@@ -43,6 +43,7 @@ pub mod argspec {
     pub const REQ1_REQBLOCK: &[u8] = b"o&\0";
     pub const REQ1_REQBLOCK_OPT1: &[u8] = b"o&|o?\0";
     pub const REQ2: &[u8] = b"oo\0";
+    pub const OPT2: &[u8] = b"|oo\0";
     pub const OPT2_OPTBLOCK: &[u8] = b"&|o?o?\0";
     pub const REQ2_OPT1: &[u8] = b"oo|o\0";
     pub const REST: &[u8] = b"*\0";
@@ -217,6 +218,29 @@ macro_rules! mrb_get_args {
                 let req2 = req2.assume_init();
                 (req1, req2)
             }
+            _ => unreachable!("mrb_get_args should have raised"),
+        }
+    }};
+    ($mrb:expr, optional = 2) => {{
+        let mut opt1 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
+        let mut opt2 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
+        let argc = $crate::sys::mrb_get_args(
+            $mrb,
+            $crate::macros::argspec::OPT2.as_ptr() as *const i8,
+            opt1.as_mut_ptr(),
+            opt2.as_mut_ptr(),
+        );
+        match argc {
+            2 => {
+                let opt1 = opt1.assume_init();
+                let opt2 = opt2.assume_init();
+                (Some(opt1), Some(opt2))
+            }
+            1 => {
+                let opt1 = opt1.assume_init();
+                (Some(opt1), None)
+            }
+            0 => (None, None),
             _ => unreachable!("mrb_get_args should have raised"),
         }
     }};

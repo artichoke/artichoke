@@ -1,3 +1,5 @@
+//! Glue between mruby FFI and `securerandom` Rust implementation.
+
 use crate::extn::prelude::*;
 use crate::extn::stdlib::securerandom;
 
@@ -19,6 +21,31 @@ pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Excep
         securerandom::base64(Some(len))?
     } else {
         securerandom::base64(None)?
+    };
+    Ok(interp.convert_mut(base64))
+}
+
+#[inline]
+pub fn urlsafe_base64(
+    interp: &mut Artichoke,
+    len: Option<Value>,
+    padding: Option<Value>,
+) -> Result<Value, Exception> {
+    let padding = match padding {
+        None => false,
+        Some(val) if val.is_nil() => false,
+        Some(padding) => {
+            // All truthy values evaluate to `true` for this argument. So either
+            // `padding` is a `bool` and we can extract it, or we default to
+            // `true` since only `nil` (handled above) and `false` are falsy.
+            padding.try_into::<bool>(interp).unwrap_or(true)
+        }
+    };
+    let base64 = if let Some(len) = len {
+        let len = len.implicitly_convert_to_int(interp)?;
+        securerandom::urlsafe_base64(Some(len), padding)?
+    } else {
+        securerandom::urlsafe_base64(None, padding)?
     };
     Ok(interp.convert_mut(base64))
 }

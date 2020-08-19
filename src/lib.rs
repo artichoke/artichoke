@@ -63,19 +63,19 @@
 //!
 //! ## Crate Features
 //!
-//! - `core-env-system` - **Enabled** by default. This activates the `std::env`
-//!   backend for the [`ENV` object][core-obj-env]. When this feature is
-//!   disabled, access to the environ is emulated with an in-memory store.
-//! - `core-math-extra` - **Enabled** by default. This enables additional
-//!   dependencies to implement some functions in the
-//!   [`Math` module][core-mod-math].  When this feature is disabled, these
-//!   functions raise `NotImplementedError`.
-//! - `core-random` - **Enabled** by default. This includes an implementation of
-//!   the [`Random` class][core-class-random]. This feature includes additional
+//! All features are enabled by default.
+//!
+//! - **core-env-system** - Activates the [`std::env`](module@std::env) backend
+//!   for the [`ENV` object][core-obj-env]. When this feature is disabled,
+//!   access to the environ is emulated with an in-memory store.
+//! - **core-math-extra** - Activates additional dependencies to implement some
+//!   functions in the [`Math` module][core-mod-math].  When this feature is
+//!   disabled, these functions raise `NotImplementedError`.
+//! - **core-random** - This includes an implementation of the
+//!   [`Random` class][core-class-random]. This feature includes additional
 //!   dependencies. When this feature is disabled, Artichoke does not have
 //!   support for generating psuedorandom numbers.
-//! - `stdlib-securerandom` - **Enabled** by default. This feature includes an
-//!   implementation of a CSPRNG for the
+//! - **stdlib-securerandom** - An implementation of a CSPRNG for the
 //!   [`SecureRandom` module][stdlib-mod-securerandom]. This feature includes
 //!   additional dependencies.  When this feature is disabled, the
 //!   `SecureRandom` module is not present.

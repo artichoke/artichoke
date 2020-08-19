@@ -1,3 +1,5 @@
+//! FFI glue between the Rust trampolines and the mruby C interpreter.
+
 use crate::extn::prelude::*;
 use crate::extn::stdlib::securerandom::{self, trampoline};
 
@@ -31,6 +33,11 @@ impl File for SecureRandomFile {
                 "base64",
                 artichoke_securerandom_base64,
                 sys::mrb_args_opt(1),
+            )?
+            .add_self_method(
+                "urlsafe_base64",
+                artichoke_securerandom_urlsafe_base64,
+                sys::mrb_args_opt(2),
             )?
             .add_self_method("hex", artichoke_securerandom_hex, sys::mrb_args_opt(1))?
             .add_self_method(
@@ -78,6 +85,25 @@ unsafe extern "C" fn artichoke_securerandom_base64(
     let mut guard = Guard::new(&mut interp);
     let len = len.map(Value::from).and_then(|len| guard.convert(len));
     let result = trampoline::base64(&mut guard, len);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => exception::raise(guard, exception),
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn artichoke_securerandom_urlsafe_base64(
+    mrb: *mut sys::mrb_state,
+    _slf: sys::mrb_value,
+) -> sys::mrb_value {
+    let (len, padding) = mrb_get_args!(mrb, optional = 2);
+    let mut interp = unwrap_interpreter!(mrb);
+    let mut guard = Guard::new(&mut interp);
+    let len = len.map(Value::from).and_then(|len| guard.convert(len));
+    let padding = padding
+        .map(Value::from)
+        .and_then(|padding| guard.convert(padding));
+    let result = trampoline::urlsafe_base64(&mut guard, len, padding);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => exception::raise(guard, exception),
