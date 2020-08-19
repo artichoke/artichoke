@@ -11,11 +11,9 @@ keywords = ["artichoke", "artichoke-ruby", "mruby", "ruby"]
 categories = ["api-bindings"]
 
 [dependencies]
-base64 = { version = "0.12", optional = true }
 bstr = { version = "0.2", default-features = false, features = ["std"] }
 chrono = "0.4"
 dtoa = "0.4"
-hex = { version = "0.4", optional = true }
 intaglio = "1.1"
 itoa = "0.4"
 libm = { version = "0.2", optional = true }
@@ -25,8 +23,8 @@ rand = { version = "0.7", optional = true }
 rand_pcg = { version = "0.2", optional = true }
 regex = "1"
 spinoso-array = { version = "0.3", path = "../spinoso-array" }
+spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
-uuid = { version = "0.8", optional = true, features = ["v4"] }
 
 [dependencies.artichoke-core]
 path = "../artichoke-core"
@@ -62,4 +60,4 @@ core-regexp-oniguruma = ["onig"]
 native-filesystem-access = []
 output-strategy-capture = []
 output-strategy-null = ["output-strategy-capture"]
-stdlib-securerandom = ["base64", "hex", "rand", "uuid"]
+stdlib-securerandom = ["spinoso-securerandom"]

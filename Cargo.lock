@@ -35,13 +35,11 @@ name = "artichoke-backend"
 version = "0.1.0"
 dependencies = [
  "artichoke-core",
- "base64",
  "bindgen",
  "bstr",
  "cc",
  "chrono",
  "dtoa",
- "hex",
  "intaglio",
  "itoa",
  "libc",
@@ -55,9 +53,9 @@ dependencies = [
  "rand_pcg",
  "regex",
  "spinoso-array",
+ "spinoso-securerandom",
  "spinoso-symbol",
  "target-lexicon",
- "uuid",
 ]
 
 [[package]]
@@ -226,12 +224,6 @@ checksum = "3deed196b6e7f9e44a2ae8d94225d80302d81208b1bb673fd21fe634645c85a9"
 dependencies = [
  "libc",
 ]
-
-[[package]]
-name = "hex"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "644f9158b2f133fd50f5fb3242878846d9eb792e445c893805ff0e3824006e35"
 
 [[package]]
 name = "intaglio"
