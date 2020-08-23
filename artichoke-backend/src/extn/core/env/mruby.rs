@@ -17,14 +17,10 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     )?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
-        .add_method("[]", artichoke_env_element_reference, sys::mrb_args_req(1))?
-        .add_method(
-            "[]=",
-            artichoke_env_element_assignment,
-            sys::mrb_args_req(2),
-        )?
-        .add_method("initialize", artichoke_env_initialize, sys::mrb_args_none())?
-        .add_method("to_h", artichoke_env_to_h, sys::mrb_args_none())?
+        .add_method("[]", env_element_reference, sys::mrb_args_req(1))?
+        .add_method("[]=", env_element_assignment, sys::mrb_args_req(2))?
+        .add_method("initialize", env_initialize, sys::mrb_args_none())?
+        .add_method("to_h", env_to_h, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<env::Environ>(spec)?;
     let _ = interp.eval(&include_bytes!("env.rb")[..])?;
@@ -33,8 +29,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_env_initialize(
+unsafe extern "C" fn env_initialize(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -49,8 +44,7 @@ unsafe extern "C" fn artichoke_env_initialize(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_env_element_reference(
+unsafe extern "C" fn env_element_reference(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -66,8 +60,7 @@ unsafe extern "C" fn artichoke_env_element_reference(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_env_element_assignment(
+unsafe extern "C" fn env_element_assignment(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -84,11 +77,7 @@ unsafe extern "C" fn artichoke_env_element_assignment(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_env_to_h(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn env_to_h(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
