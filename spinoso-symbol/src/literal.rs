@@ -22,19 +22,12 @@ impl Literal {
         }
         let bytes = (ch as u32).to_le_bytes();
         let ascii_byte = bytes[0];
-        match ascii_byte {
-            0x00..=0x1F | b'"' | b'\\' | 0x7F => true,
-            _ => false,
-        }
+        Self::debug_escape(ascii_byte).len() > 1
     }
-}
 
-impl From<u8> for Literal {
-    /// Map from a `u8` to a String literal of a hex escape code.
-    ///
-    /// For example, `\xFF` or `\f`.
+    /// Return the debug escape code for the given byte.
     #[allow(clippy::too_many_lines)]
-    fn from(value: u8) -> Self {
+    pub fn debug_escape(value: u8) -> &'static str {
         // Some control character bytes escape to non-hex literals:
         //
         // ```console
@@ -105,7 +98,7 @@ impl From<u8> for Literal {
         // [2.6.3] > :"\x20"
         // => :" "
         // ```
-        let escape = match value {
+        match value {
             0 => r"\x00",
             1 => r"\x01",
             2 => r"\x02",
@@ -374,8 +367,16 @@ impl From<u8> for Literal {
             253 => r"\xFD",
             254 => r"\xFE",
             255 => r"\xFF",
-        };
-        Self(escape.chars())
+        }
+    }
+}
+
+impl From<u8> for Literal {
+    /// Map from a `u8` to a String literal of a hex escape code.
+    ///
+    /// For example, `\xFF` or `\f`.
+    fn from(value: u8) -> Self {
+        Self(Self::debug_escape(value).chars())
     }
 }
 
