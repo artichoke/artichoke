@@ -970,6 +970,11 @@ mod tests {
     }
 
     #[test]
+    fn del() {
+        assert_eq!(Inspect::from("\x7F").collect::<String>(), r#":"\x7F""#);
+    }
+
+    #[test]
     fn ascii_control() {
         assert_eq!(Inspect::from("\0").collect::<String>(), r#":"\x00""#);
         assert_eq!(Inspect::from("\x01").collect::<String>(), r#":"\x01""#);
