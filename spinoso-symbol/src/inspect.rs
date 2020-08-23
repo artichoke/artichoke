@@ -54,8 +54,8 @@ use crate::unicode::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
 /// [`Symbol`]: crate::Symbol
 /// [`format_inspect_into`]: crate::Symbol::format_inspect_into
 /// [`write_inspect_into`]: crate::Symbol::write_inspect_into
-#[must_use = "Iterator"]
 #[derive(Default, Debug, Clone)]
+#[must_use = "this `Inspect` is an `Iterator`, which should be consumed if constructed"]
 #[cfg_attr(docsrs, doc(cfg(feature = "inspect")))]
 pub struct Inspect<'a>(State<'a>);
 
@@ -105,8 +105,8 @@ enum Quote {
     None,
 }
 
-#[must_use = "Iterator"]
 #[derive(Debug, Clone)]
+#[must_use = "this `State` is an `Iterator`, which should be consumed if constructed"]
 struct State<'a> {
     is_ident: bool,
     string: &'a [u8],

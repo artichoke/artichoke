@@ -287,8 +287,8 @@ impl<'a> FusedIterator for Hex<'a> {}
 
 impl<'a> ExactSizeIterator for Hex<'a> {}
 
-#[must_use = "Iterator"]
 #[derive(Debug, Clone)]
+#[must_use = "this `EncodedByte` is an `Iterator`, which should be consumed if constructed"]
 struct EncodedByte(Option<[u8; 2]>);
 
 impl From<u8> for EncodedByte {

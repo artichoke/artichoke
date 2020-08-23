@@ -6,8 +6,8 @@ use core::str::Chars;
 /// For example, `\xFF` or `\f`.
 ///
 /// ASCII printable characters are passed through as is.
-#[must_use = "Iterator"]
 #[derive(Debug, Clone)]
+#[must_use = "this `Literal` is an `Iterator`, which should be consumed if constructed"]
 pub struct Literal(Chars<'static>);
 
 impl Literal {
@@ -26,6 +26,12 @@ impl Literal {
     }
 
     /// Return the debug escape code for the given byte.
+    ///
+    /// Debug escapes can be hex escapes (`\xFF`), control character escapes
+    /// (`\e`), or escape sequences for debug printing (`\"` or `\\`).
+    ///
+    /// Printable ASCII characters that are not escape sequences are passed
+    /// through untouched.
     #[allow(clippy::too_many_lines)]
     pub fn debug_escape(value: u8) -> &'static str {
         // Some control character bytes escape to non-hex literals:
@@ -131,8 +137,8 @@ impl Literal {
             29 => r"\x1D",
             30 => r"\x1E",
             31 => r"\x1F",
-            32 => r" ",
-            33 => r"!",
+            32 => " ",
+            33 => "!",
             // [2.6.3] > '"'.ord
             // => 34
             // [2.6.3] > '"'.ord.to_s(16)
@@ -140,63 +146,63 @@ impl Literal {
             // [2.6.3] > :"\x22"
             // => :"\""
             34 => r#"\""#,
-            35 => r"#",
-            36 => r"$",
-            37 => r"%",
-            38 => r"&",
-            39 => r"'",
-            40 => r"(",
-            41 => r")",
-            42 => r"*",
-            43 => r"+",
-            44 => r",",
-            45 => r"-",
-            46 => r".",
-            47 => r"/",
-            48 => r"0",
-            49 => r"1",
-            50 => r"2",
-            51 => r"3",
-            52 => r"4",
-            53 => r"5",
-            54 => r"6",
-            55 => r"7",
-            56 => r"8",
-            57 => r"9",
-            58 => r":",
-            59 => r";",
-            60 => r"<",
-            61 => r"=",
-            62 => r">",
-            63 => r"?",
-            64 => r"@",
-            65 => r"A",
-            66 => r"B",
-            67 => r"C",
-            68 => r"D",
-            69 => r"E",
-            70 => r"F",
-            71 => r"G",
-            72 => r"H",
-            73 => r"I",
-            74 => r"J",
-            75 => r"K",
-            76 => r"L",
-            77 => r"M",
-            78 => r"N",
-            79 => r"O",
-            80 => r"P",
-            81 => r"Q",
-            82 => r"R",
-            83 => r"S",
-            84 => r"T",
-            85 => r"U",
-            86 => r"V",
-            87 => r"W",
-            88 => r"X",
-            89 => r"Y",
-            90 => r"Z",
-            91 => r"[",
+            35 => "#",
+            36 => "$",
+            37 => "%",
+            38 => "&",
+            39 => "'",
+            40 => "(",
+            41 => ")",
+            42 => "*",
+            43 => "+",
+            44 => ",",
+            45 => "-",
+            46 => ".",
+            47 => "/",
+            48 => "0",
+            49 => "1",
+            50 => "2",
+            51 => "3",
+            52 => "4",
+            53 => "5",
+            54 => "6",
+            55 => "7",
+            56 => "8",
+            57 => "9",
+            58 => ":",
+            59 => ";",
+            60 => "<",
+            61 => "=",
+            62 => ">",
+            63 => "?",
+            64 => "@",
+            65 => "A",
+            66 => "B",
+            67 => "C",
+            68 => "D",
+            69 => "E",
+            70 => "F",
+            71 => "G",
+            72 => "H",
+            73 => "I",
+            74 => "J",
+            75 => "K",
+            76 => "L",
+            77 => "M",
+            78 => "N",
+            79 => "O",
+            80 => "P",
+            81 => "Q",
+            82 => "R",
+            83 => "S",
+            84 => "T",
+            85 => "U",
+            86 => "V",
+            87 => "W",
+            88 => "X",
+            89 => "Y",
+            90 => "Z",
+            91 => "[",
             // [2.6.3] > '\\'.ord
             // => 92
             // [2.6.3] > '\\'.ord.to_s(16)
@@ -204,40 +210,40 @@ impl Literal {
             // [2.6.3] > :"\x5C"
             // => :"\\"
             92 => r"\\",
-            93 => r"]",
-            94 => r"^",
-            95 => r"_",
-            96 => r"`",
-            97 => r"a",
-            98 => r"b",
-            99 => r"c",
-            100 => r"d",
-            101 => r"e",
-            102 => r"f",
-            103 => r"g",
-            104 => r"h",
-            105 => r"i",
-            106 => r"j",
-            107 => r"k",
-            108 => r"l",
-            109 => r"m",
-            110 => r"n",
-            111 => r"o",
-            112 => r"p",
-            113 => r"q",
-            114 => r"r",
-            115 => r"s",
-            116 => r"t",
-            117 => r"u",
-            118 => r"v",
-            119 => r"w",
-            120 => r"x",
-            121 => r"y",
-            122 => r"z",
-            123 => r"{",
-            124 => r"|",
-            125 => r"}",
-            126 => r"~",
+            93 => "]",
+            94 => "^",
+            95 => "_",
+            96 => "`",
+            97 => "a",
+            98 => "b",
+            99 => "c",
+            100 => "d",
+            101 => "e",
+            102 => "f",
+            103 => "g",
+            104 => "h",
+            105 => "i",
+            106 => "j",
+            107 => "k",
+            108 => "l",
+            109 => "m",
+            110 => "n",
+            111 => "o",
+            112 => "p",
+            113 => "q",
+            114 => "r",
+            115 => "s",
+            116 => "t",
+            117 => "u",
+            118 => "v",
+            119 => "w",
+            120 => "x",
+            121 => "y",
+            122 => "z",
+            123 => "{",
+            124 => "|",
+            125 => "}",
+            126 => "~",
             127 => r"\x7F",
             128 => r"\x80",
             129 => r"\x81",
@@ -372,9 +378,14 @@ impl Literal {
 }
 
 impl From<u8> for Literal {
-    /// Map from a `u8` to a String literal of a hex escape code.
+    /// Map from a `u8` to a String literal of debug escape code.
     ///
-    /// For example, `\xFF` or `\f`.
+    /// Debug escapes can be hex escapes (`\xFF`), control character escapes
+    /// (`\e`), or escape sequences for debug printing (`\"` or `\\`).
+    ///
+    /// Printable ASCII characters that are not escape sequences are passed
+    /// through untouched.
+    #[inline]
     fn from(value: u8) -> Self {
         Self(Self::debug_escape(value).chars())
     }
