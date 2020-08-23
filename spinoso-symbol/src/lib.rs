@@ -123,6 +123,8 @@ mod eq;
 mod ident;
 #[cfg(feature = "inspect")]
 mod inspect;
+#[cfg(feature = "inspect")]
+mod literal;
 #[cfg(any(feature = "ident-parser", feature = "inspect"))]
 mod unicode;
 

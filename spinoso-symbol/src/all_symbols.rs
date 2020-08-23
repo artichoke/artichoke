@@ -136,8 +136,8 @@ where
 ///
 /// [interner]: Intern
 /// [`all_symbols`]: InternerAllSymbols::all_symbols
-#[must_use = "Iterator"]
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[must_use = "this `AllSymbols` is an `Iterator`, which should be consumed if constructed"]
 #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
 pub struct AllSymbols(Range<u32>);
 
