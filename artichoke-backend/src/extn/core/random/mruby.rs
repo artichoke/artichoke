@@ -8,26 +8,14 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Random", None, Some(def::box_unbox_free::<random::Random>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
-        .add_self_method(
-            "new_seed",
-            artichoke_random_self_new_seed,
-            sys::mrb_args_req(1),
-        )?
-        .add_self_method("srand", artichoke_random_self_srand, sys::mrb_args_opt(1))?
-        .add_self_method(
-            "urandom",
-            artichoke_random_self_urandom,
-            sys::mrb_args_req(1),
-        )?
-        .add_method(
-            "initialize",
-            artichoke_random_initialize,
-            sys::mrb_args_opt(1),
-        )?
-        .add_method("==", artichoke_random_eq, sys::mrb_args_opt(1))?
-        .add_method("bytes", artichoke_random_bytes, sys::mrb_args_req(1))?
-        .add_method("rand", artichoke_random_rand, sys::mrb_args_opt(1))?
-        .add_method("seed", artichoke_random_seed, sys::mrb_args_none())?
+        .add_self_method("new_seed", random_self_new_seed, sys::mrb_args_req(1))?
+        .add_self_method("srand", random_self_srand, sys::mrb_args_opt(1))?
+        .add_self_method("urandom", random_self_urandom, sys::mrb_args_req(1))?
+        .add_method("initialize", random_initialize, sys::mrb_args_opt(1))?
+        .add_method("==", random_eq, sys::mrb_args_opt(1))?
+        .add_method("bytes", random_bytes, sys::mrb_args_req(1))?
+        .add_method("rand", random_rand, sys::mrb_args_opt(1))?
+        .add_method("seed", random_seed, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<random::Random>(spec)?;
 
@@ -40,8 +28,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_random_initialize(
+unsafe extern "C" fn random_initialize(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -57,11 +44,7 @@ unsafe extern "C" fn artichoke_random_initialize(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_random_eq(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn random_eq(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
@@ -74,11 +57,7 @@ unsafe extern "C" fn artichoke_random_eq(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_random_bytes(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn random_bytes(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
@@ -91,11 +70,7 @@ unsafe extern "C" fn artichoke_random_bytes(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_random_rand(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn random_rand(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let max = mrb_get_args!(mrb, optional = 1);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
@@ -108,11 +83,7 @@ unsafe extern "C" fn artichoke_random_rand(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_random_seed(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn random_seed(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
@@ -124,8 +95,7 @@ unsafe extern "C" fn artichoke_random_seed(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_random_self_new_seed(
+unsafe extern "C" fn random_self_new_seed(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -139,8 +109,7 @@ unsafe extern "C" fn artichoke_random_self_new_seed(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_random_self_srand(
+unsafe extern "C" fn random_self_srand(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -155,8 +124,7 @@ unsafe extern "C" fn artichoke_random_self_srand(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_random_self_urandom(
+unsafe extern "C" fn random_self_urandom(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {

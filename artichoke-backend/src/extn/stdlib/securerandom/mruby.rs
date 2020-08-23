@@ -9,7 +9,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SecureRandomFile {
+struct SecureRandomFile {
     // Ensure this type is not constructable
     _private: (),
 }
@@ -26,31 +26,27 @@ impl File for SecureRandomFile {
         module::Builder::for_spec(interp, &spec)
             .add_self_method(
                 "alphanumeric",
-                artichoke_securerandom_alphanumeric,
+                securerandom_alphanumeric,
                 sys::mrb_args_opt(1),
             )?
-            .add_self_method(
-                "base64",
-                artichoke_securerandom_base64,
-                sys::mrb_args_opt(1),
-            )?
+            .add_self_method("base64", securerandom_base64, sys::mrb_args_opt(1))?
             .add_self_method(
                 "urlsafe_base64",
-                artichoke_securerandom_urlsafe_base64,
+                securerandom_urlsafe_base64,
                 sys::mrb_args_opt(2),
             )?
-            .add_self_method("hex", artichoke_securerandom_hex, sys::mrb_args_opt(1))?
+            .add_self_method("hex", securerandom_hex, sys::mrb_args_opt(1))?
             .add_self_method(
                 "random_bytes",
-                artichoke_securerandom_random_bytes,
+                securerandom_random_bytes,
                 sys::mrb_args_opt(1),
             )?
             .add_self_method(
                 "random_number",
-                artichoke_securerandom_random_number,
+                securerandom_random_number,
                 sys::mrb_args_opt(1),
             )?
-            .add_self_method("uuid", artichoke_securerandom_uuid, sys::mrb_args_none())?
+            .add_self_method("uuid", securerandom_uuid, sys::mrb_args_none())?
             .define()?;
         interp.def_module::<securerandom::SecureRandom>(spec)?;
 
@@ -59,8 +55,7 @@ impl File for SecureRandomFile {
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_securerandom_alphanumeric(
+unsafe extern "C" fn securerandom_alphanumeric(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -75,8 +70,7 @@ unsafe extern "C" fn artichoke_securerandom_alphanumeric(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_securerandom_base64(
+unsafe extern "C" fn securerandom_base64(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -91,8 +85,7 @@ unsafe extern "C" fn artichoke_securerandom_base64(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_securerandom_urlsafe_base64(
+unsafe extern "C" fn securerandom_urlsafe_base64(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -110,8 +103,7 @@ unsafe extern "C" fn artichoke_securerandom_urlsafe_base64(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_securerandom_hex(
+unsafe extern "C" fn securerandom_hex(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -126,8 +118,7 @@ unsafe extern "C" fn artichoke_securerandom_hex(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_securerandom_random_bytes(
+unsafe extern "C" fn securerandom_random_bytes(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -142,8 +133,7 @@ unsafe extern "C" fn artichoke_securerandom_random_bytes(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_securerandom_random_number(
+unsafe extern "C" fn securerandom_random_number(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -158,8 +148,7 @@ unsafe extern "C" fn artichoke_securerandom_random_number(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_securerandom_uuid(
+unsafe extern "C" fn securerandom_uuid(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {

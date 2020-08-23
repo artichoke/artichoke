@@ -7,26 +7,14 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Symbol", None, None)?;
     class::Builder::for_spec(interp, &spec)
-        .add_self_method(
-            "all_symbols",
-            artichoke_symbol_all_symbols,
-            sys::mrb_args_none(),
-        )?
-        .add_method("==", artichoke_symbol_equal_equal, sys::mrb_args_req(1))?
-        .add_method(
-            "casecmp",
-            artichoke_symbol_ascii_casecmp,
-            sys::mrb_args_req(1),
-        )?
-        .add_method(
-            "casecmp?",
-            artichoke_symbol_unicode_casecmp,
-            sys::mrb_args_req(1),
-        )?
-        .add_method("empty?", artichoke_symbol_empty, sys::mrb_args_none())?
-        .add_method("inspect", artichoke_symbol_inspect, sys::mrb_args_none())?
-        .add_method("length", artichoke_symbol_length, sys::mrb_args_none())?
-        .add_method("to_s", artichoke_symbol_to_s, sys::mrb_args_none())?
+        .add_self_method("all_symbols", symbol_all_symbols, sys::mrb_args_none())?
+        .add_method("==", symbol_equal_equal, sys::mrb_args_req(1))?
+        .add_method("casecmp", symbol_ascii_casecmp, sys::mrb_args_req(1))?
+        .add_method("casecmp?", symbol_unicode_casecmp, sys::mrb_args_req(1))?
+        .add_method("empty?", symbol_empty, sys::mrb_args_none())?
+        .add_method("inspect", symbol_inspect, sys::mrb_args_none())?
+        .add_method("length", symbol_length, sys::mrb_args_none())?
+        .add_method("to_s", symbol_to_s, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<symbol::Symbol>(spec)?;
     let _ = interp.eval(&include_bytes!("symbol.rb")[..])?;
@@ -34,8 +22,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_all_symbols(
+unsafe extern "C" fn symbol_all_symbols(
     mrb: *mut sys::mrb_state,
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -49,8 +36,7 @@ unsafe extern "C" fn artichoke_symbol_all_symbols(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_equal_equal(
+unsafe extern "C" fn symbol_equal_equal(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -66,8 +52,7 @@ unsafe extern "C" fn artichoke_symbol_equal_equal(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_ascii_casecmp(
+unsafe extern "C" fn symbol_ascii_casecmp(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -83,8 +68,7 @@ unsafe extern "C" fn artichoke_symbol_ascii_casecmp(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_unicode_casecmp(
+unsafe extern "C" fn symbol_unicode_casecmp(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -100,11 +84,7 @@ unsafe extern "C" fn artichoke_symbol_unicode_casecmp(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_empty(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn symbol_empty(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
@@ -116,8 +96,7 @@ unsafe extern "C" fn artichoke_symbol_empty(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_inspect(
+unsafe extern "C" fn symbol_inspect(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -132,8 +111,7 @@ unsafe extern "C" fn artichoke_symbol_inspect(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_length(
+unsafe extern "C" fn symbol_length(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -148,11 +126,7 @@ unsafe extern "C" fn artichoke_symbol_length(
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_symbol_to_s(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn symbol_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
