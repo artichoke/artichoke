@@ -20,7 +20,6 @@ pub use crate::class_registry::ClassRegistry;
 pub use crate::convert::{BoxUnboxVmValue, HeapAllocatedData};
 pub use crate::core::{Regexp as _, Value as _, *};
 pub use crate::def::{self, EnclosingRubyScope, NotDefinedError};
-pub use crate::exception;
 pub use crate::ffi::InterpreterExtractError;
 pub use crate::module;
 pub use crate::module_registry::ModuleRegistry;
@@ -32,4 +31,4 @@ pub use crate::value::Value;
 
 /// Type alias for errors returned from `init` functions in
 /// [`extn`](crate::extn).
-pub type InitializeResult<T> = Result<T, Exception>;
+pub type InitializeResult<T> = Result<T, Error>;

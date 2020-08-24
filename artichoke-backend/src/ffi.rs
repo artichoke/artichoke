@@ -12,7 +12,7 @@ use std::ptr::{self, NonNull};
 
 use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::state::State;
 use crate::sys;
@@ -105,13 +105,13 @@ impl RubyException for InterpreterExtractError {
     }
 }
 
-impl From<InterpreterExtractError> for Exception {
+impl From<InterpreterExtractError> for Error {
     fn from(exception: InterpreterExtractError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<InterpreterExtractError>> for Exception {
+impl From<Box<InterpreterExtractError>> for Error {
     fn from(exception: Box<InterpreterExtractError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
@@ -198,13 +198,13 @@ impl RubyException for ConvertBytesError {
     }
 }
 
-impl From<ConvertBytesError> for Exception {
+impl From<ConvertBytesError> for Error {
     fn from(exception: ConvertBytesError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<ConvertBytesError>> for Exception {
+impl From<Box<ConvertBytesError>> for Error {
     fn from(exception: Box<ConvertBytesError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }

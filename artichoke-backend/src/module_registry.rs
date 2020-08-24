@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::module;
 use crate::sys;
@@ -8,11 +8,11 @@ use crate::value::Value;
 use crate::Artichoke;
 
 pub trait ModuleRegistry {
-    fn def_module<T>(&mut self, spec: module::Spec) -> Result<(), Exception>
+    fn def_module<T>(&mut self, spec: module::Spec) -> Result<(), Error>
     where
         T: Any;
 
-    fn module_spec<T>(&self) -> Result<Option<&module::Spec>, Exception>
+    fn module_spec<T>(&self) -> Result<Option<&module::Spec>, Error>
     where
         T: Any;
 
@@ -27,7 +27,7 @@ pub trait ModuleRegistry {
         }
     }
 
-    fn module_of<T>(&mut self) -> Result<Option<Value>, Exception>
+    fn module_of<T>(&mut self) -> Result<Option<Value>, Error>
     where
         T: Any;
 }
@@ -38,7 +38,7 @@ impl ModuleRegistry for Artichoke {
     /// Module definitions have the same lifetime as the interpreter because the
     /// module def owns the `mrb_data_type` for the type, which must be
     /// long-lived.
-    fn def_module<T>(&mut self, spec: module::Spec) -> Result<(), Exception>
+    fn def_module<T>(&mut self, spec: module::Spec) -> Result<(), Error>
     where
         T: Any,
     {
@@ -51,7 +51,7 @@ impl ModuleRegistry for Artichoke {
     ///
     /// This function returns `None` if type `T` has not had a module spec
     /// registered for it using [`ModuleRegistry::def_module`].
-    fn module_spec<T>(&self) -> Result<Option<&module::Spec>, Exception>
+    fn module_spec<T>(&self) -> Result<Option<&module::Spec>, Error>
     where
         T: Any,
     {
@@ -60,7 +60,7 @@ impl ModuleRegistry for Artichoke {
         Ok(spec)
     }
 
-    fn module_of<T>(&mut self) -> Result<Option<Value>, Exception>
+    fn module_of<T>(&mut self) -> Result<Option<Value>, Error>
     where
         T: Any,
     {

@@ -25,31 +25,31 @@ pub mod trampoline;
 #[doc(inline)]
 pub use spinoso_securerandom::{
     alphanumeric, base64, hex, random_bytes, random_number, urlsafe_base64, uuid, ArgumentError,
-    DomainError, Error, Max, RandomBytesError, RandomNumber, SecureRandom,
+    DomainError, Error as SecureRandomError, Max, RandomBytesError, RandomNumber, SecureRandom,
 };
 
-impl From<Error> for Exception {
-    fn from(err: Error) -> Self {
+impl From<SecureRandomError> for Error {
+    fn from(err: SecureRandomError) -> Self {
         match err {
-            Error::Argument(err) => err.into(),
-            Error::RandomBytes(err) => err.into(),
+            SecureRandomError::Argument(err) => err.into(),
+            SecureRandomError::RandomBytes(err) => err.into(),
         }
     }
 }
 
-impl From<ArgumentError> for Exception {
+impl From<ArgumentError> for Error {
     fn from(err: ArgumentError) -> Self {
         exc::ArgumentError::from(err.message()).into()
     }
 }
 
-impl From<RandomBytesError> for Exception {
+impl From<RandomBytesError> for Error {
     fn from(err: RandomBytesError) -> Self {
         RuntimeError::from(err.message()).into()
     }
 }
 
-impl From<DomainError> for Exception {
+impl From<DomainError> for Error {
     fn from(err: DomainError) -> Self {
         // TODO: MRI returns `Errno::EDOM` exception class.
         ArgumentError::from(err.message()).into()
@@ -57,7 +57,7 @@ impl From<DomainError> for Exception {
 }
 
 impl TryConvertMut<Value, Max> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, max: Value) -> Result<Max, Self::Error> {
         let optional: Option<Value> = self.try_convert(max)?;
@@ -66,7 +66,7 @@ impl TryConvertMut<Value, Max> for Artichoke {
 }
 
 impl TryConvertMut<Option<Value>, Max> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, max: Option<Value>) -> Result<Max, Self::Error> {
         if let Some(max) = max {

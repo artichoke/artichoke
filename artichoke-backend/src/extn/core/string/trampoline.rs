@@ -4,7 +4,7 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::prelude::*;
 
-pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Exception> {
+pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
     let string = value.try_into_mut::<&[u8]>(interp)?;
 
     let ord = if let Some((start, end, ch)) = string.char_indices().next() {
@@ -34,7 +34,7 @@ pub fn scan(
     value: Value,
     mut pattern: Value,
     block: Option<Block>,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     if let Ruby::Symbol = pattern.ruby_type() {
         let mut message = String::from("wrong argument type ");
         message.push_str(pattern.pretty_name(interp));

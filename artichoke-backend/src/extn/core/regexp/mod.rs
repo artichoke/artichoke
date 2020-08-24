@@ -94,7 +94,7 @@ pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, [u8]> {
     }
 }
 
-pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Exception> {
+pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Error> {
     let mut idx = interp.active_regexp_globals()?;
     while let Some(group) = NonZeroUsize::new(idx) {
         interp.unset_global_variable(nth_match_group(group))?;
@@ -126,7 +126,7 @@ impl Regexp {
         literal_config: Config,
         derived_config: Config,
         encoding: Encoding,
-    ) -> Result<Self, Exception> {
+    ) -> Result<Self, Error> {
         #[cfg(feature = "core-regexp-oniguruma")]
         {
             // Patterns must be parsable by Oniguruma.
@@ -159,7 +159,7 @@ impl Regexp {
         mut pattern: Value,
         options: Option<Options>,
         encoding: Option<Encoding>,
-    ) -> Result<Self, Exception> {
+    ) -> Result<Self, Error> {
         let literal_config =
             if let Ok(regexp) = unsafe { Self::unbox_from_value(&mut pattern, interp) } {
                 if options.is_some() || encoding.is_some() {
@@ -186,7 +186,7 @@ impl Regexp {
         Self::new(literal_config, derived_config, encoding.unwrap_or_default())
     }
 
-    pub fn escape(pattern: &[u8]) -> Result<String, Exception> {
+    pub fn escape(pattern: &[u8]) -> Result<String, Error> {
         if let Ok(pattern) = str::from_utf8(pattern) {
             Ok(syntax::escape(pattern))
         } else {
@@ -194,14 +194,11 @@ impl Regexp {
         }
     }
 
-    pub fn union<T>(interp: &mut Artichoke, patterns: T) -> Result<Self, Exception>
+    pub fn union<T>(interp: &mut Artichoke, patterns: T) -> Result<Self, Error>
     where
         T: IntoIterator<Item = Value>,
     {
-        fn extract_pattern(
-            interp: &mut Artichoke,
-            value: &mut Value,
-        ) -> Result<Vec<u8>, Exception> {
+        fn extract_pattern(interp: &mut Artichoke, value: &mut Value) -> Result<Vec<u8>, Error> {
             if let Ok(regexp) = unsafe { Regexp::unbox_from_value(value, interp) } {
                 let config = regexp.inner().derived_config();
                 let pattern = config.pattern.clone();
@@ -259,11 +256,7 @@ impl Regexp {
         self.0.as_ref()
     }
 
-    pub fn case_compare(
-        &self,
-        interp: &mut Artichoke,
-        mut other: Value,
-    ) -> Result<bool, Exception> {
+    pub fn case_compare(&self, interp: &mut Artichoke, mut other: Value) -> Result<bool, Error> {
         let pattern = if let Ok(pattern) = other.implicitly_convert_to_string(interp) {
             pattern
         } else {
@@ -310,7 +303,7 @@ impl Regexp {
         }
     }
 
-    pub fn is_match(&self, pattern: Option<&[u8]>, pos: Option<Int>) -> Result<bool, Exception> {
+    pub fn is_match(&self, pattern: Option<&[u8]>, pos: Option<Int>) -> Result<bool, Error> {
         if let Some(pattern) = pattern {
             self.0.is_match(pattern, pos)
         } else {
@@ -324,7 +317,7 @@ impl Regexp {
         pattern: Option<&[u8]>,
         pos: Option<Int>,
         block: Option<Block>,
-    ) -> Result<Value, Exception> {
+    ) -> Result<Value, Error> {
         if let Some(pattern) = pattern {
             self.0.match_(interp, pattern, pos, block)
         } else {
@@ -338,7 +331,7 @@ impl Regexp {
         &self,
         interp: &mut Artichoke,
         pattern: Option<&[u8]>,
-    ) -> Result<Option<usize>, Exception> {
+    ) -> Result<Option<usize>, Error> {
         if let Some(pattern) = pattern {
             self.0.match_operator(interp, pattern)
         } else {
@@ -346,7 +339,7 @@ impl Regexp {
         }
     }
 
-    pub fn named_captures(&self) -> Result<NameToCaptureLocations, Exception> {
+    pub fn named_captures(&self) -> Result<NameToCaptureLocations, Error> {
         let captures = self.0.named_captures()?;
         let mut converted = Vec::with_capacity(captures.len());
         for (name, indexes) in captures {
@@ -404,7 +397,7 @@ pub struct Config {
 impl TryConvertMut<(Option<Value>, Option<Value>), (Option<Options>, Option<Encoding>)>
     for Artichoke
 {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(
         &mut self,

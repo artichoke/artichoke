@@ -61,7 +61,7 @@ unsafe extern "C" fn artichoke_math_acos(
     let result = math::acos(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -76,7 +76,7 @@ unsafe extern "C" fn artichoke_math_acosh(
     let result = math::acosh(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -91,7 +91,7 @@ unsafe extern "C" fn artichoke_math_asin(
     let result = math::asin(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -106,7 +106,7 @@ unsafe extern "C" fn artichoke_math_asinh(
     let result = math::asinh(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -121,7 +121,7 @@ unsafe extern "C" fn artichoke_math_atan(
     let result = math::atan(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -137,7 +137,7 @@ unsafe extern "C" fn artichoke_math_atan2(
     let result = math::atan2(&mut guard, value, other).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -152,7 +152,7 @@ unsafe extern "C" fn artichoke_math_atanh(
     let result = math::atanh(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -167,7 +167,7 @@ unsafe extern "C" fn artichoke_math_cbrt(
     let result = math::cbrt(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -182,7 +182,7 @@ unsafe extern "C" fn artichoke_math_cos(
     let result = math::cos(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -197,7 +197,7 @@ unsafe extern "C" fn artichoke_math_cosh(
     let result = math::cosh(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -212,7 +212,7 @@ unsafe extern "C" fn artichoke_math_erf(
     let result = math::erf(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -227,7 +227,7 @@ unsafe extern "C" fn artichoke_math_erfc(
     let result = math::erfc(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -242,7 +242,7 @@ unsafe extern "C" fn artichoke_math_exp(
     let result = math::exp(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -261,7 +261,7 @@ unsafe extern "C" fn artichoke_math_frexp(
     });
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -276,7 +276,7 @@ unsafe extern "C" fn artichoke_math_gamma(
     let result = math::gamma(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -292,7 +292,7 @@ unsafe extern "C" fn artichoke_math_hypot(
     let result = math::hypot(&mut guard, value, other).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -309,7 +309,7 @@ unsafe extern "C" fn artichoke_math_ldexp(
         math::ldexp(&mut guard, fraction, exponent).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -328,7 +328,7 @@ unsafe extern "C" fn artichoke_math_lgamma(
     });
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -344,7 +344,7 @@ unsafe extern "C" fn artichoke_math_log(
     let result = math::log(&mut guard, value, base).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -359,7 +359,7 @@ unsafe extern "C" fn artichoke_math_log10(
     let result = math::log10(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -374,7 +374,7 @@ unsafe extern "C" fn artichoke_math_log2(
     let result = math::log2(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -389,7 +389,7 @@ unsafe extern "C" fn artichoke_math_sin(
     let result = math::sin(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -404,7 +404,7 @@ unsafe extern "C" fn artichoke_math_sinh(
     let result = math::sinh(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -419,7 +419,7 @@ unsafe extern "C" fn artichoke_math_sqrt(
     let result = math::sqrt(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -434,7 +434,7 @@ unsafe extern "C" fn artichoke_math_tan(
     let result = math::tan(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -449,6 +449,6 @@ unsafe extern "C" fn artichoke_math_tanh(
     let result = math::tanh(&mut guard, value).map(|result| guard.convert_mut(result));
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

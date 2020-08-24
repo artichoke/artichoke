@@ -24,7 +24,7 @@ impl EnvType for Memory {
         self
     }
 
-    fn get<'a>(&'a self, name: &[u8]) -> Result<Option<Cow<'a, [u8]>>, Exception> {
+    fn get<'a>(&'a self, name: &[u8]) -> Result<Option<Cow<'a, [u8]>>, Error> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -38,9 +38,8 @@ impl EnvType for Memory {
             return Ok(None);
         }
         if name.find_byte(b'\0').is_some() {
-            return Err(Exception::from(EnvArgumentError::from(
-                "bad environment variable name: contains null byte",
-            )));
+            let message = "bad environment variable name: contains null byte";
+            return Err(EnvArgumentError::from(message).into());
         }
         if name.find_byte(b'=').is_some() {
             // MRI accepts names containing '=' on get and should always return
@@ -51,7 +50,7 @@ impl EnvType for Memory {
         }
     }
 
-    fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Exception> {
+    fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Error> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -64,17 +63,14 @@ impl EnvType for Memory {
                 return Ok(());
             }
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Exception::from(EnvArgumentError::from(
-                "Invalid argument - setenv()",
-            )));
+            return Err(EnvArgumentError::from("Invalid argument - setenv()").into());
         }
         if name.find_byte(b'\0').is_some() {
             if value.is_none() {
                 return Ok(());
             }
-            return Err(Exception::from(EnvArgumentError::from(
-                "bad environment variable name: contains null byte",
-            )));
+            let message = "bad environment variable name: contains null byte";
+            return Err(EnvArgumentError::from(message).into());
         }
         if name.find_byte(b'=').is_some() {
             if value.is_none() {
@@ -84,13 +80,12 @@ impl EnvType for Memory {
             message.extend(name.to_vec());
             message.push(b')');
             // TODO: This should raise `Errno::EINVAL`.
-            return Err(Exception::from(EnvArgumentError::from(message)));
+            return Err(EnvArgumentError::from(message).into());
         }
         if let Some(value) = value {
             if value.find_byte(b'\0').is_some() {
-                return Err(Exception::from(EnvArgumentError::from(
-                    "bad environment variable value: contains null byte",
-                )));
+                let message = "bad environment variable value: contains null byte";
+                return Err(EnvArgumentError::from(message).into());
             }
             self.store.insert(name.to_vec(), value.to_vec());
             Ok(())
@@ -100,7 +95,7 @@ impl EnvType for Memory {
         }
     }
 
-    fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
+    fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Error> {
         Ok(self.store.clone())
     }
 }

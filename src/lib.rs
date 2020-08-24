@@ -36,7 +36,7 @@
 //! ```
 //! use artichoke::prelude::*;
 //!
-//! # fn example() -> Result<(), Exception> {
+//! # fn example() -> Result<(), Error> {
 //! let mut interp = artichoke::interpreter()?;
 //! let result = interp.eval(b"2 + 5")?;
 //! # Ok(())
@@ -50,7 +50,7 @@
 //! ```
 //! use artichoke::prelude::*;
 //!
-//! # fn example() -> Result<(), Exception> {
+//! # fn example() -> Result<(), Error> {
 //! let mut interp = artichoke::interpreter()?;
 //! let s = interp.convert_mut("💎");
 //! let codepoint = s.funcall(&mut interp, "ord", &[] /* args */, None /* block */)?;
@@ -125,11 +125,10 @@ pub mod ruby;
 /// The prelude may grow over time as additional items see ubiquitous use.
 pub mod prelude {
     pub use artichoke_backend::prelude::*;
-
-    pub use crate::interpreter;
 }
 
-pub use artichoke_backend::{Artichoke, Exception};
+use artichoke_backend::release_metadata::ReleaseMetadata;
+pub use artichoke_backend::{Artichoke, Error};
 
 /// Create a new Artichoke Ruby interpreter.
 ///
@@ -140,8 +139,8 @@ pub use artichoke_backend::{Artichoke, Exception};
 ///
 /// If Artichoke Ruby Core or Standard Library cannot be initialized, an error
 /// is returned.
-pub fn interpreter() -> Result<Artichoke, Exception> {
-    let release = prelude::ReleaseMetadata::new()
+pub fn interpreter() -> Result<Artichoke, Error> {
+    let release = ReleaseMetadata::new()
         .with_ruby_copyright(env!("RUBY_COPYRIGHT"))
         .with_ruby_description(env!("RUBY_DESCRIPTION"))
         .with_ruby_engine_version(env!("CARGO_PKG_VERSION"))

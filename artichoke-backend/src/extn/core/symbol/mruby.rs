@@ -32,7 +32,7 @@ unsafe extern "C" fn symbol_all_symbols(
     let result = trampoline::all_symbols(&mut guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -48,7 +48,7 @@ unsafe extern "C" fn symbol_equal_equal(
     let result = trampoline::equal_equal(&mut guard, sym, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -64,7 +64,7 @@ unsafe extern "C" fn symbol_ascii_casecmp(
     let result = trampoline::ascii_casecmp(&mut guard, sym, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -80,7 +80,7 @@ unsafe extern "C" fn symbol_unicode_casecmp(
     let result = trampoline::unicode_casecmp(&mut guard, sym, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -92,7 +92,7 @@ unsafe extern "C" fn symbol_empty(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     let result = trampoline::is_empty(&mut guard, sym);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -107,7 +107,7 @@ unsafe extern "C" fn symbol_inspect(
     let result = trampoline::inspect(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -122,7 +122,7 @@ unsafe extern "C" fn symbol_length(
     let result = trampoline::length(&mut guard, sym);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -134,6 +134,6 @@ unsafe extern "C" fn symbol_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::bytes(&mut guard, sym);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

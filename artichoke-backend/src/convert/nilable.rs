@@ -3,7 +3,7 @@
 //! Excludes collection types Array and Hash.
 
 use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut, Value as _};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
@@ -67,7 +67,7 @@ impl Convert<Value, Option<Value>> for Artichoke {
 }
 
 impl TryConvertMut<Value, Option<Vec<u8>>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Option<Vec<u8>>, Self::Error> {
         if value.is_nil() {
@@ -79,7 +79,7 @@ impl TryConvertMut<Value, Option<Vec<u8>>> for Artichoke {
 }
 
 impl<'a> TryConvertMut<Value, Option<&'a [u8]>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Option<&'a [u8]>, Self::Error> {
         if value.is_nil() {
@@ -91,7 +91,7 @@ impl<'a> TryConvertMut<Value, Option<&'a [u8]>> for Artichoke {
 }
 
 impl TryConvertMut<Value, Option<String>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Option<String>, Self::Error> {
         if value.is_nil() {
@@ -103,7 +103,7 @@ impl TryConvertMut<Value, Option<String>> for Artichoke {
 }
 
 impl<'a> TryConvertMut<Value, Option<&'a str>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Option<&'a str>, Self::Error> {
         if value.is_nil() {
@@ -115,7 +115,7 @@ impl<'a> TryConvertMut<Value, Option<&'a str>> for Artichoke {
 }
 
 impl TryConvert<Value, Option<Int>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert(&self, value: Value) -> Result<Option<Int>, Self::Error> {
         if value.is_nil() {

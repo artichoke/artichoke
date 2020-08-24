@@ -4,7 +4,7 @@ use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
 
-pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
+pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::from("can't modify frozen Array").into());
     }
@@ -18,7 +18,7 @@ pub fn element_reference(
     mut ary: Value,
     first: Value,
     second: Option<Value>,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let elem = array.element_reference(interp, first, second)?;
     Ok(interp.convert(elem))
@@ -30,7 +30,7 @@ pub fn element_assignment(
     first: Value,
     second: Value,
     third: Option<Value>,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::from("can't modify frozen Array").into());
     }
@@ -50,7 +50,7 @@ pub fn element_assignment(
     result
 }
 
-pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
+pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::from("can't modify frozen Array").into());
     }
@@ -63,7 +63,7 @@ pub fn concat(
     interp: &mut Artichoke,
     mut ary: Value,
     other: Option<Value>,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::from("can't modify frozen Array").into());
     }
@@ -74,7 +74,7 @@ pub fn concat(
     Ok(ary)
 }
 
-pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Exception> {
+pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::from("can't modify frozen Array").into());
     }
@@ -83,7 +83,7 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
     Ok(ary)
 }
 
-pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exception> {
+pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::from("can't modify frozen Array").into());
     }
@@ -92,7 +92,7 @@ pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Exc
     Ok(ary)
 }
 
-pub fn len(interp: &mut Artichoke, mut ary: Value) -> Result<usize, Exception> {
+pub fn len(interp: &mut Artichoke, mut ary: Value) -> Result<usize, Error> {
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     Ok(array.len())
 }
@@ -103,7 +103,7 @@ pub fn initialize(
     first: Option<Value>,
     second: Option<Value>,
     block: Option<Block>,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     let array = Array::initialize(interp, first, second, block)?;
     Array::box_into_value(array, into, interp)
 }
@@ -112,17 +112,13 @@ pub fn initialize_copy(
     interp: &mut Artichoke,
     ary: Value,
     mut from: Value,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
     let result = from.clone();
     Array::box_into_value(result, ary, interp)
 }
 
-pub fn shift(
-    interp: &mut Artichoke,
-    mut ary: Value,
-    count: Option<Value>,
-) -> Result<Value, Exception> {
+pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::from("can't modify frozen Array").into());
     }

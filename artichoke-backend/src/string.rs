@@ -14,7 +14,7 @@ use std::io;
 
 use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::sys;
 use crate::Artichoke;
@@ -149,14 +149,14 @@ impl RubyException for WriteError {
     }
 }
 
-impl From<WriteError> for Exception {
+impl From<WriteError> for Error {
     #[inline]
     fn from(exception: WriteError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<WriteError>> for Exception {
+impl From<Box<WriteError>> for Error {
     #[inline]
     fn from(exception: Box<WriteError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
@@ -233,14 +233,14 @@ impl RubyException for IoWriteError {
     }
 }
 
-impl From<IoWriteError> for Exception {
+impl From<IoWriteError> for Error {
     #[inline]
     fn from(exception: IoWriteError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<IoWriteError>> for Exception {
+impl From<Box<IoWriteError>> for Error {
     #[inline]
     fn from(exception: Box<IoWriteError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))

@@ -3,7 +3,7 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use crate::core::{Eval, LoadSources, Parser, Value as _};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::ffi::{self, InterpreterExtractError};
@@ -16,7 +16,7 @@ use crate::Artichoke;
 impl Eval for Artichoke {
     type Value = Value;
 
-    type Error = Exception;
+    type Error = Error;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
         trace!("Attempting eval of Ruby source");
@@ -124,7 +124,7 @@ mod tests {
         impl File for NestedEval {
             type Artichoke = Artichoke;
 
-            type Error = Exception;
+            type Error = Error;
 
             fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
                 let spec = module::Spec::new(interp, "NestedEval", None)?;

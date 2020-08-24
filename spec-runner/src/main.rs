@@ -125,7 +125,7 @@ where
     let config = str::from_utf8(config.as_slice())?;
     let config = serde_yaml::from_str::<model::Config>(config)?;
 
-    let mut interp = interpreter()?;
+    let mut interp = artichoke::interpreter()?;
 
     rubyspec::init(&mut interp)?;
     let mut specs = vec![];

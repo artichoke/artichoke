@@ -1,6 +1,6 @@
 use crate::convert::UnboxRubyError;
 use crate::core::{Convert, TryConvert, Value as _};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
@@ -27,7 +27,7 @@ impl Convert<Option<bool>, Value> for Artichoke {
 }
 
 impl TryConvert<Value, bool> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert(&self, value: Value) -> Result<bool, Self::Error> {
         if let Ruby::Bool = value.ruby_type() {
@@ -39,16 +39,16 @@ impl TryConvert<Value, bool> for Artichoke {
             } else {
                 // This branch is unreachable because `Ruby::Bool` typed values
                 // are guaranteed to be either true or false.
-                Err(Exception::from(UnboxRubyError::new(&value, Rust::Bool)))
+                Err(UnboxRubyError::new(&value, Rust::Bool).into())
             }
         } else {
-            Err(Exception::from(UnboxRubyError::new(&value, Rust::Bool)))
+            Err(UnboxRubyError::new(&value, Rust::Bool).into())
         }
     }
 }
 
 impl TryConvert<Value, Option<bool>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert(&self, value: Value) -> Result<Option<bool>, Self::Error> {
         if value.is_nil() {

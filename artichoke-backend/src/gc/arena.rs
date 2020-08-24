@@ -7,34 +7,37 @@ use std::ops::{Deref, DerefMut};
 
 use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::sys;
 use crate::Artichoke;
 
-/// Failed to extract Artichoke interpreter at an FFI boundary.
+/// Failed to create a new GC arena savepoint.
+///
+/// This error is returned by [`ArenaIndex::new`].
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct IndexError {
+#[allow(clippy::module_name_repetitions)]
+pub struct ArenaSavepointError {
     _private: (),
 }
 
-impl IndexError {
-    /// Constructs a new, default `IndexError`.
+impl ArenaSavepointError {
+    /// Constructs a new, default `ArenaSavepointError`.
     #[must_use]
     pub const fn new() -> Self {
         Self { _private: () }
     }
 }
 
-impl fmt::Display for IndexError {
+impl fmt::Display for ArenaSavepointError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Failed to create internal garbage collection savepoint")
     }
 }
 
-impl error::Error for IndexError {}
+impl error::Error for ArenaSavepointError {}
 
-impl RubyException for IndexError {
+impl RubyException for ArenaSavepointError {
     fn message(&self) -> Cow<'_, [u8]> {
         Cow::Borrowed(b"Failed to create internal garbage collection savepoint")
     }
@@ -55,26 +58,26 @@ impl RubyException for IndexError {
     }
 }
 
-impl From<IndexError> for Exception {
-    fn from(exception: IndexError) -> Self {
+impl From<ArenaSavepointError> for Error {
+    fn from(exception: ArenaSavepointError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<IndexError>> for Exception {
-    fn from(exception: Box<IndexError>) -> Self {
+impl From<Box<ArenaSavepointError>> for Error {
+    fn from(exception: Box<ArenaSavepointError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<IndexError> for Box<dyn RubyException> {
-    fn from(exception: IndexError) -> Box<dyn RubyException> {
+impl From<ArenaSavepointError> for Box<dyn RubyException> {
+    fn from(exception: ArenaSavepointError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-impl From<Box<IndexError>> for Box<dyn RubyException> {
-    fn from(exception: Box<IndexError>) -> Box<dyn RubyException> {
+impl From<Box<ArenaSavepointError>> for Box<dyn RubyException> {
+    fn from(exception: Box<ArenaSavepointError>) -> Box<dyn RubyException> {
         exception
     }
 }
@@ -105,12 +108,12 @@ pub struct ArenaIndex<'a> {
 
 impl<'a> ArenaIndex<'a> {
     /// Create a new arena savepoint.
-    pub fn new(interp: &'a mut Artichoke) -> Result<Self, IndexError> {
+    pub fn new(interp: &'a mut Artichoke) -> Result<Self, ArenaSavepointError> {
         unsafe {
             interp
                 .with_ffi_boundary(|mrb| sys::mrb_sys_gc_arena_save(mrb))
                 .map(move |index| Self { index, interp })
-                .map_err(|_| IndexError::new())
+                .map_err(|_| ArenaSavepointError::new())
         }
     }
 

@@ -67,14 +67,14 @@ impl TryConvertMut<Option<Value>, Seed> for Artichoke {
     }
 }
 
-pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Exception> {
+pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Error> {
     let old_seed = interp.prng_seed()?;
     interp.prng_reseed(seed.to_reseed())?;
     #[allow(clippy::cast_possible_wrap)]
     Ok(old_seed as Int)
 }
 
-pub fn urandom(size: Int) -> Result<Vec<u8>, Exception> {
+pub fn urandom(size: Int) -> Result<Vec<u8>, Error> {
     match usize::try_from(size) {
         Ok(0) => Ok(Vec::new()),
         Ok(len) => {
@@ -121,12 +121,12 @@ impl Random {
     }
 
     #[inline]
-    pub fn initialize(interp: &mut Artichoke, seed: Seed) -> Result<Self, Exception> {
+    pub fn initialize(interp: &mut Artichoke, seed: Seed) -> Result<Self, Error> {
         let _ = interp;
         Ok(Self(backend::rand::new(seed.to_reseed())))
     }
 
-    pub fn eql(&self, interp: &mut Artichoke, mut other: Value) -> Result<bool, Exception> {
+    pub fn eql(&self, interp: &mut Artichoke, mut other: Value) -> Result<bool, Error> {
         if let Ok(other) = unsafe { Random::unbox_from_value(&mut other, interp) } {
             let this_seed = self.inner().seed(interp)?;
             let other_seed = other.inner().seed(interp)?;
@@ -136,7 +136,7 @@ impl Random {
         }
     }
 
-    pub fn bytes(&mut self, interp: &mut Artichoke, size: Int) -> Result<Vec<u8>, Exception> {
+    pub fn bytes(&mut self, interp: &mut Artichoke, size: Int) -> Result<Vec<u8>, Error> {
         match usize::try_from(size) {
             Ok(0) => Ok(Vec::new()),
             Ok(len) => {
@@ -152,7 +152,7 @@ impl Random {
         &mut self,
         interp: &mut Artichoke,
         max: RandomNumberMax,
-    ) -> Result<RandomNumber, Exception> {
+    ) -> Result<RandomNumber, Error> {
         match max {
             RandomNumberMax::Float(max) if !max.is_finite() => {
                 // NOTE: MRI returns `Errno::EDOM` exception class.
@@ -188,7 +188,7 @@ impl Random {
     }
 
     #[inline]
-    pub fn seed(&self, interp: &mut Artichoke) -> Result<Int, Exception> {
+    pub fn seed(&self, interp: &mut Artichoke) -> Result<Int, Error> {
         let seed = self.inner().seed(interp)?;
         #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
         let seed = seed as Int;
@@ -211,7 +211,7 @@ pub enum RandomNumberMax {
 }
 
 impl TryConvertMut<Value, RandomNumberMax> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, max: Value) -> Result<RandomNumberMax, Self::Error> {
         let optional: Option<Value> = self.try_convert(max)?;
@@ -220,7 +220,7 @@ impl TryConvertMut<Value, RandomNumberMax> for Artichoke {
 }
 
 impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, max: Option<Value>) -> Result<RandomNumberMax, Self::Error> {
         if let Some(max) = max {

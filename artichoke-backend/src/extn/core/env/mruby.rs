@@ -40,7 +40,7 @@ unsafe extern "C" fn env_initialize(
     let result = trampoline::initialize(&mut guard, slf);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -56,7 +56,7 @@ unsafe extern "C" fn env_element_reference(
     let result = trampoline::element_reference(&mut guard, obj, name);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -73,7 +73,7 @@ unsafe extern "C" fn env_element_assignment(
     let result = trampoline::element_assignment(&mut guard, obj, name, value);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -85,6 +85,6 @@ unsafe extern "C" fn env_to_h(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> 
     let result = trampoline::to_h(&mut guard, obj);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

@@ -1,12 +1,12 @@
 use crate::core::Prng;
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::extn::core::random::backend::InternalState;
 use crate::ffi::InterpreterExtractError;
 use crate::types::{Fp, Int};
 use crate::Artichoke;
 
 impl Prng for Artichoke {
-    type Error = Exception;
+    type Error = Error;
     type InternalState = InternalState;
     type Int = Int;
     type Float = Fp;

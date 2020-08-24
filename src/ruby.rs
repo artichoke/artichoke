@@ -61,7 +61,7 @@ where
 {
     let opt = Opt::from_args();
     if opt.copyright {
-        let mut interp = interpreter()?;
+        let mut interp = crate::interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(Ok(()))
     } else if !opt.commands.is_empty() {
@@ -73,7 +73,7 @@ where
     } else if let Some(programfile) = opt.programfile.filter(|file| file != Path::new("-")) {
         execute_program_file(error, programfile.as_path(), opt.fixture.as_deref())
     } else {
-        let mut interp = interpreter()?;
+        let mut interp = crate::interpreter()?;
         let mut program = vec![];
         input
             .read_to_end(&mut program)
@@ -94,7 +94,7 @@ fn execute_inline_eval<W>(
 where
     W: io::Write + WriteColor,
 {
-    let mut interp = interpreter()?;
+    let mut interp = crate::interpreter()?;
     interp.pop_context()?;
     // safety:
     //
@@ -126,7 +126,7 @@ fn execute_program_file<W>(
 where
     W: io::Write + WriteColor,
 {
-    let mut interp = interpreter()?;
+    let mut interp = crate::interpreter()?;
     if let Some(ref fixture) = fixture {
         setup_fixture_hack(&mut interp, fixture)?;
     }
@@ -137,7 +137,7 @@ where
     Ok(Ok(()))
 }
 
-fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Exception> {
+fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Error> {
     let mut buf = String::from(message);
     buf.push_str(" -- ");
     let path = ffi::os_str_to_bytes(file.as_ref())?;
@@ -152,7 +152,7 @@ fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Excepti
 // `PATH` into memory and stores it in the interpreter bound to the `$fixture`
 // global.
 #[inline]
-fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Result<(), Exception> {
+fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Result<(), Error> {
     let data = if let Ok(data) = std::fs::read(fixture.as_ref()) {
         data
     } else {

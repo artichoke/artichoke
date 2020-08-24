@@ -156,7 +156,7 @@ impl Artichoke {
 /// pointer before re-entering the FFI boundary. This guard implements [`Drop`]
 /// to reserialize the `State` into the `mrb` once it goes out of scope.
 ///
-/// `Guard` is passed directly to [`exception::raise`](crate::exception::raise).
+/// `Guard` is passed directly to [`error::raise`](crate::error::raise).
 #[derive(Debug)]
 pub struct Guard<'a>(&'a mut Artichoke);
 

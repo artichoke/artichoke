@@ -61,7 +61,7 @@ unsafe extern "C" fn artichoke_kernel_integer(
     let result = trampoline::integer(&mut guard, arg, base);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -76,7 +76,7 @@ unsafe extern "C" fn artichoke_kernel_load(
     let result = trampoline::load(&mut guard, file);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -91,7 +91,7 @@ unsafe extern "C" fn artichoke_kernel_p(
     let result = trampoline::p(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -106,7 +106,7 @@ unsafe extern "C" fn artichoke_kernel_print(
     let result = trampoline::print(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -121,7 +121,7 @@ unsafe extern "C" fn artichoke_kernel_puts(
     let result = trampoline::puts(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -136,7 +136,7 @@ unsafe extern "C" fn artichoke_kernel_require(
     let result = trampoline::require(&mut guard, file);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -151,6 +151,6 @@ unsafe extern "C" fn artichoke_kernel_require_relative(
     let result = trampoline::require_relative(&mut guard, file);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

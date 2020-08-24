@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use crate::core::{ConvertMut, Value as _, Warn};
 use crate::def::NotDefinedError;
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::extn::core::exception::IOError;
 use crate::extn::core::warning::Warning;
 use crate::ffi::InterpreterExtractError;
@@ -11,7 +11,7 @@ use crate::state::output::Output;
 use crate::Artichoke;
 
 impl Warn for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn warn(&mut self, message: &[u8]) -> Result<(), Self::Error> {
         let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;

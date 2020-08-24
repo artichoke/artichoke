@@ -1,19 +1,15 @@
-use bstr::BString;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
 use std::hint;
 
-use crate::core::{TryConvertMut, Value as _};
-use crate::string;
 use crate::sys;
-use crate::value::Value;
 use crate::{Artichoke, Guard};
 
 #[derive(Debug)]
-pub struct Exception(Box<dyn RubyException>);
+pub struct Error(Box<dyn RubyException>);
 
-impl RubyException for Exception {
+impl RubyException for Error {
     fn message(&self) -> Cow<'_, [u8]> {
         self.0.message()
     }
@@ -32,15 +28,15 @@ impl RubyException for Exception {
     }
 }
 
-impl fmt::Display for Exception {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl error::Error for Exception {}
+impl error::Error for Error {}
 
-impl From<Box<dyn RubyException>> for Exception {
+impl From<Box<dyn RubyException>> for Error {
     fn from(exc: Box<dyn RubyException>) -> Self {
         Self(exc)
     }
@@ -89,7 +85,7 @@ where
 /// Polymorphic exception type that corresponds to Ruby's `Exception`.
 ///
 /// All types that implement `RubyException` can be raised with
-/// [`exception::raise`](raise). Rust code can re-raise a trait object to
+/// [`error::raise`](raise). Rust code can re-raise a trait object to
 /// propagate exceptions from native code back into the interpreter.
 #[allow(clippy::module_name_repetitions)]
 pub trait RubyException: error::Error + 'static {
@@ -130,71 +126,3 @@ impl RubyException for Box<dyn RubyException> {
 impl error::Error for Box<dyn RubyException> {}
 
 impl error::Error for &dyn RubyException {}
-
-/// An `Exception` rescued with [`sys::mrb_protect`].
-///
-/// `CaughtException` is re-raiseable because it implements [`RubyException`].
-#[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone)]
-pub(crate) struct CaughtException {
-    value: Value,
-    name: String,
-    message: BString,
-}
-
-impl CaughtException {
-    /// Construct a new `CaughtException`.
-    pub fn new(value: Value, name: String, message: Vec<u8>) -> Self {
-        Self {
-            value,
-            name,
-            message: message.into(),
-        }
-    }
-}
-
-impl fmt::Display for CaughtException {
-    fn fmt(&self, mut f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.name())?;
-        f.write_str(" (")?;
-        string::format_unicode_debug_into(&mut f, &self.message())
-            .map_err(string::WriteError::into_inner)?;
-        f.write_str(")")?;
-        Ok(())
-    }
-}
-
-impl error::Error for CaughtException {}
-
-impl RubyException for CaughtException {
-    fn message(&self) -> Cow<'_, [u8]> {
-        self.message.as_slice().into()
-    }
-
-    fn name(&self) -> Cow<'_, str> {
-        self.name.as_str().into()
-    }
-
-    fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>> {
-        let backtrace = self.value.funcall(interp, "backtrace", &[], None).ok()?;
-        let backtrace = interp.try_convert_mut(backtrace).ok()?;
-        Some(backtrace)
-    }
-
-    fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let _ = interp;
-        Some(self.value.inner())
-    }
-}
-
-impl From<CaughtException> for Box<dyn RubyException> {
-    fn from(exc: CaughtException) -> Self {
-        Box::new(exc)
-    }
-}
-
-impl From<CaughtException> for Exception {
-    fn from(exc: CaughtException) -> Self {
-        Self(Box::new(exc))
-    }
-}

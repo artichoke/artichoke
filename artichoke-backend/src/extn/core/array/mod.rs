@@ -160,7 +160,7 @@ impl Array {
         first: Option<Value>,
         second: Option<Value>,
         block: Option<Block>,
-    ) -> Result<Self, Exception> {
+    ) -> Result<Self, Error> {
         let vector = match (first, second, block) {
             (Some(mut array_or_len), default, None) => {
                 if let Ok(len) = array_or_len.try_into::<Int>(interp) {
@@ -264,7 +264,7 @@ impl Array {
         interp: &mut Artichoke,
         index: Value,
         len: Option<Value>,
-    ) -> Result<Option<Value>, Exception> {
+    ) -> Result<Option<Value>, Error> {
         let (index, len) = match args::element_reference(interp, index, len, self.0.len())? {
             args::ElementReference::Empty => return Ok(None),
             args::ElementReference::Index(index) => (index, None),
@@ -302,7 +302,7 @@ impl Array {
         first: Value,
         second: Value,
         third: Option<Value>,
-    ) -> Result<Value, Exception> {
+    ) -> Result<Value, Error> {
         let (start, drain, mut elem) =
             args::element_assignment(interp, first, second, third, self.0.len())?;
 
@@ -349,7 +349,7 @@ impl Array {
         self.0.set_slice(start, drain, src)
     }
 
-    pub fn concat(&mut self, interp: &mut Artichoke, mut other: Value) -> Result<(), Exception> {
+    pub fn concat(&mut self, interp: &mut Artichoke, mut other: Value) -> Result<(), Error> {
         if let Ok(other) = unsafe { Self::unbox_from_value(&mut other, interp) } {
             self.0.concat(other.0.as_slice());
         } else if other.respond_to(interp, "to_ary")? {

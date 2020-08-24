@@ -16,7 +16,7 @@ struct SecureRandomFile {
 
 impl File for SecureRandomFile {
     type Artichoke = Artichoke;
-    type Error = Exception;
+    type Error = Error;
 
     fn require(interp: &mut Self::Artichoke) -> Result<(), Self::Error> {
         if interp.is_module_defined::<securerandom::SecureRandom>() {
@@ -66,7 +66,7 @@ unsafe extern "C" fn securerandom_alphanumeric(
     let result = trampoline::alphanumeric(&mut guard, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -81,7 +81,7 @@ unsafe extern "C" fn securerandom_base64(
     let result = trampoline::base64(&mut guard, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -99,7 +99,7 @@ unsafe extern "C" fn securerandom_urlsafe_base64(
     let result = trampoline::urlsafe_base64(&mut guard, len, padding);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -114,7 +114,7 @@ unsafe extern "C" fn securerandom_hex(
     let result = trampoline::hex(&mut guard, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -129,7 +129,7 @@ unsafe extern "C" fn securerandom_random_bytes(
     let result = trampoline::random_bytes(&mut guard, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -144,7 +144,7 @@ unsafe extern "C" fn securerandom_random_number(
     let result = trampoline::random_number(&mut guard, max);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -158,6 +158,6 @@ unsafe extern "C" fn securerandom_uuid(
     let result = trampoline::uuid(&mut guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

@@ -5,7 +5,7 @@ use std::slice;
 
 use crate::convert::UnboxRubyError;
 use crate::core::{ConvertMut, TryConvertMut};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::ffi;
 use crate::sys;
 use crate::types::{Ruby, Rust};
@@ -41,7 +41,7 @@ impl<'a> ConvertMut<Cow<'a, [u8]>, Value> for Artichoke {
 }
 
 impl TryConvertMut<OsString, Value> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: OsString) -> Result<Value, Self::Error> {
         let bytes = ffi::os_str_to_bytes(&*value)?;
@@ -50,7 +50,7 @@ impl TryConvertMut<OsString, Value> for Artichoke {
 }
 
 impl TryConvertMut<&OsStr, Value> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: &OsStr) -> Result<Value, Self::Error> {
         let bytes = ffi::os_str_to_bytes(value)?;
@@ -59,7 +59,7 @@ impl TryConvertMut<&OsStr, Value> for Artichoke {
 }
 
 impl<'a> TryConvertMut<Cow<'a, OsStr>, Value> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Cow<'a, OsStr>) -> Result<Value, Self::Error> {
         match value {
@@ -76,7 +76,7 @@ impl<'a> TryConvertMut<Cow<'a, OsStr>, Value> for Artichoke {
 }
 
 impl TryConvertMut<Value, Vec<u8>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Vec<u8>, Self::Error> {
         TryConvertMut::<_, &[u8]>::try_convert_mut(self, value).map(<[_]>::to_vec)
@@ -84,7 +84,7 @@ impl TryConvertMut<Value, Vec<u8>> for Artichoke {
 }
 
 impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<&'a [u8], Self::Error> {
         if let Ruby::String = value.ruby_type() {
@@ -104,7 +104,7 @@ impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
                 })?
             }
         } else {
-            Err(Exception::from(UnboxRubyError::new(&value, Rust::Bytes)))
+            Err(UnboxRubyError::new(&value, Rust::Bytes).into())
         }
     }
 }

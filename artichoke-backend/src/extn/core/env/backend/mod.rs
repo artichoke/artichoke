@@ -13,11 +13,11 @@ pub trait EnvType {
     /// Return a `dyn Debug` representation of this `Environ`.
     fn as_debug(&self) -> &dyn fmt::Debug;
 
-    fn get<'a>(&'a self, name: &[u8]) -> Result<Option<Cow<'a, [u8]>>, Exception>;
+    fn get<'a>(&'a self, name: &[u8]) -> Result<Option<Cow<'a, [u8]>>, Error>;
 
-    fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Exception>;
+    fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Error>;
 
-    fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception>;
+    fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Error>;
 }
 
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -83,14 +83,14 @@ impl RubyException for EnvArgumentError {
     }
 }
 
-impl From<EnvArgumentError> for Exception {
+impl From<EnvArgumentError> for Error {
     #[inline]
     fn from(exception: EnvArgumentError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<EnvArgumentError>> for Exception {
+impl From<Box<EnvArgumentError>> for Error {
     #[inline]
     fn from(exception: Box<EnvArgumentError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))

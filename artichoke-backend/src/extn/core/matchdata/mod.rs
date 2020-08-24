@@ -119,7 +119,7 @@ pub enum CaptureMatch {
 }
 
 impl TryConvertMut<CaptureMatch, Value> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: CaptureMatch) -> Result<Value, Self::Error> {
         match value {
@@ -175,7 +175,7 @@ impl MatchData {
     }
 
     #[inline]
-    pub fn begin(&self, capture: Capture<'_>) -> Result<Option<usize>, Exception> {
+    pub fn begin(&self, capture: Capture<'_>) -> Result<Option<usize>, Error> {
         if let Some([begin, _]) = self.offset(capture)? {
             Ok(Some(begin))
         } else {
@@ -183,7 +183,7 @@ impl MatchData {
         }
     }
 
-    pub fn capture_at(&self, at: CaptureAt<'_>) -> Result<CaptureMatch, Exception> {
+    pub fn capture_at(&self, at: CaptureAt<'_>) -> Result<CaptureMatch, Error> {
         let haystack = self.matched_region();
         let captures = if let Some(captures) = self.regexp.inner().captures(haystack)? {
             captures
@@ -259,7 +259,7 @@ impl MatchData {
         }
     }
 
-    pub fn captures(&self) -> Result<Option<Vec<Option<Vec<u8>>>>, Exception> {
+    pub fn captures(&self) -> Result<Option<Vec<Option<Vec<u8>>>>, Error> {
         let haystack = self.matched_region();
         let captures = self.regexp.inner().captures(haystack)?;
         if let Some(mut captures) = captures {
@@ -274,7 +274,7 @@ impl MatchData {
     }
 
     #[inline]
-    pub fn end(&self, capture: Capture<'_>) -> Result<Option<usize>, Exception> {
+    pub fn end(&self, capture: Capture<'_>) -> Result<Option<usize>, Error> {
         if let Some([_, end]) = self.offset(capture)? {
             Ok(Some(end))
         } else {
@@ -288,13 +288,13 @@ impl MatchData {
     }
 
     #[inline]
-    pub fn len(&self) -> Result<usize, Exception> {
+    pub fn len(&self) -> Result<usize, Error> {
         let haystack = self.matched_region();
         self.regexp.inner().captures_len(Some(haystack))
     }
 
     #[inline]
-    pub fn named_captures(&self) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
+    pub fn named_captures(&self) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Error> {
         let haystack = self.matched_region();
         self.regexp.inner().named_captures_for_haystack(haystack)
     }
@@ -305,7 +305,7 @@ impl MatchData {
         self.regexp.names()
     }
 
-    pub fn offset(&self, capture: Capture<'_>) -> Result<Option<[usize; 2]>, Exception> {
+    pub fn offset(&self, capture: Capture<'_>) -> Result<Option<[usize; 2]>, Error> {
         let haystack = self.matched_region();
         let index = match capture {
             Capture::GroupIndex(index) => {
@@ -391,13 +391,13 @@ impl MatchData {
     }
 
     #[inline]
-    pub fn to_a(&self) -> Result<Option<Vec<NilableString>>, Exception> {
+    pub fn to_a(&self) -> Result<Option<Vec<NilableString>>, Error> {
         let haystack = self.matched_region();
         self.regexp.inner().captures(haystack)
     }
 
     #[inline]
-    pub fn to_s(&self) -> Result<Option<&[u8]>, Exception> {
+    pub fn to_s(&self) -> Result<Option<&[u8]>, Error> {
         let haystack = self.matched_region();
         self.regexp.inner().capture0(haystack)
     }

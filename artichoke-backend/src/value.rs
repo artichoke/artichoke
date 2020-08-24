@@ -8,7 +8,7 @@ use std::ptr;
 use crate::class_registry::ClassRegistry;
 use crate::convert::BoxUnboxVmValue;
 use crate::core::{Convert, ConvertMut, Intern, TryConvert, Value as ValueCore};
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
 use crate::extn::core::symbol::Symbol;
@@ -135,7 +135,7 @@ impl Value {
         &self,
         interp: &mut Artichoke,
         len: Int,
-    ) -> Result<Option<protect::Range>, Exception> {
+    ) -> Result<Option<protect::Range>, Error> {
         let mut arena = interp.create_arena_savepoint()?;
         let result = unsafe {
             arena
@@ -253,7 +253,7 @@ impl ValueCore for Value {
     type Arg = Self;
     type Value = Self;
     type Block = Self;
-    type Error = Exception;
+    type Error = Error;
 
     fn funcall(
         &self,
@@ -476,13 +476,13 @@ impl RubyException for ArgCountError {
     }
 }
 
-impl From<ArgCountError> for Exception {
+impl From<ArgCountError> for Error {
     fn from(exception: ArgCountError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<ArgCountError>> for Exception {
+impl From<Box<ArgCountError>> for Error {
     fn from(exception: Box<ArgCountError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }

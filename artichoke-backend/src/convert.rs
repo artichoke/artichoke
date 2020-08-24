@@ -4,7 +4,7 @@ use std::fmt;
 
 use crate::class_registry::ClassRegistry;
 use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut};
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn::core::exception::TypeError;
 use crate::sys;
 use crate::types::{Ruby, Rust};
@@ -31,7 +31,7 @@ where
 {
     // TODO: this should be the never type.
     // https://github.com/rust-lang/rust/issues/35121
-    type Error = Exception;
+    type Error = Error;
 
     /// Blanket implementation that always succeeds by delegating to
     /// [`Convert::convert`].
@@ -49,7 +49,7 @@ where
 {
     // TODO: this should be the never type.
     // https://github.com/rust-lang/rust/issues/35121
-    type Error = Exception;
+    type Error = Error;
 
     /// Blanket implementation that always succeeds by delegating to
     /// [`Convert::convert`].
@@ -109,13 +109,13 @@ impl RubyException for UnboxRubyError {
     }
 }
 
-impl From<UnboxRubyError> for Exception {
+impl From<UnboxRubyError> for Error {
     fn from(exception: UnboxRubyError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<UnboxRubyError>> for Exception {
+impl From<Box<UnboxRubyError>> for Error {
     fn from(exception: Box<UnboxRubyError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
@@ -180,13 +180,13 @@ impl RubyException for BoxIntoRubyError {
     }
 }
 
-impl From<BoxIntoRubyError> for Exception {
+impl From<BoxIntoRubyError> for Error {
     fn from(exception: BoxIntoRubyError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<BoxIntoRubyError>> for Exception {
+impl From<Box<BoxIntoRubyError>> for Error {
     fn from(exception: Box<BoxIntoRubyError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }

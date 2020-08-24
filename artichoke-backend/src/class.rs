@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
 use crate::def::{ConstantNameError, EnclosingRubyScope, Free, Method, NotDefinedError};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::method;
 use crate::sys;
@@ -43,7 +43,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    pub fn with_super_class<T, U>(mut self, classname: U) -> Result<Self, Exception>
+    pub fn with_super_class<T, U>(mut self, classname: U) -> Result<Self, Error>
     where
         T: Any,
         U: Into<Cow<'static, str>>,

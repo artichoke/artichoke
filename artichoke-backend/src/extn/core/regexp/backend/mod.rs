@@ -21,7 +21,7 @@ pub enum Scan {
 }
 
 impl TryConvertMut<Scan, Option<Value>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, from: Scan) -> Result<Option<Value>, Self::Error> {
         match from {
@@ -53,17 +53,17 @@ pub trait RegexpType {
 
     fn string(&self) -> &[u8];
 
-    fn captures(&self, haystack: &[u8]) -> Result<Option<Vec<NilableString>>, Exception>;
+    fn captures(&self, haystack: &[u8]) -> Result<Option<Vec<NilableString>>, Error>;
 
-    fn capture_indexes_for_name(&self, name: &[u8]) -> Result<Option<Vec<usize>>, Exception>;
+    fn capture_indexes_for_name(&self, name: &[u8]) -> Result<Option<Vec<usize>>, Error>;
 
-    fn captures_len(&self, haystack: Option<&[u8]>) -> Result<usize, Exception>;
+    fn captures_len(&self, haystack: Option<&[u8]>) -> Result<usize, Error>;
 
-    fn capture0<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Exception>;
+    fn capture0<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Error>;
 
-    fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Exception>;
+    fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Error>;
 
-    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Exception>;
+    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Error>;
 
     fn match_(
         &self,
@@ -71,31 +71,31 @@ pub trait RegexpType {
         haystack: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
-    ) -> Result<Value, Exception>;
+    ) -> Result<Value, Error>;
 
     fn match_operator(
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<usize>, Exception>;
+    ) -> Result<Option<usize>, Error>;
 
-    fn named_captures(&self) -> Result<NameToCaptureLocations, Exception>;
+    fn named_captures(&self) -> Result<NameToCaptureLocations, Error>;
 
     fn named_captures_for_haystack(
         &self,
         haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception>;
+    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Error>;
 
     fn names(&self) -> Vec<Vec<u8>>;
 
-    fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Exception>;
+    fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Error>;
 
     fn scan(
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
         block: Option<Block>,
-    ) -> Result<Scan, Exception>;
+    ) -> Result<Scan, Error>;
 }
 
 impl Clone for Box<dyn RegexpType> {

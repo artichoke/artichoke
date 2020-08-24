@@ -322,15 +322,15 @@ macro_rules! ruby_exception_impl {
             }
         }
 
-        impl From<$exception> for exception::Exception {
-            fn from(exception: $exception) -> exception::Exception {
-                exception::Exception::from(Box::<dyn RubyException>::from(exception))
+        impl From<$exception> for Error {
+            fn from(exception: $exception) -> Error {
+                Error::from(Box::<dyn RubyException>::from(exception))
             }
         }
 
-        impl From<Box<$exception>> for exception::Exception {
-            fn from(exception: Box<$exception>) -> exception::Exception {
-                exception::Exception::from(Box::<dyn RubyException>::from(exception))
+        impl From<Box<$exception>> for Error {
+            fn from(exception: Box<$exception>) -> Error {
+                Error::from(Box::<dyn RubyException>::from(exception))
             }
         }
 
@@ -431,13 +431,13 @@ mod tests {
         let mut interp = unwrap_interpreter!(mrb);
         let guard = Guard::new(&mut interp);
         let exc = RuntimeError::from("something went wrong");
-        exception::raise(guard, exc)
+        error::raise(guard, exc)
     }
 
     impl File for Run {
         type Artichoke = Artichoke;
 
-        type Error = Exception;
+        type Error = Error;
 
         fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
             let spec = class::Spec::new("Run", None, None).unwrap();

@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 
 use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
 use crate::core::{ConvertMut, TryConvertMut};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::extn::core::array::Array;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};
@@ -28,7 +28,7 @@ impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
 }
 
 impl TryConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Result<Value, Self::Error> {
         let capa = Int::try_from(value.len()).unwrap_or_default();
@@ -77,7 +77,7 @@ impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke 
 }
 
 impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Vec<(Value, Value)>, Self::Error> {
         if let Ruby::Hash = value.ruby_type() {
@@ -96,7 +96,7 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
             }
             Ok(pairs)
         } else {
-            Err(Exception::from(UnboxRubyError::new(&value, Rust::Map)))
+            Err(UnboxRubyError::new(&value, Rust::Map).into())
         }
     }
 }

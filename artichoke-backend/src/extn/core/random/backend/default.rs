@@ -21,23 +21,23 @@ impl RandType for Default {
         self
     }
 
-    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) -> Result<(), Exception> {
+    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) -> Result<(), Error> {
         interp.prng_fill_bytes(buf)
     }
 
-    fn seed(&self, interp: &Artichoke) -> Result<u64, Exception> {
+    fn seed(&self, interp: &Artichoke) -> Result<u64, Error> {
         interp.prng_seed()
     }
 
-    fn internal_state(&self, interp: &Artichoke) -> Result<InternalState, Exception> {
+    fn internal_state(&self, interp: &Artichoke) -> Result<InternalState, Error> {
         interp.prng_internal_state()
     }
 
-    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Result<Int, Exception> {
+    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Result<Int, Error> {
         interp.rand_int(max)
     }
 
-    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Result<Fp, Exception> {
+    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Result<Fp, Error> {
         interp.rand_float(max)
     }
 }

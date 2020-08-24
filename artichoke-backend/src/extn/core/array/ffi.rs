@@ -16,7 +16,7 @@ unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_val
     let result = Array::alloc_value(result, &mut guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -33,7 +33,7 @@ unsafe extern "C" fn artichoke_ary_new_capa(
     let result = Array::alloc_value(result, &mut guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -56,7 +56,7 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -77,7 +77,7 @@ unsafe extern "C" fn artichoke_ary_new_assoc(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -99,7 +99,7 @@ unsafe extern "C" fn artichoke_ary_splat(
     };
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -132,7 +132,7 @@ unsafe extern "C" fn artichoke_ary_concat(
             sys::mrb_write_barrier(mrb, basic);
             ary.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 

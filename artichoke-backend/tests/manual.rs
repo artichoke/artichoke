@@ -46,7 +46,7 @@ unsafe extern "C" fn container_value(
 impl File for Container {
     type Artichoke = Artichoke;
 
-    type Error = Exception;
+    type Error = Error;
 
     fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
         let spec = class::Spec::new("Container", None, Some(def::box_unbox_free::<Box<Self>>))?;

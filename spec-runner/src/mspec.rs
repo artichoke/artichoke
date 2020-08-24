@@ -9,7 +9,7 @@ use artichoke::prelude::*;
 /// # Errors
 ///
 /// If an exception is raised on the Artichoke interpreter, it is returned.
-pub fn init(interp: &mut Artichoke) -> Result<(), Exception> {
+pub fn init(interp: &mut Artichoke) -> Result<(), Error> {
     for source in Sources::iter() {
         if let Some(content) = Sources::get(&source) {
             interp.def_rb_source_file(source.as_ref(), content)?;
@@ -28,7 +28,7 @@ pub struct Sources;
 /// # Errors
 ///
 /// If an exception is raised on the Artichoke interpreter, it is returned.
-pub fn run<'a, T>(interp: &mut Artichoke, specs: T) -> Result<bool, Exception>
+pub fn run<'a, T>(interp: &mut Artichoke, specs: T) -> Result<bool, Error>
 where
     T: IntoIterator<Item = &'a str>,
 {

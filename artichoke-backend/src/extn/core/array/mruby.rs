@@ -47,7 +47,7 @@ unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -68,7 +68,7 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
             let len = guard.convert(len);
             len.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -85,7 +85,7 @@ unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -106,7 +106,7 @@ unsafe extern "C" fn ary_initialize(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -126,7 +126,7 @@ unsafe extern "C" fn ary_initialize_copy(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -145,7 +145,7 @@ unsafe extern "C" fn ary_reverse_bang(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -162,7 +162,7 @@ unsafe extern "C" fn ary_element_reference(
     let result = array::trampoline::element_reference(&mut guard, array, elem, len);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -184,7 +184,7 @@ unsafe extern "C" fn ary_element_assignment(
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -201,6 +201,6 @@ unsafe extern "C" fn ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value) ->
             sys::mrb_write_barrier(mrb, basic);
             value.inner()
         }
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

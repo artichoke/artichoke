@@ -1,11 +1,10 @@
-use crate::gc::arena::IndexError;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
 pub mod arena;
 
-use arena::ArenaIndex;
+use arena::{ArenaIndex, ArenaSavepointError};
 
 /// Garbage collection primitives for an mruby interpreter.
 pub trait MrbGarbageCollection {
@@ -20,7 +19,7 @@ pub trait MrbGarbageCollection {
     ///
     /// The returned [`ArenaIndex`] implements [`Drop`], so it is sufficient to
     /// let it go out of scope to ensure objects are eventually collected.
-    fn create_arena_savepoint(&mut self) -> Result<ArenaIndex<'_>, IndexError>;
+    fn create_arena_savepoint(&mut self) -> Result<ArenaIndex<'_>, ArenaSavepointError>;
 
     /// Retrieve the number of live objects on the interpreter heap.
     ///
@@ -58,7 +57,7 @@ pub trait MrbGarbageCollection {
 }
 
 impl MrbGarbageCollection for Artichoke {
-    fn create_arena_savepoint(&mut self) -> Result<ArenaIndex<'_>, IndexError> {
+    fn create_arena_savepoint(&mut self) -> Result<ArenaIndex<'_>, ArenaSavepointError> {
         ArenaIndex::new(self)
     }
 
@@ -77,17 +76,13 @@ impl MrbGarbageCollection for Artichoke {
 
     fn incremental_gc(&mut self) {
         unsafe {
-            let _ = self.with_ffi_boundary(|mrb| {
-                sys::mrb_incremental_gc(mrb);
-            });
+            let _ = self.with_ffi_boundary(|mrb| sys::mrb_incremental_gc(mrb));
         }
     }
 
     fn full_gc(&mut self) {
         unsafe {
-            let _ = self.with_ffi_boundary(|mrb| {
-                sys::mrb_full_gc(mrb);
-            });
+            let _ = self.with_ffi_boundary(|mrb| sys::mrb_full_gc(mrb));
         }
     }
 

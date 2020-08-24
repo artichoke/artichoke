@@ -15,7 +15,7 @@ pub fn element_reference(
     elem: Value,
     len: Option<Value>,
     ary_len: usize,
-) -> Result<ElementReference, Exception> {
+) -> Result<ElementReference, Error> {
     if let Some(len) = len {
         let start = elem.implicitly_convert_to_int(interp)?;
         let len = len.implicitly_convert_to_int(interp)?;
@@ -47,7 +47,7 @@ pub fn element_assignment(
     second: Value,
     third: Option<Value>,
     len: usize,
-) -> Result<(usize, Option<usize>, Value), Exception> {
+) -> Result<(usize, Option<usize>, Value), Error> {
     if let Some(elem) = third {
         let start = first.implicitly_convert_to_int(interp)?;
         let start = if let Ok(start) = usize::try_from(start) {

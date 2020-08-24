@@ -2,7 +2,7 @@ use std::ffi::CString;
 
 use crate::core::DefineConstant;
 use crate::def::{ConstantNameError, NotDefinedError};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::value::Value;
@@ -11,7 +11,7 @@ use crate::Artichoke;
 impl DefineConstant for Artichoke {
     type Value = Value;
 
-    type Error = Exception;
+    type Error = Error;
 
     fn define_global_constant(
         &mut self,

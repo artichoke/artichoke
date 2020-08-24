@@ -51,7 +51,7 @@ impl ConvertMut<Float, Value> for Artichoke {
 }
 
 impl TryConvert<Value, Float> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     #[inline]
     fn try_convert(&self, value: Value) -> Result<Float, Self::Error> {
@@ -215,11 +215,7 @@ impl Float {
     }
 
     #[inline]
-    pub fn coerced_modulo(
-        self,
-        interp: &mut Artichoke,
-        other: Value,
-    ) -> Result<Outcome, Exception> {
+    pub fn coerced_modulo(self, interp: &mut Artichoke, other: Value) -> Result<Outcome, Error> {
         if let Ruby::Float = other.ruby_type() {
             let other = other.try_into::<Float>(interp)?;
             return Ok(self.modulo(other).into());
