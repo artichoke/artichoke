@@ -5,7 +5,7 @@ use std::fmt;
 
 use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, Eval, ReleaseMetadata};
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
 use crate::ffi;
@@ -20,8 +20,9 @@ use crate::Artichoke;
 /// This function creates a new [`State`], embeds it in the [`sys::mrb_state`],
 /// initializes an [in memory virtual filesystem](crate::fs), and loads the
 /// [`extn`] extensions to Ruby Core and Stdlib.
-pub fn interpreter() -> Result<Artichoke, Exception> {
-    interpreter_with_config(ArtichokeBackendReleaseMetadata::new())
+pub fn interpreter() -> Result<Artichoke, Error> {
+    let release_meta = ArtichokeBackendReleaseMetadata::new();
+    interpreter_with_config(release_meta)
 }
 
 /// Create and initialize an [`Artichoke`] interpreter with build metadata.
@@ -30,7 +31,7 @@ pub fn interpreter() -> Result<Artichoke, Exception> {
 /// about how Artichoke was built. Otherwise, it behaves identically to the
 /// [`interpreter`] function.
 #[allow(clippy::module_name_repetitions)]
-pub fn interpreter_with_config<T>(config: T) -> Result<Artichoke, Exception>
+pub fn interpreter_with_config<T>(config: T) -> Result<Artichoke, Error>
 where
     T: ReleaseMetadata,
 {
@@ -129,13 +130,13 @@ impl RubyException for InterpreterAllocError {
     }
 }
 
-impl From<InterpreterAllocError> for Exception {
+impl From<InterpreterAllocError> for Error {
     fn from(exception: InterpreterAllocError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<InterpreterAllocError>> for Exception {
+impl From<Box<InterpreterAllocError>> for Error {
     fn from(exception: Box<InterpreterAllocError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }

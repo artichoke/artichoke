@@ -3,7 +3,7 @@ use std::str;
 
 use crate::convert::UnboxRubyError;
 use crate::core::{ConvertMut, TryConvertMut};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::types::Rust;
 use crate::value::Value;
 use crate::Artichoke;
@@ -34,7 +34,7 @@ impl<'a> ConvertMut<Cow<'a, str>, Value> for Artichoke {
 }
 
 impl TryConvertMut<Value, String> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<String, Self::Error> {
         TryConvertMut::<_, &str>::try_convert_mut(self, value).map(String::from)
@@ -42,7 +42,7 @@ impl TryConvertMut<Value, String> for Artichoke {
 }
 
 impl<'a> TryConvertMut<Value, &'a str> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<&'a str, Self::Error> {
         let bytes = self.try_convert_mut(value)?;

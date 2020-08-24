@@ -1,17 +1,18 @@
 use std::borrow::Cow;
 
 use crate::core::{Globals, Intern};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
 // TODO: Handle invalid variable names. For now this is delegated to mruby.
+// The parser in `spinoso-symbol` can handle this.
 
 impl Globals for Artichoke {
     type Value = Value;
 
-    type Error = Exception;
+    type Error = Error;
 
     fn set_global_variable<T>(&mut self, name: T, value: &Self::Value) -> Result<(), Self::Error>
     where

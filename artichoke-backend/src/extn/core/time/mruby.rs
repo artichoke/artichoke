@@ -107,7 +107,7 @@ unsafe extern "C" fn time_self_now(
     let result = trampoline::now(&mut guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -122,7 +122,7 @@ unsafe extern "C" fn time_self_at(
     let result = trampoline::at(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -137,7 +137,7 @@ unsafe extern "C" fn time_self_mkutc(
     let result = trampoline::mkutc(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -152,7 +152,7 @@ unsafe extern "C" fn time_self_mktime(
     let result = trampoline::mktime(&mut guard, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -166,7 +166,7 @@ unsafe extern "C" fn time_to_int(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::to_int(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -181,7 +181,7 @@ unsafe extern "C" fn time_to_float(
     let result = trampoline::to_float(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -196,7 +196,7 @@ unsafe extern "C" fn time_to_rational(
     let result = trampoline::to_rational(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -209,7 +209,7 @@ unsafe extern "C" fn time_cmp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> 
     let result = trampoline::cmp(&mut guard, time, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -222,7 +222,7 @@ unsafe extern "C" fn time_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> 
     let result = trampoline::eql(&mut guard, time, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -234,7 +234,7 @@ unsafe extern "C" fn time_hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     let result = trampoline::hash(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -250,7 +250,7 @@ unsafe extern "C" fn time_initialize(
     let result = trampoline::initialize(&mut guard, time, args);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -266,7 +266,7 @@ unsafe extern "C" fn time_initialize_copy(
     let result = trampoline::initialize_copy(&mut guard, time, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -284,7 +284,7 @@ unsafe extern "C" fn time_mutate_to_local(
     let result = trampoline::mutate_to_local(&mut guard, time, utc_offset);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -299,7 +299,7 @@ unsafe extern "C" fn time_mutate_to_utc(
     let result = trampoline::mutate_to_utc(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -315,7 +315,7 @@ unsafe extern "C" fn time_as_local(
     let result = trampoline::as_local(&mut guard, time, utc_offset);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -327,7 +327,7 @@ unsafe extern "C" fn time_as_utc(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::as_utc(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -341,7 +341,7 @@ unsafe extern "C" fn time_asctime(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     let result = trampoline::asctime(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -356,7 +356,7 @@ unsafe extern "C" fn time_to_string(
     let result = trampoline::to_string(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -371,7 +371,7 @@ unsafe extern "C" fn time_to_array(
     let result = trampoline::to_array(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -386,7 +386,7 @@ unsafe extern "C" fn time_plus(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     let result = trampoline::plus(&mut guard, time, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -399,7 +399,7 @@ unsafe extern "C" fn time_minus(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
     let result = trampoline::minus(&mut guard, time, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -413,7 +413,7 @@ unsafe extern "C" fn time_succ(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     let result = trampoline::succ(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -426,7 +426,7 @@ unsafe extern "C" fn time_round(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
     let result = trampoline::round(&mut guard, time, num_digits);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -440,7 +440,7 @@ unsafe extern "C" fn time_second(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::second(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -452,7 +452,7 @@ unsafe extern "C" fn time_minute(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::minute(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -464,7 +464,7 @@ unsafe extern "C" fn time_hour(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     let result = trampoline::hour(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -476,7 +476,7 @@ unsafe extern "C" fn time_day(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> 
     let result = trampoline::day(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -488,7 +488,7 @@ unsafe extern "C" fn time_month(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
     let result = trampoline::month(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -500,7 +500,7 @@ unsafe extern "C" fn time_year(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     let result = trampoline::year(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -512,7 +512,7 @@ unsafe extern "C" fn time_weekday(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     let result = trampoline::weekday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -527,7 +527,7 @@ unsafe extern "C" fn time_year_day(
     let result = trampoline::year_day(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -539,7 +539,7 @@ unsafe extern "C" fn time_is_dst(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::is_dst(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -551,7 +551,7 @@ unsafe extern "C" fn time_zone(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     let result = trampoline::timezone(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -566,7 +566,7 @@ unsafe extern "C" fn time_utc_offset(
     let result = trampoline::utc_offset(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -580,7 +580,7 @@ unsafe extern "C" fn time_is_utc(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::is_utc(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -597,7 +597,7 @@ unsafe extern "C" fn time_is_sunday(
     let result = trampoline::is_sunday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -612,7 +612,7 @@ unsafe extern "C" fn time_is_monday(
     let result = trampoline::is_monday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -627,7 +627,7 @@ unsafe extern "C" fn time_is_tuesday(
     let result = trampoline::is_tuesday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -642,7 +642,7 @@ unsafe extern "C" fn time_is_wednesday(
     let result = trampoline::is_wednesday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -657,7 +657,7 @@ unsafe extern "C" fn time_is_thursday(
     let result = trampoline::is_thursday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -672,7 +672,7 @@ unsafe extern "C" fn time_is_friday(
     let result = trampoline::is_friday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -687,7 +687,7 @@ unsafe extern "C" fn time_is_saturday(
     let result = trampoline::is_saturday(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -704,7 +704,7 @@ unsafe extern "C" fn time_microsecond(
     let result = trampoline::microsecond(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -719,7 +719,7 @@ unsafe extern "C" fn time_nanosecond(
     let result = trampoline::nanosecond(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -731,7 +731,7 @@ unsafe extern "C" fn time_subsec(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::subsec(&mut guard, time);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -749,6 +749,6 @@ unsafe extern "C" fn time_strftime(
     let result = trampoline::strftime(&mut guard, time, format);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

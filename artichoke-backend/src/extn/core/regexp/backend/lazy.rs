@@ -30,7 +30,7 @@ impl Lazy {
         Self::default()
     }
 
-    pub fn regexp(&self) -> Result<&Regexp, Exception> {
+    pub fn regexp(&self) -> Result<&Regexp, Error> {
         self.regexp.get_or_try_init(|| {
             Regexp::new(self.literal.clone(), self.literal.clone(), self.encoding)
         })
@@ -55,19 +55,19 @@ impl RegexpType for Lazy {
         Box::new(self.clone())
     }
 
-    fn captures(&self, haystack: &[u8]) -> Result<Option<Vec<NilableString>>, Exception> {
+    fn captures(&self, haystack: &[u8]) -> Result<Option<Vec<NilableString>>, Error> {
         self.regexp()?.inner().captures(haystack)
     }
 
-    fn capture_indexes_for_name(&self, name: &[u8]) -> Result<Option<Vec<usize>>, Exception> {
+    fn capture_indexes_for_name(&self, name: &[u8]) -> Result<Option<Vec<usize>>, Error> {
         self.regexp()?.inner().capture_indexes_for_name(name)
     }
 
-    fn captures_len(&self, haystack: Option<&[u8]>) -> Result<usize, Exception> {
+    fn captures_len(&self, haystack: Option<&[u8]>) -> Result<usize, Error> {
         self.regexp()?.inner().captures_len(haystack)
     }
 
-    fn capture0<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Exception> {
+    fn capture0<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Error> {
         self.regexp()?.inner().capture0(haystack)
     }
 
@@ -112,11 +112,11 @@ impl RegexpType for Lazy {
             .unwrap_or_default()
     }
 
-    fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Exception> {
+    fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Error> {
         self.regexp()?.inner().case_match(interp, haystack)
     }
 
-    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Exception> {
+    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Error> {
         self.regexp()?.inner().is_match(haystack, pos)
     }
 
@@ -126,7 +126,7 @@ impl RegexpType for Lazy {
         haystack: &[u8],
         pos: Option<Int>,
         block: Option<Block>,
-    ) -> Result<Value, Exception> {
+    ) -> Result<Value, Error> {
         self.regexp()?.inner().match_(interp, haystack, pos, block)
     }
 
@@ -134,18 +134,18 @@ impl RegexpType for Lazy {
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-    ) -> Result<Option<usize>, Exception> {
+    ) -> Result<Option<usize>, Error> {
         self.regexp()?.inner().match_operator(interp, haystack)
     }
 
-    fn named_captures(&self) -> Result<NameToCaptureLocations, Exception> {
+    fn named_captures(&self) -> Result<NameToCaptureLocations, Error> {
         self.regexp()?.inner().named_captures()
     }
 
     fn named_captures_for_haystack(
         &self,
         haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Exception> {
+    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Error> {
         self.regexp()?.inner().named_captures_for_haystack(haystack)
     }
 
@@ -155,7 +155,7 @@ impl RegexpType for Lazy {
             .unwrap_or_default()
     }
 
-    fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Exception> {
+    fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Error> {
         self.regexp()?.inner().pos(haystack, at)
     }
 
@@ -164,7 +164,7 @@ impl RegexpType for Lazy {
         interp: &mut Artichoke,
         haystack: &[u8],
         block: Option<Block>,
-    ) -> Result<Scan, Exception> {
+    ) -> Result<Scan, Error> {
         self.regexp()?.inner().scan(interp, haystack, block)
     }
 }

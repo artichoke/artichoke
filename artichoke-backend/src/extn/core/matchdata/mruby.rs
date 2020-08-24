@@ -67,7 +67,7 @@ unsafe extern "C" fn artichoke_matchdata_begin(
     let result = trampoline::begin(&mut guard, value, begin);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -82,7 +82,7 @@ unsafe extern "C" fn artichoke_matchdata_captures(
     let result = trampoline::captures(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -99,7 +99,7 @@ unsafe extern "C" fn artichoke_matchdata_element_reference(
     let result = trampoline::element_reference(&mut guard, value, elem, len);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -115,7 +115,7 @@ unsafe extern "C" fn artichoke_matchdata_end(
     let result = trampoline::end(&mut guard, value, end);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -130,7 +130,7 @@ unsafe extern "C" fn artichoke_matchdata_length(
     let result = trampoline::length(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -145,7 +145,7 @@ unsafe extern "C" fn artichoke_matchdata_named_captures(
     let result = trampoline::named_captures(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -160,7 +160,7 @@ unsafe extern "C" fn artichoke_matchdata_names(
     let result = trampoline::names(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -176,7 +176,7 @@ unsafe extern "C" fn artichoke_matchdata_offset(
     let result = trampoline::offset(&mut guard, value, offset);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -191,7 +191,7 @@ unsafe extern "C" fn artichoke_matchdata_post_match(
     let result = trampoline::post_match(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -206,7 +206,7 @@ unsafe extern "C" fn artichoke_matchdata_pre_match(
     let result = trampoline::pre_match(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -221,7 +221,7 @@ unsafe extern "C" fn artichoke_matchdata_regexp(
     let result = trampoline::regexp(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -236,7 +236,7 @@ unsafe extern "C" fn artichoke_matchdata_string(
     let result = trampoline::string(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -251,7 +251,7 @@ unsafe extern "C" fn artichoke_matchdata_to_a(
     let result = trampoline::to_a(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -266,6 +266,6 @@ unsafe extern "C" fn artichoke_matchdata_to_s(
     let result = trampoline::to_s(&mut guard, value);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

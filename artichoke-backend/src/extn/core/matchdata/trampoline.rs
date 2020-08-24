@@ -7,7 +7,7 @@ use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 use crate::sys::protect;
 
-pub fn begin(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Value, Exception> {
+pub fn begin(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let capture = match interp.try_convert_mut(&mut at)? {
         CaptureExtract::GroupIndex(idx) => Capture::GroupIndex(idx),
@@ -22,7 +22,7 @@ pub fn begin(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<
     }
 }
 
-pub fn captures(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn captures(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     if let Some(captures) = data.captures()? {
         interp.try_convert_mut(captures)
@@ -36,7 +36,7 @@ pub fn element_reference(
     mut value: Value,
     mut elem: Value,
     len: Option<Value>,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let at = if let Some(len) = len {
         let start = elem.implicitly_convert_to_int(interp)?;
@@ -64,7 +64,7 @@ pub fn element_reference(
     interp.try_convert_mut(matched)
 }
 
-pub fn end(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Value, Exception> {
+pub fn end(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let capture = match interp.try_convert_mut(&mut at)? {
         CaptureExtract::GroupIndex(idx) => Capture::GroupIndex(idx),
@@ -79,7 +79,7 @@ pub fn end(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Va
     }
 }
 
-pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let len = data.len()?;
     if let Ok(len) = Int::try_from(len) {
@@ -89,19 +89,19 @@ pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Excepti
     }
 }
 
-pub fn named_captures(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn named_captures(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let named_captures = data.named_captures()?;
     interp.try_convert_mut(named_captures)
 }
 
-pub fn names(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn names(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let names = data.names();
     interp.try_convert_mut(names)
 }
 
-pub fn offset(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Value, Exception> {
+pub fn offset(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let capture = match interp.try_convert_mut(&mut at)? {
         CaptureExtract::GroupIndex(idx) => Capture::GroupIndex(idx),
@@ -121,19 +121,19 @@ pub fn offset(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result
     }
 }
 
-pub fn post_match(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn post_match(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let post = data.post();
     Ok(interp.convert_mut(post))
 }
 
-pub fn pre_match(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn pre_match(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let pre = data.pre();
     Ok(interp.convert_mut(pre))
 }
 
-pub fn regexp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn regexp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let regexp = data.regexp();
     // TODO(GH-614): MatchData#regexp needs to return an identical Regexp to the
@@ -147,14 +147,14 @@ pub fn regexp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Excepti
     Ok(regexp)
 }
 
-pub fn string(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn string(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let mut string = interp.convert_mut(data.string());
     string.freeze(interp)?;
     Ok(string)
 }
 
-pub fn to_a(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn to_a(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     if let Some(ary) = data.to_a()? {
         interp.try_convert_mut(ary)
@@ -163,7 +163,7 @@ pub fn to_a(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception
     }
 }
 
-pub fn to_s(interp: &mut Artichoke, mut value: Value) -> Result<Value, Exception> {
+pub fn to_s(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let display = data.to_s()?;
     Ok(interp.convert_mut(display))

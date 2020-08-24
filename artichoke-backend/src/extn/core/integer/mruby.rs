@@ -35,7 +35,7 @@ unsafe extern "C" fn artichoke_integer_chr(
     let result = trampoline::chr(&mut guard, value, encoding);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -51,7 +51,7 @@ unsafe extern "C" fn artichoke_integer_element_reference(
     let result = trampoline::element_reference(&mut guard, value, bit);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -67,7 +67,7 @@ unsafe extern "C" fn artichoke_integer_div(
     let result = trampoline::div(&mut guard, value, denominator);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -81,6 +81,6 @@ unsafe extern "C" fn artichoke_integer_size(
     let result = trampoline::size(&guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

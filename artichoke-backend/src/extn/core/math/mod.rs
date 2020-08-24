@@ -15,7 +15,7 @@ pub const PI: Fp = f64::consts::PI;
 #[derive(Debug, Clone, Copy)]
 pub struct Math;
 
-fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     match value.ruby_type() {
         Ruby::Float => value.try_into(interp),
         Ruby::Fixnum => value.try_into::<Integer>(interp).map(Integer::as_f64),
@@ -58,7 +58,7 @@ fn value_to_float(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception>
     }
 }
 
-pub fn acos(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn acos(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     if value.is_nan() {
         return Ok(value);
@@ -71,7 +71,7 @@ pub fn acos(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
 }
 
-pub fn acosh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn acosh(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     if value.is_nan() {
         return Ok(value);
@@ -84,7 +84,7 @@ pub fn acosh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
 }
 
-pub fn asin(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn asin(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     if value.is_nan() {
         return Ok(value);
@@ -97,26 +97,26 @@ pub fn asin(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
 }
 
-pub fn asinh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn asinh(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.asinh();
     Ok(result)
 }
 
-pub fn atan(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn atan(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.atan();
     Ok(result)
 }
 
-pub fn atan2(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, Exception> {
+pub fn atan2(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let other = value_to_float(interp, other)?;
     let result = value.atan2(other);
     Ok(result)
 }
 
-pub fn atanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn atanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     if value.is_nan() {
         return Ok(value);
@@ -129,89 +129,85 @@ pub fn atanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
 }
 
-pub fn cbrt(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn cbrt(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.cbrt();
     Ok(result)
 }
 
-pub fn cos(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn cos(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.cos();
     Ok(result)
 }
 
-pub fn cosh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn cosh(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.cosh();
     Ok(result)
 }
 
 #[cfg(not(feature = "core-math-extra"))]
-pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let _ = interp;
     let _ = value;
-    Err(Exception::from(NotImplementedError::from(
-        "enable 'core-math-extra' feature when building Artichoke",
-    )))
+    let message = "enable 'core-math-extra' feature when building Artichoke";
+    Err(NotImplementedError::from(message).into())
 }
 
 #[cfg(feature = "core-math-extra")]
-pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn erf(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = libm::erf(value);
     Ok(result)
 }
 
 #[cfg(not(feature = "core-math-extra"))]
-pub fn erfc(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn erfc(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let _ = interp;
     let _ = value;
-    Err(Exception::from(NotImplementedError::from(
-        "enable 'core-math-extra' feature when building Artichoke",
-    )))
+    let message = "enable 'core-math-extra' feature when building Artichoke";
+    Err(NotImplementedError::from(message).into())
 }
 
 #[cfg(feature = "core-math-extra")]
-pub fn erfc(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn erfc(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = libm::erfc(value);
     Ok(result)
 }
 
-pub fn exp(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn exp(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.exp();
     Ok(result)
 }
 
 #[cfg(not(feature = "core-math-extra"))]
-pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
+pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Error> {
     let _ = interp;
     let _ = value;
-    Err(Exception::from(NotImplementedError::from(
-        "enable 'core-math-extra' feature when building Artichoke",
-    )))
+    let message = "enable 'core-math-extra' feature when building Artichoke";
+    Err(NotImplementedError::from(message).into())
 }
 
 #[cfg(feature = "core-math-extra")]
-pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
+pub fn frexp(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Error> {
     let value = value_to_float(interp, value)?;
     let (fraction, exponent) = libm::frexp(value);
     Ok((fraction, exponent.into()))
 }
 
 #[cfg(not(feature = "core-math-extra"))]
-pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let _ = interp;
     let _ = value;
-    Err(Exception::from(NotImplementedError::from(
-        "enable 'core-math-extra' feature when building Artichoke",
-    )))
+    let message = "enable 'core-math-extra' feature when building Artichoke";
+    Err(NotImplementedError::from(message).into())
 }
 
 #[cfg(feature = "core-math-extra")]
-pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     use crate::extn::core::float;
     use std::convert::TryFrom;
     use std::num::FpCategory;
@@ -281,7 +277,7 @@ pub fn gamma(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
 }
 
-pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, Exception> {
+pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let other = value_to_float(interp, other)?;
     let result = value.hypot(other);
@@ -289,17 +285,16 @@ pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, E
 }
 
 #[cfg(not(feature = "core-math-extra"))]
-pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Fp, Exception> {
+pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Fp, Error> {
     let _ = interp;
     let _ = fraction;
     let _ = exponent;
-    Err(Exception::from(NotImplementedError::from(
-        "enable 'core-math-extra' feature when building Artichoke",
-    )))
+    let message = "enable 'core-math-extra' feature when building Artichoke";
+    Err(NotImplementedError::from(message).into())
 }
 
 #[cfg(feature = "core-math-extra")]
-pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Fp, Exception> {
+pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Fp, Error> {
     use std::convert::TryFrom;
 
     let fraction = value_to_float(interp, fraction)?;
@@ -313,7 +308,7 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
                 Ok(exponent as Int)
             }
         } else {
-            Err(Exception::from(err))
+            Err(Error::from(err))
         }
     })?;
     if let Ok(exponent) = i32::try_from(exponent) {
@@ -332,16 +327,15 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
 }
 
 #[cfg(not(feature = "core-math-extra"))]
-pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
+pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Error> {
     let _ = interp;
     let _ = value;
-    Err(Exception::from(NotImplementedError::from(
-        "enable 'core-math-extra' feature when building Artichoke",
-    )))
+    let message = "enable 'core-math-extra' feature when building Artichoke";
+    Err(NotImplementedError::from(message).into())
 }
 
 #[cfg(feature = "core-math-extra")]
-pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Exception> {
+pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Error> {
     let value = value_to_float(interp, value)?;
     if value.is_infinite() && value.is_sign_negative() {
         Err(DomainError::from(r#"Numerical argument is out of domain - "lgamma""#).into())
@@ -351,7 +345,7 @@ pub fn lgamma(interp: &mut Artichoke, value: Value) -> Result<(Fp, Int), Excepti
     }
 }
 
-pub fn log(interp: &mut Artichoke, value: Value, base: Option<Value>) -> Result<Fp, Exception> {
+pub fn log(interp: &mut Artichoke, value: Value, base: Option<Value>) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     if value.is_nan() {
         return Ok(value);
@@ -372,7 +366,7 @@ pub fn log(interp: &mut Artichoke, value: Value, base: Option<Value>) -> Result<
     }
 }
 
-pub fn log10(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn log10(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     if value.is_nan() {
         return Ok(value);
@@ -385,7 +379,7 @@ pub fn log10(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
 }
 
-pub fn log2(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn log2(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     if value.is_nan() {
         return Ok(value);
@@ -398,19 +392,19 @@ pub fn log2(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
 }
 
-pub fn sin(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn sin(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.sin();
     Ok(result)
 }
 
-pub fn sinh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn sinh(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.sinh();
     Ok(result)
 }
 
-pub fn sqrt(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn sqrt(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     if value.is_nan() {
         return Ok(value);
@@ -423,13 +417,13 @@ pub fn sqrt(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
     }
 }
 
-pub fn tan(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn tan(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.tan();
     Ok(result)
 }
 
-pub fn tanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Exception> {
+pub fn tanh(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = value_to_float(interp, value)?;
     let result = value.tanh();
     Ok(result)
@@ -494,13 +488,13 @@ impl RubyException for DomainError {
     }
 }
 
-impl From<DomainError> for Exception {
+impl From<DomainError> for Error {
     fn from(exception: DomainError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<DomainError>> for Exception {
+impl From<Box<DomainError>> for Error {
     fn from(exception: Box<DomainError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }

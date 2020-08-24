@@ -1,6 +1,6 @@
 use crate::convert::UnboxRubyError;
 use crate::core::{ConvertMut, TryConvert};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::sys;
 use crate::types::{Fp, Ruby, Rust};
 use crate::value::Value;
@@ -15,14 +15,14 @@ impl ConvertMut<Fp, Value> for Artichoke {
 }
 
 impl TryConvert<Value, Fp> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert(&self, value: Value) -> Result<Fp, Self::Error> {
         if let Ruby::Float = value.ruby_type() {
             let value = value.inner();
             Ok(unsafe { sys::mrb_sys_float_to_cdouble(value) })
         } else {
-            Err(Exception::from(UnboxRubyError::new(&value, Rust::Float)))
+            Err(UnboxRubyError::new(&value, Rust::Float).into())
         }
     }
 }

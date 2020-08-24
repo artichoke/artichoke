@@ -19,7 +19,7 @@ impl BoxUnboxVmValue for Symbol {
     unsafe fn unbox_from_value<'a>(
         value: &'a mut Value,
         interp: &mut Artichoke,
-    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Exception> {
+    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Error> {
         let _ = interp;
 
         // Make sure we have a Symbol otherwise extraction will fail.
@@ -39,7 +39,7 @@ impl BoxUnboxVmValue for Symbol {
         Ok(UnboxedValueGuard::new(Immediate::new(symbol_id.into())))
     }
 
-    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Exception> {
+    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
         let _ = interp;
 
         let symbol_id = u32::from(value);
@@ -51,7 +51,7 @@ impl BoxUnboxVmValue for Symbol {
         value: Self::Unboxed,
         into: Value,
         interp: &mut Artichoke,
-    ) -> Result<Value, Exception> {
+    ) -> Result<Value, Error> {
         let _ = value;
         let _ = into;
         let _ = interp;

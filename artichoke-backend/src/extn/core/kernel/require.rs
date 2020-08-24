@@ -10,7 +10,7 @@ use crate::state::parser::Context;
 
 const RUBY_EXTENSION: &str = "rb";
 
-pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Exception> {
+pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::from("path name contains null byte").into());
@@ -39,7 +39,7 @@ pub fn require(
     interp: &mut Artichoke,
     mut filename: Value,
     base: Option<RelativePath>,
-) -> Result<bool, Exception> {
+) -> Result<bool, Error> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::from("path name contains null byte").into());
@@ -127,7 +127,7 @@ impl RelativePath {
         self.0.join(path.as_ref())
     }
 
-    pub fn try_from_interp(interp: &mut Artichoke) -> Result<Self, Exception> {
+    pub fn try_from_interp(interp: &mut Artichoke) -> Result<Self, Error> {
         let context = interp
             .peek_context()?
             .ok_or_else(|| Fatal::from("relative require with no context stack"))?;
@@ -151,7 +151,7 @@ mod test {
     impl File for MockSourceFile {
         type Artichoke = Artichoke;
 
-        type Error = Exception;
+        type Error = Error;
 
         fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
             let _ = interp.eval(b"@i = 255").unwrap();
@@ -165,7 +165,7 @@ mod test {
     impl File for MockExtensionAndSourceFile {
         type Artichoke = Artichoke;
 
-        type Error = Exception;
+        type Error = Error;
 
         fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
             let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();

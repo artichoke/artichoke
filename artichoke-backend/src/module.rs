@@ -7,7 +7,7 @@ use std::ptr::NonNull;
 
 use crate::core::Intern;
 use crate::def::{ConstantNameError, EnclosingRubyScope, Method, NotDefinedError};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::method;
 use crate::sys;
 use crate::Artichoke;
@@ -194,7 +194,7 @@ impl Spec {
         interp: &mut Artichoke,
         name: T,
         enclosing_scope: Option<EnclosingRubyScope>,
-    ) -> Result<Self, Exception>
+    ) -> Result<Self, Error>
     where
         T: Into<Cow<'static, str>>,
     {

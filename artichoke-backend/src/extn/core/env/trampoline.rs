@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::extn::core::env::Environ;
 use crate::extn::prelude::*;
 
-pub fn initialize(interp: &mut Artichoke, into: Value) -> Result<Value, Exception> {
+pub fn initialize(interp: &mut Artichoke, into: Value) -> Result<Value, Error> {
     let environ = Environ::initialize();
     let result = Environ::box_into_value(environ, into, interp)?;
     Ok(result)
@@ -13,7 +13,7 @@ pub fn element_reference(
     interp: &mut Artichoke,
     mut environ: Value,
     mut name: Value,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     let environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
     let name = name.implicitly_convert_to_string(interp)?;
     let result = environ.get(name)?;
@@ -27,7 +27,7 @@ pub fn element_assignment(
     mut environ: Value,
     mut name: Value,
     mut value: Value,
-) -> Result<Value, Exception> {
+) -> Result<Value, Error> {
     let mut environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
     let name = name.implicitly_convert_to_string(interp)?;
     let env_value = value.implicitly_convert_to_nilable_string(interp)?;
@@ -36,7 +36,7 @@ pub fn element_assignment(
     Ok(value)
 }
 
-pub fn to_h(interp: &mut Artichoke, mut environ: Value) -> Result<Value, Exception> {
+pub fn to_h(interp: &mut Artichoke, mut environ: Value) -> Result<Value, Error> {
     let environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
     let result = environ.to_map()?;
     Ok(interp.convert_mut(result))

@@ -5,7 +5,7 @@ use std::fmt;
 
 use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{Fatal, TypeError};
 use crate::gc::MrbGarbageCollection;
@@ -49,13 +49,13 @@ impl RubyException for NoBlockGiven {
     }
 }
 
-impl From<NoBlockGiven> for Exception {
+impl From<NoBlockGiven> for Error {
     fn from(exception: NoBlockGiven) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<NoBlockGiven>> for Exception {
+impl From<Box<NoBlockGiven>> for Error {
     fn from(exception: Box<NoBlockGiven>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
@@ -165,7 +165,7 @@ impl Block {
         self.0
     }
 
-    pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Exception> {
+    pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Error> {
         let mut arena = interp.create_arena_savepoint()?;
 
         let result = unsafe {

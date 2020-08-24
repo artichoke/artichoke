@@ -76,13 +76,8 @@ pub enum Coercion {
 /// ```
 ///
 /// [numeric]: https://ruby-doc.org/core-2.6.3/Numeric.html#method-i-coerce
-pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Exception> {
-    fn do_coerce(
-        interp: &mut Artichoke,
-        x: Value,
-        y: Value,
-        depth: u8,
-    ) -> Result<Coercion, Exception> {
+pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Error> {
+    fn do_coerce(interp: &mut Artichoke, x: Value, y: Value, depth: u8) -> Result<Coercion, Error> {
         if depth > MAX_COERCE_DEPTH {
             return Err(SystemStackError::from("stack level too deep").into());
         }

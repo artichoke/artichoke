@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, IncrementLinenoError, Parser};
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn::core::exception::ScriptError;
 use crate::ffi::InterpreterExtractError;
 use crate::state::parser::Context;
@@ -11,7 +11,7 @@ use crate::Artichoke;
 
 impl Parser for Artichoke {
     type Context = Context;
-    type Error = Exception;
+    type Error = Error;
 
     fn reset_parser(&mut self) -> Result<(), Self::Error> {
         let mrb = unsafe { self.mrb.as_mut() };
@@ -101,13 +101,13 @@ impl RubyException for IncrementLinenoError {
     }
 }
 
-impl From<IncrementLinenoError> for Exception {
+impl From<IncrementLinenoError> for Error {
     fn from(exception: IncrementLinenoError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<IncrementLinenoError>> for Exception {
+impl From<Box<IncrementLinenoError>> for Error {
     fn from(exception: Box<IncrementLinenoError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }

@@ -8,7 +8,7 @@ use crate::class;
 use crate::class_registry::ClassRegistry;
 use crate::convert::BoxUnboxVmValue;
 use crate::core::ConvertMut;
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn::core::exception::{NameError, ScriptError};
 use crate::module;
 use crate::sys;
@@ -235,13 +235,13 @@ impl RubyException for ConstantNameError {
     }
 }
 
-impl From<ConstantNameError> for Exception {
+impl From<ConstantNameError> for Error {
     fn from(exception: ConstantNameError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<ConstantNameError>> for Exception {
+impl From<Box<ConstantNameError>> for Error {
     fn from(exception: Box<ConstantNameError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
@@ -397,13 +397,13 @@ impl RubyException for NotDefinedError {
     }
 }
 
-impl From<NotDefinedError> for Exception {
+impl From<NotDefinedError> for Error {
     fn from(exception: NotDefinedError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<NotDefinedError>> for Exception {
+impl From<Box<NotDefinedError>> for Error {
     fn from(exception: Box<NotDefinedError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }

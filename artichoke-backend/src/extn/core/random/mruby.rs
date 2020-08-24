@@ -40,7 +40,7 @@ unsafe extern "C" fn random_initialize(
     let result = trampoline::initialize(&mut guard, seed, slf);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -53,7 +53,7 @@ unsafe extern "C" fn random_eq(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     let result = trampoline::equal(&mut guard, rand, other);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -66,7 +66,7 @@ unsafe extern "C" fn random_bytes(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     let result = trampoline::bytes(&mut guard, rand, size);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -79,7 +79,7 @@ unsafe extern "C" fn random_rand(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::rand(&mut guard, rand, max);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -91,7 +91,7 @@ unsafe extern "C" fn random_seed(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let result = trampoline::seed(&mut guard, rand);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -105,7 +105,7 @@ unsafe extern "C" fn random_self_new_seed(
     let result = trampoline::new_seed(&mut guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -120,7 +120,7 @@ unsafe extern "C" fn random_self_srand(
     let result = trampoline::srand(&mut guard, number);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -135,6 +135,6 @@ unsafe extern "C" fn random_self_urandom(
     let result = trampoline::urandom(&mut guard, size);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

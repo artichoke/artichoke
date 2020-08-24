@@ -34,7 +34,7 @@
 //! ```rust
 //! use artichoke_backend::prelude::*;
 //!
-//! # fn example() -> Result<(), Exception> {
+//! # fn example() -> Result<(), Error> {
 //! let mut interp = artichoke_backend::interpreter()?;
 //! let result = interp.eval(b"10 * 10")?;
 //! let result = result.try_into::<i64>(&interp)?;
@@ -53,7 +53,7 @@
 //! ```rust
 //! use artichoke_backend::prelude::*;
 //!
-//! # fn example() -> Result<(), Exception> {
+//! # fn example() -> Result<(), Error> {
 //! let mut interp = artichoke_backend::interpreter()?;
 //! let result = interp.eval(b"'ruby funcall'")?;
 //! let result = result.funcall(&mut interp, "length", &[], None)?;
@@ -127,8 +127,8 @@ pub mod class_registry;
 mod constant;
 pub mod convert;
 pub mod def;
+pub mod error;
 mod eval;
-pub mod exception;
 pub mod exception_handler;
 pub mod extn;
 pub mod ffi;
@@ -159,7 +159,7 @@ mod warn;
 mod test;
 
 pub use crate::artichoke::{Artichoke, Guard};
-pub use crate::exception::{Exception, RubyException};
+pub use crate::error::{Error, RubyException};
 pub use crate::interpreter::{interpreter, interpreter_with_config};
 pub use artichoke_core::prelude as core;
 
@@ -177,10 +177,9 @@ pub use artichoke_core::prelude as core;
 pub mod prelude {
     pub use artichoke_core::prelude::*;
 
-    pub use crate::exception::{self, Exception, RubyException};
-    pub use crate::extn::core::exception::{Exception as _, *};
+    pub use crate::error::{self, Error, RubyException};
+    pub use crate::extn::core::exception::*;
     pub use crate::gc::MrbGarbageCollection;
-    pub use crate::interpreter::{interpreter, interpreter_with_config};
     pub use crate::release_metadata::ReleaseMetadata;
     pub use crate::{Artichoke, Guard};
 }

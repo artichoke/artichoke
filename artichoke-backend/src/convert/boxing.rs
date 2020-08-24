@@ -6,7 +6,7 @@ use std::ops::{Deref, DerefMut};
 use std::ptr;
 
 use crate::def::NotDefinedError;
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::extn::core::exception::TypeError;
 use crate::ffi::InterpreterExtractError;
 use crate::gc::{MrbGarbageCollection, State as GcState};
@@ -107,15 +107,15 @@ pub trait BoxUnboxVmValue {
     unsafe fn unbox_from_value<'a>(
         value: &'a mut Value,
         interp: &mut Artichoke,
-    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Exception>;
+    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Error>;
 
-    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Exception>;
+    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error>;
 
     fn box_into_value(
         value: Self::Unboxed,
         into: Value,
         interp: &mut Artichoke,
-    ) -> Result<Value, Exception>;
+    ) -> Result<Value, Error>;
 
     fn free(data: *mut c_void);
 }
@@ -132,7 +132,7 @@ where
     unsafe fn unbox_from_value<'a>(
         value: &'a mut Value,
         interp: &mut Artichoke,
-    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Exception> {
+    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Error> {
         // Make sure we have a Data otherwise extraction will fail.
         if value.ruby_type() != Ruby::Data {
             let mut message = String::from("uninitialized ");
@@ -191,7 +191,7 @@ where
         Ok(UnboxedValueGuard::new(HeapAllocated::new(value)))
     }
 
-    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Exception> {
+    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
         // Disable the GC to prevent a collection cycle from re-entering into
         // Rust code while the `State` is moved out of the `mrb`.
         //
@@ -268,7 +268,7 @@ where
         value: Self::Unboxed,
         into: Value,
         interp: &mut Artichoke,
-    ) -> Result<Value, Exception> {
+    ) -> Result<Value, Error> {
         let state = interp
             .state
             .as_ref()

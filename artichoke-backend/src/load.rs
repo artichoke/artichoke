@@ -2,15 +2,15 @@ use std::borrow::Cow;
 use std::path::Path;
 
 use crate::core::{Eval, File, LoadSources};
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::fs::RUBY_LOAD_PATH;
 use crate::Artichoke;
 
 impl LoadSources for Artichoke {
     type Artichoke = Self;
-    type Error = Exception;
-    type Exception = Exception;
+    type Error = Error;
+    type Exception = Error;
 
     fn def_file_for_type<P, T>(&mut self, path: P) -> Result<(), Self::Error>
     where

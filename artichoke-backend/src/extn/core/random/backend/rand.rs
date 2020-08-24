@@ -56,7 +56,7 @@ where
     #[inline]
     pub fn bytes(&mut self, buf: &mut [u8]) {
         // TODO: use non-panicking ``Rng::try_fill_bytes`, which requires a
-        // custom error type and returning `Result<(), Exception>`.
+        // custom error type and returning `Result<(), Error>`.
         self.rng.fill_bytes(buf);
     }
 
@@ -80,28 +80,28 @@ where
         self
     }
 
-    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) -> Result<(), Exception> {
+    fn bytes(&mut self, interp: &mut Artichoke, buf: &mut [u8]) -> Result<(), Error> {
         let _ = interp;
         self.bytes(buf);
         Ok(())
     }
 
-    fn seed(&self, interp: &Artichoke) -> Result<u64, Exception> {
+    fn seed(&self, interp: &Artichoke) -> Result<u64, Error> {
         let _ = interp;
         Ok(self.seed())
     }
 
-    fn internal_state(&self, interp: &Artichoke) -> Result<InternalState, Exception> {
+    fn internal_state(&self, interp: &Artichoke) -> Result<InternalState, Error> {
         let _ = interp;
         Ok(self.internal_state())
     }
 
-    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Result<Int, Exception> {
+    fn rand_int(&mut self, interp: &mut Artichoke, max: Int) -> Result<Int, Error> {
         let _ = interp;
         Ok(self.rand_int(max))
     }
 
-    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Result<Fp, Exception> {
+    fn rand_float(&mut self, interp: &mut Artichoke, max: Option<Fp>) -> Result<Fp, Error> {
         let _ = interp;
         Ok(self.rand_float(max))
     }

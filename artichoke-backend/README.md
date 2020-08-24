@@ -23,7 +23,7 @@ The `artichoke-backend` interpreter implements
 ```rust
 use artichoke_backend::prelude::*;
 
-fn example() -> Result<(), Exception> {
+fn example() -> Result<(), Error> {
     let mut interp = artichoke_backend::interpreter()?;
     let result = interp.eval(b"10 * 10")?;
     let result = result.try_into::<i64>(&interp)?;
@@ -41,7 +41,7 @@ which enables calling Ruby functions from Rust.
 ```rust
 use artichoke_backend::prelude::*;
 
-fn example() -> Result<(), Exception> {
+fn example() -> Result<(), Error> {
     let mut interp = artichoke_backend::interpreter()?;
     let s = interp.eval(b"'ruby funcall'")?;
     let len = s.funcall(&mut interp, "length", &[], None)?;

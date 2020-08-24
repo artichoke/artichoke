@@ -16,7 +16,7 @@ use std::fmt;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
-use crate::exception::Exception;
+use crate::error::Error;
 use crate::Artichoke;
 
 pub mod hybrid;
@@ -38,7 +38,7 @@ pub const RUBY_LOAD_PATH: &str = "/src/lib";
 /// This signature is equivalent to the signature for `File::require` as defined
 /// by the `artichoke-backend` implementation of
 /// [`LoadSources`](crate::core::LoadSources).
-pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Exception>;
+pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Error>;
 
 #[must_use]
 #[cfg(all(feature = "native-filesystem-access", not(any(test, doctest))))]

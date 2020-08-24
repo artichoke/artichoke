@@ -46,14 +46,14 @@ unsafe extern "C" fn container_initialize(
     let result = Container::box_into_value(container, slf, &mut guard);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
 impl File for Container {
     type Artichoke = Artichoke;
 
-    type Error = Exception;
+    type Error = Error;
 
     fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
         let spec = class::Spec::new("Container", None, Some(def::box_unbox_free::<Self>))?;

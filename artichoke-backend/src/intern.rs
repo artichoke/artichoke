@@ -4,14 +4,14 @@ use std::borrow::Cow;
 use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;
 use crate::core::Intern;
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::Artichoke;
 
 impl Artichoke {
-    pub fn lookup_symbol_with_trailing_nul(&self, symbol: u32) -> Result<Option<&[u8]>, Exception> {
+    pub fn lookup_symbol_with_trailing_nul(&self, symbol: u32) -> Result<Option<&[u8]>, Error> {
         let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         if let Some(symbol) = symbol.checked_sub(1) {
             if let Some(bytes) = state.symbols.get(symbol.into()) {
@@ -24,7 +24,7 @@ impl Artichoke {
         }
     }
 
-    pub fn intern_bytes_with_trailing_nul<T>(&mut self, bytes: T) -> Result<u32, Exception>
+    pub fn intern_bytes_with_trailing_nul<T>(&mut self, bytes: T) -> Result<u32, Error>
     where
         T: Into<Cow<'static, [u8]>>,
     {
@@ -42,7 +42,7 @@ impl Artichoke {
     pub fn check_interned_bytes_with_trailing_nul(
         &self,
         bytes: &[u8],
-    ) -> Result<Option<u32>, Exception> {
+    ) -> Result<Option<u32>, Error> {
         let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let symbol = state.symbols.check_interned(bytes);
         if let Some(symbol) = symbol {
@@ -61,7 +61,7 @@ impl Artichoke {
 impl Intern for Artichoke {
     type Symbol = u32;
 
-    type Error = Exception;
+    type Error = Error;
 
     const SYMBOL_RANGE_START: Self::Symbol = 1;
 
@@ -148,14 +148,14 @@ impl RubyException for SymbolOverflowError {
     }
 }
 
-impl From<SymbolOverflowError> for Exception {
+impl From<SymbolOverflowError> for Error {
     #[inline]
     fn from(exception: SymbolOverflowError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<SymbolOverflowError>> for Exception {
+impl From<Box<SymbolOverflowError>> for Error {
     #[inline]
     fn from(exception: Box<SymbolOverflowError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))

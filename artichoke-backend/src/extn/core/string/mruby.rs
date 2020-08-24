@@ -26,7 +26,7 @@ unsafe extern "C" fn artichoke_string_ord(
     let result = trampoline::ord(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -42,6 +42,6 @@ unsafe extern "C" fn artichoke_string_scan(
     let result = trampoline::scan(&mut guard, value, pattern, block);
     match result {
         Ok(result) => result.inner(),
-        Err(exception) => exception::raise(guard, exception),
+        Err(exception) => error::raise(guard, exception),
     }
 }

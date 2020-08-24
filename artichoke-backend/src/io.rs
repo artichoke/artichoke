@@ -5,7 +5,7 @@ use std::io;
 
 use crate::class_registry::ClassRegistry;
 use crate::core::{ConvertMut, Io};
-use crate::exception::{Exception, RubyException};
+use crate::error::{Error, RubyException};
 use crate::extn::core::exception;
 use crate::ffi::InterpreterExtractError;
 use crate::state::output::Output;
@@ -13,7 +13,7 @@ use crate::sys;
 use crate::Artichoke;
 
 impl Io for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     /// Writes the given bytes to the interpreter stdout stream.
     ///
@@ -53,7 +53,7 @@ impl From<io::Error> for IOError {
     }
 }
 
-impl From<io::Error> for Exception {
+impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
         Self::from(IOError::from(err))
     }
@@ -95,13 +95,13 @@ impl RubyException for IOError {
     }
 }
 
-impl From<IOError> for Exception {
+impl From<IOError> for Error {
     fn from(exception: IOError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<IOError>> for Exception {
+impl From<Box<IOError>> for Error {
     fn from(exception: Box<IOError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }

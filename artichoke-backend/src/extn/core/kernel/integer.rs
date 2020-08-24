@@ -53,7 +53,7 @@ impl Radix {
 }
 
 impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Option<Radix>, Self::Error> {
         if let Some(value) = value {
@@ -151,7 +151,7 @@ impl<'a> IntegerString<'a> {
 }
 
 impl<'a> TryConvertMut<&'a mut Value, IntegerString<'a>> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: &'a mut Value) -> Result<IntegerString<'a>, Self::Error> {
         let mut message = String::from("can't convert ");
@@ -212,7 +212,7 @@ impl<'a> ParseState<'a> {
         Self::Initial(arg)
     }
 
-    fn set_sign(self, sign: Sign) -> Result<Self, Exception> {
+    fn set_sign(self, sign: Sign) -> Result<Self, Error> {
         match self {
             Self::Sign(arg, _) | Self::Accumulate(arg, _, _) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
@@ -243,7 +243,7 @@ impl<'a> ParseState<'a> {
         }
     }
 
-    fn parse(self) -> Result<(String, Option<Radix>), Exception> {
+    fn parse(self) -> Result<(String, Option<Radix>), Error> {
         let (arg, sign, mut digits) = match self {
             Self::Accumulate(arg, sign, digits) => (arg, sign, digits),
             Self::Initial(arg) | Self::Sign(arg, _) => {
@@ -293,7 +293,7 @@ impl<'a> ParseState<'a> {
     }
 }
 
-pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Exception> {
+pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Error> {
     let mut state = ParseState::new(arg);
     let mut chars = arg
         .inner()

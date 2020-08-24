@@ -44,16 +44,16 @@ impl Environ {
         environ
     }
 
-    pub fn get(&self, name: &[u8]) -> Result<Option<Cow<'_, [u8]>>, Exception> {
+    pub fn get(&self, name: &[u8]) -> Result<Option<Cow<'_, [u8]>>, Error> {
         self.0.get(name)
     }
 
-    pub fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Exception> {
+    pub fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Error> {
         self.0.put(name, value)?;
         Ok(())
     }
 
-    pub fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Exception> {
+    pub fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Error> {
         self.0.to_map()
     }
 }

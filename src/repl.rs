@@ -135,7 +135,7 @@ impl Default for PromptConfig {
     }
 }
 
-fn preamble(interp: &mut Artichoke) -> Result<String, Exception> {
+fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
     let description = interp
         .eval(b"RUBY_DESCRIPTION")?
         .try_into_mut::<&str>(interp)?;
@@ -175,7 +175,7 @@ where
     Werr: io::Write + WriteColor,
 {
     let config = config.unwrap_or_default();
-    let mut interp = interpreter()?;
+    let mut interp = crate::interpreter()?;
     writeln!(output, "{}", preamble(&mut interp)?)?;
 
     interp.reset_parser()?;

@@ -413,7 +413,7 @@ mod hook_prototype_tests {
 
     impl File for TestFile {
         type Artichoke = Artichoke;
-        type Error = Exception;
+        type Error = Error;
 
         fn require(_interp: &mut Artichoke) -> Result<(), Self::Error> {
             Ok(())

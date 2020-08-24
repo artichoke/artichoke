@@ -18,7 +18,7 @@ impl Convert<Integer, Value> for Artichoke {
 }
 
 impl TryConvert<Value, Integer> for Artichoke {
-    type Error = Exception;
+    type Error = Error;
 
     #[inline]
     fn try_convert(&self, value: Value) -> Result<Integer, Self::Error> {
@@ -83,11 +83,7 @@ impl Integer {
         self.0 as f64
     }
 
-    pub fn chr(
-        self,
-        interp: &mut Artichoke,
-        encoding: Option<Value>,
-    ) -> Result<Vec<u8>, Exception> {
+    pub fn chr(self, interp: &mut Artichoke, encoding: Option<Value>) -> Result<Vec<u8>, Error> {
         if let Some(encoding) = encoding {
             let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
             message.extend(encoding.inspect(interp));
@@ -140,7 +136,7 @@ impl Integer {
     }
 
     #[inline]
-    pub fn bit(self, bit: Int) -> Result<Self, Exception> {
+    pub fn bit(self, bit: Int) -> Result<Self, Error> {
         if let Ok(bit) = u32::try_from(bit) {
             Ok(self.as_i64().checked_shr(bit).map_or(0, |v| v & 1).into())
         } else {
@@ -148,7 +144,7 @@ impl Integer {
         }
     }
 
-    pub fn div(self, interp: &mut Artichoke, denominator: Value) -> Result<Outcome, Exception> {
+    pub fn div(self, interp: &mut Artichoke, denominator: Value) -> Result<Outcome, Error> {
         match denominator.ruby_type() {
             Ruby::Fixnum => {
                 let denom = denominator.try_into::<Int>(interp)?;
