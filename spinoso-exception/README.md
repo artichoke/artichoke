@@ -11,11 +11,10 @@
 Built in Ruby exception types.
 
 Descendants of class [`Exception`] are used to communicate between
-[`Kernel#raise`] and `rescue` statements in `begin ... end` blocks.
-Exception objects carry information about the exception – its type (the
-exception's class name), an optional descriptive string, and optional
-traceback information. `Exception` subclasses may add additional information
-like [`NameError#name`].
+[`Kernel#raise`] and `rescue` statements in `begin ... end` blocks. Exception
+objects carry information about the exception – its type (the exception's class
+name), an optional descriptive string, and optional traceback information.
+`Exception` subclasses may add additional information like [`NameError#name`].
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The idea is that the data structures defined in the `spinoso` family
@@ -39,8 +38,8 @@ let exc = RuntimeError::from("failed to generate random bytes");
 ```
 
 This crate exposes a `RubyException` trait that unifies all of the exception
-types it defines. `RubyException` is [object safe] and can be used to create trait
-objects of any Ruby exception.
+types it defines. `RubyException` is [object safe] and can be used to create
+trait objects of any Ruby exception.
 
 ```rust
 use spinoso_exception::{FrozenError, NotImplementedError, RubyException};
@@ -79,9 +78,10 @@ All features are enabled by default.
 `spinoso-exception` is licensed with the [MIT License](../LICENSE) (c) Ryan
 Lopopolo.
 
-[`Exception`]: https://ruby-doc.org/core-2.6.3/Exception.html
-[`Kernel#raise`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-raise
-[`NameError#name`]: https://ruby-doc.org/core-2.6.3/NameError.html#method-i-name
-[object safe]: https://doc.rust-lang.org/book/ch17-02-trait-objects.html#object-safety-is-required-for-trait-objects
+[`exception`]: https://ruby-doc.org/core-2.6.3/Exception.html
+[`kernel#raise`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-raise
+[`nameerror#name`]: https://ruby-doc.org/core-2.6.3/NameError.html#method-i-name
+[object safe]:
+  https://doc.rust-lang.org/book/ch17-02-trait-objects.html#object-safety-is-required-for-trait-objects
 [`alloc`]: https://doc.rust-lang.org/alloc/
 [`std::error::error`]: https://doc.rust-lang.org/std/error/trait.Error.html
