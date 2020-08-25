@@ -1,6 +1,9 @@
 ---
 # This config file lists the ruby/specs that are enforced as passing in
 # Artichoke Ruby during CI.
+#
+# The `skip_all` spec is used to force the spec harness to run no tests for the
+# given suite.
 core:
   - suite: array
     specs:
@@ -44,74 +47,65 @@ core:
   - suite: comparable
   - suite: env
     skip:
-      - element_set # missing Errno::EINVAL implementation
-      - store # missing Errno::EINVAL implementation
-      - values_at # Hash#values_at is not implemented
+      # missing `Errno::EINVAL` implementation
+      - element_set
+      # missing `Errno::EINVAL` implementation
+      - store
+      # `Hash#values_at` is not implemented
+      - values_at
   - suite: kernel
     specs:
       - Integer
   - suite: matchdata
   - suite: math
     skip:
-      - gamma # missing support for Bignum
-      - log2 # missing support for Bignum
+      # missing support for Bignum
+      - gamma
+      # missing support for Bignum
+      - log2
   - suite: regexp
   - suite: string
     specs:
       - scan
   - suite: symbol
-    specs:
-      - all_symbols
+    skip:
+      # Requires investments to Unicode support in `String` and Unicode
+      # titlecase support, which does not exist in `core` or `std`.
+      - capitalize
       # Requires investments to Unicode support in `String`
-      # - capitalize
-      - case_compare
-      - casecmp
-      - comparison
-      # Requires investments to Unicode support in `String`
-      # - downcase
-      - dup
+      - downcase
       # Depends on `Regexp` indexing fixes
-      # - element_reference
-      - empty
-      - encoding
-      - equal_value
-      - id2name
+      - element_reference
       # fails with an mruby `SyntaxError`
       # upstream bug: https://github.com/mruby/mruby/issues/5055
-      # - inspect
-      - intern
-      - length
-      - match
-      - next
-      - size
+      # spinoso-symbol ported these test cases to Rust tests, which pass.
+      - inspect
       # Depends on `Regexp` indexing fixes
-      # - slice
-      - succ
-      - swapcase
-      - symbol
-      - to_proc
-      - to_s
-      - to_sym
+      - slice
       # Requires investments to Unicode support in `String`
-      # - upcase
+      - upcase
 library:
   - suite: abbrev
+  - suite: base64
   - suite: delegate
     specs:
       - skip_all
   - suite: monitor
   - suite: securerandom
     skip:
-      - random_bytes # specs require ASCII-8BIT encoding for Strings
-      - random_number # missing support for Bignum and Range arguments
+      # specs require ASCII-8BIT / BINARY encoding for `String`s
+      - random_bytes
+      # missing support for Bignum and Range arguments
+      - random_number
   - suite: shellwords
     skip:
-      - shellwords # missing String#gsub support for back references
+      # missing `String#gsub` support for back references
+      - shellwords
   - suite: stringscanner
   - suite: time
     specs:
-      - skip_all # missing date package
+      # missing `date` package
+      - skip_all
   - suite: uri
     skip:
       - parse
-  - suite: base64
