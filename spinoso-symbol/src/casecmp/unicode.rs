@@ -12,8 +12,8 @@ use focaccia::CaseFold;
 /// interner. Unresolved symbols are compared as if they resolve to `&[]`.
 ///
 /// This comparison function attempts to convert each symbol's byte content to a
-/// UTF-8 [`str`]. If both symbols resolve to UTF-8 contents, [Unicode case
-/// folding] is used when comparing the contents and this function returns
+/// UTF-8 [`str`](prim@str). If both symbols resolve to UTF-8 contents, [Unicode
+/// case folding] is used when comparing the contents and this function returns
 /// `Ok(Some(bool))`. If neither symbol resolves to UTF-8 contents, this
 /// function falls back to [`ascii_casecmp`] and returns `Ok(Some(bool))`.
 /// Otherwise, the two symbols have byte contents with different encodings and
