@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::prelude::*;
 use crate::ffi;
-use crate::fs::RUBY_LOAD_PATH;
+use crate::fs::{normalize_slashes, RUBY_LOAD_PATH};
 use crate::state::parser::Context;
 
 const RUBY_EXTENSION: &str = "rb";
@@ -29,8 +29,8 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
         message.extend_from_slice(filename);
         return Err(LoadError::from(message).into());
     }
-    let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-        .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
+    let context = normalize_slashes(path.to_owned())?;
+    let context = Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
     interp.push_context(context)?;
     let result = interp.load_source(path);
     let _ = interp.pop_context()?;
@@ -66,8 +66,9 @@ pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<Relativ
         (path.to_owned(), None)
     };
     if interp.source_is_file(&path)? {
-        let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-            .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
+        let context = normalize_slashes(path.to_owned())?;
+        let context =
+            Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         interp.push_context(context)?;
         let result = interp.require_source(&path);
         let _ = interp.pop_context()?;
@@ -75,8 +76,9 @@ pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<Relativ
     }
     if let Some(path) = alternate {
         if interp.source_is_file(&path)? {
-            let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-                .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
+            let context = normalize_slashes(path.to_owned())?;
+            let context =
+                Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
             interp.push_context(context)?;
             let result = interp.require_source(&path);
             let _ = interp.pop_context()?;
