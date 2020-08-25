@@ -39,7 +39,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     array::mruby::init(interp)?;
     module::init(interp)?;
     // Some `Exception`s depend on: `attr_accessor` (defined in `Module`)
-    exception::init(interp)?;
+    exception::mruby::init(interp)?;
     comparable::init(interp)?;
     symbol::mruby::init(interp)?;
     artichoke::init(interp)?;

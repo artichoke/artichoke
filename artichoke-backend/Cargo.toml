@@ -23,6 +23,7 @@ rand = { version = "0.7", optional = true }
 rand_pcg = { version = "0.2", optional = true }
 regex = "1"
 spinoso-array = { version = "0.3", path = "../spinoso-array" }
+spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
 spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
 
