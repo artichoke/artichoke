@@ -53,6 +53,7 @@ dependencies = [
  "rand_pcg",
  "regex",
  "spinoso-array",
+ "spinoso-exception",
  "spinoso-securerandom",
  "spinoso-symbol",
  "target-lexicon",
