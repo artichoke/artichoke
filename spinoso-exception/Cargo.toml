@@ -1,0 +1,26 @@
+[package]
+name = "spinoso-exception"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+description = """
+Ruby Exception error structs
+"""
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["error", "exception", "no_std", "spinoso"]
+categories = ["rust-patterns"]
+
+[dependencies]
+bstr = { version = "0.2", default-features = false }
+
+[features]
+default = ["std"]
+# By default, `spinoso-exception` is `no_std` + `alloc`. This feature enables
+# `std::error::Error` impls.
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

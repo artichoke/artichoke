@@ -1,0 +1,74 @@
+//! Ruby exception class implementations.
+//!
+//! See crate-level documentation for more about the types exposed in this
+//! module.
+
+mod exception;
+mod nomemoryerror;
+mod scripterror;
+mod loaderror;
+mod notimplementederror;
+mod syntaxerror;
+mod securityerror;
+mod signalexception;
+mod interrupt;
+mod standarderror;
+mod argumenterror;
+mod uncaughtthrowerror;
+mod encodingerror;
+mod fibererror;
+mod ioerror;
+mod eoferror;
+mod indexerror;
+mod keyerror;
+mod stopiteration;
+mod localjumperror;
+mod nameerror;
+mod nomethoderror;
+mod rangeerror;
+mod floatdomainerror;
+mod regexperror;
+mod runtimeerror;
+mod frozenerror;
+mod systemcallerror;
+mod threaderror;
+mod typeerror;
+mod zerodivisionerror;
+mod systemexit;
+mod systemstackerror;
+mod fatal;
+
+pub use exception::Exception;
+pub use nomemoryerror::NoMemoryError;
+pub use scripterror::ScriptError;
+pub use loaderror::LoadError;
+pub use notimplementederror::NotImplementedError;
+pub use syntaxerror::SyntaxError;
+pub use securityerror::SecurityError;
+pub use signalexception::SignalException;
+pub use interrupt::Interrupt;
+pub use standarderror::StandardError;
+pub use argumenterror::ArgumentError;
+pub use uncaughtthrowerror::UncaughtThrowError;
+pub use encodingerror::EncodingError;
+pub use fibererror::FiberError;
+pub use ioerror::IOError;
+pub use eoferror::EOFError;
+pub use indexerror::IndexError;
+pub use keyerror::KeyError;
+pub use stopiteration::StopIteration;
+pub use localjumperror::LocalJumpError;
+pub use nameerror::NameError;
+pub use nomethoderror::NoMethodError;
+pub use rangeerror::RangeError;
+pub use floatdomainerror::FloatDomainError;
+pub use regexperror::RegexpError;
+pub use runtimeerror::RuntimeError;
+pub use frozenerror::FrozenError;
+pub use systemcallerror::SystemCallError;
+pub use threaderror::ThreadError;
+pub use typeerror::TypeError;
+pub use zerodivisionerror::ZeroDivisionError;
+pub use systemexit::SystemExit;
+pub use systemstackerror::SystemStackError;
+pub use fatal::Fatal;
