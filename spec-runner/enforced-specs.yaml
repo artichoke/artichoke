@@ -47,17 +47,22 @@ core:
   - suite: comparable
   - suite: env
     skip:
-      - element_set # missing Errno::EINVAL implementation
-      - store # missing Errno::EINVAL implementation
-      - values_at # Hash#values_at is not implemented
+      # missing `Errno::EINVAL` implementation
+      - element_set
+      # missing `Errno::EINVAL` implementation
+      - store
+      # `Hash#values_at` is not implemented
+      - values_at
   - suite: kernel
     specs:
       - Integer
   - suite: matchdata
   - suite: math
     skip:
-      - gamma # missing support for Bignum
-      - log2 # missing support for Bignum
+      # missing support for Bignum
+      - gamma
+      # missing support for Bignum
+      - log2
   - suite: regexp
   - suite: string
     specs:
@@ -81,22 +86,26 @@ core:
       - upcase
 library:
   - suite: abbrev
+  - suite: base64
   - suite: delegate
     specs:
       - skip_all
   - suite: monitor
   - suite: securerandom
     skip:
-      - random_bytes # specs require ASCII-8BIT encoding for Strings
-      - random_number # missing support for Bignum and Range arguments
+      # specs require ASCII-8BIT / BINARY encoding for `String`s
+      - random_bytes
+      # missing support for Bignum and Range arguments
+      - random_number
   - suite: shellwords
     skip:
-      - shellwords # missing String#gsub support for back references
+      # missing `String#gsub` support for back references
+      - shellwords
   - suite: stringscanner
   - suite: time
     specs:
-      - skip_all # missing date package
+      # missing `date` package
+      - skip_all
   - suite: uri
     skip:
       - parse
-  - suite: base64
