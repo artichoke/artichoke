@@ -11,6 +11,7 @@ keywords = ["artichoke", "artichoke-ruby", "mruby", "ruby"]
 categories = ["api-bindings"]
 
 [dependencies]
+artichoke-core = { version = "0.3", path = "../artichoke-core" }
 bstr = { version = "0.2", default-features = false, features = ["std"] }
 chrono = "0.4"
 dtoa = "0.4"
@@ -27,12 +28,9 @@ spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
 spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
 
-[dependencies.artichoke-core]
-path = "../artichoke-core"
-
 [dependencies.onig]
 git = "https://github.com/artichoke/rust-onig"
-rev = "ec266cae185ef4119008ea0b4799b9abd7161436"
+rev = "v6.0.0-artichoke.2"
 default-features = false
 optional = true
 
