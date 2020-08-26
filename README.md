@@ -15,8 +15,8 @@
 </p>
 
 Artichoke is a Ruby implementation written in Rust and Ruby. Artichoke intends
-to be [MRI-compatible](https://github.com/ruby/spec) and targets Ruby 2.6.3.
-Artichoke provides a Ruby runtime implemented in Rust and Ruby.
+to be [MRI-compatible][ruby-spec] and targets Ruby 2.6.3. Artichoke provides a
+Ruby runtime implemented in Rust and Ruby.
 
 ## Try Artichoke
 
@@ -28,18 +28,23 @@ Artichoke provides a Ruby runtime implemented in Rust and Ruby.
   <em>Artichoke Ruby Wasm Playground</em>
 </p>
 
-You can [try Artichoke in your browser](https://artichoke.run). The
-[Artichoke Playground](https://github.com/artichoke/playground) runs a
-[WebAssembly](https://webassembly.org/) build of Artichoke.
+You can [try Artichoke in your browser][playground]. The [Artichoke
+Playground][playground-repo] runs a [WebAssembly] build of Artichoke.
 
 ## Install Artichoke
 
 ### Prebuilt nightly binaries
 
-[Download a prebuilt binary from artichoke/nightly](https://github.com/artichoke/nightly/releases/latest).
-Binaries are available for Linux, Linux/Musl, macOS, and Windows.
+[Download a prebuilt binary from artichoke/nightly][nightlies]. Binaries are
+available for Linux, Linux/musl, macOS, and Windows.
 
 These daily binaries track the latest master branch of Artichoke.
+
+Binaries are also distributed through [ruby-build]. To install with [rbenv]:
+
+```bash
+rbenv install artichoke-dev
+```
 
 ### Cargo
 
@@ -56,7 +61,7 @@ Rust, clang, and Ruby. [`BUILD.md`](BUILD.md) has more detail on
 
 ### Docker
 
-[Artichoke is available on Docker Hub](https://hub.docker.com/r/artichokeruby/artichoke).
+[Artichoke is available on Docker Hub][docker-hub].
 
 You can launch a REPL by running:
 
@@ -71,7 +76,7 @@ Artichoke ships with two binaries: `airb` and `artichoke`.
 ### `airb`
 
 `airb` is the Artichoke implementation of `irb` and is an interactive Ruby shell
-and [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop).
+and [REPL].
 
 `airb` is a readline-enabled shell, although it does not persist history.
 
@@ -112,36 +117,33 @@ ARGS:
 Artichoke is [designed to enable experimentation](VISION.md). The top goals of
 the project are:
 
-- [Support WebAssembly as a build target](https://github.com/artichoke/artichoke/labels/O-wasm-unknown).
+- [Support WebAssembly as a build target][o-wasm].
 - Support embedding and executing Ruby in untrusted environments.
-- [Distribute Ruby applications as single-binary artifacts](https://github.com/artichoke/artichoke/labels/A-single-binary).
-- [Implement Ruby with state-of-the-art dependencies](https://github.com/artichoke/artichoke/labels/A-deps).
-- Experiment with VMs to support
-  [dynamic codegen](https://github.com/artichoke/artichoke/labels/A-codegen),
-  [ahead of time compilation](https://github.com/artichoke/artichoke/labels/A-compiler),
-  [parallelism and eliminating the GIL](https://github.com/artichoke/artichoke/labels/A-parallelism),
-  and novel
-  [memory management and garbage collection techniques](https://github.com/artichoke/artichoke/labels/A-memory-management).
+- [Distribute Ruby applications as single-binary artifacts][a-single-binary].
+- [Implement Ruby with state-of-the-art dependencies][a-deps].
+- Experiment with VMs to support [dynamic codegen][a-codegen], [ahead of time
+  compilation][a-compiler], [parallelism and eliminating the
+  GIL][a-parallelism], and novel [memory management and garbage collection
+  techniques][a-memory-management].
 
 ## Contributing
 
 Artichoke aspires to be a Ruby 2.6.3-compatible implementation of the Ruby
-programming language.
-[There is lots to do](https://github.com/artichoke/artichoke/issues).
+programming language. [There is lots to do][file-an-issue].
 
 If Artichoke does not run Ruby source code in the same way that MRI does, it is
-a bug and we would appreciate if you
-[filed an issue so we can fix it](https://github.com/artichoke/artichoke/issues/new).
+a bug and we would appreciate if you [filed an issue so we can fix
+it][file-an-issue].
 
 If you would like to contribute code 👩‍💻👨‍💻, find an issue that looks interesting
 and leave a comment that you're beginning to investigate. If there is no issue,
-please file one before beginning to work on a PR.
-[Good first issues are labeled `E-easy`](https://github.com/artichoke/artichoke/labels/E-easy).
+please file one before beginning to work on a PR. [Good first issues are labeled
+`E-easy`][e-easy].
 
 ### Discussion
 
-If you'd like to engage in a discussion outside of GitHub, you can
-[join Artichoke's public Discord server](https://discord.gg/QCe2tp2).
+If you'd like to engage in a discussion outside of GitHub, you can [join
+Artichoke's public Discord server][discord].
 
 ## License
 
@@ -150,3 +152,24 @@ If you'd like to engage in a discussion outside of GitHub, you can
 Some portions of Artichoke are derived from third party sources. The READMEs in
 each crate discuss which third party licenses are applicable to the sources and
 derived works in Artichoke.
+
+[ruby-spec]: https://github.com/ruby/spec
+[playground]: https://artichoke.run
+[playground-repo]: https://github.com/artichoke/playground
+[webassembly]: https://webassembly.org/
+[nightlies]: https://github.com/artichoke/nightly/releases/latest
+[docker-hub]: https://hub.docker.com/r/artichokeruby/artichoke
+[ruby-build]: https://github.com/rbenv/ruby-build
+[rbenv]: https://github.com/rbenv/rbenv
+[repl]: https://en.wikipedia.org/wiki/Interactive_Ruby_Shell
+[o-wasm]: https://github.com/artichoke/artichoke/labels/O-wasm-unknown
+[a-single-binary]: https://github.com/artichoke/artichoke/labels/A-single-binary
+[a-deps]: https://github.com/artichoke/artichoke/labels/A-deps
+[a-codegen]: https://github.com/artichoke/artichoke/labels/A-codegen
+[a-compiler]: https://github.com/artichoke/artichoke/labels/A-compiler
+[a-parallelism]: https://github.com/artichoke/artichoke/labels/A-parallelism
+[a-memory-management]:
+  https://github.com/artichoke/artichoke/labels/A-memory-management
+[file-an-issue]: https://github.com/artichoke/artichoke/issues
+[discord]: https://discord.gg/QCe2tp2
+[e-easy]: https://github.com/artichoke/artichoke/labels/E-easy
