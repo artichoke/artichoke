@@ -30,8 +30,8 @@ PLATFORMS
 
 DEPENDENCIES
   rake (>= 12.3.3)
-  rubocop
-  rubocop-rake
+  rubocop (~> 0.89)
+  rubocop-rake (~> 0.5)
 
 BUNDLED WITH
    2.0.2
