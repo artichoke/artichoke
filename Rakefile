@@ -41,7 +41,7 @@ namespace :lint do
       'RUBYSPEC.md',
       'VISION.md',
       'artichoke-backend/README.md',
-      'artichoke-backend/src/extn/stdlib/gen/README.md',
+      'artichoke-backend/src/extn/stdlib/vendor/gen/README.md',
       'artichoke-backend/vendor/README.md',
       'artichoke-core/README.md',
       'spec-runner/README.md',

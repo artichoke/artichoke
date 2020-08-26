@@ -115,14 +115,6 @@ On macOS, you can install Node.js with
 brew install node
 ```
 
-### Node.js Packages
-
-Once you have Node.js installed, you can install the packages specified in
-[`package.json`](package.json).
-
-Node.js packages are automatically installed by linting tasks defined in the
-[`Rakefile`](Rakefile).
-
 ## Code Quality
 
 ### Linting
