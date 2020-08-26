@@ -30,7 +30,7 @@ spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
 
 [dependencies.onig]
 git = "https://github.com/artichoke/rust-onig"
-rev = "v6.0.0-artichoke.2"
+rev = "v6.0.0"
 default-features = false
 optional = true
 

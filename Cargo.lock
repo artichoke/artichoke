@@ -344,7 +344,7 @@ checksum = "260e51e7efe62b592207e9e13a68e43692a7a279171d6ba57abd208bf23645ad"
 [[package]]
 name = "onig"
 version = "6.0.0"
-source = "git+https://github.com/artichoke/rust-onig?rev=v6.0.0-artichoke.2#6588100a1f29afb0412f778de14db611ee0d0a10"
+source = "git+https://github.com/artichoke/rust-onig?rev=v6.0.0#742dc25ab7750c21493b666b90bdee7656d0b221"
 dependencies = [
  "bitflags",
  "lazy_static",
@@ -355,7 +355,7 @@ dependencies = [
 [[package]]
 name = "onig_sys"
 version = "69.5.0"
-source = "git+https://github.com/artichoke/rust-onig?rev=v6.0.0-artichoke.2#6588100a1f29afb0412f778de14db611ee0d0a10"
+source = "git+https://github.com/artichoke/rust-onig?rev=v6.0.0#742dc25ab7750c21493b666b90bdee7656d0b221"
 dependencies = [
  "cc",
  "pkg-config",
