@@ -1,6 +1,7 @@
 //! Ruby `Array` based on [`Vec`].
 
 use alloc::boxed::Box;
+use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp;
 use core::slice::{Iter, IterMut};
@@ -129,8 +130,7 @@ impl<T> Array<T> {
     #[inline]
     #[must_use]
     pub fn assoc(first: T, second: T) -> Self {
-        let pair: [T; 2] = [first, second];
-        Self::from(pair)
+        Self(vec![first, second])
     }
 
     /// Returns an iterator over the slice.
@@ -872,7 +872,7 @@ where
     #[inline]
     #[must_use]
     pub fn with_len_and_default(len: usize, default: T) -> Self {
-        Self(alloc::vec![default; len])
+        Self(vec![default; len])
     }
 
     /// Appends the elements of `other` to self.
