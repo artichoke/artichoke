@@ -21,6 +21,8 @@
 
 #include <mruby-sys/ext.h>
 
+const uint8_t mrblib_irep[] = {0};
+
 // Check whether `mrb_value` is nil, false, or true
 
 MRB_API _Bool

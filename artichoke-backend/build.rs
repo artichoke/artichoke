@@ -100,7 +100,7 @@ mod libmruby {
     use std::env;
     use std::ffi::OsStr;
     use std::fs;
-    use std::path::{Component, PathBuf};
+    use std::path::PathBuf;
     use std::process::Command;
     use std::str;
     use target_lexicon::{Architecture, OperatingSystem, Triple};
@@ -214,15 +214,15 @@ mod libmruby {
             let is_required_gem_source = gems().iter().any(|gem| {
                 source
                     .components()
-                    .any(|component| component == Component::Normal(OsStr::new(gem)))
+                    .any(|component| component.as_os_str() == OsStr::new(gem))
             });
             if is_core_source || is_required_gem_source {
                 let is_build_source = relative_source
                     .components()
-                    .any(|component| component == Component::Normal(OsStr::new("build")));
+                    .any(|component| component.as_os_str() == OsStr::new("build"));
                 let is_test_source = relative_source
                     .components()
-                    .any(|component| component == Component::Normal(OsStr::new("test")));
+                    .any(|component| component.as_os_str() == OsStr::new("test"));
                 if is_build_source || is_test_source {
                     continue;
                 }
@@ -237,7 +237,7 @@ mod libmruby {
             let relative_source = source.strip_prefix(mruby_generated_source_dir()).unwrap();
             let is_test_source = relative_source
                 .components()
-                .any(|component| component == Component::Normal(OsStr::new("test")));
+                .any(|component| component.as_os_str() == OsStr::new("test"));
             if is_test_source {
                 continue;
             }

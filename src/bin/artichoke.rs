@@ -1,8 +1,15 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![warn(missing_docs, intra_doc_link_resolution_failure)]
+#![warn(clippy::cargo)]
+#![allow(unknown_lints)]
+#![warn(broken_intra_doc_links)]
+#![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
+#![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
+#![warn(trivial_casts, trivial_numeric_casts)]
+#![warn(unused_qualifications)]
+#![warn(variant_size_differences)]
 
 //! `artichoke` is the `ruby` binary frontend to Artichoke.
 //!
