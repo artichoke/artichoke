@@ -1,0 +1,28 @@
+[package]
+name = "scolapasta-hex"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+description = """
+no_std hexadecimal encoding utility package for Artichoke Ruby.
+"""
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["base16", "encoding", "hex", "hexadecimal", "no_std"]
+categories = ["encoding", "no-std"]
+
+[dependencies]
+
+[features]
+default = ["std"]
+# By default, `spinoso-symbol` is `no_std`. This feature enables
+# APIs that depend on `std::io::Write`.
+std = ["alloc"]
+# By default, `spinoso-symbol` is `no_std`. This feature enables
+# APIs that depend on `alloc::string::String`.
+alloc = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
