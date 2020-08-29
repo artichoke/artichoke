@@ -576,6 +576,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "scolapasta-hex"
+version = "0.1.0"
+
+[[package]]
 name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -657,6 +661,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "rand",
+ "scolapasta-hex",
  "uuid",
 ]
 

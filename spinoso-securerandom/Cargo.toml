@@ -17,6 +17,12 @@ base64 = "0.12"
 rand = "0.7"
 uuid = { version = "0.8", default-features = false, features = ["v4"] }
 
+[dependencies.scolapasta-hex]
+version = "0.1"
+path = "../scolapasta-hex"
+default-features = false
+features = ["alloc"]
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

@@ -103,7 +103,7 @@ use rand::{self, Rng, RngCore};
 use std::error;
 use uuid::Uuid;
 
-pub mod hex;
+use scolapasta_hex as hex;
 
 const DEFAULT_REQUESTED_BYTES: usize = 16;
 

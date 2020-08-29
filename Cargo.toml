@@ -34,6 +34,7 @@ target-lexicon = "0.11.0"
 members = [
   "artichoke-backend",
   "artichoke-core",
+  "scolapasta-hex",
   "spec-runner",
   "spinoso-array",
   "spinoso-exception",
