@@ -16,11 +16,11 @@ categories = ["encoding", "no-std"]
 
 [features]
 default = ["std"]
-# By default, `spinoso-symbol` is `no_std`. This feature enables
-# APIs that depend on `std::io::Write`.
+# By default, `scolapasta-hex` is `no_std`. This feature enables APIs that
+# depend on `std::io::Write`.
 std = ["alloc"]
-# By default, `spinoso-symbol` is `no_std`. This feature enables
-# APIs that depend on `alloc::string::String`.
+# By default, `scolapasta-hex` is `no_std`. This feature enables APIs that
+# depend on `alloc::string::String`.
 alloc = []
 
 [package.metadata.docs.rs]

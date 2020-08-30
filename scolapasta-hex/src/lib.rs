@@ -67,7 +67,7 @@
 //! [Base 16 encoding]: https://tools.ietf.org/html/rfc4648#section-8
 //! [`io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
 
-// `spinoso-symbol` is a `no_std` crate unless the `std` feature is enabled.
+// `scolapasta-hex` is a `no_std` crate unless the `std` feature is enabled.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // Having access to `String` in tests is convenient to collect `Inspect`
@@ -92,7 +92,7 @@ readme!();
 #[cfg(feature = "alloc")]
 use alloc::string::String;
 use core::fmt;
-use core::iter::{FusedIterator, Peekable};
+use core::iter::FusedIterator;
 use core::slice;
 use core::str::Chars;
 #[cfg(feature = "std")]
@@ -231,7 +231,7 @@ where
 #[derive(Debug, Clone)]
 pub struct Hex<'a> {
     iter: slice::Iter<'a, u8>,
-    escaped_byte: Option<Peekable<EscapedByte>>,
+    escaped_byte: Option<EscapedByte>,
 }
 
 impl<'a> Hex<'a> {
@@ -256,12 +256,12 @@ impl<'a> Hex<'a> {
     #[inline]
     #[must_use]
     pub fn len(&self) -> usize {
-        if self.escaped_byte.is_some() {
+        if let Some(ref escaped_byte) = self.escaped_byte {
             let remaining_bytes = self.iter.as_slice().len();
             // Every byte expands to two hexadecimal ASCII `char`s.
             let remaining_bytes_encoded_len = remaining_bytes.saturating_mul(2);
-            // Add one for the dangling char from the `EscapedByte` iterator.
-            remaining_bytes_encoded_len.saturating_add(1)
+            // Add the dangling char(s) from the `EscapedByte` iterator.
+            remaining_bytes_encoded_len.saturating_add(escaped_byte.len())
         } else {
             let remaining_bytes = self.iter.as_slice().len();
             // Every byte expands to two hexadecimal ASCII `char`s.
@@ -291,7 +291,11 @@ impl<'a> Hex<'a> {
     #[inline]
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.iter.as_slice().is_empty() && self.escaped_byte.is_none()
+        if let Some(ref escaped_byte) = self.escaped_byte {
+            self.iter.as_slice().is_empty() && escaped_byte.is_empty()
+        } else {
+            self.iter.as_slice().is_empty()
+        }
     }
 }
 
@@ -317,11 +321,8 @@ impl<'a> Iterator for Hex<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(mut escaped) = self.escaped_byte.take() {
+        if let Some(ref mut escaped) = self.escaped_byte {
             let next = escaped.next();
-            if escaped.peek().is_some() {
-                self.escaped_byte = Some(escaped);
-            }
             if next.is_some() {
                 return next;
             }
@@ -329,7 +330,7 @@ impl<'a> Iterator for Hex<'a> {
         let byte = self.iter.next().copied()?;
         let mut escaped = EscapedByte::from(byte);
         let next = escaped.next()?;
-        self.escaped_byte = Some(escaped.peekable());
+        self.escaped_byte = Some(escaped);
         Some(next)
     }
 
@@ -361,6 +362,28 @@ impl<'a> ExactSizeIterator for Hex<'a> {}
 struct EscapedByte(Chars<'static>);
 
 impl EscapedByte {
+    /// Views the underlying data as a subslice of the original data.
+    ///
+    /// This has `'static` lifetime, and so the iterator can continue to be used
+    /// while this exists.
+    #[inline]
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        self.0.as_str()
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.as_str().len()
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.as_str().is_empty()
+    }
+
     /// Map from a `u8` to a hex encoded string literal.
     ///
     /// For example, `00`, `20` or `ff`.
