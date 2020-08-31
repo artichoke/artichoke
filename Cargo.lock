@@ -659,7 +659,7 @@ dependencies = [
 name = "spinoso-exception"
 version = "0.1.0"
 dependencies = [
- "bstr",
+ "scolapasta-string-escape",
 ]
 
 [[package]]

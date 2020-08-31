@@ -2,10 +2,10 @@ use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
+use scolapasta_string_escape::format_debug_escape_into;
 #[cfg(feature = "std")]
 use std::error;
 
-use crate::string;
 use crate::RubyException;
 
 const DEFAULT_MESSAGE: &[u8] = b"FloatDomainError";
@@ -139,7 +139,7 @@ impl fmt::Display for FloatDomainError {
         f.write_str(self.name())?;
         f.write_str(" (")?;
         let message = self.message.as_ref();
-        string::format_into(message, &mut f)?;
+        format_debug_escape_into(message, &mut f)?;
         f.write_str(")")?;
         Ok(())
     }
