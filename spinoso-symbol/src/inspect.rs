@@ -1,10 +1,11 @@
 use bstr::{ByteSlice, CharIndices};
 use core::convert::TryFrom;
 use core::iter::FusedIterator;
+use scolapasta_string_escape::{
+    is_ascii_char_with_escape, Literal, REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES,
+};
 
 use crate::ident::IdentifierType;
-use crate::literal::Literal;
-use crate::unicode::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
 
 /// An iterator that yields a debug representation of a `Symbol` and its byte
 /// contents as a sequence of `char`s.
@@ -211,9 +212,9 @@ impl<'a> Iterator for State<'a> {
                     return next;
                 }
                 '"' | '\\' if self.is_ident => return Some(ch),
-                ch if Literal::is_ascii_char_with_escape(ch) => {
-                    let bytes = (ch as u32).to_le_bytes();
-                    let mut lit = Literal::from(bytes[0]);
+                ch if is_ascii_char_with_escape(ch) => {
+                    let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
+                    let mut lit = Literal::from(ascii_byte);
                     let next = lit.next();
                     self.next[0] = Some(lit);
                     return next;
@@ -284,9 +285,9 @@ impl<'a> DoubleEndedIterator for State<'a> {
                     return next;
                 }
                 '"' | '\\' if self.is_ident => return Some(ch),
-                ch if Literal::is_ascii_char_with_escape(ch) => {
-                    let bytes = (ch as u32).to_le_bytes();
-                    let mut lit = Literal::from(bytes[0]);
+                ch if is_ascii_char_with_escape(ch) => {
+                    let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
+                    let mut lit = Literal::from(ascii_byte);
                     let next = lit.next_back();
                     self.next_back[2] = Some(lit);
                     return next;

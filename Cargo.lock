@@ -679,6 +679,7 @@ dependencies = [
  "artichoke-core",
  "bstr",
  "focaccia",
+ "scolapasta-string-escape",
 ]
 
 [[package]]

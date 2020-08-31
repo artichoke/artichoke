@@ -52,8 +52,7 @@ use bstr::ByteSlice;
 use core::convert::TryFrom;
 use core::fmt;
 use core::str::FromStr;
-
-use crate::unicode::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
+use scolapasta_string_escape::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
 
 /// Valid types for Ruby identifiers.
 ///
