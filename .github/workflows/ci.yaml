@@ -117,6 +117,28 @@ jobs:
           cargo build --verbose --no-default-features --features inspect,artichoke
         working-directory: "spinoso-symbol"
 
+      - name: Compile scolapasta-hex with no default features
+        run: cargo build --verbose --no-default-features
+        working-directory: "scolapasta-hex"
+
+      - name: Compile scolapasta-hex with all features
+        run: cargo build --verbose --all-features
+        working-directory: "scolapasta-hex"
+
+      - name: Compile scolapasta-hex with some features
+        run: |
+          cargo build --verbose --no-default-features --features alloc
+          cargo build --verbose --no-default-features --features alloc,std
+        working-directory: "scolapasta-hex"
+
+      - name: Compile scolapasta-string-escape with no default features
+        run: cargo build --verbose --no-default-features
+        working-directory: "scolapasta-string-escape"
+
+      - name: Compile scolapasta-string-escape with all features
+        run: cargo build --verbose --all-features
+        working-directory: "scolapasta-string-escape"
+
   rust:
     name: Lint and format Rust
     runs-on: ubuntu-latest
