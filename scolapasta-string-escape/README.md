@@ -8,30 +8,6 @@
 [![API](https://docs.rs/scolapasta-string-escape/badge.svg)](https://docs.rs/scolapasta-string-escape)
 [![API trunk](https://img.shields.io/badge/docs-trunk-blue.svg)](https://artichoke.github.io/artichoke/scolapasta_string_escape/)
 
-Functions for encoding sequences of bytes into base 16 hex encoding.
-
-[Base 16 encoding] is an encoding scheme that uses a 16 character ASCII alphabet
-for encoding arbitrary octets.
-
-This crate offers encoders that:
-
-- Allocate and return a [`String`]: `encode`.
-- Encode into an already allocated [`String`]: `encode_into`.
-- Encode into a [`fmt::Write`]: `format_into`.
-- Encode into a [`io::Write`]: `write_into`.
-
-_Scolapasta_ is a colander used to drain pasta. Its a tool in the kitchen,
-similar to this utility crate for building Artichoke Ruby.
-
-## Usage
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-scolapasta-string-escape = "0.1"
-```
-
 Routines for debug escaping Ruby Strings.
 
 Ruby Strings are conventionally UTF-8 byte sequences. When calling
@@ -41,7 +17,10 @@ escaped to have a valid UTF-8 representation.
 This crate exposes functions and iterators for encoding arbitrary byte slices as
 valid, printable UTF-8.
 
-# Ruby debug escapes
+_Scolapasta_ is a colander used to drain pasta. Its a tool in the kitchen,
+similar to this utility crate for building Artichoke Ruby.
+
+## Ruby debug escapes
 
 Ruby produces debug escapes that look like:
 
@@ -54,7 +33,14 @@ Slash \\ and quote \" are escaped."
 => "Artichoke Ruby is made with Rust.\n\nInvalid UTF-8: \xFF.\n\nSlash \\ and quote \" are escaped."
 ```
 
-# Examples
+## Usage
+
+Add this to your `Cargo.toml`:
+
+```toml
+[dependencies]
+scolapasta-string-escape = "0.1"
+```
 
 To debug escape a conventionally UTF-8 bytestring:
 
