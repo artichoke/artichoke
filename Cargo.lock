@@ -52,6 +52,7 @@ dependencies = [
  "rand",
  "rand_pcg",
  "regex",
+ "scolapasta-string-escape",
  "spinoso-array",
  "spinoso-exception",
  "spinoso-securerandom",
