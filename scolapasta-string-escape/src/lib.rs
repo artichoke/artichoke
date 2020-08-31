@@ -64,7 +64,7 @@
 //!
 //! # fn example() -> Result<(), core::fmt::Error> {
 //! let mut escaped = String::new();
-//! format_debug_escape_into(EXAMPLE, &mut escaped)?;
+//! format_debug_escape_into(&mut escaped, EXAMPLE)?;
 //! assert_eq!(
 //!     escaped,
 //!     r#"Artichoke Ruby is made with Rust.\n\nInvalid UTF-8: \xFF.\n\nSlash \\ and quote \" are escaped."#,

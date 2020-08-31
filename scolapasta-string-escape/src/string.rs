@@ -21,7 +21,7 @@ use crate::unicode::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
 ///
 /// let mut message = String::from("cannot load such file -- ");
 /// let filename = b"utf8-invalid-name-\xFF";
-/// format_debug_escape_into(filename, &mut message);
+/// format_debug_escape_into(&mut message, filename);
 /// assert_eq!(r"cannot load such file -- utf8-invalid-name-\xFF", message);
 /// ```
 ///
@@ -29,10 +29,10 @@ use crate::unicode::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
 ///
 /// This method only returns an error when the given writer returns an
 /// error.
-pub fn format_debug_escape_into<T, W>(message: T, mut dest: W) -> fmt::Result
+pub fn format_debug_escape_into<W, T>(mut dest: W, message: T) -> fmt::Result
 where
-    T: AsRef<[u8]>,
     W: Write,
+    T: AsRef<[u8]>,
 {
     let mut enc = [0; 4];
     let message = message.as_ref();
@@ -83,7 +83,7 @@ mod tests {
     fn format_ascii_message() {
         let message = "Spinoso Exception";
         let mut dest = String::new();
-        format_debug_escape_into(message, &mut dest).unwrap();
+        format_debug_escape_into(&mut dest, message).unwrap();
         assert_eq!(dest, "Spinoso Exception");
     }
 
@@ -91,7 +91,7 @@ mod tests {
     fn format_unicode_message() {
         let message = "Spinoso Exception 💎🦀";
         let mut dest = String::new();
-        format_debug_escape_into(message, &mut dest).unwrap();
+        format_debug_escape_into(&mut dest, message).unwrap();
         assert_eq!(dest, "Spinoso Exception 💎🦀");
     }
 
@@ -99,7 +99,7 @@ mod tests {
     fn format_invalid_utf8_message() {
         let message = b"oh no! \xFF";
         let mut dest = String::new();
-        format_debug_escape_into(message, &mut dest).unwrap();
+        format_debug_escape_into(&mut dest, message).unwrap();
         assert_eq!(dest, r"oh no! \xFF");
     }
 
@@ -107,7 +107,7 @@ mod tests {
     fn format_escape_code_message() {
         let message = "yes to symbolic \t\n\x7F";
         let mut dest = String::new();
-        format_debug_escape_into(message, &mut dest).unwrap();
+        format_debug_escape_into(&mut dest, message).unwrap();
         assert_eq!(dest, r"yes to symbolic \t\n\x7F");
     }
 
@@ -115,7 +115,20 @@ mod tests {
     fn replacement_character() {
         let message = "This is the replacement character: \u{FFFD}";
         let mut dest = String::new();
-        format_debug_escape_into(message, &mut dest).unwrap();
+        format_debug_escape_into(&mut dest, message).unwrap();
         assert_eq!(dest, "This is the replacement character: \u{FFFD}");
+    }
+
+    #[test]
+    fn as_ref() {
+        let message = b"Danger".to_vec();
+        let mut dest = String::new();
+        format_debug_escape_into(&mut dest, message).unwrap();
+        assert_eq!(dest, "Danger");
+
+        let message = "Danger".to_string();
+        let mut dest = String::new();
+        format_debug_escape_into(&mut dest, message).unwrap();
+        assert_eq!(dest, "Danger");
     }
 }

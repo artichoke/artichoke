@@ -145,7 +145,7 @@ TEMPLATE = <<~AUTOGEN
           f.write_str(self.name())?;
           f.write_str(" (")?;
           let message = self.message.as_ref();
-          format_debug_escape_into(message, &mut f)?;
+          format_debug_escape_into(&mut f, message)?;
           f.write_str(")")?;
           Ok(())
       }

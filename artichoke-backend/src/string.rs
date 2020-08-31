@@ -47,7 +47,7 @@ pub fn format_unicode_debug_into<W>(dest: W, string: &[u8]) -> Result<(), WriteE
 where
     W: fmt::Write,
 {
-    format_debug_escape_into(string, dest).map_err(WriteError)
+    format_debug_escape_into(dest, string).map_err(WriteError)
 }
 
 pub fn format_int_into<W, I>(dest: W, value: I) -> Result<(), WriteError>
