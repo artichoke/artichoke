@@ -87,7 +87,7 @@ let literal = Literal::from(b'\x0C');
 assert_eq!(literal.collect::<String>(), r"\f");
 ```
 
-# `no_std`
+## `no_std`
 
 This crate is `no_std`. This crate does not depend on [`alloc`].
 

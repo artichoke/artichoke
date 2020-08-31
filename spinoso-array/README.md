@@ -58,9 +58,11 @@ spinoso-array has two backends:
 - `SmallArray` is based on [`SmallVec`] and implements the small vector
   optimization – small arrays are stored inline without a heap allocation.
 
-## Crate features
+## `no_std`
 
-`spinoso-array` is `no_std` compatible with a required dependency on [`alloc`].
+This crate is `no_std` compatible with a required dependency on [`alloc`].
+
+## Crate features
 
 All features are enabled by default.
 
