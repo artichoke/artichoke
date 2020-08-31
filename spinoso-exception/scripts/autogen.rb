@@ -8,10 +8,10 @@ TEMPLATE = <<~AUTOGEN
   use alloc::string::String;
   use alloc::vec::Vec;
   use core::fmt;
+  use scolapasta_string_escape::format_debug_escape_into;
   #[cfg(feature = "std")]
   use std::error;
 
-  use crate::string;
   use crate::RubyException;
 
   const DEFAULT_MESSAGE: &[u8] = b"$$exc_class_name$$";
@@ -145,7 +145,7 @@ TEMPLATE = <<~AUTOGEN
           f.write_str(self.name())?;
           f.write_str(" (")?;
           let message = self.message.as_ref();
-          string::format_into(message, &mut f)?;
+          format_debug_escape_into(&mut f, message)?;
           f.write_str(")")?;
           Ok(())
       }

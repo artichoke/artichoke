@@ -1,28 +1,131 @@
 use core::iter::FusedIterator;
 use core::str::Chars;
 
-/// Map from a byte to a String literal of a hex escape code.
+/// Returns whether a [`char`] is ASCII and has a literal escape code.
 ///
-/// For example, `\xFF` or `\f`.
+/// Control characters in the range `0x00..=0x1F`, `"`, `\` and `DEL` have
+/// non-trivial escapes.
 ///
-/// ASCII printable characters are passed through as is.
+/// # Examples
+///
+/// ```
+/// # use core::char::REPLACEMENT_CHARACTER;
+/// # use scolapasta_string_escape::is_ascii_char_with_escape;
+/// assert!(is_ascii_char_with_escape('\x00'));
+/// assert!(is_ascii_char_with_escape('"'));
+/// assert!(is_ascii_char_with_escape('\\'));
+///
+/// assert!(!is_ascii_char_with_escape('a'));
+/// assert!(!is_ascii_char_with_escape('Z'));
+/// assert!(!is_ascii_char_with_escape(';'));
+/// assert!(!is_ascii_char_with_escape('💎'));
+/// assert!(!is_ascii_char_with_escape(REPLACEMENT_CHARACTER));
+/// ```
+#[inline]
+#[must_use]
+pub const fn is_ascii_char_with_escape(ch: char) -> bool {
+    if !ch.is_ascii() {
+        return false;
+    }
+    let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
+    let escape = Literal::debug_escape(ascii_byte);
+    escape.len() > 1
+}
+
+/// Iterator of Ruby debug escape sequences for a byte.
+///
+/// This iterator's item type is [`char`].
+///
+/// Non printable bytes like `0xFF` or `0x0C` are escaped to `\xFF` or `\f`.
+///
+/// ASCII printable characters are passed through as is unless they are `"` or
+/// `\` since these fields are used to delimit strings and escape sequences.
+///
+/// # Usage notes
+///
+/// This iterator operates on individual bytes, which makes it unsuitable for
+/// debug printing a conventionally UTF-8 bytestring on its own. See
+/// [`format_debug_escape_into`] to debug format an entire bytestring.
+///
+/// # Examples
+///
+/// Printable ASCII characters are passed through unescaped:
+///
+/// ```
+/// # use scolapasta_string_escape::Literal;
+/// let literal = Literal::from(b'a');
+/// assert_eq!(literal.collect::<String>(), "a");
+///
+/// let literal = Literal::from(b';');
+/// assert_eq!(literal.collect::<String>(), ";");
+/// ```
+///
+/// `"` and `\` are escaped:
+///
+/// ```
+/// # use scolapasta_string_escape::Literal;
+/// let literal = Literal::from(b'"');
+/// assert_eq!(literal.collect::<String>(), r#"\""#);
+///
+/// let literal = Literal::from(b'\\');
+/// assert_eq!(literal.collect::<String>(), r"\\");
+/// ```
+///
+/// ASCII control characters are escaped:
+///
+/// ```
+/// # use scolapasta_string_escape::Literal;
+/// let literal = Literal::from(b'\0');
+/// assert_eq!(literal.collect::<String>(), r"\x00");
+///
+/// let literal = Literal::from(b'\x0A');
+/// assert_eq!(literal.collect::<String>(), r"\n");
+///
+/// let literal = Literal::from(b'\x0C');
+/// assert_eq!(literal.collect::<String>(), r"\f");
+///
+/// let literal = Literal::from(b'\x7F');
+/// assert_eq!(literal.collect::<String>(), r"\x7F");
+/// ```
+///
+/// UTF-8 invalid bytes are escaped:
+///
+/// ```
+/// # use scolapasta_string_escape::Literal;
+/// let literal = Literal::from(b'\xFF');
+/// assert_eq!(literal.collect::<String>(), r"\xFF");
+/// ```
+///
+/// [`format_debug_escape_into`]: crate::format_debug_escape_into
 #[derive(Debug, Clone)]
 #[must_use = "this `Literal` is an `Iterator`, which should be consumed if constructed"]
 pub struct Literal(Chars<'static>);
 
 impl Literal {
-    /// Returns whether a [`char`] is ASCII and has a literal escape code.
+    /// Views the underlying data as a subslice of the original data.
     ///
-    /// Control characters in the range `0x00..=0x1F`, `"`, `\` and `DEL` have
-    /// non-trivial escapes.
+    /// This has `'static` lifetime, and so the iterator can continue to be used
+    /// while this exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::Literal;
+    /// let mut literal = Literal::from(b'\0');
+    ///
+    /// assert_eq!(literal.as_str(), r"\x00");
+    /// literal.next();
+    /// assert_eq!(literal.as_str(), "x00");
+    /// literal.next();
+    /// literal.next();
+    /// assert_eq!(literal.as_str(), "0");
+    /// literal.next();
+    /// assert_eq!(literal.as_str(), "");
+    /// ```
     #[inline]
-    pub fn is_ascii_char_with_escape(ch: char) -> bool {
-        if !ch.is_ascii() {
-            return false;
-        }
-        let bytes = (ch as u32).to_le_bytes();
-        let ascii_byte = bytes[0];
-        Self::debug_escape(ascii_byte).len() > 1
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        self.0.as_str()
     }
 
     /// Return the debug escape code for the given byte.
@@ -30,10 +133,22 @@ impl Literal {
     /// Debug escapes can be hex escapes (`\xFF`), control character escapes
     /// (`\e`), or escape sequences for debug printing (`\"` or `\\`).
     ///
-    /// Printable ASCII characters that are not escape sequences are passed
+    /// Printable ASCII characters that do not have escape sequences are passed
     /// through untouched.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::Literal;
+    /// assert_eq!(Literal::debug_escape(255), r"\xFF");
+    /// assert_eq!(Literal::debug_escape(0x1B), r"\e");
+    /// assert_eq!(Literal::debug_escape(b'"'), r#"\""#);
+    /// assert_eq!(Literal::debug_escape(b'\\'), r"\\");
+    /// assert_eq!(Literal::debug_escape(b'a'), "a");
+    /// ```
+    #[must_use]
     #[allow(clippy::too_many_lines)]
-    pub fn debug_escape(value: u8) -> &'static str {
+    pub const fn debug_escape(byte: u8) -> &'static str {
         // Some control character bytes escape to non-hex literals:
         //
         // ```console
@@ -104,7 +219,7 @@ impl Literal {
         // [2.6.3] > :"\x20"
         // => :" "
         // ```
-        match value {
+        match byte {
             0 => r"\x00",
             1 => r"\x01",
             2 => r"\x02",
@@ -386,8 +501,9 @@ impl From<u8> for Literal {
     /// Printable ASCII characters that are not escape sequences are passed
     /// through untouched.
     #[inline]
-    fn from(value: u8) -> Self {
-        Self(Self::debug_escape(value).chars())
+    fn from(byte: u8) -> Self {
+        let escape = Self::debug_escape(byte);
+        Self(escape.chars())
     }
 }
 

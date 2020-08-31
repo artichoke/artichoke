@@ -52,6 +52,7 @@ dependencies = [
  "rand",
  "rand_pcg",
  "regex",
+ "scolapasta-string-escape",
  "spinoso-array",
  "spinoso-exception",
  "spinoso-securerandom",
@@ -580,6 +581,13 @@ name = "scolapasta-hex"
 version = "0.1.0"
 
 [[package]]
+name = "scolapasta-string-escape"
+version = "0.1.0"
+dependencies = [
+ "bstr",
+]
+
+[[package]]
 name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -652,7 +660,7 @@ dependencies = [
 name = "spinoso-exception"
 version = "0.1.0"
 dependencies = [
- "bstr",
+ "scolapasta-string-escape",
 ]
 
 [[package]]
@@ -672,6 +680,7 @@ dependencies = [
  "artichoke-core",
  "bstr",
  "focaccia",
+ "scolapasta-string-escape",
 ]
 
 [[package]]

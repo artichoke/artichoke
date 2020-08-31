@@ -6,7 +6,7 @@
 //!
 //! Artichoke aims to support ASCII, UTF-8, maybe UTF-8, and binary encodings.
 
-use bstr::ByteSlice;
+use scolapasta_string_escape::format_debug_escape_into;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
@@ -43,44 +43,32 @@ use crate::Artichoke;
 ///
 /// This method only returns an error when the given writer returns an
 /// error.
-// TODO: deprecate this method and replace it with something like
-// `spinoso_symbol::Inspect`.
-pub fn format_unicode_debug_into<W>(mut f: W, string: &[u8]) -> Result<(), WriteError>
+pub fn format_unicode_debug_into<W>(dest: W, string: &[u8]) -> Result<(), WriteError>
 where
     W: fmt::Write,
 {
-    for (start, end, ch) in string.char_indices() {
-        if ch == '\u{FFFD}' {
-            let slice = &string[start..end];
-            for byte in slice {
-                write!(f, r"\x{:X}", byte).map_err(WriteError)?;
-            }
-        } else {
-            write!(f, "{}", ch.escape_debug()).map_err(WriteError)?;
-        }
-    }
-    Ok(())
+    format_debug_escape_into(dest, string).map_err(WriteError)
 }
 
-pub fn format_int_into<W, I>(f: W, value: I) -> Result<(), WriteError>
+pub fn format_int_into<W, I>(dest: W, value: I) -> Result<(), WriteError>
 where
     W: fmt::Write,
     I: itoa::Integer,
 {
-    itoa::fmt(f, value)?;
+    itoa::fmt(dest, value)?;
     Ok(())
 }
 
-pub fn write_int_into<W, I>(f: W, value: I) -> Result<(), IoWriteError>
+pub fn write_int_into<W, I>(dest: W, value: I) -> Result<(), IoWriteError>
 where
     W: io::Write,
     I: itoa::Integer,
 {
-    itoa::write(f, value)?;
+    itoa::write(dest, value)?;
     Ok(())
 }
 
-pub fn write_float_into<W, F>(f: W, value: F) -> Result<(), IoWriteError>
+pub fn write_float_into<W, F>(dest: W, value: F) -> Result<(), IoWriteError>
 where
     W: io::Write,
     F: dtoa::Floating,
@@ -89,7 +77,7 @@ where
     // `format_into_int` above.
     //
     // See: https://github.com/dtolnay/dtoa/issues/18
-    dtoa::write(f, value)?;
+    dtoa::write(dest, value)?;
     Ok(())
 }
 

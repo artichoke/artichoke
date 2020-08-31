@@ -16,6 +16,7 @@ categories = ["data-structures", "no-std", "parser-implementations"]
 artichoke-core = { version = "0.3", path = "../artichoke-core", default-features = false, optional = true }
 bstr = { version = "0.2", optional = true, default-features = false }
 focaccia = { version = "1.0", optional = true, default-features = false }
+scolapasta-string-escape = { version = "0.1", path = "../scolapasta-string-escape", optional = true }
 
 [features]
 default = ["artichoke", "std"]
@@ -30,9 +31,9 @@ default = ["artichoke", "std"]
 artichoke = ["artichoke-core", "focaccia", "inspect"]
 # Implement an iterator for printing debug output of a bytestring associated
 # with a `Symbol` that is suitable for implementing `Symbol#inspect`.
-inspect = ["bstr", "ident-parser"]
+inspect = ["ident-parser"]
 # Add a parser for valid Ruby identifiers.
-ident-parser = ["bstr"]
+ident-parser = ["bstr", "scolapasta-string-escape"]
 # By default, `spinoso-symbol` is `no_std`. This feature enables
 # `std::error::Error` impls. This feature activates `focaccia/std` to enable
 # `Error` impls on the re-exported error structs.

@@ -109,9 +109,6 @@ extern crate alloc;
 use alloc::borrow::Cow;
 
 pub mod core;
-mod literal;
-mod string;
-mod unicode;
 
 #[doc(inline)]
 pub use self::core::*;

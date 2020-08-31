@@ -1,19 +1,24 @@
+#[doc(inline)]
 pub use core::char::REPLACEMENT_CHARACTER;
 
-// ```ruby
-// [2.6.3] > "\u{FFFD}"
-// => "�"
-// [2.6.3] > "\u{FFFD}".bytes
-// => [239, 191, 189]
-// [2.6.3] > "\u{FFFD}".ord.to_s(16)
-// => "fffd"
-// [2.6.3] > '�'.ord
-// => 65533
-// [2.6.3] > '�'.ord.to_s(16)
-// => "fffd"
-// [2.6.3] > '�'.bytes
-// => [239, 191, 189]
-// ```
+/// The UTF-8 encoded byte representation of `U+FFFD REPLACEMENT CHARACTER` (�).
+///
+/// # Examples
+///
+/// ```ruby
+/// [2.6.3] > "\u{FFFD}"
+/// => "�"
+/// [2.6.3] > "\u{FFFD}".bytes
+/// => [239, 191, 189]
+/// [2.6.3] > "\u{FFFD}".ord.to_s(16)
+/// => "fffd"
+/// [2.6.3] > '�'.ord
+/// => 65533
+/// [2.6.3] > '�'.ord.to_s(16)
+/// => "fffd"
+/// [2.6.3] > '�'.bytes
+/// => [239, 191, 189]
+/// ```
 pub const REPLACEMENT_CHARACTER_BYTES: [u8; 3] = [239, 191, 189];
 
 #[cfg(test)]

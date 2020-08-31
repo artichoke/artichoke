@@ -60,8 +60,8 @@
 //!   bytestring. Activating this feature also activates the **ident-parser**
 //!   feature.
 //! - **ident-parser** - Enables a parser to determing the Ruby identifier type,
-//!   if any, for a bytestring. Dropping this feature removes the `bstr`
-//!   dependency.
+//!   if any, for a bytestring. Dropping this feature removes the `bstr` and
+//!   `scolapasta-string-escape` dependencies.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
@@ -123,10 +123,6 @@ mod eq;
 mod ident;
 #[cfg(feature = "inspect")]
 mod inspect;
-#[cfg(feature = "inspect")]
-mod literal;
-#[cfg(any(feature = "ident-parser", feature = "inspect"))]
-mod unicode;
 
 #[cfg(test)]
 mod fixtures;
