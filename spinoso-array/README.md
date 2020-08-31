@@ -21,8 +21,8 @@ types in this crate can be passed by pointer over FFI.
 `O(n)` at worst.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
-Sardinia. The idea is that the data structures defined in the `spinoso` family
-of crates will form the backbone of Ruby Core in Artichoke.
+Sardinia. The data structures defined in the `spinoso` family of crates form the
+backbone of Ruby Core in Artichoke.
 
 ## Usage
 
@@ -58,9 +58,11 @@ spinoso-array has two backends:
 - `SmallArray` is based on [`SmallVec`] and implements the small vector
   optimization – small arrays are stored inline without a heap allocation.
 
-## Crate features
+## `no_std`
 
-`spinoso-array` is `no_std` compatible with a required dependency on [`alloc`].
+This crate is `no_std` compatible with a required dependency on [`alloc`].
+
+## Crate features
 
 All features are enabled by default.
 

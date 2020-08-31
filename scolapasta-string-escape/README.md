@@ -17,8 +17,9 @@ escaped to have a valid UTF-8 representation.
 This crate exposes functions and iterators for encoding arbitrary byte slices as
 valid, printable UTF-8.
 
-_Scolapasta_ is a colander used to drain pasta. Its a tool in the kitchen,
-similar to this utility crate for building Artichoke Ruby.
+_Scolapasta_ refers to a specialized colander used to drain pasta. The utilities
+defined in the `scolapasta` family of crates are the kitchen tools for preparing
+Artichoke Ruby.
 
 ## Ruby debug escapes
 
@@ -62,7 +63,6 @@ fn example() -> Result<(), core::fmt::Error> {
     );
     Ok(())
 }
-# example().unwrap();
 ```
 
 This crate exposes low level utilities for accessing escape internals. To escape
@@ -75,19 +75,19 @@ let literal = Literal::from(b'a');
 assert_eq!(literal.collect::<String>(), "a");
 
 let literal = Literal::from(b'\\');
-assert_eq!(literal.collect::<String>(), r"\\");
+assert_eq!(literal.as_str(), r"\\");
 
-let literal = Literal::from(b'\0');
-assert_eq!(literal.collect::<String>(), r"\x00");
+let literal = Literal::debug_escape(b'\0');
+assert_eq!(literal, r"\x00");
 
 let literal = Literal::from(b'\x0A');
-assert_eq!(literal.collect::<String>(), r"\n");
+assert_eq!(literal.as_str(), r"\n");
 
 let literal = Literal::from(b'\x0C');
 assert_eq!(literal.collect::<String>(), r"\f");
 ```
 
-# `no_std`
+## `no_std`
 
 This crate is `no_std`. This crate does not depend on [`alloc`].
 
