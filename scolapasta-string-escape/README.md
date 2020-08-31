@@ -63,7 +63,6 @@ fn example() -> Result<(), core::fmt::Error> {
     );
     Ok(())
 }
-# example().unwrap();
 ```
 
 This crate exposes low level utilities for accessing escape internals. To escape
@@ -76,13 +75,13 @@ let literal = Literal::from(b'a');
 assert_eq!(literal.collect::<String>(), "a");
 
 let literal = Literal::from(b'\\');
-assert_eq!(literal.collect::<String>(), r"\\");
+assert_eq!(literal.as_str(), r"\\");
 
-let literal = Literal::from(b'\0');
-assert_eq!(literal.collect::<String>(), r"\x00");
+let literal = Literal::debug_escape(b'\0');
+assert_eq!(literal, r"\x00");
 
 let literal = Literal::from(b'\x0A');
-assert_eq!(literal.collect::<String>(), r"\n");
+assert_eq!(literal.as_str(), r"\n");
 
 let literal = Literal::from(b'\x0C');
 assert_eq!(literal.collect::<String>(), r"\f");

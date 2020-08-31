@@ -45,7 +45,8 @@ assert_eq!(buf, "4172746963686f6b652052756279");
 This module also exposes an iterator:
 
 ```rust
-# use scolapasta_hex::Hex;
+use scolapasta_hex::Hex;
+
 let data = "Artichoke Ruby";
 let iter = Hex::from(data);
 assert_eq!(iter.collect::<String>(), "4172746963686f6b652052756279");
