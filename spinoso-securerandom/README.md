@@ -18,8 +18,8 @@ This implementation of `SecureRandom` supports the system RNG via the
 [`getrandom`] crate. This implementation does not depend on OpenSSL.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
-Sardinia. The idea is that the data structures defined in the `spinoso` family
-of crates will form the backbone of Ruby Core in Artichoke.
+Sardinia. The data structures defined in the `spinoso` family of crates form the
+backbone of Ruby Core in Artichoke.
 
 ## Usage
 

@@ -20,8 +20,9 @@ This crate offers encoders that:
 - Encode into a [`fmt::Write`]: `format_into`.
 - Encode into a [`io::Write`]: `write_into`.
 
-_Scolapasta_ is a colander used to drain pasta. Its a tool in the kitchen,
-similar to this utility crate for building Artichoke Ruby.
+_Scolapasta_ refers to a specialized colander used to drain pasta. The utilities
+defined in the `scolapasta` family of crates are the kitchen tools for preparing
+Artichoke Ruby.
 
 ## Usage
 

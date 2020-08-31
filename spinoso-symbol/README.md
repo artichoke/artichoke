@@ -21,8 +21,8 @@ compare. It is suitable for representing indexes into a string interner.
 > the context or meaning of that name.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
-Sardinia. The idea is that the data structures defined in the `spinoso` family
-of crates will form the backbone of Ruby Core in Artichoke.
+Sardinia. The data structures defined in the `spinoso` family of crates form the
+backbone of Ruby Core in Artichoke.
 
 # Artichoke integration
 
