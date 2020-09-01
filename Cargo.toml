@@ -41,6 +41,7 @@ members = [
   "spinoso-exception",
   "spinoso-securerandom",
   "spinoso-symbol",
+  "spinoso-time",
 ]
 
 [profile.release]
