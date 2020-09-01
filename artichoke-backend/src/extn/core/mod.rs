@@ -27,6 +27,7 @@ pub mod regexp;
 pub mod string;
 pub mod symbol;
 pub mod thread;
+#[cfg(feature = "core-time")]
 pub mod time;
 pub mod warning;
 
@@ -62,6 +63,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     regexp::mruby::init(interp)?;
     string::mruby::init(interp)?;
     thread::init(interp)?;
+    #[cfg(feature = "core-time")]
     time::mruby::init(interp)?;
     warning::init(interp)?;
     Ok(())

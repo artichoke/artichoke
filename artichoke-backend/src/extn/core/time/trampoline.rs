@@ -1,3 +1,5 @@
+//! Glue between mruby FFI and `Time` Rust implementation.
+
 use crate::extn::core::time::Time;
 use crate::extn::prelude::*;
 
@@ -38,16 +40,16 @@ where
 
 // Core
 
-pub fn to_int(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    Err(NotImplementedError::new().into())
+pub fn to_int(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let timestamp = time.to_int();
+    Ok(interp.convert(timestamp))
 }
 
-pub fn to_float(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    Err(NotImplementedError::new().into())
+pub fn to_float(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let duration = time.to_float();
+    Ok(interp.convert_mut(duration))
 }
 
 pub fn to_rational(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
@@ -57,18 +59,27 @@ pub fn to_rational(interp: &mut Artichoke, time: Value) -> Result<Value, Error> 
     Err(NotImplementedError::new().into())
 }
 
-pub fn cmp(interp: &mut Artichoke, time: Value, other: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    let _ = other;
-    Err(NotImplementedError::new().into())
+pub fn cmp(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    if let Ok(other) = unsafe { Time::unbox_from_value(&mut other, interp) } {
+        let cmp = time.cmp(&other);
+        Ok(interp.convert(cmp as i32))
+    } else {
+        let mut message = String::from("comparison of Time with ");
+        message.push_str(other.pretty_name(interp));
+        message.push_str(" failed");
+        Err(ArgumentError::from(message).into())
+    }
 }
 
-pub fn eql(interp: &mut Artichoke, time: Value, other: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    let _ = other;
-    Err(NotImplementedError::new().into())
+pub fn eql(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    if let Ok(other) = unsafe { Time::unbox_from_value(&mut other, interp) } {
+        let cmp = time.eq(&other);
+        Ok(interp.convert(cmp))
+    } else {
+        Ok(interp.convert(false))
+    }
 }
 
 pub fn hash(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
@@ -87,18 +98,14 @@ where
     Err(NotImplementedError::new().into())
 }
 
-pub fn initialize_copy(interp: &mut Artichoke, time: Value, from: Value) -> Result<Value, Error> {
-    // Time does not support clone. This is what the implementation of this
-    // function should be:
-    //
-    // let from = unsafe { Time::unbox_from_value(&mut from, interp)? };
-    // let result = from.clone();
-    // Time::box_into_value(result, time, interp)
-
-    let _ = interp;
-    let _ = time;
-    let _ = from;
-    Err(NotImplementedError::new().into())
+pub fn initialize_copy(
+    interp: &mut Artichoke,
+    time: Value,
+    mut from: Value,
+) -> Result<Value, Error> {
+    let from = unsafe { Time::unbox_from_value(&mut from, interp)? };
+    let result = from.clone();
+    Time::box_into_value(result, time, interp)
 }
 
 // Mutators and converters
@@ -114,10 +121,10 @@ pub fn mutate_to_local(
     Err(NotImplementedError::new().into())
 }
 
-pub fn mutate_to_utc(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    Err(NotImplementedError::new().into())
+pub fn mutate_to_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    let mut obj = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    *obj = obj.to_utc();
+    Ok(time)
 }
 
 pub fn as_local(
@@ -131,10 +138,10 @@ pub fn as_local(
     Err(NotImplementedError::new().into())
 }
 
-pub fn as_utc(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    Err(NotImplementedError::new().into())
+pub fn as_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let utc = time.to_utc();
+    Time::alloc_value(utc, interp)
 }
 
 // Inspect
@@ -152,6 +159,7 @@ pub fn to_string(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
 }
 
 pub fn to_array(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
+    // Need to implement `Convert` for timezone offset.
     let _ = interp;
     let _ = time;
     Err(NotImplementedError::new().into())
@@ -175,10 +183,11 @@ pub fn minus(interp: &mut Artichoke, time: Value, other: Value) -> Result<Value,
 
 // Coarse math
 
-pub fn succ(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    Err(NotImplementedError::new().into())
+pub fn succ(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    interp.warn(b"warning: Time#succ is obsolete; use time + 1")?;
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let next = time.succ();
+    Time::alloc_value(next, interp)
 }
 
 pub fn round(
@@ -196,64 +205,64 @@ pub fn round(
 
 pub fn second(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let second = time.inner().second();
+    let second = time.second();
     let result = interp.convert(second);
     Ok(result)
 }
 
 pub fn minute(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let minute = time.inner().minute();
+    let minute = time.minute();
     let result = interp.convert(minute);
     Ok(result)
 }
 
 pub fn hour(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let hour = time.inner().hour();
+    let hour = time.hour();
     let result = interp.convert(hour);
     Ok(result)
 }
 
 pub fn day(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let day = time.inner().day();
+    let day = time.day();
     let result = interp.convert(day);
     Ok(result)
 }
 
 pub fn month(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let month = time.inner().month();
+    let month = time.month();
     let result = interp.convert(month);
     Ok(result)
 }
 
 pub fn year(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year = time.inner().year();
+    let year = time.year();
     let result = interp.convert(year);
     Ok(result)
 }
 
 pub fn weekday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let weekday = time.inner().weekday();
+    let weekday = time.weekday();
     let result = interp.convert(weekday);
     Ok(result)
 }
 
 pub fn year_day(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year_day = time.inner().year_day();
+    let year_day = time.year_day();
     let result = interp.convert(year_day);
     Ok(result)
 }
 
-pub fn is_dst(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    Err(NotImplementedError::new().into())
+pub fn is_dst(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let is_dst = time.is_dst();
+    Ok(interp.convert(is_dst))
 }
 
 pub fn timezone(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
@@ -270,60 +279,60 @@ pub fn utc_offset(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
 
 // Timezone mode
 
-pub fn is_utc(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    Err(NotImplementedError::new().into())
+pub fn is_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let is_utc = time.is_utc();
+    Ok(interp.convert(is_utc))
 }
 
 // Day of week
 
 pub fn is_sunday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year = time.inner().is_sunday();
-    let result = interp.convert(year);
+    let is_sunday = time.is_sunday();
+    let result = interp.convert(is_sunday);
     Ok(result)
 }
 
 pub fn is_monday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year = time.inner().is_monday();
-    let result = interp.convert(year);
+    let is_monday = time.is_monday();
+    let result = interp.convert(is_monday);
     Ok(result)
 }
 
 pub fn is_tuesday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year = time.inner().is_tuesday();
-    let result = interp.convert(year);
+    let is_tuesday = time.is_tuesday();
+    let result = interp.convert(is_tuesday);
     Ok(result)
 }
 
 pub fn is_wednesday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year = time.inner().is_wednesday();
-    let result = interp.convert(year);
+    let is_wednesday = time.is_wednesday();
+    let result = interp.convert(is_wednesday);
     Ok(result)
 }
 
 pub fn is_thursday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year = time.inner().is_thursday();
-    let result = interp.convert(year);
+    let is_thursday = time.is_thursday();
+    let result = interp.convert(is_thursday);
     Ok(result)
 }
 
 pub fn is_friday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year = time.inner().is_friday();
-    let result = interp.convert(year);
+    let is_friday = time.is_friday();
+    let result = interp.convert(is_friday);
     Ok(result)
 }
 
 pub fn is_saturday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year = time.inner().is_saturday();
-    let result = interp.convert(year);
+    let is_saturday = time.is_saturday();
+    let result = interp.convert(is_saturday);
     Ok(result)
 }
 
@@ -331,14 +340,14 @@ pub fn is_saturday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Err
 
 pub fn microsecond(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let microsecond = time.inner().microsecond();
+    let microsecond = time.microsecond();
     let result = interp.convert(microsecond);
     Ok(result)
 }
 
 pub fn nanosecond(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let nanosecond = time.inner().nanosecond();
+    let nanosecond = time.nanosecond();
     let result = interp.convert(nanosecond);
     Ok(result)
 }

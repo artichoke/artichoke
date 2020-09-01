@@ -13,7 +13,6 @@ categories = ["api-bindings"]
 [dependencies]
 artichoke-core = { version = "0.3", path = "../artichoke-core" }
 bstr = { version = "0.2", default-features = false, features = ["std"] }
-chrono = "0.4"
 dtoa = "0.4"
 intaglio = "1.1"
 itoa = "0.4"
@@ -28,6 +27,7 @@ spinoso-array = { version = "0.3", path = "../spinoso-array" }
 spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
 spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
+spinoso-time = { version = "0.1", path = "../spinoso-time", optional = true }
 
 [dependencies.onig]
 git = "https://github.com/artichoke/rust-onig"
@@ -51,12 +51,14 @@ default = [
   "core-math-extra",
   "core-random",
   "core-regexp-oniguruma",
+  "core-time",
   "stdlib-securerandom"
 ]
 core-env-system = []
 core-math-extra = ["libm"]
 core-random = ["rand", "rand_pcg"]
 core-regexp-oniguruma = ["onig"]
+core-time = ["spinoso-time"]
 native-filesystem-access = []
 output-strategy-capture = []
 output-strategy-null = ["output-strategy-capture"]

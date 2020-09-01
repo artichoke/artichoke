@@ -71,10 +71,14 @@
 //! - **core-math-extra** - Activates additional dependencies to implement some
 //!   functions in the [`Math` module][core-mod-math].  When this feature is
 //!   disabled, these functions raise `NotImplementedError`.
-//! - **core-random** - This includes an implementation of the
+//! - **core-random** - Include an implementation of the
 //!   [`Random` class][core-class-random]. This feature includes additional
 //!   dependencies. When this feature is disabled, Artichoke does not have
 //!   support for generating psuedorandom numbers.
+//! - **core-time** - Include an implementation of the
+//!   [`Time` class][core-class-time]. This feature includes additional
+//!   dependencies. When this feature is disabled, Artichoke does not have
+//!   datetime support.
 //! - **stdlib-securerandom** - An implementation of a CSPRNG for the
 //!   [`SecureRandom` module][stdlib-mod-securerandom]. This feature includes
 //!   additional dependencies.  When this feature is disabled, the
@@ -85,6 +89,7 @@
 //! [core-obj-env]: https://ruby-doc.org/core-2.6.3/ENV.html
 //! [core-mod-math]: https://ruby-doc.org/core-2.6.3/Math.html
 //! [core-class-random]: https://ruby-doc.org/core-2.6.3/Random.html
+//! [core-class-time]: https://ruby-doc.org/core-2.6.3/Time.html
 //! [stdlib-mod-securerandom]: https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
 
 #![doc(html_root_url = "https://docs.rs/artichoke/0.1.0-pre.0")]
