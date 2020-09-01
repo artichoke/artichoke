@@ -104,7 +104,7 @@ pub fn initialize_copy(
     mut from: Value,
 ) -> Result<Value, Error> {
     let from = unsafe { Time::unbox_from_value(&mut from, interp)? };
-    let result = from.clone();
+    let result = *from;
     Time::box_into_value(result, time, interp)
 }
 

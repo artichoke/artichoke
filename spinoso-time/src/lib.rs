@@ -65,6 +65,7 @@ mod time;
 
 pub use time::chrono::{Offset, Time, ToA};
 
+#[allow(clippy::cast_possible_truncation)] // 1e9 < u32::MAX
 const NANOS_IN_SECOND: u32 = Duration::from_secs(1).as_nanos() as u32;
 
 /// Error returned when constructing a [`Time`] from a [`ToA`].

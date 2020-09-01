@@ -13,18 +13,18 @@ Time is an abstraction of dates and times.
 This module implements the [`Time`] class from Ruby Core.
 
 In Artichoke, Time is represented as a 64-bit signed integer of seconds since
-January 1, 1970 UTC (the Unix Epoch) and an unsigned 32-bit integer of
-subsecond nanoseconds. This allows representing roughly 584 billion years.
+January 1, 1970 UTC (the Unix Epoch) and an unsigned 32-bit integer of subsecond
+nanoseconds. This allows representing roughly 584 billion years.
 
-You can use this class in your application by accessing it directly. As a
-Core class, it is globally available:
+You can use this class in your application by accessing it directly. As a Core
+class, it is globally available:
 
 ```ruby
 Time.now
 ```
 
-This implementation of `Time` supports the system clock via the
-[`chrono`] and crates.
+This implementation of `Time` supports the system clock via the [`chrono`] and
+crates.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
@@ -41,7 +41,6 @@ spinoso-time = "0.1"
 
 ## Examples
 
-
 ```rust
 use spinoso_time::Time;
 // Get a local time set to the current time.
@@ -55,8 +54,7 @@ let timestamp = utc.to_int();
 
 ## License
 
-`spinoso-time` is licensed with the [MIT License](../LICENSE) (c) Ryan
-Lopopolo.
+`spinoso-time` is licensed with the [MIT License](../LICENSE) (c) Ryan Lopopolo.
 
 [`time`]: https://ruby-doc.org/core-2.6.3/Time.html
 [`chrono`]: https://crates.io/crates/chrono

@@ -96,6 +96,9 @@ impl Time {
     }
 
     /// Returns the name of the time zone used for _time_.
+    #[inline]
+    #[must_use]
+    #[allow(clippy::match_same_arms)]
     pub fn timezone(self) -> Option<&'static str> {
         match self.offset {
             Offset::Utc => Some("UTC"),
