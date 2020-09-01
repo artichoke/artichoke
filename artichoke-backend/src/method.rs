@@ -48,7 +48,7 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn method_type(&self) -> &Type {
+    pub const fn method_type(&self) -> &Type {
         &self.method_type
     }
 

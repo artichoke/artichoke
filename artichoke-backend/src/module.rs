@@ -128,7 +128,11 @@ pub struct Rclass {
 
 impl Rclass {
     #[must_use]
-    pub fn new(sym: u32, name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
+    pub const fn new(
+        sym: u32,
+        name: Box<CStr>,
+        enclosing_scope: Option<EnclosingRubyScope>,
+    ) -> Self {
         Self {
             sym,
             name,

@@ -343,7 +343,7 @@ impl NotDefinedError {
     }
 
     #[must_use]
-    pub fn item_type(&self) -> &str {
+    pub const fn item_type(&self) -> &str {
         match self {
             Self::EnclosingScope(_) => "enclosing scope",
             Self::Super(_) => "super class",
