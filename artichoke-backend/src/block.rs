@@ -155,13 +155,13 @@ impl Block {
     ///
     /// The block must not be `nil`.
     #[must_use]
-    pub unsafe fn new_unchecked(block: sys::mrb_value) -> Self {
+    pub const unsafe fn new_unchecked(block: sys::mrb_value) -> Self {
         Self(block)
     }
 
     #[inline]
     #[must_use]
-    pub fn inner(&self) -> sys::mrb_value {
+    pub const fn inner(&self) -> sys::mrb_value {
         self.0
     }
 

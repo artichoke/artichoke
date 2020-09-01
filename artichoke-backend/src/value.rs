@@ -76,7 +76,7 @@ impl Value {
     // TODO(GH-251): make `Value::inner` pub(crate).
     #[inline]
     #[must_use]
-    pub fn inner(&self) -> sys::mrb_value {
+    pub const fn inner(&self) -> sys::mrb_value {
         self.0
     }
 

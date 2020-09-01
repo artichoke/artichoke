@@ -56,7 +56,8 @@ impl State {
     }
 
     /// Create a new [`parser::State`] from a [`sys::mrb_state`].
-    pub fn try_init_parser(&mut self, mrb: &mut sys::mrb_state) {
+    #[doc(hidden)]
+    pub(crate) fn try_init_parser(&mut self, mrb: &mut sys::mrb_state) {
         if let Some(parser) = parser::State::new(mrb) {
             if let Some(old_parser) = self.parser.replace(parser) {
                 old_parser.close(mrb);

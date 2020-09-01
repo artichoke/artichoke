@@ -164,7 +164,7 @@ pub struct Rclass {
 
 impl Rclass {
     #[must_use]
-    pub fn new(name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
+    pub const fn new(name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
         Self {
             name,
             enclosing_scope,
@@ -255,7 +255,7 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn data_type(&self) -> &sys::mrb_data_type {
+    pub const fn data_type(&self) -> &sys::mrb_data_type {
         &self.data_type
     }
 

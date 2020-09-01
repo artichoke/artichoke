@@ -29,7 +29,7 @@ pub struct Artichoke {
 impl Artichoke {
     /// Create a new interpreter from an underlying `mrb` and a `State`.
     #[must_use]
-    pub fn new(mrb: NonNull<sys::mrb_state>, state: Box<State>) -> Self {
+    pub const fn new(mrb: NonNull<sys::mrb_state>, state: Box<State>) -> Self {
         let state = Some(state);
         Self { mrb, state }
     }
