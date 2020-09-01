@@ -41,6 +41,7 @@ members = [
   "spinoso-exception",
   "spinoso-securerandom",
   "spinoso-symbol",
+  "spinoso-time",
 ]
 
 [profile.release]
@@ -53,6 +54,7 @@ default = [
   "core-math-extra",
   "core-random",
   "core-regexp-oniguruma",
+  "core-time",
   "native-filesystem-access",
   "stdlib-securerandom"
 ]
@@ -70,6 +72,9 @@ core-random = ["artichoke-backend/core-random"]
 # backend they execute on. The `regex` crate backend remains the default as long
 # as it can parse the given pattern.
 core-regexp-oniguruma = ["artichoke-backend/core-regexp-oniguruma"]
+# Implement the `Time` core class. This feature adds dependencies on `chrono`
+# and `chrono-tz`.
+core-time = ["artichoke-backend/core-time"]
 # Extend the Artichoke virtual filesystem to have native/host access.
 # This feature enables requiring sources from local disk.
 native-filesystem-access = ["artichoke-backend/native-filesystem-access"]
