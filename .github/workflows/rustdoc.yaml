@@ -33,9 +33,6 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
-      - name: Install Bison
-        run: sudo apt install bison
-
       - name: Build Documentation
         run: cargo doc --workspace
 

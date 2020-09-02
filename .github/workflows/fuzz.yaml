@@ -28,9 +28,6 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
-      - name: Install Bison
-        run: sudo apt install bison
-
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
 

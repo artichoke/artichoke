@@ -33,10 +33,6 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
-      - name: Install Bison
-        run: sudo apt install bison
-        if: matrix.os == 'ubuntu-latest'
-
       # avoid choco because it takes forever to initialize on first use
       # instead, install directly from GitHub releases
       - name: Install Bison
@@ -84,9 +80,6 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
-
-      - name: Install Bison
-        run: sudo apt install bison
 
       - name: Compile artichoke with no default features
         run: cargo build --verbose --no-default-features
@@ -159,9 +152,6 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
-
-      - name: Install Bison
-        run: sudo apt install bison
 
       - name: Check formatting
         run: cargo fmt -- --check --color=auto
