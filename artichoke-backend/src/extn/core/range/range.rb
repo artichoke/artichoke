@@ -96,17 +96,17 @@ class Range
 
     raise ArgumentError, "wrong number of arguments (given #{args.length}, expected 1)" unless args.length == 1
 
-    n = args[0].to_i
-    raise ArgumentError, 'negative array size (or size too big)' unless n >= 0
+    arg = args[0]
+    classname = arg.class
+    classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
+    raise TypeError, "no implicit conversion of #{classname} into Integer" unless arg.respond_to?(:to_int)
 
-    ary = []
-    each do |i|
-      break if n <= 0
-
-      ary.push(i)
-      n -= 1
+    n = arg.to_int
+    unless n.is_a?(Integer)
+      raise TypeError, "can't convert #{arg.class} to Integer (#{arg.class}#to_int gives #{n.class})"
     end
-    ary
+
+    each.take(n).to_a
   end
 
   def hash
