@@ -90,13 +90,11 @@ impl Memory {
         if name.is_empty() {
             // MRI accepts empty names on get and should always return `nil`
             // since empty names are invalid at the OS level.
-            return Ok(None);
-        }
-        if name.find_byte(b'\0').is_some() {
+            Ok(None)
+        } else if name.find_byte(b'\0').is_some() {
             let message = "bad environment variable name: contains null byte";
-            return Err(ArgumentError::with_message(message));
-        }
-        if name.find_byte(b'=').is_some() {
+            Err(ArgumentError::with_message(message))
+        } else if name.find_byte(b'=').is_some() {
             // MRI accepts names containing '=' on get and should always return
             // `nil` since these names are invalid at the OS level.
             Ok(None)
@@ -146,32 +144,29 @@ impl Memory {
         // This function may panic if key is empty, contains an ASCII equals
         // sign '=' or the NUL character '\0', or when the value contains the
         // NUL character.
-        if name.is_empty() {
-            if value.is_none() {
-                return Ok(());
-            }
-            let message = "Invalid argument - setenv()";
-            return Err(InvalidError::with_message(message).into());
-        }
         if name.find_byte(b'\0').is_some() {
             let message = "bad environment variable name: contains null byte";
-            return Err(ArgumentError::with_message(message).into());
-        }
-        if name.find_byte(b'=').is_some() {
-            if value.is_none() {
-                return Ok(());
-            }
-            let mut message = b"Invalid argument - setenv(".to_vec();
-            message.extend(name.to_vec());
-            message.push(b')');
-            return Err(InvalidError::from(message).into());
-        }
-        if let Some(value) = value {
+            Err(ArgumentError::with_message(message).into())
+        } else if let Some(value) = value {
             if value.find_byte(b'\0').is_some() {
                 let message = "bad environment variable value: contains null byte";
                 return Err(ArgumentError::with_message(message).into());
             }
+            if name.find_byte(b'=').is_some() {
+                let mut message = b"Invalid argument - setenv(".to_vec();
+                message.extend(name.to_vec());
+                message.push(b')');
+                return Err(InvalidError::from(message).into());
+            }
+            if name.is_empty() {
+                let message = "Invalid argument - setenv()";
+                return Err(InvalidError::with_message(message).into());
+            }
             self.store.insert(name.to_vec(), value.to_vec());
+            Ok(())
+        } else if name.is_empty() {
+            Ok(())
+        } else if name.find_byte(b'=').is_some() {
             Ok(())
         } else {
             self.store.remove(name);
@@ -209,12 +204,29 @@ impl Memory {
 #[cfg(test)]
 mod tests {
     use super::Memory;
-    use crate::ArgumentError;
+    use crate::{ArgumentError, Error, InvalidError};
 
+    // ```console
+    // $ ruby -e 'puts ENV[""].inspect'
+    // nil
+    // ```
     #[test]
-    fn get_name_null_byte_err() {
+    fn get_name_empty() {
         let backend = Memory::new();
-        let name: &[u8] = b"foo\0bar";
+        let name: &[u8] = b"";
+        assert_eq!(backend.get(name), Ok(None));
+    }
+
+    // ```consol
+    // $ ruby -e 'puts ENV["980b1f2f-a155-4cc6-97f3-cafc3cea2b1a-foo\0bar"].inspect'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]': bad environment variable name: contains null byte (ArgumentError)
+    // ```
+    #[test]
+    fn get_name_nul_byte_err() {
+        let backend = Memory::new();
+        let name: &[u8] = b"980b1f2f-a155-4cc6-97f3-cafc3cea2b1a-foo\0bar";
         assert_eq!(
             backend.get(name),
             Err(ArgumentError::with_message(
@@ -223,15 +235,247 @@ mod tests {
         );
     }
 
+    // ```console
+    // $ ruby -e 'puts ENV["fa7575b4-3224-4fbb-9201-85d54ea95b93-foo=bar"].inspect'
+    // nil
+    // ```
     #[test]
     fn get_name_equal_byte_unset() {
         let backend = Memory::new();
-        let name: &[u8] = b"foo=bar";
+        let name: &[u8] = b"fa7575b4-3224-4fbb-9201-85d54ea95b93-foo=bar";
         assert_eq!(backend.get(name), Ok(None));
     }
 
+    // ``console
+    // $ ruby -e 'ENV["0f87d787-bf18-437a-a205-ed38d81fa4da-foo\0bar"] = "3427d141-700f-494f-bfa6-877147333249-baz"'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': bad environment variable name: contains null byte (ArgumentError)
+    // ```
     #[test]
-    fn set_get() {
+    fn put_name_null_byte_err_set_value() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"0f87d787-bf18-437a-a205-ed38d81fa4da-foo\0bar";
+        let value: &[u8] = b"3427d141-700f-494f-bfa6-877147333249-baz";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Argument(ArgumentError::with_message(
+                "bad environment variable name: contains null byte"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV["1437e58a-b7e3-4c5e-9b1f-a67b78fe1e42-foo\0bar"] = nil'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': bad environment variable name: contains null byte (ArgumentError)
+    // ```
+    #[test]
+    fn put_name_nul_byte_err_unset_value() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"1437e58a-b7e3-4c5e-9b1f-a67b78fe1e42-foo\0bar";
+        assert_eq!(
+            backend.put(name, None),
+            Err(Error::Argument(ArgumentError::with_message(
+                "bad environment variable name: contains null byte"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV["75b8c10e-4a1d-4f61-9800-5f5c29087edd-foo\0bar"] = "a19660e3-304d-45b8-8746-297a2065a076-baz\0quux"'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': bad environment variable name: contains null byte (ArgumentError)
+    // ```
+    #[test]
+    fn put_name_null_byte_set_value_nul_byte_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"75b8c10e-4a1d-4f61-9800-5f5c29087edd-foo\0bar";
+        let value: &[u8] = b"a19660e3-304d-45b8-8746-297a2065a076-baz\0quux";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Argument(ArgumentError::with_message(
+                "bad environment variable name: contains null byte"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV["044f35c0-f711-4b80-8de5-4579075cd754-foo-bar"] = "52bb4d27-6d8a-4a83-90f8-51940ce1f1a7-baz\0quux"'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': bad environment variable value: contains null byte (ArgumentError)
+    // ```
+    #[test]
+    fn put_name_set_value_nul_byte_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"044f35c0-f711-4b80-8de5-4579075cd754-foo-bar";
+        let value: &[u8] = b"52bb4d27-6d8a-4a83-90f8-51940ce1f1a7-baz\0quux";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Argument(ArgumentError::with_message(
+                "bad environment variable value: contains null byte"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV["="] = nil'
+    // ```
+    #[test]
+    fn put_name_eq_unset() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"=";
+        assert_eq!(backend.put(name, None), Ok(()));
+    }
+
+    // ```console
+    // $ ruby -e 'ENV["="] = ""'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': Invalid argument - setenv(=) (Errno::EINVAL)
+    // ```
+    #[test]
+    fn put_name_eq_set_value_empty_byte_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"=";
+        let value: &[u8] = b"";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Invalid(InvalidError::with_message(
+                "Invalid argument - setenv(=)"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV["="] = "4ac79e15-2b8c-4771-8fc8-ff0b095ce7d0-baz-quux"'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': Invalid argument - setenv(=) (Errno::EINVAL)
+    // ```
+    #[test]
+    fn put_name_eq_set_value_non_empty_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"=";
+        let value: &[u8] = b"4ac79e15-2b8c-4771-8fc8-ff0b095ce7d0-baz-quux";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Invalid(InvalidError::with_message(
+                "Invalid argument - setenv(=)"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV["="] = "42db3f11-46f5-4cab-93f4-ee543c1634f9-baz\0quux"'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': bad environment variable value: contains null byte (ArgumentError)
+    // ```
+    #[test]
+    fn put_name_eq_set_value_null_byte_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"=";
+        let value: &[u8] = b"42db3f11-46f5-4cab-93f4-ee543c1634f9-baz\0quux";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Argument(ArgumentError::with_message(
+                "bad environment variable value: contains null byte"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV["=71cb1499-3a0d-476a-8334-aa7a334f387e-\0"] = "42db3f11-46f5-4cab-93f4-ee543c1634f9-baz\0quux"'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': bad environment variable name: contains null byte (ArgumentError)
+    // ```
+    #[test]
+    fn put_name_eq_nul_set_value_null_byte_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"=71cb1499-3a0d-476a-8334-aa7a334f387e-\0";
+        let value: &[u8] = b"42db3f11-46f5-4cab-93f4-ee543c1634f9-baz\0quux";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Argument(ArgumentError::with_message(
+                "bad environment variable name: contains null byte"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV[""] = nil'
+    // ```
+    #[test]
+    fn put_name_empty_value_unset() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"";
+        assert_eq!(backend.put(name, None), Ok(()));
+    }
+
+    // ```console
+    // $ ruby -e 'ENV[""] = ""'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': Invalid argument - setenv() (Errno::EINVAL)
+    // ```
+    #[test]
+    fn put_name_empty_set_value_empty_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"";
+        let value: &[u8] = b"";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Invalid(InvalidError::with_message(
+                "Invalid argument - setenv()"
+            )))
+        );
+    }
+
+    // ``console
+    // $ ruby -e 'ENV[""] = "157f6920-04e5-4561-8f06-6f00d09c3610-foo"'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': Invalid argument - setenv() (Errno::EINVAL)
+    // ```
+    #[test]
+    fn put_name_empty_set_value_non_empty_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"";
+        let value: &[u8] = b"157f6920-04e5-4561-8f06-6f00d09c3610-foo";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Invalid(InvalidError::with_message(
+                "Invalid argument - setenv()"
+            )))
+        );
+    }
+
+    // ```console
+    // $ ruby -e 'ENV[""] = "1d50869d-e71a-4347-8b28-b274f34e2892-foo\0bar"'
+    // Traceback (most recent call last):
+    // 	1: from -e:1:in `<main>'
+    // -e:1:in `[]=': bad environment variable value: contains null byte (ArgumentError)
+    // ```
+    #[test]
+    fn put_name_empty_set_value_non_empty_nul_byte_err() {
+        let mut backend = Memory::new();
+        let name: &[u8] = b"";
+        let value: &[u8] = b"1d50869d-e71a-4347-8b28-b274f34e2892-foo\0bar";
+        assert_eq!(
+            backend.put(name, Some(value)),
+            Err(Error::Argument(ArgumentError::with_message(
+                "bad environment variable value: contains null byte"
+            )))
+        );
+    }
+
+    #[test]
+    fn set_get_happy_path() {
         // given
         let mut backend = Memory::new();
         let name: &[u8] = b"308a3d98-2f87-46fd-b996-ae471a76b64e";
@@ -247,7 +491,7 @@ mod tests {
     }
 
     #[test]
-    fn set_unset() {
+    fn set_unset_happy_path() {
         // given
         let mut backend = Memory::new();
         let name: &[u8] = b"7a6885c3-0c17-4310-a5e7-ed971cac69b6";
