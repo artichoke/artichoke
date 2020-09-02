@@ -424,9 +424,7 @@ pub enum Max {
     /// If `max` is less than or equal to zero, the range defaults to floats
     /// in `[0.0, 1.0]`.
     ///
-    /// If `max` is [`NaN`], an error is returned.
-    ///
-    /// [`NaN`]: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.NAN
+    /// If `max` is [`NaN`](f64::NAN), an error is returned.
     Float(f64),
     /// Generate signed integers in the range `[0, max)`.
     ///
@@ -497,10 +495,8 @@ pub enum RandomNumber {
 ///
 /// # Errors
 ///
-/// If the float given in a [`Max::Float`] variant is [`NaN`] or infinite, a
-/// [`DomainError`] is returned.
-///
-/// [`NaN`]: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.NAN
+/// If the float given in a [`Max::Float`] variant is [`NaN`](f64::NAN) or
+/// infinite, a [`DomainError`] is returned.
 #[inline]
 pub fn random_number(max: Max) -> Result<RandomNumber, DomainError> {
     let mut rng = rand::thread_rng();

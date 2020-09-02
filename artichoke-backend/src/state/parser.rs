@@ -126,8 +126,10 @@ fn reset_context_filename(mrb: &mut sys::mrb_state, context: &mut sys::mrbc_cont
 
 /// `Context` is used to manipulate the current filename on the parser.
 ///
-/// Parser [`State`] maintains a stack of `Context`s and
-/// [`eval`](crate::eval::Eval) calls XXX to set the `__FILE__` magic constant.
+/// Parser [`State`] maintains a stack of `Context`s and [`eval`] uses the
+/// `Context` stack to set the `__FILE__` magic constant.
+///
+/// [`eval`]: crate::core::Eval
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Context {
     /// Value of the `__FILE__` magic constant that also appears in stack
