@@ -93,7 +93,8 @@ impl System {
     ///
     /// [platform string]: std::ffi::OsString
     #[inline]
-    pub fn get<'a>(&'a self, name: &[u8]) -> Result<Option<Cow<'a, [u8]>>, ArgumentError> {
+    #[allow(clippy::unused_self)]
+    pub fn get<'a>(self, name: &[u8]) -> Result<Option<Cow<'a, [u8]>>, ArgumentError> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -168,7 +169,8 @@ impl System {
     ///
     /// [platform string]: std::ffi::OsString
     #[inline]
-    pub fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Error> {
+    #[allow(clippy::unused_self)]
+    pub fn put(self, name: &[u8], value: Option<&[u8]>) -> Result<(), Error> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
         // https://doc.rust-lang.org/std/env/fn.remove_var.html
@@ -248,7 +250,8 @@ impl System {
     ///
     /// [platform string]: std::ffi::OsString
     #[inline]
-    pub fn to_map(&self) -> Result<HashMap<Bytes, Bytes>, ArgumentError> {
+    #[allow(clippy::unused_self)]
+    pub fn to_map(self) -> Result<HashMap<Bytes, Bytes>, ArgumentError> {
         let mut map = HashMap::new();
         for (name, value) in env::vars_os() {
             let name = Vec::from_os_string(name).map_err(|_| {

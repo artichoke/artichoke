@@ -12,14 +12,13 @@ ENV is a hash-like accessor for environment variables.
 
 This module implements the [`ENV`] singleton object from Ruby Core.
 
-In Artichoke, the enviroment variable store is modeled as a hash map of
-byte vector keys and values, e.g. `HashMap<Vec<u8>, Vec<u8>>`. Backends are
-expected to convert their internals to this representation in their public
-APIs. For this reason, all APIs exposed by ENV backends in this crate are
-fallible.
+In Artichoke, the enviroment variable store is modeled as a hash map of byte
+vector keys and values, e.g. `HashMap<Vec<u8>, Vec<u8>>`. Backends are expected
+to convert their internals to this representation in their public APIs. For this
+reason, all APIs exposed by ENV backends in this crate are fallible.
 
-You can use this object in your application by accessing it directly. As a
-Core API, it is globally available:
+You can use this object in your application by accessing it directly. As a Core
+API, it is globally available:
 
 ```ruby
 ENV['PATH']
@@ -28,12 +27,11 @@ ENV['PS1'] = 'artichoke> '
 
 There are two `ENV` implementations in this crate:
 
-- [`Memory`], enabled by default, implements an `ENV` store and accessor on
-  top of a Rust [`HashMap`]. This backend does not query or modify the host
-  system.
-- [`System`], enabled when the **system-env** feature is activated, is a
-  proxy for the system environment and uses platform-specific APIs defined
-  in the [Rust Standard Library].
+- [`Memory`], enabled by default, implements an `ENV` store and accessor on top
+  of a Rust [`HashMap`]. This backend does not query or modify the host system.
+- [`System`], enabled when the **system-env** feature is activated, is a proxy
+  for the system environment and uses platform-specific APIs defined in the
+  [Rust Standard Library].
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
@@ -84,10 +82,9 @@ All features are enabled by default:
 - **system-env** - Enable an `ENV` backend that accesses the host system's
   environment variables via the [`std::env`](module@std::env) module.
 
-[`ENV`]: https://ruby-doc.org/core-2.6.3/ENV.html
-[`HashMap`]: std::collections::HashMap
-[Rust Standard Library]: std
-
+[`env`]: https://ruby-doc.org/core-2.6.3/ENV.html
+[`hashmap`]: std::collections::HashMap
+[rust standard library]: std
 
 ## License
 

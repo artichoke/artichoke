@@ -12,7 +12,7 @@ type Bytes = Vec<u8>;
 /// crate, but does not access or mutate the underlying system.
 ///
 /// This backend is suitable for running in untrusted environments such as a
-/// WebAssembly binary, testing environments, or in embedded contexts.
+/// Wasm binary, testing environments, or in embedded contexts.
 ///
 /// # Examples
 ///
