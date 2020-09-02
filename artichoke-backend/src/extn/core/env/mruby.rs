@@ -1,3 +1,7 @@
+//! FFI glue between the Rust trampolines and the mruby C interpreter.
+
+use spinoso_env::RUBY_API_POLYFILLS;
+
 use crate::extn::core::artichoke;
 use crate::extn::core::env::{self, trampoline};
 use crate::extn::prelude::*;
@@ -23,7 +27,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("to_h", env_to_h, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<env::Environ>(spec)?;
-    let _ = interp.eval(&include_bytes!("env.rb")[..])?;
+    let _ = interp.eval(RUBY_API_POLYFILLS.as_bytes())?;
     trace!("Patched ENV onto interpreter");
     trace!("Patched Artichoke::Environ onto interpreter");
     Ok(())

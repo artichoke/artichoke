@@ -24,6 +24,7 @@ rand_pcg = { version = "0.2", optional = true }
 regex = "1"
 scolapasta-string-escape = { version = "0.1", path = "../scolapasta-string-escape" }
 spinoso-array = { version = "0.3", path = "../spinoso-array" }
+spinoso-env = { version = "0.1", path = "../spinoso-env", optional = true }
 spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
 spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
@@ -47,6 +48,7 @@ target-lexicon = "0.11.0"
 
 [features]
 default = [
+  "core-env",
   "core-env-system",
   "core-math-extra",
   "core-random",
@@ -54,7 +56,8 @@ default = [
   "core-time",
   "stdlib-securerandom"
 ]
-core-env-system = []
+core-env = ["spinoso-env"]
+core-env-system = ["core-env", "spinoso-env/system-env"]
 core-math-extra = ["libm"]
 core-random = ["rand", "rand_pcg"]
 core-regexp-oniguruma = ["onig"]

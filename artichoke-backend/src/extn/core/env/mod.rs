@@ -1,51 +1,50 @@
+//! ENV is a hash-like accessor for environment variables.
+//!
+//! This module implements the [`ENV`] singleton object from Ruby Core.
+//!
+//! In Artichoke, the enviroment variable store is modeled as a hash map of
+//! byte vector keys and values, e.g. `HashMap<Vec<u8>, Vec<u8>>`. Backends are
+//! expected to convert their internals to this representation in their public
+//! APIs. For this reason, all APIs exposed by ENV backends in this crate are
+//! fallible.
+//!
+//! You can use this object in your application by accessing it directly. As a
+//! Core API, it is globally available:
+//!
+//! ```ruby
+//! ENV['PATH']
+//! ENV['PS1'] = 'artichoke> '
+//! ```
+//!
+//! [`ENV`]: https://ruby-doc.org/core-2.6.3/ENV.html
+
+use spinoso_env::{ArgumentError as EnvArgumentError, Error as EnvError, InvalidError};
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::fmt;
 
 use crate::extn::prelude::*;
 
-pub mod backend;
-mod boxing;
 pub mod mruby;
 pub mod trampoline;
 
-use backend::memory::Memory;
-use backend::system::System;
-use backend::EnvType;
+#[cfg(not(feature = "core-env-system"))]
+type Backend = spinoso_env::Memory;
+#[cfg(feature = "core-env-system")]
+type Backend = spinoso_env::System;
 
-pub struct Environ(Box<dyn EnvType>);
-
-impl fmt::Debug for Environ {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Environ")
-            .field("backend", self.0.as_debug())
-            .finish()
-    }
-}
+#[derive(Default, Debug)]
+#[allow(missing_copy_implementations)] // not all backends implement `Copy`
+pub struct Environ(Backend);
 
 impl Environ {
     #[must_use]
-    pub fn new_system_env() -> Self {
-        Self(Box::new(System::new()))
-    }
-
-    #[must_use]
-    pub fn new_memory_env() -> Self {
-        Self(Box::new(Memory::new()))
-    }
-
-    #[must_use]
-    pub fn initialize() -> Self {
-        #[cfg(feature = "core-env-system")]
-        let environ = Self::new_system_env();
-        #[cfg(not(feature = "core-env-system"))]
-        let environ = Self::new_memory_env();
-
-        environ
+    pub fn new() -> Self {
+        Self(Backend::new())
     }
 
     pub fn get(&self, name: &[u8]) -> Result<Option<Cow<'_, [u8]>>, Error> {
-        self.0.get(name)
+        let value = self.0.get(name)?;
+        Ok(value)
     }
 
     pub fn put(&mut self, name: &[u8], value: Option<&[u8]>) -> Result<(), Error> {
@@ -54,6 +53,33 @@ impl Environ {
     }
 
     pub fn to_map(&self) -> Result<HashMap<Vec<u8>, Vec<u8>>, Error> {
-        self.0.to_map()
+        let map = self.0.to_map()?;
+        Ok(map)
+    }
+}
+
+impl HeapAllocatedData for Environ {
+    const RUBY_TYPE: &'static str = "Artichoke::Environ";
+}
+
+impl From<EnvArgumentError> for Error {
+    fn from(err: EnvArgumentError) -> Self {
+        ArgumentError::from(err.message()).into()
+    }
+}
+
+impl From<InvalidError> for Error {
+    fn from(err: InvalidError) -> Self {
+        // TODO: This should be an `Errno::EINVAL`.
+        SystemCallError::from(err.message().to_vec()).into()
+    }
+}
+
+impl From<EnvError> for Error {
+    fn from(err: EnvError) -> Self {
+        match err {
+            EnvError::Argument(err) => err.into(),
+            EnvError::Invalid(err) => err.into(),
+        }
     }
 }

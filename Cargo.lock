@@ -53,6 +53,7 @@ dependencies = [
  "regex",
  "scolapasta-string-escape",
  "spinoso-array",
+ "spinoso-env",
  "spinoso-exception",
  "spinoso-securerandom",
  "spinoso-symbol",
