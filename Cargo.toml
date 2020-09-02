@@ -38,6 +38,7 @@ members = [
   "scolapasta-string-escape",
   "spec-runner",
   "spinoso-array",
+  "spinoso-env",
   "spinoso-exception",
   "spinoso-securerandom",
   "spinoso-symbol",
