@@ -202,9 +202,7 @@ impl System {
             })?;
             env::set_var(name, value);
             Ok(())
-        } else if name.is_empty() {
-            Ok(())
-        } else if name.find_byte(b'=').is_some() {
+        } else if name.is_empty() || name.find_byte(b'=').is_some() {
             Ok(())
         } else {
             let name = name.to_os_str().map_err(|_| {

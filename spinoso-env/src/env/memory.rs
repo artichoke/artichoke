@@ -164,9 +164,7 @@ impl Memory {
             }
             self.store.insert(name.to_vec(), value.to_vec());
             Ok(())
-        } else if name.is_empty() {
-            Ok(())
-        } else if name.find_byte(b'=').is_some() {
+        } else if name.is_empty() || name.find_byte(b'=').is_some() {
             Ok(())
         } else {
             self.store.remove(name);
