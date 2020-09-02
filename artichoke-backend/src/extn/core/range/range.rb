@@ -82,9 +82,8 @@ class Range
     while (val <=> last) < 0 # rubocop:disable Style/NumericPredicate
       block.call(val)
       val = val.succ
-      if str_each
-        break if val.size > last.size
-      end
+      next unless str_each
+      break if val.size > last.size
     end
 
     block.call(val) if !exclude_end? && (val <=> last) == 0 # rubocop:disable Style/NumericPredicate
