@@ -127,13 +127,17 @@ pub use env::system::System;
 /// [`Hash`]: https://ruby-doc.org/core-2.6.3/Hash.html
 pub const RUBY_API_POLYFILLS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/env.rb"));
 
-/// Sum type of all errors possibly returned from [`Memory::put`].
+/// Sum type of all errors possibly returned from [`put`].
 ///
 /// `put` can return errors under several conditions:
 ///
 /// - The name contains a NUL byte.
 /// - The name contains an `=` byte.
 /// - The value contains a NUL byte.
+///
+/// Ruby represents these error conditions with different exception types.
+///
+/// [`put`]: Memory::put
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Error {
     /// Error that indicates an argument parsing or value logic error occurred.
@@ -142,29 +146,35 @@ pub enum Error {
     Argument(ArgumentError),
     /// Error that indicates the access to the underlying platform APIs failed.
     ///
+    /// This error type corresponds to the `EINVAL` syscall error.
+    ///
     /// See [`InvalidError`].
     Invalid(InvalidError),
 }
 
 impl From<ArgumentError> for Error {
+    #[inline]
     fn from(err: ArgumentError) -> Self {
         Self::Argument(err)
     }
 }
 
 impl From<InvalidError> for Error {
+    #[inline]
     fn from(err: InvalidError) -> Self {
         Self::Invalid(err)
     }
 }
 
 impl fmt::Display for Error {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("ENV error")
     }
 }
 
 impl error::Error for Error {
+    #[inline]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Self::Argument(ref err) => Some(err),
@@ -186,7 +196,9 @@ impl error::Error for Error {
 /// let err = ArgumentError::new();
 /// assert_eq!(err.message(), "ArgumentError");
 ///
-/// let err = ArgumentError::with_message("bad environment variable name: contains null byte");
+/// let err = ArgumentError::with_message(
+///     "bad environment variable name: contains null byte"
+/// );
 /// assert_eq!(err.message(), "bad environment variable name: contains null byte");
 /// ```
 ///
@@ -195,18 +207,21 @@ impl error::Error for Error {
 pub struct ArgumentError(&'static str);
 
 impl From<&'static str> for ArgumentError {
+    #[inline]
     fn from(message: &'static str) -> Self {
         Self::with_message(message)
     }
 }
 
 impl Default for ArgumentError {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl fmt::Display for ArgumentError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.message())
     }
@@ -236,7 +251,9 @@ impl ArgumentError {
     ///
     /// ```
     /// # use spinoso_env::ArgumentError;
-    /// const ERR: ArgumentError = ArgumentError::with_message("bad environment variable name: contains null byte");
+    /// const ERR: ArgumentError = ArgumentError::with_message(
+    ///     "bad environment variable name: contains null byte"
+    /// );
     /// assert_eq!(ERR.message(), "bad environment variable name: contains null byte");
     /// ```
     #[inline]
@@ -254,7 +271,9 @@ impl ArgumentError {
     /// let err = ArgumentError::new();
     /// assert_eq!(err.message(), "ArgumentError");
     ///
-    /// let err = ArgumentError::with_message("bad environment variable name: contains null byte");
+    /// let err = ArgumentError::with_message(
+    ///     "bad environment variable name: contains null byte"
+    /// );
     /// assert_eq!(err.message(), "bad environment variable name: contains null byte");
     /// ```
     #[inline]
@@ -268,10 +287,22 @@ impl ArgumentError {
 ///
 /// This error is typically returned by the operating system and corresponds to
 /// `EINVAL`.
+///
+/// # Examples
+///
+/// ```
+/// # use spinoso_env::InvalidError;
+/// let err = InvalidError::new();
+/// assert_eq!(err.message(), b"Errno::EINVAL");
+///
+/// let err = InvalidError::with_message("Invalid argument - setenv()");
+/// assert_eq!(err.message(), b"Invalid argument - setenv()");
+/// ```
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InvalidError(Cow<'static, [u8]>);
 
 impl fmt::Display for InvalidError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         format_debug_escape_into(f, self.message())
     }
@@ -279,7 +310,22 @@ impl fmt::Display for InvalidError {
 
 impl error::Error for InvalidError {}
 
+impl From<&'static str> for InvalidError {
+    #[inline]
+    fn from(message: &'static str) -> Self {
+        Self::with_message(message)
+    }
+}
+
+impl From<&'static [u8]> for InvalidError {
+    #[inline]
+    fn from(message: &'static [u8]) -> Self {
+        Self(Cow::Borrowed(message))
+    }
+}
+
 impl From<Vec<u8>> for InvalidError {
+    #[inline]
     fn from(message: Vec<u8>) -> Self {
         Self(Cow::Owned(message))
     }
@@ -330,5 +376,24 @@ impl InvalidError {
     #[must_use]
     pub fn message(&self) -> &[u8] {
         self.0.as_ref()
+    }
+
+    /// Consume this error and return the inner message.
+    ///
+    /// This method allows taking ownership of this error's message without an
+    /// allocation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_env::InvalidError;
+    /// # use std::borrow::Cow;
+    /// let err = InvalidError::new();
+    /// assert_eq!(err.into_message(), Cow::Borrowed(b"Errno::EINVAL"));
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn into_message(self) -> Cow<'static, [u8]> {
+        self.0
     }
 }

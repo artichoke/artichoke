@@ -71,7 +71,7 @@ impl From<EnvArgumentError> for Error {
 impl From<InvalidError> for Error {
     fn from(err: InvalidError) -> Self {
         // TODO: This should be an `Errno::EINVAL`.
-        SystemCallError::from(err.message().to_vec()).into()
+        SystemCallError::from(err.into_message()).into()
     }
 }
 
