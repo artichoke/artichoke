@@ -12,8 +12,8 @@ require PACKAGE
 lib_sources = $LOADED_FEATURES.select { |f| f.include?(BASE) }
 lib_sources +=
   $LOADED_FEATURES
-  .map { |f| f.gsub('/', '\\') }
-  .select { |f| f.include?(BASE) }
+    .map { |f| f.gsub('/', '\\') }
+    .select { |f| f.include?(BASE) }
 package_sources = lib_sources.select { |f| f =~ /#{PACKAGE}/ }
 
 puts package_sources.sort.uniq

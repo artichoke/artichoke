@@ -12,6 +12,8 @@ Layout/LineLength:
   Exclude:
     - "**/Rakefile"
     - "**/extn/**/*"
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
 Metrics:
   Enabled: false
 Style/Documentation:
