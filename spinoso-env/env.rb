@@ -263,28 +263,26 @@ class << ENV
   def to_h
     @backend ||= ::Artichoke::Environ.new
     h = @backend.to_h
-    if block_given?
-      pairs = h.each_pair.map do |name, value|
-        tx = yield(name, value)
-        if tx.is_a?(Array)
-          raise ArgumentError, "element has wrong array length (expected 2, was #{tx.length})" if tx.length != 2
+    return h unless block_given?
 
-          tx
-        elsif tx.respond_to?(:to_ary)
-          pair = tx.to_ary
-          unless pair.is_a?(Array)
-            raise TypeError, "can't convert #{tx.class} to Array (#{tx.class}#to_ary gives #{pair.class})"
-          end
+    pairs = h.each_pair.map do |name, value|
+      tx = yield(name, value)
+      if tx.is_a?(Array)
+        raise ArgumentError, "element has wrong array length (expected 2, was #{tx.length})" if tx.length != 2
 
-          pair
-        else
-          raise TypeError, "wrong element type #{tx.class} (expected array)"
+        tx
+      elsif tx.respond_to?(:to_ary)
+        pair = tx.to_ary
+        unless pair.is_a?(Array)
+          raise TypeError, "can't convert #{tx.class} to Array (#{tx.class}#to_ary gives #{pair.class})"
         end
+
+        pair
+      else
+        raise TypeError, "wrong element type #{tx.class} (expected array)"
       end
-      pairs.to_h
-    else
-      h
     end
+    pairs.to_h
   end
 
   def to_hash

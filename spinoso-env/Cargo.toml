@@ -1,0 +1,27 @@
+[package]
+name = "spinoso-env"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+description = """
+Access to environment variables, system or virtualized, for Artichoke Ruby
+"""
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["artichoke", "env", "environ", "spinoso"]
+categories = ["os", "wasm"]
+
+[dependencies]
+bstr = { version = "0.2", default-features = false }
+scolapasta-string-escape = { version = "0.1", path = "../scolapasta-string-escape" }
+
+[features]
+default = ["system-env"]
+# Enable an `ENV` implementation that access the system environment via
+# `std::env::var_os`. These APIs enable Ruby to manipulate the host system.
+system-env = ["bstr/std"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

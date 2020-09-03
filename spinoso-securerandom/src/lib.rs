@@ -199,7 +199,7 @@ impl ArgumentError {
         Self("ArgumentError")
     }
 
-    /// Construct a new, default argument error.
+    /// Construct a new, argument error with a message.
     ///
     /// # Examples
     ///

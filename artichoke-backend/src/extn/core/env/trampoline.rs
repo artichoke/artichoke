@@ -1,10 +1,12 @@
+//! Glue between mruby FFI and `ENV` Rust implementation.
+
 use std::borrow::Cow;
 
 use crate::extn::core::env::Environ;
 use crate::extn::prelude::*;
 
 pub fn initialize(interp: &mut Artichoke, into: Value) -> Result<Value, Error> {
-    let environ = Environ::initialize();
+    let environ = Environ::new();
     let result = Environ::box_into_value(environ, into, interp)?;
     Ok(result)
 }

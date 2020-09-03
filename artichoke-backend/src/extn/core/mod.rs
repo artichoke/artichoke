@@ -7,6 +7,7 @@ pub mod artichoke;
 pub mod comparable;
 pub mod enumerable;
 pub mod enumerator;
+#[cfg(feature = "core-env")]
 pub mod env;
 pub mod exception;
 pub mod float;
@@ -45,6 +46,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     symbol::mruby::init(interp)?;
     artichoke::init(interp)?;
     enumerator::init(interp)?;
+    #[cfg(feature = "core-env")]
     env::mruby::init(interp)?;
     hash::init(interp)?;
     numeric::init(interp)?;
