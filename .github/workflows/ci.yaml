@@ -1,5 +1,6 @@
+---
 name: CI
-on:
+"on":
   push:
     branches:
       - master
@@ -199,3 +200,12 @@ jobs:
 
       - name: Lint and check formatting with prettier
         run: npx prettier --check '**/*'
+
+      - name: Lint YAML sources with yamllint
+        run: |
+          sudo -H python3 -m pip install --upgrade pip setuptools wheel
+          sudo -H python3 -m pip install --upgrade yamllint
+          yamllint --version
+          echo "Linting YAML sources with yamllint ..."
+          yamllint --strict .
+          echo "OK"

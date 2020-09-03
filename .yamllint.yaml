@@ -1,0 +1,11 @@
+---
+extends: default
+
+ignore: |
+  **/node_modules/**/*
+  **/vendor/**
+  **/target/**/*
+
+rules:
+  comments: disable
+  line-length: disable
