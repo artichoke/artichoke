@@ -558,14 +558,11 @@ mod tests {
         let value_b: &[u8] = b"value2";
 
         // when
-        let size_before = ENV.to_map().unwrap().len();
         ENV.put(name_a, Some(value_a)).unwrap();
         ENV.put(name_b, Some(value_b)).unwrap();
         let data = ENV.to_map().unwrap();
-        let size_after = data.len();
 
         // then
-        assert_eq!(size_after - size_before, 2);
         let value1 = data.get(name_a);
         let value2 = data.get(name_b);
         assert!(value1.is_some());

@@ -27,11 +27,11 @@ ENV['PS1'] = 'artichoke> '
 
 There are two `ENV` implementations in this crate:
 
-- [`Memory`], enabled by default, implements an `ENV` store and accessor on top
-  of a Rust [`HashMap`]. This backend does not query or modify the host system.
-- [`System`], enabled when the **system-env** feature is activated, is a proxy
-  for the system environment and uses platform-specific APIs defined in the
-  [Rust Standard Library].
+- `Memory`, enabled by default, implements an `ENV` store and accessor on top of
+  a Rust `HashMap`. This backend does not query or modify the host system.
+- `System`, enabled when the **system-env** feature is activated, is a proxy for
+  the system environment and uses platform-specific APIs defined in the [Rust
+  Standard Library].
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
@@ -82,13 +82,11 @@ All features are enabled by default:
 - **system-env** - Enable an `ENV` backend that accesses the host system's
   environment variables via the [`std::env`](module@std::env) module.
 
-[`env`]: https://ruby-doc.org/core-2.6.3/ENV.html
-[`hashmap`]: std::collections::HashMap
-[rust standard library]: std
-
 ## License
 
 `spinoso-env` is licensed with the [MIT License](../LICENSE) (c) Ryan Lopopolo.
 
-[`time`]: https://ruby-doc.org/core-2.6.3/Time.html
-[`chrono`]: https://crates.io/crates/chrono
+[`env`]: https://ruby-doc.org/core-2.6.3/ENV.html
+[`hashmap`]: std::collections::HashMap
+[rust standard library]: https://doc.rust-lang.org/std/
+[`std`]: https://doc.rust-lang.org/std/
