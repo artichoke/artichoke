@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
-use crate::core::{ConvertMut, TryConvertMut};
+use crate::core::{ConvertMut, TryConvertMut, Value as _};
 use crate::error::Error;
 use crate::extn::core::array::Array;
 use crate::sys;

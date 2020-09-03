@@ -1,5 +1,5 @@
 use crate::convert::UnboxRubyError;
-use crate::core::{ConvertMut, TryConvert};
+use crate::core::{ConvertMut, TryConvert, Value as _};
 use crate::error::Error;
 use crate::sys;
 use crate::types::{Fp, Ruby, Rust};

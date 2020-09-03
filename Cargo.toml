@@ -41,6 +41,7 @@ members = [
   "spinoso-array",
   "spinoso-env",
   "spinoso-exception",
+  "spinoso-math",
   "spinoso-securerandom",
   "spinoso-symbol",
   "spinoso-time",
@@ -54,7 +55,8 @@ lto = true
 default = [
   "core-env",
   "core-env-system",
-  "core-math-extra",
+  "core-math",
+  "core-math-full",
   "core-random",
   "core-regexp-oniguruma",
   "core-time",
@@ -66,9 +68,11 @@ core-env = ["artichoke-backend/core-env"]
 # Enable resolving environment variables with the `ENV` core object using native
 # OS APIs. This feature replaces the in-memory backend with `std::env`.
 core-env-system = ["core-env", "artichoke-backend/core-env-system"]
+# Enable the `Math` module in Ruby Core.
+core-math = ["artichoke-backend/core-math"]
 # Enable an extra dependency on `libm` to implement some `Math` core APIs for
 # functions not present in `std`.
-core-math-extra = ["artichoke-backend/core-math-extra"]
+core-math-full = ["core-math", "artichoke-backend/core-math-full"]
 # Implement the `Random` core class and add an interpreter-default PRNG to
 # Artichoke. This feature adds dependencies on `rand_core` and `rand_pcg`.
 core-random = ["artichoke-backend/core-random"]

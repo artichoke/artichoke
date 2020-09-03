@@ -1,3 +1,5 @@
+use artichoke_core::value::pretty_name;
+
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
@@ -122,12 +124,12 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Er
                         }
                     } else {
                         let mut message = String::from("can't convert ");
-                        message.push_str(y.pretty_name(interp));
+                        message.push_str(pretty_name(y, interp));
                         message.push_str(" into Float");
                         Err(TypeError::from(message).into())
                     }
                 } else {
-                    let mut message = String::from(y.pretty_name(interp));
+                    let mut message = String::from(pretty_name(y, interp));
                     message.push_str(" can't be coerced into Float");
                     Err(TypeError::from(message).into())
                 }

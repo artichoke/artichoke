@@ -4,7 +4,7 @@ use std::ffi::{OsStr, OsString};
 use std::slice;
 
 use crate::convert::UnboxRubyError;
-use crate::core::{ConvertMut, TryConvertMut};
+use crate::core::{ConvertMut, TryConvertMut, Value as _};
 use crate::error::Error;
 use crate::ffi;
 use crate::sys;

@@ -1,5 +1,7 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
+use artichoke_core::value::pretty_name;
+
 use crate::extn::core::time::Time;
 use crate::extn::prelude::*;
 
@@ -66,7 +68,7 @@ pub fn cmp(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<
         Ok(interp.convert(cmp as i32))
     } else {
         let mut message = String::from("comparison of Time with ");
-        message.push_str(other.pretty_name(interp));
+        message.push_str(pretty_name(other, interp));
         message.push_str(" failed");
         Err(ArgumentError::from(message).into())
     }

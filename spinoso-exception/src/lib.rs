@@ -66,6 +66,19 @@
 //! - [`SystemStackError`]
 //! - `fatal` — impossible to rescue
 //!
+//! # `no_std`
+//!
+//! This crate is `no_std` compatible when built without the `std` feature. This
+//! crate has a required dependency on [`alloc`].
+//!
+//! # Crate features
+//!
+//! All features are enabled by default.
+//!
+//! - **std** - Enables a dependency on the Rust Standard Library. Activating
+//!   this feature enables [`std::error::Error`] impls on error types in this
+//!   crate.
+//!
 //! [`Exception`]: https://ruby-doc.org/core-2.6.3/Exception.html
 //! [`Kernel#raise`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-raise
 //! [`NameError#name`]: https://ruby-doc.org/core-2.6.3/NameError.html#method-i-name

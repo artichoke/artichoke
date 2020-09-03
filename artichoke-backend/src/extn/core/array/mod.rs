@@ -1,3 +1,4 @@
+use artichoke_core::value::pretty_name;
 use spinoso_array::SmallArray as SpinosoArray;
 use std::convert::TryFrom;
 use std::iter::FromIterator;
@@ -179,11 +180,12 @@ impl Array {
                             other.0.clone()
                         } else {
                             let mut message = String::from("can't convert ");
-                            message.push_str(array_or_len.pretty_name(interp));
+                            let name = pretty_name(array_or_len, interp);
+                            message.push_str(name);
                             message.push_str(" to Array (");
-                            message.push_str(array_or_len.pretty_name(interp));
+                            message.push_str(name);
                             message.push_str("#to_ary gives ");
-                            message.push_str(other.pretty_name(interp));
+                            message.push_str(pretty_name(other, interp));
                             return Err(TypeError::from(message).into());
                         }
                     } else {
@@ -223,11 +225,12 @@ impl Array {
                             other.0.clone()
                         } else {
                             let mut message = String::from("can't convert ");
-                            message.push_str(array_or_len.pretty_name(interp));
+                            let name = pretty_name(array_or_len, interp);
+                            message.push_str(name);
                             message.push_str(" to Array (");
-                            message.push_str(array_or_len.pretty_name(interp));
+                            message.push_str(name);
                             message.push_str("#to_ary gives ");
-                            message.push_str(other.pretty_name(interp));
+                            message.push_str(pretty_name(other, interp));
                             return Err(TypeError::from(message).into());
                         }
                     } else {
@@ -315,11 +318,12 @@ impl Array {
                     self.0.set_slice(start, drain, other.0.as_slice());
                 } else {
                     let mut message = String::from("can't convert ");
-                    message.push_str(elem.pretty_name(interp));
+                    let name = pretty_name(elem, interp);
+                    message.push_str(name);
                     message.push_str(" to Array (");
-                    message.push_str(elem.pretty_name(interp));
+                    message.push_str(name);
                     message.push_str("#to_ary gives ");
-                    message.push_str(other.pretty_name(interp));
+                    message.push_str(pretty_name(other, interp));
                     return Err(TypeError::from(message).into());
                 }
             } else {
@@ -358,16 +362,17 @@ impl Array {
                 self.0.concat(other.0.as_slice());
             } else {
                 let mut message = String::from("can't convert ");
-                message.push_str(other.pretty_name(interp));
+                let name = pretty_name(other, interp);
+                message.push_str(name);
                 message.push_str(" to Array (");
-                message.push_str(other.pretty_name(interp));
+                message.push_str(name);
                 message.push_str("#to_ary gives ");
-                message.push_str(other.pretty_name(interp));
+                message.push_str(pretty_name(arr, interp));
                 return Err(TypeError::from(message).into());
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
-            message.push_str(other.pretty_name(interp));
+            message.push_str(pretty_name(other, interp));
             message.push_str(" into Array");
             return Err(TypeError::from(message).into());
         };

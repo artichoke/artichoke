@@ -42,7 +42,6 @@ dependencies = [
  "intaglio",
  "itoa",
  "libc",
- "libm",
  "log",
  "once_cell",
  "onig",
@@ -55,6 +54,7 @@ dependencies = [
  "spinoso-array",
  "spinoso-env",
  "spinoso-exception",
+ "spinoso-math",
  "spinoso-securerandom",
  "spinoso-symbol",
  "spinoso-time",
@@ -63,7 +63,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-core"
-version = "0.3.0"
+version = "0.4.0"
 
 [[package]]
 name = "atty"
@@ -689,6 +689,13 @@ name = "spinoso-exception"
 version = "0.1.0"
 dependencies = [
  "scolapasta-string-escape",
+]
+
+[[package]]
+name = "spinoso-math"
+version = "0.1.0"
+dependencies = [
+ "libm",
 ]
 
 [[package]]

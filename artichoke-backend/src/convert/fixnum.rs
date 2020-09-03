@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::convert::{BoxIntoRubyError, UnboxRubyError};
-use crate::core::{Convert, TryConvert};
+use crate::core::{Convert, TryConvert, Value as _};
 use crate::error::Error;
 use crate::sys;
 use crate::types::{Int, Ruby, Rust};

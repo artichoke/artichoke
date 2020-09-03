@@ -96,6 +96,22 @@ jobs:
         run: cargo build --verbose --all-features
         working-directory: "spinoso-array"
 
+      - name: Compile spinoso-array with no default features
+        run: cargo build --verbose --no-default-features
+        working-directory: "spinoso-env"
+
+      - name: Compile spinoso-array with all features
+        run: cargo build --verbose --all-features
+        working-directory: "spinoso-env"
+
+      - name: Compile spinoso-array with no default features
+        run: cargo build --verbose --no-default-features
+        working-directory: "spinoso-math"
+
+      - name: Compile spinoso-array with all features
+        run: cargo build --verbose --all-features
+        working-directory: "spinoso-math"
+
       - name: Compile spinoso-symbol with no default features
         run: cargo build --verbose --no-default-features
         working-directory: "spinoso-symbol"

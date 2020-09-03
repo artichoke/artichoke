@@ -1,3 +1,4 @@
+use artichoke_core::value::pretty_name;
 use bstr::ByteSlice;
 use std::convert::{TryFrom, TryInto};
 use std::error;
@@ -155,7 +156,7 @@ impl<'a> TryConvertMut<&'a mut Value, IntegerString<'a>> for Artichoke {
 
     fn try_convert_mut(&mut self, value: &'a mut Value) -> Result<IntegerString<'a>, Self::Error> {
         let mut message = String::from("can't convert ");
-        message.push_str(value.pretty_name(self));
+        message.push_str(pretty_name(*value, self));
         message.push_str(" into Integer");
 
         if let Ok(arg) = value.implicitly_convert_to_string(self) {

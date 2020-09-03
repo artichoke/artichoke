@@ -5,6 +5,7 @@ use std::mem::ManuallyDrop;
 use std::ops::{Deref, DerefMut};
 use std::ptr;
 
+use crate::core::Value as _;
 use crate::def::NotDefinedError;
 use crate::error::Error;
 use crate::extn::core::exception::TypeError;
