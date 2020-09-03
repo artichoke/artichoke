@@ -64,20 +64,25 @@ tasks by running:
 
 ```console
 $ bundle exec rake --tasks
-rake build             # Build Rust workspace
-rake doc               # Generate Rust API documentation
-rake doc:open          # Generate Rust API documentation and open it in a web browser
-rake lint              # Lint and format
-rake lint:clippy       # Run Clippy
-rake lint:deps         # Install linting dependencies
-rake lint:eslint       # Run ESlint
-rake lint:fmt          # Format sources (alias)
-rake lint:format       # Format sources
-rake lint:links        # Check markdown links
-rake lint:restriction  # Lint with Clippy restriction pass (unenforced lints)
-rake lint:rubocop      # Run RuboCop
-rake spec              # Run enforced ruby/spec suite
-rake test              # Run Artichoke unit tests
+rake build                      # Build Rust workspace
+rake doc                        # Generate Rust API documentation
+rake doc:open                   # Generate Rust API documentation and open it in a web browser
+rake fmt                        # Format sources
+rake fmt:c                      # Format .c and .h sources with clang-format
+rake fmt:rust                   # Format Rust sources with rustfmt
+rake fmt:text                   # Format text, YAML, and Markdown sources with prettier
+rake format                     # Format sources
+rake format:c                   # Format .c and .h sources with clang-format
+rake format:rust                # Format Rust sources with rustfmt
+rake format:text                # Format text, YAML, and Markdown sources with prettier
+rake lint                       # Lint sources
+rake lint:clippy                # Lint Rust sources with Clippy
+rake lint:clippy:restriction    # Lint Rust sources with Clippy restriction pass (unenforced lints)
+rake lint:links                 # Check for broken markdown links
+rake lint:rubocop               # Run RuboCop
+rake lint:rubocop:auto_correct  # Auto-correct RuboCop offenses
+rake spec                       # Run enforced ruby/spec suite
+rake test                       # Run Artichoke unit tests
 ```
 
 To lint Ruby sources, Artichoke uses
@@ -120,10 +125,10 @@ brew install node
 ### Linting
 
 Once you [configure a development environment](#setup), run the following to
-lint sources:
+lint and format sources:
 
 ```sh
-rake lint
+rake
 ```
 
 Merges will be blocked by CI if there are lint errors.

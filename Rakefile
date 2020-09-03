@@ -1,14 +1,16 @@
 # frozen_string_literal: true
 
 require 'fileutils'
+require 'shellwords'
+require 'rubocop/rake_task'
 
-task default: :lint
+task default: %i[format lint]
 
-desc 'Lint and format'
-task lint: %i[lint:format lint:clippy lint:rubocop]
+desc 'Lint sources'
+task lint: %i[lint:clippy lint:rubocop:auto_correct]
 
 namespace :lint do
-  desc 'Run Clippy'
+  desc 'Lint Rust sources with Clippy'
   task :clippy do
     roots = Dir.glob('**/{build,lib,main}.rs')
     roots.each do |root|
@@ -17,56 +19,88 @@ namespace :lint do
     sh 'cargo clippy --workspace --all-features'
   end
 
-  desc 'Run RuboCop'
-  task :rubocop do
-    sh 'rubocop -a'
-  end
+  RuboCop::RakeTask.new(:rubocop)
 
-  desc 'Format sources'
-  task :format do
-    sh 'cargo fmt -- --color=auto'
-    sh "npx prettier --write '**/*'"
-    sh 'npx github:artichoke/clang-format'
-  end
-
-  desc 'Format sources (alias)'
-  task fmt: :format
-
-  desc 'Check markdown links'
+  desc 'Check for broken markdown links'
   task :links do
-    markdown = [
-      'BUILD.md',
-      'CONTRIBUTING.md',
-      'README.md',
-      'RUBYSPEC.md',
-      'VISION.md',
-      'artichoke-backend/README.md',
+    readmes = Dir.glob('**/README.md')
+      .reject { |path| path.include?('node_modules/') }
+      .reject { |path| path.include?('target/') }
+      .reject { |path| path.include?('vendor/') }
+    docs = Dir.glob('*.md')
+    extra = [
       'artichoke-backend/src/extn/stdlib/vendor/gen/README.md',
       'artichoke-backend/vendor/README.md',
-      'artichoke-core/README.md',
-      'spec-runner/README.md',
       'spec-runner/vendor/README.md'
     ]
-    markdown.each do |source|
+    markdown = readmes + docs + extra
+    puts 'Checking links in the following markdown sources:', markdown.sort
+    markdown.sort.uniq.each do |source|
       sh "npx markdown-link-check --config .github/markdown-link-check.json #{source}"
+      sleep(rand(1..5))
     end
   end
 
-  desc 'Lint with Clippy restriction pass (unenforced lints)'
-  task :restriction do
-    sh 'cargo clippy -- ' \
-      '-W clippy::dbg_macro ' \
-      '-W clippy::get_unwrap ' \
-      '-W clippy::indexing_slicing ' \
-      '-W clippy::option_expect_used ' \
-      '-W clippy::option_unwrap_used ' \
-      '-W clippy::panic ' \
-      '-W clippy::print_stdout ' \
-      '-W clippy::result_expect_used ' \
-      '-W clippy::result_unwrap_used ' \
-      '-W clippy::todo ' \
-      '-W clippy::unimplemented ' \
-      '-W clippy::unreachable'
+  desc 'Lint Rust sources with Clippy restriction pass (unenforced lints)'
+  task :'clippy:restriction' do
+    roots = Dir.glob('**/{build,lib,main}.rs')
+    roots.each do |root|
+      FileUtils.touch(root)
+    end
+    lints = [
+      'clippy::dbg_macro',
+      'clippy::get_unwrap',
+      'clippy::indexing_slicing',
+      'clippy::panic',
+      'clippy::print_stdout',
+      'clippy::expect_used',
+      'clippy::unwrap_used',
+      'clippy::todo',
+      'clippy::unimplemented',
+      'clippy::unreachable'
+    ]
+    command = ['cargo', 'clippy', '--'] + lints.flat_map { |lint| ['-W', lint] }
+    sh command.shelljoin
+  end
+end
+
+desc 'Format sources'
+task format: %i[format:rust format:text format:c]
+
+namespace :format do
+  desc 'Format Rust sources with rustfmt'
+  task :rust do
+    sh 'cargo fmt -- --color=auto'
+  end
+
+  desc 'Format text, YAML, and Markdown sources with prettier'
+  task :text do
+    sh "npx prettier --write '**/*'"
+  end
+
+  desc 'Format .c and .h sources with clang-format'
+  task :c do
+    sh 'npx github:artichoke/clang-format'
+  end
+end
+
+desc 'Format sources'
+task fmt: %i[fmt:rust fmt:text fmt:c]
+
+namespace :fmt do
+  desc 'Format Rust sources with rustfmt'
+  task :rust do
+    sh 'cargo fmt -- --color=auto'
+  end
+
+  desc 'Format text, YAML, and Markdown sources with prettier'
+  task :text do
+    sh "npx prettier --write '**/*'"
+  end
+
+  desc 'Format .c and .h sources with clang-format'
+  task :c do
+    sh 'npx github:artichoke/clang-format'
   end
 end
 
