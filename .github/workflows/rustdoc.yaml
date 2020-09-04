@@ -1,5 +1,6 @@
+---
 name: Documentation
-on:
+"on":
   push:
     branches:
       - master

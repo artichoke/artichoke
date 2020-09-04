@@ -1,5 +1,6 @@
+---
 name: Audit
-on:
+"on":
   push:
     branches:
       - master
