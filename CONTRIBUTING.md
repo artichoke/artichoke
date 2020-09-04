@@ -64,25 +64,25 @@ tasks by running:
 
 ```console
 $ bundle exec rake --tasks
-rake build                      # Build Rust workspace
-rake doc                        # Generate Rust API documentation
-rake doc:open                   # Generate Rust API documentation and open it in a web browser
-rake fmt                        # Format sources
-rake fmt:c                      # Format .c and .h sources with clang-format
-rake fmt:rust                   # Format Rust sources with rustfmt
-rake fmt:text                   # Format text, YAML, and Markdown sources with prettier
-rake format                     # Format sources
-rake format:c                   # Format .c and .h sources with clang-format
-rake format:rust                # Format Rust sources with rustfmt
-rake format:text                # Format text, YAML, and Markdown sources with prettier
-rake lint                       # Lint sources
-rake lint:clippy                # Lint Rust sources with Clippy
-rake lint:clippy:restriction    # Lint Rust sources with Clippy restriction pass (unenforced lints)
-rake lint:links                 # Check for broken markdown links
-rake lint:rubocop               # Run RuboCop
-rake lint:rubocop:auto_correct  # Auto-correct RuboCop offenses
-rake spec                       # Run enforced ruby/spec suite
-rake test                       # Run Artichoke unit tests
+rake build                        # Build Rust workspace
+rake doc                          # Generate Rust API documentation
+rake doc:open                     # Generate Rust API documentation and open it in a web browser
+rake fmt                          # Format sources
+rake fmt:c                        # Format .c and .h sources with clang-format
+rake fmt:rust                     # Format Rust sources with rustfmt
+rake fmt:text                     # Format text, YAML, and Markdown sources with prettier
+rake format                       # Format sources
+rake format:c                     # Format .c and .h sources with clang-format
+rake format:rust                  # Format Rust sources with rustfmt
+rake format:text                  # Format text, YAML, and Markdown sources with prettier
+rake lint                         # Lint sources
+rake lint:clippy                  # Lint Rust sources with Clippy
+rake lint:clippy:restriction      # Lint Rust sources with Clippy restriction pass (unenforced lints)
+rake lint:rubocop                 # Run RuboCop
+rake lint:rubocop:auto_correct    # Auto-correct RuboCop offenses
+rake release:markdown_link_check  # Check for broken links in markdown files
+rake spec                         # Run enforced ruby/spec suite
+rake test                         # Run Artichoke unit tests
 ```
 
 To lint Ruby sources, Artichoke uses

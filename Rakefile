@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'fileutils'
 require 'shellwords'
 require 'rubocop/rake_task'
 
@@ -10,41 +9,19 @@ desc 'Lint sources'
 task lint: %i[lint:clippy lint:rubocop:auto_correct]
 
 namespace :lint do
+  RuboCop::RakeTask.new(:rubocop)
+
   desc 'Lint Rust sources with Clippy'
   task :clippy do
-    roots = Dir.glob('**/{build,lib,main}.rs')
-    roots.each do |root|
+    FileList['**/{build,lib,main}.rs'].each do |root|
       FileUtils.touch(root)
     end
     sh 'cargo clippy --workspace --all-features'
   end
 
-  RuboCop::RakeTask.new(:rubocop)
-
-  desc 'Check for broken markdown links'
-  task :links do
-    readmes = Dir.glob('**/README.md')
-      .reject { |path| path.include?('node_modules/') }
-      .reject { |path| path.include?('target/') }
-      .reject { |path| path.include?('vendor/') }
-    docs = Dir.glob('*.md')
-    extra = [
-      'artichoke-backend/src/extn/stdlib/vendor/gen/README.md',
-      'artichoke-backend/vendor/README.md',
-      'spec-runner/vendor/README.md'
-    ]
-    markdown = readmes + docs + extra
-    puts 'Checking links in the following markdown sources:', markdown.sort
-    markdown.sort.uniq.each do |source|
-      sh "npx markdown-link-check --config .github/markdown-link-check.json #{source}"
-      sleep(rand(1..5))
-    end
-  end
-
   desc 'Lint Rust sources with Clippy restriction pass (unenforced lints)'
   task :'clippy:restriction' do
-    roots = Dir.glob('**/{build,lib,main}.rs')
-    roots.each do |root|
+    FileList['**/{build,lib,main}.rs'].each do |root|
       FileUtils.touch(root)
     end
     lints = [
@@ -131,4 +108,23 @@ end
 desc 'Run Artichoke unit tests'
 task :test do
   sh 'cargo test --workspace'
+end
+
+namespace :release do
+  link_check_files = FileList.new('**/*.md') do |f|
+    f.exclude('node_modules/**/*')
+    f.exclude('**/target/**/*')
+    f.exclude('**/vendor/**/*')
+    f.include('*.md')
+    f.include('**/vendor/*.md')
+  end
+
+  link_check_files.each do |markdown|
+    desc 'Check for broken links in markdown files'
+    task markdown_link_check: markdown do
+      command = ['npx', 'markdown-link-check', '--config', '.github/markdown-link-check.json', markdown]
+      sh command.shelljoin
+      sleep(rand(1..5))
+    end
+  end
 end
