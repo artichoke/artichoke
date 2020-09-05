@@ -6,7 +6,7 @@ use crate::{ArgumentError, Error, InvalidError};
 
 type Bytes = Vec<u8>;
 
-/// An in-memory fake store of environment variables.
+/// A hash-like accessor for environment variables using a fake in-memory store.
 ///
 /// `Memory` offers the same API as other environment variable backends in this
 /// crate, but does not access or mutate the underlying system.

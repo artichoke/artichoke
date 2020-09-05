@@ -7,8 +7,7 @@ use crate::{ArgumentError, Error, InvalidError};
 
 type Bytes = Vec<u8>;
 
-/// ENV is a hash-like accessor for environment variables using the platform
-/// APIs for accessing the environment.
+/// A hash-like accessor for environment variables using platform APIs.
 ///
 /// `System` is an accessor to the host system's environment variables using the
 /// functions provided by the [Rust Standard Library] in the
@@ -42,6 +41,7 @@ type Bytes = Vec<u8>;
 /// ```
 ///
 /// [Rust Standard Library]: std
+#[cfg_attr(docsrs, doc(cfg(feature = "system-env")))]
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct System {
     _private: (),
