@@ -301,7 +301,7 @@ impl Symbol {
     /// byteslice associated with the symbol in the underlying interner.
     ///
     /// This iterator produces [`char`] sequences like `:spinoso` and
-    /// `:invalid-\xFF-utf8`.
+    /// `:"invalid-\xFF-utf8"`.
     ///
     /// If there symbol does not exist in the underlying interner or there is an
     /// error looking up the symbol in the underlying interner, a default
@@ -325,7 +325,7 @@ impl Symbol {
     /// representation of the interned byteslice associated with the symbol in
     /// the underlying interner.
     ///
-    /// This formatter writes content like `:spinoso` and `:invalid-\xFF-utf8`.
+    /// This formatter writes content like `:spinoso` and `:"invalid-\xFF-utf8"`.
     /// To see example output of the underlying iterator, see the [`Inspect`]
     /// documentation.
     ///
@@ -362,7 +362,7 @@ impl Symbol {
     /// representation of the interned byteslice associated with the symbol in
     /// the underlying interner.
     ///
-    /// This formatter writes content like `:spinoso` and `:invalid-\xFF-utf8`.
+    /// This formatter writes content like `:spinoso` and `:"invalid-\xFF-utf8"`.
     /// To see example output of the underlying iterator, see the [`Inspect`]
     /// documentation.
     ///

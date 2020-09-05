@@ -127,17 +127,23 @@ pub use env::system::System;
 /// [`Hash`]: https://ruby-doc.org/core-2.6.3/Hash.html
 pub const RUBY_API_POLYFILLS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/env.rb"));
 
-/// Sum type of all errors possibly returned from [`put`].
+/// Sum type of all errors possibly returned from [`get`], [`put`], and
+/// [`to_map`].
 ///
-/// `put` can return errors under several conditions:
+/// These APIs can return errors under several conditions:
 ///
-/// - The name contains a NUL byte.
-/// - The name contains an `=` byte.
-/// - The value contains a NUL byte.
+/// - An environment variable name is not convertable to a [platform string].
+/// - An environment variable value is not convertable to a [platform string].
+/// - An environment variable name contains a NUL byte.
+/// - An environment variable name contains an `=` byte.
+/// - An environment variable value contains a NUL byte.
 ///
 /// Ruby represents these error conditions with different exception types.
 ///
+/// [`get`]: Memory::get
 /// [`put`]: Memory::put
+/// [`to_map`]: Memory::to_map
+/// [platform string]: std::ffi::OsString
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Error {
     /// Error that indicates an argument parsing or value logic error occurred.
