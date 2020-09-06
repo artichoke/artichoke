@@ -23,6 +23,7 @@ structopt = "0.3"
 termcolor = "1.1"
 
 [dependencies.artichoke-backend]
+version = "0.1"
 path = "artichoke-backend"
 default-features = false
 

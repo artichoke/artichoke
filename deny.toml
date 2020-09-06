@@ -21,6 +21,7 @@ confidence-threshold = 0.8
 
 [bans]
 multiple-versions = "deny"
+wildcards = "deny"
 highlight = "all"
 allow = []
 deny = []
