@@ -1,0 +1,23 @@
+[package]
+name = "artichoke-load-path"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+description = "Source and extension loaders for a managing a Ruby $LOAD_PATH"
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
+categories = ["filesystem"]
+
+[dependencies]
+same-file = { version = "1", optional = true }
+
+[features]
+default = ["native-filesystem-loader", "rubylib-native-filesystem-loader"]
+native-filesystem-loader = ["same-file"]
+rubylib-native-filesystem-loader = ["native-filesystem-loader"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

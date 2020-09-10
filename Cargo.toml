@@ -45,6 +45,8 @@ required-features = ["cli"]
 members = [
   "artichoke-backend",
   "artichoke-core",
+  "artichoke-load-path",
+  "mezzaluna-feature-loader",
   "scolapasta-hex",
   "scolapasta-string-escape",
   "spinoso-array",

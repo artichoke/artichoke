@@ -70,16 +70,16 @@ impl Native {
     ///
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]
-    pub fn is_required(&self, path: &Path) -> bool {
+    pub fn is_required(&self, path: &Path) -> Option<bool> {
         let path = if let Ok(cwd) = env::current_dir() {
             absolutize_relative_to(path, &cwd)
         } else {
-            return false;
+            return None;
         };
         if let Ok(path) = normalize_slashes(path) {
-            self.loaded_features.contains(path.as_bstr())
+            Some(self.loaded_features.contains(path.as_bstr()))
         } else {
-            false
+            None
         }
     }
 

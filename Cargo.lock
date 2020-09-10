@@ -37,6 +37,7 @@ name = "artichoke-backend"
 version = "0.1.0"
 dependencies = [
  "artichoke-core",
+ "artichoke-load-path",
  "bindgen",
  "bstr",
  "cc",
@@ -64,6 +65,13 @@ dependencies = [
 [[package]]
 name = "artichoke-core"
 version = "0.8.0"
+
+[[package]]
+name = "artichoke-load-path"
+version = "0.1.0"
+dependencies = [
+ "same-file",
+]
 
 [[package]]
 name = "atty"
@@ -350,6 +358,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
 
 [[package]]
+name = "mezzaluna-feature-loader"
+version = "0.1.0"
+dependencies = [
+ "bstr",
+ "same-file",
+]
+
+[[package]]
 name = "nibble_vec"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -583,6 +599,15 @@ dependencies = [
  "unicode-width",
  "utf8parse",
  "winapi",
+]
+
+[[package]]
+name = "same-file"
+version = "1.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
+dependencies = [
+ "winapi-util",
 ]
 
 [[package]]

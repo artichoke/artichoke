@@ -87,7 +87,7 @@ impl LoadSources for Artichoke {
         let path = {
             let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
             // If a file is already required, short circuit.
-            if state.load_path_vfs.is_required(path) {
+            if let Some(true) = state.load_path_vfs.is_required(path) {
                 return Ok(false);
             }
             // Require Rust `File` first because an File may define classes and
@@ -105,7 +105,7 @@ impl LoadSources for Artichoke {
                     alternate_path = path.to_owned();
                     alternate_path.set_extension(RUBY_EXTENSION);
                     // If a file is already required, short circuit.
-                    if state.load_path_vfs.is_required(&alternate_path) {
+                    if let Some(true) = state.load_path_vfs.is_required(&alternate_path) {
                         return Ok(false);
                     }
                     if let Some(hook) = state.load_path_vfs.get_extension(&alternate_path) {
@@ -136,7 +136,7 @@ impl LoadSources for Artichoke {
         let path = {
             let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
             // If a file is already required, short circuit.
-            if state.load_path_vfs.is_required(path) {
+            if let Some(true) = state.load_path_vfs.is_required(path) {
                 return Ok(false);
             }
             // Require Rust `File` first because an File may define classes and
@@ -154,7 +154,7 @@ impl LoadSources for Artichoke {
                     alternate_path = path.to_owned();
                     alternate_path.set_extension(RUBY_EXTENSION);
                     // If a file is already required, short circuit.
-                    if state.load_path_vfs.is_required(&alternate_path) {
+                    if let Some(true) = state.load_path_vfs.is_required(&alternate_path) {
                         return Ok(false);
                     }
                     if let Some(hook) = state.load_path_vfs.get_extension(&alternate_path) {
@@ -165,7 +165,17 @@ impl LoadSources for Artichoke {
                         // source.
                         &alternate_path
                     } else {
-                        path
+                        // Try to load the source at the given path
+                        if let Ok(contents) = self.read_source_file_contents(path) {
+                            let contents = contents.into_owned();
+                            self.eval(&contents)?;
+                            let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
+                            state.load_path_vfs.mark_required(path)?;
+                            trace!("Successful require of {}", path.display());
+                            return Ok(true);
+                        }
+                        // else proceed with the alternate path
+                        &alternate_path
                     }
                 }
             }
@@ -184,22 +194,7 @@ impl LoadSources for Artichoke {
     {
         let state = self.state.as_deref().ok_or_else(InterpreterExtractError::new)?;
         let path = path.as_ref();
-        let contents = match state.load_path_vfs.read_file(path) {
-            Ok(contents) => contents,
-            // If we failed to read the source file and it already has a `.rb`
-            // extension, return the error since there are no alternative paths
-            // we can try.
-            Err(err) if matches!(path.extension(), Some(ext) if *ext == *OsStr::new(RUBY_EXTENSION)) => {
-                return Err(err.into());
-            }
-            // Retry the read with an alternative file path that has a `.rb`
-            // extension.
-            Err(_) => {
-                let mut path = path.to_owned();
-                path.set_extension(RUBY_EXTENSION);
-                state.load_path_vfs.read_file(&path)?
-            }
-        };
+        let contents = state.load_path_vfs.read_file(path)?;
         Ok(contents.to_vec().into())
     }
 }
