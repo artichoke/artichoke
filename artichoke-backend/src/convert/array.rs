@@ -1,7 +1,7 @@
 use std::iter::FromIterator;
 
 use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
-use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut};
+use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut, Value as _};
 use crate::error::Error;
 use crate::extn::core::array::Array;
 use crate::types::{Int, Ruby, Rust};

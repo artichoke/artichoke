@@ -98,6 +98,7 @@ readme!();
 
 extern crate alloc;
 
+pub mod coerce_to_numeric;
 pub mod constant;
 pub mod convert;
 pub mod eval;
@@ -127,6 +128,7 @@ pub mod warn;
 ///
 /// The prelude may grow over time as additional items see ubiquitous use.
 pub mod prelude {
+    pub use crate::coerce_to_numeric::CoerceToNumeric;
     pub use crate::constant::DefineConstant;
     pub use crate::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
     pub use crate::eval::Eval;

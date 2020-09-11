@@ -64,7 +64,7 @@ pub fn array_concat(slf: Array, other: Array) -> Result<Array, Box<dyn RubyExcep
 ## `no_std`
 
 This crate is `no_std` compatible when built without the `std` feature. This
-crate unconditionally depends on [`alloc`].
+crate has a required dependency on [`alloc`].
 
 ## Crate features
 

@@ -1,3 +1,4 @@
+use artichoke_core::value::pretty_name;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::error;
@@ -80,32 +81,6 @@ impl Value {
         self.0
     }
 
-    /// Return this values [Rust-mapped type tag](Ruby).
-    #[inline]
-    #[must_use]
-    pub fn ruby_type(&self) -> Ruby {
-        types::ruby_from_mrb_value(self.inner())
-    }
-
-    #[must_use]
-    pub fn pretty_name<'a>(&self, interp: &mut Artichoke) -> &'a str {
-        match self.try_into(interp) {
-            Ok(Some(true)) => "true",
-            Ok(Some(false)) => "false",
-            Ok(None) => "nil",
-            Err(_) => {
-                if let Ruby::Data | Ruby::Object = self.ruby_type() {
-                    self.funcall(interp, "class", &[], None)
-                        .and_then(|class| class.funcall(interp, "name", &[], None))
-                        .and_then(|class| class.try_into_mut(interp))
-                        .unwrap_or_default()
-                } else {
-                    self.ruby_type().class_name()
-                }
-            }
-        }
-    }
-
     /// Whether a value is an interpreter-only variant not exposed to Ruby.
     ///
     /// Some type tags like [`MRB_TT_UNDEF`](sys::mrb_vtype::MRB_TT_UNDEF) are
@@ -166,23 +141,24 @@ impl Value {
                     int
                 } else {
                     let mut message = String::from("can't convert ");
-                    message.push_str(self.pretty_name(interp));
+                    let name = pretty_name(*self, interp);
+                    message.push_str(name);
                     message.push_str(" to Integer (");
-                    message.push_str(self.pretty_name(interp));
+                    message.push_str(name);
                     message.push_str("#to_int gives ");
-                    message.push_str(maybe.pretty_name(interp));
+                    message.push_str(pretty_name(maybe, interp));
                     message.push(')');
                     return Err(TypeError::from(message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(self.pretty_name(interp));
+                message.push_str(pretty_name(*self, interp));
                 message.push_str(" into Integer");
                 return Err(TypeError::from(message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
-            message.push_str(self.pretty_name(interp));
+            message.push_str(pretty_name(*self, interp));
             message.push_str(" into Integer");
             return Err(TypeError::from(message));
         };
@@ -211,23 +187,24 @@ impl Value {
                     string
                 } else {
                     let mut message = String::from("can't convert ");
-                    message.push_str(self.pretty_name(interp));
+                    let name = pretty_name(*self, interp);
+                    message.push_str(name);
                     message.push_str(" to String (");
-                    message.push_str(self.pretty_name(interp));
+                    message.push_str(name);
                     message.push_str("#to_str gives ");
-                    message.push_str(maybe.pretty_name(interp));
+                    message.push_str(pretty_name(maybe, interp));
                     message.push(')');
                     return Err(TypeError::from(message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(self.pretty_name(interp));
+                message.push_str(pretty_name(*self, interp));
                 message.push_str(" into String");
                 return Err(TypeError::from(message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
-            message.push_str(self.pretty_name(interp));
+            message.push_str(pretty_name(*self, interp));
             message.push_str(" into String");
             return Err(TypeError::from(message));
         };
@@ -344,6 +321,10 @@ impl ValueCore for Value {
         } else {
             Vec::new()
         }
+    }
+
+    fn ruby_type(&self) -> Ruby {
+        types::ruby_from_mrb_value(self.inner())
     }
 }
 

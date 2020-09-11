@@ -124,6 +124,7 @@ mod artichoke;
 pub mod block;
 pub mod class;
 pub mod class_registry;
+mod coerce_to_numeric;
 mod constant;
 pub mod convert;
 pub mod def;
