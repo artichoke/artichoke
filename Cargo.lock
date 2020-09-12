@@ -699,6 +699,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "spinoso-random"
+version = "0.1.0"
+dependencies = [
+ "getrandom",
+ "libm",
+ "rand",
+ "rand_core",
+]
+
+[[package]]
 name = "spinoso-securerandom"
 version = "0.1.0"
 dependencies = [

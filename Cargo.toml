@@ -42,6 +42,7 @@ members = [
   "spinoso-env",
   "spinoso-exception",
   "spinoso-math",
+  "spinoso-random",
   "spinoso-securerandom",
   "spinoso-symbol",
   "spinoso-time",
