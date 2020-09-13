@@ -210,6 +210,10 @@ impl Mt {
             chunk.copy_from_slice(&bytes);
         }
         let remainder = dest_chunks.into_remainder();
+        // Don't consume more from the RNG if we already filled the buffer.
+        if remainder.is_empty() {
+            return;
+        }
         let bytes = self.next_int32().to_le_bytes();
         // chunks_mut_exact guarantees `remainder.len()` is less than the chunk
         // size of `size_of::<u32>()`

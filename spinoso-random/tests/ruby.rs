@@ -1,5 +1,3 @@
-#![cfg(feature = "ruby")]
-
 use spinoso_random::Mt;
 
 #[test]
@@ -12,9 +10,9 @@ fn bytes_reproducibility() {
         35, 103, 59, 225,
     ];
 
-    let mut rng = Mt::new(33);
+    let mut rng = Mt::with_seed(33);
     let mut samples = [0; 64];
-    rng.fill(&mut samples);
+    rng.fill_bytes(&mut samples);
     assert_eq!(samples[..], expected[..]);
 }
 
@@ -44,7 +42,7 @@ fn float_reproducibility() {
         0.4512914630087632,
     ];
 
-    let mut rng = Mt::new(33);
+    let mut rng = Mt::with_seed(33);
     let mut samples = vec![0.0; expected.len()];
     for cell in samples.iter_mut() {
         *cell = rng.next_real();
@@ -70,15 +68,15 @@ fn float_reproducibility() {
 // ```
 #[test]
 fn spec_bytes() {
-    let mut rng = Mt::new(33);
+    let mut rng = Mt::with_seed(33);
     let mut buf = [0; 2];
     rng.fill_bytes(&mut buf);
-    assert_eq!(buf, b"\x14\\");
+    assert_eq!(buf[..], b"\x14\\"[..]);
 
     let mut skip = [0; 1000];
     rng.fill_bytes(&mut skip);
 
     let mut buf = [0; 2];
     rng.fill_bytes(&mut buf);
-    assert_eq!(buf, b"\xA1p");
+    assert_eq!(buf[..], b"\xA1p"[..]);
 }
