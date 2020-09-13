@@ -16,9 +16,10 @@ categories = ["algorithms", "no-std"]
 getrandom = { version = "0.1", default-features = false }
 libm = "0.2"
 rand_ = { version = "0.7", optional = true, default-features = false, package = "rand" }
-rand_core = { version = "0.5", optional = true, default-features = false }
+rand_core_ = { version = "0.5", optional = true, default-features = false, package = "rand_core" }
 
 [features]
 default = ["rand", "std"]
 rand = ["rand_", "rand_core"]
+rand_core = ["rand_core_"]
 std = []

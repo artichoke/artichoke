@@ -2,7 +2,7 @@ use core::mem::size_of;
 
 use crate::{InitializeError, NewSeedError};
 
-#[cfg(feature = "rand")]
+#[cfg(feature = "rand_core")]
 mod rand;
 pub mod ruby;
 
@@ -10,6 +10,8 @@ use ruby::Mt;
 
 const DEFAULT_SEED_CNT: usize = 4;
 const DEFAULT_SEED_BYTES: usize = size_of::<u32>() * DEFAULT_SEED_CNT;
+
+const DEFAULT_SEED: u32 = 5489_u32;
 
 /// Random provides an interface to Ruby's pseudo-random number generator, or
 /// PRNG.
@@ -45,14 +47,29 @@ const DEFAULT_SEED_BYTES: usize = size_of::<u32>() * DEFAULT_SEED_CNT;
 ///
 /// ```
 /// # use spinoso_random::Random;
-/// let seed = [1_u32, 2, 3, 4];
+/// let seed = 5489_u32;
 /// let mut random = Random::with_seed(seed);
+/// let rand = random.next_int32();
+///
+/// let seed = [627457_u32, 697550, 16438, 41926];
+/// let mut random = Random::with_array_seed(seed);
 /// let rand = random.next_int32();
 /// ```
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Random {
     mt: Mt,
     seed: [u32; 4],
+}
+
+impl Default for Random {
+    #[inline]
+    fn default() -> Self {
+        if let Ok(random) = Random::new() {
+            random
+        } else {
+            Random::with_seed(DEFAULT_SEED)
+        }
+    }
 }
 
 impl Random {
@@ -98,13 +115,50 @@ impl Random {
     ///
     /// ```
     /// # use spinoso_random::Random;
-    /// let seed = [1_u32, 2, 3, 4];
+    /// let seed = 33;
     /// let mut random = Random::with_seed(seed);
     /// let rand = random.next_int32();
     /// ```
     #[inline]
     #[must_use]
-    pub fn with_seed(seed: [u32; 4]) -> Self {
+    pub fn with_seed(seed: u32) -> Self {
+        let mt = Mt::with_seed(seed);
+        let seed = u128::from(seed).to_le_bytes();
+        let seed = seed_to_key(seed);
+        Self { mt, seed }
+    }
+
+    /// Create a new random number generator using the given seed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_random::Random;
+    /// let seed = [1_u32, 2, 3, 4];
+    /// let mut random = Random::with_array_seed(seed);
+    /// let rand = random.next_int32();
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn with_array_seed(seed: [u32; DEFAULT_SEED_CNT]) -> Self {
+        let mt = Mt::new_with_key(seed.iter().copied());
+        Self { mt, seed }
+    }
+
+    /// Create a new random number generator using the given seed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_random::Random;
+    /// let seed = [1_u32, 2, 3, 4];
+    /// let mut random = Random::with_array_seed(seed);
+    /// let rand = random.next_int32();
+    /// ```
+    #[inline]
+    #[must_use]
+    pub fn with_byte_array_seed(seed: [u8; DEFAULT_SEED_BYTES]) -> Self {
+        let seed = seed_to_key(seed);
         let mt = Mt::new_with_key(seed.iter().copied());
         Self { mt, seed }
     }
@@ -193,7 +247,7 @@ impl Random {
     /// ```
     /// # use spinoso_random::Random;
     /// let seed = [1_u32, 2, 3, 4];
-    /// let random = Random::with_seed(seed);
+    /// let random = Random::with_array_seed(seed);
     /// assert_eq!(random.seed(), seed);
     /// ```
     #[inline]
@@ -216,9 +270,10 @@ fn int_pair_to_real_inclusive(a: u32, b: u32) -> f64 {
     libm::ldexp(r, -MANTISSA_DIGITS)
 }
 
+/// Convert a byte array into a reseeding key of `u32`s.
 #[inline]
 #[must_use]
-fn seed_to_key(seed: [u8; DEFAULT_SEED_BYTES]) -> [u32; DEFAULT_SEED_CNT] {
+pub fn seed_to_key(seed: [u8; DEFAULT_SEED_BYTES]) -> [u32; DEFAULT_SEED_CNT] {
     let mut key = [0_u32; DEFAULT_SEED_CNT];
     let iter = key.iter_mut().zip(seed.chunks_exact(size_of::<u32>()));
     for (cell, chunk) in iter {

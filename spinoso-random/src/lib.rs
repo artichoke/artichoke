@@ -42,8 +42,8 @@
 //!
 //! ```
 //! # use spinoso_random::Random;
-//! let seed = [1_u32, 2, 3, 4];
-//! let mut random = Random::with_seed(seed);
+//! let seed = [627457_u32, 697550, 16438, 41926];
+//! let mut random = Random::with_array_seed(seed);
 //! let rand = random.next_int32();
 //! ```
 //!
@@ -97,7 +97,7 @@ mod urandom;
 #[cfg(feature = "rand")]
 pub use rand::{rand, Max, Rand};
 pub use random::ruby::Mt;
-pub use random::{new_seed, Random};
+pub use random::{new_seed, seed_to_key, Random};
 pub use urandom::urandom;
 
 // Ensure code blocks in README.md compile

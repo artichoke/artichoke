@@ -1,11 +1,11 @@
-use crate::extn::core::random::{self, trampoline};
+use super::{trampoline, Rng};
 use crate::extn::prelude::*;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.is_class_defined::<random::Random>() {
+    if interp.is_class_defined::<Rng>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Random", None, Some(def::box_unbox_free::<random::Random>))?;
+    let spec = class::Spec::new("Random", None, Some(def::box_unbox_free::<Rng>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_self_method("new_seed", random_self_new_seed, sys::mrb_args_req(1))?
@@ -17,12 +17,12 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("rand", random_rand, sys::mrb_args_opt(1))?
         .add_method("seed", random_seed, sys::mrb_args_none())?
         .define()?;
-    interp.def_class::<random::Random>(spec)?;
+    interp.def_class::<Rng>(spec)?;
 
-    let default = random::Random::interpreter_prng_delegate();
-    let default = random::Random::alloc_value(default, interp)
+    let default = Rng::Global;
+    let default = Rng::alloc_value(default, interp)
         .map_err(|_| NotDefinedError::class_constant("Random::DEFAULT"))?;
-    interp.define_class_constant::<random::Random>("DEFAULT", default)?;
+    interp.define_class_constant::<Rng>("DEFAULT", default)?;
     let _ = interp.eval(&include_bytes!("random.rb")[..])?;
     trace!("Patched Random onto interpreter");
     Ok(())

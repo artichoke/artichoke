@@ -35,7 +35,7 @@ pub fn interpreter_with_config<T>(config: T) -> Result<Artichoke, Error>
 where
     T: ReleaseMetadata,
 {
-    let state = State::new();
+    let state = State::new()?;
     let state = Box::new(state);
     let alloc_ud = Box::into_raw(state) as *mut c_void;
     let raw = unsafe { sys::mrb_open_allocf(Some(sys::mrb_default_allocf), alloc_ud) };

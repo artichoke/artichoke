@@ -1,18 +1,16 @@
 use intaglio::bytes::SymbolTable;
 
 use crate::class;
+#[cfg(feature = "core-random")]
+use crate::extn::core::random::Random;
 use crate::fs::{self, Filesystem};
+use crate::interpreter::InterpreterAllocError;
 use crate::module;
 use crate::sys;
 
 pub mod output;
 pub mod parser;
-#[cfg(feature = "core-random")]
-pub mod prng;
 pub mod regexp;
-
-#[cfg(feature = "core-random")]
-use prng::Prng;
 
 /// Container for domain-specific interpreter state.
 #[derive(Default, Debug)]
@@ -25,7 +23,7 @@ pub struct State {
     pub symbols: SymbolTable,
     pub output: output::Strategy,
     #[cfg(feature = "core-random")]
-    pub prng: Prng,
+    pub prng: Random,
 }
 
 impl State {
@@ -40,9 +38,14 @@ impl State {
     /// - [Ruby parser and file context](parser::State).
     /// - [Intepreter-level PRNG](Prng) (behind the `core-random` feature).
     /// - [IO capturing](output::Strategy) strategy.
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
+    ///
+    /// # Errors
+    ///
+    /// If the `core-random` feature is enabled, this function may return an
+    /// error if the interpreter-global psuedorandom number generator fails
+    /// to initialize using the paltform source of randomness.
+    pub fn new() -> Result<Self, InterpreterAllocError> {
+        Ok(Self {
             parser: None,
             classes: class::Registry::new(),
             modules: module::Registry::new(),
@@ -51,8 +54,8 @@ impl State {
             symbols: SymbolTable::new(),
             output: output::Strategy::new(),
             #[cfg(feature = "core-random")]
-            prng: Prng::new(),
-        }
+            prng: Random::new().map_err(|_| InterpreterAllocError::new())?,
+        })
     }
 
     /// Create a new [`parser::State`] from a [`sys::mrb_state`].

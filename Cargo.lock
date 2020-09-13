@@ -47,14 +47,13 @@ dependencies = [
  "onig",
  "quickcheck",
  "quickcheck_macros",
- "rand",
- "rand_pcg",
  "regex",
  "scolapasta-string-escape",
  "spinoso-array",
  "spinoso-env",
  "spinoso-exception",
  "spinoso-math",
+ "spinoso-random",
  "spinoso-securerandom",
  "spinoso-symbol",
  "spinoso-time",
@@ -63,7 +62,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-core"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "atty"
@@ -500,15 +499,6 @@ name = "rand_hc"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
-dependencies = [
- "rand_core",
-]
-
-[[package]]
-name = "rand_pcg"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16abd0c1b639e9eb4d7c50c0b8100b0d0f849be2349829c740fe8e6eb4816429"
 dependencies = [
  "rand_core",
 ]

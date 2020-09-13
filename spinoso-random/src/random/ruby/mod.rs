@@ -8,7 +8,7 @@ use core::hash;
 use core::mem::size_of;
 use core::num::Wrapping;
 
-#[cfg(feature = "rand")]
+#[cfg(feature = "rand_core")]
 mod rand;
 
 const N: usize = 624;
