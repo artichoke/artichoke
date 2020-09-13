@@ -119,7 +119,7 @@ impl Mt {
     /// This function is used when initializing an `Mt` with more than 32 bits,
     /// such as when initializing with a `Bignum` seed.
     ///
-    /// MRI initializes the global Sip Hash seed with 4 `u32`s of entropy.
+    /// MRI initializes the global SipHash seed with 4 `u32`s of entropy.
     #[inline]
     #[must_use]
     pub fn new_with_key<I>(key: I) -> Self

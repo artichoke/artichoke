@@ -1,3 +1,5 @@
+//! FFI glue between the Rust trampolines and the mruby C interpreter.
+
 use super::{trampoline, Rng};
 use crate::extn::prelude::*;
 

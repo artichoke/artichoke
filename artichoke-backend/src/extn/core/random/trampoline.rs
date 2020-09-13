@@ -1,3 +1,5 @@
+//! Glue between mruby FFI and `ENV` Rust implementation.
+
 use super::{Random, Rng, Seed};
 use crate::extn::prelude::*;
 

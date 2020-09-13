@@ -12,7 +12,15 @@ pub mod output;
 pub mod parser;
 pub mod regexp;
 
-/// Container for domain-specific interpreter state.
+/// Container for interpreter global state.
+///
+/// A Ruby interpreter requires various pieces of state to execute Ruby code. It
+/// needs an object heap, type registry, symbol table, psuedorandom number
+/// generator, and more.
+///
+/// This struct stores all of these components and allows them to be passed
+/// around as one bundle. This is useful in FFI contexts because this `State`
+/// can be [`Box`]ed and stored in a user data pointer.
 #[derive(Default, Debug)]
 pub struct State {
     pub parser: Option<parser::State>,
@@ -31,19 +39,27 @@ impl State {
     ///
     /// The state is comprised of several components:
     ///
-    /// - [`Class`](crate::class_registry::ClassRegistry) and
-    ///   [`Module`](crate::module_registry::ModuleRegistry) registries.
-    /// - `Regexp` [global state](regexp::State).
-    /// - [In-memory virtual filesystem](fs).
-    /// - [Ruby parser and file context](parser::State).
-    /// - [Intepreter-level PRNG](Prng) (behind the `core-random` feature).
-    /// - [IO capturing](output::Strategy) strategy.
+    /// - [`Class`] and [`Module`] registries.
+    /// - `Regexp` [global state][regexp-state].
+    /// - [In-memory virtual filesystem].
+    /// - [Ruby parser and file context].
+    /// - [Intepreter-level PRNG] (requires activating the `core-random`
+    ///   feature).
+    /// - [IO capturing] strategy.
     ///
     /// # Errors
     ///
     /// If the `core-random` feature is enabled, this function may return an
     /// error if the interpreter-global psuedorandom number generator fails
     /// to initialize using the paltform source of randomness.
+    ///
+    /// [`Class`]: crate::class_registry::ClassRegistry
+    /// [`Module`]: crate::module_registry::ModuleRegistry
+    /// [regexp-state]: regexp::State
+    /// [In-memory virtual filesystem]: fs
+    /// [Ruby parser and file context]: parser::State
+    /// [Intepreter-level PRNG]: Random
+    /// [IO capturing]: output::Strategy
     pub fn new() -> Result<Self, InterpreterAllocError> {
         Ok(Self {
             parser: None,

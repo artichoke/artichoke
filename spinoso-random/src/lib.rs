@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
+#![allow(clippy::doc_markdown)]
 #![allow(unknown_lints)]
 #![warn(broken_intra_doc_links)]
 #![warn(missing_docs)]
@@ -70,17 +71,20 @@
 //!
 //! All features are enabled by default.
 //!
-//! - **rand** - Enables implementations [`RngCore`] on [`Random`] and [`Mt`]
-//!   types. Enables range sampling methods for the [`rand()`] function.
-//!   Dropping this feature removes the [`rand`] and [`rand_core`] dependencies.
+//! - **rand** - Enables range sampling methods for the [`rand()`] function.
+//!   Activating this feature also activates the **rand_core** feature. Dropping
+//!   this feature removes the [`rand`] dependency.
+//! - **rand_core** - Enables implementations of [`RngCore`] on [`Random`] and
+//!   [`Mt`] types. Dropping this feature removes the [`rand_core`] dependency.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
 //!
 //! [ruby-random]: https://ruby-doc.org/core-2.6.3/Random.html
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
-//! [`RngCore`]: rand_core::RngCore
+//! [`RngCore`]: rand_core_::RngCore
 //! [`rand`]: rand_
+//! [`rand_core`]: rand_core_
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, doc(alias = "random"))]
