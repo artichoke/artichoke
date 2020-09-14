@@ -177,6 +177,24 @@ impl From<UrandomError> for Error {
     }
 }
 
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Random error")
+    }
+}
+
+#[cfg(feature = "std")]
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Self::Argument(ref err) => Some(err),
+            Self::Initialize(ref err) => Some(err),
+            Self::NewSeed(ref err) => Some(err),
+            Self::Urandom(ref err) => Some(err),
+        }
+    }
+}
+
 /// Error that indicates a `Random` random number generator failed to
 /// initialize.
 ///
