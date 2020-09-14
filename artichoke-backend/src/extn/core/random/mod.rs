@@ -1,13 +1,49 @@
-use rand::{self, Rng, RngCore};
-use std::convert::TryFrom;
-use std::fmt;
+//! Random provides an interface to Ruby's pseudo-random number generator, or
+//! PRNG. The PRNG produces a deterministic sequence of bits which approximate
+//! true randomness. The sequence may be represented by integers, floats, or
+//! binary strings.
+//!
+//! This module implements the [`Random`] singleton object from Ruby Core.
+//!
+//! In Artichoke, `Random` is implemented using a modified Mersenne Twister that
+//! reproduces the same byte and float sequences as the MRI implementation.
+//!
+//! You can use this class in your application by accessing it directly. As a
+//! Core API, it is globally available:
+//!
+//! ```ruby
+//! Random::DEFAULT.bytes(16)
+//! r = Random.new(33)
+//! r.rand
+//! ```
+//!
+//! [`Random`]: https://ruby-doc.org/core-2.6.3/Random.html
 
+use core::convert::TryFrom;
+use core::ops::{Deref, DerefMut};
+use spinoso_random::{
+    ArgumentError as RandomArgumentError, InitializeError, NewSeedError, Random as SpinosoRandom,
+    UrandomError,
+};
+
+use crate::convert::HeapAllocatedData;
 use crate::extn::prelude::*;
 
-pub mod backend;
-mod boxing;
+#[doc(inline)]
+pub use spinoso_random::{Max, Rand};
+
 pub mod mruby;
 pub mod trampoline;
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+enum Rng {
+    Global,
+    Value(Box<Random>),
+}
+
+impl HeapAllocatedData for Rng {
+    const RUBY_TYPE: &'static str = "Random";
+}
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Seed {
@@ -35,10 +71,14 @@ impl Seed {
     }
 
     #[must_use]
-    pub fn to_reseed(self) -> Option<u64> {
+    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_wrap)]
+    pub fn to_mt_seed(self) -> Option<[u32; 4]> {
         if let Self::New(seed) = self {
-            #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
-            Some(seed as u64)
+            let seed = u128::from(seed as u64);
+            let seed = seed.to_le_bytes();
+            let seed = spinoso_random::seed_to_key(seed);
+            Some(seed)
         } else {
             None
         }
@@ -49,8 +89,8 @@ impl TryConvertMut<Value, Seed> for Artichoke {
     type Error = TypeError;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Seed, Self::Error> {
-        let optional: Option<Value> = self.convert(value);
-        self.try_convert_mut(optional)
+        let seed = value.implicitly_convert_to_int(self)?;
+        Ok(Seed::New(seed))
     }
 }
 
@@ -59,19 +99,31 @@ impl TryConvertMut<Option<Value>, Seed> for Artichoke {
 
     fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Seed, Self::Error> {
         if let Some(value) = value {
-            let seed = value.implicitly_convert_to_int(self)?;
-            Ok(Seed::New(seed))
+            let seed = self.try_convert_mut(value)?;
+            Ok(seed)
         } else {
             Ok(Seed::None)
         }
     }
 }
 
+#[allow(clippy::cast_sign_loss)]
+#[allow(clippy::cast_possible_wrap)]
+pub fn new_seed() -> Result<Int, Error> {
+    // TODO: return a bignum instead of truncating.
+    let [a, b, _, _] = spinoso_random::new_seed()?;
+    let seed = u64::from(a) << 32 | u64::from(b);
+    let seed = seed as Int;
+    Ok(seed)
+}
+
 pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Error> {
-    let old_seed = interp.prng_seed()?;
-    interp.prng_reseed(seed.to_reseed())?;
-    #[allow(clippy::cast_possible_wrap)]
-    Ok(old_seed as Int)
+    let old_seed = interp.prng()?.seed();
+    let new_random = Random::with_array_seed(seed.to_mt_seed())?;
+    // "Reseed" by replacing the RNG with a newly seeded one.
+    let prng = interp.prng_mut()?;
+    *prng = new_random;
+    Ok(old_seed)
 }
 
 pub fn urandom(size: Int) -> Result<Vec<u8>, Error> {
@@ -79,159 +131,122 @@ pub fn urandom(size: Int) -> Result<Vec<u8>, Error> {
         Ok(0) => Ok(Vec::new()),
         Ok(len) => {
             let mut buf = vec![0; len];
-            let mut rng = rand::thread_rng();
-            rng.try_fill_bytes(&mut buf)
-                .map_err(|err| RuntimeError::from(err.to_string()))?;
+            spinoso_random::urandom(&mut buf)?;
             Ok(buf)
         }
         Err(_) => Err(ArgumentError::from("negative string size (or size too big)").into()),
     }
 }
 
-pub struct Random(Box<dyn backend::RandType>);
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq)]
+pub struct Random(SpinosoRandom);
 
-impl fmt::Debug for Random {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Random")
-            .field("backend", self.0.as_debug())
-            .finish()
+impl AsRef<SpinosoRandom> for Random {
+    fn as_ref(&self) -> &SpinosoRandom {
+        &self.0
+    }
+}
+
+impl AsMut<SpinosoRandom> for Random {
+    fn as_mut(&mut self) -> &mut SpinosoRandom {
+        &mut self.0
+    }
+}
+
+impl Deref for Random {
+    type Target = SpinosoRandom;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Random {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
 impl Random {
-    #[must_use]
-    pub fn new(seed: Option<u64>) -> Self {
-        Self(backend::rand::new(seed))
+    pub fn new() -> Result<Self, Error> {
+        let random = SpinosoRandom::new()?;
+        Ok(Self(random))
     }
 
-    #[must_use]
-    pub fn interpreter_prng_delegate() -> Self {
-        Self(Box::new(backend::default::Default::default()))
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn inner(&self) -> &dyn backend::RandType {
-        self.0.as_ref()
-    }
-
-    #[inline]
-    pub fn inner_mut(&mut self) -> &mut dyn backend::RandType {
-        self.0.as_mut()
-    }
-
-    #[inline]
-    pub fn initialize(interp: &mut Artichoke, seed: Seed) -> Result<Self, Error> {
-        let _ = interp;
-        Ok(Self(backend::rand::new(seed.to_reseed())))
-    }
-
-    pub fn eql(&self, interp: &mut Artichoke, mut other: Value) -> Result<bool, Error> {
-        if let Ok(other) = unsafe { Random::unbox_from_value(&mut other, interp) } {
-            let this_seed = self.inner().seed(interp)?;
-            let other_seed = other.inner().seed(interp)?;
-            Ok(this_seed == other_seed)
+    pub fn with_seed(seed: Option<u64>) -> Result<Self, Error> {
+        let random = if let Some(seed) = seed {
+            if let Ok(seed) = u32::try_from(seed) {
+                SpinosoRandom::with_seed(seed)
+            } else {
+                let seed = u128::from(seed);
+                let seed = seed.to_le_bytes();
+                SpinosoRandom::with_byte_array_seed(seed)
+            }
         } else {
-            Ok(false)
-        }
+            SpinosoRandom::new()?
+        };
+        Ok(Self(random))
     }
 
-    pub fn bytes(&mut self, interp: &mut Artichoke, size: Int) -> Result<Vec<u8>, Error> {
+    pub fn with_array_seed(seed: Option<[u32; 4]>) -> Result<Self, Error> {
+        let random = if let Some(seed) = seed {
+            SpinosoRandom::with_array_seed(seed)
+        } else {
+            SpinosoRandom::new()?
+        };
+        Ok(Self(random))
+    }
+
+    pub fn bytes(&mut self, size: Int) -> Result<Vec<u8>, Error> {
         match usize::try_from(size) {
             Ok(0) => Ok(Vec::new()),
             Ok(len) => {
                 let mut buf = vec![0; len];
-                self.inner_mut().bytes(interp, &mut buf)?;
+                self.fill_bytes(&mut buf);
                 Ok(buf)
             }
             Err(_) => Err(ArgumentError::from("negative string size (or size too big)").into()),
         }
     }
 
-    pub fn rand(
-        &mut self,
-        interp: &mut Artichoke,
-        max: RandomNumberMax,
-    ) -> Result<RandomNumber, Error> {
-        match max {
-            RandomNumberMax::Float(max) if !max.is_finite() => {
-                // NOTE: MRI returns `Errno::EDOM` exception class.
-                Err(ArgumentError::from("Numerical argument out of domain").into())
-            }
-            RandomNumberMax::Float(max) if max < 0.0 => {
-                let mut message = b"invalid argument - ".to_vec();
-                string::write_float_into(&mut message, max)?;
-                Err(ArgumentError::from(message).into())
-            }
-            RandomNumberMax::Float(max) if max == 0.0 => {
-                let number = self.inner_mut().rand_float(interp, None)?;
-                Ok(RandomNumber::Float(number))
-            }
-            RandomNumberMax::Float(max) => {
-                let number = self.inner_mut().rand_float(interp, Some(max))?;
-                Ok(RandomNumber::Float(number))
-            }
-            RandomNumberMax::Integer(max) if max < 1 => {
-                let mut message = String::from("invalid argument - ");
-                string::format_int_into(&mut message, max)?;
-                Err(ArgumentError::from(message).into())
-            }
-            RandomNumberMax::Integer(max) => {
-                let number = self.inner_mut().rand_int(interp, max)?;
-                Ok(RandomNumber::Integer(number))
-            }
-            RandomNumberMax::None => {
-                let number = self.inner_mut().rand_float(interp, None)?;
-                Ok(RandomNumber::Float(number))
-            }
-        }
-    }
-
-    #[inline]
-    pub fn seed(&self, interp: &mut Artichoke) -> Result<Int, Error> {
-        let seed = self.inner().seed(interp)?;
-        #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
-        let seed = seed as Int;
-        Ok(seed)
+    pub fn rand(&mut self, constraint: Max) -> Result<Rand, Error> {
+        let rand = spinoso_random::rand(self, constraint)?;
+        Ok(rand)
     }
 
     #[must_use]
-    pub fn new_seed() -> Int {
-        let mut rng = rand::thread_rng();
-        rng.gen::<Int>()
+    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_wrap)]
+    pub fn seed(&self) -> Int {
+        // TODO: return a bignum instead of truncating.
+        let [a, b, _, _] = self.as_ref().seed();
+        let seed = u64::from(a) << 32 | u64::from(b);
+        seed as Int
     }
 }
 
-#[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum RandomNumberMax {
-    Float(Fp),
-    Integer(Int),
-    None,
-}
-
-impl TryConvertMut<Value, RandomNumberMax> for Artichoke {
+impl TryConvertMut<Value, Max> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, max: Value) -> Result<RandomNumberMax, Self::Error> {
+    fn try_convert_mut(&mut self, max: Value) -> Result<Max, Self::Error> {
         let optional: Option<Value> = self.try_convert(max)?;
         self.try_convert_mut(optional)
     }
 }
 
-impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
+impl TryConvertMut<Option<Value>, Max> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, max: Option<Value>) -> Result<RandomNumberMax, Self::Error> {
+    fn try_convert_mut(&mut self, max: Option<Value>) -> Result<Max, Self::Error> {
         if let Some(max) = max {
             match max.ruby_type() {
                 Ruby::Fixnum => {
                     let max = max.try_into(self)?;
-                    Ok(RandomNumberMax::Integer(max))
+                    Ok(Max::Integer(max))
                 }
                 Ruby::Float => {
                     let max = max.try_into(self)?;
-                    Ok(RandomNumberMax::Float(max))
+                    Ok(Max::Float(max))
                 }
                 _ => {
                     let max = max.implicitly_convert_to_int(self).map_err(|_| {
@@ -239,27 +254,48 @@ impl TryConvertMut<Option<Value>, RandomNumberMax> for Artichoke {
                         message.extend(max.inspect(self));
                         ArgumentError::from(message)
                     })?;
-                    Ok(RandomNumberMax::Integer(max))
+                    Ok(Max::Integer(max))
                 }
             }
         } else {
-            Ok(RandomNumberMax::None)
+            Ok(Max::None)
         }
     }
 }
 
-#[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum RandomNumber {
-    Float(Fp),
-    Integer(Int),
+impl ConvertMut<Rand, Value> for Artichoke {
+    fn convert_mut(&mut self, from: Rand) -> Value {
+        match from {
+            Rand::Integer(num) => self.convert(num),
+            Rand::Float(num) => self.convert_mut(num),
+        }
+    }
 }
 
-impl ConvertMut<RandomNumber, Value> for Artichoke {
-    fn convert_mut(&mut self, from: RandomNumber) -> Value {
-        match from {
-            RandomNumber::Integer(num) => self.convert(num),
-            RandomNumber::Float(num) => self.convert_mut(num),
-        }
+impl From<RandomArgumentError> for Error {
+    fn from(err: RandomArgumentError) -> Self {
+        let err = RuntimeError::from(err.to_string());
+        err.into()
+    }
+}
+
+impl From<InitializeError> for Error {
+    fn from(err: InitializeError) -> Self {
+        let err = RuntimeError::from(err.message());
+        err.into()
+    }
+}
+
+impl From<NewSeedError> for Error {
+    fn from(err: NewSeedError) -> Self {
+        let err = RuntimeError::from(err.message());
+        err.into()
+    }
+}
+
+impl From<UrandomError> for Error {
+    fn from(err: UrandomError) -> Self {
+        let err = RuntimeError::from(err.message());
+        err.into()
     }
 }

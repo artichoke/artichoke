@@ -1,4 +1,6 @@
-use crate::extn::core::random::{self, Random};
+//! Glue between mruby FFI and `ENV` Rust implementation.
+
+use super::{Random, Rng, Seed};
 use crate::extn::prelude::*;
 
 pub fn initialize(
@@ -6,51 +8,62 @@ pub fn initialize(
     seed: Option<Value>,
     into: Value,
 ) -> Result<Value, Error> {
-    let seed = interp.try_convert_mut(seed)?;
-    let rand = Random::initialize(interp, seed)?;
-    let rand = Random::box_into_value(rand, into, interp)?;
-    Ok(rand)
+    let seed: Seed = interp.try_convert_mut(seed)?;
+    let random = Random::with_array_seed(seed.to_mt_seed())?;
+    let random = Rng::Value(Box::new(random));
+    let random = Rng::box_into_value(random, into, interp)?;
+    Ok(random)
 }
 
-pub fn equal(interp: &mut Artichoke, mut rand: Value, other: Value) -> Result<Value, Error> {
-    let rand = unsafe { Random::unbox_from_value(&mut rand, interp)? };
-    let eql = rand.eql(interp, other)?;
+pub fn equal(interp: &mut Artichoke, mut rand: Value, mut other: Value) -> Result<Value, Error> {
+    let random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
+    let other = unsafe { Rng::unbox_from_value(&mut other, interp)? };
+    let eql = random.as_ref() == other.as_ref();
     Ok(interp.convert(eql))
 }
 
 pub fn bytes(interp: &mut Artichoke, mut rand: Value, size: Value) -> Result<Value, Error> {
-    let mut rand = unsafe { Random::unbox_from_value(&mut rand, interp)? };
+    let mut random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
     let size = size.implicitly_convert_to_int(interp)?;
-    let buf = rand.bytes(interp, size)?;
+    let buf = match random.as_mut() {
+        Rng::Global => interp.prng_mut()?.bytes(size)?,
+        Rng::Value(random) => random.bytes(size)?,
+    };
     Ok(interp.convert_mut(buf))
 }
 
 pub fn rand(interp: &mut Artichoke, mut rand: Value, max: Option<Value>) -> Result<Value, Error> {
-    let mut rand = unsafe { Random::unbox_from_value(&mut rand, interp)? };
+    let mut random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
     let max = interp.try_convert_mut(max)?;
-    let num = rand.rand(interp, max)?;
+    let num = match random.as_mut() {
+        Rng::Global => interp.prng_mut()?.rand(max)?,
+        Rng::Value(random) => random.rand(max)?,
+    };
     Ok(interp.convert_mut(num))
 }
 
 pub fn seed(interp: &mut Artichoke, mut rand: Value) -> Result<Value, Error> {
-    let rand = unsafe { Random::unbox_from_value(&mut rand, interp)? };
-    let seed = rand.seed(interp)?;
+    let random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
+    let seed = match random.as_ref() {
+        Rng::Global => interp.prng()?.seed(),
+        Rng::Value(random) => random.seed(),
+    };
     Ok(interp.convert(seed))
 }
 
 pub fn new_seed(interp: &mut Artichoke) -> Result<Value, Error> {
-    let seed = Random::new_seed();
+    let seed = super::new_seed()?;
     Ok(interp.convert(seed))
 }
 
 pub fn srand(interp: &mut Artichoke, seed: Option<Value>) -> Result<Value, Error> {
     let seed = interp.try_convert_mut(seed)?;
-    let old_seed = random::srand(interp, seed)?;
+    let old_seed = super::srand(interp, seed)?;
     Ok(interp.convert(old_seed))
 }
 
 pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Error> {
     let size = size.implicitly_convert_to_int(interp)?;
-    let buf = random::urandom(size)?;
+    let buf = super::urandom(size)?;
     Ok(interp.convert_mut(buf))
 }

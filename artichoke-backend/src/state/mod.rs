@@ -1,20 +1,26 @@
 use intaglio::bytes::SymbolTable;
 
 use crate::class;
+#[cfg(feature = "core-random")]
+use crate::extn::core::random::Random;
 use crate::fs::{self, Filesystem};
+use crate::interpreter::InterpreterAllocError;
 use crate::module;
 use crate::sys;
 
 pub mod output;
 pub mod parser;
-#[cfg(feature = "core-random")]
-pub mod prng;
 pub mod regexp;
 
-#[cfg(feature = "core-random")]
-use prng::Prng;
-
-/// Container for domain-specific interpreter state.
+/// Container for interpreter global state.
+///
+/// A Ruby interpreter requires various pieces of state to execute Ruby code. It
+/// needs an object heap, type registry, symbol table, psuedorandom number
+/// generator, and more.
+///
+/// This struct stores all of these components and allows them to be passed
+/// around as one bundle. This is useful in FFI contexts because this `State`
+/// can be [`Box`]ed and stored in a user data pointer.
 #[derive(Default, Debug)]
 pub struct State {
     pub parser: Option<parser::State>,
@@ -25,7 +31,7 @@ pub struct State {
     pub symbols: SymbolTable,
     pub output: output::Strategy,
     #[cfg(feature = "core-random")]
-    pub prng: Prng,
+    pub prng: Random,
 }
 
 impl State {
@@ -33,16 +39,29 @@ impl State {
     ///
     /// The state is comprised of several components:
     ///
-    /// - [`Class`](crate::class_registry::ClassRegistry) and
-    ///   [`Module`](crate::module_registry::ModuleRegistry) registries.
-    /// - `Regexp` [global state](regexp::State).
-    /// - [In-memory virtual filesystem](fs).
-    /// - [Ruby parser and file context](parser::State).
-    /// - [Intepreter-level PRNG](Prng) (behind the `core-random` feature).
-    /// - [IO capturing](output::Strategy) strategy.
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
+    /// - [`Class`] and [`Module`] registries.
+    /// - `Regexp` [global state][regexp-state].
+    /// - [In-memory virtual filesystem].
+    /// - [Ruby parser and file context].
+    /// - [Intepreter-level PRNG] (requires activating the `core-random`
+    ///   feature).
+    /// - [IO capturing] strategy.
+    ///
+    /// # Errors
+    ///
+    /// If the `core-random` feature is enabled, this function may return an
+    /// error if the interpreter-global psuedorandom number generator fails
+    /// to initialize using the paltform source of randomness.
+    ///
+    /// [`Class`]: crate::class_registry::ClassRegistry
+    /// [`Module`]: crate::module_registry::ModuleRegistry
+    /// [regexp-state]: regexp::State
+    /// [In-memory virtual filesystem]: fs
+    /// [Ruby parser and file context]: parser::State
+    /// [Intepreter-level PRNG]: Random
+    /// [IO capturing]: output::Strategy
+    pub fn new() -> Result<Self, InterpreterAllocError> {
+        Ok(Self {
             parser: None,
             classes: class::Registry::new(),
             modules: module::Registry::new(),
@@ -51,8 +70,8 @@ impl State {
             symbols: SymbolTable::new(),
             output: output::Strategy::new(),
             #[cfg(feature = "core-random")]
-            prng: Prng::new(),
-        }
+            prng: Random::new().map_err(|_| InterpreterAllocError::new())?,
+        })
     }
 
     /// Create a new [`parser::State`] from a [`sys::mrb_state`].

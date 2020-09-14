@@ -11,21 +11,20 @@ keywords = ["artichoke", "artichoke-ruby", "mruby", "ruby"]
 categories = ["api-bindings"]
 
 [dependencies]
-artichoke-core = { version = "0.4", path = "../artichoke-core" }
+artichoke-core = { version = "0.5", path = "../artichoke-core" }
 bstr = { version = "0.2", default-features = false, features = ["std"] }
 dtoa = "0.4"
 intaglio = "1.1"
 itoa = "0.4"
 log = "0.4"
 once_cell = "1"
-rand = { version = "0.7", optional = true }
-rand_pcg = { version = "0.2", optional = true }
 regex = "1"
 scolapasta-string-escape = { version = "0.1", path = "../scolapasta-string-escape" }
 spinoso-array = { version = "0.3", path = "../spinoso-array" }
 spinoso-env = { version = "0.1", path = "../spinoso-env", optional = true }
 spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
 spinoso-math = { version = "0.1", path = "../spinoso-math", optional = true }
+spinoso-random = { version = "0.1", path = "../spinoso-random", optional = true }
 spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.1", path = "../spinoso-time", optional = true }
@@ -62,7 +61,7 @@ core-env = ["spinoso-env"]
 core-env-system = ["core-env", "spinoso-env/system-env"]
 core-math = ["spinoso-math"]
 core-math-full = ["core-math", "spinoso-math/full"]
-core-random = ["rand", "rand_pcg"]
+core-random = ["spinoso-random"]
 core-regexp-oniguruma = ["onig"]
 core-time = ["spinoso-time"]
 native-filesystem-access = []
