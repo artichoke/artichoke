@@ -66,11 +66,11 @@ crate does not depend on [`alloc`].
 
 All features are enabled by default.
 
-- **rand** - Enables range sampling methods for the [`rand()`] function.
+- **rand** - Enables range sampling methods for the `rand()` function.
   Activating this feature also activates the **rand_core** feature. Dropping
   this feature removes the [`rand`] dependency.
-- **rand_core** - Enables implementations of [`RngCore`] on [`Random`] and
-  [`Mt`] types. Dropping this feature removes the [`rand_core`] dependency.
+- **rand_core** - Enables implementations of [`RngCore`] on `Random` and `Mt`
+  types. Dropping this feature removes the [`rand_core`] dependency.
 - **std** - Enables a dependency on the Rust Standard Library. Activating this
   feature enables [`std::error::Error`] impls on error types in this crate.
 
