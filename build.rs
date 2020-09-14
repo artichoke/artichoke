@@ -19,7 +19,11 @@ struct Date {
 
 impl From<DateTime<Utc>> for Date {
     fn from(date: DateTime<Utc>) -> Self {
-        Self::new(date.year(), date.month(), date.day())
+        Self {
+            year: date.year(),
+            month: date.month(),
+            day: date.day(),
+        }
     }
 }
 
@@ -29,43 +33,24 @@ impl fmt::Display for Date {
     }
 }
 
-impl Date {
-    pub fn new(year: i32, month: u32, day: u32) -> Self {
-        Self { year, month, day }
-    }
-
-    pub fn year(&self) -> i32 {
-        self.year
-    }
-
-    pub fn month(&self) -> u32 {
-        self.month
-    }
-
-    pub fn day(&self) -> u32 {
-        self.day
-    }
-}
-
 pub fn build_release_metadata(target: &Triple) {
-    let version = env::var("CARGO_PKG_VERSION").unwrap();
+    let version =
+        env::var_os("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION was not set in build.rs");
+    let version = version
+        .to_str()
+        .expect("CARGO_PKG_VERSION was not a valid UTF-8 String");
     let birth_date = birthdate();
     let build_date = Date::from(Utc::now());
     let release_date = build_date;
     let revision_count = revision_count();
     let platform = platform(target);
     let copyright = copyright(birth_date, build_date);
-    let description = description(
-        version.as_str(),
-        release_date,
-        revision_count,
-        platform.as_str(),
-    );
+    let description = description(version, release_date, revision_count, platform.as_str());
 
     emit("RUBY_RELEASE_DATE", release_date);
-    emit("RUBY_RELEASE_YEAR", build_date.year());
-    emit("RUBY_RELEASE_MONTH", build_date.month());
-    emit("RUBY_RELEASE_DAY", build_date.day());
+    emit("RUBY_RELEASE_YEAR", build_date.year);
+    emit("RUBY_RELEASE_MONTH", build_date.month);
+    emit("RUBY_RELEASE_DAY", build_date.day);
     emit("RUBY_REVISION", revision_count.unwrap_or(0));
     emit("RUBY_PLATFORM", platform);
     emit("RUBY_COPYRIGHT", copyright);
@@ -114,16 +99,15 @@ fn platform(target: &Triple) -> String {
 }
 
 fn copyright(birth_date: Date, build_date: Date) -> String {
-    if birth_date.year() == build_date.year() {
+    if birth_date.year == build_date.year {
         format!(
             "Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
-            birth_date.year()
+            birth_date.year
         )
     } else {
         format!(
             "Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
-            birth_date.year(),
-            build_date.year()
+            birth_date.year, build_date.year
         )
     }
 }
@@ -151,7 +135,11 @@ fn compiler_version() -> Option<String> {
 }
 
 fn main() {
-    let target = env::var_os("TARGET").unwrap();
-    let target = Triple::from_str(target.to_str().unwrap()).unwrap();
+    let target = env::var_os("TARGET").expect("TARGET not set in build.rs");
+    let target = target
+        .to_str()
+        .expect("TARGET was not a valid UTF-8 String");
+    let target =
+        Triple::from_str(target).unwrap_or_else(|_| panic!("Invalid TARGET triple: {}", target));
     build_release_metadata(&target)
 }
