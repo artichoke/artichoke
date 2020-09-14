@@ -19,31 +19,17 @@ struct Date {
 
 impl From<DateTime<Utc>> for Date {
     fn from(date: DateTime<Utc>) -> Self {
-        Self::new(date.year(), date.month(), date.day())
+        Self {
+            year: date.year(),
+            month: date.month(),
+            day: date.day(),
+        }
     }
 }
 
 impl fmt::Display for Date {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:04}-{:02}-{:02}", self.year, self.month, self.day)
-    }
-}
-
-impl Date {
-    pub fn new(year: i32, month: u32, day: u32) -> Self {
-        Self { year, month, day }
-    }
-
-    pub fn year(&self) -> i32 {
-        self.year
-    }
-
-    pub fn month(&self) -> u32 {
-        self.month
-    }
-
-    pub fn day(&self) -> u32 {
-        self.day
     }
 }
 
@@ -55,17 +41,12 @@ pub fn build_release_metadata(target: &Triple) {
     let revision_count = revision_count();
     let platform = platform(target);
     let copyright = copyright(birth_date, build_date);
-    let description = description(
-        version.as_str(),
-        release_date,
-        revision_count,
-        platform.as_str(),
-    );
+    let description = description(version, release_date, revision_count, platform.as_str());
 
     emit("RUBY_RELEASE_DATE", release_date);
-    emit("RUBY_RELEASE_YEAR", build_date.year());
-    emit("RUBY_RELEASE_MONTH", build_date.month());
-    emit("RUBY_RELEASE_DAY", build_date.day());
+    emit("RUBY_RELEASE_YEAR", build_date.year);
+    emit("RUBY_RELEASE_MONTH", build_date.month);
+    emit("RUBY_RELEASE_DAY", build_date.day);
     emit("RUBY_REVISION", revision_count.unwrap_or(0));
     emit("RUBY_PLATFORM", platform);
     emit("RUBY_COPYRIGHT", copyright);
@@ -114,16 +95,15 @@ fn platform(target: &Triple) -> String {
 }
 
 fn copyright(birth_date: Date, build_date: Date) -> String {
-    if birth_date.year() == build_date.year() {
+    if birth_date.year == build_date.year {
         format!(
             "Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
-            birth_date.year()
+            birth_date.year
         )
     } else {
         format!(
             "Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
-            birth_date.year(),
-            build_date.year()
+            birth_date.year, build_date.year
         )
     }
 }
