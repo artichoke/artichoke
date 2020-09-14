@@ -1,6 +1,6 @@
 #![allow(clippy::needless_pass_by_value)]
 
-use crate::core::ReleaseMetadata;
+use crate::release_metadata::ReleaseMetadata;
 
 pub mod core;
 pub mod prelude;
@@ -10,10 +10,7 @@ use prelude::*;
 
 pub const INPUT_RECORD_SEPARATOR: &str = "\n";
 
-pub fn init<T>(interp: &mut Artichoke, config: T) -> InitializeResult<()>
-where
-    T: ReleaseMetadata,
-{
+pub fn init(interp: &mut Artichoke, config: ReleaseMetadata<'_>) -> InitializeResult<()> {
     let copyright = interp.convert_mut(config.ruby_copyright());
     interp.define_global_constant("RUBY_COPYRIGHT", copyright)?;
 

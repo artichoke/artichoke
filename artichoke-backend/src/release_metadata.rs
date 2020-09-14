@@ -138,4 +138,54 @@ impl<'a> ReleaseMetadata<'a> {
         self.compiler_version = compiler_version;
         self
     }
+
+    #[must_use]
+    pub const fn ruby_copyright(&self) -> &str {
+        self.copyright
+    }
+
+    #[must_use]
+    pub const fn ruby_description(&self) -> &str {
+        self.description
+    }
+
+    #[must_use]
+    pub const fn ruby_engine(&self) -> &str {
+        self.engine
+    }
+
+    #[must_use]
+    pub const fn ruby_engine_version(&self) -> &str {
+        self.engine_version
+    }
+
+    #[must_use]
+    pub const fn ruby_patchlevel(&self) -> &str {
+        self.patchlevel
+    }
+
+    #[must_use]
+    pub const fn ruby_platform(&self) -> &str {
+        self.platform
+    }
+
+    #[must_use]
+    pub const fn ruby_release_date(&self) -> &str {
+        self.release_date
+    }
+
+    #[must_use]
+    pub const fn ruby_revision(&self) -> &str {
+        self.revision
+    }
+
+    #[must_use]
+    pub const fn ruby_version(&self) -> &str {
+        self.ruby_version
+    }
+
+    #[must_use]
+    pub const fn artichoke_compiler_version(&self) -> Option<&str> {
+        self.compiler_version
+    }
 }
