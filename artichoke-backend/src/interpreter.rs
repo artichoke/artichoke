@@ -4,13 +4,13 @@ use std::ffi::c_void;
 use std::fmt;
 
 use crate::class_registry::ClassRegistry;
-use crate::core::{ConvertMut, Eval, ReleaseMetadata};
+use crate::core::{ConvertMut, Eval};
 use crate::error::{Error, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
 use crate::ffi;
 use crate::gc::{MrbGarbageCollection, State as GcState};
-use crate::release_metadata::ReleaseMetadata as ArtichokeBackendReleaseMetadata;
+use crate::release_metadata::ReleaseMetadata;
 use crate::state::State;
 use crate::sys;
 use crate::Artichoke;
@@ -21,7 +21,7 @@ use crate::Artichoke;
 /// initializes an [in memory virtual filesystem](crate::fs), and loads the
 /// [`extn`] extensions to Ruby Core and Stdlib.
 pub fn interpreter() -> Result<Artichoke, Error> {
-    let release_meta = ArtichokeBackendReleaseMetadata::new();
+    let release_meta = ReleaseMetadata::new();
     interpreter_with_config(release_meta)
 }
 
@@ -31,10 +31,7 @@ pub fn interpreter() -> Result<Artichoke, Error> {
 /// about how Artichoke was built. Otherwise, it behaves identically to the
 /// [`interpreter`] function.
 #[allow(clippy::module_name_repetitions)]
-pub fn interpreter_with_config<T>(config: T) -> Result<Artichoke, Error>
-where
-    T: ReleaseMetadata,
-{
+pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke, Error> {
     let state = State::new()?;
     let state = Box::new(state);
     let alloc_ud = Box::into_raw(state) as *mut c_void;
