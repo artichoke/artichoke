@@ -56,16 +56,16 @@
 //! maximum:
 //!
 //! ```rust
-//! # use spinoso_securerandom::{Max, RandomNumber};
-//! # fn example() -> Result<(), spinoso_securerandom::DomainError> {
+//! # use spinoso_securerandom::{DomainError, Max, Rand};
+//! # fn example() -> Result<(), DomainError> {
 //! let rand = spinoso_securerandom::random_number(Max::None)?;
-//! assert!(matches!(rand, RandomNumber::Float(_)));
+//! assert!(matches!(rand, Rand::Float(_)));
 //!
 //! let rand = spinoso_securerandom::random_number(Max::Integer(57))?;
-//! assert!(matches!(rand, RandomNumber::Integer(_)));
+//! assert!(matches!(rand, Rand::Integer(_)));
 //!
 //! let rand = spinoso_securerandom::random_number(Max::Float(57.0))?;
-//! assert!(matches!(rand, RandomNumber::Float(_)));
+//! assert!(matches!(rand, Rand::Float(_)));
 //! # Ok(())
 //! # }
 //! # example().unwrap()
@@ -127,13 +127,29 @@ pub enum Error {
     RandomBytes(RandomBytesError),
 }
 
+impl From<ArgumentError> for Error {
+    #[inline]
+    fn from(err: ArgumentError) -> Self {
+        Self::Argument(err)
+    }
+}
+
+impl From<RandomBytesError> for Error {
+    #[inline]
+    fn from(err: RandomBytesError) -> Self {
+        Self::RandomBytes(err)
+    }
+}
+
 impl fmt::Display for Error {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("SecureRandom error")
     }
 }
 
 impl error::Error for Error {
+    #[inline]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Self::Argument(ref err) => Some(err),
@@ -164,18 +180,21 @@ impl error::Error for Error {
 pub struct ArgumentError(&'static str);
 
 impl From<&'static str> for ArgumentError {
+    #[inline]
     fn from(message: &'static str) -> Self {
         Self::with_message(message)
     }
 }
 
 impl Default for ArgumentError {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl fmt::Display for ArgumentError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.message())
     }
@@ -243,6 +262,7 @@ pub struct RandomBytesError {
 }
 
 impl fmt::Display for RandomBytesError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.message())
     }
@@ -293,6 +313,7 @@ pub struct DomainError {
 }
 
 impl fmt::Display for DomainError {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.message())
     }
@@ -390,17 +411,14 @@ impl SecureRandom {
 /// [`RandomBytesError`].
 #[inline]
 pub fn random_bytes(len: Option<i64>) -> Result<Vec<u8>, Error> {
-    let len = if let Some(len) = len {
-        match usize::try_from(len) {
-            Ok(0) => return Ok(Vec::new()),
-            Ok(len) => len,
-            Err(_) => {
-                let err = ArgumentError::with_message("negative string size (or size too big)");
-                return Err(Error::Argument(err));
-            }
+    let len = match len.map(usize::try_from) {
+        Some(Ok(0)) => return Ok(Vec::new()),
+        Some(Ok(len)) => len,
+        Some(Err(_)) => {
+            let err = ArgumentError::with_message("negative string size (or size too big)");
+            return Err(Error::Argument(err));
         }
-    } else {
-        DEFAULT_REQUESTED_BYTES
+        None => DEFAULT_REQUESTED_BYTES,
     };
     let mut rng = rand::thread_rng();
     let mut bytes = vec![0; len];
@@ -443,7 +461,7 @@ pub enum Max {
 /// The numeric contents of this enum will never be negative and will always be
 /// finite.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum RandomNumber {
+pub enum Rand {
     /// A random float that is greater than or equal to zero.
     Float(f64),
     /// A random signed integer that is greater than or equal to zero.
@@ -466,28 +484,28 @@ pub enum RandomNumber {
 /// # Examples
 ///
 /// ```rust
-/// # use spinoso_securerandom::{Max, RandomNumber};
+/// # use spinoso_securerandom::{Max, Rand};
 /// # fn example() -> Result<(), spinoso_securerandom::DomainError> {
 /// let rand = spinoso_securerandom::random_number(Max::None)?;
-/// assert!(matches!(rand, RandomNumber::Float(_)));
+/// assert!(matches!(rand, Rand::Float(_)));
 ///
 /// let rand = spinoso_securerandom::random_number(Max::Integer(57))?;
-/// assert!(matches!(rand, RandomNumber::Integer(_)));
+/// assert!(matches!(rand, Rand::Integer(_)));
 ///
 /// let rand = spinoso_securerandom::random_number(Max::Integer(-20))?;
-/// assert!(matches!(rand, RandomNumber::Float(_)));
+/// assert!(matches!(rand, Rand::Float(_)));
 ///
 /// let rand = spinoso_securerandom::random_number(Max::Integer(0))?;
-/// assert!(matches!(rand, RandomNumber::Float(_)));
+/// assert!(matches!(rand, Rand::Float(_)));
 ///
 /// let rand = spinoso_securerandom::random_number(Max::Float(57.0))?;
-/// assert!(matches!(rand, RandomNumber::Float(_)));
+/// assert!(matches!(rand, Rand::Float(_)));
 ///
 /// let rand = spinoso_securerandom::random_number(Max::Float(-20.0))?;
-/// assert!(matches!(rand, RandomNumber::Float(_)));
+/// assert!(matches!(rand, Rand::Float(_)));
 ///
 /// let rand = spinoso_securerandom::random_number(Max::Float(0.0))?;
-/// assert!(matches!(rand, RandomNumber::Float(_)));
+/// assert!(matches!(rand, Rand::Float(_)));
 /// # Ok(())
 /// # }
 /// # example().unwrap()
@@ -498,7 +516,7 @@ pub enum RandomNumber {
 /// If the float given in a [`Max::Float`] variant is [`NaN`](f64::NAN) or
 /// infinite, a [`DomainError`] is returned.
 #[inline]
-pub fn random_number(max: Max) -> Result<RandomNumber, DomainError> {
+pub fn random_number(max: Max) -> Result<Rand, DomainError> {
     let mut rng = rand::thread_rng();
     match max {
         Max::Float(max) if !max.is_finite() => {
@@ -507,23 +525,23 @@ pub fn random_number(max: Max) -> Result<RandomNumber, DomainError> {
         }
         Max::Float(max) if max <= 0.0 => {
             let number = rng.gen_range(0.0, 1.0);
-            Ok(RandomNumber::Float(number))
+            Ok(Rand::Float(number))
         }
         Max::Float(max) => {
             let number = rng.gen_range(0.0, max);
-            Ok(RandomNumber::Float(number))
+            Ok(Rand::Float(number))
         }
         Max::Integer(max) if !max.is_positive() => {
             let number = rng.gen_range(0.0, 1.0);
-            Ok(RandomNumber::Float(number))
+            Ok(Rand::Float(number))
         }
         Max::Integer(max) => {
             let number = rng.gen_range(0, max);
-            Ok(RandomNumber::Integer(number))
+            Ok(Rand::Integer(number))
         }
         Max::None => {
             let number = rng.gen_range(0.0, 1.0);
-            Ok(RandomNumber::Float(number))
+            Ok(Rand::Float(number))
         }
     }
 }
@@ -648,18 +666,15 @@ pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> 
 /// If the underlying source of randomness returns an error, return a
 /// [`RandomBytesError`].
 #[inline]
-pub fn alphanumeric(len: Option<i64>) -> Result<String, Error> {
-    let len = if let Some(len) = len {
-        match usize::try_from(len) {
-            Ok(0) => return Ok(String::new()),
-            Ok(len) => len,
-            Err(_) => {
-                let err = ArgumentError::with_message("negative string size (or size too big)");
-                return Err(Error::Argument(err));
-            }
+pub fn alphanumeric(len: Option<i64>) -> Result<String, ArgumentError> {
+    let len = match len.map(usize::try_from) {
+        Some(Ok(0)) => return Ok(String::new()),
+        Some(Ok(len)) => len,
+        Some(Err(_)) => {
+            let err = ArgumentError::with_message("negative string size (or size too big)");
+            return Err(err);
         }
-    } else {
-        DEFAULT_REQUESTED_BYTES
+        None => DEFAULT_REQUESTED_BYTES,
     };
     let rng = rand::thread_rng();
     let string = rng.sample_iter(Alphanumeric).take(len).collect();
@@ -691,8 +706,7 @@ pub fn uuid() -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        alphanumeric, base64, hex, random_bytes, random_number, uuid, DomainError, Error, Max,
-        RandomNumber,
+        alphanumeric, base64, hex, random_bytes, random_number, uuid, DomainError, Error, Max, Rand,
     };
     use rand::CryptoRng;
 
@@ -708,7 +722,7 @@ mod tests {
         assert!(matches!(random_bytes(Some(-1)), Err(Error::Argument(_))));
         assert!(matches!(base64(Some(-1)), Err(Error::Argument(_))));
         assert!(matches!(hex(Some(-1)), Err(Error::Argument(_))));
-        assert!(matches!(alphanumeric(Some(-1)), Err(Error::Argument(_))));
+        assert!(alphanumeric(Some(-1)).is_err());
     }
 
     #[test]
@@ -756,33 +770,21 @@ mod tests {
 
     #[test]
     fn random_number_in_float_out_float() {
-        assert!(matches!(
-            random_number(Max::None),
-            Ok(RandomNumber::Float(_))
-        ));
-        assert!(matches!(
-            random_number(Max::Float(0.5)),
-            Ok(RandomNumber::Float(_))
-        ));
-        assert!(matches!(
-            random_number(Max::Float(1.0)),
-            Ok(RandomNumber::Float(_))
-        ));
+        assert!(matches!(random_number(Max::None), Ok(Rand::Float(_))));
+        assert!(matches!(random_number(Max::Float(0.5)), Ok(Rand::Float(_))));
+        assert!(matches!(random_number(Max::Float(1.0)), Ok(Rand::Float(_))));
         assert!(matches!(
             random_number(Max::Float(9000.63)),
-            Ok(RandomNumber::Float(_))
+            Ok(Rand::Float(_))
         ));
-        assert!(matches!(
-            random_number(Max::Float(0.0)),
-            Ok(RandomNumber::Float(_))
-        ));
+        assert!(matches!(random_number(Max::Float(0.0)), Ok(Rand::Float(_))));
         assert!(matches!(
             random_number(Max::Float(-0.0)),
-            Ok(RandomNumber::Float(_))
+            Ok(Rand::Float(_))
         ));
         assert!(matches!(
             random_number(Max::Float(-1.0)),
-            Ok(RandomNumber::Float(_))
+            Ok(Rand::Float(_))
         ));
     }
 
@@ -790,31 +792,28 @@ mod tests {
     fn random_number_in_neg_integer_out_float() {
         assert!(matches!(
             random_number(Max::Integer(-1)),
-            Ok(RandomNumber::Float(_))
+            Ok(Rand::Float(_))
         ));
     }
 
     #[test]
     fn random_number_in_zero_integer_out_float() {
-        assert!(matches!(
-            random_number(Max::Integer(0)),
-            Ok(RandomNumber::Float(_))
-        ));
+        assert!(matches!(random_number(Max::Integer(0)), Ok(Rand::Float(_))));
     }
 
     #[test]
     fn random_number_in_pos_integer_out_integer() {
         assert!(matches!(
             random_number(Max::Integer(1)),
-            Ok(RandomNumber::Integer(_))
+            Ok(Rand::Integer(_))
         ));
         assert!(matches!(
             random_number(Max::Integer(9000)),
-            Ok(RandomNumber::Integer(_))
+            Ok(Rand::Integer(_))
         ));
         assert!(matches!(
             random_number(Max::Integer(i64::MAX)),
-            Ok(RandomNumber::Integer(_))
+            Ok(Rand::Integer(_))
         ));
     }
 

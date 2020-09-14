@@ -56,17 +56,17 @@ fn example() -> Result<(), spinoso_securerandom::Error> {
 Generate random floats and integers in a range bounded from zero to a maximum:
 
 ```rust
-use spinoso_securerandom::{Max, RandomNumber};
+use spinoso_securerandom::{DomainError, Max, Rand};
 
-fn example() -> Result<(), spinoso_securerandom::DomainError> {
+fn example() -> Result<(), DomainError> {
     let rand = spinoso_securerandom::random_number(Max::None)?;
-    assert!(matches!(rand, RandomNumber::Float(_)));
+    assert!(matches!(rand, Rand::Float(_)));
 
     let rand = spinoso_securerandom::random_number(Max::Integer(57))?;
-    assert!(matches!(rand, RandomNumber::Integer(_)));
+    assert!(matches!(rand, Rand::Integer(_)));
 
     let rand = spinoso_securerandom::random_number(Max::Float(57.0))?;
-    assert!(matches!(rand, RandomNumber::Float(_)));
+    assert!(matches!(rand, Rand::Float(_)));
     Ok(())
 }
 ```
