@@ -34,7 +34,11 @@ impl fmt::Display for Date {
 }
 
 pub fn build_release_metadata(target: &Triple) {
-    let version = env::var("CARGO_PKG_VERSION").unwrap();
+    let version =
+        env::var_os("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION was not set in build.rs");
+    let version = version
+        .to_str()
+        .expect("CARGO_PKG_VERSION was not a valid UTF-8 String");
     let birth_date = birthdate();
     let build_date = Date::from(Utc::now());
     let release_date = build_date;
@@ -131,7 +135,11 @@ fn compiler_version() -> Option<String> {
 }
 
 fn main() {
-    let target = env::var_os("TARGET").unwrap();
-    let target = Triple::from_str(target.to_str().unwrap()).unwrap();
+    let target = env::var_os("TARGET").expect("TARGET not set in build.rs");
+    let target = target
+        .to_str()
+        .expect("TARGET was not a valid UTF-8 String");
+    let target =
+        Triple::from_str(target).unwrap_or_else(|_| panic!("Invalid TARGET triple: {}", target));
     build_release_metadata(&target)
 }
