@@ -25,7 +25,7 @@ pub mod trampoline;
 #[doc(inline)]
 pub use spinoso_securerandom::{
     alphanumeric, base64, hex, random_bytes, random_number, urlsafe_base64, uuid, ArgumentError,
-    DomainError, Error as SecureRandomError, Max, RandomBytesError, RandomNumber, SecureRandom,
+    DomainError, Error as SecureRandomError, Max, Rand, RandomBytesError, SecureRandom,
 };
 
 impl From<SecureRandomError> for Error {
@@ -94,11 +94,11 @@ impl TryConvertMut<Option<Value>, Max> for Artichoke {
     }
 }
 
-impl ConvertMut<RandomNumber, Value> for Artichoke {
-    fn convert_mut(&mut self, from: RandomNumber) -> Value {
+impl ConvertMut<Rand, Value> for Artichoke {
+    fn convert_mut(&mut self, from: Rand) -> Value {
         match from {
-            RandomNumber::Integer(num) => self.convert(num),
-            RandomNumber::Float(num) => self.convert_mut(num),
+            Rand::Integer(num) => self.convert(num),
+            Rand::Float(num) => self.convert_mut(num),
         }
     }
 }
