@@ -36,3 +36,17 @@ pub fn urandom(dest: &mut [u8]) -> Result<(), UrandomError> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::urandom;
+
+    #[test]
+    fn read_random_bytes() {
+        let mut buf_a = [0; 256];
+        let mut buf_b = [0; 256];
+        urandom(&mut buf_a).unwrap();
+        urandom(&mut buf_b).unwrap();
+        assert_ne!(buf_a[..], buf_b[..]);
+    }
+}
