@@ -1,10 +1,10 @@
-use spinoso_random::Mt;
+use spinoso_random::Random;
 
 mod vectors;
 
 #[test]
 fn bytes_reproducibility() {
-    let mut rng = Mt::with_seed(33);
+    let mut rng = Random::with_seed(33);
     let mut samples = vec![0; 4096];
     rng.fill_bytes(&mut samples);
     assert_eq!(samples[..], vectors::BYTES_SEED_32[..]);
@@ -12,7 +12,7 @@ fn bytes_reproducibility() {
 
 #[test]
 fn float_reproducibility() {
-    let mut rng = Mt::with_seed(33);
+    let mut rng = Random::with_seed(33);
     let mut samples = Vec::with_capacity(4096);
     for cell in samples.iter_mut() {
         *cell = rng.next_real();
@@ -24,7 +24,7 @@ fn float_reproducibility() {
 
 #[test]
 fn u32_reproducibility() {
-    let mut rng = Mt::with_seed(33);
+    let mut rng = Random::with_seed(33);
     let mut samples = Vec::with_capacity(4096);
     for _ in 0..4096 {
         samples.push(rng.next_int32());
@@ -50,7 +50,7 @@ fn u32_reproducibility() {
 // ```
 #[test]
 fn spec_bytes() {
-    let mut rng = Mt::with_seed(33);
+    let mut rng = Random::with_seed(33);
     let mut buf = [0; 2];
     rng.fill_bytes(&mut buf);
     assert_eq!(buf[..], b"\x14\\"[..]);

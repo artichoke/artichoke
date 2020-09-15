@@ -150,3 +150,90 @@ pub fn rand(rng: &mut Random, max: Max) -> Result<Rand, ArgumentError> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{rand, Max, Rand};
+    use crate::Random;
+
+    #[test]
+    fn random_number_domain_error() {
+        let mut random = Random::with_seed(33);
+        assert!(
+            matches!(rand(&mut random, Max::Float(f64::NAN)), Err(err) if err.is_domain_error())
+        );
+        assert!(
+            matches!(rand(&mut random, Max::Float(f64::INFINITY)), Err(err) if err.is_domain_error())
+        );
+        assert!(
+            matches!(rand(&mut random, Max::Float(f64::NEG_INFINITY)), Err(err) if err.is_domain_error())
+        );
+    }
+
+    #[test]
+    fn random_number_in_float_out_float() {
+        let mut random = Random::with_seed(33);
+        assert!(matches!(rand(&mut random, Max::None), Ok(Rand::Float(num)) if num < 1.0));
+        assert!(matches!(
+            rand(&mut random, Max::Float(0.5)),
+            Ok(Rand::Float(num)) if num < 0.5
+        ));
+        assert!(matches!(
+            rand(&mut random, Max::Float(1.0)),
+            Ok(Rand::Float(num)) if num < 1.0
+        ));
+        assert!(matches!(
+            rand(&mut random, Max::Float(9000.63)),
+            Ok(Rand::Float(num)) if num < 9000.63
+        ));
+        assert!(matches!(
+            rand(&mut random, Max::Float(0.0)),
+            Ok(Rand::Float(num)) if num < 1.0
+        ));
+        assert!(matches!(
+            rand(&mut random, Max::Float(-0.0)),
+            Ok(Rand::Float(num)) if num < 1.0
+        ));
+    }
+
+    #[test]
+    fn random_number_in_neg_float_out_err() {
+        let mut random = Random::with_seed(33);
+        assert!(matches!(
+            rand(&mut random, Max::Float(-1.0)), Err(err) if err.message() == "invalid argument"
+        ));
+    }
+
+    #[test]
+    fn random_number_in_neg_integer_out_err() {
+        let mut random = Random::with_seed(33);
+        assert!(
+            matches!(rand(&mut random, Max::Integer(-1)), Err(err) if err.message() == "invalid argument")
+        );
+    }
+
+    #[test]
+    fn random_number_in_zero_integer_out_err() {
+        let mut random = Random::with_seed(33);
+        assert!(
+            matches!(rand(&mut random, Max::Integer(0)), Err(err) if err.message() == "invalid argument")
+        );
+    }
+
+    #[test]
+    fn random_number_in_pos_integer_out_integer() {
+        let mut random = Random::with_seed(33);
+        assert!(matches!(
+            rand(&mut random, Max::Integer(1)),
+            Ok(Rand::Integer(0))
+        ));
+        assert!(matches!(
+            rand(&mut random, Max::Integer(9000)),
+            Ok(Rand::Integer(num)) if num < 9000 && num >= 0
+        ));
+        assert!(matches!(
+            rand(&mut random, Max::Integer(i64::MAX)),
+            Ok(Rand::Integer(num)) if num >= 0
+        ));
+    }
+}
