@@ -89,6 +89,10 @@ jobs:
         run: cargo build --locked
         working-directory: "fuzz"
 
+      - name: Compile spec-runner with locked Cargo.lock
+        run: cargo build --locked
+        working-directory: "spec-runner"
+
       - name: Compile artichoke with no default features
         run: cargo build --verbose --no-default-features
 
