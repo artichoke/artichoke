@@ -86,6 +86,14 @@ task :build do
   sh 'cargo build --workspace'
 end
 
+desc 'Build Rust workspace and sub-workspaces'
+task :'build:all' do
+  sh 'cargo build --workspace'
+  Dir.chdir('fuzz') do
+    sh 'cargo build --workspace'
+  end
+end
+
 desc 'Generate Rust API documentation'
 task :doc do
   ENV['RUSTFLAGS'] = '-D warnings'
