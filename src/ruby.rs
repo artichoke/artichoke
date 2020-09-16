@@ -112,8 +112,7 @@ where
             // short circuit, but don't return an error since we already printed it
             return Ok(Err(()));
         }
-        // TODO: Do not suppress this error and implement RubyException for it.
-        let _ = interp.add_fetch_lineno(1);
+        interp.add_fetch_lineno(1)?;
     }
     Ok(Ok(()))
 }
