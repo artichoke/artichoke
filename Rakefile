@@ -92,6 +92,9 @@ task :'build:all' do
   Dir.chdir('fuzz') do
     sh 'cargo build --workspace'
   end
+  Dir.chdir('spec-runner') do
+    sh 'cargo build --workspace'
+  end
 end
 
 desc 'Generate Rust API documentation'
@@ -110,7 +113,9 @@ end
 
 desc 'Run enforced ruby/spec suite'
 task :spec do
-  sh 'cargo run -q -p spec-runner -- spec-runner/enforced-specs.yaml'
+  Dir.chdir('spec-runner') do
+    sh 'cargo run -q -- enforced-specs.yaml'
+  end
 end
 
 desc 'Run Artichoke unit tests'

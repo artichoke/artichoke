@@ -37,7 +37,6 @@ members = [
   "artichoke-core",
   "scolapasta-hex",
   "scolapasta-string-escape",
-  "spec-runner",
   "spinoso-array",
   "spinoso-env",
   "spinoso-exception",
