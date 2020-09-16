@@ -102,21 +102,24 @@ pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, E
     Ok(result)
 }
 
+#[allow(clippy::cast_possible_truncation)]
 pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Fp, Error> {
     let fraction = interp.coerce_to_float(fraction)?;
-    let exponent = exponent.implicitly_convert_to_int(interp).or_else(|err| {
-        if let Ok(exponent) = exponent.try_into::<Fp>(interp) {
-            if exponent.is_nan() {
-                Err(RangeError::from("float NaN out of range of integer").into())
-            } else {
-                // TODO: use `approx_unchecked_to` once stabilized.
-                #[allow(clippy::cast_possible_truncation)]
-                Ok(exponent as Int)
-            }
-        } else {
-            Err(Error::from(err))
+    let exponent = exponent
+        .implicitly_convert_to_int(interp)
+        .map_err(|_| exponent.try_into::<Fp>(interp));
+    let exponent = match exponent {
+        Ok(exp) => exp,
+        Err(Ok(exp)) if exp.is_nan() => {
+            return Err(RangeError::from("float NaN out of range of integer").into());
         }
-    })?;
+        Err(Ok(exp)) => {
+            // This saturating cast will be rejected by the `i32::try_from`
+            // below if `exp` is too large.
+            exp as Int
+        }
+        Err(Err(err)) => return Err(err),
+    };
     match i32::try_from(exponent) {
         Ok(exp) => {
             let result = spinoso_math::ldexp(fraction, exp)?;
