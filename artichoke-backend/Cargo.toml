@@ -13,7 +13,6 @@ categories = ["api-bindings"]
 [dependencies]
 artichoke-core = { version = "0.5", path = "../artichoke-core" }
 bstr = { version = "0.2", default-features = false, features = ["std"] }
-dtoa = "0.4"
 intaglio = "1.1"
 itoa = "0.4"
 log = "0.4"
