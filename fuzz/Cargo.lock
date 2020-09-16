@@ -44,7 +44,6 @@ dependencies = [
  "bindgen",
  "bstr",
  "cc",
- "dtoa",
  "intaglio",
  "itoa",
  "log",
@@ -200,12 +199,6 @@ dependencies = [
  "unicode-width",
  "vec_map",
 ]
-
-[[package]]
-name = "dtoa"
-version = "0.4.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "134951f4028bdadb9b84baf4232681efbf277da25144b9b0ad65df75946c422b"
 
 [[package]]
 name = "focaccia"
