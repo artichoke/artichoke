@@ -82,6 +82,13 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
+      - name: Compile with locked Cargo.lock
+        run: cargo build --locked
+
+      - name: Compile fuzz with locked Cargo.lock
+        run: cargo build --locked
+        working-directory: "fuzz"
+
       - name: Compile artichoke with no default features
         run: cargo build --verbose --no-default-features
 
