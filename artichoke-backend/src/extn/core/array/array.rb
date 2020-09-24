@@ -451,7 +451,7 @@ class Array
         if other.is_a?(Array)
           other
         elsif other.respond_to?(:to_ary)
-          other = other.to_ary # rubocop:disable Style/RedundantSelfAssignment
+          other = other.to_ary
           unless other.is_a?(Array)
             raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{other.class})"
           end
@@ -1135,7 +1135,7 @@ class Array
       if other.is_a?(Array)
         other
       elsif other.respond_to?(:to_ary)
-        other = other.to_ary # rubocop:disable Style/RedundantSelfAssignment
+        other = other.to_ary
         unless other.is_a?(Array)
           raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{other.class})"
         end

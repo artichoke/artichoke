@@ -26,10 +26,10 @@ class Range
       return true if cmp_end >= 0
 
       val_max = begin
-                  val.max
-                rescue StandardError
-                  nil
-                end
+        val.max
+      rescue StandardError
+        nil
+      end
       return false if val_max.nil?
 
       return (range_end <=> val_max) >= 0
@@ -39,10 +39,10 @@ class Range
     return false if cmp_begin.nil? || cmp_begin.negative?
 
     max = begin
-            self.max
-          rescue StandardError
-            nil
-          end
+      self.max
+    rescue StandardError
+      nil
+    end
     cmp_max = val <=> max
     cmp_end = val <=> range_end
 
