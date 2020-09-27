@@ -24,7 +24,9 @@ multiple-versions = "deny"
 wildcards = "deny"
 highlight = "all"
 allow = []
-deny = []
+deny = [
+  { name = "time", version = ">=0.2.0" },
+]
 skip = []
 skip-tree = []
 
