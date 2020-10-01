@@ -28,7 +28,7 @@ path = "artichoke-backend"
 default-features = false
 
 [build-dependencies]
-chrono = { version = "0.4.18", default-features = false, features = ["clock"] }
+chrono = { version = "0.4.19", default-features = false, features = ["clock"] }
 target-lexicon = "0.11.0"
 
 [workspace]
