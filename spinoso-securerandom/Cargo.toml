@@ -13,7 +13,7 @@ keywords = ["artichoke", "rand", "random", "rng", "spinoso"]
 categories = ["algorithms"]
 
 [dependencies]
-base64 = "0.12"
+base64 = "0.13"
 rand = "0.7"
 uuid = { version = "0.8", default-features = false, features = ["v4"] }
 
