@@ -155,9 +155,22 @@ pub fn asctime(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
 }
 
 pub fn to_string(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
     let _ = time;
-    Err(NotImplementedError::new().into())
+    // XXX: This function is used to implement `Time#inspect`. Raising in an
+    // `#inspect` implementation interacts poorly with the locals table when
+    // running Artichoke in a REPL.
+    //
+    // Rather than fix this, which will involve deep diving into mruby, work
+    // around this by returning a `String` that says `Time#inspect` is not
+    // implemented. This allows us to uphold the API contract without
+    // implementing `strftime`.
+    //
+    // This hack replaces this code:
+    //
+    // ```rust
+    // Err(NotImplementedError::new().into())
+    // ```
+    Ok(interp.convert_mut("Time<Time#inspect is not implemented>"))
 }
 
 pub fn to_array(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
