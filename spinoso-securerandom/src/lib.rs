@@ -74,9 +74,13 @@
 //! Generate version 4 random UUIDs:
 //!
 //! ```rust
-//! let bytes = spinoso_securerandom::uuid();
-//! assert_eq!(bytes.len(), 36);
-//! assert!(bytes.is_ascii());
+//! # fn example() -> Result<(), spinoso_securerandom::Error> {
+//! let uuid = spinoso_securerandom::uuid()?;
+//! assert_eq!(uuid.len(), 36);
+//! assert!(uuid.is_ascii());
+//! # Ok(())
+//! # }
+//! # example().unwrap()
 //! ```
 //!
 //! [`SecureRandom`]: https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
@@ -101,9 +105,10 @@ use core::fmt;
 use rand::distributions::Alphanumeric;
 use rand::{self, Rng, RngCore};
 use std::error;
-use uuid::Uuid;
 
 use scolapasta_hex as hex;
+
+mod uuid;
 
 const DEFAULT_REQUESTED_BYTES: usize = 16;
 
@@ -688,19 +693,24 @@ pub fn alphanumeric(len: Option<i64>) -> Result<String, ArgumentError> {
 /// # Examples
 ///
 /// ```rust
-/// let bytes = spinoso_securerandom::uuid();
-/// assert_eq!(bytes.len(), 36);
-/// assert!(bytes.is_ascii());
+/// # fn example() -> Result<(), spinoso_securerandom::Error> {
+/// let uuid = spinoso_securerandom::uuid()?;
+/// assert_eq!(uuid.len(), 36);
+/// assert!(uuid.chars().all(|ch| ch == '-' || ch.is_ascii_hexdigit()));
+/// # Ok(())
+/// # }
+/// # example().unwrap()
 /// ```
+///
+/// # Errors
+///
+/// If the underlying source of randomness returns an error, return a
+/// [`RandomBytesError`].
 ///
 /// [RFC 4122]: https://tools.ietf.org/html/rfc4122#section-4.4
 #[inline]
-#[must_use]
-pub fn uuid() -> String {
-    let uuid = Uuid::new_v4();
-    let mut buf = Uuid::encode_buffer();
-    let enc = uuid.to_hyphenated().encode_lower(&mut buf);
-    String::from(enc)
+pub fn uuid() -> Result<String, RandomBytesError> {
+    uuid::v4()
 }
 
 #[cfg(test)]
@@ -819,11 +829,9 @@ mod tests {
 
     #[test]
     fn uuid_format() {
-        let id = uuid();
+        let id = uuid().unwrap();
         assert_eq!(id.len(), 36);
-        assert!(id
-            .find(|ch: char| ch != '-' && !ch.is_ascii_alphanumeric())
-            .is_none());
+        assert!(id.chars().all(|ch| ch == '-' || ch.is_ascii_hexdigit()));
         assert!(id.find(char::is_uppercase).is_none());
         assert_eq!(&id[14..15], "4");
     }

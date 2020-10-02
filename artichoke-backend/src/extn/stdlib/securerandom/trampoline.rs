@@ -81,6 +81,6 @@ pub fn random_number(interp: &mut Artichoke, max: Option<Value>) -> Result<Value
 
 #[inline]
 pub fn uuid(interp: &mut Artichoke) -> Result<Value, Error> {
-    let uuid = securerandom::uuid();
+    let uuid = securerandom::uuid()?;
     Ok(interp.convert_mut(uuid))
 }

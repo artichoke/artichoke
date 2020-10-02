@@ -357,6 +357,21 @@ impl<'a> FusedIterator for Hex<'a> {}
 
 impl<'a> ExactSizeIterator for Hex<'a> {}
 
+/// Map from a `u8` to a hex encoded string literal.
+///
+/// # Examples
+///
+/// ```
+/// assert_eq!(scolapasta_hex::escape_byte(0), "00");
+/// assert_eq!(scolapasta_hex::escape_byte(0x20), "20");
+/// assert_eq!(scolapasta_hex::escape_byte(255), "ff");
+/// ```
+#[inline]
+#[must_use]
+pub const fn escape_byte(byte: u8) -> &'static str {
+    EscapedByte::hex_escape(byte)
+}
+
 #[derive(Debug, Clone)]
 #[must_use = "this `EscapedByte` is an `Iterator`, which should be consumed if constructed"]
 struct EscapedByte(Chars<'static>);
