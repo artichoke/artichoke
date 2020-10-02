@@ -74,9 +74,12 @@ fn example() -> Result<(), DomainError> {
 Generate version 4 random UUIDs:
 
 ```rust
-let bytes = spinoso_securerandom::uuid();
-assert_eq!(bytes.len(), 36);
-assert!(bytes.is_ascii());
+fn example() -> Result<(), spinoso_securerandom::Error> {
+    let uuid = spinoso_securerandom::uuid()?;
+    assert_eq!(uuid.len(), 36);
+    assert!(uuid.chars().all(|ch| ch == '-' || ch.is_ascii_hexdigit()));
+    Ok(())
+}
 ```
 
 ## License
