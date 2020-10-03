@@ -101,6 +101,7 @@ extern crate alloc;
 pub mod coerce_to_numeric;
 pub mod constant;
 pub mod convert;
+pub mod debug;
 pub mod eval;
 pub mod file;
 pub mod globals;
@@ -131,6 +132,7 @@ pub mod prelude {
     pub use crate::coerce_to_numeric::CoerceToNumeric;
     pub use crate::constant::DefineConstant;
     pub use crate::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
+    pub use crate::debug::Debug;
     pub use crate::eval::Eval;
     pub use crate::file::File;
     pub use crate::globals::Globals;

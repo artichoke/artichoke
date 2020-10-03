@@ -1,4 +1,7 @@
-use artichoke_core::value::pretty_name;
+use artichoke_core::convert::{Convert, ConvertMut, TryConvert};
+use artichoke_core::debug::Debug;
+use artichoke_core::intern::Intern;
+use artichoke_core::value::Value as ValueCore;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::error;
@@ -8,7 +11,6 @@ use std::ptr;
 
 use crate::class_registry::ClassRegistry;
 use crate::convert::BoxUnboxVmValue;
-use crate::core::{Convert, ConvertMut, Intern, TryConvert, Value as ValueCore};
 use crate::error::{Error, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
@@ -141,24 +143,24 @@ impl Value {
                     int
                 } else {
                     let mut message = String::from("can't convert ");
-                    let name = pretty_name(*self, interp);
+                    let name = interp.inspect_type_name_for_value(*self);
                     message.push_str(name);
                     message.push_str(" to Integer (");
                     message.push_str(name);
                     message.push_str("#to_int gives ");
-                    message.push_str(pretty_name(maybe, interp));
+                    message.push_str(interp.inspect_type_name_for_value(maybe));
                     message.push(')');
                     return Err(TypeError::from(message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(pretty_name(*self, interp));
+                message.push_str(interp.inspect_type_name_for_value(*self));
                 message.push_str(" into Integer");
                 return Err(TypeError::from(message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
-            message.push_str(pretty_name(*self, interp));
+            message.push_str(interp.inspect_type_name_for_value(*self));
             message.push_str(" into Integer");
             return Err(TypeError::from(message));
         };
@@ -187,24 +189,24 @@ impl Value {
                     string
                 } else {
                     let mut message = String::from("can't convert ");
-                    let name = pretty_name(*self, interp);
+                    let name = interp.inspect_type_name_for_value(*self);
                     message.push_str(name);
                     message.push_str(" to String (");
                     message.push_str(name);
                     message.push_str("#to_str gives ");
-                    message.push_str(pretty_name(maybe, interp));
+                    message.push_str(interp.inspect_type_name_for_value(maybe));
                     message.push(')');
                     return Err(TypeError::from(message));
                 }
             } else {
                 let mut message = String::from("no implicit conversion of ");
-                message.push_str(pretty_name(*self, interp));
+                message.push_str(interp.inspect_type_name_for_value(*self));
                 message.push_str(" into String");
                 return Err(TypeError::from(message));
             }
         } else {
             let mut message = String::from("no implicit conversion of ");
-            message.push_str(pretty_name(*self, interp));
+            message.push_str(interp.inspect_type_name_for_value(*self));
             message.push_str(" into String");
             return Err(TypeError::from(message));
         };

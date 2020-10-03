@@ -1,4 +1,3 @@
-use artichoke_core::value::pretty_name;
 use bstr::ByteSlice;
 
 use crate::extn::core::matchdata::MatchData;
@@ -38,7 +37,7 @@ pub fn scan(
 ) -> Result<Value, Error> {
     if let Ruby::Symbol = pattern.ruby_type() {
         let mut message = String::from("wrong argument type ");
-        message.push_str(pretty_name(pattern, interp));
+        message.push_str(interp.inspect_type_name_for_value(pattern));
         message.push_str(" (expected Regexp)");
         Err(TypeError::from(message).into())
     } else if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut pattern, interp) } {
@@ -106,7 +105,7 @@ pub fn scan(
         }
     } else {
         let mut message = String::from("wrong argument type ");
-        message.push_str(pretty_name(pattern, interp));
+        message.push_str(interp.inspect_type_name_for_value(pattern));
         message.push_str(" (expected Regexp)");
         Err(TypeError::from(message).into())
     }

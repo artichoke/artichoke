@@ -127,6 +127,7 @@ pub mod class_registry;
 mod coerce_to_numeric;
 mod constant;
 pub mod convert;
+mod debug;
 pub mod def;
 pub mod error;
 mod eval;

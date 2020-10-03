@@ -1,7 +1,8 @@
 use artichoke_core::coerce_to_numeric::CoerceToNumeric;
 use artichoke_core::convert::TryConvert;
+use artichoke_core::debug::Debug;
 use artichoke_core::eval::Eval;
-use artichoke_core::value::{pretty_name, Value as _};
+use artichoke_core::value::Value as _;
 use spinoso_exception::TypeError;
 
 use crate::types::{Fp, Ruby};
@@ -30,7 +31,7 @@ impl CoerceToNumeric for Artichoke {
         if let Ok(true) = is_a_numeric {
             if !value.respond_to(self, "to_f")? {
                 let mut message = String::from("can't convert ");
-                message.push_str(pretty_name(value, self));
+                message.push_str(self.inspect_type_name_for_value(value));
                 message.push_str(" into Float");
                 return Err(TypeError::from(message).into());
             }
@@ -39,18 +40,18 @@ impl CoerceToNumeric for Artichoke {
                 coerced.try_into::<f64>(self)
             } else {
                 let mut message = String::from("can't convert ");
-                let name = pretty_name(value, self);
+                let name = self.inspect_type_name_for_value(value);
                 message.push_str(name);
                 message.push_str(" into Float (");
                 message.push_str(name);
                 message.push_str("#to_f gives ");
-                message.push_str(pretty_name(coerced, self));
+                message.push_str(self.inspect_type_name_for_value(coerced));
                 message.push(')');
                 Err(TypeError::from(message).into())
             }
         } else {
             let mut message = String::from("can't convert ");
-            message.push_str(pretty_name(value, self));
+            message.push_str(self.inspect_type_name_for_value(value));
             message.push_str(" into Float");
             Err(TypeError::from(message).into())
         }

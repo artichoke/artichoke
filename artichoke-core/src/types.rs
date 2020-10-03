@@ -129,7 +129,7 @@ impl Ruby {
             Self::Data => "Rust-backed Ruby instance",
             Self::Exception => "Exception",
             Self::Fiber => "Fiber",
-            Self::Fixnum => "Fixnum",
+            Self::Fixnum => "Integer",
             Self::Float => "Float",
             Self::Hash => "Hash",
             Self::InlineStruct => "Inline Struct",
