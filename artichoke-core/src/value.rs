@@ -102,38 +102,3 @@ pub trait Value {
     /// Return this values [Rust-mapped type tag](Ruby).
     fn ruby_type(&self) -> Ruby;
 }
-
-/// Return a name for this value's type suitable for using in an `Exception`
-/// message.
-///
-/// Some immediate types like `true`, `false`, and `nil` are shown by value
-/// rather than by class.
-///
-/// This function suppresses all errors and returns an empty string on
-/// error.
-pub fn pretty_name<'a, V, T>(value: V, interp: &mut T) -> &'a str
-where
-    V: Copy + Value<Artichoke = T>,
-    T: TryConvert<V, Option<bool>, Error = V::Error>
-        + TryConvertMut<V, &'a str, Error = V::Error>
-        + TryConvertMut<<<V as Value>::Value as Value>::Value, &'a str, Error = V::Error>,
-    V::Value: Value<Artichoke = T>,
-    <V::Value as Value>::Value: Value<Artichoke = T, Error = V::Error>,
-{
-    match value.try_into(interp) {
-        Ok(Some(true)) => "true",
-        Ok(Some(false)) => "false",
-        Ok(None) => "nil",
-        Err(_) if matches!(value.ruby_type(), Ruby::Data | Ruby::Object) => {
-            if let Ok(class) = value.funcall(interp, "class", &[], None) {
-                if let Ok(class) = class.funcall(interp, "name", &[], None) {
-                    if let Ok(class) = class.try_into_mut(interp) {
-                        return class;
-                    }
-                }
-            }
-            ""
-        }
-        Err(_) => value.ruby_type().class_name(),
-    }
-}

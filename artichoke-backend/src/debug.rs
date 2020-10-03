@@ -1,5 +1,6 @@
-use crate::core::Debug;
-use crate::core::Value as _;
+use artichoke_core::debug::Debug;
+use artichoke_core::value::Value as _;
+
 use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
