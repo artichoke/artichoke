@@ -38,8 +38,10 @@ const LOWER_MASK: Wrapping<u32> = Wrapping(0x7fff_ffff);
 /// [`MT19937`]: http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
 /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
 #[derive(Clone)]
-#[cfg_attr(docsrs, doc(alias = "mersenne twister"))]
-#[cfg_attr(docsrs, doc(alias = "Mersenne twister"))]
+#[cfg_attr(docsrs, doc(alias = "Mersenne"))]
+#[cfg_attr(docsrs, doc(alias = "mersenne"))]
+#[cfg_attr(docsrs, doc(alias = "twister"))]
+#[cfg_attr(docsrs, doc(alias = "MT"))]
 #[cfg_attr(docsrs, doc(alias = "MT19937"))]
 #[allow(missing_copy_implementations)] // RNGs should not implement `Copy`
 pub struct Mt {
