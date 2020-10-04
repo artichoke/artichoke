@@ -363,8 +363,9 @@ checksum = "0b631f7e854af39a1739f401cf34a8a013dfe09eac4fa4dba91e9768bd28168d"
 
 [[package]]
 name = "onig"
-version = "6.0.0"
-source = "git+https://github.com/artichoke/rust-onig?rev=v6.0.0-artichoke.2#6588100a1f29afb0412f778de14db611ee0d0a10"
+version = "6.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a155d13862da85473665694f4c05d77fb96598bdceeaf696433c84ea9567e20"
 dependencies = [
  "bitflags",
  "lazy_static",
@@ -374,8 +375,9 @@ dependencies = [
 
 [[package]]
 name = "onig_sys"
-version = "69.5.0"
-source = "git+https://github.com/artichoke/rust-onig?rev=v6.0.0-artichoke.2#6588100a1f29afb0412f778de14db611ee0d0a10"
+version = "69.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9bff06597a6b17855040955cae613af000fc0bfc8ad49ea68b9479a74e59292d"
 dependencies = [
  "cc",
  "pkg-config",
