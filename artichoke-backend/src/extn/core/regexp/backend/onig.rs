@@ -1,3 +1,4 @@
+use core::mem::size_of;
 use onig::{Regex, RegexOptions, Syntax};
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -12,6 +13,13 @@ use crate::extn::core::regexp::{self, Config, Encoding, Options, Regexp, RegexpT
 use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
+
+// The oniguruma `Regexp` backend requries that `u32` can be widened to `usize`
+// losslessly.
+//
+// This const-evaluated expression ensures that `usize` is always at least as
+// wide as `usize`.
+const _: () = [()][!(size_of::<usize>() >= size_of::<u32>()) as usize];
 
 impl From<Options> for RegexOptions {
     fn from(opts: Options) -> Self {
@@ -93,22 +101,16 @@ impl RegexpType for Onig {
     fn capture_indexes_for_name(&self, name: &[u8]) -> Result<Option<Vec<usize>>, Error> {
         let mut result = None;
         self.regex.foreach_name(|group, group_indexes| {
-            if name == group.as_bytes() {
-                let indexes = group_indexes
-                    .iter()
-                    .copied()
-                    .map(|index: u32| {
-                        // u32 is always losslessly convertable to usize on
-                        // 32-bit and 64-bit targets.
-                        debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
-                        index as usize
-                    })
-                    .collect::<Vec<_>>();
-                result = Some(indexes);
-                false
-            } else {
-                true
+            if name != group.as_bytes() {
+                // Continue searching through named captures.
+                return true;
             }
+            let mut indexes = Vec::with_capacity(group_indexes.len());
+            for &index in group_indexes {
+                indexes.push(index as usize);
+            }
+            result = Some(indexes);
+            false
         });
         Ok(result)
     }
@@ -364,13 +366,10 @@ impl RegexpType for Onig {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
-        self.regex.foreach_name(|group, indexes: &[u32]| {
-            let mut converted = Vec::with_capacity(indexes.len());
-            for &idx in indexes {
-                // u32 is always losslessly convertable to usize on 32-bit and
-                // 64-bit targets.
-                debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
-                converted.push(idx as usize);
+        self.regex.foreach_name(|group, group_indexes| {
+            let mut converted = Vec::with_capacity(group_indexes.len());
+            for &index in group_indexes {
+                converted.push(index as usize);
             }
             map.push((group.into(), converted));
             true
@@ -388,17 +387,13 @@ impl RegexpType for Onig {
         if let Some(captures) = self.regex.captures(haystack) {
             let mut map = HashMap::with_capacity(captures.len());
             self.regex.foreach_name(|group, group_indexes| {
-                let capture = group_indexes.iter().rev().copied().find_map(|index: u32| {
-                    // u32 is always losslessly convertable to usize on 32-bit
-                    // and 64-bit targets.
-                    debug_assert!(std::mem::size_of::<usize>() >= std::mem::size_of::<u32>());
-                    captures.at(index as usize)
-                });
-                if let Some(capture) = capture {
-                    map.insert(group.into(), Some(capture.into()));
-                } else {
-                    map.insert(group.into(), None);
+                for &index in group_indexes.iter().rev() {
+                    if let Some(capture) = captures.at(index as usize) {
+                        map.insert(group.into(), Some(capture.into()));
+                        return true;
+                    }
                 }
+                map.insert(group.into(), None);
                 true
             });
             Ok(Some(map))
@@ -409,9 +404,9 @@ impl RegexpType for Onig {
 
     fn names(&self) -> Vec<Vec<u8>> {
         let mut names = vec![];
-        let mut capture_names = Vec::<(Vec<u8>, Vec<u32>)>::new();
+        let mut capture_names = vec![];
         self.regex.foreach_name(|group, group_indexes| {
-            capture_names.push((group.into(), group_indexes.into()));
+            capture_names.push((group.as_bytes().to_vec(), group_indexes.to_vec()));
             true
         });
         capture_names.sort_by(|left, right| {
