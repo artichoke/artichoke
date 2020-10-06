@@ -1,6 +1,5 @@
 use core::mem::size_of;
 use onig::{Regex, RegexOptions, Syntax};
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
@@ -410,9 +409,9 @@ impl RegexpType for Onig {
             true
         });
         capture_names.sort_by(|left, right| {
-            let left = left.1.iter().copied().fold(u32::max_value(), u32::min);
-            let right = right.1.iter().copied().fold(u32::max_value(), u32::min);
-            left.partial_cmp(&right).unwrap_or(Ordering::Equal)
+            let left = left.1.iter().min().copied().unwrap_or(u32::MAX);
+            let right = right.1.iter().min().copied().unwrap_or(u32::MAX);
+            left.cmp(&right)
         });
         for (name, _) in capture_names {
             if !names.contains(&name) {

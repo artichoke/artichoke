@@ -1,5 +1,4 @@
 use regex::{Regex, RegexBuilder};
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::convert::{self, TryFrom};
 use std::fmt;
@@ -432,9 +431,9 @@ impl RegexpType for Utf8 {
         let mut names = vec![];
         let mut capture_names = self.named_captures().unwrap_or_default();
         capture_names.sort_by(|left, right| {
-            let left = left.1.iter().copied().fold(usize::max_value(), usize::min);
-            let right = right.1.iter().copied().fold(usize::max_value(), usize::min);
-            left.partial_cmp(&right).unwrap_or(Ordering::Equal)
+            let left = left.1.iter().min().copied().unwrap_or(usize::MAX);
+            let right = right.1.iter().min().copied().unwrap_or(usize::MAX);
+            left.cmp(&right)
         });
         for (name, _) in capture_names {
             if !names.contains(&name) {
