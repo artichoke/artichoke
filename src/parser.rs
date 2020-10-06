@@ -18,7 +18,7 @@ use crate::backend::Artichoke;
 pub enum State {
     /// Internal parser error. This is a fatal error.
     ParseError,
-    /// Code must be fewer than `isize::max_value` bytes.
+    /// Code must be fewer than [`isize::MAX`] bytes.
     CodeTooLong,
     /// The code has too many end statements.
     UnexpectedEnd,

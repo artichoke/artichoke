@@ -27,8 +27,8 @@ pub type Fp = f64;
 /// # use std::mem;
 /// # use artichoke_backend::types::Int;
 /// assert_eq!(mem::size_of::<i64>(), mem::size_of::<Int>());
-/// assert_eq!(i64::min_value(), Int::min_value());
-/// assert_eq!(i64::max_value(), Int::max_value());
+/// assert_eq!(i64::MIN, Int::MIN);
+/// assert_eq!(i64::MAX, Int::MAX);
 /// assert_eq!(TypeId::of::<i64>(), TypeId::of::<Int>());
 /// ```
 pub type Int = i64;
