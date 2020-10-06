@@ -87,7 +87,6 @@
 //! [`rand_core`]: rand_core_
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(docsrs, doc(alias = "random"))]
 
 use core::fmt;
 #[cfg(feature = "std")]
