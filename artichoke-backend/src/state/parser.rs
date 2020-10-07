@@ -64,9 +64,9 @@ impl State {
         let old = usize::from(unsafe { self.context.as_ref() }.lineno);
         let new = old
             .checked_add(val)
-            .ok_or_else(|| IncrementLinenoError::Overflow(usize::from(u16::max_value())))?;
+            .ok_or_else(|| IncrementLinenoError::Overflow(usize::from(u16::MAX)))?;
         let store = u16::try_from(new)
-            .map_err(|_| IncrementLinenoError::Overflow(usize::from(u16::max_value())))?;
+            .map_err(|_| IncrementLinenoError::Overflow(usize::from(u16::MAX)))?;
         unsafe {
             self.context.as_mut().lineno = store;
         }
