@@ -22,11 +22,7 @@ pub trait ClassRegistry {
     where
         T: Any,
     {
-        if let Ok(Some(_)) = self.class_spec::<T>() {
-            true
-        } else {
-            false
-        }
+        matches!(self.class_spec::<T>(), Ok(Some(_)))
     }
 
     fn class_of<T>(&mut self) -> Result<Option<Value>, Error>

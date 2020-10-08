@@ -20,11 +20,7 @@ pub trait ModuleRegistry {
     where
         T: Any,
     {
-        if let Ok(Some(_)) = self.module_spec::<T>() {
-            true
-        } else {
-            false
-        }
+        matches!(self.module_spec::<T>(), Ok(Some(_)))
     }
 
     fn module_of<T>(&mut self) -> Result<Option<Value>, Error>
