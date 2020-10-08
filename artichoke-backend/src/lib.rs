@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![allow(clippy::missing_errors_doc)]
+#![allow(clippy::option_if_let_else)]
 // disable or_fun_call lint until release of:
 // https://github.com/rust-lang/rust-clippy/pull/5889
 #![allow(clippy::or_fun_call)]

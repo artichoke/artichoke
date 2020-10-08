@@ -1,3 +1,6 @@
+// https://github.com/rust-lang/rust-clippy/issues/6137
+#![allow(clippy::shadow_unrelated)]
+
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
