@@ -368,7 +368,7 @@ impl fmt::Display for ParseIdentifierError {
 #[inline]
 fn parse(name: &[u8]) -> Option<IdentifierType> {
     match name {
-        b"" | b"\0" => None,
+        [] | [b'\0'] => None,
         // special global variable
         [b'$', name @ ..] if is_special_global_name(name) => Some(IdentifierType::Global),
         // global vairable
@@ -391,7 +391,7 @@ fn parse(name: &[u8]) -> Option<IdentifierType> {
 #[inline]
 fn parse_ident(name: &[u8], id_type: IdentifierType) -> Option<IdentifierType> {
     match name {
-        b"" => None,
+        [] => None,
         [first, name @ .., b'=']
             if *first != b'_' && first.is_ascii() && !first.is_ascii_alphabetic() =>
         {
@@ -425,12 +425,15 @@ fn parse_ident(name: &[u8], id_type: IdentifierType) -> Option<IdentifierType> {
 #[inline]
 fn is_special_global_name(name: &[u8]) -> bool {
     match name {
-        b"" => false,
+        [] => false,
         [first, rest @ ..] if is_special_global_punct(*first) => rest.is_empty(),
-        b"-" => false,
+        [b'-'] => false,
         [b'-', rest @ ..] if is_next_ident_exhausting(rest) => true,
         [b'-', ..] => false,
-        name => name.char_indices().map(|idx| idx.2).all(char::is_numeric),
+        name => name
+            .char_indices()
+            .map(|(_, _, ch)| ch)
+            .all(char::is_numeric),
     }
 }
 
@@ -479,7 +482,7 @@ fn is_symbolic_method_name(name: &[u8]) -> bool {
 #[inline]
 fn is_const_name(name: &[u8]) -> bool {
     match name {
-        b"" => false,
+        [] => false,
         name if name.is_ascii() => name
             .iter()
             .next()
