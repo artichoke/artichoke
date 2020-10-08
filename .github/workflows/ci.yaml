@@ -40,18 +40,18 @@ jobs:
         run: |
           (New-Object System.Net.WebClient).DownloadFile("https://github.com/lexxmark/winflexbison/releases/download/v2.5.22/win_flex_bison-2.5.22.zip","win_flex_bison.zip");
           Expand-Archive .\win_flex_bison.zip .\win_flex_bison;
-          echo "::add-path::${{ github.workspace }}/win_flex_bison"
-        if: matrix.os == 'windows-latest'
+          echo "${{ github.workspace }}/win_flex_bison" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+        if: runner.os == 'Windows'
 
       - name: Check Bison
         run: bison --version
-        if: matrix.os != 'windows-latest'
+        if: runner.os != 'Windows'
 
       - name: Check Bison
         run: |
           win_bison.exe --version
           win_bison --version
-        if: matrix.os == 'windows-latest'
+        if: runner.os == 'Windows'
 
       - name: Compile
         run: cargo build --workspace --verbose
