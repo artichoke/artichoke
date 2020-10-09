@@ -6,14 +6,15 @@ module Artichoke
       raise ArgumentError, 'reachable requires an Array src' unless src.is_a?(::Array)
 
       reachable_objects ||= ::Hash.new { |h, k| h[k] = [] }
-      reachable_objects[src.object_id] << src.class unless reachable_objects.key?(src.object_id)
-      return true if reachable_objects[dest.object_id].include?(dest.class)
+      reachable_objects.compare_by_identity
+      reachable_objects[src] << src.class unless reachable_objects.key?(src)
+      return true if reachable_objects[dest].include?(dest.class)
 
       if dest.equal?(nil) || dest.equal?(true) || dest.equal?(false) || dest.is_a?(::Integer) || dest.is_a?(::Float)
         return false
       end
 
-      reachable_objects[dest.object_id] << dest.class
+      reachable_objects[dest] << dest.class
       case dest
       when ::Array
         dest.each do |item|
@@ -1365,7 +1366,7 @@ class Array
   end
 
   def to_a
-    return self if self.class == Array
+    return self if instance_of?(Array)
 
     [].concat(self)
   end

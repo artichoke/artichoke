@@ -160,7 +160,7 @@ class String
       end
     return nil if element.nil?
 
-    if self.class == String
+    if instance_of?(String)
       element
     else
       self.class.new(element)
