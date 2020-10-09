@@ -2,7 +2,7 @@
 
 class NilClass
   def <=>(other)
-    return 0 if other.class == NilClass
+    return 0 if other.instance_of?(NilClass)
 
     nil
   end

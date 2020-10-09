@@ -148,7 +148,7 @@ class StringScanner
     return nil if @last_match.nil?
 
     ret = @last_match[0]
-    ret = String.new(ret) unless ret.class == String
+    ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
 
@@ -196,7 +196,7 @@ class StringScanner
     return nil if @last_match.nil?
 
     ret = @string[@last_match_charpos..-1]
-    ret = String.new(ret) unless ret.class == String
+    ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
 
@@ -210,7 +210,7 @@ class StringScanner
         @last_match.length
       end
     ret = @string[0...@last_match_charpos - match_len]
-    ret = String.new(ret) unless ret.class == String
+    ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
 
@@ -223,7 +223,7 @@ class StringScanner
 
   def rest
     ret = @string[@charpos..-1]
-    ret = String.new(ret) unless ret.class == String
+    ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
 
@@ -264,7 +264,7 @@ class StringScanner
 
     if return_string_p
       ret = @string[previous_charpos, match.end(0)]
-      ret = String.new(ret) unless ret.class == String
+      ret = String.new(ret) unless ret.instance_of?(String)
       ret
     else
       match.end(0)

@@ -69,7 +69,7 @@ module Kernel
 
     raise TypeError, "can't convert #{classname} into Integer" if arg.nil?
 
-    if arg&.respond_to?(:to_int)
+    if arg.respond_to?(:to_int)
       ret = arg.to_int
 
       # uncritically return the value of to_int even if it is not an Integer
