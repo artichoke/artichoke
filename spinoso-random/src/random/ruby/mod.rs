@@ -2,9 +2,7 @@
 //
 // See https://github.com/artichoke/rand_mt/blob/aeb3274a/src/mt.rs.
 
-use core::cmp::Ordering;
 use core::fmt;
-use core::hash;
 use core::mem::size_of;
 use core::num::Wrapping;
 
@@ -44,43 +42,10 @@ const LOWER_MASK: Wrapping<u32> = Wrapping(0x7fff_ffff);
 #[cfg_attr(docsrs, doc(alias = "MT"))]
 #[cfg_attr(docsrs, doc(alias = "MT19937"))]
 #[allow(missing_copy_implementations)] // RNGs should not implement `Copy`
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Mt {
     idx: usize,
     state: [Wrapping<u32>; N],
-}
-
-impl Eq for Mt {}
-
-impl PartialEq for Mt {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        self.state[..] == other.state[..] && self.idx == other.idx
-    }
-}
-
-impl Ord for Mt {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        match self.state[..].cmp(&other.state[..]) {
-            Ordering::Equal => self.idx.cmp(&other.idx),
-            ordering => ordering,
-        }
-    }
-}
-
-impl PartialOrd for Mt {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl hash::Hash for Mt {
-    #[inline]
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.idx.hash(state);
-        self.state.hash(state);
-    }
 }
 
 impl fmt::Debug for Mt {
