@@ -1,3 +1,4 @@
+use core::fmt;
 use core::mem::size_of;
 
 use crate::{InitializeError, NewSeedError};
@@ -55,7 +56,7 @@ const DEFAULT_SEED: u32 = 5489_u32;
 /// let mut random = Random::with_array_seed(seed);
 /// let rand = random.next_int32();
 /// ```
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Random {
     mt: Mt,
     seed: [u32; 4],
@@ -69,6 +70,12 @@ impl Default for Random {
         } else {
             Random::with_seed(DEFAULT_SEED)
         }
+    }
+}
+
+impl fmt::Debug for Random {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Random {}")
     }
 }
 
@@ -312,4 +319,20 @@ pub fn new_seed() -> Result<[u32; DEFAULT_SEED_CNT], NewSeedError> {
     }
     let seed = seed_to_key(seed);
     Ok(seed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Random;
+
+    #[test]
+    fn fmt_debug_does_not_leak_seed() {
+        let random = Random::with_seed(874);
+        let debug = format!("{:?}", random);
+        assert!(!debug.contains("894"));
+
+        let random = Random::with_seed(123_456);
+        let debug = format!("{:?}", random);
+        assert!(!debug.contains("123456"));
+    }
 }

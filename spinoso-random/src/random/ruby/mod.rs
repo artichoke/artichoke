@@ -339,6 +339,17 @@ mod tests {
     use super::Mt;
 
     #[test]
+    fn fmt_debug_does_not_leak_seed() {
+        let mt = Mt::with_seed(874);
+        let debug = format!("{:?}", mt);
+        assert!(!debug.contains("894"));
+
+        let mt = Mt::with_seed(123_456);
+        let debug = format!("{:?}", mt);
+        assert!(!debug.contains("123456"));
+    }
+
+    #[test]
     fn seed_with_empty_iter_returns() {
         let _ = Mt::new_with_key(core::iter::empty());
     }
