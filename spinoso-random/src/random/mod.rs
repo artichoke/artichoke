@@ -313,3 +313,15 @@ pub fn new_seed() -> Result<[u32; DEFAULT_SEED_CNT], NewSeedError> {
     let seed = seed_to_key(seed);
     Ok(seed)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Random;
+
+    #[test]
+    fn fmt_debug_does_not_leak_seed() {
+        let random = Random::with_seed(123_456);
+        let debug = format!("{:?}", random);
+        assert!(!debug.contains("123456"));
+    }
+}
