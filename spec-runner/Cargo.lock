@@ -745,9 +745,9 @@ dependencies = [
 
 [[package]]
 name = "target-lexicon"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe2635952a442a01fd4cb53d98858b5e4bb461b02c0d111f22f31772e3e7a8b2"
+checksum = "4ee5a98e506fb7231a304c3a1bd7c132a55016cf65001e0282480665870dfcb9"
 
 [[package]]
 name = "termcolor"
