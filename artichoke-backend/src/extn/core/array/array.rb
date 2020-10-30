@@ -888,7 +888,7 @@ class Array
   end
 
   def index(val = (not_set = true), &block)
-    return to_enum(:index) if !block && not_set
+    return to_enum(:index) if !block && not_set # rubocop:disable Lint/ToEnumArguments
 
     idx = 0
     if not_set
@@ -1165,7 +1165,7 @@ class Array
   end
 
   def rindex(val = (not_set = true), &block)
-    return to_enum(:rindex) if !block && not_set
+    return to_enum(:rindex) if !block && not_set # rubocop:disable Lint/ToEnumArguments
 
     if not_set
       reverse.index(&block)
@@ -1339,7 +1339,7 @@ class Array
 
   def sort_by!(&block)
     raise FrozenError, "can't modify frozen Array" if frozen?
-    return to_enum(:sort_by) unless block
+    return to_enum(:sort_by!) unless block
     return self if length <= 1
 
     sort! { |left, right| block.call(left) <=> block.call(right) }

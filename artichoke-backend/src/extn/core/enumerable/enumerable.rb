@@ -196,7 +196,7 @@ module Enumerable
   end
 
   def find_index(*args, &block)
-    return to_enum(:find_index, args[0]) if !block && args.empty?
+    return to_enum(:find_index, *args) if !block && args.empty?
 
     idx = 0
     if block

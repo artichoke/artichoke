@@ -64,7 +64,7 @@ class << ENV
   end
 
   def each_pair(&blk)
-    return to_enum(:each) unless block_given?
+    return to_enum(:each_pair) unless block_given?
 
     to_h.each_pair(&blk)
   end
