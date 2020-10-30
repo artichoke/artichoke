@@ -408,7 +408,7 @@ class String
   #   "hello".gsub(/([aeiou])/, '<\1>')             #=> "h<e>ll<o>"
   #   "hello".gsub(/(?<foo>[aeiou])/, '{\k<foo>}')  #=> "h{e}ll{o}"
   def gsub(pattern, replacement = nil)
-    return to_enum(:gsub, pattern) if replacement.nil? && !block_given?
+    return to_enum(:gsub, pattern, replacement) if replacement.nil? && !block_given?
 
     replace =
       if replacement.nil?
@@ -633,7 +633,7 @@ class String
   end
 
   def sub(pattern, replacement = nil)
-    return to_enum(:sub, pattern) if replacement.nil? && !block_given?
+    return to_enum(:sub, pattern, replacement) if replacement.nil? && !block_given?
 
     replace =
       if replacement.nil?

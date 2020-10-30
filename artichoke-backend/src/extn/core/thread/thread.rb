@@ -340,4 +340,6 @@ class Mutex
 end
 
 # Spawn the special "root" thread that never terminates.
+# rubocop:disable Lint/EmptyBlock
 Thread.new(root: true) {}
+# rubocop:enable Lint/EmptyBlock
