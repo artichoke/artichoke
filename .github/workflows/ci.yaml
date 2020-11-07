@@ -221,7 +221,7 @@ jobs:
         run: bundle install
 
       - name: Lint and check formatting with Rubocop
-        run: bundle exec rubocop
+        run: bundle exec rubocop --format github
 
   c:
     name: Lint and format C
