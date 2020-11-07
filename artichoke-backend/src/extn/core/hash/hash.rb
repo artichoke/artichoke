@@ -123,10 +123,10 @@ class Hash
 
   def dig(idx, *args)
     n = self[idx]
-    if !args.empty?
-      n&.dig(*args)
-    else
+    if args.empty?
       n
+    else
+      n&.dig(*args)
     end
   end
 

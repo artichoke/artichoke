@@ -3,5 +3,5 @@
 source 'https://rubygems.org'
 
 gem 'rake', '>= 12.3.3', require: false
-gem 'rubocop', '~> 1.1', require: false
+gem 'rubocop', '~> 1.2', require: false
 gem 'rubocop-rake', '~> 0.5', require: false
