@@ -276,11 +276,11 @@ class Enumerator
     unless argv.empty?
       obj = dup
       args = obj.args
-      if !args.empty?
+      if args.empty?
+        args = argv.dup
+      else
         args = args.dup
         args.concat argv
-      else
-        args = argv.dup
       end
       obj.args = args
     end
