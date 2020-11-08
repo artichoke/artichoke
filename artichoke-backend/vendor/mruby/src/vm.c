@@ -2516,7 +2516,7 @@ RETRY_TRY_BLOCK:
       ary = ARRAY_PTR(mrb, v);
       len = ARRAY_LEN(mrb, v);
       if (len > pre + post) {
-        v = mrb_ary_new_from_values(mrb, len - pre - post, ary+pre);
+        v = ARY_NEW_FROM_VALUES(mrb, len - pre - post, ary+pre);
         regs[a++] = v;
         while (post--) {
           regs[a++] = ary[len-post-1];
