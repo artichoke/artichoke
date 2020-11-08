@@ -2,19 +2,19 @@
 
 module Artichoke
   class Array
+    # rubocop:disable Lint/HashCompareByIdentity
     def self.reachable?(src, dest, reachable_objects = nil)
       raise ArgumentError, 'reachable requires an Array src' unless src.is_a?(::Array)
 
       reachable_objects ||= ::Hash.new { |h, k| h[k] = [] }
-      reachable_objects.compare_by_identity
-      reachable_objects[src] << src.class unless reachable_objects.key?(src)
-      return true if reachable_objects[dest].include?(dest.class)
+      reachable_objects[src.object_id] << src.class unless reachable_objects.key?(src.object_id)
+      return true if reachable_objects[dest.object_id].include?(dest.class)
 
       if dest.equal?(nil) || dest.equal?(true) || dest.equal?(false) || dest.is_a?(::Integer) || dest.is_a?(::Float)
         return false
       end
 
-      reachable_objects[dest] << dest.class
+      reachable_objects[dest.object_id] << dest.class
       case dest
       when ::Array
         dest.each do |item|
@@ -31,6 +31,7 @@ module Artichoke
       end
       false
     end
+    # rubocop:enable Lint/HashCompareByIdentity
   end
 end
 
