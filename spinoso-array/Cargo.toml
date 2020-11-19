@@ -13,7 +13,9 @@ keywords = ["array", "no_std", "spinoso", "vec", "vector"]
 categories = ["data-structures", "no-std"]
 
 [dependencies]
-smallvec = { version = "1.4.2", optional = true }
+# 1.4.1 fixed UB when allocating zero-bytes for ZST element types.
+# https://github.com/servo/rust-smallvec/releases/tag/v1.4.1
+smallvec = { version = "1, >= 1.4.1", optional = true }
 
 [features]
 default = ["small-array"]
