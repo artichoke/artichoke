@@ -35,23 +35,25 @@ jobs:
           ruby-version: ".ruby-version"
 
       # avoid choco because it takes forever to initialize on first use
-      # instead, install directly from GitHub releases
+      # instead, install bison directly from GitHub releases
       - name: Install Bison
         run: |
-          (New-Object System.Net.WebClient).DownloadFile("https://github.com/lexxmark/winflexbison/releases/download/v2.5.22/win_flex_bison-2.5.22.zip","win_flex_bison.zip");
-          Expand-Archive .\win_flex_bison.zip .\win_flex_bison;
-          echo "${{ github.workspace }}/win_flex_bison" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+          $win_flex_bison = ($env:temp) + '\win_flex_bison\'
+          (Invoke-WebRequest $env:WIN_FLEX_BISON).Content | Expand-Archive -DestinationPath $win_flex_bison
+          echo $win_flex_bison | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+        env:
+          WIN_FLEX_BISON: https://github.com/lexxmark/winflexbison/releases/download/v2.5.22/win_flex_bison-2.5.22.zip
         if: runner.os == 'Windows'
 
       - name: Check Bison
-        run: bison --version
-        if: runner.os != 'Windows'
-
-      - name: Check Bison
+        shell: bash
         run: |
-          win_bison.exe --version
-          win_bison --version
-        if: runner.os == 'Windows'
+          if [ "${{ runner.os }}" = "Windows"]; then
+            win_bison.exe --version
+            win_bison --version
+          else
+            bison --version
+          fi
 
       - name: Compile
         run: cargo build --workspace --verbose
