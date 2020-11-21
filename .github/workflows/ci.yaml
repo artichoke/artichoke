@@ -216,9 +216,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
-
-      - name: Install gems
-        run: bundle install
+          bundler-cache: true
 
       - name: Lint and check formatting with Rubocop
         run: bundle exec rubocop --format github
