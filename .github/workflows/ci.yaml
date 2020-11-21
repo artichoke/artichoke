@@ -34,24 +34,35 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
-      # avoid choco because it takes forever to initialize on first use
-      # instead, install directly from GitHub releases
+      # Avoid using the `choco` package manager to install deps on Windows
+      # runners because it takes a non-trivial amount of time to initialize on
+      # first use. Instead, install `bison` directly from GitHub releases using
+      # native PowerShell cmdlets.
+      #
+      # `win_flex_bison` is the same `bison` mruby installs for Windows builds
+      # in its CI configuration.
+      #
+      # https://github.com/artichoke/artichoke/blob/5a98788e/artichoke-backend/vendor/mruby/appveyor.yml#L35
       - name: Install Bison
         run: |
-          (New-Object System.Net.WebClient).DownloadFile("https://github.com/lexxmark/winflexbison/releases/download/v2.5.22/win_flex_bison-2.5.22.zip","win_flex_bison.zip");
-          Expand-Archive .\win_flex_bison.zip .\win_flex_bison;
-          echo "${{ github.workspace }}/win_flex_bison" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+          $winFlexBison = Join-Path -Path $env:temp  -ChildPath $(New-Guid)
+          $releaseArchive = New-TemporaryFile | Rename-Item -NewName { $_ -replace 'tmp$', 'zip' } -PassThru
+          Invoke-WebRequest $env:ARTIFACT_URL -OutFile $releaseArchive
+          $releaseArchive | Expand-Archive -DestinationPath $winFlexBison
+          $winFlexBison | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+        env:
+          ARTIFACT_URL: https://github.com/lexxmark/winflexbison/releases/download/v2.5.22/win_flex_bison-2.5.22.zip
         if: runner.os == 'Windows'
 
       - name: Check Bison
-        run: bison --version
-        if: runner.os != 'Windows'
-
-      - name: Check Bison
+        shell: bash
         run: |
-          win_bison.exe --version
-          win_bison --version
-        if: runner.os == 'Windows'
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            win_bison.exe --version
+            win_bison --version
+          else
+            bison --version
+          fi
 
       - name: Compile
         run: cargo build --workspace --verbose
