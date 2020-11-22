@@ -1,6 +1,8 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
+// https://github.com/rust-lang/rust-clippy/pull/5998#issuecomment-731855891
+#![allow(clippy::map_err_ignore)]
 #![allow(clippy::option_if_let_else)]
 #![allow(unknown_lints)]
 #![warn(broken_intra_doc_links)]
