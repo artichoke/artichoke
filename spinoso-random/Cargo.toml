@@ -21,7 +21,7 @@ rand_core_ = { version = "0.5", optional = true, default-features = false, packa
 [features]
 default = ["rand", "std"]
 # Enables range sampling methods for the `rand()` function.
-rand = ["rand_", "rand_core"]
+rand = ["rand_", "rand-core"]
 # Enables implementations of `RngCore` on `Random` and `Mt` types.
-rand_core = ["rand_core_"]
+rand-core = ["rand_core_"]
 std = []

@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
-#![allow(clippy::doc_markdown)]
 // https://github.com/rust-lang/rust-clippy/pull/5998#issuecomment-731855891
 #![allow(clippy::map_err_ignore)]
 #![allow(clippy::option_if_let_else)]
@@ -75,9 +74,9 @@
 //! All features are enabled by default.
 //!
 //! - **rand** - Enables range sampling methods for the [`rand()`] function.
-//!   Activating this feature also activates the **rand_core** feature. Dropping
+//!   Activating this feature also activates the **rand-core** feature. Dropping
 //!   this feature removes the [`rand`] dependency.
-//! - **rand_core** - Enables implementations of [`RngCore`] on [`Random`] and
+//! - **rand-core** - Enables implementations of [`RngCore`] on [`Random`] and
 //!   [`Mt`] types. Dropping this feature removes the [`rand_core`] dependency.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this

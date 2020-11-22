@@ -3,7 +3,7 @@ use core::mem::size_of;
 
 use crate::{InitializeError, NewSeedError};
 
-#[cfg(feature = "rand_core")]
+#[cfg(feature = "rand-core")]
 mod rand;
 pub mod ruby;
 

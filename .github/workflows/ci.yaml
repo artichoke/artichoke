@@ -144,7 +144,7 @@ jobs:
 
       - name: Compile spinoso-random with some features
         run: |
-          cargo build --verbose --no-default-features --features rand_core
+          cargo build --verbose --no-default-features --features rand-core
           cargo build --verbose --no-default-features --features std
           cargo build --verbose --no-default-features --features rand
         working-directory: "spinoso-random"
