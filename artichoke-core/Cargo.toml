@@ -18,3 +18,7 @@ default = ["std"]
 # APIs that depend on `OsStr` and `Path`, as well as some `std::error::Error`
 # impls.
 std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

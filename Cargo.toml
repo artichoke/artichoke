@@ -95,3 +95,7 @@ output-strategy-null = ["artichoke-backend/output-strategy-null"]
 # Implement the `SecureRandom` Standard Library package. This feature adds
 # dependencies on `base64`, `hex`, `rand`, `rand_core`, and `uuid`.
 stdlib-securerandom = ["artichoke-backend/stdlib-securerandom"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

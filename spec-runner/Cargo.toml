@@ -24,3 +24,7 @@ path = ".."
 # Remove it from the main artichoke workspace.
 [workspace]
 members = ["."]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
