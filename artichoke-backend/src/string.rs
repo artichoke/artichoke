@@ -50,9 +50,14 @@ where
     format_debug_escape_into(dest, string).map_err(WriteError)
 }
 
-/// Error type for [`format_unicode_debug_into`] and [`format_int_into`].
+/// Error type for [`format_unicode_debug_into`].
+///
+/// This error type can also be used to convert generic [`fmt::Error`] into an
+/// [`Error`], such as when formatting integers with [`itoa::fmt`].
 ///
 /// This  error type wraps a [`fmt::Error`].
+///
+/// [`Error`]: crate::error::Error
 #[derive(Debug, Clone, Copy)]
 pub struct WriteError(fmt::Error);
 
