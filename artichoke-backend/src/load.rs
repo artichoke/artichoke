@@ -24,7 +24,7 @@ impl LoadSources for Artichoke {
             absolute_path = Path::new(RUBY_LOAD_PATH).join(path);
             path = &absolute_path;
         }
-        state.vfs.register_extension(&path, T::require)?;
+        state.vfs.register_extension(path, T::require)?;
         trace!(
             "Added Rust extension to interpreter filesystem -- {}",
             path.display()
