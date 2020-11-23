@@ -103,7 +103,7 @@ where
     // - A test asserts that `INLINE_EVAL_SWITCH_FILENAME` has no NUL bytes.
     let context = unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH_FILENAME) };
     interp.push_context(context)?;
-    if let Some(ref fixture) = fixture {
+    if let Some(fixture) = fixture {
         setup_fixture_hack(&mut interp, fixture)?;
     }
     for command in commands {
@@ -126,7 +126,7 @@ where
     W: io::Write + WriteColor,
 {
     let mut interp = crate::interpreter()?;
-    if let Some(ref fixture) = fixture {
+    if let Some(fixture) = fixture {
         setup_fixture_hack(&mut interp, fixture)?;
     }
     if let Err(ref exc) = interp.eval_file(programfile) {
@@ -140,7 +140,7 @@ fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Error> 
     let mut buf = String::from(message);
     buf.push_str(" -- ");
     let path = ffi::os_str_to_bytes(file.as_ref())?;
-    string::format_unicode_debug_into(&mut buf, &path)?;
+    string::format_unicode_debug_into(&mut buf, path)?;
     Ok(buf)
 }
 

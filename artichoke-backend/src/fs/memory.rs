@@ -294,7 +294,7 @@ impl Filesystem for Memory {
     /// [`io::ErrorKind::NotFound`] is returned.
     fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
         let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(ref entry) = self.fs.get(&path) {
+        if let Some(entry) = self.fs.get(&path) {
             if let Some(ref code) = entry.code {
                 match code.content {
                     Cow::Borrowed(content) => Ok(content.into()),

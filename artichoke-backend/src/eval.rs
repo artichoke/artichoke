@@ -56,7 +56,7 @@ impl Eval for Artichoke {
 
     fn eval_os_str(&mut self, code: &OsStr) -> Result<Self::Value, Self::Error> {
         let code = ffi::os_str_to_bytes(code)?;
-        self.eval(&code)
+        self.eval(code)
     }
 
     fn eval_file(&mut self, file: &Path) -> Result<Self::Value, Self::Error> {
