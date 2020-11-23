@@ -11,7 +11,6 @@
 use std::ffi::CStr;
 use std::fmt::{self, Write};
 
-use crate::string;
 use crate::types::{self, Ruby};
 
 mod args;
@@ -47,11 +46,10 @@ impl fmt::Debug for mrb_value {
             Ruby::Bool => f.write_str("false"),
             Ruby::Fixnum => {
                 let fixnum = unsafe { mrb_sys_fixnum_to_cint(*self) };
-                string::format_int_into(f, fixnum).map_err(string::WriteError::into_inner)
+                itoa::fmt(f, fixnum)
             }
             Ruby::Float => {
                 let float = unsafe { mrb_sys_float_to_cdouble(*self) };
-                // dtoa can't write to `fmt::Write` streams.
                 write!(f, "{}", float)
             }
             type_tag => write!(f, "<{}>", type_tag),

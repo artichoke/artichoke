@@ -84,11 +84,11 @@ pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, [u8]> {
         20 => b"$20".as_ref().into(),
         num => {
             let mut buf = String::from("$");
-            // Suppress io errors because this function is infallible.
+            // Suppress fmt errors because this function is infallible.
             //
-            // In practice string::format_int_into will never error because the
-            // fmt::Write impl for String never panics.
-            let _ = string::format_int_into(&mut buf, num);
+            // In practice `itoa::fmt` will never error because the `fmt::Write`
+            // impl for `String` never panics.
+            let _ = itoa::fmt(&mut buf, num);
             buf.into_bytes().into()
         }
     }

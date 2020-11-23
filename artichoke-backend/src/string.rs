@@ -7,7 +7,7 @@
 //! Artichoke aims to support ASCII, UTF-8, maybe UTF-8, and binary encodings.
 
 use scolapasta_string_escape::format_debug_escape_into;
-use std::borrow::Cow;
+use std::borrow::{Borrow, BorrowMut, Cow};
 use std::error;
 use std::fmt;
 
@@ -42,6 +42,7 @@ use crate::Artichoke;
 ///
 /// This method only returns an error when the given writer returns an
 /// error.
+#[inline]
 pub fn format_unicode_debug_into<W>(dest: W, string: &[u8]) -> Result<(), WriteError>
 where
     W: fmt::Write,
@@ -49,18 +50,14 @@ where
     format_debug_escape_into(dest, string).map_err(WriteError)
 }
 
-pub fn format_int_into<W, I>(dest: W, value: I) -> Result<(), WriteError>
-where
-    W: fmt::Write,
-    I: itoa::Integer,
-{
-    itoa::fmt(dest, value)?;
-    Ok(())
-}
-
-/// Error type for [`format_unicode_debug_into`] and [`format_int_into`].
+/// Error type for [`format_unicode_debug_into`].
+///
+/// This error type can also be used to convert generic [`fmt::Error`] into an
+/// [`Error`], such as when formatting integers with [`itoa::fmt`].
 ///
 /// This  error type wraps a [`fmt::Error`].
+///
+/// [`Error`]: crate::error::Error
 #[derive(Debug, Clone, Copy)]
 pub struct WriteError(fmt::Error);
 
@@ -70,11 +67,41 @@ impl From<fmt::Error> for WriteError {
     }
 }
 
+impl From<WriteError> for fmt::Error {
+    fn from(err: WriteError) -> Self {
+        err.into_inner()
+    }
+}
+
 impl WriteError {
     #[inline]
     #[must_use]
     pub fn into_inner(self) -> fmt::Error {
         self.0
+    }
+}
+
+impl AsRef<fmt::Error> for WriteError {
+    fn as_ref(&self) -> &fmt::Error {
+        &self.0
+    }
+}
+
+impl AsMut<fmt::Error> for WriteError {
+    fn as_mut(&mut self) -> &mut fmt::Error {
+        &mut self.0
+    }
+}
+
+impl Borrow<fmt::Error> for WriteError {
+    fn borrow(&self) -> &fmt::Error {
+        &self.0
+    }
+}
+
+impl BorrowMut<fmt::Error> for WriteError {
+    fn borrow_mut(&mut self) -> &mut fmt::Error {
+        &mut self.0
     }
 }
 
