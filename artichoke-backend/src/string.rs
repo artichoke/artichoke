@@ -67,6 +67,12 @@ impl From<fmt::Error> for WriteError {
     }
 }
 
+impl From<WriteError> for fmt::Error {
+    fn from(err: WriteError) -> Self {
+        err.into_inner()
+    }
+}
+
 impl WriteError {
     #[inline]
     #[must_use]
