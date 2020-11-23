@@ -25,3 +25,7 @@ rand = ["rand_", "rand_core"]
 # Enables implementations of `RngCore` on `Random` and `Mt` types.
 rand_core = ["rand_core_"]
 std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -23,3 +23,7 @@ full = ["libm"]
 # By default, `spinoso-math` is `no_std`. This feature enables
 # `std::error::Error` impls.
 std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
