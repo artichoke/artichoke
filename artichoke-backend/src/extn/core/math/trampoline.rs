@@ -3,6 +3,7 @@
 use core::convert::TryFrom;
 
 use crate::extn::prelude::*;
+use crate::string::WriteError;
 
 pub fn acos(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = interp.coerce_to_float(value)?;
@@ -127,13 +128,13 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
         }
         Err(_) if exponent < 0 => {
             let mut message = String::from("integer ");
-            string::format_int_into(&mut message, exponent)?;
+            itoa::fmt(&mut message, exponent).map_err(WriteError::from)?;
             message.push_str("too small to convert to `int'");
             Err(RangeError::from(message).into())
         }
         Err(_) => {
             let mut message = String::from("integer ");
-            string::format_int_into(&mut message, exponent)?;
+            itoa::fmt(&mut message, exponent).map_err(WriteError::from)?;
             message.push_str("too big to convert to `int'");
             Err(RangeError::from(message).into())
         }

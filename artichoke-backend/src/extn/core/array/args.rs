@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::extn::prelude::*;
+use crate::string::WriteError;
 use crate::sys::protect;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -61,9 +62,9 @@ pub fn element_assignment(
                 start
             } else {
                 let mut message = String::from("index ");
-                string::format_int_into(&mut message, start)?;
+                itoa::fmt(&mut message, start).map_err(WriteError::from)?;
                 message.push_str(" too small for array; minimum: -");
-                string::format_int_into(&mut message, len)?;
+                itoa::fmt(&mut message, len).map_err(WriteError::from)?;
                 return Err(IndexError::from(message).into());
             }
         };
@@ -72,7 +73,7 @@ pub fn element_assignment(
             Ok((start, Some(slice_len), elem))
         } else {
             let mut message = String::from("negative length (");
-            string::format_int_into(&mut message, slice_len)?;
+            itoa::fmt(&mut message, slice_len).map_err(WriteError::from)?;
             message.push(')');
             Err(IndexError::from(message).into())
         }
@@ -88,9 +89,9 @@ pub fn element_assignment(
                 Ok((idx, None, second))
             } else {
                 let mut message = String::from("index ");
-                string::format_int_into(&mut message, index)?;
+                itoa::fmt(&mut message, index).map_err(WriteError::from)?;
                 message.push_str(" too small for array; minimum: -");
-                string::format_int_into(&mut message, len)?;
+                itoa::fmt(&mut message, len).map_err(WriteError::from)?;
                 Err(IndexError::from(message).into())
             }
         }
@@ -112,9 +113,9 @@ pub fn element_assignment(
             // TODO: This conditional is probably not doing the right thing
             if start + (end - start) < 0 {
                 let mut message = String::new();
-                string::format_int_into(&mut message, start)?;
+                itoa::fmt(&mut message, start).map_err(WriteError::from)?;
                 message.push_str("..");
-                string::format_int_into(&mut message, end)?;
+                itoa::fmt(&mut message, end).map_err(WriteError::from)?;
                 message.push_str(" out of range");
                 return Err(RangeError::from(message).into());
             }
@@ -129,18 +130,18 @@ pub fn element_assignment(
                         Ok((start, end.checked_sub(start), second))
                     } else {
                         let mut message = String::from("index ");
-                        string::format_int_into(&mut message, start)?;
+                        itoa::fmt(&mut message, start).map_err(WriteError::from)?;
                         message.push_str(" too small for array; minimum: -");
-                        string::format_int_into(&mut message, len)?;
+                        itoa::fmt(&mut message, len).map_err(WriteError::from)?;
                         Err(IndexError::from(message).into())
                     }
                 }
                 (Ok(start), Err(_)) => Ok((start, None, second)),
                 (Err(_), Err(_)) => {
                     let mut message = String::from("index ");
-                    string::format_int_into(&mut message, start)?;
+                    itoa::fmt(&mut message, start).map_err(WriteError::from)?;
                     message.push_str(" too small for array; minimum: -");
-                    string::format_int_into(&mut message, len)?;
+                    itoa::fmt(&mut message, len).map_err(WriteError::from)?;
                     Err(IndexError::from(message).into())
                 }
             }

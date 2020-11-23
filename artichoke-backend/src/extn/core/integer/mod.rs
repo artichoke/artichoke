@@ -3,6 +3,7 @@ use std::mem;
 
 use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
+use crate::string::WriteError;
 
 pub mod mruby;
 pub mod trampoline;
@@ -127,7 +128,7 @@ impl Integer {
                 }
                 _ => {
                     let mut message = String::new();
-                    string::format_int_into(&mut message, self.as_i64())?;
+                    itoa::fmt(&mut message, self.as_i64()).map_err(WriteError::from)?;
                     message.push_str(" out of char range");
                     Err(RangeError::from(message).into())
                 }

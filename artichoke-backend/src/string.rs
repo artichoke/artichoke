@@ -42,20 +42,12 @@ use crate::Artichoke;
 ///
 /// This method only returns an error when the given writer returns an
 /// error.
+#[inline]
 pub fn format_unicode_debug_into<W>(dest: W, string: &[u8]) -> Result<(), WriteError>
 where
     W: fmt::Write,
 {
     format_debug_escape_into(dest, string).map_err(WriteError)
-}
-
-pub fn format_int_into<W, I>(dest: W, value: I) -> Result<(), WriteError>
-where
-    W: fmt::Write,
-    I: itoa::Integer,
-{
-    itoa::fmt(dest, value)?;
-    Ok(())
 }
 
 /// Error type for [`format_unicode_debug_into`] and [`format_int_into`].

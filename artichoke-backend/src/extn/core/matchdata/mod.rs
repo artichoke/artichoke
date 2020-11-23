@@ -19,6 +19,7 @@ use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
+use crate::string::WriteError;
 
 mod boxing;
 pub mod mruby;
@@ -314,7 +315,7 @@ impl MatchData {
                     Ok(idx) if idx < captures_len => idx,
                     _ => {
                         let mut message = String::from("index ");
-                        string::format_int_into(&mut message, index)?;
+                        itoa::fmt(&mut message, index).map_err(WriteError::from)?;
                         message.push_str(" out of matches");
                         return Err(IndexError::from(message).into());
                     }

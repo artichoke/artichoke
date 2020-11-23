@@ -7,6 +7,7 @@ use std::num::NonZeroU32;
 use std::str::{self, FromStr};
 
 use crate::extn::prelude::*;
+use crate::string::WriteError;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Radix(NonZeroU32);
@@ -63,7 +64,7 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
                 Ok(Radix::new(radix))
             } else {
                 let mut message = String::from("invalid radix ");
-                string::format_int_into(&mut message, radix)?;
+                itoa::fmt(&mut message, radix).map_err(WriteError::from)?;
                 Err(ArgumentError::from(message).into())
             }
         } else {
