@@ -29,7 +29,7 @@ spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.1", path = "../spinoso-time", optional = true }
 
 [dependencies.onig]
-version = "6.1.0"
+version = "6.1.1"
 default-features = false
 optional = true
 
