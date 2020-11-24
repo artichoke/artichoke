@@ -516,7 +516,7 @@ class String
   end
 
   def prepend(*args)
-    insert(0, args.join(''))
+    insert(0, args.join)
   end
 
   def rjust(integer, padstr = ' ')
