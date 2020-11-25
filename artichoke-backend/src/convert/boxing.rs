@@ -40,6 +40,18 @@ impl<'a, T> UnboxedValueGuard<'a, T> {
             phantom: PhantomData,
         }
     }
+
+    #[inline]
+    #[must_use]
+    pub fn as_inner_ref(&self) -> &T {
+        self.guarded.deref()
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn as_inner_mut(&mut self) -> &mut T {
+        self.guarded.deref_mut()
+    }
 }
 
 #[derive(Debug)]
