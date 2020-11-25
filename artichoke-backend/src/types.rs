@@ -95,7 +95,7 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         // `MRB_TT_ARRAY` refers to the mruby `mrb_array` implementation.
         // Artichoke implements its own `Array` as a `Ruby::Data`, so this
         // variant is unreachable.
-        MRB_TT_ARRAY => Ruby::Unreachable,
+        MRB_TT_ARRAY => Ruby::Array,
         MRB_TT_HASH => Ruby::Hash,
         MRB_TT_STRING => Ruby::String,
         MRB_TT_RANGE => Ruby::Range,
@@ -245,12 +245,12 @@ mod tests {
     fn parse_array_ruby_type() {
         let mut interp = interpreter().unwrap();
         let empty = interp.eval(b"[]").unwrap();
-        assert_eq!(Ruby::Data, types::ruby_from_mrb_value(empty.inner()));
+        assert_eq!(Ruby::Array, types::ruby_from_mrb_value(empty.inner()));
         let array = interp.eval(b"[1, /./, Object.new]").unwrap();
-        assert_eq!(Ruby::Data, types::ruby_from_mrb_value(array.inner()));
+        assert_eq!(Ruby::Array, types::ruby_from_mrb_value(array.inner()));
         let ary = vec!["a", "b", "c"];
         let converted = interp.try_convert_mut(ary).unwrap();
-        assert_eq!(Ruby::Data, types::ruby_from_mrb_value(converted.inner()));
+        assert_eq!(Ruby::Array, types::ruby_from_mrb_value(converted.inner()));
     }
 
     #[test]
