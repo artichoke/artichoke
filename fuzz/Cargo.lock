@@ -566,7 +566,7 @@ checksum = "fbee7696b84bbf3d89a1c2eccff0850e3047ed46bfcd2e92c29a2d074d57e252"
 
 [[package]]
 name = "spinoso-array"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "smallvec",
 ]
