@@ -1,4 +1,4 @@
-use spinoso_array::SmallArray as SpinosoArray;
+use spinoso_array::Array as SpinosoArray;
 use std::convert::TryFrom;
 use std::iter::FromIterator;
 use std::slice;
@@ -144,6 +144,16 @@ impl Array {
     #[must_use]
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.0.capacity()
+    }
+
+    #[must_use]
+    pub fn as_mut_ptr(&mut self) -> *mut sys::mrb_value {
+        self.0.as_mut_ptr()
     }
 
     #[must_use]
@@ -396,6 +406,53 @@ impl Array {
 
     pub fn shift_n(&mut self, count: usize) -> Self {
         Self(self.0.shift_n(count))
+    }
+
+    /// Creates an `Array<T>` directly from the raw components of another array.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't
+    /// checked:
+    ///
+    /// - `ptr` needs to have been previously allocated via `Array<T>` (at
+    ///   least, it's highly likely to be incorrect if it wasn't).
+    /// - `T` needs to have the same size and alignment as what `ptr` was
+    ///   allocated with. (`T` having a less strict alignment is not sufficient,
+    ///   the alignment really needs to be equal to satisfy the `dealloc`
+    ///   requirement that memory must be allocated and deallocated with the
+    ///   same layout.)
+    /// - `length` needs to be less than or equal to `capacity`.
+    /// - `capacity` needs to be the `capacity` that the pointer was allocated
+    ///   with.
+    ///
+    /// Violating these may cause problems like corrupting the allocator's
+    /// internal data structures.
+    ///
+    /// The ownership of `ptr` is effectively transferred to the `Array<T>`
+    /// which may then deallocate, reallocate or change the contents of memory
+    /// pointed to by the pointer at will. Ensure that nothing else uses the
+    /// pointer after calling this function.
+    pub unsafe fn from_raw_parts(ptr: *mut sys::mrb_value, length: usize, capacity: usize) -> Self {
+        Self(SpinosoArray::from_raw_parts(ptr, length, capacity))
+    }
+
+    /// Decomposes an `Array<T>` into its raw components.
+    ///
+    /// Returns the raw pointer to the underlying data, the length of the array
+    /// (in elements), and the allocated capacity of the data (in elements).
+    /// These are the same arguments in the same order as the arguments to
+    /// [`from_raw_parts`].
+    ///
+    /// After calling this function, the caller is responsible for the memory
+    /// previously managed by the `Array`. The only way to do this is to convert
+    /// the raw pointer, length, and capacity back into a `Array` with the
+    /// [`from_raw_parts`] function, allowing the destructor to perform the
+    /// cleanup.
+    ///
+    /// [`from_raw_parts`]: Array::from_raw_parts
+    pub fn into_raw_parts(self) -> (*mut sys::mrb_value, usize, usize) {
+        self.0.into_raw_parts()
     }
 }
 
