@@ -15,10 +15,6 @@
 #include <mruby/numeric.h>
 #include <mruby/data.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 struct backtrace_location {
   int32_t lineno;
   mrb_sym method_id;
@@ -84,12 +80,12 @@ print_backtrace(mrb_state *mrb, mrb_value backtrace)
   mrb_int n;
   FILE *stream = stderr;
 
-  n = ARRAY_LEN(mrb, backtrace) - 1;
+  n = RARRAY_LEN(backtrace) - 1;
   if (n == 0) return;
 
   fprintf(stream, "trace (most recent call last):\n");
   for (i=0; i<n; i++) {
-    mrb_value entry = ARY_REF(mrb, backtrace, n-i-1);
+    mrb_value entry = RARRAY_PTR(backtrace)[n-i-1];
 
     if (mrb_string_p(entry)) {
       fprintf(stream, "\t[%d] %.*s\n", i, (int)RSTRING_LEN(entry), RSTRING_PTR(entry));
@@ -156,7 +152,7 @@ mrb_print_backtrace(mrb_state *mrb)
 
   backtrace = mrb_obj_iv_get(mrb, mrb->exc, mrb_intern_lit(mrb, "backtrace"));
   if (mrb_nil_p(backtrace)) return;
-  if (ARY_CHECK(mrb, backtrace)) {
+  if (mrb_array_p(backtrace)) {
     print_backtrace(mrb, backtrace);
   }
   else {
@@ -237,13 +233,13 @@ mrb_unpack_backtrace(mrb_state *mrb, mrb_value backtrace)
 
   if (mrb_nil_p(backtrace)) {
   empty_backtrace:
-    return ARY_NEW_CAPA(mrb, 0);
+    return mrb_ary_new_capa(mrb, 0);
   }
-  if (ARY_CHECK(mrb, backtrace)) return backtrace;
+  if (mrb_array_p(backtrace)) return backtrace;
   bt = (struct backtrace_location*)mrb_data_check_get_ptr(mrb, backtrace, &bt_type);
   if (bt == NULL) goto empty_backtrace;
   n = (mrb_int)RDATA(backtrace)->flags;
-  backtrace = ARY_NEW_CAPA(mrb, n);
+  backtrace = mrb_ary_new_capa(mrb, n);
   ai = mrb_gc_arena_save(mrb);
   for (i = 0; i < n; i++) {
     const struct backtrace_location *entry = &bt[i];
@@ -255,7 +251,7 @@ mrb_unpack_backtrace(mrb_state *mrb, mrb_value backtrace)
       mrb_str_cat_lit(mrb, btline, ":in ");
       mrb_str_cat_cstr(mrb, btline, mrb_sym_name(mrb, entry->method_id));
     }
-    ARY_PUSH(mrb, backtrace, btline);
+    mrb_ary_push(mrb, backtrace, btline);
     mrb_gc_arena_restore(mrb, ai);
   }
 
@@ -270,7 +266,7 @@ mrb_exc_backtrace(mrb_state *mrb, mrb_value exc)
 
   attr_name = mrb_intern_lit(mrb, "backtrace");
   backtrace = mrb_iv_get(mrb, exc, attr_name);
-  if (mrb_nil_p(backtrace) || ARY_CHECK(mrb, backtrace)) {
+  if (mrb_nil_p(backtrace) || mrb_array_p(backtrace)) {
     return backtrace;
   }
   backtrace = mrb_unpack_backtrace(mrb, backtrace);

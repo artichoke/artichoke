@@ -16,10 +16,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 struct tmpl {
   mrb_value str;
   int idx;
@@ -156,9 +152,9 @@ static int
 unpack_c(mrb_state *mrb, const void *src, int srclen, mrb_value ary, unsigned int flags)
 {
   if (flags & PACK_FLAG_SIGNED)
-    ARY_PUSH(mrb, ary, mrb_fixnum_value(*(signed char *)src));
+    mrb_ary_push(mrb, ary, mrb_fixnum_value(*(signed char *)src));
   else
-    ARY_PUSH(mrb, ary, mrb_fixnum_value(*(unsigned char *)src));
+    mrb_ary_push(mrb, ary, mrb_fixnum_value(*(unsigned char *)src));
   return 1;
 }
 
@@ -192,7 +188,7 @@ unpack_s(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, un
   if ((flags & PACK_FLAG_SIGNED) && (n >= 0x8000)) {
     n -= 0x10000;
   }
-  ARY_PUSH(mrb, ary, mrb_fixnum_value(n));
+  mrb_ary_push(mrb, ary, mrb_fixnum_value(n));
   return 2;
 }
 
@@ -255,7 +251,7 @@ unpack_l(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, un
 #endif
     n = ul;
   }
-  ARY_PUSH(mrb, ary, mrb_fixnum_value(n));
+  mrb_ary_push(mrb, ary, mrb_fixnum_value(n));
   return 4;
 }
 
@@ -322,7 +318,7 @@ unpack_q(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, un
     }
     n = ull;
   }
-  ARY_PUSH(mrb, ary, mrb_fixnum_value(n));
+  mrb_ary_push(mrb, ary, mrb_fixnum_value(n));
   return 8;
 }
 
@@ -385,7 +381,7 @@ unpack_double(mrb_state *mrb, const unsigned char * src, int srclen, mrb_value a
       memcpy(buffer, src, 8);
     }
   }
-  ARY_PUSH(mrb, ary, mrb_float_value(mrb, d));
+  mrb_ary_push(mrb, ary, mrb_float_value(mrb, d));
 
   return 8;
 }
@@ -448,7 +444,7 @@ unpack_float(mrb_state *mrb, const unsigned char * src, int srclen, mrb_value ar
       memcpy(buffer, src, 4);
     }
   }
-  ARY_PUSH(mrb, ary, mrb_float_value(mrb, f));
+  mrb_ary_push(mrb, ary, mrb_float_value(mrb, f));
 
   return 4;
 }
@@ -567,7 +563,7 @@ unpack_utf8(mrb_state *mrb, const unsigned char * src, int srclen, mrb_value ary
     return 1;
   }
   uv = utf8_to_uv(mrb, (const char *)src, &lenp);
-  ARY_PUSH(mrb, ary, mrb_fixnum_value((mrb_int)uv));
+  mrb_ary_push(mrb, ary, mrb_fixnum_value((mrb_int)uv));
   return (int)lenp;
 }
 
@@ -638,7 +634,7 @@ unpack_a(mrb_state *mrb, const void *src, int slen, mrb_value ary, long count, u
 
   if (copylen < 0) copylen = 0;
   dst = mrb_str_new(mrb, sptr, (mrb_int)copylen);
-  ARY_PUSH(mrb, ary, dst);
+  mrb_ary_push(mrb, ary, dst);
   return slen;
 }
 
@@ -730,7 +726,7 @@ unpack_h(mrb_state *mrb, const void *src, int slen, mrb_value ary, int count, un
   }
 
   dst = mrb_str_resize(mrb, dst, dptr - dptr0);
-  ARY_PUSH(mrb, ary, dst);
+  mrb_ary_push(mrb, ary, dst);
   return (int)(sptr - sptr0);
 }
 
@@ -853,7 +849,7 @@ unpack_m(mrb_state *mrb, const void *src, int slen, mrb_value ary, unsigned int 
 
 done:
   dst = mrb_str_resize(mrb, dst, dptr - dptr0);
-  ARY_PUSH(mrb, ary, dst);
+  mrb_ary_push(mrb, ary, dst);
   return (int)(sptr - sptr0);
 }
 
@@ -1141,11 +1137,11 @@ mrb_pack_pack(mrb_state *mrb, mrb_value ary)
         continue;
     }
 
-    for (; aidx < ARRAY_LEN(mrb, ary); aidx++) {
+    for (; aidx < RARRAY_LEN(ary); aidx++) {
       if (count == 0 && !(flags & PACK_FLAG_WIDTH))
         break;
 
-      o = ARY_REF(mrb, ary, aidx);
+      o = mrb_ary_ref(mrb, ary, aidx);
       if (type == PACK_TYPE_INTEGER) {
         o = mrb_to_int(mrb, o);
       }
@@ -1232,7 +1228,7 @@ pack_unpack(mrb_state *mrb, mrb_value str, int single)
   srcidx = 0;
   srclen = (int)RSTRING_LEN(str);
 
-  result = ARY_NEW(mrb);
+  result = mrb_ary_new(mrb);
   while (has_tmpl(&tmpl)) {
     read_tmpl(mrb, &tmpl, &dir, &type, &size, &count, &flags);
 
@@ -1262,7 +1258,7 @@ pack_unpack(mrb_state *mrb, mrb_value str, int single)
     while (count != 0) {
       if (srclen - srcidx < size) {
         while (count-- > 0) {
-          ARY_PUSH(mrb, result, mrb_nil_value());
+          mrb_ary_push(mrb, result, mrb_nil_value());
         }
         break;
       }
@@ -1303,8 +1299,8 @@ pack_unpack(mrb_state *mrb, mrb_value str, int single)
   }
 
   if (single) {
-    if (ARRAY_LEN(mrb, result) > 0) {
-      return ARY_REF(mrb, result, 0);
+    if (RARRAY_LEN(result) > 0) {
+      return RARRAY_PTR(result)[0];
     }
     return mrb_nil_value();
   }
@@ -1329,7 +1325,7 @@ mrb_mruby_pack_gem_init(mrb_state *mrb)
   check_little_endian();
   make_base64_dec_tab();
 
-  mrb_define_method(mrb, mrb_class_get(mrb, "Array"), "pack", mrb_pack_pack, MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, mrb->array_class, "pack", mrb_pack_pack, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, mrb->string_class, "unpack", mrb_pack_unpack, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, mrb->string_class, "unpack1", mrb_pack_unpack1, MRB_ARGS_REQ(1));
 }
