@@ -6,9 +6,7 @@ use std::slice;
 use crate::extn::prelude::*;
 
 pub mod args;
-mod boxing;
 mod ffi;
-mod gc;
 pub mod mruby;
 pub mod trampoline;
 
