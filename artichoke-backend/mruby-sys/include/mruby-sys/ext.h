@@ -105,7 +105,10 @@ MRB_API void mrb_sys_raise_current_exception(struct mrb_state *mrb);
 
 // Manipulate Array `mrb_value`s
 
-MRB_API mrb_int mrb_sys_ary_len(mrb_value value);
+MRB_API mrb_value mrb_sys_alloc_rarray(struct mrb_state *mrb, mrb_value *ptr, mrb_int len,
+                                       mrb_int capa);
+
+MRB_API void mrb_sys_repack_into_rarray(mrb_value *ptr, mrb_int len, mrb_int capa, mrb_value into);
 
 // Manage the mruby garbage collector (GC)
 

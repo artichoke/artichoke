@@ -1,15 +1,13 @@
 use std::convert::TryFrom;
-use std::ptr;
 use std::slice;
 
-use crate::extn::core::array::gc;
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
 
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
+unsafe extern "C" fn mrb_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
     let result = Array::new();
@@ -22,7 +20,7 @@ unsafe extern "C" fn artichoke_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_val
 
 // MRB_API mrb_value mrb_ary_new_capa(mrb_state*, mrb_int);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_new_capa(
+unsafe extern "C" fn mrb_ary_new_capa(
     mrb: *mut sys::mrb_state,
     capa: sys::mrb_int,
 ) -> sys::mrb_value {
@@ -39,7 +37,7 @@ unsafe extern "C" fn artichoke_ary_new_capa(
 
 // MRB_API mrb_value mrb_ary_new_from_values(mrb_state *mrb, mrb_int size, const mrb_value *vals);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_new_from_values(
+unsafe extern "C" fn mrb_ary_new_from_values(
     mrb: *mut sys::mrb_state,
     size: sys::mrb_int,
     vals: *const sys::mrb_value,
@@ -62,7 +60,7 @@ unsafe extern "C" fn artichoke_ary_new_from_values(
 
 // MRB_API mrb_value mrb_assoc_new(mrb_state *mrb, mrb_value car, mrb_value cdr)
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_new_assoc(
+unsafe extern "C" fn mrb_assoc_new(
     mrb: *mut sys::mrb_state,
     one: sys::mrb_value,
     two: sys::mrb_value,
@@ -83,7 +81,7 @@ unsafe extern "C" fn artichoke_ary_new_assoc(
 
 // MRB_API mrb_value mrb_ary_splat(mrb_state *mrb, mrb_value value);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_splat(
+unsafe extern "C" fn mrb_ary_splat(
     mrb: *mut sys::mrb_state,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -105,16 +103,16 @@ unsafe extern "C" fn artichoke_ary_splat(
 
 // MRB_API void mrb_ary_concat(mrb_state *mrb, mrb_value self, mrb_value other);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_concat(
+unsafe extern "C" fn mrb_ary_concat(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     other: sys::mrb_value,
 ) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let mut ary = Value::from(ary);
+    let mut array = Value::from(ary);
     let other = Value::from(other);
-    let result = if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
+    let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let prior_gc_state = guard.disable_gc();
 
         let result = array.concat(&mut guard, other);
@@ -128,9 +126,9 @@ unsafe extern "C" fn artichoke_ary_concat(
     };
     match result {
         Ok(()) => {
-            let basic = sys::mrb_sys_basic_ptr(ary.inner());
+            let basic = sys::mrb_sys_basic_ptr(ary);
             sys::mrb_write_barrier(mrb, basic);
-            ary.inner()
+            ary
         }
         Err(exception) => error::raise(guard, exception),
     }
@@ -138,45 +136,41 @@ unsafe extern "C" fn artichoke_ary_concat(
 
 // MRB_API mrb_value mrb_ary_pop(mrb_state *mrb, mrb_value ary);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_pop(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let mut interp = unwrap_interpreter!(mrb);
     let mut guard = Guard::new(&mut interp);
-    let mut ary = Value::from(ary);
-    let result = if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
+    let mut array = Value::from(ary);
+    let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         guard.convert(array.pop())
     } else {
         Value::nil()
     };
-    let basic = sys::mrb_sys_basic_ptr(ary.inner());
+    let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
     result.inner()
 }
 
 // MRB_API void mrb_ary_push(mrb_state *mrb, mrb_value array, mrb_value value);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_push(
+unsafe extern "C" fn mrb_ary_push(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     value: sys::mrb_value,
-) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
+) {
+    let mut interp = unwrap_interpreter!(mrb, or_else = ());
     let mut guard = Guard::new(&mut interp);
-    let mut ary = Value::from(ary);
+    let mut array = Value::from(ary);
     let value = Value::from(value);
-    if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
+    if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         array.push(value);
     }
-    let basic = sys::mrb_sys_basic_ptr(ary.inner());
+    let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
-    ary.inner()
 }
 
 // MRB_API mrb_value mrb_ary_ref(mrb_state *mrb, mrb_value ary, mrb_int n);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_ref(
+unsafe extern "C" fn mrb_ary_ref(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     offset: sys::mrb_int,
@@ -195,7 +189,7 @@ unsafe extern "C" fn artichoke_ary_ref(
 
 // MRB_API void mrb_ary_set(mrb_state *mrb, mrb_value ary, mrb_int n, mrb_value val);
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_set(
+unsafe extern "C" fn mrb_ary_set(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     offset: sys::mrb_int,
@@ -230,8 +224,9 @@ unsafe extern "C" fn artichoke_ary_set(
     value.inner()
 }
 
+// MRB_API mrb_value mrb_ary_shift(mrb_state *mrb, mrb_value self)
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_shift(
+unsafe extern "C" fn mrb_ary_shift(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
@@ -250,8 +245,9 @@ unsafe extern "C" fn artichoke_ary_shift(
     result.inner()
 }
 
+// MRB_API mrb_value mrb_ary_unshift(mrb_state *mrb, mrb_value self, mrb_value item)
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_unshift(
+unsafe extern "C" fn mrb_ary_unshift(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     value: sys::mrb_value,
@@ -269,86 +265,12 @@ unsafe extern "C" fn artichoke_ary_unshift(
 }
 
 #[no_mangle]
-unsafe extern "C" fn artichoke_ary_len(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_int {
-    let mut interp = unwrap_interpreter!(mrb, or_else = 0);
-    let mut guard = Guard::new(&mut interp);
-    let mut ary = Value::from(ary);
-    if let Ok(array) = Array::unbox_from_value(&mut ary, &mut guard) {
-        Int::try_from(array.len()).unwrap_or_default()
-    } else {
-        0
-    }
-}
+unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut sys::RArray) {
+    let _ = mrb;
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_ary_set_len(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-    len: sys::mrb_int,
-) {
-    let mut interp = unwrap_interpreter!(mrb, or_else = ());
-    let mut guard = Guard::new(&mut interp);
-    let mut ary = Value::from(ary);
-    if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
-        let len = usize::try_from(len).unwrap_or_default();
-        array.0.set_len(len);
-    }
-}
+    let ptr = (*ary).as_.heap.ptr;
+    let len = (*ary).as_.heap.len as usize;
+    let capacity = (*ary).as_.heap.aux.capa as usize;
 
-#[no_mangle]
-unsafe extern "C" fn artichoke_ary_ptr(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> *mut sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb, or_else = ptr::null_mut());
-    let mut guard = Guard::new(&mut interp);
-    let mut ary = Value::from(ary);
-    if let Ok(mut array) = Array::unbox_from_value(&mut ary, &mut guard) {
-        array.0.as_mut_ptr()
-    } else {
-        ptr::null_mut()
-    }
-}
-
-#[no_mangle]
-unsafe extern "C" fn artichoke_ary_check(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_bool {
-    let mut interp = unwrap_interpreter!(mrb, or_else = 0);
-    let mut guard = Guard::new(&mut interp);
-    let mut ary = Value::from(ary);
-    if Array::unbox_from_value(&mut ary, &mut guard).is_ok() {
-        1
-    } else {
-        0
-    }
-}
-
-#[no_mangle]
-unsafe extern "C" fn artichoke_gc_mark_ary(mrb: *mut sys::mrb_state, ary: sys::mrb_value) {
-    let mut interp = unwrap_interpreter!(mrb, or_else = ());
-    let mut guard = Guard::new(&mut interp);
-    let mut array = Value::from(ary);
-    if let Ok(array) = Array::unbox_from_value(&mut array, &mut guard) {
-        gc::mark(&array, &mut guard);
-    }
-}
-
-#[no_mangle]
-unsafe extern "C" fn artichoke_gc_mark_ary_size(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> usize {
-    let mut interp = unwrap_interpreter!(mrb, or_else = 0);
-    let mut guard = Guard::new(&mut interp);
-    let mut array = Value::from(ary);
-    if let Ok(array) = Array::unbox_from_value(&mut array, &mut guard) {
-        gc::children(&array)
-    } else {
-        0
-    }
+    let _ = Array::from_raw_parts(ptr, len, capacity);
 }
