@@ -115,9 +115,12 @@ readme!();
 
 pub use artichoke_backend as backend;
 
+#[cfg(feature = "cli")]
 pub mod backtrace;
 pub mod parser;
+#[cfg(feature = "cli")]
 pub mod repl;
+#[cfg(feature = "cli")]
 pub mod ruby;
 
 /// A "prelude" for users of the `artichoke-backend` crate.
