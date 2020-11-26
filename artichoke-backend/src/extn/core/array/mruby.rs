@@ -9,7 +9,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Array", None, Some(def::box_unbox_free::<array::Array>))?;
     class::Builder::for_spec(interp, &spec)
-        .value_is_rust_object()
         .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))?
         .add_method(
             "[]=",

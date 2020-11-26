@@ -1,8 +1,11 @@
 use spinoso_array::Array as SpinosoArray;
 use std::convert::TryFrom;
+use std::ffi::c_void;
 use std::iter::FromIterator;
+use std::ops::{Deref, DerefMut};
 use std::slice;
 
+use crate::convert::UnboxedValueGuard;
 use crate::extn::prelude::*;
 
 pub mod args;
@@ -451,6 +454,115 @@ impl Array {
     /// [`from_raw_parts`]: Array::from_raw_parts
     pub fn into_raw_parts(self) -> (*mut sys::mrb_value, usize, usize) {
         self.0.into_raw_parts()
+    }
+
+    pub fn rebox_into_value(
+        into: Value,
+        ptr: *mut sys::mrb_value,
+        len: usize,
+        capacity: usize,
+    ) -> Result<(), Error> {
+        unsafe {
+            sys::mrb_sys_repack_into_rarray(
+                ptr,
+                len as sys::mrb_int,
+                capacity as sys::mrb_int,
+                into.inner(),
+            );
+        }
+        Ok(())
+    }
+}
+
+impl BoxUnboxVmValue for Array {
+    type Unboxed = Self;
+    type Guarded = Array;
+
+    const RUBY_TYPE: &'static str = "Array";
+
+    unsafe fn unbox_from_value<'a>(
+        value: &'a mut Value,
+        interp: &mut Artichoke,
+    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Error> {
+        let _ = interp;
+
+        // Make sure we have a Symbol otherwise extraction will fail.
+        // This check is critical to the safety of accessing the `value` union.
+        if value.ruby_type() != Ruby::Array {
+            let mut message = String::from("uninitialized ");
+            message.push_str(Self::RUBY_TYPE);
+            return Err(TypeError::from(message).into());
+        }
+
+        // Safety:
+        //
+        // The above check on the data type ensures the `value` union holds a
+        // `u32` in the `sym` variant.
+        let value = value.inner();
+        let ary = sys::mrb_sys_basic_ptr(value).cast::<sys::RArray>();
+
+        let ptr = (*ary).as_.heap.ptr;
+        let len = (*ary).as_.heap.len as usize;
+        let capacity = (*ary).as_.heap.aux.capa as usize;
+        let array = Array::from_raw_parts(ptr, len, capacity);
+
+        Ok(UnboxedValueGuard::new(array))
+    }
+
+    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
+        let _ = interp;
+
+        let (ptr, len, capacity) = Array::into_raw_parts(value);
+        let value = unsafe {
+            interp.with_ffi_boundary(|mrb| {
+                sys::mrb_sys_alloc_rarray(mrb, ptr, len as sys::mrb_int, capacity as sys::mrb_int)
+            })?
+        };
+        Ok(value.into())
+    }
+
+    fn box_into_value(
+        value: Self::Unboxed,
+        into: Value,
+        interp: &mut Artichoke,
+    ) -> Result<Value, Error> {
+        let _ = interp;
+        let (ptr, len, capacity) = Array::into_raw_parts(value);
+        Self::rebox_into_value(into, ptr, len, capacity)?;
+        Ok(into)
+    }
+
+    fn free(data: *mut c_void) {
+        // this function is never called. `Array` is freed directly in the VM by
+        // calling `mrb_ary_artichoke_free`.
+        // not have a destructor registered in the class registry.
+        let _ = data;
+    }
+}
+
+impl<'a> AsRef<Array> for UnboxedValueGuard<'a, Array> {
+    fn as_ref(&self) -> &Array {
+        self.as_inner_ref()
+    }
+}
+
+impl<'a> AsMut<Array> for UnboxedValueGuard<'a, Array> {
+    fn as_mut(&mut self) -> &mut Array {
+        self.as_inner_mut()
+    }
+}
+
+impl<'a> Deref for UnboxedValueGuard<'a, Array> {
+    type Target = Array;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_inner_ref()
+    }
+}
+
+impl<'a> DerefMut for UnboxedValueGuard<'a, Array> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.as_inner_mut()
     }
 }
 

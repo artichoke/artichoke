@@ -10,6 +10,11 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.clear();
+
+    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    drop(array);
+    Array::rebox_into_value(ary, ptr, len, capacity)?;
+
     Ok(ary)
 }
 
@@ -44,6 +49,10 @@ pub fn element_assignment(
 
     let result = array.element_assignment(interp, first, second, third);
 
+    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    drop(array);
+    Array::rebox_into_value(ary, ptr, len, capacity)?;
+
     if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();
     }
@@ -56,6 +65,11 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = array.pop();
+
+    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    drop(array);
+    Array::rebox_into_value(ary, ptr, len, capacity)?;
+
     Ok(interp.convert(result))
 }
 
@@ -70,6 +84,10 @@ pub fn concat(
     if let Some(other) = other {
         let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
         array.concat(interp, other)?;
+
+        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+        drop(array);
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
     }
     Ok(ary)
 }
@@ -80,6 +98,11 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.push(value);
+
+    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    drop(array);
+    Array::rebox_into_value(ary, ptr, len, capacity)?;
+
     Ok(ary)
 }
 
@@ -123,14 +146,21 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
         return Err(FrozenError::from("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    if let Some(count) = count {
+    let result = if let Some(count) = count {
         let count = count.implicitly_convert_to_int(interp)?;
         let count =
             usize::try_from(count).map_err(|_| ArgumentError::from("negative array size"))?;
         let shifted = array.shift_n(count);
+
         Array::alloc_value(shifted, interp)
     } else {
         let shifted = array.shift();
+
         Ok(interp.convert(shifted))
-    }
+    };
+    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    drop(array);
+    Array::rebox_into_value(ary, ptr, len, capacity)?;
+
+    result
 }
