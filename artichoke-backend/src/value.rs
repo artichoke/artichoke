@@ -312,7 +312,9 @@ impl ValueCore for Value {
     }
 
     fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error> {
-        let method = interp.convert_mut(method);
+        let method = interp.intern_string(String::from(method))?;
+        let method = Symbol::new(method);
+        let method = Symbol::alloc_value(method, interp)?;
         let respond_to = self.funcall(interp, "respond_to?", &[method], None)?;
         interp.try_convert(respond_to)
     }
