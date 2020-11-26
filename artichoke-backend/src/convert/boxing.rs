@@ -44,13 +44,13 @@ impl<'a, T> UnboxedValueGuard<'a, T> {
     #[inline]
     #[must_use]
     pub fn as_inner_ref(&self) -> &T {
-        self.guarded.deref()
+        &*self.guarded
     }
 
     #[inline]
     #[must_use]
     pub fn as_inner_mut(&mut self) -> &mut T {
-        self.guarded.deref_mut()
+        &mut *self.guarded
     }
 }
 
@@ -58,6 +58,7 @@ impl<'a, T> UnboxedValueGuard<'a, T> {
 pub struct HeapAllocated<T>(Box<T>);
 
 impl<T> HeapAllocated<T> {
+    #[must_use]
     pub fn new(obj: Box<T>) -> Self {
         Self(obj)
     }

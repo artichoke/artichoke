@@ -434,6 +434,7 @@ impl Array {
     /// which may then deallocate, reallocate or change the contents of memory
     /// pointed to by the pointer at will. Ensure that nothing else uses the
     /// pointer after calling this function.
+    #[must_use]
     pub unsafe fn from_raw_parts(ptr: *mut sys::mrb_value, length: usize, capacity: usize) -> Self {
         Self(SpinosoArray::from_raw_parts(ptr, length, capacity))
     }
@@ -452,24 +453,33 @@ impl Array {
     /// cleanup.
     ///
     /// [`from_raw_parts`]: Array::from_raw_parts
+    #[must_use]
     pub fn into_raw_parts(self) -> (*mut sys::mrb_value, usize, usize) {
         self.0.into_raw_parts()
     }
 
-    pub fn rebox_into_value(
+    /// Pack the raw triple of an `Array` into an [`RArray`](sys::RArray)-backed
+    /// [`sys::mrb_value`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this function takes ownership of the allocation pointed to by
+    /// `ptr`. `ptr` or its source cannot be safely accessed until calling
+    /// [`Array::from_raw_parts`].
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    pub unsafe fn rebox_into_value(
         into: Value,
         ptr: *mut sys::mrb_value,
         len: usize,
         capacity: usize,
     ) -> Result<(), Error> {
-        unsafe {
-            sys::mrb_sys_repack_into_rarray(
-                ptr,
-                len as sys::mrb_int,
-                capacity as sys::mrb_int,
-                into.inner(),
-            );
-        }
+        sys::mrb_sys_repack_into_rarray(
+            ptr,
+            len as sys::mrb_int,
+            capacity as sys::mrb_int,
+            into.inner(),
+        );
         Ok(())
     }
 }
@@ -480,6 +490,8 @@ impl BoxUnboxVmValue for Array {
 
     const RUBY_TYPE: &'static str = "Array";
 
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
     unsafe fn unbox_from_value<'a>(
         value: &'a mut Value,
         interp: &mut Artichoke,
@@ -528,7 +540,9 @@ impl BoxUnboxVmValue for Array {
     ) -> Result<Value, Error> {
         let _ = interp;
         let (ptr, len, capacity) = Array::into_raw_parts(value);
-        Self::rebox_into_value(into, ptr, len, capacity)?;
+        unsafe {
+            Self::rebox_into_value(into, ptr, len, capacity)?;
+        }
         Ok(into)
     }
 

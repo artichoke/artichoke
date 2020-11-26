@@ -13,7 +13,9 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
 
     let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
     drop(array);
-    Array::rebox_into_value(ary, ptr, len, capacity)?;
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
 
     Ok(ary)
 }
@@ -51,7 +53,9 @@ pub fn element_assignment(
 
     let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
     drop(array);
-    Array::rebox_into_value(ary, ptr, len, capacity)?;
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
 
     if let GcState::Enabled = prior_gc_state {
         interp.enable_gc();
@@ -68,7 +72,9 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
 
     let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
     drop(array);
-    Array::rebox_into_value(ary, ptr, len, capacity)?;
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
 
     Ok(interp.convert(result))
 }
@@ -87,7 +93,9 @@ pub fn concat(
 
         let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
         drop(array);
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        unsafe {
+            Array::rebox_into_value(ary, ptr, len, capacity)?;
+        }
     }
     Ok(ary)
 }
@@ -101,7 +109,9 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
 
     let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
     drop(array);
-    Array::rebox_into_value(ary, ptr, len, capacity)?;
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
 
     Ok(ary)
 }
@@ -160,7 +170,9 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
     };
     let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
     drop(array);
-    Array::rebox_into_value(ary, ptr, len, capacity)?;
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
 
     result
 }

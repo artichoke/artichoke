@@ -298,6 +298,8 @@ unsafe extern "C" fn mrb_ary_unshift(
 }
 
 #[no_mangle]
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_sign_loss)]
 unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut sys::RArray) {
     let _ = mrb;
 
