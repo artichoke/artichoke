@@ -14,7 +14,7 @@ impl Warn for Artichoke {
     type Error = Error;
 
     fn warn(&mut self, message: &[u8]) -> Result<(), Self::Error> {
-        let state = self.state.as_mut().ok_or_else(InterpreterExtractError::new)?;
+        let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         if let Err(err) = state.output.write_stderr(b"rb warning: ") {
             let mut message = String::from("Failed to write warning to $stderr: ");
             let _ = write!(&mut message, "{}", err);

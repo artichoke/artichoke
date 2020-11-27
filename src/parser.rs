@@ -92,7 +92,7 @@ impl Parser {
     /// Create a new parser from an interpreter instance.
     #[must_use]
     pub fn new(interp: &mut Artichoke) -> Option<Self> {
-        let state = interp.state.as_mut()?;
+        let state = interp.state.as_deref_mut()?;
         let context = state.parser.as_mut()?.context_mut();
         let context = NonNull::new(context)?;
         let parser = unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_parser_new(mrb)).ok()? };

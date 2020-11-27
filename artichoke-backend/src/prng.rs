@@ -8,12 +8,12 @@ impl Prng for Artichoke {
     type Prng = Random;
 
     fn prng(&self) -> Result<&Self::Prng, Self::Error> {
-        let state = self.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
+        let state = self.state.as_deref().ok_or_else(InterpreterExtractError::new)?;
         Ok(&state.prng)
     }
 
     fn prng_mut(&mut self) -> Result<&mut Self::Prng, Self::Error> {
-        let state = self.state.as_mut().ok_or_else(InterpreterExtractError::new)?;
+        let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         Ok(&mut state.prng)
     }
 }

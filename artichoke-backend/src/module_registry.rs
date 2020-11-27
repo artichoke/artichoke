@@ -38,7 +38,7 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        let state = self.state.as_mut().ok_or_else(InterpreterExtractError::new)?;
+        let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         state.modules.insert::<T>(Box::new(spec));
         Ok(())
     }
@@ -51,7 +51,7 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        let state = self.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
+        let state = self.state.as_deref().ok_or_else(InterpreterExtractError::new)?;
         let spec = state.modules.get::<T>();
         Ok(spec)
     }
@@ -60,7 +60,7 @@ impl ModuleRegistry for Artichoke {
     where
         T: Any,
     {
-        let state = self.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
+        let state = self.state.as_deref().ok_or_else(InterpreterExtractError::new)?;
         let spec = state.modules.get::<T>();
         let spec = if let Some(spec) = spec {
             spec
