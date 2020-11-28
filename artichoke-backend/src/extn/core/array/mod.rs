@@ -498,7 +498,7 @@ impl BoxUnboxVmValue for Array {
     ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Error> {
         let _ = interp;
 
-        // Make sure we have a Symbol otherwise extraction will fail.
+        // Make sure we have an Array otherwise extraction will fail.
         // This check is critical to the safety of accessing the `value` union.
         if value.ruby_type() != Ruby::Array {
             let mut message = String::from("uninitialized ");
@@ -508,8 +508,8 @@ impl BoxUnboxVmValue for Array {
 
         // Safety:
         //
-        // The above check on the data type ensures the `value` union holds a
-        // `u32` in the `sym` variant.
+        // The above check on the data type ensures the `value` union holds an
+        // `RArray` in the `p` variant.
         let value = value.inner();
         let ary = sys::mrb_sys_basic_ptr(value).cast::<sys::RArray>();
 

@@ -192,7 +192,6 @@ where
         }
 
         // Copy data pointer out of the `mrb_value` box.
-        let mrb = interp.mrb.as_mut();
         let state = interp
             .state
             .as_ref()
@@ -201,7 +200,9 @@ where
             .classes
             .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
-        let embedded_data_ptr = sys::mrb_data_check_get_ptr(mrb, value.inner(), spec.data_type());
+        let data_type = spec.data_type();
+        let embedded_data_ptr = interp
+            .with_ffi_boundary(|mrb| sys::mrb_data_check_get_ptr(mrb, value.inner(), data_type))?;
         if embedded_data_ptr.is_null() {
             // `Object#allocate` can be used to create `MRB_TT_DATA` without calling
             // `#initialize`. These objects will return a NULL pointer.
@@ -271,15 +272,13 @@ where
             .classes
             .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
+        let data_type = spec.data_type();
         let obj = unsafe {
-            let mrb = interp.mrb.as_mut();
-            let alloc = sys::mrb_data_object_alloc(
-                mrb,
-                rclass.as_mut(),
-                ptr as *mut c_void,
-                spec.data_type(),
-            );
-            sys::mrb_sys_obj_value(alloc as *mut c_void)
+            interp.with_ffi_boundary(|mrb| {
+                let alloc =
+                    sys::mrb_data_object_alloc(mrb, rclass.as_mut(), ptr as *mut c_void, data_type);
+                sys::mrb_sys_obj_value(alloc as *mut c_void)
+            })?
         };
 
         // Undo the GC disable if necessary.

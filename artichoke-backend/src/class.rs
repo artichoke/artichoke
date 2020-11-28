@@ -103,7 +103,16 @@ impl<'a> Builder<'a> {
         let mut super_class = if let Some(super_class) = self.super_class {
             super_class
         } else {
-            let rclass = unsafe { self.interp.mrb.as_mut().object_class };
+            // Safety:
+            //
+            // This direct access of the `mrb` property on `Artichoke` does not
+            // go through `Artichoke::with_ffi_boundary`. This is safe because
+            // no `MRB_API` functions are called, which means it is not required
+            // to re-box the Artichoke `State` into the `mrb_state->ud` pointer.
+            //
+            // This code only performs a memory access to read a field from the
+            // `mrb_state`.
+            let rclass = unsafe { self.interp.mrb.as_ref().object_class };
             NonNull::new(rclass).ok_or_else(|| NotDefinedError::super_class("Object"))?
         };
 
@@ -212,7 +221,7 @@ impl Rclass {
 pub struct Spec {
     name: Cow<'static, str>,
     cstring: Box<CStr>,
-    data_type: sys::mrb_data_type,
+    data_type: *mut sys::mrb_data_type,
     enclosing_scope: Option<EnclosingRubyScope>,
 }
 
@@ -243,6 +252,8 @@ impl Spec {
                 struct_name: cstring.as_ptr(),
                 dfree: free,
             };
+            let data_type = Box::new(data_type);
+            let data_type: &'static mut sys::mrb_data_type = Box::leak(data_type);
             Ok(Self {
                 name,
                 cstring,
@@ -255,8 +266,8 @@ impl Spec {
     }
 
     #[must_use]
-    pub const fn data_type(&self) -> &sys::mrb_data_type {
-        &self.data_type
+    pub fn data_type(&self) -> *mut sys::mrb_data_type {
+        self.data_type
     }
 
     #[must_use]
