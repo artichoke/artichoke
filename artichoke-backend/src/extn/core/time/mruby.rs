@@ -102,8 +102,7 @@ unsafe extern "C" fn time_self_now(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let result = trampoline::now(&mut guard);
     match result {
         Ok(value) => value.inner(),
@@ -116,8 +115,7 @@ unsafe extern "C" fn time_self_at(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
     let result = trampoline::at(&mut guard, args);
     match result {
@@ -131,8 +129,7 @@ unsafe extern "C" fn time_self_mkutc(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
     let result = trampoline::mkutc(&mut guard, args);
     match result {
@@ -146,8 +143,7 @@ unsafe extern "C" fn time_self_mktime(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
     let result = trampoline::mktime(&mut guard, args);
     match result {
@@ -160,8 +156,7 @@ unsafe extern "C" fn time_self_mktime(
 
 unsafe extern "C" fn time_to_int(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::to_int(&mut guard, time);
     match result {
@@ -175,8 +170,7 @@ unsafe extern "C" fn time_to_float(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::to_float(&mut guard, time);
     match result {
@@ -190,8 +184,7 @@ unsafe extern "C" fn time_to_rational(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::to_rational(&mut guard, time);
     match result {
@@ -202,8 +195,7 @@ unsafe extern "C" fn time_to_rational(
 
 unsafe extern "C" fn time_cmp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::cmp(&mut guard, time, other);
@@ -215,8 +207,7 @@ unsafe extern "C" fn time_cmp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> 
 
 unsafe extern "C" fn time_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::eql(&mut guard, time, other);
@@ -228,8 +219,7 @@ unsafe extern "C" fn time_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> 
 
 unsafe extern "C" fn time_hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::hash(&mut guard, time);
     match result {
@@ -243,8 +233,7 @@ unsafe extern "C" fn time_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let args = args.iter().copied().map(Value::from);
     let result = trampoline::initialize(&mut guard, time, args);
@@ -259,8 +248,7 @@ unsafe extern "C" fn time_initialize_copy(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::initialize_copy(&mut guard, time, other);
@@ -277,8 +265,7 @@ unsafe extern "C" fn time_mutate_to_local(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let utc_offset = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let utc_offset = utc_offset.map(Value::from);
     let result = trampoline::mutate_to_local(&mut guard, time, utc_offset);
@@ -293,8 +280,7 @@ unsafe extern "C" fn time_mutate_to_utc(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::mutate_to_utc(&mut guard, time);
     match result {
@@ -308,8 +294,7 @@ unsafe extern "C" fn time_as_local(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let utc_offset = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let utc_offset = utc_offset.map(Value::from);
     let result = trampoline::as_local(&mut guard, time, utc_offset);
@@ -321,8 +306,7 @@ unsafe extern "C" fn time_as_local(
 
 unsafe extern "C" fn time_as_utc(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::as_utc(&mut guard, time);
     match result {
@@ -335,8 +319,7 @@ unsafe extern "C" fn time_as_utc(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
 
 unsafe extern "C" fn time_asctime(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::asctime(&mut guard, time);
     match result {
@@ -350,8 +333,7 @@ unsafe extern "C" fn time_to_string(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::to_string(&mut guard, time);
     match result {
@@ -365,8 +347,7 @@ unsafe extern "C" fn time_to_array(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::to_array(&mut guard, time);
     match result {
@@ -379,8 +360,7 @@ unsafe extern "C" fn time_to_array(
 
 unsafe extern "C" fn time_plus(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::plus(&mut guard, time, other);
@@ -392,8 +372,7 @@ unsafe extern "C" fn time_plus(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
 
 unsafe extern "C" fn time_minus(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::minus(&mut guard, time, other);
@@ -407,8 +386,7 @@ unsafe extern "C" fn time_minus(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
 
 unsafe extern "C" fn time_succ(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::succ(&mut guard, time);
     match result {
@@ -419,8 +397,7 @@ unsafe extern "C" fn time_succ(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
 
 unsafe extern "C" fn time_round(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let num_digits = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let num_digits = num_digits.map(Value::from);
     let result = trampoline::round(&mut guard, time, num_digits);
@@ -434,8 +411,7 @@ unsafe extern "C" fn time_round(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
 
 unsafe extern "C" fn time_second(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::second(&mut guard, time);
     match result {
@@ -446,8 +422,7 @@ unsafe extern "C" fn time_second(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
 
 unsafe extern "C" fn time_minute(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::minute(&mut guard, time);
     match result {
@@ -458,8 +433,7 @@ unsafe extern "C" fn time_minute(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
 
 unsafe extern "C" fn time_hour(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::hour(&mut guard, time);
     match result {
@@ -470,8 +444,7 @@ unsafe extern "C" fn time_hour(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
 
 unsafe extern "C" fn time_day(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::day(&mut guard, time);
     match result {
@@ -482,8 +455,7 @@ unsafe extern "C" fn time_day(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> 
 
 unsafe extern "C" fn time_month(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::month(&mut guard, time);
     match result {
@@ -494,8 +466,7 @@ unsafe extern "C" fn time_month(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
 
 unsafe extern "C" fn time_year(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::year(&mut guard, time);
     match result {
@@ -506,8 +477,7 @@ unsafe extern "C" fn time_year(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
 
 unsafe extern "C" fn time_weekday(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::weekday(&mut guard, time);
     match result {
@@ -521,8 +491,7 @@ unsafe extern "C" fn time_year_day(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::year_day(&mut guard, time);
     match result {
@@ -533,8 +502,7 @@ unsafe extern "C" fn time_year_day(
 
 unsafe extern "C" fn time_is_dst(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_dst(&mut guard, time);
     match result {
@@ -545,8 +513,7 @@ unsafe extern "C" fn time_is_dst(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
 
 unsafe extern "C" fn time_zone(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::timezone(&mut guard, time);
     match result {
@@ -560,8 +527,7 @@ unsafe extern "C" fn time_utc_offset(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::utc_offset(&mut guard, time);
     match result {
@@ -574,8 +540,7 @@ unsafe extern "C" fn time_utc_offset(
 
 unsafe extern "C" fn time_is_utc(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_utc(&mut guard, time);
     match result {
@@ -591,8 +556,7 @@ unsafe extern "C" fn time_is_sunday(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_sunday(&mut guard, time);
     match result {
@@ -606,8 +570,7 @@ unsafe extern "C" fn time_is_monday(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_monday(&mut guard, time);
     match result {
@@ -621,8 +584,7 @@ unsafe extern "C" fn time_is_tuesday(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_tuesday(&mut guard, time);
     match result {
@@ -636,8 +598,7 @@ unsafe extern "C" fn time_is_wednesday(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_wednesday(&mut guard, time);
     match result {
@@ -651,8 +612,7 @@ unsafe extern "C" fn time_is_thursday(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_thursday(&mut guard, time);
     match result {
@@ -666,8 +626,7 @@ unsafe extern "C" fn time_is_friday(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_friday(&mut guard, time);
     match result {
@@ -681,8 +640,7 @@ unsafe extern "C" fn time_is_saturday(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::is_saturday(&mut guard, time);
     match result {
@@ -698,8 +656,7 @@ unsafe extern "C" fn time_microsecond(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::microsecond(&mut guard, time);
     match result {
@@ -713,8 +670,7 @@ unsafe extern "C" fn time_nanosecond(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::nanosecond(&mut guard, time);
     match result {
@@ -725,8 +681,7 @@ unsafe extern "C" fn time_nanosecond(
 
 unsafe extern "C" fn time_subsec(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let result = trampoline::subsec(&mut guard, time);
     match result {
@@ -742,8 +697,7 @@ unsafe extern "C" fn time_strftime(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let format = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
     let format = Value::from(format);
     let result = trampoline::strftime(&mut guard, time, format);

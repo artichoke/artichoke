@@ -28,8 +28,7 @@ unsafe extern "C" fn artichoke_integer_chr(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let encoding = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let encoding = encoding.map(Value::from);
     let result = trampoline::chr(&mut guard, value, encoding);
@@ -44,8 +43,7 @@ unsafe extern "C" fn artichoke_integer_element_reference(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let bit = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let bit = Value::from(bit);
     let result = trampoline::element_reference(&mut guard, value, bit);
@@ -60,8 +58,7 @@ unsafe extern "C" fn artichoke_integer_div(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let denominator = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let denominator = Value::from(denominator);
     let result = trampoline::div(&mut guard, value, denominator);
@@ -76,8 +73,7 @@ unsafe extern "C" fn artichoke_integer_size(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let result = trampoline::size(&guard);
     match result {
         Ok(value) => value.inner(),

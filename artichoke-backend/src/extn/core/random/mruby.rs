@@ -35,8 +35,7 @@ unsafe extern "C" fn random_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let seed = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
     let seed = seed.map(Value::from);
     let result = trampoline::initialize(&mut guard, seed, slf);
@@ -48,8 +47,7 @@ unsafe extern "C" fn random_initialize(
 
 unsafe extern "C" fn random_eq(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let rand = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::equal(&mut guard, rand, other);
@@ -61,8 +59,7 @@ unsafe extern "C" fn random_eq(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
 
 unsafe extern "C" fn random_bytes(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let rand = Value::from(slf);
     let size = Value::from(size);
     let result = trampoline::bytes(&mut guard, rand, size);
@@ -74,8 +71,7 @@ unsafe extern "C" fn random_bytes(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
 
 unsafe extern "C" fn random_rand(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let max = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let rand = Value::from(slf);
     let max = max.map(Value::from);
     let result = trampoline::rand(&mut guard, rand, max);
@@ -87,8 +83,7 @@ unsafe extern "C" fn random_rand(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
 
 unsafe extern "C" fn random_seed(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let rand = Value::from(slf);
     let result = trampoline::seed(&mut guard, rand);
     match result {
@@ -102,8 +97,7 @@ unsafe extern "C" fn random_self_new_seed(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let result = trampoline::new_seed(&mut guard);
     match result {
         Ok(value) => value.inner(),
@@ -116,8 +110,7 @@ unsafe extern "C" fn random_self_srand(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let number = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let number = number.map(Value::from);
     let result = trampoline::srand(&mut guard, number);
     match result {
@@ -131,8 +124,7 @@ unsafe extern "C" fn random_self_urandom(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let size = Value::from(size);
     let result = trampoline::urandom(&mut guard, size);
     match result {

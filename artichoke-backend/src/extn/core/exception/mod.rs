@@ -133,8 +133,7 @@ mod tests {
     struct Run;
 
     unsafe extern "C" fn run_run(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-        let mut interp = unwrap_interpreter!(mrb);
-        let guard = Guard::new(&mut interp);
+        unwrap_interpreter!(mrb, to => guard);
         let exc = RuntimeError::from("something went wrong");
         error::raise(guard, exc)
     }

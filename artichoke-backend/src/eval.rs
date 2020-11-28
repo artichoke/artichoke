@@ -111,8 +111,7 @@ mod tests {
             mrb: *mut sys::mrb_state,
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
-            let mut interp = unwrap_interpreter!(mrb);
-            let mut guard = Guard::new(&mut interp);
+            unwrap_interpreter!(mrb, to => guard);
             let result = if let Ok(value) = guard.eval(b"__FILE__") {
                 value
             } else {

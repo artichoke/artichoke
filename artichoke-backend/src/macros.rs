@@ -14,22 +14,40 @@
 /// [`sys::mrb_state`]: crate::sys::mrb_state
 #[macro_export]
 macro_rules! unwrap_interpreter {
-    ($mrb:expr, or_else = ()) => {
-        if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
+    ($mrb:expr, to => $to:ident, or_else = ()) => {
+        let mut interp = if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
             interp
         } else {
             return;
-        }
+        };
+        let mut arena = if let Ok(arena) =
+            $crate::gc::MrbGarbageCollection::create_arena_savepoint(&mut interp)
+        {
+            arena
+        } else {
+            return;
+        };
+        #[allow(unused_mut)]
+        let mut $to = $crate::Guard::new(arena.interp());
     };
-    ($mrb:expr, or_else = $default:expr) => {
-        if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
+    ($mrb:expr, to => $to:ident, or_else = $default:expr) => {
+        let mut interp = if let Ok(interp) = $crate::ffi::from_user_data($mrb) {
             interp
         } else {
             return $default;
-        }
+        };
+        let mut arena = if let Ok(arena) =
+            $crate::gc::MrbGarbageCollection::create_arena_savepoint(&mut interp)
+        {
+            arena
+        } else {
+            return $default;
+        };
+        #[allow(unused_mut)]
+        let mut $to = $crate::Guard::new(arena.interp());
     };
-    ($mrb:expr) => {
-        unwrap_interpreter!($mrb, or_else = $crate::sys::mrb_sys_nil_value())
+    ($mrb:expr, to => $to:ident) => {
+        unwrap_interpreter!($mrb, to => $to, or_else = $crate::sys::mrb_sys_nil_value())
     };
 }
 

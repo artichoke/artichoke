@@ -7,8 +7,7 @@ use crate::extn::prelude::*;
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 #[no_mangle]
 unsafe extern "C" fn mrb_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let result = Array::new();
     let result = Array::alloc_value(result, &mut guard);
     match result {
@@ -23,8 +22,7 @@ unsafe extern "C" fn mrb_ary_new_capa(
     mrb: *mut sys::mrb_state,
     capa: sys::mrb_int,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let capacity = usize::try_from(capa).unwrap_or_default();
     let result = Array::with_capacity(capacity);
     let result = Array::alloc_value(result, &mut guard);
@@ -41,8 +39,7 @@ unsafe extern "C" fn mrb_ary_new_from_values(
     size: sys::mrb_int,
     vals: *const sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let size = usize::try_from(size).unwrap_or_default();
     let values = slice::from_raw_parts(vals, size);
     let result = Array::from(values);
@@ -64,8 +61,7 @@ unsafe extern "C" fn mrb_assoc_new(
     one: sys::mrb_value,
     two: sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let result = Array::assoc(one.into(), two.into());
     let result = Array::alloc_value(result, &mut guard);
     match result {
@@ -84,8 +80,7 @@ unsafe extern "C" fn mrb_ary_splat(
     mrb: *mut sys::mrb_state,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let mut value = Value::from(value);
     let result = if Array::unbox_from_value(&mut value, &mut guard).is_ok() {
         Ok(value)
@@ -109,8 +104,7 @@ unsafe extern "C" fn mrb_ary_concat(
     ary: sys::mrb_value,
     other: sys::mrb_value,
 ) {
-    let mut interp = unwrap_interpreter!(mrb, or_else = ());
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard, or_else = ());
     let mut array = Value::from(ary);
     let mut other = Value::from(other);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
@@ -133,8 +127,7 @@ unsafe extern "C" fn mrb_ary_concat(
 // MRB_API mrb_value mrb_ary_pop(mrb_state *mrb, mrb_value ary);
 #[no_mangle]
 unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let result = guard.convert(array.pop());
@@ -160,8 +153,7 @@ unsafe extern "C" fn mrb_ary_push(
     ary: sys::mrb_value,
     value: sys::mrb_value,
 ) {
-    let mut interp = unwrap_interpreter!(mrb, or_else = ());
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard, or_else = ());
     let mut array = Value::from(ary);
     let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
@@ -183,8 +175,7 @@ unsafe extern "C" fn mrb_ary_ref(
     ary: sys::mrb_value,
     offset: sys::mrb_int,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let mut ary = Value::from(ary);
     let offset = usize::try_from(offset).unwrap_or_default();
     let result = if let Ok(array) = Array::unbox_from_value(&mut ary, &mut guard) {
@@ -203,8 +194,7 @@ unsafe extern "C" fn mrb_ary_set(
     offset: sys::mrb_int,
     value: sys::mrb_value,
 ) {
-    let mut interp = unwrap_interpreter!(mrb, or_else = ());
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard, or_else = ());
     let mut array = Value::from(ary);
     let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
@@ -242,8 +232,7 @@ unsafe extern "C" fn mrb_ary_shift(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let result = array.get(0);
@@ -270,8 +259,7 @@ unsafe extern "C" fn mrb_ary_unshift(
     ary: sys::mrb_value,
     value: sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {

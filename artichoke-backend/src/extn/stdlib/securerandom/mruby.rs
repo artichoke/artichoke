@@ -60,8 +60,7 @@ unsafe extern "C" fn securerandom_alphanumeric(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let len = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let len = len.map(Value::from).and_then(|len| guard.convert(len));
     let result = trampoline::alphanumeric(&mut guard, len);
     match result {
@@ -75,8 +74,7 @@ unsafe extern "C" fn securerandom_base64(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let len = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let len = len.map(Value::from).and_then(|len| guard.convert(len));
     let result = trampoline::base64(&mut guard, len);
     match result {
@@ -90,8 +88,7 @@ unsafe extern "C" fn securerandom_urlsafe_base64(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (len, padding) = mrb_get_args!(mrb, optional = 2);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let len = len.map(Value::from).and_then(|len| guard.convert(len));
     let padding = padding
         .map(Value::from)
@@ -108,8 +105,7 @@ unsafe extern "C" fn securerandom_hex(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let len = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let len = len.map(Value::from).and_then(|len| guard.convert(len));
     let result = trampoline::hex(&mut guard, len);
     match result {
@@ -123,8 +119,7 @@ unsafe extern "C" fn securerandom_random_bytes(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let len = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let len = len.map(Value::from).and_then(|len| guard.convert(len));
     let result = trampoline::random_bytes(&mut guard, len);
     match result {
@@ -138,8 +133,7 @@ unsafe extern "C" fn securerandom_random_number(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let max = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let max = max.map(Value::from).and_then(|max| guard.convert(max));
     let result = trampoline::random_number(&mut guard, max);
     match result {
@@ -153,8 +147,7 @@ unsafe extern "C" fn securerandom_uuid(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let result = trampoline::uuid(&mut guard);
     match result {
         Ok(value) => value.inner(),
