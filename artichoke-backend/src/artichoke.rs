@@ -5,6 +5,7 @@ use std::ptr::NonNull;
 use crate::ffi::{self, InterpreterExtractError};
 use crate::state::State;
 use crate::sys;
+use crate::value::Value;
 
 /// Interpreter instance.
 ///
@@ -32,6 +33,21 @@ impl Artichoke {
     pub const fn new(mrb: NonNull<sys::mrb_state>, state: Box<State>) -> Self {
         let state = Some(state);
         Self { mrb, state }
+    }
+
+    /// Prevent the given value from being garbage collected.
+    ///
+    /// Calls [`sys::mrb_gc_protect`] on this value which adds it to the GC
+    /// arena. This object will remain in the arena until [`ArenaIndex::restore`]
+    /// restores the arena to an index before this call to protect.
+    ///
+    /// [`ArenaIndex::restore`]: crate::gc::ArenaIndex::restore
+    pub fn protect(&mut self, value: Value) -> Value {
+        unsafe {
+            let value = value.inner();
+            let _ = self.with_ffi_boundary(|mrb| sys::mrb_gc_protect(mrb, value));
+        }
+        value
     }
 
     /// Execute a a closure by moving the [`State`] into the `mrb` instance.
