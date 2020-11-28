@@ -492,6 +492,9 @@ impl Array {
         len: usize,
         capacity: usize,
     ) -> Result<(), Error> {
+        if !matches!(into.ruby_type(), Ruby::Array) {
+            panic!("Tried to box Array into {:?} value", into.ruby_type());
+        }
         sys::mrb_sys_repack_into_rarray(
             ptr,
             len as sys::mrb_int,
@@ -567,7 +570,8 @@ impl BoxUnboxVmValue for Array {
     fn free(data: *mut c_void) {
         // this function is never called. `Array` is freed directly in the VM by
         // calling `mrb_ary_artichoke_free`.
-        // not have a destructor registered in the class registry.
+        //
+        // Array should not have a destructor registered in the class registry.
         let _ = data;
     }
 }
