@@ -41,7 +41,7 @@ impl Artichoke {
     /// arena. This object will remain in the arena until [`ArenaIndex::restore`]
     /// restores the arena to an index before this call to protect.
     ///
-    /// [`ArenaIndex::restore`]: crate::gc::ArenaIndex::restore
+    /// [`ArenaIndex::restore`]: crate::gc::arena::ArenaIndex::restore
     pub fn protect(&mut self, value: Value) -> Value {
         unsafe {
             let value = value.inner();
