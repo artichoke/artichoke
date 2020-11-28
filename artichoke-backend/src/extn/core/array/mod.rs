@@ -121,6 +121,24 @@ impl<'a> IntoIterator for &'a Array {
     }
 }
 
+impl Extend<sys::mrb_value> for Array {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = sys::mrb_value>,
+    {
+        self.0.extend(iter.into_iter());
+    }
+}
+
+impl Extend<Value> for Array {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = Value>,
+    {
+        self.0.extend(iter.into_iter().map(|value| value.inner()));
+    }
+}
+
 impl Array {
     #[must_use]
     pub fn new() -> Self {
