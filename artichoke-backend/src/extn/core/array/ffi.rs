@@ -3,7 +3,6 @@ use std::slice;
 
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
-use crate::gc::{MrbGarbageCollection, State as GcState};
 
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 #[no_mangle]
@@ -102,40 +101,32 @@ unsafe extern "C" fn mrb_ary_splat(
 }
 
 // MRB_API void mrb_ary_concat(mrb_state *mrb, mrb_value self, mrb_value other);
+//
+// This function corresponds to the `OP_ARYCAT` VM opcode.
 #[no_mangle]
 unsafe extern "C" fn mrb_ary_concat(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     other: sys::mrb_value,
-) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
+) {
+    let mut interp = unwrap_interpreter!(mrb, or_else = ());
     let mut guard = Guard::new(&mut interp);
     let mut array = Value::from(ary);
-    let other = Value::from(other);
-    let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        let prior_gc_state = guard.disable_gc();
-
-        let result = array.concat(&mut guard, other);
+    let mut other = Value::from(other);
+    if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
+        if let Ok(other) = Array::unbox_from_value(&mut other, &mut guard) {
+            array.extend(other.iter());
+        } else {
+            warn!(
+                "Attempted to call mrb_ary_concat with a {:?} argument",
+                other.ruby_type()
+            );
+        }
 
         let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
         if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
             warn!("Failed to rebox Array");
         }
-
-        if let GcState::Enabled = prior_gc_state {
-            guard.enable_gc();
-        }
-        result
-    } else {
-        Ok(())
-    };
-    match result {
-        Ok(()) => {
-            let basic = sys::mrb_sys_basic_ptr(ary);
-            sys::mrb_write_barrier(mrb, basic);
-            ary
-        }
-        Err(exception) => error::raise(guard, exception),
     }
 }
 
@@ -211,8 +202,8 @@ unsafe extern "C" fn mrb_ary_set(
     ary: sys::mrb_value,
     offset: sys::mrb_int,
     value: sys::mrb_value,
-) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
+) {
+    let mut interp = unwrap_interpreter!(mrb, or_else = ());
     let mut guard = Guard::new(&mut interp);
     let mut array = Value::from(ary);
     let value = Value::from(value);
@@ -243,7 +234,6 @@ unsafe extern "C" fn mrb_ary_set(
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
-    value.inner()
 }
 
 // MRB_API mrb_value mrb_ary_shift(mrb_state *mrb, mrb_value self)
