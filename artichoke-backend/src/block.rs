@@ -8,7 +8,6 @@ use crate::core::{ConvertMut, Value as _};
 use crate::error::{Error, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{Fatal, TypeError};
-use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Ruby};
 use crate::value::Value;
@@ -166,16 +165,12 @@ impl Block {
     }
 
     pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Error> {
-        let mut arena = interp.create_arena_savepoint()?;
-
         let result = unsafe {
-            arena
-                .interp()
-                .with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
+            interp.with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
         };
         match result {
             Ok(value) => {
-                let value = Value::from(value);
+                let value = interp.protect(Value::from(value));
                 if value.is_unreachable() {
                     // Unreachable values are internal to the mruby interpreter
                     // and interacting with them via the C API is unspecified
@@ -188,8 +183,8 @@ impl Block {
                 }
             }
             Err(exception) => {
-                let exception = Value::from(exception);
-                Err(exception_handler::last_error(&mut arena, exception)?)
+                let exception = interp.protect(Value::from(exception));
+                Err(exception_handler::last_error(interp, exception)?)
             }
         }
     }

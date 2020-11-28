@@ -22,10 +22,6 @@
 #include <mruby/string.h>
 #include <mruby/numeric.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 typedef struct mrb_shared_string {
   int refcnt;
   mrb_int capa;
@@ -2158,8 +2154,8 @@ mrb_str_split_m(mrb_state *mrb, mrb_value str)
   if (argc == 2) {
     if (lim == 1) {
       if (RSTRING_LEN(str) == 0)
-        return ARY_NEW_CAPA(mrb, 0);
-      return ARY_NEW_FROM_VALUES(mrb, 1, &str);
+        return mrb_ary_new_capa(mrb, 0);
+      return mrb_ary_new_from_values(mrb, 1, &str);
     }
     i = 1;
   }
@@ -2174,7 +2170,7 @@ mrb_str_split_m(mrb_state *mrb, mrb_value str)
     split_type = awk;
   }
 
-  result = ARY_NEW(mrb);
+  result = mrb_ary_new(mrb);
   beg = 0;
   if (split_type == awk) {
     mrb_bool skip = TRUE;
@@ -2197,7 +2193,7 @@ mrb_str_split_m(mrb_state *mrb, mrb_value str)
         }
       }
       else if (ISSPACE(c)) {
-        ARY_PUSH(mrb, result, mrb_str_byte_subseq(mrb, str, beg, end-beg));
+        mrb_ary_push(mrb, result, mrb_str_byte_subseq(mrb, str, beg, end-beg));
         mrb_gc_arena_restore(mrb, ai);
         skip = TRUE;
         beg = idx;
@@ -2222,7 +2218,7 @@ mrb_str_split_m(mrb_state *mrb, mrb_value str)
       else {
         end = chars2bytes(str, idx, 1);
       }
-      ARY_PUSH(mrb, result, mrb_str_byte_subseq(mrb, str, idx, end));
+      mrb_ary_push(mrb, result, mrb_str_byte_subseq(mrb, str, idx, end));
       mrb_gc_arena_restore(mrb, ai);
       idx += end + pat_len;
       if (lim_p && lim <= ++i) break;
@@ -2236,13 +2232,13 @@ mrb_str_split_m(mrb_state *mrb, mrb_value str)
     else {
       tmp = mrb_str_byte_subseq(mrb, str, beg, RSTRING_LEN(str)-beg);
     }
-    ARY_PUSH(mrb, result, tmp);
+    mrb_ary_push(mrb, result, tmp);
   }
   if (!lim_p && lim == 0) {
     mrb_int len;
-    while ((len = ARRAY_LEN(mrb, result)) > 0 &&
-           (tmp = ARY_REF(mrb, result, len-1), RSTRING_LEN(tmp) == 0))
-      ARY_POP(mrb, result);
+    while ((len = RARRAY_LEN(result)) > 0 &&
+           (tmp = RARRAY_PTR(result)[len-1], RSTRING_LEN(tmp) == 0))
+      mrb_ary_pop(mrb, result);
   }
 
   return result;
@@ -2766,11 +2762,11 @@ static mrb_value
 mrb_str_bytes(mrb_state *mrb, mrb_value str)
 {
   struct RString *s = mrb_str_ptr(str);
-  mrb_value a = ARY_NEW_CAPA(mrb, RSTR_LEN(s));
+  mrb_value a = mrb_ary_new_capa(mrb, RSTR_LEN(s));
   unsigned char *p = (unsigned char *)(RSTR_PTR(s)), *pend = p + RSTR_LEN(s);
 
   while (p < pend) {
-    ARY_PUSH(mrb, a, mrb_fixnum_value(p[0]));
+    mrb_ary_push(mrb, a, mrb_fixnum_value(p[0]));
     p++;
   }
   return a;

@@ -93,6 +93,7 @@ pub fn mrb_sys_mruby_version(verbose: bool) -> String {
 /// ```
 ///
 /// This function is infallible and guaranteed not to panic.
+#[must_use]
 pub fn mrb_sys_state_debug(mrb: *mut mrb_state) -> String {
     let engine = CStr::from_bytes_with_nul(MRUBY_RUBY_ENGINE);
     let engine = engine

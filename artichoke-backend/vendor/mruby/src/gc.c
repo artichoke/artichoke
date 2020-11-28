@@ -20,10 +20,6 @@
 #include <mruby/error.h>
 #include <mruby/throw.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 /*
   = Tri-color Incremental Garbage Collection
 
@@ -697,14 +693,8 @@ gc_mark_children(mrb_state *mrb, mrb_gc *gc, struct RBasic *obj)
     }
     /* fall through */
 
-  case MRB_TT_DATA:
-#ifdef ARTICHOKE
-    // Artichoke `Array`s may not be contiguous chunks of memory, so we must
-    // mark each value by resolving it with `ARY_REF`.
-    artichoke_gc_mark_ary(mrb, mrb_obj_value((struct RObject*)obj));
-    /* fall through */
-#endif
   case MRB_TT_OBJECT:
+  case MRB_TT_DATA:
   case MRB_TT_EXCEPTION:
     mrb_gc_mark_iv(mrb, (struct RObject*)obj);
     break;
@@ -859,10 +849,14 @@ obj_free(mrb_state *mrb, struct RBasic *obj, int end)
     break;
 
   case MRB_TT_ARRAY:
+#ifdef ARTICHOKE
+    mrb_ary_artichoke_free(mrb, (struct RArray*)obj);
+#else
     if (ARY_SHARED_P(obj))
       mrb_ary_decref(mrb, ((struct RArray*)obj)->as.heap.aux.shared);
     else if (!ARY_EMBED_P(obj))
       mrb_free(mrb, ((struct RArray*)obj)->as.heap.ptr);
+#endif
     break;
 
   case MRB_TT_HASH:
@@ -931,9 +925,7 @@ root_scan_phase(mrb_state *mrb, mrb_gc *gc)
   mrb_gc_mark(mrb, (struct RBasic*)mrb->module_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->proc_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->string_class);
-#ifndef ARTICHOKE
   mrb_gc_mark(mrb, (struct RBasic*)mrb->array_class);
-#endif
   mrb_gc_mark(mrb, (struct RBasic*)mrb->hash_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->range_class);
 
@@ -991,12 +983,8 @@ gc_gray_mark(mrb_state *mrb, mrb_gc *gc, struct RBasic *obj)
     }
     break;
 
-  case MRB_TT_DATA:
-#ifdef ARTICHOKE
-    children += artichoke_gc_mark_ary_size(mrb, mrb_obj_value((struct RObject*)obj));
-    /* fall through */
-#endif
   case MRB_TT_OBJECT:
+  case MRB_TT_DATA:
   case MRB_TT_EXCEPTION:
     children += mrb_gc_mark_iv_size(mrb, (struct RObject*)obj);
     break;

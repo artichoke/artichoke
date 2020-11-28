@@ -51,7 +51,7 @@ impl State {
     ///
     /// If the `core-random` feature is enabled, this function may return an
     /// error if the interpreter-global psuedorandom number generator fails
-    /// to initialize using the paltform source of randomness.
+    /// to initialize using the platform source of randomness.
     ///
     /// [`Class`]: crate::class_registry::ClassRegistry
     /// [`Module`]: crate::module_registry::ModuleRegistry

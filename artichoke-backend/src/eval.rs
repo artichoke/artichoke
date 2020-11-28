@@ -42,11 +42,11 @@ impl Eval for Artichoke {
                     Err(Fatal::from("Unreachable Ruby value").into())
                 } else {
                     trace!("Sucessful eval");
-                    Ok(value)
+                    Ok(self.protect(value))
                 }
             }
             Err(exception) => {
-                let exception = Value::from(exception);
+                let exception = self.protect(Value::from(exception));
                 let debug = exception.inspect(self);
                 debug!("Failed eval raised exception: {:?}", debug.as_bstr());
                 Err(exception_handler::last_error(self, exception)?)
@@ -111,8 +111,7 @@ mod tests {
             mrb: *mut sys::mrb_state,
             _slf: sys::mrb_value,
         ) -> sys::mrb_value {
-            let mut interp = unwrap_interpreter!(mrb);
-            let mut guard = Guard::new(&mut interp);
+            unwrap_interpreter!(mrb, to => guard);
             let result = if let Ok(value) = guard.eval(b"__FILE__") {
                 value
             } else {

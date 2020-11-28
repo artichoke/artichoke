@@ -5,10 +5,6 @@
 #include <mruby/string.h>
 #include <mruby/debug.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 static mrb_value
 mrb_proc_lambda(mrb_state *mrb, mrb_value self)
 {
@@ -115,16 +111,16 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
 
   if (MRB_PROC_CFUNC_P(proc)) {
     // TODO cfunc aspec is not implemented yet
-    return ARY_NEW(mrb);
+    return mrb_ary_new(mrb);
   }
   if (!irep) {
-    return ARY_NEW(mrb);
+    return mrb_ary_new(mrb);
   }
   if (!irep->lv) {
-    return ARY_NEW(mrb);
+    return mrb_ary_new(mrb);
   }
   if (*irep->iseq != OP_ENTER) {
-    return ARY_NEW(mrb);
+    return mrb_ary_new(mrb);
   }
 
   if (!MRB_PROC_STRICT_P(proc)) {
@@ -141,7 +137,7 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
   parameters_list[3].size = MRB_ASPEC_POST(aspec);
   parameters_list[4].size = MRB_ASPEC_BLOCK(aspec);
 
-  parameters = ARY_NEW_CAPA(mrb, irep->nlocals-1);
+  parameters = mrb_ary_new_capa(mrb, irep->nlocals-1);
 
   max = irep->nlocals-1;
   for (i = 0, p = parameters_list; p->name; p++) {
@@ -150,8 +146,8 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
     for (j = 0; j < p->size; i++, j++) {
       mrb_value a;
 
-      a = ARY_NEW(mrb);
-      ARY_PUSH(mrb, a, sname);
+      a = mrb_ary_new(mrb);
+      mrb_ary_push(mrb, a, sname);
       if (i < max && irep->lv[i].name) {
         mrb_sym sym = irep->lv[i].name;
         const char *name = mrb_sym_name(mrb, sym);
@@ -159,11 +155,11 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
         case '*': case '&':
           break;
         default:
-          ARY_PUSH(mrb, a, mrb_symbol_value(sym));
+          mrb_ary_push(mrb, a, mrb_symbol_value(sym));
           break;
         }
       }
-      ARY_PUSH(mrb, parameters, a);
+      mrb_ary_push(mrb, parameters, a);
     }
   }
   return parameters;

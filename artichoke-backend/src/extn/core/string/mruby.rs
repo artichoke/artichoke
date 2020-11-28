@@ -20,8 +20,7 @@ unsafe extern "C" fn artichoke_string_ord(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let result = trampoline::ord(&mut guard, value);
     match result {
@@ -35,8 +34,7 @@ unsafe extern "C" fn artichoke_string_scan(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let pattern = Value::from(pattern);
     let result = trampoline::scan(&mut guard, value, pattern, block);

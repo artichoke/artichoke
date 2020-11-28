@@ -27,8 +27,7 @@ unsafe extern "C" fn symbol_all_symbols(
     _slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let result = trampoline::all_symbols(&mut guard);
     match result {
         Ok(value) => value.inner(),
@@ -41,8 +40,7 @@ unsafe extern "C" fn symbol_equal_equal(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let sym = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::equal_equal(&mut guard, sym, other);
@@ -57,8 +55,7 @@ unsafe extern "C" fn symbol_ascii_casecmp(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let sym = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::ascii_casecmp(&mut guard, sym, other);
@@ -73,8 +70,7 @@ unsafe extern "C" fn symbol_unicode_casecmp(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let sym = Value::from(slf);
     let other = Value::from(other);
     let result = trampoline::unicode_casecmp(&mut guard, sym, other);
@@ -86,8 +82,7 @@ unsafe extern "C" fn symbol_unicode_casecmp(
 
 unsafe extern "C" fn symbol_empty(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let sym = Value::from(slf);
     let result = trampoline::is_empty(&mut guard, sym);
     match result {
@@ -101,8 +96,7 @@ unsafe extern "C" fn symbol_inspect(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let result = trampoline::inspect(&mut guard, value);
     match result {
@@ -116,8 +110,7 @@ unsafe extern "C" fn symbol_length(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let sym = Value::from(slf);
     let result = trampoline::length(&mut guard, sym);
     match result {
@@ -128,8 +121,7 @@ unsafe extern "C" fn symbol_length(
 
 unsafe extern "C" fn symbol_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let sym = Value::from(slf);
     let result = trampoline::bytes(&mut guard, sym);
     match result {

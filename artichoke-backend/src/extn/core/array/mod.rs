@@ -1,14 +1,15 @@
-use spinoso_array::SmallArray as SpinosoArray;
+use spinoso_array::Array as SpinosoArray;
 use std::convert::TryFrom;
+use std::ffi::c_void;
 use std::iter::FromIterator;
+use std::ops::{Deref, DerefMut};
 use std::slice;
 
+use crate::convert::UnboxedValueGuard;
 use crate::extn::prelude::*;
 
 pub mod args;
-mod boxing;
 mod ffi;
-mod gc;
 pub mod mruby;
 pub mod trampoline;
 
@@ -120,6 +121,24 @@ impl<'a> IntoIterator for &'a Array {
     }
 }
 
+impl Extend<sys::mrb_value> for Array {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = sys::mrb_value>,
+    {
+        self.0.extend(iter.into_iter());
+    }
+}
+
+impl Extend<Value> for Array {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = Value>,
+    {
+        self.0.extend(iter.into_iter().map(|value| value.inner()));
+    }
+}
+
 impl Array {
     #[must_use]
     pub fn new() -> Self {
@@ -144,6 +163,16 @@ impl Array {
     #[must_use]
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.0.capacity()
+    }
+
+    #[must_use]
+    pub fn as_mut_ptr(&mut self) -> *mut sys::mrb_value {
+        self.0.as_mut_ptr()
     }
 
     #[must_use]
@@ -396,6 +425,180 @@ impl Array {
 
     pub fn shift_n(&mut self, count: usize) -> Self {
         Self(self.0.shift_n(count))
+    }
+
+    /// Creates an `Array<T>` directly from the raw components of another array.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't
+    /// checked:
+    ///
+    /// - `ptr` needs to have been previously allocated via `Array<T>` (at
+    ///   least, it's highly likely to be incorrect if it wasn't).
+    /// - `T` needs to have the same size and alignment as what `ptr` was
+    ///   allocated with. (`T` having a less strict alignment is not sufficient,
+    ///   the alignment really needs to be equal to satisfy the `dealloc`
+    ///   requirement that memory must be allocated and deallocated with the
+    ///   same layout.)
+    /// - `length` needs to be less than or equal to `capacity`.
+    /// - `capacity` needs to be the `capacity` that the pointer was allocated
+    ///   with.
+    ///
+    /// Violating these may cause problems like corrupting the allocator's
+    /// internal data structures.
+    ///
+    /// The ownership of `ptr` is effectively transferred to the `Array<T>`
+    /// which may then deallocate, reallocate or change the contents of memory
+    /// pointed to by the pointer at will. Ensure that nothing else uses the
+    /// pointer after calling this function.
+    #[must_use]
+    pub unsafe fn from_raw_parts(ptr: *mut sys::mrb_value, length: usize, capacity: usize) -> Self {
+        Self(SpinosoArray::from_raw_parts(ptr, length, capacity))
+    }
+
+    /// Decomposes an `Array<T>` into its raw components.
+    ///
+    /// Returns the raw pointer to the underlying data, the length of the array
+    /// (in elements), and the allocated capacity of the data (in elements).
+    /// These are the same arguments in the same order as the arguments to
+    /// [`from_raw_parts`].
+    ///
+    /// After calling this function, the caller is responsible for the memory
+    /// previously managed by the `Array`. The only way to do this is to convert
+    /// the raw pointer, length, and capacity back into a `Array` with the
+    /// [`from_raw_parts`] function, allowing the destructor to perform the
+    /// cleanup.
+    ///
+    /// [`from_raw_parts`]: Array::from_raw_parts
+    #[must_use]
+    pub fn into_raw_parts(self) -> (*mut sys::mrb_value, usize, usize) {
+        self.0.into_raw_parts()
+    }
+
+    /// Pack the raw triple of an `Array` into an [`RArray`](sys::RArray)-backed
+    /// [`sys::mrb_value`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this function takes ownership of the allocation pointed to by
+    /// `ptr`. `ptr` or its source cannot be safely accessed until calling
+    /// [`Array::from_raw_parts`].
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    pub unsafe fn rebox_into_value(
+        into: Value,
+        ptr: *mut sys::mrb_value,
+        len: usize,
+        capacity: usize,
+    ) -> Result<(), Error> {
+        if !matches!(into.ruby_type(), Ruby::Array) {
+            panic!("Tried to box Array into {:?} value", into.ruby_type());
+        }
+        sys::mrb_sys_repack_into_rarray(
+            ptr,
+            len as sys::mrb_int,
+            capacity as sys::mrb_int,
+            into.inner(),
+        );
+        Ok(())
+    }
+}
+
+impl BoxUnboxVmValue for Array {
+    type Unboxed = Self;
+    type Guarded = Array;
+
+    const RUBY_TYPE: &'static str = "Array";
+
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    unsafe fn unbox_from_value<'a>(
+        value: &'a mut Value,
+        interp: &mut Artichoke,
+    ) -> Result<UnboxedValueGuard<'a, Self::Guarded>, Error> {
+        let _ = interp;
+
+        // Make sure we have an Array otherwise extraction will fail.
+        // This check is critical to the safety of accessing the `value` union.
+        if value.ruby_type() != Ruby::Array {
+            let mut message = String::from("uninitialized ");
+            message.push_str(Self::RUBY_TYPE);
+            return Err(TypeError::from(message).into());
+        }
+
+        // Safety:
+        //
+        // The above check on the data type ensures the `value` union holds an
+        // `RArray` in the `p` variant.
+        let value = value.inner();
+        let ary = sys::mrb_sys_basic_ptr(value).cast::<sys::RArray>();
+
+        let ptr = (*ary).as_.heap.ptr;
+        let len = (*ary).as_.heap.len as usize;
+        let capacity = (*ary).as_.heap.aux.capa as usize;
+        let array = Array::from_raw_parts(ptr, len, capacity);
+
+        Ok(UnboxedValueGuard::new(array))
+    }
+
+    fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
+        let _ = interp;
+
+        let (ptr, len, capacity) = Array::into_raw_parts(value);
+        let value = unsafe {
+            interp.with_ffi_boundary(|mrb| {
+                sys::mrb_sys_alloc_rarray(mrb, ptr, len as sys::mrb_int, capacity as sys::mrb_int)
+            })?
+        };
+        Ok(interp.protect(value.into()))
+    }
+
+    fn box_into_value(
+        value: Self::Unboxed,
+        into: Value,
+        interp: &mut Artichoke,
+    ) -> Result<Value, Error> {
+        let _ = interp;
+        let (ptr, len, capacity) = Array::into_raw_parts(value);
+        unsafe {
+            Self::rebox_into_value(into, ptr, len, capacity)?;
+        }
+        Ok(interp.protect(into))
+    }
+
+    fn free(data: *mut c_void) {
+        // this function is never called. `Array` is freed directly in the VM by
+        // calling `mrb_ary_artichoke_free`.
+        //
+        // Array should not have a destructor registered in the class registry.
+        let _ = data;
+    }
+}
+
+impl<'a> AsRef<Array> for UnboxedValueGuard<'a, Array> {
+    fn as_ref(&self) -> &Array {
+        self.as_inner_ref()
+    }
+}
+
+impl<'a> AsMut<Array> for UnboxedValueGuard<'a, Array> {
+    fn as_mut(&mut self) -> &mut Array {
+        self.as_inner_mut()
+    }
+}
+
+impl<'a> Deref for UnboxedValueGuard<'a, Array> {
+    type Target = Array;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_inner_ref()
+    }
+}
+
+impl<'a> DerefMut for UnboxedValueGuard<'a, Array> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.as_inner_mut()
     }
 }
 

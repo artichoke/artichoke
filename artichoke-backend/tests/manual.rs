@@ -18,8 +18,7 @@ unsafe extern "C" fn container_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let inner = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
     let inner = Value::from(inner);
     let inner = inner.try_into::<Int>(&mut guard).unwrap_or_default();
@@ -32,8 +31,7 @@ unsafe extern "C" fn container_value(
     mrb: *mut sys::mrb_state,
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let mut value = Value::from(slf);
     let result = if let Ok(data) = Box::<Container>::unbox_from_value(&mut value, &mut guard) {
         guard.interp().convert(data.0)

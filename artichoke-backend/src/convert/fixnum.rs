@@ -33,6 +33,10 @@ impl TryConvert<u64, Value> for Artichoke {
     type Error = Error;
 
     fn try_convert(&self, value: u64) -> Result<Value, Self::Error> {
+        // Safety
+        //
+        // Integer Ruby Values do not need to be protected because they are
+        // immediates and do not live on the mruby heap.
         if let Ok(value) = Int::try_from(value) {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
@@ -49,6 +53,10 @@ impl TryConvert<usize, Value> for Artichoke {
     type Error = Error;
 
     fn try_convert(&self, value: usize) -> Result<Value, Self::Error> {
+        // Safety
+        //
+        // Integer Ruby Values do not need to be protected because they are
+        // immediates and do not live on the mruby heap.
         if let Ok(value) = Int::try_from(value) {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
@@ -86,6 +94,10 @@ impl TryConvert<isize, Value> for Artichoke {
     type Error = Error;
 
     fn try_convert(&self, value: isize) -> Result<Value, Self::Error> {
+        // Safety
+        //
+        // Integer Ruby Values do not need to be protected because they are
+        // immediates and do not live on the mruby heap.
         if let Ok(value) = Int::try_from(value) {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
@@ -114,6 +126,10 @@ impl TryConvert<isize, Value> for Artichoke {
 impl Convert<Int, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: Int) -> Value {
+        // Safety
+        //
+        // Integer Ruby Values do not need to be protected because they are
+        // immediates and do not live on the mruby heap.
         let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
         Value::from(fixnum)
     }

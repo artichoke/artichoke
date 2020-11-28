@@ -10,10 +10,6 @@
 #include <mruby/string.h>
 #include <mruby/array.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 #define RANGE_INITIALIZED_MASK 1
 #define RANGE_INITIALIZED(p) ((p)->flags |= RANGE_INITIALIZED_MASK)
 #define RANGE_INITIALIZED_P(p) ((p)->flags & RANGE_INITIALIZED_MASK)
@@ -337,20 +333,20 @@ mrb_get_values_at(mrb_state *mrb, mrb_value obj, mrb_int olen, mrb_int argc, con
 {
   mrb_int i, j, beg, len;
   mrb_value result;
-  result = ARY_NEW(mrb);
+  result = mrb_ary_new(mrb);
 
   for (i = 0; i < argc; ++i) {
     if (mrb_fixnum_p(argv[i])) {
-      ARY_PUSH(mrb, result, func(mrb, obj, mrb_fixnum(argv[i])));
+      mrb_ary_push(mrb, result, func(mrb, obj, mrb_fixnum(argv[i])));
     }
     else if (mrb_range_beg_len(mrb, argv[i], &beg, &len, olen, FALSE) == MRB_RANGE_OK) {
       mrb_int const end = olen < beg + len ? olen : beg + len;
       for (j = beg; j < end; ++j) {
-        ARY_PUSH(mrb, result, func(mrb, obj, j));
+        mrb_ary_push(mrb, result, func(mrb, obj, j));
       }
 
       for (; j < beg + len; ++j) {
-        ARY_PUSH(mrb, result, mrb_nil_value());
+        mrb_ary_push(mrb, result, mrb_nil_value());
       }
     }
     else {

@@ -38,8 +38,7 @@ unsafe extern "C" fn env_initialize(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
     let result = trampoline::initialize(&mut guard, slf);
     match result {
@@ -53,8 +52,7 @@ unsafe extern "C" fn env_element_reference(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let name = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let obj = Value::from(slf);
     let name = Value::from(name);
     let result = trampoline::element_reference(&mut guard, obj, name);
@@ -69,8 +67,7 @@ unsafe extern "C" fn env_element_assignment(
     slf: sys::mrb_value,
 ) -> sys::mrb_value {
     let (name, value) = mrb_get_args!(mrb, required = 2);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let obj = Value::from(slf);
     let name = Value::from(name);
     let value = Value::from(value);
@@ -83,8 +80,7 @@ unsafe extern "C" fn env_element_assignment(
 
 unsafe extern "C" fn env_to_h(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let obj = Value::from(slf);
     let result = trampoline::to_h(&mut guard, obj);
     match result {

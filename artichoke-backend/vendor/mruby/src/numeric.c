@@ -18,10 +18,6 @@
 #include <mruby/string.h>
 #include <mruby/class.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 #ifndef MRB_WITHOUT_FLOAT
 #ifdef MRB_USE_FLOAT
 #define trunc(f) truncf(f)
@@ -941,16 +937,16 @@ fix_divmod(mrb_state *mrb, mrb_value x)
 
     if (mrb_fixnum(y) == 0) {
 #ifdef MRB_WITHOUT_FLOAT
-      return ARY_NEW_ASSOC(mrb, mrb_fixnum_value(0), mrb_fixnum_value(0));
+      return mrb_assoc_new(mrb, mrb_fixnum_value(0), mrb_fixnum_value(0));
 #else
-      return ARY_NEW_ASSOC(mrb, ((mrb_fixnum(x) == 0) ?
+      return mrb_assoc_new(mrb, ((mrb_fixnum(x) == 0) ?
                                  mrb_float_value(mrb, NAN):
                                  mrb_float_value(mrb, INFINITY)),
                            mrb_float_value(mrb, NAN));
 #endif
     }
     fixdivmod(mrb, mrb_fixnum(x), mrb_fixnum(y), &div, &mod);
-    return ARY_NEW_ASSOC(mrb, mrb_fixnum_value(div), mrb_fixnum_value(mod));
+    return mrb_assoc_new(mrb, mrb_fixnum_value(div), mrb_fixnum_value(mod));
   }
 #ifdef MRB_WITHOUT_FLOAT
   mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
@@ -962,7 +958,7 @@ fix_divmod(mrb_state *mrb, mrb_value x)
     flodivmod(mrb, (mrb_float)mrb_fixnum(x), mrb_to_flo(mrb, y), &div, &mod);
     a = mrb_int_value(mrb, div);
     b = mrb_float_value(mrb, mod);
-    return ARY_NEW_ASSOC(mrb, a, b);
+    return mrb_assoc_new(mrb, a, b);
   }
 #endif
 }
@@ -980,7 +976,7 @@ flo_divmod(mrb_state *mrb, mrb_value x)
   flodivmod(mrb, mrb_float(x), mrb_to_flo(mrb, y), &div, &mod);
   a = mrb_int_value(mrb, div);
   b = mrb_float_value(mrb, mod);
-  return ARY_NEW_ASSOC(mrb, a, b);
+  return mrb_assoc_new(mrb, a, b);
 }
 #endif
 

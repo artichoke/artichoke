@@ -4,10 +4,6 @@
 #include <mruby/hash.h>
 #include <mruby/range.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 static mrb_value
 mrb_f_caller(mrb_state *mrb, mrb_value self)
 {
@@ -58,7 +54,7 @@ mrb_f_caller(mrb_state *mrb, mrb_value self)
   }
 
   if (n == 0) {
-    return ARY_NEW(mrb);
+    return mrb_ary_new(mrb);
   }
 
   return mrb_funcall(mrb, bt, "[]", 2, mrb_fixnum_value(lev), mrb_fixnum_value(n));
@@ -177,7 +173,7 @@ mrb_f_array(mrb_state *mrb, mrb_value self)
   mrb_get_args(mrb, "o", &arg);
   tmp = mrb_check_convert_type(mrb, arg, MRB_TT_ARRAY, "Array", "to_a");
   if (mrb_nil_p(tmp)) {
-    return ARY_NEW_FROM_VALUES(mrb, 1, &arg);
+    return mrb_ary_new_from_values(mrb, 1, &arg);
   }
 
   return tmp;

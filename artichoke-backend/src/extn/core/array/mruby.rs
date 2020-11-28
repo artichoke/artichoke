@@ -9,7 +9,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Array", None, Some(def::box_unbox_free::<array::Array>))?;
     class::Builder::for_spec(interp, &spec)
-        .value_is_rust_object()
         .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))?
         .add_method(
             "[]=",
@@ -37,8 +36,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
     let result = array::trampoline::pop(&mut guard, array);
     match result {
@@ -53,8 +51,7 @@ unsafe extern "C" fn ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 
 unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let ary = Value::from(ary);
     let result = array::trampoline::len(&mut guard, ary).and_then(|len| {
         if let Ok(len) = sys::mrb_int::try_from(len) {
@@ -74,8 +71,7 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 
 unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
     let other = other.map(Value::from);
     let result = array::trampoline::concat(&mut guard, array, other);
@@ -94,8 +90,7 @@ unsafe extern "C" fn ary_initialize(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (first, second, block) = mrb_get_args!(mrb, optional = 2, &block);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
     let first = first.map(Value::from);
     let second = second.map(Value::from);
@@ -115,8 +110,7 @@ unsafe extern "C" fn ary_initialize_copy(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
     let other = Value::from(other);
     let result = array::trampoline::initialize_copy(&mut guard, array, other);
@@ -135,8 +129,7 @@ unsafe extern "C" fn ary_reverse_bang(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
     let result = array::trampoline::reverse_bang(&mut guard, array);
     match result {
@@ -154,8 +147,7 @@ unsafe extern "C" fn ary_element_reference(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let elem = Value::from(elem);
     let len = len.map(Value::from);
     let array = Value::from(ary);
@@ -171,8 +163,7 @@ unsafe extern "C" fn ary_element_assignment(
     ary: sys::mrb_value,
 ) -> sys::mrb_value {
     let (first, second, third) = mrb_get_args!(mrb, required = 2, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let first = Value::from(first);
     let second = Value::from(second);
     let third = third.map(Value::from);
@@ -190,8 +181,7 @@ unsafe extern "C" fn ary_element_assignment(
 
 unsafe extern "C" fn ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let count = mrb_get_args!(mrb, optional = 1);
-    let mut interp = unwrap_interpreter!(mrb);
-    let mut guard = Guard::new(&mut interp);
+    unwrap_interpreter!(mrb, to => guard);
     let count = count.map(Value::from);
     let array = Value::from(ary);
     let result = array::trampoline::shift(&mut guard, array, count);

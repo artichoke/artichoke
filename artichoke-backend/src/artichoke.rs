@@ -5,6 +5,7 @@ use std::ptr::NonNull;
 use crate::ffi::{self, InterpreterExtractError};
 use crate::state::State;
 use crate::sys;
+use crate::value::Value;
 
 /// Interpreter instance.
 ///
@@ -32,6 +33,21 @@ impl Artichoke {
     pub const fn new(mrb: NonNull<sys::mrb_state>, state: Box<State>) -> Self {
         let state = Some(state);
         Self { mrb, state }
+    }
+
+    /// Prevent the given value from being garbage collected.
+    ///
+    /// Calls [`sys::mrb_gc_protect`] on this value which adds it to the GC
+    /// arena. This object will remain in the arena until [`ArenaIndex::restore`]
+    /// restores the arena to an index before this call to protect.
+    ///
+    /// [`ArenaIndex::restore`]: crate::gc::arena::ArenaIndex::restore
+    pub fn protect(&mut self, value: Value) -> Value {
+        unsafe {
+            let value = value.inner();
+            let _ = self.with_ffi_boundary(|mrb| sys::mrb_gc_protect(mrb, value));
+        }
+        value
     }
 
     /// Execute a a closure by moving the [`State`] into the `mrb` instance.
@@ -116,28 +132,49 @@ impl Artichoke {
 
     /// Consume an interpreter and free all live objects.
     pub fn close(mut self) {
-        unsafe {
-            let mrb = self.mrb.as_mut();
-            if let Some(state) = self.state.take() {
-                // Do not free class and module specs before running the final
-                // garbage collection on `mrb_close`.
-                let State {
-                    parser,
-                    classes,
-                    modules,
-                    ..
-                } = *state;
+        // Safety:
+        //
+        // It is permissible to directly access the `*mut sys::mrb_state`
+        // because we are tearing down the interpreter. The only `MRB_API`
+        // calls made from this point are related to freeing interpreter
+        // memory.
+        let mrb = unsafe { self.mrb.as_mut() };
+        if let Some(state) = self.state.take() {
+            // Do not free class and module specs before running the final
+            // garbage collection on `mrb_close`.
+            let State {
+                parser,
+                classes,
+                modules,
+                ..
+            } = *state;
 
+            // Safety
+            //
+            // - The parser must be deallocated to free the associated
+            //   `mrbc_context`.
+            // - The parser must be freed before the `mrb_state` because the
+            //   `mrb_state` may hold a copy of the context pointer.
+            // - `classes` and `modules` from the Artichoke Rust `State`
+            //   must be live allocations before calling `mrb_close` because
+            //   these registries allow resolving the `dfree` free functions
+            //   for Ruby types defined with type tag `MRB_TT_DATA`.
+            unsafe {
                 if let Some(parser) = parser {
                     parser.close(mrb);
                 }
                 sys::mrb_close(mrb);
-
-                drop(classes);
-                drop(modules);
-            } else {
-                sys::mrb_close(mrb);
             }
+
+            drop(classes);
+            drop(modules);
+        } else {
+            // Safety
+            //
+            // If there is no Artichoke Rust `State`, the mruby interpreter
+            // cannot be safely closed. Prefer to leak the interpreter than
+            // try to close it.
+            let _ = mrb;
         }
     }
 }

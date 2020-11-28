@@ -41,13 +41,13 @@ mrb_init_core(mrb_state *mrb)
   mrb_init_string(mrb); DONE;
   mrb_init_exception(mrb); DONE;
   mrb_init_proc(mrb); DONE;
-#ifndef ARTICHOKE
   mrb_init_array(mrb); DONE;
-#endif
   mrb_init_hash(mrb); DONE;
   mrb_init_numeric(mrb); DONE;
   mrb_init_range(mrb); DONE;
   mrb_init_gc(mrb); DONE;
   mrb_init_version(mrb); DONE;
-  // mrb_init_mrblib(mrb); DONE;
+#ifndef ARTICHOKE
+  mrb_init_mrblib(mrb); DONE;
+#endif
 }

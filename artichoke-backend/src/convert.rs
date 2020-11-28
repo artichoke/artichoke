@@ -21,7 +21,7 @@ mod hash;
 mod nilable;
 mod string;
 
-pub use boxing::{BoxUnboxVmValue, HeapAllocatedData, Immediate, UnboxedValueGuard};
+pub use boxing::{BoxUnboxVmValue, HeapAllocated, HeapAllocatedData, Immediate, UnboxedValueGuard};
 
 /// Provide a fallible converter for types that implement an infallible
 /// conversion.

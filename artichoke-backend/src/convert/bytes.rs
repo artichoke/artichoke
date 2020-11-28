@@ -27,7 +27,7 @@ impl ConvertMut<&[u8], Value> for Artichoke {
         // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
         // to worry about the lifetime of the slice passed into this converter.
         let string = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_str_new(mrb, raw, len)) };
-        Value::from(string.unwrap())
+        self.protect(Value::from(string.unwrap()))
     }
 }
 

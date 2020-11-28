@@ -6,7 +6,6 @@
 
 #include <stddef.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <math.h>
 #include <mruby.h>
 #include <mruby/array.h>
@@ -22,10 +21,6 @@
 #include <mruby/opcode.h>
 #include "value_array.h"
 #include <mruby/throw.h>
-
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
 
 #ifdef MRB_DISABLE_STDIO
 #if defined(__cplusplus)
@@ -472,12 +467,12 @@ mrb_funcall_with_block(mrb_state *mrb, mrb_value self, mrb_sym mid, mrb_int argc
     m = mrb_method_search_vm(mrb, &c, mid);
     if (MRB_METHOD_UNDEF_P(m)) {
       mrb_sym missing = mrb_intern_lit(mrb, "method_missing");
-      mrb_value args = ARY_NEW_FROM_VALUES(mrb, argc, argv);
+      mrb_value args = mrb_ary_new_from_values(mrb, argc, argv);
       m = mrb_method_search_vm(mrb, &c, missing);
       if (MRB_METHOD_UNDEF_P(m)) {
         mrb_method_missing(mrb, mid, self, args);
       }
-      ARY_UNSHIFT(mrb, args, mrb_symbol_value(mid));
+      mrb_ary_unshift(mrb, args, mrb_symbol_value(mid));
       mrb_stack_extend(mrb, n+2);
       mrb->c->stack[n+1] = args;
       argc = -1;
@@ -496,7 +491,7 @@ mrb_funcall_with_block(mrb_state *mrb, mrb_value self, mrb_sym mid, mrb_int argc
       voff = argv - mrb->c->stbase;
     }
     if (argc >= CALL_MAXARGS) {
-      mrb_value args = ARY_NEW_FROM_VALUES(mrb, argc, argv);
+      mrb_value args = mrb_ary_new_from_values(mrb, argc, argv);
 
       mrb->c->stack[1] = args;
       ci->argc = -1;
@@ -628,7 +623,7 @@ mrb_f_send(mrb_state *mrb, mrb_value self)
     ci->argc--;
   }
   else {                     /* variable length arguments */
-    ARY_SHIFT(mrb, regs[0]);
+    mrb_ary_shift(mrb, regs[0]);
   }
 
   if (MRB_METHOD_CFUNC_P(m)) {
@@ -829,7 +824,7 @@ mrb_yield_cont(mrb_state *mrb, mrb_value b, mrb_value self, mrb_int argc, const 
   ci = mrb->c->ci;
 
   mrb_stack_extend(mrb, 3);
-  mrb->c->stack[1] = ARY_NEW_FROM_VALUES(mrb, argc, argv);
+  mrb->c->stack[1] = mrb_ary_new_from_values(mrb, argc, argv);
   mrb->c->stack[2] = mrb_nil_value();
   ci->argc = -1;
   return mrb_exec_irep(mrb, self, p);
@@ -878,8 +873,8 @@ argnum_error(mrb_state *mrb, mrb_int num)
 
   if (argc < 0) {
     mrb_value args = mrb->c->stack[1];
-    if (ARY_CHECK(mrb, args)) {
-      argc = ARRAY_LEN(mrb, args);
+    if (mrb_array_p(args)) {
+      argc = RARRAY_LEN(args);
     }
   }
   if (mrb->c->ci->mid) {
@@ -1404,7 +1399,7 @@ RETRY_TRY_BLOCK:
         mrb_sym missing = mrb_intern_lit(mrb, "method_missing");
         m = mrb_method_search_vm(mrb, &cls, missing);
         if (MRB_METHOD_UNDEF_P(m) || (missing == mrb->c->ci->mid && mrb_obj_eq(mrb, regs[0], recv))) {
-          mrb_value args = (argc < 0) ? regs[a+1] : ARY_NEW_FROM_VALUES(mrb, c, regs+a+1);
+          mrb_value args = (argc < 0) ? regs[a+1] : mrb_ary_new_from_values(mrb, c, regs+a+1);
           ERR_PC_SET(mrb);
           mrb_method_missing(mrb, mid, recv, args);
         }
@@ -1412,11 +1407,11 @@ RETRY_TRY_BLOCK:
           if (a+2 >= irep->nregs) {
             mrb_stack_extend(mrb, a+3);
           }
-          regs[a+1] = ARY_NEW_FROM_VALUES(mrb, c, regs+a+1);
+          regs[a+1] = mrb_ary_new_from_values(mrb, c, regs+a+1);
           regs[a+2] = blk;
           argc = -1;
         }
-        ARY_UNSHIFT(mrb, regs[a+1], mrb_symbol_value(mid));
+        mrb_ary_unshift(mrb, regs[a+1], mrb_symbol_value(mid));
         mid = missing;
       }
 
@@ -1441,7 +1436,7 @@ RETRY_TRY_BLOCK:
           recv = p->body.func(mrb, recv);
         }
         else if (MRB_METHOD_NOARG_P(m) &&
-                 (argc > 0 || (argc == -1 && ARRAY_LEN(mrb, regs[1]) != 0))) {
+                 (argc > 0 || (argc == -1 && RARRAY_LEN(regs[1]) != 0))) {
           argnum_error(mrb, 0);
           goto L_RAISE;
         }
@@ -1610,7 +1605,7 @@ RETRY_TRY_BLOCK:
         }
         m = mrb_method_search_vm(mrb, &cls, missing);
         if (MRB_METHOD_UNDEF_P(m)) {
-          mrb_value args = (argc < 0) ? regs[a+1] : ARY_NEW_FROM_VALUES(mrb, b, regs+a+1);
+          mrb_value args = (argc < 0) ? regs[a+1] : mrb_ary_new_from_values(mrb, b, regs+a+1);
           ERR_PC_SET(mrb);
           mrb_method_missing(mrb, mid, recv, args);
         }
@@ -1619,11 +1614,11 @@ RETRY_TRY_BLOCK:
           if (a+2 >= irep->nregs) {
             mrb_stack_extend(mrb, a+3);
           }
-          regs[a+1] = ARY_NEW_FROM_VALUES(mrb, b, regs+a+1);
+          regs[a+1] = mrb_ary_new_from_values(mrb, b, regs+a+1);
           regs[a+2] = blk;
           argc = -1;
         }
-        ARY_UNSHIFT(mrb, regs[a+1], mrb_symbol_value(ci->mid));
+        mrb_ary_unshift(mrb, regs[a+1], mrb_symbol_value(ci->mid));
       }
 
       /* push callinfo */
@@ -1708,32 +1703,34 @@ RETRY_TRY_BLOCK:
         stack = e->stack + 1;
       }
       if (r == 0) {
-        regs[a] = ARY_NEW_FROM_VALUES(mrb, m1+m2+kd, stack);
+        regs[a] = mrb_ary_new_from_values(mrb, m1+m2+kd, stack);
       }
       else {
         mrb_value *pp = NULL;
-        mrb_value *rest;
+        struct RArray *rest;
         int len = 0;
 
-        if (ARY_CHECK(mrb, stack[m1])) {
-          pp = ARRAY_PTR(mrb, stack[m1]);
-          len = ARRAY_LEN(mrb, stack[m1]);
+        if (mrb_array_p(stack[m1])) {
+          struct RArray *ary = mrb_ary_ptr(stack[m1]);
+
+          pp = ARY_PTR(ary);
+          len = (int)ARY_LEN(ary);
         }
-        regs[a] = ARY_NEW_CAPA(mrb, m1 + len + m2 + kd);
-        rest = ARRAY_PTR(mrb, regs[a]);
+        regs[a] = mrb_ary_new_capa(mrb, m1+len+m2+kd);
+        rest = mrb_ary_ptr(regs[a]);
         if (m1 > 0) {
-          stack_copy(rest, stack, m1);
+          stack_copy(ARY_PTR(rest), stack, m1);
         }
         if (len > 0) {
-          stack_copy(rest+m1, pp, len);
+          stack_copy(ARY_PTR(rest)+m1, pp, len);
         }
         if (m2 > 0) {
-          stack_copy(rest+m1+len, stack+m1+1, m2);
+          stack_copy(ARY_PTR(rest)+m1+len, stack+m1+1, m2);
         }
         if (kd) {
-          stack_copy(rest+m1+len+m2, stack+m1+m2+1, kd);
+          stack_copy(ARY_PTR(rest)+m1+len+m2, stack+m1+m2+1, kd);
         }
-        ARRAY_SET_LEN(mrb, regs[a], m1+len+m2+kd);
+        ARY_SET_LEN(rest, m1+len+m2+kd);
       }
       regs[a+1] = stack[m1+r+m2];
       mrb_gc_arena_restore(mrb, ai);
@@ -1760,8 +1757,9 @@ RETRY_TRY_BLOCK:
 
       /* arguments is passed with Array */
       if (argc < 0) {
-        argv = ARRAY_PTR(mrb, regs[1]);
-        argc = ARRAY_LEN(mrb, regs[1]);
+        struct RArray *ary = mrb_ary_ptr(regs[1]);
+        argv = ARY_PTR(ary);
+        argc = (int)ARY_LEN(ary);
         mrb_gc_protect(mrb, regs[1]);
       }
 
@@ -1773,10 +1771,10 @@ RETRY_TRY_BLOCK:
         }
       }
       /* extract first argument array to arguments */
-      else if (len > 1 && argc == 1 && ARY_CHECK(mrb, argv[0])) {
+      else if (len > 1 && argc == 1 && mrb_array_p(argv[0])) {
         mrb_gc_protect(mrb, argv[0]);
-        argc = (int)ARRAY_LEN(mrb, argv[0]);
-        argv = ARRAY_PTR(mrb, argv[0]);
+        argc = (int)RARRAY_LEN(argv[0]);
+        argv = RARRAY_PTR(argv[0]);
       }
 
       if (kd) {
@@ -1830,7 +1828,7 @@ RETRY_TRY_BLOCK:
         }
         /* initalize rest arguments with empty Array */
         if (r) {
-          regs[m1+o+1] = ARY_NEW_CAPA(mrb, 0);
+          regs[m1+o+1] = mrb_ary_new_capa(mrb, 0);
         }
         /* skip initailizer of passed arguments */
         if (o > 0 && argc-kargs > m1+m2)
@@ -1847,7 +1845,7 @@ RETRY_TRY_BLOCK:
           mrb_value ary;
 
           rnum = argc-m1-o-m2-kargs;
-          ary = ARY_NEW_FROM_VALUES(mrb, rnum, argv+m1+o);
+          ary = mrb_ary_new_from_values(mrb, rnum, argv+m1+o);
           regs[m1+o+1] = ary;
         }
         if (m2) {
@@ -1903,7 +1901,7 @@ RETRY_TRY_BLOCK:
 
       if (mrb_hash_p(kdict) && !mrb_hash_empty_p(mrb, kdict)) {
         mrb_value keys = mrb_hash_keys(mrb, kdict);
-        mrb_value key1 = ARY_REF(mrb, keys, 0);
+        mrb_value key1 = RARRAY_PTR(keys)[0];
         mrb_value str = mrb_format(mrb, "unknown keyword: %v", key1);
         mrb_exc_set(mrb, mrb_exc_new_str(mrb, E_ARGUMENT_ERROR, str));
         goto L_RAISE;
@@ -2439,42 +2437,42 @@ RETRY_TRY_BLOCK:
     }
 
     CASE(OP_ARRAY, BB) {
-      mrb_value v = ARY_NEW_FROM_VALUES(mrb, b, &regs[a]);
+      mrb_value v = mrb_ary_new_from_values(mrb, b, &regs[a]);
       regs[a] = v;
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
     }
     CASE(OP_ARRAY2, BBB) {
-      mrb_value v = ARY_NEW_FROM_VALUES(mrb, c, &regs[b]);
+      mrb_value v = mrb_ary_new_from_values(mrb, c, &regs[b]);
       regs[a] = v;
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
     }
 
     CASE(OP_ARYCAT, B) {
-      mrb_value splat = ARY_SPLAT(mrb, regs[a+1]);
+      mrb_value splat = mrb_ary_splat(mrb, regs[a+1]);
       if (mrb_nil_p(regs[a])) {
         regs[a] = splat;
       }
       else {
-        ARY_CONCAT(mrb, regs[a], splat);
+        mrb_ary_concat(mrb, regs[a], splat);
       }
       mrb_gc_arena_restore(mrb, ai);
       NEXT;
     }
 
     CASE(OP_ARYPUSH, B) {
-      ARY_PUSH(mrb, regs[a], regs[a+1]);
+      mrb_ary_push(mrb, regs[a], regs[a+1]);
       NEXT;
     }
 
     CASE(OP_ARYDUP, B) {
       mrb_value ary = regs[a];
-      if (ARY_CHECK(mrb, ary)) {
-        ary = ARY_NEW_FROM_VALUES(mrb, ARRAY_LEN(mrb, ary), ARRAY_PTR(mrb, ary));
+      if (mrb_array_p(ary)) {
+        ary = mrb_ary_new_from_values(mrb, RARRAY_LEN(ary), RARRAY_PTR(ary));
       }
       else {
-        ary = ARY_NEW_FROM_VALUES(mrb, 1, &ary);
+        ary = mrb_ary_new_from_values(mrb, 1, &ary);
       }
       regs[a] = ary;
       NEXT;
@@ -2483,7 +2481,7 @@ RETRY_TRY_BLOCK:
     CASE(OP_AREF, BBB) {
       mrb_value v = regs[b];
 
-      if (!ARY_CHECK(mrb, v)) {
+      if (!mrb_array_p(v)) {
         if (c == 0) {
           regs[a] = v;
         }
@@ -2492,14 +2490,14 @@ RETRY_TRY_BLOCK:
         }
       }
       else {
-        v = ARY_REF(mrb, v, c);
+        v = mrb_ary_ref(mrb, v, c);
         regs[a] = v;
       }
       NEXT;
     }
 
     CASE(OP_ASET, BBB) {
-      ARY_SET(mrb, regs[b], c, regs[a]);
+      mrb_ary_set(mrb, regs[b], c, regs[a]);
       NEXT;
     }
 
@@ -2507,26 +2505,26 @@ RETRY_TRY_BLOCK:
       mrb_value v = regs[a];
       int pre  = b;
       int post = c;
-      mrb_value *ary;
+      struct RArray *ary;
       int len, idx;
 
-      if (!ARY_CHECK(mrb, v)) {
-        v = ARY_NEW_FROM_VALUES(mrb, 1, &regs[a]);
+      if (!mrb_array_p(v)) {
+        v = mrb_ary_new_from_values(mrb, 1, &regs[a]);
       }
-      ary = ARRAY_PTR(mrb, v);
-      len = ARRAY_LEN(mrb, v);
+      ary = mrb_ary_ptr(v);
+      len = (int)ARY_LEN(ary);
       if (len > pre + post) {
-        v = ARY_NEW_FROM_VALUES(mrb, len - pre - post, ary+pre);
+        v = mrb_ary_new_from_values(mrb, len - pre - post, ARY_PTR(ary)+pre);
         regs[a++] = v;
         while (post--) {
-          regs[a++] = ary[len-post-1];
+          regs[a++] = ARY_PTR(ary)[len-post-1];
         }
       }
       else {
-        v = ARY_NEW_CAPA(mrb, 0);
+        v = mrb_ary_new_capa(mrb, 0);
         regs[a++] = v;
         for (idx=0; idx+pre<len; idx++) {
-          regs[a+idx] = ary[pre+idx];
+          regs[a+idx] = ARY_PTR(ary)[pre+idx];
         }
         while (idx < post) {
           SET_NIL_VALUE(regs[a+idx]);

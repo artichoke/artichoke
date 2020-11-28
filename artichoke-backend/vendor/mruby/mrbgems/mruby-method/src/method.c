@@ -5,10 +5,6 @@
 #include "mruby/proc.h"
 #include "mruby/string.h"
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 static struct RObject *
 method_object_alloc(mrb_state *mrb, struct RClass *mclass)
 {
@@ -276,8 +272,8 @@ method_parameters(mrb_state *mrb, mrb_value self)
 
   if (mrb_nil_p(proc)) {
     mrb_value rest = mrb_symbol_value(mrb_intern_lit(mrb, "rest"));
-    mrb_value arest = ARY_NEW_FROM_VALUES(mrb, 1, &rest);
-    return ARY_NEW_FROM_VALUES(mrb, 1, &arest);
+    mrb_value arest = mrb_ary_new_from_values(mrb, 1, &rest);
+    return mrb_ary_new_from_values(mrb, 1, &arest);
   }
 
   rproc = mrb_proc_ptr(proc);

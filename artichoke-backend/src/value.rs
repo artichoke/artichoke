@@ -241,7 +241,6 @@ impl ValueCore for Value {
         args: &[Self::Arg],
         block: Option<Self::Block>,
     ) -> Result<Self::Value, Self::Error> {
-        let mut arena = interp.create_arena_savepoint()?;
         if let Ok(arg_count_error) = ArgCountError::try_from(args) {
             warn!("{}", arg_count_error);
             return Err(arg_count_error.into());
@@ -254,9 +253,9 @@ impl ValueCore for Value {
             args.len(),
             if block.is_some() { " and block" } else { "" }
         );
-        let func = arena.intern_string(func.to_string())?;
+        let func = interp.intern_string(func.to_string())?;
         let result = unsafe {
-            arena.with_ffi_boundary(|mrb| {
+            interp.with_ffi_boundary(|mrb| {
                 protect::funcall(
                     mrb,
                     self.inner(),
@@ -277,12 +276,12 @@ impl ValueCore for Value {
                     // See: https://github.com/mruby/mruby/issues/4460
                     Err(Fatal::from("Unreachable Ruby value").into())
                 } else {
-                    Ok(value)
+                    Ok(interp.protect(value))
                 }
             }
             Err(exception) => {
-                let exception = Self::from(exception);
-                Err(exception_handler::last_error(&mut arena, exception)?)
+                let exception = interp.protect(Self::from(exception));
+                Err(exception_handler::last_error(interp, exception)?)
             }
         }
     }
@@ -312,7 +311,9 @@ impl ValueCore for Value {
     }
 
     fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error> {
-        let method = interp.convert_mut(method);
+        let method = interp.intern_string(String::from(method))?;
+        let method = Symbol::new(method);
+        let method = Symbol::alloc_value(method, interp)?;
         let respond_to = self.funcall(interp, "respond_to?", &[method], None)?;
         interp.try_convert(respond_to)
     }

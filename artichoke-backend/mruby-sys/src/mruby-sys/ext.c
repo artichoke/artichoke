@@ -248,10 +248,59 @@ mrb_sys_raise_current_exception(struct mrb_state *mrb)
 
 // Manipulate Array `mrb_value`s
 
-MRB_API mrb_int
-mrb_sys_ary_len(mrb_value value)
+MRB_API mrb_value
+mrb_sys_alloc_rarray(struct mrb_state *mrb, mrb_value *ptr, mrb_int len, mrb_int capa)
 {
-  return ARY_LEN(mrb_ary_ptr(value));
+  struct RArray *a;
+
+  a = (struct RArray *)mrb_obj_alloc(mrb, MRB_TT_ARRAY, mrb->array_class);
+
+  a->as.heap.ptr = ptr;
+  a->as.heap.len = len;
+  a->as.heap.aux.capa = capa;
+
+  return mrb_obj_value(a);
+}
+
+MRB_API void
+mrb_sys_repack_into_rarray(mrb_value *ptr, mrb_int len, mrb_int capa, mrb_value into)
+{
+  struct RArray *a = RARRAY(into);
+
+  a->as.heap.ptr = ptr;
+  a->as.heap.len = len;
+  a->as.heap.aux.capa = capa;
+}
+
+MRB_API mrb_value
+mrb_ary_entry(mrb_value ary, mrb_int offset)
+{
+  if (offset < 0) {
+    offset += RARRAY_LEN(ary);
+  }
+  if (offset < 0 || RARRAY_LEN(ary) <= offset) {
+    return mrb_nil_value();
+  }
+  return RARRAY_PTR(ary)[offset];
+}
+
+static void
+ary_modify_check(mrb_state *mrb, struct RArray *a)
+{
+  mrb_check_frozen(mrb, a);
+}
+
+static void
+ary_modify(mrb_state *mrb, struct RArray *a)
+{
+  ary_modify_check(mrb, a);
+}
+
+MRB_API void
+mrb_ary_modify(mrb_state *mrb, struct RArray *a)
+{
+  mrb_write_barrier(mrb, (struct RBasic *)a);
+  ary_modify(mrb, a);
 }
 
 // Manage the mruby garbage collector (GC)

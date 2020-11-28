@@ -3,10 +3,6 @@
 #include <mruby/class.h>
 #include <mruby/proc.h>
 
-#ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
-#endif
-
 #define fiber_ptr(o) ((struct RFiber*)mrb_ptr(o))
 
 #define FIBER_STACK_INIT_SIZE 64
@@ -154,7 +150,7 @@ fiber_result(mrb_state *mrb, const mrb_value *a, mrb_int len)
 {
   if (len == 0) return mrb_nil_value();
   if (len == 1) return a[0];
-  return ARY_NEW_FROM_VALUES(mrb, len, a);
+  return mrb_ary_new_from_values(mrb, len, a);
 }
 
 /* mark return from context modifying method */
