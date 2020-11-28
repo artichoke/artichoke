@@ -548,7 +548,7 @@ impl BoxUnboxVmValue for Array {
                 sys::mrb_sys_alloc_rarray(mrb, ptr, len as sys::mrb_int, capacity as sys::mrb_int)
             })?
         };
-        Ok(value.into())
+        Ok(interp.protect(value.into()))
     }
 
     fn box_into_value(
@@ -561,7 +561,7 @@ impl BoxUnboxVmValue for Array {
         unsafe {
             Self::rebox_into_value(into, ptr, len, capacity)?;
         }
-        Ok(into)
+        Ok(interp.protect(into))
     }
 
     fn free(data: *mut c_void) {

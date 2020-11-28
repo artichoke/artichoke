@@ -286,7 +286,7 @@ where
             interp.enable_gc();
         }
 
-        Ok(Value::from(obj))
+        Ok(interp.protect(Value::from(obj)))
     }
 
     fn box_into_value(

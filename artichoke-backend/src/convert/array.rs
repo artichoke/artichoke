@@ -13,7 +13,8 @@ impl TryConvertMut<&[Value], Value> for Artichoke {
 
     fn try_convert_mut(&mut self, value: &[Value]) -> Result<Value, Self::Error> {
         let ary = Array::from(value);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -22,7 +23,8 @@ impl TryConvertMut<Vec<Value>, Value> for Artichoke {
 
     fn try_convert_mut(&mut self, value: Vec<Value>) -> Result<Value, Self::Error> {
         let ary = Array::from(value);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -31,7 +33,8 @@ impl TryConvertMut<&[Option<Value>], Value> for Artichoke {
 
     fn try_convert_mut(&mut self, value: &[Option<Value>]) -> Result<Value, Self::Error> {
         let ary = Array::from_iter(value);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -41,7 +44,8 @@ impl TryConvertMut<Vec<Vec<u8>>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Vec<Vec<u8>>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -51,7 +55,8 @@ impl TryConvertMut<Vec<&[u8]>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Vec<&[u8]>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -61,7 +66,8 @@ impl TryConvertMut<&[Vec<u8>], Value> for Artichoke {
     fn try_convert_mut(&mut self, value: &[Vec<u8>]) -> Result<Value, Self::Error> {
         let iter = value.iter().map(|item| self.convert_mut(item.as_slice()));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -71,7 +77,8 @@ impl TryConvertMut<&[&[u8]], Value> for Artichoke {
     fn try_convert_mut(&mut self, value: &[&[u8]]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -81,7 +88,8 @@ impl TryConvertMut<Vec<String>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Vec<String>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -91,7 +99,8 @@ impl TryConvertMut<Vec<&str>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Vec<&str>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -101,7 +110,8 @@ impl TryConvertMut<&[String], Value> for Artichoke {
     fn try_convert_mut(&mut self, value: &[String]) -> Result<Value, Self::Error> {
         let iter = value.iter().map(|item| self.convert_mut(item.as_str()));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -111,7 +121,8 @@ impl TryConvertMut<&[&str], Value> for Artichoke {
     fn try_convert_mut(&mut self, value: &[&str]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -121,7 +132,8 @@ impl TryConvertMut<Vec<Int>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Vec<Int>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -131,7 +143,8 @@ impl TryConvertMut<&[Int], Value> for Artichoke {
     fn try_convert_mut(&mut self, value: &[Int]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -141,7 +154,8 @@ impl TryConvertMut<&[Option<Vec<u8>>], Value> for Artichoke {
     fn try_convert_mut(&mut self, value: &[Option<Vec<u8>>]) -> Result<Value, Self::Error> {
         let iter = value.iter().map(|item| self.convert_mut(item.as_deref()));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -151,7 +165,8 @@ impl TryConvertMut<Vec<Option<Vec<u8>>>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Vec<Option<Vec<u8>>>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -161,7 +176,8 @@ impl TryConvertMut<&[Option<&[u8]>], Value> for Artichoke {
     fn try_convert_mut(&mut self, value: &[Option<&[u8]>]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -171,7 +187,8 @@ impl TryConvertMut<Vec<Option<&[u8]>>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Vec<Option<&[u8]>>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -183,7 +200,8 @@ impl TryConvertMut<Vec<Vec<Option<Vec<u8>>>>, Value> for Artichoke {
             .into_iter()
             .map(|item| self.try_convert_mut(item))
             .collect::<Result<Array, _>>()?;
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -195,7 +213,8 @@ impl TryConvertMut<Vec<Vec<Option<&[u8]>>>, Value> for Artichoke {
             .into_iter()
             .map(|item| self.try_convert_mut(item))
             .collect::<Result<Array, _>>()?;
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -205,7 +224,8 @@ impl TryConvertMut<&[Option<&str>], Value> for Artichoke {
     fn try_convert_mut(&mut self, value: &[Option<&str>]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -215,7 +235,8 @@ impl TryConvertMut<Vec<Option<&str>>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Vec<Option<&str>>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert_mut(item));
         let ary = Array::from_iter(iter);
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -227,7 +248,8 @@ impl TryConvertMut<Vec<Vec<Option<&str>>>, Value> for Artichoke {
             .into_iter()
             .map(|item| self.try_convert_mut(item))
             .collect::<Result<Array, _>>()?;
-        Array::alloc_value(ary, self)
+        let value = Array::alloc_value(ary, self)?;
+        Ok(self.protect(value))
     }
 }
 

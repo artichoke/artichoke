@@ -42,11 +42,11 @@ impl Eval for Artichoke {
                     Err(Fatal::from("Unreachable Ruby value").into())
                 } else {
                     trace!("Sucessful eval");
-                    Ok(value)
+                    Ok(self.protect(value))
                 }
             }
             Err(exception) => {
-                let exception = Value::from(exception);
+                let exception = self.protect(Value::from(exception));
                 let debug = exception.inspect(self);
                 debug!("Failed eval raised exception: {:?}", debug.as_bstr());
                 Err(exception_handler::last_error(self, exception)?)
