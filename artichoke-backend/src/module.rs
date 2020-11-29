@@ -185,7 +185,7 @@ impl Rclass {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Spec {
     name: Cow<'static, str>,
     sym: u32,
@@ -235,6 +235,11 @@ impl Spec {
     #[must_use]
     pub fn enclosing_scope(&self) -> Option<&EnclosingRubyScope> {
         self.enclosing_scope.as_ref()
+    }
+
+    #[must_use]
+    pub fn name_symbol(&self) -> u32 {
+        self.sym
     }
 
     #[must_use]

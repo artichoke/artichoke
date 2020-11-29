@@ -217,7 +217,7 @@ impl Rclass {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Spec {
     name: Cow<'static, str>,
     cstring: Box<CStr>,
