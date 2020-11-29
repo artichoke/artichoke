@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::error;
-use std::ffi::c_void;
+use std::ffi::{c_void, CStr};
 use std::fmt;
 use std::ptr::NonNull;
 
@@ -89,6 +89,21 @@ mod free_test {
 pub type Method =
     unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct ClassScope {
+    name: String,
+    cstring: Box<CStr>,
+    enclosing_scope: Option<Box<EnclosingRubyScope>>,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct ModuleScope {
+    name: String,
+    cstring: Box<CStr>,
+    name_symbol: u32,
+    enclosing_scope: Option<Box<EnclosingRubyScope>>,
+}
+
 /// Typesafe wrapper for the [`RClass *`](sys::RClass) of the enclosing scope
 /// for an mruby `Module` or `Class`.
 ///
@@ -106,9 +121,9 @@ pub type Method =
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum EnclosingRubyScope {
     /// Reference to a Ruby `Class` enclosing scope.
-    Class(Box<class::Spec>),
+    Class(ClassScope),
     /// Reference to a Ruby `Module` enclosing scope.
-    Module(Box<module::Spec>),
+    Module(ModuleScope),
 }
 
 impl EnclosingRubyScope {
@@ -118,7 +133,17 @@ impl EnclosingRubyScope {
     /// class registry.
     #[must_use]
     pub fn class(spec: &class::Spec) -> Self {
-        Self::Class(Box::new(spec.clone()))
+        let cstring = spec.name_c_str();
+        // Safety
+        //
+        // This CStr is being constructed with another CStr including the nul
+        // byte.
+        let cstring = unsafe { CStr::from_bytes_with_nul_unchecked(cstring.to_bytes_with_nul()) };
+        Self::Class(ClassScope {
+            name: String::from(spec.name()),
+            cstring: cstring.into(),
+            enclosing_scope: spec.enclosing_scope().map(Clone::clone).map(Box::new),
+        })
     }
 
     /// Factory for [`EnclosingRubyScope::Module`] that clones a
@@ -128,7 +153,18 @@ impl EnclosingRubyScope {
     /// module registry.
     #[must_use]
     pub fn module(spec: &module::Spec) -> Self {
-        Self::Module(Box::new(spec.clone()))
+        let cstring = spec.name_c_str();
+        // Safety
+        //
+        // This CStr is being constructed with another CStr including the nul
+        // byte.
+        let cstring = unsafe { CStr::from_bytes_with_nul_unchecked(cstring.to_bytes_with_nul()) };
+        Self::Module(ModuleScope {
+            name: String::from(spec.name()),
+            cstring: cstring.into(),
+            name_symbol: spec.name_symbol(),
+            enclosing_scope: spec.enclosing_scope().map(Clone::clone).map(Box::new),
+        })
     }
 
     /// Resolve the [`RClass *`](sys::RClass) of the wrapped class or module.
@@ -145,8 +181,15 @@ impl EnclosingRubyScope {
     /// to the Artichoke [`State](crate::state::State).
     pub unsafe fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         match self {
-            Self::Class(spec) => spec.rclass().resolve(mrb),
-            Self::Module(spec) => spec.rclass().resolve(mrb),
+            Self::Class(scope) => {
+                let enclosing_scope = scope.enclosing_scope.clone().map(|scope| *scope);
+                class::Rclass::new(scope.cstring.clone(), enclosing_scope).resolve(mrb)
+            }
+            Self::Module(scope) => {
+                let enclosing_scope = scope.enclosing_scope.clone().map(|scope| *scope);
+                module::Rclass::new(scope.name_symbol, scope.cstring.clone(), enclosing_scope)
+                    .resolve(mrb)
+            }
         }
     }
 
@@ -168,9 +211,17 @@ impl EnclosingRubyScope {
     /// for each enclosing scope.
     #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {
-        match self {
-            Self::Class(spec) => spec.fqname(),
-            Self::Module(spec) => spec.fqname(),
+        let (name, enclosing_scope) = match self {
+            Self::Class(scope) => (&scope.name, &scope.enclosing_scope),
+            Self::Module(scope) => (&scope.name, &scope.enclosing_scope),
+        };
+        if let Some(scope) = enclosing_scope {
+            let mut fqname = String::from(scope.fqname());
+            fqname.push_str("::");
+            fqname.push_str(name);
+            fqname.into()
+        } else {
+            name.into()
         }
     }
 }
