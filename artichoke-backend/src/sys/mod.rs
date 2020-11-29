@@ -137,6 +137,5 @@ mod tests {
                 format!("mruby 2.0 (v2.0.1) interpreter at {:p}", &*mrb)
             );
         };
-        interp.close();
     }
 }

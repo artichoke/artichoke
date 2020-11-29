@@ -547,7 +547,7 @@ mod tests {
     fn to_s_fixnum() {
         let mut interp = interpreter().unwrap();
 
-        let value = Convert::<_, Value>::convert(&interp, 255);
+        let value = Convert::<_, Value>::convert(&*interp, 255);
         let string = value.to_s(&mut interp);
         assert_eq!(string, b"255");
     }
@@ -556,7 +556,7 @@ mod tests {
     fn inspect_fixnum() {
         let mut interp = interpreter().unwrap();
 
-        let value = Convert::<_, Value>::convert(&interp, 255);
+        let value = Convert::<_, Value>::convert(&*interp, 255);
         let debug = value.inspect(&mut interp);
         assert_eq!(debug, b"255");
     }
@@ -631,7 +631,7 @@ mod tests {
         assert!(!live.is_dead(&mut interp));
         // Fixnums are immediate even if they are created directly without an
         // interpreter.
-        let fixnum = Convert::<_, Value>::convert(&interp, 99);
+        let fixnum = Convert::<_, Value>::convert(&*interp, 99);
         assert!(!fixnum.is_dead(&mut interp));
     }
 

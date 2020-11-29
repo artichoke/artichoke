@@ -230,10 +230,10 @@ mod tests {
     #[test]
     fn fixnum_to_usize() {
         let interp = interpreter().unwrap();
-        let value = Convert::<_, Value>::convert(&interp, 100);
+        let value = Convert::<_, Value>::convert(&*interp, 100);
         let value = value.try_into::<usize>(&interp).unwrap();
         assert_eq!(100, value);
-        let value = Convert::<_, Value>::convert(&interp, -100);
+        let value = Convert::<_, Value>::convert(&*interp, -100);
         let value = value.try_into::<usize>(&interp);
         assert!(value.is_err());
     }
