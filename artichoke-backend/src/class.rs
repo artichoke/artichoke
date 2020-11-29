@@ -221,7 +221,7 @@ impl Rclass {
 pub struct Spec {
     name: Cow<'static, str>,
     cstring: Box<CStr>,
-    data_type: *mut sys::mrb_data_type,
+    data_type: Box<sys::mrb_data_type>,
     enclosing_scope: Option<EnclosingRubyScope>,
 }
 
@@ -253,7 +253,6 @@ impl Spec {
                 dfree: free,
             };
             let data_type = Box::new(data_type);
-            let data_type: &'static mut sys::mrb_data_type = Box::leak(data_type);
             Ok(Self {
                 name,
                 cstring,
@@ -266,8 +265,8 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn data_type(&self) -> *mut sys::mrb_data_type {
-        self.data_type
+    pub fn data_type(&self) -> *const sys::mrb_data_type {
+        self.data_type.as_ref()
     }
 
     #[must_use]
