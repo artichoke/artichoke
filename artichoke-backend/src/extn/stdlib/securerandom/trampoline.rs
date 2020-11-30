@@ -64,6 +64,10 @@ pub fn hex(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error> {
 #[inline]
 pub fn random_bytes(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error> {
     let bytes = if let Some(len) = len {
+        // Upstream uses `n.to_int`, which means we must implicitly convert to
+        // int.
+        //
+        // https://github.com/ruby/ruby/blob/v2_6_3/lib/securerandom.rb#L135
         let len = len.implicitly_convert_to_int(interp)?;
         securerandom::random_bytes(Some(len))?
     } else {
