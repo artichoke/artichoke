@@ -100,11 +100,6 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         MRB_TT_STRING => Ruby::String,
         MRB_TT_RANGE => Ruby::Range,
         MRB_TT_EXCEPTION => Ruby::Exception,
-        // This is a special value type for the `mruby-io` implementation of
-        // the `File` class. Artichoke does not bundle `mruby-io`, so this
-        // variant is unreachable.
-        MRB_TT_FILE => Ruby::Unreachable,
-        // ENV is currently implemented as a singleton object in Ruby.
         // NOTE(lopopolo): This might be an internal closure symbol table,
         // rather than the `ENV` core object.
         MRB_TT_ENV => Ruby::Unreachable,
