@@ -1,5 +1,17 @@
 # frozen_string_literal: true
 
+class BasicObject
+  # rubocop:disable Style/RedundantConditional
+  def !=(other)
+    if self == other
+      false
+    else
+      true
+    end
+  end
+  # rubocop:enable Style/RedundantConditional
+end
+
 class NilClass
   def <=>(other)
     return 0 if other.instance_of?(NilClass)
