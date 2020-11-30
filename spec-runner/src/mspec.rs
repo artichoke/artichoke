@@ -55,5 +55,6 @@ mod tests {
         super::init(&mut interp).unwrap();
         // should not panic
         assert!(super::run(&mut interp, vec![]).unwrap());
+        interp.close();
     }
 }
