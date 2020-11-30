@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://www.artichokeruby.org">
-    <img height="200" width="200" src="https://www.artichokeruby.org/artichoke-logo.svg">
+    <img alt="Artichoke Ruby logo" height="200" width="200" src="https://www.artichokeruby.org/artichoke-logo.svg">
   </a>
 </p>
 
@@ -22,7 +22,7 @@ Ruby runtime implemented in Rust and Ruby.
 
 <p align="center">
   <a href="https://artichoke.run">
-    <img style="max-width: 400px" width="400" src="https://artichoke.run/playground.png">
+    <img alt="Artichoke Ruby WebAssembly playground" style="max-width: 400px" width="400" src="https://artichoke.run/playground.png">
   </a>
   <br>
   <em>Artichoke Ruby Wasm Playground</em>
@@ -87,9 +87,10 @@ and [REPL].
 `artichoke` supports executing programs via files, stdin, or inline with one or
 more `-e` flags.
 
-Artichoke does not yet support local filesystem access. A temporary workaround
-is to inject data into the interpreter with the `--with-fixture` flag, which
-reads file contents into a `$fixture` global.
+Artichoke can `require`, `require_relative`, and `load` files from the local
+filesystem, but otherwise does not yet support local filesystem access. A
+temporary workaround is to inject data into the interpreter with the
+`--with-fixture` flag, which reads file contents into a `$fixture` global.
 
 ```console
 $ artichoke --help
@@ -129,7 +130,7 @@ the project are:
 ## Contributing
 
 Artichoke aspires to be a Ruby 2.6.3-compatible implementation of the Ruby
-programming language. [There is lots to do][file-an-issue].
+programming language. [There is lots to do][github-issues].
 
 If Artichoke does not run Ruby source code in the same way that MRI does, it is
 a bug and we would appreciate if you [filed an issue so we can fix
@@ -150,8 +151,8 @@ Artichoke's public Discord server][discord].
 `artichoke` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 Some portions of Artichoke are derived from third party sources. The READMEs in
-each crate discuss which third party licenses are applicable to the sources and
-derived works in Artichoke.
+each workspace crate discuss which third party licenses are applicable to the
+sources and derived works in Artichoke.
 
 [ruby-spec]: https://github.com/ruby/spec
 [playground]: https://artichoke.run
@@ -170,6 +171,7 @@ derived works in Artichoke.
 [a-parallelism]: https://github.com/artichoke/artichoke/labels/A-parallelism
 [a-memory-management]:
   https://github.com/artichoke/artichoke/labels/A-memory-management
-[file-an-issue]: https://github.com/artichoke/artichoke/issues
+[github-issues]: https://github.com/artichoke/artichoke/issues
+[file-an-issue]: https://github.com/artichoke/artichoke/issues/new
 [discord]: https://discord.gg/QCe2tp2
 [e-easy]: https://github.com/artichoke/artichoke/labels/E-easy
