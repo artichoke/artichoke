@@ -134,7 +134,7 @@ mod tests {
             let debug = sys::mrb_sys_state_debug(mrb);
             assert_eq!(
                 debug,
-                format!("mruby 2.0 (v2.0.1) interpreter at {:p}", &*mrb)
+                format!("mruby 2.0 (v2.1.2) interpreter at {:p}", &*mrb)
             );
         };
     }
