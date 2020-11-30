@@ -26,6 +26,7 @@ MRuby::Gem::Specification.new('mruby-test') do |spec|
 
   file assert_lib => assert_c
   file assert_c => [assert_rb, build.mrbcfile] do |t|
+    mkdir_p File.dirname(t.name)
     open(t.name, 'w') do |f|
       mrbc.run f, assert_rb, 'mrbtest_assert_irep'
     end
@@ -40,7 +41,7 @@ MRuby::Gem::Specification.new('mruby-test') do |spec|
 
     file test_rbobj => g.test_rbireps
     file g.test_rbireps => [g.test_rbfiles, build.mrbcfile].flatten do |t|
-      FileUtils.mkdir_p File.dirname(t.name)
+      mkdir_p File.dirname(t.name)
       open(t.name, 'w') do |f|
         g.print_gem_test_header(f)
         test_preload = g.test_preload and [g.dir, MRUBY_ROOT].map {|dir|
@@ -149,15 +150,10 @@ MRuby::Gem::Specification.new('mruby-test') do |spec|
   # of the test gem depending on a change to the gem
   # selection
   active_gems_path = "#{build_dir}/active_gems_path.lst"
-  active_gem_list = if File.exist? active_gems_path
-                      File.read active_gems_path
-                    else
-                      FileUtils.mkdir_p File.dirname(active_gems_path)
-                      nil
-                    end
+  active_gem_list = File.read active_gems_path if File.exist? active_gems_path
   current_gem_list = build.gems.map(&:name).join("\n")
   task active_gems_path do |_t|
-    FileUtils.mkdir_p File.dirname(active_gems_path)
+    mkdir_p File.dirname(active_gems_path)
     File.write active_gems_path, current_gem_list
   end
   file clib => active_gems_path if active_gem_list != current_gem_list
@@ -165,7 +161,7 @@ MRuby::Gem::Specification.new('mruby-test') do |spec|
   file mlib => clib
   file clib => [build.mrbcfile, __FILE__] do |_t|
     _pp "GEN", "*.rb", "#{clib.relative_path}"
-    FileUtils.mkdir_p File.dirname(clib)
+    mkdir_p File.dirname(clib)
     open(clib, 'w') do |f|
       f.puts %Q[/*]
       f.puts %Q[ * This file contains a list of all]

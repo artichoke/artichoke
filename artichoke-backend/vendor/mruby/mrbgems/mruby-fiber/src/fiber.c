@@ -291,8 +291,7 @@ mrb_fiber_alive_p(mrb_state *mrb, mrb_value self)
 static mrb_value
 fiber_eq(mrb_state *mrb, mrb_value self)
 {
-  mrb_value other;
-  mrb_get_args(mrb, "o", &other);
+  mrb_value other = mrb_get_arg1(mrb);
 
   if (!mrb_fiber_p(other)) {
     return mrb_false_value();
@@ -409,7 +408,7 @@ mrb_mruby_fiber_gem_init(mrb_state* mrb)
   c = mrb_define_class(mrb, "Fiber", mrb->object_class);
   MRB_SET_INSTANCE_TT(c, MRB_TT_FIBER);
 
-  mrb_define_method(mrb, c, "initialize", fiber_init,    MRB_ARGS_NONE());
+  mrb_define_method(mrb, c, "initialize", fiber_init,    MRB_ARGS_NONE()|MRB_ARGS_BLOCK());
   mrb_define_method(mrb, c, "resume",     fiber_resume,  MRB_ARGS_ANY());
   mrb_define_method(mrb, c, "transfer",   fiber_transfer, MRB_ARGS_ANY());
   mrb_define_method(mrb, c, "alive?",     fiber_alive_p, MRB_ARGS_NONE());

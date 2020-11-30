@@ -13,13 +13,12 @@ module MRuby
     end
 
     def gem(gemdir, &block)
-      caller_dir = File.expand_path(File.dirname(/^(.*?):\d/.match(caller.first).to_a[1]))
-
       if gemdir.is_a?(Hash)
         gemdir = load_special_path_gem(gemdir)
       elsif GemBox.path && gemdir.is_a?(String)
         gemdir = File.expand_path(gemdir, File.dirname(GemBox.path))
       else
+        caller_dir = File.expand_path(File.dirname(caller(1,1)[0][/^(.*?):\d/,1]))
         gemdir = File.expand_path(gemdir, caller_dir)
       end
 
@@ -58,7 +57,7 @@ module MRuby
         if File.exist? mgem_list_dir
           git.run_pull mgem_list_dir, mgem_list_url if $pull_gems
         else
-          FileUtils.mkdir_p mgem_list_dir
+          mkdir_p mgem_list_dir
           git.run_clone mgem_list_dir, mgem_list_url, "--depth 1"
         end
 
@@ -87,28 +86,27 @@ module MRuby
 
         if File.exist?(gemdir)
           if $pull_gems
-            git.run_pull gemdir, url
             # Jump to the top of the branch
-            git.run_checkout(gemdir, branch)
-            git.run_reset_hard gemdir, "origin/#{branch}"
+            git.run_checkout gemdir, branch
+            git.run_pull gemdir, url
           elsif params[:checksum_hash]
-            git.run_reset_hard(gemdir, params[:checksum_hash])
+            git.run_checkout_detach gemdir, params[:checksum_hash]
           elsif lock
-            git.run_reset_hard(gemdir, lock['commit'])
+            git.run_checkout_detach gemdir, lock['commit']
           end
         else
           options = [params[:options]] || []
           options << "--recursive"
           options << "--branch \"#{branch}\""
           options << "--depth 1" unless params[:checksum_hash]
-          FileUtils.mkdir_p "#{gem_clone_dir}"
+          mkdir_p "#{gem_clone_dir}"
           git.run_clone gemdir, url, options
 
           # Jump to the specified commit
           if params[:checksum_hash]
-            git.run_reset_hard gemdir, params[:checksum_hash]
+            git.run_checkout_detach gemdir, params[:checksum_hash]
           elsif lock
-            git.run_reset_hard gemdir, lock['commit']
+            git.run_checkout_detach gemdir, lock['commit']
           end
         end
 

@@ -29,7 +29,7 @@ assert('Kernel.block_given?', '15.3.1.2.2') do
   end
 end
 
-# Kernel.eval is provided by the mruby-gem mrbgem. '15.3.1.2.3'
+# Kernel.eval is provided by the mruby-eval mrbgem. '15.3.1.2.3'
 
 assert('Kernel.iterator?', '15.3.1.2.5') do
   assert_false Kernel.iterator?
@@ -59,20 +59,11 @@ assert('Kernel.loop', '15.3.1.2.8') do
   assert_equal 100, i
 end
 
-assert('Kernel.p', '15.3.1.2.9') do
-  # TODO search for a way to test p to stdio
-  assert_true true
-end
+# Kernel.p is provided by the mruby-print mrbgem. '15.3.1.2.9'
 
-assert('Kernel.print', '15.3.1.2.10') do
-  # TODO search for a way to test print to stdio
-  assert_true true
-end
+# Kernel.print is provided by the mruby-print mrbgem. '15.3.1.2.10'
 
-assert('Kernel.puts', '15.3.1.2.11') do
-  # TODO search for a way to test puts to stdio
-  assert_true true
-end
+# Kernel.puts is provided by the mruby-print mrbgem. '15.3.1.2.11'
 
 assert('Kernel.raise', '15.3.1.2.12') do
   assert_raise RuntimeError do
@@ -100,6 +91,10 @@ assert('Kernel#__send__', '15.3.1.3.4') do
   assert_true __send__(:respond_to?, :nil?)
   # test without argument and without block
   assert_equal String, __send__(:to_s).class
+
+  args = [:respond_to?, :nil?]
+  assert_true __send__(*args)
+  assert_equal [:respond_to?, :nil?], args
 end
 
 assert('Kernel#block_given?', '15.3.1.3.6') do
@@ -121,6 +116,13 @@ assert('Kernel#block_given?', '15.3.1.3.6') do
       "block"
     end
   end
+
+  def bg_try_in_block
+    -> { block_given? }[]
+  end
+
+  assert_false bg_try_in_block
+  assert_true bg_try_in_block{}
 end
 
 assert('Kernel#class', '15.3.1.3.7') do
@@ -197,17 +199,6 @@ assert('Kernel#dup', '15.3.1.3.9') do
   a.set(2)
   c = a.dup
 
-  immutables = [ 1, :foo, true, false, nil ]
-  error_count = 0
-  immutables.each do |i|
-    begin
-      i.dup
-    rescue TypeError
-      error_count += 1
-    end
-  end
-
-  assert_equal immutables.size, error_count
   assert_equal 2, a.get
   assert_equal 1, b.get
   assert_equal 2, c.get

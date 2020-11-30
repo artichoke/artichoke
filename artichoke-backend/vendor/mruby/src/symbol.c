@@ -22,12 +22,12 @@ typedef struct symbol_name {
   const char *name;
 } symbol_name;
 
-#define SYMBOL_INLINE_BIT       1
-#define SYMBOL_INLINE_LOWER_BIT 2
-#define SYMBOL_INLINE           (1 << (SYMBOL_INLINE_BIT - 1))
-#define SYMBOL_INLINE_LOWER     (1 << (SYMBOL_INLINE_LOWER_BIT - 1))
-#define SYMBOL_NORMAL_SHIFT     SYMBOL_INLINE_BIT
-#define SYMBOL_INLINE_SHIFT     SYMBOL_INLINE_LOWER_BIT
+#define SYMBOL_INLINE_BIT_POS       1
+#define SYMBOL_INLINE_LOWER_BIT_POS 2
+#define SYMBOL_INLINE               (1 << (SYMBOL_INLINE_BIT_POS - 1))
+#define SYMBOL_INLINE_LOWER         (1 << (SYMBOL_INLINE_LOWER_BIT_POS - 1))
+#define SYMBOL_NORMAL_SHIFT         SYMBOL_INLINE_BIT_POS
+#define SYMBOL_INLINE_SHIFT         SYMBOL_INLINE_LOWER_BIT_POS
 #ifdef MRB_ENABLE_ALL_SYMBOLS
 # define SYMBOL_INLINE_P(sym) FALSE
 # define SYMBOL_INLINE_LOWER_P(sym) FALSE
@@ -50,14 +50,14 @@ sym_validate_len(mrb_state *mrb, size_t len)
 static const char pack_table[] = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 static mrb_sym
-sym_inline_pack(const char *name, uint16_t len)
+sym_inline_pack(const char *name, size_t len)
 {
-  const int lower_length_max = (MRB_SYMBOL_BITSIZE - 2) / 5;
-  const int mix_length_max   = (MRB_SYMBOL_BITSIZE - 2) / 6;
+  const size_t lower_length_max = (MRB_SYMBOL_BIT - 2) / 5;
+  const size_t mix_length_max   = (MRB_SYMBOL_BIT - 2) / 6;
 
   char c;
   const char *p;
-  int i;
+  size_t i;
   mrb_sym sym = 0;
   mrb_bool lower = TRUE;
 
@@ -126,7 +126,7 @@ symhash(const char *key, size_t len)
 }
 
 static mrb_sym
-find_symbol(mrb_state *mrb, const char *name, uint16_t len, uint8_t *hashp)
+find_symbol(mrb_state *mrb, const char *name, size_t len, uint8_t *hashp)
 {
   mrb_sym i;
   symbol_name *sname;
@@ -174,11 +174,13 @@ sym_intern(mrb_state *mrb, const char *name, size_t len, mrb_bool lit)
   if (sym > 0) return sym;
 
   /* registering a new symbol */
-  sym = ++mrb->symidx;
+  sym = mrb->symidx + 1;
   if (mrb->symcapa < sym) {
-    if (mrb->symcapa == 0) mrb->symcapa = 100;
-    else mrb->symcapa = (size_t)(mrb->symcapa * 6 / 5);
-    mrb->symtbl = (symbol_name*)mrb_realloc(mrb, mrb->symtbl, sizeof(symbol_name)*(mrb->symcapa+1));
+    size_t symcapa = mrb->symcapa;
+    if (symcapa == 0) symcapa = 100;
+    else symcapa = (size_t)(symcapa * 6 / 5);
+    mrb->symtbl = (symbol_name*)mrb_realloc(mrb, mrb->symtbl, sizeof(symbol_name)*(symcapa+1));
+    mrb->symcapa = symcapa;
   }
   sname = &mrb->symtbl[sym];
   sname->len = (uint16_t)len;
@@ -203,7 +205,7 @@ sym_intern(mrb_state *mrb, const char *name, size_t len, mrb_bool lit)
   else {
     sname->prev = 0;
   }
-  mrb->symhash[hash] = sym;
+  mrb->symhash[hash] = mrb->symidx = sym;
 
   return sym<<SYMBOL_NORMAL_SHIFT;
 }
@@ -519,18 +521,14 @@ mrb_sym_str(mrb_state *mrb, mrb_sym sym)
 {
   mrb_int len;
   const char *name = mrb_sym_name_len(mrb, sym, &len);
-  mrb_value str;
 
   if (!name) return mrb_undef_value(); /* can't happen */
   if (SYMBOL_INLINE_P(sym)) {
-    str = mrb_str_new(mrb, name, len);
+    mrb_value str = mrb_str_new(mrb, name, len);
     RSTR_SET_ASCII_FLAG(mrb_str_ptr(str));
+    return str;
   }
-  else {
-    str = mrb_str_new_static(mrb, name, len);
-  }
-  MRB_SET_FROZEN_FLAG(mrb_str_ptr(str));
-  return str;
+  return mrb_str_new_static(mrb, name, len);
 }
 
 static const char*
@@ -568,10 +566,9 @@ mrb_sym_dump(mrb_state *mrb, mrb_sym sym)
 static mrb_value
 sym_cmp(mrb_state *mrb, mrb_value s1)
 {
-  mrb_value s2;
+  mrb_value s2 = mrb_get_arg1(mrb);
   mrb_sym sym1, sym2;
 
-  mrb_get_args(mrb, "o", &s2);
   if (!mrb_symbol_p(s2)) return mrb_nil_value();
   sym1 = mrb_symbol(s1);
   sym2 = mrb_symbol(s2);

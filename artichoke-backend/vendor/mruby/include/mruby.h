@@ -1,7 +1,7 @@
 /*
 ** mruby - An embeddable Ruby implementation
 **
-** Copyright (c) mruby developers 2010-2019
+** Copyright (c) mruby developers 2010-2020
 **
 ** Permission is hereby granted, free of charge, to any person obtaining
 ** a copy of this software and associated documentation files (the
@@ -70,7 +70,13 @@
 
 #include "mrbconf.h"
 
+#include <mruby/common.h>
+#include <mruby/value.h>
+#include <mruby/gc.h>
+#include <mruby/version.h>
+
 #ifndef MRB_WITHOUT_FLOAT
+#include <float.h>
 #ifndef FLT_EPSILON
 #define FLT_EPSILON (1.19209290e-07f)
 #endif
@@ -87,11 +93,6 @@
 #define MRB_FLOAT_EPSILON DBL_EPSILON
 #endif
 #endif
-
-#include <mruby/common.h>
-#include <mruby/value.h>
-#include <mruby/gc.h>
-#include <mruby/version.h>
 
 /**
  * MRuby C API entry point
@@ -164,8 +165,8 @@ struct mrb_context {
   struct RProc **ensure;                  /* ensure handler stack */
   uint16_t esize, eidx;
 
-  enum mrb_fiber_state status;
-  mrb_bool vmexec;
+  enum mrb_fiber_state status : 4;
+  mrb_bool vmexec : 1;
   struct RFiber *fib;
 };
 
@@ -317,7 +318,9 @@ MRB_API struct RClass *mrb_define_class(mrb_state *mrb, const char *name, struct
  * @return [struct RClass *] Reference to the newly defined module.
  */
 MRB_API struct RClass *mrb_define_module(mrb_state *mrb, const char *name);
+
 MRB_API mrb_value mrb_singleton_class(mrb_state *mrb, mrb_value val);
+MRB_API struct RClass *mrb_singleton_class_ptr(mrb_state *mrb, mrb_value val);
 
 /**
  * Include a module in another class or module.
@@ -956,7 +959,20 @@ mrb_get_mid(mrb_state *mrb) /* get method symbol */
  */
 MRB_API mrb_int mrb_get_argc(mrb_state *mrb);
 
+/**
+ * Retrieve an array of arguments from mrb_state.
+ *
+ * Correctly handles *splat arguments.
+ */
 MRB_API mrb_value* mrb_get_argv(mrb_state *mrb);
+
+/**
+ * Retrieve the first and only argument from mrb_state.
+ * Raises ArgumentError unless the number of arguments is exactly one.
+ *
+ * Correctly handles *splat arguments.
+ */
+MRB_API mrb_value mrb_get_arg1(mrb_state *mrb);
 
 /* `strlen` for character string literals (use with caution or `strlen` instead)
     Adjacent string literals are concatenated in C/C++ in translation phase 6.
@@ -1148,7 +1164,6 @@ MRB_API void mrb_close(mrb_state *mrb);
 MRB_API void* mrb_default_allocf(mrb_state*, void*, size_t, void*);
 
 MRB_API mrb_value mrb_top_self(mrb_state *mrb);
-MRB_API mrb_value mrb_run(mrb_state *mrb, struct RProc* proc, mrb_value self);
 MRB_API mrb_value mrb_top_run(mrb_state *mrb, struct RProc *proc, mrb_value self, unsigned int stack_keep);
 MRB_API mrb_value mrb_vm_run(mrb_state *mrb, struct RProc *proc, mrb_value self, unsigned int stack_keep);
 MRB_API mrb_value mrb_vm_exec(mrb_state *mrb, struct RProc *proc, const mrb_code *iseq);
@@ -1232,6 +1247,7 @@ MRB_API mrb_noreturn void mrb_raise(mrb_state *mrb, struct RClass *c, const char
 MRB_API mrb_noreturn void mrb_raisef(mrb_state *mrb, struct RClass *c, const char *fmt, ...);
 MRB_API mrb_noreturn void mrb_name_error(mrb_state *mrb, mrb_sym id, const char *fmt, ...);
 MRB_API mrb_noreturn void mrb_frozen_error(mrb_state *mrb, void *frozen_obj);
+MRB_API mrb_noreturn void mrb_argnum_error(mrb_state *mrb, mrb_int argc, int min, int max);
 MRB_API void mrb_warn(mrb_state *mrb, const char *fmt, ...);
 MRB_API mrb_noreturn void mrb_bug(mrb_state *mrb, const char *fmt, ...);
 MRB_API void mrb_print_backtrace(mrb_state *mrb);

@@ -47,6 +47,17 @@ mrb_equal(mrb_state *mrb, mrb_value obj1, mrb_value obj2)
   mrb_value result;
 
   if (mrb_obj_eq(mrb, obj1, obj2)) return TRUE;
+#ifndef MRB_WITHOUT_FLOAT
+  /* value mixing with integer and float */
+  if (mrb_fixnum_p(obj1)) {
+    if (mrb_float_p(obj2) && (mrb_float)mrb_fixnum(obj1) == mrb_float(obj2))
+      return TRUE;
+  }
+  else if (mrb_float_p(obj1)) {
+    if (mrb_fixnum_p(obj2) && mrb_float(obj1) == (mrb_float)mrb_fixnum(obj2))
+      return TRUE;
+  }
+#endif
   result = mrb_funcall(mrb, obj1, "==", 1, obj2);
   if (mrb_test(result)) return TRUE;
   return FALSE;
@@ -83,13 +94,17 @@ mrb_true(mrb_state *mrb, mrb_value obj)
 static mrb_value
 nil_to_s(mrb_state *mrb, mrb_value obj)
 {
-  return mrb_str_new_frozen(mrb, 0, 0);
+  mrb_value str = mrb_str_new_frozen(mrb, 0, 0);
+  RSTR_SET_ASCII_FLAG(mrb_str_ptr(str));
+  return str;
 }
 
 static mrb_value
 nil_inspect(mrb_state *mrb, mrb_value obj)
 {
-  return mrb_str_new_lit_frozen(mrb, "nil");
+  mrb_value str = mrb_str_new_lit_frozen(mrb, "nil");
+  RSTR_SET_ASCII_FLAG(mrb_str_ptr(str));
+  return str;
 }
 
 /***********************************************************************
@@ -150,7 +165,9 @@ true_xor(mrb_state *mrb, mrb_value obj)
 static mrb_value
 true_to_s(mrb_state *mrb, mrb_value obj)
 {
-  return mrb_str_new_lit_frozen(mrb, "true");
+  mrb_value str = mrb_str_new_lit_frozen(mrb, "true");
+  RSTR_SET_ASCII_FLAG(mrb_str_ptr(str));
+  return str;
 }
 
 /* 15.2.5.3.4  */
@@ -257,7 +274,9 @@ false_or(mrb_state *mrb, mrb_value obj)
 static mrb_value
 false_to_s(mrb_state *mrb, mrb_value obj)
 {
-  return mrb_str_new_lit_frozen(mrb, "false");
+  mrb_value str = mrb_str_new_lit_frozen(mrb, "false");
+  RSTR_SET_ASCII_FLAG(mrb_str_ptr(str));
+  return str;
 }
 
 void
@@ -358,7 +377,6 @@ static const struct types {
   {MRB_TT_STRING, "String"},
   {MRB_TT_RANGE,  "Range"},
 /*    {MRB_TT_BIGNUM,  "Bignum"}, */
-  {MRB_TT_FILE,   "File"},
   {MRB_TT_DATA,   "Data"},  /* internal use: wrapped C pointers */
 /*    {MRB_TT_VARMAP,  "Varmap"}, */ /* internal use: dynamic variables */
 /*    {MRB_TT_NODE,  "Node"}, */ /* internal use: syntax tree node */
@@ -423,7 +441,7 @@ mrb_any_to_s(mrb_state *mrb, mrb_value obj)
   mrb_str_cat_cstr(mrb, str, cname);
   if (!mrb_immediate_p(obj)) {
     mrb_str_cat_lit(mrb, str, ":");
-    mrb_str_concat(mrb, str, mrb_ptr_to_str(mrb, mrb_ptr(obj)));
+    mrb_str_cat_str(mrb, str, mrb_ptr_to_str(mrb, mrb_ptr(obj)));
   }
   mrb_str_cat_lit(mrb, str, ">");
 

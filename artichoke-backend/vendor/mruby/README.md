@@ -17,7 +17,7 @@ of the Ministry of Economy, Trade and Industry of Japan.
 
 ## How to get mruby
 
-The stable version 2.0.1 of mruby can be downloaded via the following URL: [https://github.com/mruby/mruby/archive/2.0.1.zip](https://github.com/mruby/mruby/archive/2.0.1.zip)
+The stable version 2.1.2 of mruby can be downloaded via the following URL: [https://github.com/mruby/mruby/archive/2.1.2.zip](https://github.com/mruby/mruby/archive/2.1.2.zip)
 
 The latest development version of mruby can be downloaded via the following URL: [https://github.com/mruby/mruby/zipball/master](https://github.com/mruby/mruby/zipball/master)
 
@@ -30,11 +30,11 @@ You can also install and compile mruby using [ruby-install](https://github.com/p
 
 ## mruby home-page
 
-The URL of the mruby home-page is: [http://www.mruby.org](http://www.mruby.org).
+The URL of the mruby home-page is: https://mruby.org.
 
 ## Mailing list
 
-We don't have a mailing list, but you can use [GitHub issues](https://github.com/mruby/mruby).
+We don't have a mailing list, but you can use [GitHub issues](https://github.com/mruby/mruby/issues).
 
 ## How to compile and install (mruby and gems)
 
@@ -44,11 +44,11 @@ See the [compile.md](https://github.com/mruby/mruby/blob/master/doc/guides/compi
 
 To run the tests, execute the following from the project's root directory.
 
-    $ make test
+    $ rake test
 
-Or
-
-    $ ruby ./minirake test
+Note: `bison` bundled with MacOS is too old to compile `mruby`.
+Try `brew install bison` and follow the instuction shown to update
+the `$PATH` to compile `mruby`.
 
 ## Building documentation
 

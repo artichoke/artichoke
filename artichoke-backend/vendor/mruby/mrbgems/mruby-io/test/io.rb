@@ -24,6 +24,10 @@ def assert_io_open(meth)
       end
     end
     io2.close unless meth == :open
+
+    assert_raise(RuntimeError) { IO.__send__(meth, 1023) } # For Windows
+    assert_raise(RuntimeError) { IO.__send__(meth, 1 << 26) }
+    assert_raise(RuntimeError) { IO.__send__(meth, 1 << 32) } if (1 << 32).kind_of?(Integer)
   end
 end
 
@@ -561,6 +565,34 @@ assert('IO#sysseek') do
     assert_equal 2, io.sysseek(2)
     assert_equal 5, io.sysseek(3, IO::SEEK_CUR) # 2 + 3 => 5
     assert_equal $mrbtest_io_msg.size - 4, io.sysseek(-4, IO::SEEK_END)
+  end
+end
+
+assert('IO#pread') do
+  skip "IO#pread is not implemented on this configuration" unless MRubyIOTestUtil::MRB_WITH_IO_PREAD_PWRITE
+
+  IO.open(IO.sysopen($mrbtest_io_rfname, 'r'), 'r') do |io|
+    assert_equal $mrbtest_io_msg.byteslice(5, 8), io.pread(8, 5)
+    assert_equal 0, io.pos
+    assert_equal $mrbtest_io_msg.byteslice(1, 5), io.pread(5, 1)
+    assert_equal 0, io.pos
+    assert_raise(RuntimeError) { io.pread(20, -9) }
+  end
+end
+
+assert('IO#pwrite') do
+  skip "IO#pwrite is not implemented on this configuration" unless MRubyIOTestUtil::MRB_WITH_IO_PREAD_PWRITE
+
+  IO.open(IO.sysopen($mrbtest_io_wfname, 'w+'), 'w+') do |io|
+    assert_equal 6, io.pwrite("Warld!", 7)
+    assert_equal 0, io.pos
+    assert_equal 7, io.pwrite("Hello, ", 0)
+    assert_equal 0, io.pos
+    assert_equal "Hello, Warld!", io.read
+    assert_equal 6, io.pwrite("world!", 7)
+    assert_equal 13, io.pos
+    io.pos = 0
+    assert_equal "Hello, world!", io.read
   end
 end
 

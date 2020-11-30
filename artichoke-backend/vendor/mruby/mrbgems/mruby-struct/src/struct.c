@@ -154,9 +154,8 @@ mrb_struct_set_m(mrb_state *mrb, mrb_value obj)
 {
   mrb_int i = mrb_fixnum(mrb_proc_cfunc_env_get(mrb, 0));
   mrb_value *ptr;
-  mrb_value val;
+  mrb_value val = mrb_get_arg1(mrb);
 
-  mrb_get_args(mrb, "o", &val);
   mrb_struct_modify(mrb, obj);
   ptr = RSTRUCT_PTR(obj);
   if (ptr == NULL || i >= RSTRUCT_LEN(obj)) {
@@ -274,7 +273,7 @@ mrb_struct_s_def(mrb_state *mrb, mrb_value klass)
   name = mrb_nil_value();
   mrb_get_args(mrb, "*&", &argv, &argc, &b);
   if (argc == 0) { /* special case to avoid crash */
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "wrong number of arguments");
+    mrb_argnum_error(mrb, argc, 1, -1);
   }
   else {
     pargv = argv;
@@ -356,9 +355,7 @@ mrb_struct_initialize(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_struct_init_copy(mrb_state *mrb, mrb_value copy)
 {
-  mrb_value s;
-
-  mrb_get_args(mrb, "o", &s);
+  mrb_value s = mrb_get_arg1(mrb);
 
   if (mrb_obj_equal(mrb, copy, s)) return copy;
   if (!mrb_obj_is_instance_of(mrb, s, mrb_obj_class(mrb, copy))) {
@@ -428,9 +425,8 @@ struct_aref_int(mrb_state *mrb, mrb_value s, mrb_int i)
 static mrb_value
 mrb_struct_aref(mrb_state *mrb, mrb_value s)
 {
-  mrb_value idx;
+  mrb_value idx = mrb_get_arg1(mrb);
 
-  mrb_get_args(mrb, "o", &idx);
   if (mrb_string_p(idx)) {
     mrb_value sym = mrb_check_intern_str(mrb, idx);
 
@@ -545,11 +541,10 @@ mrb_struct_aset(mrb_state *mrb, mrb_value s)
 static mrb_value
 mrb_struct_equal(mrb_state *mrb, mrb_value s)
 {
-  mrb_value s2;
+  mrb_value s2 = mrb_get_arg1(mrb);
   mrb_value *ptr, *ptr2;
   mrb_int i, len;
 
-  mrb_get_args(mrb, "o", &s2);
   if (mrb_obj_equal(mrb, s, s2)) {
     return mrb_true_value();
   }
@@ -582,11 +577,10 @@ mrb_struct_equal(mrb_state *mrb, mrb_value s)
 static mrb_value
 mrb_struct_eql(mrb_state *mrb, mrb_value s)
 {
-  mrb_value s2;
+  mrb_value s2 = mrb_get_arg1(mrb);
   mrb_value *ptr, *ptr2;
   mrb_int i, len;
 
-  mrb_get_args(mrb, "o", &s2);
   if (mrb_obj_equal(mrb, s, s2)) {
     return mrb_true_value();
   }

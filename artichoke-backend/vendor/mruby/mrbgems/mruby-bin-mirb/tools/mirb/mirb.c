@@ -7,6 +7,11 @@
 */
 
 #include <mruby.h>
+
+#ifdef MRB_DISABLE_STDIO
+# error mruby-bin-mirb conflicts 'MRB_DISABLE_STDIO' configuration in your 'build_config.rb'
+#endif
+
 #include <mruby/array.h>
 #include <mruby/proc.h>
 #include <mruby/compile.h>
@@ -17,7 +22,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <ctype.h>
 
 #include <signal.h>
@@ -645,8 +649,8 @@ main(int argc, char **argv)
         /* adjust stack length of toplevel environment */
         if (mrb->c->cibase->env) {
           struct REnv *e = mrb->c->cibase->env;
-          if (e && MRB_ENV_STACK_LEN(e) < proc->body.irep->nlocals) {
-            MRB_ENV_SET_STACK_LEN(e, proc->body.irep->nlocals);
+          if (e && MRB_ENV_LEN(e) < proc->body.irep->nlocals) {
+            MRB_ENV_SET_LEN(e, proc->body.irep->nlocals);
           }
         }
         /* pass a proc for evaluation */

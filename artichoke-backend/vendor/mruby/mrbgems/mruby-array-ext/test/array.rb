@@ -94,9 +94,9 @@ assert("Array#union") do
 end
 
 assert("Array#difference") do
-  a = [1, 2, 3, 1]
-  b = [1, 4]
-  c = [1, 5]
+  a = [1, 2, 3, 1, 6, 7]
+  b = [1, 4, 6]
+  c = [1, 5, 7]
 
   assert_equal [2, 3], a.difference(b,c)
 end
@@ -109,6 +109,14 @@ assert("Array#&") do
   assert_raise(TypeError) { a & c }
   assert_equal [1], (a & b)
   assert_equal [1, 2, 3, 1], a
+end
+
+assert("Array#intersection") do
+  a = [1, 2, 3, 1, 8, 6, 7, 8]
+  b = [1, 4, 6, 8]
+  c = [1, 5, 7, 8]
+
+  assert_equal [1, 8], a.intersection(b,c)
 end
 
 assert("Array#flatten") do
@@ -187,12 +195,6 @@ assert("Array#reverse_each") do
     b << i
   end
   assert_equal [ "d", "c", "b", "a" ], b
-
-  if Object.const_defined?(:Enumerator)
-    assert_equal [ "d", "c", "b", "a" ], a.reverse_each.to_a
-  else
-    true
-  end
 end
 
 assert("Array#rotate") do
@@ -296,19 +298,6 @@ end
 # tested through Array#bsearch
 #assert("Array#bsearch_index") do
 #end
-
-assert("Array#delete_if") do
-  a = [1, 2, 3, 4, 5]
-  assert_equal [1, 2, 3, 4, 5], a.delete_if { false }
-  assert_equal [1, 2, 3, 4, 5], a
-
-  a = [1, 2, 3, 4, 5]
-  assert_equal [], a.delete_if { true }
-  assert_equal [], a
-
-  a = [ 1, 2, 3, 4, 5 ]
-  assert_equal [1, 2, 3], a.delete_if { |val| val > 3 }
-end
 
 assert("Array#keep_if") do
   a = [1, 2, 3, 4, 5]

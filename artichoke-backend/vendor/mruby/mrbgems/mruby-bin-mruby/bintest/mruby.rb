@@ -39,6 +39,11 @@ assert '$0 value' do
   assert_equal '"-e"', `#{cmd('mruby')} -e #{shellquote('p $0')}`.chomp
 end
 
+assert 'ARGV value' do
+  assert_mruby(%{["ab", "cde"]\n}, "", true, %w[-e p(ARGV) ab cde])
+  assert_mruby("[]\n", "", true, %w[-e p(ARGV)])
+end
+
 assert('float literal') do
   script, bin = Tempfile.new('test.rb'), Tempfile.new('test.mrb')
   File.write script.path, 'p [3.21, 2e308.infinite?, -2e308.infinite?]'
@@ -80,10 +85,8 @@ assert('mruby -c option') do
 end
 
 assert('mruby -d option') do
-  o = `#{cmd('mruby')} -e #{shellquote('p $DEBUG')}`
-  assert_equal "false\n", o
-  o = `#{cmd('mruby')} -d -e #{shellquote('p $DEBUG')}`
-  assert_equal "true\n", o
+  assert_mruby("false\n", "", true, ["-e", "p $DEBUG"])
+  assert_mruby("true\n", "", true, ["-dep $DEBUG"])
 end
 
 assert('mruby -e option (no code specified)') do
@@ -123,6 +126,20 @@ end
 
 assert('mruby -r option (file not found)') do
   assert_mruby("", /\A.*: Cannot open library file: .*\n\z/, false, %w[-r _no_exists_])
+end
+
+assert('mruby -v option') do
+  ver_re = '\Amruby \d+\.\d+\.\d+ \(\d+-\d+-\d+\)\n'
+  assert_mruby(/#{ver_re}\z/, "", true, %w[-v])
+  assert_mruby(/#{ver_re}^[^\n]*NODE.*\n:end\n\z/m, "", true, %w[-v -e p(:end)])
+end
+
+assert('mruby --verbose option') do
+  assert_mruby(/\A[^\n]*NODE.*\n:end\n\z/m, "", true, %w[--verbose -e p(:end)])
+end
+
+assert('mruby --') do
+  assert_mruby(%{["-x", "1"]\n}, "", true, %w[-e p(ARGV) -- -x 1])
 end
 
 assert('mruby invalid short option') do

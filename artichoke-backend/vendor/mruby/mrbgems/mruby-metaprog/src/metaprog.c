@@ -139,31 +139,30 @@ mrb_local_variables(mrb_state *mrb, mrb_value self)
 
   proc = mrb->c->ci[-1].proc;
 
-  if (MRB_PROC_CFUNC_P(proc)) {
+  if (proc == NULL || MRB_PROC_CFUNC_P(proc)) {
     return mrb_ary_new(mrb);
   }
   vars = mrb_hash_new(mrb);
   while (proc) {
     if (MRB_PROC_CFUNC_P(proc)) break;
     irep = proc->body.irep;
-    if (!irep->lv) break;
-    for (i = 0; i + 1 < irep->nlocals; ++i) {
-      if (irep->lv[i].name) {
-        mrb_sym sym = irep->lv[i].name;
-        const char *name = mrb_sym_name(mrb, sym);
-        switch (name[0]) {
-        case '*': case '&':
-          break;
-        default:
-          mrb_hash_set(mrb, vars, mrb_symbol_value(sym), mrb_true_value());
-          break;
+    if (irep->lv) {
+      for (i = 0; i + 1 < irep->nlocals; ++i) {
+        if (irep->lv[i].name) {
+          mrb_sym sym = irep->lv[i].name;
+          const char *name = mrb_sym_name(mrb, sym);
+          switch (name[0]) {
+          case '*': case '&':
+            break;
+          default:
+            mrb_hash_set(mrb, vars, mrb_symbol_value(sym), mrb_true_value());
+            break;
+          }
         }
       }
     }
-    if (!MRB_PROC_ENV_P(proc)) break;
+    if (MRB_PROC_SCOPE_P(proc)) break;
     proc = proc->upper;
-    //if (MRB_PROC_SCOPE_P(proc)) break;
-    if (!proc->c) break;
   }
 
   return mrb_hash_keys(mrb, vars);
@@ -172,7 +171,7 @@ mrb_local_variables(mrb_state *mrb, mrb_value self)
 KHASH_DECLARE(st, mrb_sym, char, FALSE)
 
 static void
-method_entry_loop(mrb_state *mrb, struct RClass* klass, khash_t(st)* set)
+method_entry_loop(mrb_state *mrb, struct RClass *klass, khash_t(st) *set, khash_t(st) *undef)
 {
   khint_t i;
 
@@ -181,20 +180,28 @@ method_entry_loop(mrb_state *mrb, struct RClass* klass, khash_t(st)* set)
   for (i=0;i<kh_end(h);i++) {
     if (kh_exist(h, i)) {
       mrb_method_t m = kh_value(h, i);
-      if (MRB_METHOD_UNDEF_P(m)) continue;
-      kh_put(st, mrb, set, kh_key(h, i));
+      if (MRB_METHOD_UNDEF_P(m)) {
+        if (undef) {
+          kh_put(st, mrb, undef, kh_key(h, i));
+        }
+      }
+      else if (undef == NULL ||
+               kh_get(st, mrb, undef, kh_key(h, i)) == kh_end(undef)) {
+        kh_put(st, mrb, set, kh_key(h, i));
+      }
     }
   }
 }
 
 static mrb_value
-mrb_class_instance_method_list(mrb_state *mrb, mrb_bool recur, struct RClass* klass, int obj)
+mrb_class_instance_method_list(mrb_state *mrb, mrb_bool recur, struct RClass *klass, int obj)
 {
   khint_t i;
   mrb_value ary;
   mrb_bool prepended = FALSE;
-  struct RClass* oldklass;
-  khash_t(st)* set = kh_init(st, mrb);
+  struct RClass *oldklass;
+  khash_t(st) *set = kh_init(st, mrb);
+  khash_t(st) *undef = (recur ? kh_init(st, mrb) : NULL);
 
   if (!recur && (klass->flags & MRB_FL_CLASS_IS_PREPENDED)) {
     MRB_CLASS_ORIGIN(klass);
@@ -203,7 +210,7 @@ mrb_class_instance_method_list(mrb_state *mrb, mrb_bool recur, struct RClass* kl
 
   oldklass = 0;
   while (klass && (klass != oldklass)) {
-    method_entry_loop(mrb, klass, set);
+    method_entry_loop(mrb, klass, set, undef);
     if ((klass->tt == MRB_TT_ICLASS && !prepended) ||
         (klass->tt == MRB_TT_SCLASS)) {
     }
@@ -221,6 +228,7 @@ mrb_class_instance_method_list(mrb_state *mrb, mrb_bool recur, struct RClass* kl
     }
   }
   kh_destroy(st, mrb, set);
+  if (undef) kh_destroy(st, mrb, undef);
 
   return ary;
 }
@@ -313,18 +321,19 @@ mrb_obj_singleton_methods(mrb_state *mrb, mrb_bool recur, mrb_value obj)
 {
   khint_t i;
   mrb_value ary;
-  struct RClass* klass;
-  khash_t(st)* set = kh_init(st, mrb);
+  struct RClass *klass;
+  khash_t(st) *set = kh_init(st, mrb);
+  khash_t(st) *undef = (recur ? kh_init(st, mrb) : NULL);
 
   klass = mrb_class(mrb, obj);
 
   if (klass && (klass->tt == MRB_TT_SCLASS)) {
-      method_entry_loop(mrb, klass, set);
+      method_entry_loop(mrb, klass, set, undef);
       klass = klass->super;
   }
   if (recur) {
       while (klass && ((klass->tt == MRB_TT_SCLASS) || (klass->tt == MRB_TT_ICLASS))) {
-        method_entry_loop(mrb, klass, set);
+        method_entry_loop(mrb, klass, set, undef);
         klass = klass->super;
       }
   }
@@ -336,6 +345,7 @@ mrb_obj_singleton_methods(mrb_state *mrb, mrb_bool recur, mrb_value obj)
     }
   }
   kh_destroy(st, mrb, set);
+  if (undef) kh_destroy(st, mrb, undef);
 
   return ary;
 }
@@ -660,8 +670,7 @@ mrb_mod_s_nesting(mrb_state *mrb, mrb_value mod)
 
   ary = mrb_ary_new(mrb);
   proc = mrb->c->ci[-1].proc;   /* callee proc */
-  mrb_assert(!MRB_PROC_CFUNC_P(proc));
-  while (proc) {
+  while (proc && !MRB_PROC_CFUNC_P(proc)) {
     if (MRB_PROC_SCOPE_P(proc)) {
       struct RClass *c2 = MRB_PROC_TARGET_CLASS(proc);
 
@@ -694,8 +703,8 @@ mrb_mruby_metaprog_gem_init(mrb_state* mrb)
   mrb_define_method(mrb, krn, "protected_methods", mrb_obj_protected_methods, MRB_ARGS_OPT(1)); /* 15.3.1.3.37 */
   mrb_define_method(mrb, krn, "public_methods", mrb_obj_public_methods, MRB_ARGS_OPT(1)); /* 15.3.1.3.38 */
   mrb_define_method(mrb, krn, "singleton_methods", mrb_obj_singleton_methods_m, MRB_ARGS_OPT(1)); /* 15.3.1.3.45 */
-  mrb_define_method(mrb, krn, "define_singleton_method", mod_define_singleton_method, MRB_ARGS_ANY());
-  mrb_define_method(mrb, krn, "send", mrb_f_send, MRB_ARGS_ANY()); /* 15.3.1.3.44 */
+  mrb_define_method(mrb, krn, "define_singleton_method", mod_define_singleton_method, MRB_ARGS_REQ(1)|MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, krn, "send", mrb_f_send, MRB_ARGS_REQ(1)|MRB_ARGS_REST()|MRB_ARGS_BLOCK()); /* 15.3.1.3.44 */
 
   mrb_define_method(mrb, mod, "class_variables", mrb_mod_class_variables, MRB_ARGS_OPT(1)); /* 15.2.2.4.19 */
   mrb_define_method(mrb, mod, "remove_class_variable", mrb_mod_remove_cvar, MRB_ARGS_REQ(1)); /* 15.2.2.4.39 */

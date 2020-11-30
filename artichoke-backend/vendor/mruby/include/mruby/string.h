@@ -23,9 +23,9 @@ struct RString {
   MRB_OBJECT_HEADER;
   union {
     struct {
-      mrb_int len;
+      mrb_ssize len;
       union {
-        mrb_int capa;
+        mrb_ssize capa;
         struct mrb_shared_string *shared;
         struct RString *fshared;
       } aux;
@@ -54,7 +54,7 @@ struct RStringEmbed {
     RSTR_SET_EMBED_LEN((s),(n));\
   }\
   else {\
-    (s)->as.heap.len = (mrb_int)(n);\
+    (s)->as.heap.len = (mrb_ssize)(n);\
   }\
 } while (0)
 #define RSTR_EMBED_PTR(s) (((struct RStringEmbed*)(s))->ary)
@@ -115,8 +115,8 @@ MRB_API mrb_int mrb_str_strlen(mrb_state*, struct RString*);
 #define MRB_STR_POOL     16  /* status flags from here */
 #define MRB_STR_ASCII    32
 #define MRB_STR_EMBED_LEN_SHIFT 6
-#define MRB_STR_EMBED_LEN_BITSIZE 5
-#define MRB_STR_EMBED_LEN_MASK (((1 << MRB_STR_EMBED_LEN_BITSIZE) - 1) << MRB_STR_EMBED_LEN_SHIFT)
+#define MRB_STR_EMBED_LEN_BIT 5
+#define MRB_STR_EMBED_LEN_MASK (((1 << MRB_STR_EMBED_LEN_BIT) - 1) << MRB_STR_EMBED_LEN_SHIFT)
 #define MRB_STR_TYPE_MASK (MRB_STR_POOL - 1)
 
 
@@ -447,7 +447,7 @@ MRB_API int mrb_str_cmp(mrb_state *mrb, mrb_value str1, mrb_value str2);
  */
 MRB_API char *mrb_str_to_cstr(mrb_state *mrb, mrb_value str);
 
-mrb_value mrb_str_pool(mrb_state *mrb, mrb_value str);
+mrb_value mrb_str_pool(mrb_state *mrb, const char *s, mrb_int len, mrb_bool nofree);
 uint32_t mrb_str_hash(mrb_state *mrb, mrb_value str);
 mrb_value mrb_str_dump(mrb_state *mrb, mrb_value str);
 
@@ -465,7 +465,8 @@ mrb_bool mrb_str_beg_len(mrb_int str_len, mrb_int *begp, mrb_int *lenp);
 mrb_value mrb_str_byte_subseq(mrb_state *mrb, mrb_value str, mrb_int beg, mrb_int len);
 
 #ifdef MRB_UTF8_STRING
-mrb_int mrb_utf8_len(const char *str, mrb_int byte_len);
+mrb_int mrb_utf8len(const char *str, const char *end);
+mrb_int mrb_utf8_strlen(const char *str, mrb_int byte_len);
 #endif
 
 MRB_END_DECL

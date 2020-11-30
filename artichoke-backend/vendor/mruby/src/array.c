@@ -633,11 +633,13 @@ mrb_ary_unshift_m(mrb_state *mrb, mrb_value self)
     ptr = a->as.heap.ptr;
   }
   else {
+    mrb_bool same = vals == ARY_PTR(a);
     ary_modify(mrb, a);
     if (ARY_CAPA(a) < len + alen)
       ary_expand_capa(mrb, a, len + alen);
     ptr = ARY_PTR(a);
     value_move(ptr + alen, ptr, len);
+    if (same) vals = ptr;
   }
   array_copy(ptr, vals, alen);
   ARY_SET_LEN(a, len+alen);
@@ -732,6 +734,10 @@ mrb_ary_splice(mrb_state *mrb, mrb_value ary, mrb_int head, mrb_int len, mrb_val
       argv = ARY_PTR(r);
     }
   }
+  else if (mrb_undef_p(rpl)) {
+    argc = 0;
+    argv = NULL;
+  }
   else {
     argc = 1;
     argv = &rpl;
@@ -804,6 +810,13 @@ ary_subseq(mrb_state *mrb, struct RArray *a, mrb_int beg, mrb_int len)
   return mrb_obj_value(b);
 }
 
+mrb_value
+mrb_ary_subseq(mrb_state *mrb, mrb_value ary, mrb_int beg, mrb_int len)
+{
+  struct RArray *a = mrb_ary_ptr(ary);
+  return ary_subseq(mrb, a, beg, len);
+}
+
 static mrb_int
 aget_index(mrb_state *mrb, mrb_value index)
 {
@@ -855,10 +868,12 @@ static mrb_value
 mrb_ary_aget(mrb_state *mrb, mrb_value self)
 {
   struct RArray *a = mrb_ary_ptr(self);
-  mrb_int i, len, alen;
+  mrb_int i;
+  mrb_int len, alen;
   mrb_value index;
 
-  if (mrb_get_args(mrb, "o|i", &index, &len) == 1) {
+  if (mrb_get_argc(mrb) == 1) {
+    index = mrb_get_arg1(mrb);
     switch (mrb_type(index)) {
       /* a[n..m] */
     case MRB_TT_RANGE:
@@ -875,6 +890,7 @@ mrb_ary_aget(mrb_state *mrb, mrb_value self)
     }
   }
 
+  mrb_get_args(mrb, "oi", &index, &len);
   i = aget_index(mrb, index);
   alen = ARY_LEN(a);
   if (i < 0) i += alen;
@@ -928,7 +944,10 @@ mrb_ary_aset(mrb_state *mrb, mrb_value self)
   mrb_int i, len;
 
   mrb_ary_modify(mrb, mrb_ary_ptr(self));
-  if (mrb_get_args(mrb, "oo|o", &v1, &v2, &v3) == 2) {
+  if (mrb_get_argc(mrb) == 2) {
+    mrb_value *vs = mrb_get_argv(mrb);
+    v1 = vs[0]; v2 = vs[1];
+
     /* a[n..m] = v */
     switch (mrb_range_beg_len(mrb, v1, &i, &len, RARRAY_LEN(self), FALSE)) {
     case MRB_RANGE_TYPE_MISMATCH:
@@ -944,6 +963,7 @@ mrb_ary_aset(mrb_state *mrb, mrb_value self)
     return v2;
   }
 
+  mrb_get_args(mrb, "ooo", &v1, &v2, &v3);
   /* a[n,m] = v */
   mrb_ary_splice(mrb, self, aget_index(mrb, v1), aget_index(mrb, v2), v3);
   return v3;
@@ -1027,10 +1047,9 @@ mrb_ary_last(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ary_index_m(mrb_state *mrb, mrb_value self)
 {
-  mrb_value obj;
+  mrb_value obj = mrb_get_arg1(mrb);
   mrb_int i;
 
-  mrb_get_args(mrb, "o", &obj);
   for (i = 0; i < RARRAY_LEN(self); i++) {
     if (mrb_equal(mrb, RARRAY_PTR(self)[i], obj)) {
       return mrb_fixnum_value(i);
@@ -1042,10 +1061,9 @@ mrb_ary_index_m(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_ary_rindex_m(mrb_state *mrb, mrb_value self)
 {
-  mrb_value obj;
+  mrb_value obj = mrb_get_arg1(mrb);
   mrb_int i, len;
 
-  mrb_get_args(mrb, "o", &obj);
   for (i = RARRAY_LEN(self) - 1; i >= 0; i--) {
     if (mrb_equal(mrb, RARRAY_PTR(self)[i], obj)) {
       return mrb_fixnum_value(i);
@@ -1219,9 +1237,8 @@ mrb_ary_join_m(mrb_state *mrb, mrb_value ary)
 static mrb_value
 mrb_ary_eq(mrb_state *mrb, mrb_value ary1)
 {
-  mrb_value ary2;
+  mrb_value ary2 = mrb_get_arg1(mrb);
 
-  mrb_get_args(mrb, "o", &ary2);
   if (mrb_obj_equal(mrb, ary1, ary2)) return mrb_true_value();
   if (!mrb_array_p(ary2)) {
     return mrb_false_value();
@@ -1234,9 +1251,8 @@ mrb_ary_eq(mrb_state *mrb, mrb_value ary1)
 static mrb_value
 mrb_ary_cmp(mrb_state *mrb, mrb_value ary1)
 {
-  mrb_value ary2;
+  mrb_value ary2 = mrb_get_arg1(mrb);
 
-  mrb_get_args(mrb, "o", &ary2);
   if (mrb_obj_equal(mrb, ary1, ary2)) return mrb_fixnum_value(0);
   if (!mrb_array_p(ary2)) {
     return mrb_nil_value();
@@ -1304,6 +1320,7 @@ init_ary_each(mrb_state *mrb, struct RClass *ary)
   each_irep->nregs = 7;
   each_irep->nlocals = 3;
   p = mrb_proc_new(mrb, each_irep);
+  p->flags |= MRB_PROC_SCOPE | MRB_PROC_STRICT;
   MRB_METHOD_FROM_PROC(m, p);
   mrb_define_method_raw(mrb, ary, mrb_intern_lit(mrb, "each"), m);
 }

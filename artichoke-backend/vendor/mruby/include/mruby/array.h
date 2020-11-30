@@ -17,7 +17,7 @@ MRB_BEGIN_DECL
 
 typedef struct mrb_shared_array {
   int refcnt;
-  mrb_int len;
+  mrb_ssize len;
   mrb_value *ptr;
 } mrb_shared_array;
 
@@ -26,9 +26,9 @@ struct RArray {
   MRB_OBJECT_HEADER;
   union {
     struct {
-      mrb_int len;
+      mrb_ssize len;
       union {
-        mrb_int capa;
+        mrb_ssize capa;
         mrb_shared_array *shared;
       } aux;
       mrb_value *ptr;
@@ -239,6 +239,7 @@ MRB_API mrb_value mrb_ary_entry(mrb_value ary, mrb_int offset);
  * @param head Beginning position of a replacement subsequence.
  * @param len Length of a replacement subsequence.
  * @param rpl The array of replacement elements.
+ *            It is possible to pass `mrb_undef_value()` instead of an empty array.
  * @return The receiver array.
  */
 MRB_API mrb_value mrb_ary_splice(mrb_state *mrb, mrb_value self, mrb_int head, mrb_int len, mrb_value rpl);
@@ -290,6 +291,9 @@ MRB_API mrb_value mrb_ary_join(mrb_state *mrb, mrb_value ary, mrb_value sep);
  * @param new_len The new capacity of the array
  */
 MRB_API mrb_value mrb_ary_resize(mrb_state *mrb, mrb_value ary, mrb_int new_len);
+
+/* helper functions */
+mrb_value mrb_ary_subseq(mrb_state *mrb, mrb_value ary, mrb_int beg, mrb_int len);
 
 #ifdef ARTICHOKE
 
