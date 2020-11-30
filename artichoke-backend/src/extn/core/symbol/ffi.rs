@@ -140,13 +140,9 @@ unsafe extern "C" fn mrb_sym_str(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) ->
 
     let value = if let Ok(Some(bytes)) = guard.lookup_symbol(sym) {
         let bytes = bytes.to_vec();
-        let mut string = guard.convert_mut(bytes);
-        let _ = string.freeze(&mut guard);
-        string
+        guard.convert_mut(bytes)
     } else {
-        let mut string = guard.convert_mut("");
-        let _ = string.freeze(&mut guard);
-        string
+        guard.convert_mut("")
     };
     value.inner()
 }
