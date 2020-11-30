@@ -732,6 +732,14 @@ mod tests {
     }
 
     #[test]
+    fn random_bytes_default_bytes() {
+        // https://github.com/ruby/ruby/blob/v2_6_3/lib/securerandom.rb#L135
+        assert_eq!(super::DEFAULT_REQUESTED_BYTES, 16);
+        let default_requested_bytes = random_bytes(None).unwrap();
+        assert_eq!(default_requested_bytes.len(), 16);
+    }
+
+    #[test]
     fn random_bytes_len_must_be_positive() {
         assert!(matches!(random_bytes(Some(-1)), Err(Error::Argument(_))));
         assert!(matches!(base64(Some(-1)), Err(Error::Argument(_))));
