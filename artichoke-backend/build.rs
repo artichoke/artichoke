@@ -231,6 +231,7 @@ mod libmruby {
                 }
             }
         }
+
         let mut mruby_codegen_sources = vec![];
         crate::enumerate_sources(mruby_generated_source_dir(), &mut mruby_codegen_sources).unwrap();
         for source in mruby_codegen_sources {
@@ -254,6 +255,8 @@ mod libmruby {
             .include(buildpath::source::mruby_sys_ext_include_dir())
             .define("MRB_DISABLE_STDIO", None)
             .define("MRB_UTF8_STRING", None)
+            .define("MRB_ARY_NO_EMBED", None)
+            .define("MRB_NO_BOXING", None)
             .define(mrb_int, None)
             .define("DISABLE_GEMS", None)
             .define("ARTICHOKE", None);
@@ -294,6 +297,8 @@ mod libmruby {
             ))
             .clang_arg("-DMRB_DISABLE_STDIO")
             .clang_arg("-DMRB_UTF8_STRING")
+            .clang_arg("-DMRB_ARY_NO_EMBED")
+            .clang_arg("-DMRB_NO_BOXING")
             .clang_arg(format!("-D{}", mrb_int))
             .whitelist_function("^mrb.*")
             .whitelist_type("^mrb.*")

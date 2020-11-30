@@ -6,11 +6,15 @@ binaries.
 ## Prerequisites
 
 To compile mruby out of the source code you need the following tools:
-* C Compiler (e.g. `gcc`)
-* Linker (e.g. `gcc`)
+* C Compiler (e.g. `gcc` or `clang`)
+* Linker (e.g. `gcc` or `clang`)
 * Archive utility (e.g. `ar`)
 * Parser generator (e.g. `bison`)
 * Ruby 2.0 or later (e.g. `ruby` or `jruby`)
+
+Note that `bison` bundled with MacOS is too old to compile `mruby`.
+Try `brew install bison` and follow the instuction shown to update
+the `$PATH` to compile `mruby`.
 
 Optional:
 * GIT (to update mruby source and integrate mrbgems easier)
@@ -32,10 +36,10 @@ All tools necessary to compile mruby can be set or modified here. In case
 you want to maintain an additional *build_config.rb* you can define a
 customized path using the *$MRUBY_CONFIG* environment variable.
 
-To compile just call `./minirake` inside of the mruby source root. To
-generate and execute the test tools call `./minirake test`. To clean
-all build files call `./minirake clean`. To see full command line on
-build, call `./minirake -v`.
+To compile just call `rake` inside of the mruby source root. To
+generate and execute the test tools call `rake test`. To clean
+all build files call `rake clean`. To see full command line on
+build, call `rake -v`.
 
 ## Build Configuration
 

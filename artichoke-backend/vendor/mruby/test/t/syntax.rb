@@ -671,3 +671,13 @@ assert 'keyword arguments' do
   assert_equal([1, 1, :c], m(c: :c))
   assert_equal([:a, nil, :c], m(a: :a, c: :c))
 end
+
+assert('numbered parameters') do
+  assert_equal(15, [1,2,3,4,5].reduce {_1+_2})
+  assert_equal(45, Proc.new do _1 + _2 + _3 + _4 + _5 + _6 + _7 + _8 + _9 end.call(*[1, 2, 3, 4, 5, 6, 7, 8, 9]))
+end
+
+assert('_0 is not numbered parameter') do
+  _0 = :l
+  assert_equal(:l, ->{_0}.call)
+end

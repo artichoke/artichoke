@@ -10,6 +10,7 @@
 
 #ifndef MRB_WITHOUT_FLOAT
 #include <float.h>
+#include <math.h>
 #endif
 #include <limits.h>
 #include <stddef.h>
@@ -24,7 +25,7 @@
 
 typedef struct mrb_shared_string {
   int refcnt;
-  mrb_int capa;
+  mrb_ssize capa;
   char *ptr;
 } mrb_shared_string;
 
@@ -40,8 +41,8 @@ str_init_normal_capa(mrb_state *mrb, struct RString *s,
   if (p) memcpy(dst, p, len);
   dst[len] = '\0';
   s->as.heap.ptr = dst;
-  s->as.heap.len = (mrb_int)len;
-  s->as.heap.aux.capa = (mrb_int)capa;
+  s->as.heap.len = (mrb_ssize)len;
+  s->as.heap.aux.capa = (mrb_ssize)capa;
   RSTR_UNSET_TYPE_FLAG(s);
   return s;
 }
@@ -66,7 +67,7 @@ static struct RString*
 str_init_nofree(struct RString *s, const char *p, size_t len)
 {
   s->as.heap.ptr = (char *)p;
-  s->as.heap.len = (mrb_int)len;
+  s->as.heap.len = (mrb_ssize)len;
   s->as.heap.aux.capa = 0;             /* nofree */
   RSTR_SET_TYPE_FLAG(s, NOFREE);
   return s;
@@ -118,7 +119,7 @@ str_new_static(mrb_state *mrb, const char *p, size_t len)
   if (RSTR_EMBEDDABLE_P(len)) {
     return str_init_embed(mrb_obj_alloc_string(mrb), p, len);
   }
-  if (len >= MRB_INT_MAX) {
+  if (len >= MRB_SSIZE_MAX) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "string size too big");
   }
   return str_init_nofree(mrb_obj_alloc_string(mrb), p, len);
@@ -130,7 +131,7 @@ str_new(mrb_state *mrb, const char *p, size_t len)
   if (RSTR_EMBEDDABLE_P(len)) {
     return str_init_embed(mrb_obj_alloc_string(mrb), p, len);
   }
-  if (len >= MRB_INT_MAX) {
+  if (len >= MRB_SSIZE_MAX) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "string size too big");
   }
   if (p && mrb_ro_data_p(p)) {
@@ -162,7 +163,7 @@ mrb_str_new_capa(mrb_state *mrb, size_t capa)
   if (RSTR_EMBEDDABLE_P(capa)) {
     s = str_init_embed(mrb_obj_alloc_string(mrb), NULL, 0);
   }
-  else if (capa >= MRB_INT_MAX) {
+  else if (capa >= MRB_SSIZE_MAX) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "string capacity size too big");
     /* not reached */
     s = NULL;
@@ -190,8 +191,8 @@ mrb_str_buf_new(mrb_state *mrb, size_t capa)
 static void
 resize_capa(mrb_state *mrb, struct RString *s, size_t capacity)
 {
-#if SIZE_MAX > MRB_INT_MAX
-    mrb_assert(capacity < MRB_INT_MAX);
+#if SIZE_MAX > MRB_SSIZE_MAX
+    mrb_assert(capacity < MRB_SSIZE_MAX);
 #endif
   if (RSTR_EMBED_P(s)) {
     if (!RSTR_EMBEDDABLE_P(capacity)) {
@@ -200,7 +201,7 @@ resize_capa(mrb_state *mrb, struct RString *s, size_t capacity)
   }
   else {
     s->as.heap.ptr = (char*)mrb_realloc(mrb, RSTR_PTR(s), capacity+1);
-    s->as.heap.aux.capa = (mrb_int)capacity;
+    s->as.heap.aux.capa = (mrb_ssize)capacity;
   }
 }
 
@@ -246,6 +247,28 @@ str_decref(mrb_state *mrb, mrb_shared_string *shared)
 }
 
 static void
+str_modify_keep_ascii(mrb_state *mrb, struct RString *s)
+{
+  if (RSTR_SHARED_P(s)) {
+    mrb_shared_string *shared = s->as.heap.aux.shared;
+
+    if (shared->refcnt == 1 && s->as.heap.ptr == shared->ptr) {
+      s->as.heap.aux.capa = shared->capa;
+      s->as.heap.ptr[s->as.heap.len] = '\0';
+      RSTR_UNSET_SHARED_FLAG(s);
+      mrb_free(mrb, shared);
+    }
+    else {
+      str_init_modifiable(mrb, s, s->as.heap.ptr, (size_t)s->as.heap.len);
+      str_decref(mrb, shared);
+    }
+  }
+  else if (RSTR_NOFREE_P(s) || RSTR_FSHARED_P(s)) {
+    str_init_modifiable(mrb, s, s->as.heap.ptr, (size_t)s->as.heap.len);
+  }
+}
+
+static void
 check_null_byte(mrb_state *mrb, mrb_value str)
 {
   mrb_to_str(mrb, str);
@@ -278,8 +301,8 @@ static const char utf8len_codepage[256] =
   3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,1,1,1,1,1,1,1,1,1,1,1,
 };
 
-static mrb_int
-utf8len(const char* p, const char* e)
+mrb_int
+mrb_utf8len(const char* p, const char* e)
 {
   mrb_int len;
   mrb_int i;
@@ -295,14 +318,14 @@ utf8len(const char* p, const char* e)
 }
 
 mrb_int
-mrb_utf8_len(const char *str, mrb_int byte_len)
+mrb_utf8_strlen(const char *str, mrb_int byte_len)
 {
   mrb_int total = 0;
   const char *p = str;
   const char *e = p + byte_len;
 
   while (p < e) {
-    p += utf8len(p, e);
+    p += mrb_utf8len(p, e);
     total++;
   }
   return total;
@@ -318,7 +341,7 @@ utf8_strlen(mrb_value str)
     return byte_len;
   }
   else {
-    mrb_int utf8_len = mrb_utf8_len(RSTR_PTR(s), byte_len);
+    mrb_int utf8_len = mrb_utf8_strlen(RSTR_PTR(s), byte_len);
     if (byte_len == utf8_len) RSTR_SET_ASCII_FLAG(s);
     return utf8_len;
   }
@@ -330,16 +353,21 @@ utf8_strlen(mrb_value str)
 static mrb_int
 chars2bytes(mrb_value s, mrb_int off, mrb_int idx)
 {
-  mrb_int i, b, n;
-  const char *p = RSTRING_PTR(s) + off;
-  const char *e = RSTRING_END(s);
-
-  for (b=i=0; p<e && i<idx; i++) {
-    n = utf8len(p, e);
-    b += n;
-    p += n;
+  if (RSTR_ASCII_P(mrb_str_ptr(s))) {
+    return idx;
   }
-  return b;
+  else {
+    mrb_int i, b, n;
+    const char *p = RSTRING_PTR(s) + off;
+    const char *e = RSTRING_END(s);
+
+    for (b=i=0; p<e && i<idx; i++) {
+      n = mrb_utf8len(p, e);
+      b += n;
+      p += n;
+    }
+    return b;
+  }
 }
 
 /* map byte offset to character index */
@@ -351,7 +379,7 @@ bytes2chars(char *p, mrb_int len, mrb_int bi)
   mrb_int i;
 
   for (i = 0; p < pivot; i ++) {
-    p += utf8len(p, e);
+    p += mrb_utf8len(p, e);
   }
   if (p != pivot) return -1;
   return i;
@@ -372,7 +400,7 @@ char_adjust(const char *beg, const char *end, const char *ptr)
     while (p > beg) {
       p --;
       if ((*p & 0xc0) != 0x80) {
-        int clen = utf8len(p, end);
+        int clen = mrb_utf8len(p, end);
         if (clen > ptr - p) return p;
         break;
       }
@@ -435,10 +463,10 @@ str_index_str_by_char_search(mrb_state *mrb, const char *p, const char *pend, co
     }
 
     pivot = p + qstable[(unsigned char)p[slen - 1]];
-    if (pivot > pend || pivot < p /* overflowed */) { return -1; }
+    if (pivot >= pend || pivot < p /* overflowed */) { return -1; }
 
     do {
-      p += utf8len(p, pend);
+      p += mrb_utf8len(p, pend);
       off ++;
     } while (p < pivot);
   }
@@ -457,7 +485,7 @@ str_index_str_by_char(mrb_state *mrb, mrb_value str, mrb_value sub, mrb_int pos)
 
   for (; pos > 0; pos --) {
     if (pend - p < 1) { return -1; }
-    p += utf8len(p, pend);
+    p += mrb_utf8len(p, pend);
   }
 
   if (slen < 1) { return off; }
@@ -476,25 +504,45 @@ str_index_str_by_char(mrb_state *mrb, mrb_value str, mrb_value sub, mrb_int pos)
 #define str_index_str_by_char(mrb, str, sub, pos) str_index_str(mrb, str, sub, pos)
 #endif
 
+#ifndef MRB_QS_SHORT_STRING_LENGTH
+#define MRB_QS_SHORT_STRING_LENGTH 2048
+#endif
+
 static inline mrb_int
 mrb_memsearch_qs(const unsigned char *xs, mrb_int m, const unsigned char *ys, mrb_int n)
 {
-  const unsigned char *x = xs, *xe = xs + m;
-  const unsigned char *y = ys;
-  int i;
-  ptrdiff_t qstable[256];
+  if (n + m < MRB_QS_SHORT_STRING_LENGTH) {
+    const unsigned char *y = ys;
+    const unsigned char *ye = ys+n-m+1;
 
-  /* Preprocessing */
-  for (i = 0; i < 256; ++i)
-    qstable[i] = m + 1;
-  for (; x < xe; ++x)
-    qstable[*x] = xe - x;
-  /* Searching */
-  for (; y + m <= ys + n; y += *(qstable + y[m])) {
-    if (*xs == *y && memcmp(xs, y, m) == 0)
-      return (mrb_int)(y - ys);
+    for (;;) {
+      y = (const unsigned char*)memchr(y, xs[0], (size_t)(ye-y));
+      if (y == NULL) return -1;
+      if (memcmp(xs, y, m) == 0) {
+        return (mrb_int)(y - ys);
+      }
+      y++;
+    }
+    return -1;
   }
-  return -1;
+  else {
+    const unsigned char *x = xs, *xe = xs + m;
+    const unsigned char *y = ys;
+    int i;
+    ptrdiff_t qstable[256];
+
+    /* Preprocessing */
+    for (i = 0; i < 256; ++i)
+      qstable[i] = m + 1;
+    for (; x < xe; ++x)
+      qstable[*x] = xe - x;
+    /* Searching */
+    for (; y + m <= ys + n; y += *(qstable + y[m])) {
+      if (*xs == *y && memcmp(xs, y, m) == 0)
+        return (mrb_int)(y - ys);
+    }
+    return -1;
+  }
 }
 
 static mrb_int
@@ -521,7 +569,7 @@ mrb_memsearch(const void *x0, mrb_int m, const void *y0, mrb_int n)
 }
 
 static void
-str_make_shared(mrb_state *mrb, struct RString *orig, struct RString *s)
+str_share(mrb_state *mrb, struct RString *orig, struct RString *s)
 {
   size_t len = (size_t)orig->as.heap.len;
 
@@ -541,7 +589,7 @@ str_make_shared(mrb_state *mrb, struct RString *orig, struct RString *s)
   else {
     if (orig->as.heap.aux.capa > orig->as.heap.len) {
       orig->as.heap.ptr = (char *)mrb_realloc(mrb, orig->as.heap.ptr, len+1);
-      orig->as.heap.aux.capa = len;
+      orig->as.heap.aux.capa = (mrb_ssize)len;
     }
     str_init_shared(mrb, orig, s, NULL);
     str_init_shared(mrb, orig, orig, s->as.heap.aux.shared);
@@ -549,12 +597,9 @@ str_make_shared(mrb_state *mrb, struct RString *orig, struct RString *s)
 }
 
 mrb_value
-mrb_str_pool(mrb_state *mrb, mrb_value str)
+mrb_str_pool(mrb_state *mrb, const char *p, mrb_int len, mrb_bool nofree)
 {
   struct RString *s = (struct RString *)mrb_malloc(mrb, sizeof(struct RString));
-  struct RString *orig = mrb_str_ptr(str);
-  const char *p = RSTR_PTR(orig);
-  size_t len = (size_t)RSTR_LEN(orig);
 
   s->tt = MRB_TT_STRING;
   s->c = mrb->string_class;
@@ -563,7 +608,7 @@ mrb_str_pool(mrb_state *mrb, mrb_value str)
   if (RSTR_EMBEDDABLE_P(len)) {
     str_init_embed(s, p, len);
   }
-  else if (RSTR_NOFREE_P(orig)) {
+  else if (nofree) {
     str_init_nofree(s, p, len);
   }
   else {
@@ -585,9 +630,9 @@ mrb_str_byte_subseq(mrb_state *mrb, mrb_value str, mrb_int beg, mrb_int len)
     str_init_embed(s, RSTR_PTR(orig)+beg, len);
   }
   else {
-    str_make_shared(mrb, orig, s);
-    s->as.heap.ptr += beg;
-    s->as.heap.len = len;
+    str_share(mrb, orig, s);
+    s->as.heap.ptr += (mrb_ssize)beg;
+    s->as.heap.len = (mrb_ssize)len;
   }
   RSTR_COPY_ASCII_FLAG(s, orig);
   return mrb_obj_value(s);
@@ -691,7 +736,7 @@ str_replace(mrb_state *mrb, struct RString *s1, struct RString *s2)
     str_init_embed(s1, RSTR_PTR(s2), len);
   }
   else {
-    str_make_shared(mrb, s2, s1);
+    str_share(mrb, s2, s1);
   }
 
   return mrb_obj_value(s1);
@@ -809,22 +854,7 @@ MRB_API void
 mrb_str_modify_keep_ascii(mrb_state *mrb, struct RString *s)
 {
   mrb_check_frozen(mrb, s);
-  if (RSTR_SHARED_P(s)) {
-    mrb_shared_string *shared = s->as.heap.aux.shared;
-
-    if (shared->refcnt == 1 && s->as.heap.ptr == shared->ptr) {
-      s->as.heap.aux.capa = shared->capa;
-      s->as.heap.ptr[s->as.heap.len] = '\0';
-      mrb_free(mrb, shared);
-    }
-    else {
-      str_init_modifiable(mrb, s, s->as.heap.ptr, (size_t)s->as.heap.len);
-      str_decref(mrb, shared);
-    }
-  }
-  else if (RSTR_NOFREE_P(s) || RSTR_FSHARED_P(s)) {
-    str_init_modifiable(mrb, s, s->as.heap.ptr, (size_t)s->as.heap.len);
-  }
+  str_modify_keep_ascii(mrb, s);
 }
 
 MRB_API void
@@ -949,7 +979,7 @@ mrb_str_times(mrb_state *mrb, mrb_value self)
   if (times < 0) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "negative argument");
   }
-  if (times && MRB_INT_MAX / times < RSTRING_LEN(self)) {
+  if (times && MRB_SSIZE_MAX / times < RSTRING_LEN(self)) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "argument too big");
   }
 
@@ -1031,10 +1061,9 @@ mrb_str_cmp(mrb_state *mrb, mrb_value str1, mrb_value str2)
 static mrb_value
 mrb_str_cmp_m(mrb_state *mrb, mrb_value str1)
 {
-  mrb_value str2;
+  mrb_value str2 = mrb_get_arg1(mrb);
   mrb_int result;
 
-  mrb_get_args(mrb, "o", &str2);
   if (!mrb_string_p(str2)) {
     return mrb_nil_value();
   }
@@ -1076,14 +1105,11 @@ mrb_str_equal(mrb_state *mrb, mrb_value str1, mrb_value str2)
 static mrb_value
 mrb_str_equal_m(mrb_state *mrb, mrb_value str1)
 {
-  mrb_value str2;
-
-  mrb_get_args(mrb, "o", &str2);
+  mrb_value str2 = mrb_get_arg1(mrb);
 
   return mrb_bool_value(mrb_str_equal(mrb, str1, str2));
 }
 /* ---------------------------------- */
-mrb_value mrb_mod_to_s(mrb_state *mrb, mrb_value klass);
 
 MRB_API mrb_value
 mrb_str_to_str(mrb_state *mrb, mrb_value str)
@@ -1223,8 +1249,6 @@ mrb_str_aref(mrb_state *mrb, mrb_value str, mrb_value indx, mrb_value alen)
  *     str[fixnum]                 => fixnum or nil
  *     str[fixnum, fixnum]         => new_str or nil
  *     str[range]                  => new_str or nil
- *     str[regexp]                 => new_str or nil
- *     str[regexp, fixnum]         => new_str or nil
  *     str[other_str]              => new_str or nil
  *     str.slice(fixnum)           => fixnum or nil
  *     str.slice(fixnum, fixnum)   => new_str or nil
@@ -1292,7 +1316,7 @@ str_replace_partial(mrb_state *mrb, mrb_value src, mrb_int pos, mrb_int end, mrb
   replen = (mrb_nil_p(rep) ? 0 : RSTRING_LEN(rep));
   newlen = replen + len - (end - pos);
 
-  if (newlen >= MRB_INT_MAX || newlen < replen /* overflowed */) {
+  if (newlen >= MRB_SSIZE_MAX || newlen < replen /* overflowed */) {
     mrb_raise(mrb, E_RUNTIME_ERROR, "string size too big");
   }
 
@@ -1318,14 +1342,13 @@ str_replace_partial(mrb_state *mrb, mrb_value src, mrb_int pos, mrb_int end, mrb
   return src;
 }
 
-#define CHAR_ESC_LEN 13 /* sizeof(\x{ hex of 32bit unsigned int } \0) */
 #define IS_EVSTR(p,e) ((p) < (e) && (*(p) == '$' || *(p) == '@' || *(p) == '{'))
 
 static mrb_value
 str_escape(mrb_state *mrb, mrb_value str, mrb_bool inspect)
 {
   const char *p, *pend;
-  char buf[CHAR_ESC_LEN + 1];
+  char buf[4];  /* `\x??` or UTF-8 character */
   mrb_value result = mrb_str_new_lit(mrb, "\"");
 #ifdef MRB_UTF8_STRING
   uint32_t ascii_flag = MRB_STR_ASCII;
@@ -1336,7 +1359,7 @@ str_escape(mrb_state *mrb, mrb_value str, mrb_bool inspect)
     unsigned char c, cc;
 #ifdef MRB_UTF8_STRING
     if (inspect) {
-      mrb_int clen = utf8len(p, pend);
+      mrb_int clen = mrb_utf8len(p, pend);
       if (clen > 1) {
         mrb_int i;
 
@@ -1389,8 +1412,13 @@ str_escape(mrb_state *mrb, mrb_value str, mrb_bool inspect)
   }
   mrb_str_cat_lit(mrb, result, "\"");
 #ifdef MRB_UTF8_STRING
-  mrb_str_ptr(str)->flags |= ascii_flag;
-  mrb_str_ptr(result)->flags |= ascii_flag;
+  if (inspect) {
+    mrb_str_ptr(str)->flags |= ascii_flag;
+    mrb_str_ptr(result)->flags |= ascii_flag;
+  }
+  else {
+    RSTR_SET_ASCII_FLAG(mrb_str_ptr(result));
+  }
 #endif
 
   return result;
@@ -1428,8 +1456,6 @@ mrb_str_aset(mrb_state *mrb, mrb_value str, mrb_value indx, mrb_value alen, mrb_
  *    str[fixnum] = replace
  *    str[fixnum, fixnum] = replace
  *    str[range] = replace
- *    str[regexp] = replace
- *    str[regexp, fixnum] = replace
  *    str[other_str] = replace
  *
  * Modify +self+ by replacing the content of +self+.
@@ -1636,7 +1662,7 @@ mrb_str_chop_bang(mrb_state *mrb, mrb_value str)
     const char* t = RSTR_PTR(s), *p = t;
     const char* e = p + RSTR_LEN(s);
     while (p<e) {
-      mrb_int clen = utf8len(p, e);
+      mrb_int clen = mrb_utf8len(p, e);
       if (p + clen>=e) break;
       p += clen;
     }
@@ -1762,10 +1788,9 @@ mrb_str_empty_p(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_str_eql(mrb_state *mrb, mrb_value self)
 {
-  mrb_value str2;
+  mrb_value str2 = mrb_get_arg1(mrb);
   mrb_bool eql_p;
 
-  mrb_get_args(mrb, "o", &str2);
   eql_p = (mrb_string_p(str2)) && str_eql(mrb, self, str2);
 
   return mrb_bool_value(eql_p);
@@ -1937,15 +1962,10 @@ mrb_str_intern(mrb_state *mrb, mrb_value self)
 MRB_API mrb_value
 mrb_obj_as_string(mrb_state *mrb, mrb_value obj)
 {
-  mrb_value str;
-
   if (mrb_string_p(obj)) {
     return obj;
   }
-  str = mrb_funcall(mrb, obj, "to_s", 0);
-  if (!mrb_string_p(str))
-    return mrb_any_to_s(mrb, obj);
-  return str;
+  return mrb_str_to_str(mrb, obj);
 }
 
 MRB_API mrb_value
@@ -2013,7 +2033,7 @@ mrb_str_reverse_bang(mrb_state *mrb, mrb_value str)
     p = RSTR_PTR(s);
     e = p + RSTR_LEN(s);
     while (p<e) {
-      mrb_int clen = utf8len(p, e);
+      mrb_int clen = mrb_utf8len(p, e);
       str_reverse(p, p + clen - 1);
       p += clen;
     }
@@ -2099,23 +2119,18 @@ mrb_str_rindex(mrb_state *mrb, mrb_value str)
 
 /*
  *  call-seq:
- *     str.split(pattern="\n", [limit])   => anArray
+ *     str.split(separator=nil, [limit])   => anArray
  *
  *  Divides <i>str</i> into substrings based on a delimiter, returning an array
  *  of these substrings.
  *
- *  If <i>pattern</i> is a <code>String</code>, then its contents are used as
- *  the delimiter when splitting <i>str</i>. If <i>pattern</i> is a single
+ *  If <i>separator</i> is a <code>String</code>, then its contents are used as
+ *  the delimiter when splitting <i>str</i>. If <i>separator</i> is a single
  *  space, <i>str</i> is split on whitespace, with leading whitespace and runs
  *  of contiguous whitespace characters ignored.
  *
- *  If <i>pattern</i> is a <code>Regexp</code>, <i>str</i> is divided where the
- *  pattern matches. Whenever the pattern matches a zero-length string,
- *  <i>str</i> is split into individual characters.
- *
- *  If <i>pattern</i> is omitted, the value of <code>$;</code> is used.  If
- *  <code>$;</code> is <code>nil</code> (which is the default), <i>str</i> is
- *  split on whitespace as if ' ' were specified.
+ *  If <i>separator</i> is omitted or <code>nil</code> (which is the default),
+ *  <i>str</i> is split on whitespace as if ' ' were specified.
  *
  *  If the <i>limit</i> parameter is omitted, trailing null fields are
  *  suppressed. If <i>limit</i> is a positive number, at most that number of
@@ -2126,9 +2141,6 @@ mrb_str_rindex(mrb_state *mrb, mrb_value str)
  *
  *     " now's  the time".split        #=> ["now's", "the", "time"]
  *     " now's  the time".split(' ')   #=> ["now's", "the", "time"]
- *     " now's  the time".split(/ /)   #=> ["", "now's", "", "the", "time"]
- *     "hello".split(//)               #=> ["h", "e", "l", "l", "o"]
- *     "hello".split(//, 3)            #=> ["h", "e", "llo"]
  *
  *     "mellow yellow".split("ello")   #=> ["m", "w y", "w"]
  *     "1,2,,3,4,,".split(',')         #=> ["1", "2", "", "3", "4"]
@@ -2141,7 +2153,7 @@ mrb_str_split_m(mrb_state *mrb, mrb_value str)
 {
   mrb_int argc;
   mrb_value spat = mrb_nil_value();
-  enum {awk, string, regexp} split_type = string;
+  enum {awk, string} split_type = string;
   mrb_int i = 0;
   mrb_int beg;
   mrb_int end;
@@ -2244,7 +2256,7 @@ mrb_str_split_m(mrb_state *mrb, mrb_value str)
   return result;
 }
 
-static mrb_value
+mrb_value
 mrb_str_len_to_inum(mrb_state *mrb, const char *str, mrb_int len, mrb_int base, int badcheck)
 {
   const char *p = str;
@@ -2355,7 +2367,7 @@ mrb_str_len_to_inum(mrb_state *mrb, const char *str, mrb_int len, mrb_int base, 
     if (*(p - 1) == '0')
       p--;
   }
-  if (p == pend) {
+  if (p == pend || *p == '_') {
     if (badcheck) goto bad;
     return mrb_fixnum_value(0);
   }
@@ -2394,9 +2406,10 @@ mrb_str_len_to_inum(mrb_state *mrb, const char *str, mrb_int len, mrb_int base, 
   }
   val = (mrb_int)n;
   if (badcheck) {
-    if (p == str) goto bad; /* no number */
+    if (p == str) goto bad;             /* no number */
+    if (*(p - 1) == '_') goto bad;      /* trailing '_' */
     while (p<pend && ISSPACE(*p)) p++;
-    if (p<pend) goto bad;       /* trailing garbage */
+    if (p<pend) goto bad;               /* trailing garbage */
   }
 
   return mrb_fixnum_value(sign ? val : -val);
@@ -2430,15 +2443,12 @@ mrb_string_value_cstr(mrb_state *mrb, mrb_value *ptr)
   if (p[len] == '\0') {
     return p;
   }
-  if (mrb_frozen_p(ps) || RSTR_CAPA(ps) == len) {
-    ps = str_new(mrb, NULL, len+1);
-    memcpy(RSTR_PTR(ps), p, len);
-    RSTR_SET_LEN(ps, len);
-    *ptr = mrb_obj_value(ps);
-  }
-  else {
-    mrb_str_modify(mrb, ps);
-  }
+
+  /*
+   * Even after str_modify_keep_ascii(), NULL termination is not ensured if
+   * RSTR_SET_LEN() is used explicitly (e.g. String#delete_suffix!).
+   */
+  str_modify_keep_ascii(mrb, ps);
   RSTR_PTR(ps)[len] = '\0';
   return RSTR_PTR(ps);
 }
@@ -2495,73 +2505,105 @@ mrb_str_to_i(mrb_state *mrb, mrb_value self)
 }
 
 #ifndef MRB_WITHOUT_FLOAT
-MRB_API double
-mrb_cstr_to_dbl(mrb_state *mrb, const char * p, mrb_bool badcheck)
+double
+mrb_str_len_to_dbl(mrb_state *mrb, const char *s, size_t len, mrb_bool badcheck)
 {
+  char buf[DBL_DIG * 4 + 20];
+  const char *p = s, *p2;
+  const char *pend = p + len;
   char *end;
-  char buf[DBL_DIG * 4 + 10];
+  char *n;
+  char prev = 0;
   double d;
-
-  enum {max_width = 20};
+  mrb_bool dot = FALSE;
 
   if (!p) return 0.0;
-  while (ISSPACE(*p)) p++;
+  while (p<pend && ISSPACE(*p)) p++;
+  p2 = p;
 
-  if (!badcheck && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-    return 0.0;
+  if (pend - p > 2 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+    mrb_value x;
+
+    if (!badcheck) return 0.0;
+    x = mrb_str_len_to_inum(mrb, p, pend-p, 0, badcheck);
+    if (mrb_fixnum_p(x))
+      d = (double)mrb_fixnum(x);
+    else /* if (mrb_float_p(x)) */
+      d = mrb_float(x);
+    return d;
   }
+  while (p < pend) {
+    if (!*p) {
+      if (badcheck) {
+        mrb_raise(mrb, E_ARGUMENT_ERROR, "string for Float contains null byte");
+        /* not reached */
+      }
+      pend = p;
+      p = p2;
+      goto nocopy;
+    }
+    if (!badcheck && *p == ' ') {
+      pend = p;
+      p = p2;
+      goto nocopy;
+    }
+    if (*p == '_') break;
+    p++;
+  }
+  p = p2;
+  n = buf;
+  while (p < pend) {
+    char c = *p++;
+    if (c == '.') dot = TRUE;
+    if (c == '_') {
+      /* remove an underscore between digits */
+      if (n == buf || !ISDIGIT(prev) || p == pend) {
+        if (badcheck) goto bad;
+        break;
+      }
+    }
+    else if (badcheck && prev == '_' && !ISDIGIT(c)) goto bad;
+    else {
+      const char *bend = buf+sizeof(buf)-1;
+      if (n==bend) {            /* buffer overflow */
+        if (dot) break;         /* cut off remaining fractions */
+        return INFINITY;
+      }
+      *n++ = c;
+    }
+    prev = c;
+  }
+  *n = '\0';
+  p = buf;
+  pend = n;
+nocopy:
   d = mrb_float_read(p, &end);
   if (p == end) {
     if (badcheck) {
 bad:
-      mrb_raisef(mrb, E_ARGUMENT_ERROR, "invalid string for float(%s)", p);
+      mrb_raisef(mrb, E_ARGUMENT_ERROR, "invalid string for float(%!s)", s);
       /* not reached */
     }
     return d;
   }
-  if (*end) {
-    char *n = buf;
-    char *e = buf + sizeof(buf) - 1;
-    char prev = 0;
-
-    while (p < end && n < e) prev = *n++ = *p++;
-    while (*p) {
-      if (*p == '_') {
-        /* remove underscores between digits */
-        if (badcheck) {
-          if (n == buf || !ISDIGIT(prev)) goto bad;
-          ++p;
-          if (!ISDIGIT(*p)) goto bad;
-        }
-        else {
-          while (*++p == '_');
-          continue;
-        }
-      }
-      prev = *p++;
-      if (n < e) *n++ = prev;
-    }
-    *n = '\0';
-    p = buf;
-
-    if (!badcheck && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-      return 0.0;
-    }
-
-    d = mrb_float_read(p, &end);
-    if (badcheck) {
-      if (!end || p == end) goto bad;
-      while (*end && ISSPACE(*end)) end++;
-      if (*end) goto bad;
-    }
+  if (badcheck) {
+    if (!end || p == end) goto bad;
+    while (end<pend && ISSPACE(*end)) end++;
+    if (end<pend) goto bad;
   }
   return d;
 }
 
 MRB_API double
+mrb_cstr_to_dbl(mrb_state *mrb, const char *s, mrb_bool badcheck)
+{
+  return mrb_str_len_to_dbl(mrb, s, strlen(s), badcheck);
+}
+
+MRB_API double
 mrb_str_to_dbl(mrb_state *mrb, mrb_value str, mrb_bool badcheck)
 {
-  return mrb_cstr_to_dbl(mrb, RSTRING_CSTR(mrb, str), badcheck);
+  return mrb_str_len_to_dbl(mrb, RSTRING_PTR(str), RSTRING_LEN(str), badcheck);
 }
 
 /* 15.2.10.5.39 */
@@ -2681,21 +2723,21 @@ mrb_str_cat(mrb_state *mrb, mrb_value str, const char *ptr, size_t len)
 
   capa = RSTR_CAPA(s);
   total = RSTR_LEN(s)+len;
-  if (total >= MRB_INT_MAX) {
+  if (total >= MRB_SSIZE_MAX) {
   size_error:
     mrb_raise(mrb, E_ARGUMENT_ERROR, "string size too big");
   }
   if (capa <= total) {
     if (capa == 0) capa = 1;
     while (capa <= total) {
-      if (capa <= MRB_INT_MAX / 2) {
+      if (capa <= MRB_SSIZE_MAX / 2) {
         capa *= 2;
       }
       else {
         capa = total+1;
       }
     }
-    if (capa <= total || capa > MRB_INT_MAX) {
+    if (capa <= total || capa > MRB_SSIZE_MAX) {
       goto size_error;
     }
     resize_capa(mrb, s, capa);
@@ -2704,7 +2746,7 @@ mrb_str_cat(mrb_state *mrb, mrb_value str, const char *ptr, size_t len)
       ptr = RSTR_PTR(s) + off;
   }
   memcpy(RSTR_PTR(s) + RSTR_LEN(s), ptr, len);
-  mrb_assert_int_fit(size_t, total, mrb_int, MRB_INT_MAX);
+  mrb_assert_int_fit(size_t, total, mrb_ssize, MRB_SSIZE_MAX);
   RSTR_SET_LEN(s, total);
   RSTR_PTR(s)[total] = '\0';   /* sentinel */
   return str;
@@ -2713,7 +2755,7 @@ mrb_str_cat(mrb_state *mrb, mrb_value str, const char *ptr, size_t len)
 MRB_API mrb_value
 mrb_str_cat_cstr(mrb_state *mrb, mrb_value str, const char *ptr)
 {
-  return mrb_str_cat(mrb, str, ptr, strlen(ptr));
+  return mrb_str_cat(mrb, str, ptr, ptr ? strlen(ptr) : 0);
 }
 
 MRB_API mrb_value
@@ -2843,25 +2885,32 @@ mrb_str_setbyte(mrb_state *mrb, mrb_value str)
 static mrb_value
 mrb_str_byteslice(mrb_state *mrb, mrb_value str)
 {
-  mrb_value a1, a2;
+  mrb_value a1;
   mrb_int str_len = RSTRING_LEN(str), beg, len;
   mrb_bool empty = TRUE;
 
-  if (mrb_get_args(mrb, "o|o", &a1, &a2) == 2) {
-    beg = mrb_fixnum(mrb_to_int(mrb, a1));
-    len = mrb_fixnum(mrb_to_int(mrb, a2));
-  }
-  else if (mrb_range_p(a1)) {
-    if (mrb_range_beg_len(mrb, a1, &beg, &len, str_len, TRUE) != MRB_RANGE_OK) {
-      return mrb_nil_value();
+  len = mrb_get_argc(mrb);
+  switch (len) {
+  case 2:
+    mrb_get_args(mrb, "ii", &beg, &len);
+    break;
+  case 1:
+    a1 = mrb_get_arg1(mrb);
+    if (mrb_range_p(a1)) {
+      if (mrb_range_beg_len(mrb, a1, &beg, &len, str_len, TRUE) != MRB_RANGE_OK) {
+        return mrb_nil_value();
+      }
     }
+    else {
+      beg = mrb_fixnum(mrb_to_int(mrb, a1));
+      len = 1;
+      empty = FALSE;
+    }
+    break;
+  default:
+    mrb_argnum_error(mrb, len, 1, 2);
+    break;
   }
-  else {
-    beg = mrb_fixnum(mrb_to_int(mrb, a1));
-    len = 1;
-    empty = FALSE;
-  }
-
   if (mrb_str_beg_len(str_len, &beg, &len) && (empty || len != 0)) {
     return mrb_str_byte_subseq(mrb, str, beg, len);
   }
@@ -2876,7 +2925,7 @@ mrb_init_string(mrb_state *mrb)
 {
   struct RClass *s;
 
-  mrb_static_assert(RSTRING_EMBED_LEN_MAX < (1 << MRB_STR_EMBED_LEN_BITSIZE),
+  mrb_static_assert(RSTRING_EMBED_LEN_MAX < (1 << MRB_STR_EMBED_LEN_BIT),
                     "pointer size too big for embedded string");
 
   mrb->string_class = s = mrb_define_class(mrb, "String", mrb->object_class);             /* 15.2.10 */

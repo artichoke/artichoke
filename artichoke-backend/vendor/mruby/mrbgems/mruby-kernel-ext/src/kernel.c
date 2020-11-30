@@ -128,9 +128,8 @@ mrb_f_integer(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_f_float(mrb_state *mrb, mrb_value self)
 {
-  mrb_value arg;
+  mrb_value arg = mrb_get_arg1(mrb);
 
-  mrb_get_args(mrb, "o", &arg);
   return mrb_Float(mrb, arg);
 }
 #endif
@@ -149,9 +148,9 @@ mrb_f_float(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_f_string(mrb_state *mrb, mrb_value self)
 {
-  mrb_value arg, tmp;
+  mrb_value arg = mrb_get_arg1(mrb);
+  mrb_value tmp;
 
-  mrb_get_args(mrb, "o", &arg);
   tmp = mrb_convert_type(mrb, arg, MRB_TT_STRING, "String", "to_s");
   return tmp;
 }
@@ -168,9 +167,9 @@ mrb_f_string(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_f_array(mrb_state *mrb, mrb_value self)
 {
-  mrb_value arg, tmp;
+  mrb_value arg = mrb_get_arg1(mrb);
+  mrb_value tmp;
 
-  mrb_get_args(mrb, "o", &arg);
   tmp = mrb_check_convert_type(mrb, arg, MRB_TT_ARRAY, "Array", "to_a");
   if (mrb_nil_p(tmp)) {
     return mrb_ary_new_from_values(mrb, 1, &arg);
@@ -196,9 +195,8 @@ mrb_f_array(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_f_hash(mrb_state *mrb, mrb_value self)
 {
-  mrb_value arg;
+  mrb_value arg = mrb_get_arg1(mrb);
 
-  mrb_get_args(mrb, "o", &arg);
   if (mrb_nil_p(arg) || (mrb_array_p(arg) && RARRAY_LEN(arg) == 0)) {
     return mrb_hash_new(mrb);
   }
@@ -213,7 +211,7 @@ mrb_mruby_kernel_ext_gem_init(mrb_state *mrb)
   mrb_define_module_function(mrb, krn, "fail", mrb_f_raise, MRB_ARGS_OPT(2));
   mrb_define_module_function(mrb, krn, "caller", mrb_f_caller, MRB_ARGS_OPT(2));
   mrb_define_method(mrb, krn, "__method__", mrb_f_method, MRB_ARGS_NONE());
-  mrb_define_module_function(mrb, krn, "Integer", mrb_f_integer, MRB_ARGS_ANY());
+  mrb_define_module_function(mrb, krn, "Integer", mrb_f_integer, MRB_ARGS_ARG(1,1));
 #ifndef MRB_WITHOUT_FLOAT
   mrb_define_module_function(mrb, krn, "Float", mrb_f_float, MRB_ARGS_REQ(1));
 #endif

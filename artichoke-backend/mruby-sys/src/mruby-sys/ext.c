@@ -18,6 +18,7 @@
 #include <mruby/array.h>
 #include <mruby/range.h>
 #include <mruby/string.h>
+#include <mruby/value.h>
 
 #include <mruby-sys/ext.h>
 
@@ -103,7 +104,7 @@ mrb_sys_class_ptr(mrb_value value)
 MRB_API struct RClass *
 mrb_sys_class_to_rclass(mrb_value value)
 {
-  return (struct RClass *)value.value.p;
+  return mrb_class_ptr(value);
 }
 
 MRB_API struct RClass *
@@ -301,6 +302,13 @@ mrb_ary_modify(mrb_state *mrb, struct RArray *a)
 {
   mrb_write_barrier(mrb, (struct RBasic *)a);
   ary_modify(mrb, a);
+}
+
+mrb_value
+mrb_ary_subseq(mrb_state *mrb, mrb_value ary, mrb_int beg, mrb_int len)
+{
+  struct RArray *a = mrb_ary_ptr(ary);
+  return mrb_ary_new_from_values(mrb, len, ARY_PTR(a) + beg);
 }
 
 // Manage the mruby garbage collector (GC)

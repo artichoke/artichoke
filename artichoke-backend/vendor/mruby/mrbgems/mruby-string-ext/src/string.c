@@ -164,9 +164,8 @@ mrb_str_swapcase(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_str_concat_m(mrb_state *mrb, mrb_value self)
 {
-  mrb_value str;
+  mrb_value str = mrb_get_arg1(mrb);
 
-  mrb_get_args(mrb, "o", &str);
   if (mrb_fixnum_p(str) || mrb_float_p(str))
 #ifdef MRB_UTF8_STRING
     str = int_chr_utf8(mrb, str);
@@ -174,8 +173,8 @@ mrb_str_concat_m(mrb_state *mrb, mrb_value self)
     str = int_chr_binary(mrb, str);
 #endif
   else
-    str = mrb_ensure_string_type(mrb, str);
-  mrb_str_concat(mrb, self, str);
+    mrb_ensure_string_type(mrb, str);
+  mrb_str_cat_str(mrb, self, str);
   return self;
 }
 
@@ -335,7 +334,7 @@ tr_parse_pattern(mrb_state *mrb, struct tr_pattern *ret, const mrb_value v_patte
 
       len = i - start_pos;
       if (len > UINT16_MAX) {
-        mrb_raise(mrb, E_ARGUMENT_ERROR, "tr pattern too long (max 65536)");
+        mrb_raise(mrb, E_ARGUMENT_ERROR, "tr pattern too long (max 65535)");
       }
       if (pat1 == NULL && ret) {
         goto nomem;
@@ -343,9 +342,9 @@ tr_parse_pattern(mrb_state *mrb, struct tr_pattern *ret, const mrb_value v_patte
       pat1->type = TR_IN_ORDER;
       pat1->flag_reverse = flag_reverse;
       pat1->flag_on_heap = !ret_uninit;
-      pat1->n = len;
+      pat1->n = (uint16_t)len;
       pat1->next = NULL;
-      pat1->val.start_pos = start_pos;
+      pat1->val.start_pos = (uint16_t)start_pos;
     }
 
     if (ret == NULL || ret_uninit) {

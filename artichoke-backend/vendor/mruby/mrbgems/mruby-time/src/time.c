@@ -11,11 +11,11 @@
 #include <mruby.h>
 #include <mruby/class.h>
 #include <mruby/data.h>
+#include <mruby/numeric.h>
 #include <mruby/time.h>
+#include <mruby/string.h>
 
-#ifndef MRB_DISABLE_STDIO
-#include <stdio.h>
-#else
+#ifdef MRB_DISABLE_STDIO
 #include <string.h>
 #endif
 
@@ -74,11 +74,6 @@ double round(double x) {
 /* mktime() creates tm structure for localtime; timegm() is for UTC time */
 /* define following macro to use probably faster timegm() on the platform */
 /* #define USE_SYSTEM_TIMEGM */
-
-/* time_t */
-/* If your platform supports time_t as uint (e.g. uint32_t, uint64_t), */
-/* uncomment following macro. */
-/* #define MRB_TIME_T_UINT */
 
 /** end of Time class configuration */
 
@@ -213,15 +208,22 @@ typedef mrb_int mrb_sec;
 #define mrb_sec_value(mrb, sec) mrb_fixnum_value(sec)
 #endif
 
-#ifdef MRB_TIME_T_UINT
-typedef uint64_t mrb_time_int;
-# define MRB_TIME_MIN 0
-# define MRB_TIME_MAX (sizeof(time_t) <= 4 ? UINT32_MAX : UINT64_MAX)
-#else
-typedef int64_t mrb_time_int;
-# define MRB_TIME_MIN (sizeof(time_t) <= 4 ? INT32_MIN : INT64_MIN)
-# define MRB_TIME_MAX (sizeof(time_t) <= 4 ? INT32_MAX : INT64_MAX)
-#endif
+#define MRB_TIME_T_UINT (~(time_t)0 > 0)
+#define MRB_TIME_MIN (                                                      \
+  MRB_TIME_T_UINT ? 0 :                                                     \
+                    (sizeof(time_t) <= 4 ? INT32_MIN : INT64_MIN)           \
+)
+#define MRB_TIME_MAX (                                                      \
+  MRB_TIME_T_UINT ? (sizeof(time_t) <= 4 ? UINT32_MAX : UINT64_MAX) :       \
+                    (sizeof(time_t) <= 4 ? INT32_MAX : INT64_MAX)           \
+)
+
+static mrb_bool
+fixable_time_t_p(time_t v)
+{
+  if (MRB_INT_MIN <= MRB_TIME_MIN && MRB_TIME_MAX <= MRB_INT_MAX) return TRUE;
+  return FIXABLE(v);
+}
 
 static time_t
 mrb_to_time_t(mrb_state *mrb, mrb_value obj, time_t *usec)
@@ -235,7 +237,7 @@ mrb_to_time_t(mrb_state *mrb, mrb_value obj, time_t *usec)
         mrb_float f = mrb_float(obj);
 
         mrb_check_num_exact(mrb, f);
-        if (f > (mrb_float)MRB_TIME_MAX || (mrb_float)MRB_TIME_MIN > f) {
+        if (f >= ((mrb_float)MRB_TIME_MAX-1.0) || f < ((mrb_float)MRB_TIME_MIN+1.0)) {
           goto out_of_range;
         }
 
@@ -254,7 +256,8 @@ mrb_to_time_t(mrb_state *mrb, mrb_value obj, time_t *usec)
       {
         mrb_int i = mrb_int(mrb, obj);
 
-        if ((mrb_time_int)i > MRB_TIME_MAX || MRB_TIME_MIN > i) {
+        if ((MRB_INT_MAX > MRB_TIME_MAX && i > 0 && i > (mrb_int)MRB_TIME_MAX) ||
+            (MRB_TIME_MIN > MRB_INT_MIN && MRB_TIME_MIN > i)) {
           goto out_of_range;
         }
 
@@ -512,11 +515,10 @@ time_get_ptr(mrb_state *mrb, mrb_value time)
 static mrb_value
 mrb_time_eq(mrb_state *mrb, mrb_value self)
 {
-  mrb_value other;
+  mrb_value other = mrb_get_arg1(mrb);
   struct mrb_time *tm1, *tm2;
   mrb_bool eq_p;
 
-  mrb_get_args(mrb, "o", &other);
   tm1 = DATA_GET_PTR(mrb, self, &mrb_time_type, struct mrb_time);
   tm2 = DATA_CHECK_GET_PTR(mrb, other, &mrb_time_type, struct mrb_time);
   eq_p = tm1 && tm2 && tm1->sec == tm2->sec && tm1->usec == tm2->usec;
@@ -527,10 +529,9 @@ mrb_time_eq(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_time_cmp(mrb_state *mrb, mrb_value self)
 {
-  mrb_value other;
+  mrb_value other = mrb_get_arg1(mrb);
   struct mrb_time *tm1, *tm2;
 
-  mrb_get_args(mrb, "o", &other);
   tm1 = DATA_GET_PTR(mrb, self, &mrb_time_type, struct mrb_time);
   tm2 = DATA_CHECK_GET_PTR(mrb, other, &mrb_time_type, struct mrb_time);
   if (!tm1 || !tm2) return mrb_nil_value();
@@ -553,11 +554,10 @@ mrb_time_cmp(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_time_plus(mrb_state *mrb, mrb_value self)
 {
-  mrb_value o;
+  mrb_value o = mrb_get_arg1(mrb);
   struct mrb_time *tm;
   time_t sec, usec;
 
-  mrb_get_args(mrb, "o", &o);
   tm = time_get_ptr(mrb, self);
   sec = mrb_to_time_t(mrb, o, &usec);
   return mrb_time_make_time(mrb, mrb_obj_class(mrb, self), tm->sec+sec, tm->usec+usec, tm->timezone);
@@ -566,10 +566,9 @@ mrb_time_plus(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_time_minus(mrb_state *mrb, mrb_value self)
 {
-  mrb_value other;
+  mrb_value other = mrb_get_arg1(mrb);
   struct mrb_time *tm, *tm2;
 
-  mrb_get_args(mrb, "o", &other);
   tm = time_get_ptr(mrb, self);
   tm2 = DATA_CHECK_GET_PTR(mrb, other, &mrb_time_type, struct mrb_time);
   if (tm2) {
@@ -767,10 +766,9 @@ mrb_time_initialize(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_time_initialize_copy(mrb_state *mrb, mrb_value copy)
 {
-  mrb_value src;
+  mrb_value src = mrb_get_arg1(mrb);
   struct mrb_time *t1, *t2;
 
-  mrb_get_args(mrb, "o", &src);
   if (mrb_obj_equal(mrb, copy, src)) return copy;
   if (!mrb_obj_is_instance_of(mrb, src, mrb_obj_class(mrb, copy))) {
     mrb_raise(mrb, E_TYPE_ERROR, "wrong argument class");
@@ -867,7 +865,7 @@ mrb_time_to_i(mrb_state *mrb, mrb_value self)
 
   tm = time_get_ptr(mrb, self);
 #ifndef MRB_WITHOUT_FLOAT
-  if (tm->sec > MRB_INT_MAX || tm->sec < MRB_INT_MIN) {
+  if (!fixable_time_t_p(tm->sec)) {
     return mrb_float_value(mrb, (mrb_float)tm->sec);
   }
 #endif
@@ -883,7 +881,7 @@ mrb_time_usec(mrb_state *mrb, mrb_value self)
 
   tm = time_get_ptr(mrb, self);
 #ifndef MRB_WITHOUT_FLOAT
-  if (tm->usec > MRB_INT_MAX || tm->usec < MRB_INT_MIN) {
+  if (!fixable_time_t_p(tm->usec)) {
     return mrb_float_value(mrb, (mrb_float)tm->usec);
   }
 #endif
@@ -952,7 +950,9 @@ mrb_time_to_s(mrb_state *mrb, mrb_value self)
   struct mrb_time *tm = time_get_ptr(mrb, self);
   mrb_bool utc = tm->timezone == MRB_TIMEZONE_UTC;
   size_t len = (utc ? time_to_s_utc : time_to_s_local)(mrb, tm, buf, sizeof(buf));
-  return mrb_str_new(mrb, buf, len);
+  mrb_value str = mrb_str_new(mrb, buf, len);
+  RSTR_SET_ASCII_FLAG(mrb_str_ptr(str));
+  return str;
 }
 
 void

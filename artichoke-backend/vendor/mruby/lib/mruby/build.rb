@@ -173,7 +173,7 @@ module MRuby
       obj = objfile(cxx_src) if obj.nil?
 
       file cxx_src => [src, __FILE__] do |t|
-        FileUtils.mkdir_p File.dirname t.name
+        mkdir_p File.dirname t.name
         IO.write t.name, <<EOS
 #define __STDC_CONSTANT_MACROS
 #define __STDC_LIMIT_MACROS
@@ -276,14 +276,6 @@ EOS
       end
     end
 
-    def cygwin_filename(name)
-      if name.is_a?(Array)
-        name.flatten.map { |n| cygwin_filename(n) }
-      else
-        `cygpath -w "#{filename(name)}"`.strip
-      end
-    end
-
     def exefile(name)
       if name.is_a?(Array)
         name.flatten.map { |n| exefile(n) }
@@ -320,7 +312,7 @@ EOS
     end
 
     def verbose_flag
-      $verbose ? ' -v' : ''
+      Rake.verbose ? ' -v' : ''
     end
 
     def run_test
@@ -344,7 +336,8 @@ EOS
       puts "         Binaries: #{@bins.join(', ')}" unless @bins.empty?
       unless @gems.empty?
         puts "    Included Gems:"
-        @gems.map do |gem|
+        gems = @gems.sort_by { |gem| gem.name }
+        gems.each do |gem|
           gem_version = " - #{gem.version}" if gem.version != '0.0.0'
           gem_summary = " - #{gem.summary}" if gem.summary
           puts "             #{gem.name}#{gem_version}#{gem_summary}"
@@ -386,7 +379,7 @@ EOS
     end
 
     def run_test
-      @test_runner.runner_options << ' -v' if $verbose
+      @test_runner.runner_options << verbose_flag
       mrbtest = exefile("#{build_dir}/bin/mrbtest")
       if (@test_runner.command == nil)
         puts "You should run #{mrbtest} on target device."
@@ -394,27 +387,6 @@ EOS
       else
         @test_runner.run(mrbtest)
       end
-    end
-
-    def big_endian
-      if @endian
-        puts "Endian has already specified as #{@endian}."
-        return
-      end
-      @endian = :big
-      @mrbc.compile_options += ' -E'
-      compilers.each do |c|
-        c.defines += %w(MRB_ENDIAN_BIG)
-      end
-    end
-
-    def little_endian
-      if @endian
-        puts "Endian has already specified as #{@endian}."
-        return
-      end
-      @endian = :little
-      @mrbc.compile_options += ' -e'
     end
   end # CrossBuild
 end # MRuby

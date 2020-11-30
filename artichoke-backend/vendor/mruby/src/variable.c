@@ -378,7 +378,7 @@ assign_class_name(mrb_state *mrb, struct RObject *obj, mrb_sym sym, mrb_value v)
 {
   if (namespace_p(obj->tt) && namespace_p(mrb_type(v))) {
     struct RObject *c = mrb_obj_ptr(v);
-    if (obj != c && ISUPPER(mrb_sym_name(mrb, sym)[0])) {
+    if (obj != c && ISUPPER(mrb_sym_name_len(mrb, sym, NULL)[0])) {
       mrb_sym id_classname = mrb_intern_lit(mrb, "__classname__");
       mrb_value o = mrb_obj_iv_get(mrb, c, id_classname);
 
@@ -509,7 +509,7 @@ mrb_obj_iv_inspect(mrb_state *mrb, struct RObject *obj)
     mrb_str_cat_lit(mrb, str, "-<");
     mrb_str_cat_cstr(mrb, str, cn);
     mrb_str_cat_lit(mrb, str, ":");
-    mrb_str_concat(mrb, str, mrb_ptr_to_str(mrb, obj));
+    mrb_str_cat_str(mrb, str, mrb_ptr_to_str(mrb, obj));
 
     iv_foreach(mrb, t, inspect_i, &str);
     mrb_str_cat_lit(mrb, str, ">");
@@ -1123,7 +1123,7 @@ mrb_class_find_path(mrb_state *mrb, struct RClass *c)
     iv_del(mrb, c->iv, mrb_intern_lit(mrb, "__outer__"), NULL);
     iv_put(mrb, c->iv, mrb_intern_lit(mrb, "__classname__"), path);
     mrb_field_write_barrier_value(mrb, (struct RBasic*)c, path);
-    MRB_SET_FROZEN_FLAG(mrb_obj_ptr(path));
+    path = mrb_str_dup(mrb, path);
   }
   return path;
 }

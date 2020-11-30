@@ -154,7 +154,7 @@ class Hash
   def each_value(&block)
     return to_enum :each_value unless block
 
-    keys.each { |k| block.call(self[k]) }
+    values.each { |v| block.call(v) }
     self
   end
 

@@ -7,12 +7,7 @@
 #include "mruby/data.h"
 #include "mruby/string.h"
 #include "mruby/ext/io.h"
-
-#if MRUBY_RELEASE_NO < 10000
-#include "error.h"
-#else
 #include "mruby/error.h"
-#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,6 +48,7 @@
 #if defined(_WIN32) || defined(_WIN64)
   #define PATH_SEPARATOR ";"
   #define FILE_ALT_SEPARATOR "\\"
+  #define VOLUME_SEPARATOR ":"
 #else
   #define PATH_SEPARATOR ":"
 #endif
@@ -70,7 +66,15 @@
 #define LOCK_UN 8
 #endif
 
-#define STAT(p, s)        stat(p, s)
+#ifndef _WIN32
+typedef struct stat         mrb_stat;
+# define mrb_stat(path, sb) stat(path, sb)
+# define mrb_fstat(fd, sb)  fstat(fd, sb)
+#else
+typedef struct __stat64     mrb_stat;
+# define mrb_stat(path, sb) _stat64(path, sb)
+# define mrb_fstat(fd, sb)  _fstat64(fd, sb)
+#endif
 
 #ifdef _WIN32
 static int
@@ -85,7 +89,7 @@ flock(int fd, int operation) {
 }
 #endif
 
-mrb_value
+static mrb_value
 mrb_file_s_umask(mrb_state *mrb, mrb_value klass)
 {
 #if defined(_WIN32) || defined(_WIN64)
@@ -261,7 +265,7 @@ mrb_file_realpath(mrb_state *mrb, mrb_value klass)
   return result;
 }
 
-mrb_value
+static mrb_value
 mrb_file__getwd(mrb_state *mrb, mrb_value klass)
 {
   mrb_value path;
@@ -276,11 +280,58 @@ mrb_file__getwd(mrb_state *mrb, mrb_value klass)
   return path;
 }
 
+#ifdef _WIN32
+#define IS_FILESEP(x) (x == (*(char*)(FILE_SEPARATOR)) || x == (*(char*)(FILE_ALT_SEPARATOR)))
+#define IS_VOLSEP(x) (x == (*(char*)(VOLUME_SEPARATOR)))
+#define IS_DEVICEID(x) (x == '.' || x == '?')
+#define CHECK_UNCDEV_PATH (IS_FILESEP(path[0]) && IS_FILESEP(path[1]))
+
+static int 
+is_absolute_traditional_path(const char *path, size_t len)
+{
+  if (len < 3) return 0;
+  return (ISALPHA(path[0]) && IS_VOLSEP(path[1]) && IS_FILESEP(path[2]));
+}
+
+static int 
+is_aboslute_unc_path(const char *path, size_t len) {
+  if (len < 2) return 0;
+  return (CHECK_UNCDEV_PATH && !IS_DEVICEID(path[2]));
+}
+
+static int 
+is_absolute_device_path(const char *path, size_t len) {
+  if (len < 4) return 0;
+  return (CHECK_UNCDEV_PATH && IS_DEVICEID(path[2]) && IS_FILESEP(path[3]));
+}
+
 static int
 mrb_file_is_absolute_path(const char *path)
 {
-  return (path[0] == '/');
+  size_t len = strlen(path);
+  if (IS_FILESEP(path[0])) return 1;
+  if (len > 0)
+    return (
+      is_absolute_traditional_path(path, len) || 
+      is_aboslute_unc_path(path, len) || 
+      is_absolute_device_path(path, len)
+      );
+  else
+    return 0;
 }
+
+#undef IS_FILESEP
+#undef IS_VOLSEP
+#undef IS_DEVICEID
+#undef CHECK_UNCDEV_PATH
+
+#else
+static int
+mrb_file_is_absolute_path(const char *path)
+{
+  return (path[0] == *(char*)(FILE_SEPARATOR));
+}
+#endif
 
 static mrb_value
 mrb_file__gethome(mrb_state *mrb, mrb_value klass)
@@ -316,7 +367,7 @@ mrb_file__gethome(mrb_state *mrb, mrb_value klass)
   path = mrb_str_new_cstr(mrb, home);
   mrb_locale_free(home);
   return path;
-#else
+#else  /* _WIN32 */
   argc = mrb_get_argc(mrb);
   if (argc == 0) {
     home = getenv("USERPROFILE");
@@ -344,13 +395,13 @@ mrb_file_mtime(mrb_state *mrb, mrb_value self)
   int fd;
 
   obj = mrb_obj_value(mrb_class_get(mrb, "Time"));
-  fd = (int)mrb_fixnum(mrb_io_fileno(mrb, self));
+  fd = mrb_io_fileno(mrb, self);
   if (fstat(fd, &st) == -1)
     return mrb_false_value();
   return mrb_funcall(mrb, obj, "at", 1, mrb_fixnum_value(st.st_mtime));
 }
 
-mrb_value
+static mrb_value
 mrb_file_flock(mrb_state *mrb, mrb_value self)
 {
 #if defined(sun)
@@ -360,7 +411,7 @@ mrb_file_flock(mrb_state *mrb, mrb_value self)
   int fd;
 
   mrb_get_args(mrb, "i", &operation);
-  fd = (int)mrb_fixnum(mrb_io_fileno(mrb, self));
+  fd = mrb_io_fileno(mrb, self);
 
   while (flock(fd, (int)operation) == -1) {
     switch (errno) {
@@ -381,6 +432,74 @@ mrb_file_flock(mrb_state *mrb, mrb_value self)
     }
   }
 #endif
+  return mrb_fixnum_value(0);
+}
+
+static mrb_value
+mrb_file_size(mrb_state *mrb, mrb_value self)
+{
+  mrb_stat st;
+  int fd;
+
+  fd = mrb_io_fileno(mrb, self);
+  if (mrb_fstat(fd, &st) == -1) {
+    mrb_raise(mrb, E_RUNTIME_ERROR, "fstat failed");
+  }
+
+  if (st.st_size > MRB_INT_MAX) {
+#ifdef MRB_WITHOUT_FLOAT
+    mrb_raise(mrb, E_RUNTIME_ERROR, "File#size too large for MRB_WITHOUT_FLOAT");
+#else
+    return mrb_float_value(mrb, (mrb_float)st.st_size);
+#endif
+  }
+
+  return mrb_fixnum_value((mrb_int)st.st_size);
+}
+
+static int
+mrb_ftruncate(int fd, mrb_int length)
+{
+#ifndef _WIN32
+  return ftruncate(fd, (off_t)length);
+#else
+  HANDLE file;
+  __int64 cur;
+
+  file = (HANDLE)_get_osfhandle(fd);
+  if (file == INVALID_HANDLE_VALUE) {
+    return -1;
+  }
+
+  cur = _lseeki64(fd, 0, SEEK_CUR);
+  if (cur == -1) return -1;
+
+  if (_lseeki64(fd, (__int64)length, SEEK_SET) == -1) return -1;
+
+  if (!SetEndOfFile(file)) {
+    errno = EINVAL; /* TODO: GetLastError to errno */
+    return -1;
+  }
+
+  if (_lseeki64(fd, cur, SEEK_SET) == -1) return -1;
+
+  return 0;
+#endif /* _WIN32 */
+}
+
+static mrb_value
+mrb_file_truncate(mrb_state *mrb, mrb_value self)
+{
+  int fd;
+  mrb_int length;
+  mrb_value lenv = mrb_get_arg1(mrb);
+
+  fd = mrb_io_fileno(mrb, self);
+  length = mrb_int(mrb, lenv);
+  if (mrb_ftruncate(fd, length) != 0) {
+    mrb_raise(mrb, E_IO_ERROR, "ftruncate failed");
+  }
+
   return mrb_fixnum_value(0);
 }
 
@@ -474,7 +593,7 @@ mrb_init_file(mrb_state *mrb)
   io   = mrb_class_get(mrb, "IO");
   file = mrb_define_class(mrb, "File", io);
   MRB_SET_INSTANCE_TT(file, MRB_TT_DATA);
-  mrb_define_class_method(mrb, file, "umask",  mrb_file_s_umask, MRB_ARGS_REQ(1));
+  mrb_define_class_method(mrb, file, "umask",  mrb_file_s_umask, MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, file, "delete", mrb_file_s_unlink, MRB_ARGS_ANY());
   mrb_define_class_method(mrb, file, "unlink", mrb_file_s_unlink, MRB_ARGS_ANY());
   mrb_define_class_method(mrb, file, "rename", mrb_file_s_rename, MRB_ARGS_REQ(2));
@@ -490,6 +609,8 @@ mrb_init_file(mrb_state *mrb)
 
   mrb_define_method(mrb, file, "flock", mrb_file_flock, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, file, "mtime", mrb_file_mtime, MRB_ARGS_NONE());
+  mrb_define_method(mrb, file, "size", mrb_file_size, MRB_ARGS_NONE());
+  mrb_define_method(mrb, file, "truncate", mrb_file_truncate, MRB_ARGS_REQ(1));
 
   cnst = mrb_define_module_under(mrb, file, "Constants");
   mrb_define_const(mrb, cnst, "LOCK_SH", mrb_fixnum_value(LOCK_SH));
@@ -505,4 +626,22 @@ mrb_init_file(mrb_state *mrb)
 #endif
   mrb_define_const(mrb, cnst, "NULL", mrb_str_new_cstr(mrb, NULL_FILE));
 
+  mrb_define_const(mrb, cnst, "RDONLY", mrb_fixnum_value(MRB_O_RDONLY));
+  mrb_define_const(mrb, cnst, "WRONLY", mrb_fixnum_value(MRB_O_WRONLY));
+  mrb_define_const(mrb, cnst, "RDWR", mrb_fixnum_value(MRB_O_RDWR));
+  mrb_define_const(mrb, cnst, "APPEND", mrb_fixnum_value(MRB_O_APPEND));
+  mrb_define_const(mrb, cnst, "CREAT", mrb_fixnum_value(MRB_O_CREAT));
+  mrb_define_const(mrb, cnst, "EXCL", mrb_fixnum_value(MRB_O_EXCL));
+  mrb_define_const(mrb, cnst, "TRUNC", mrb_fixnum_value(MRB_O_TRUNC));
+  mrb_define_const(mrb, cnst, "NONBLOCK", mrb_fixnum_value(MRB_O_NONBLOCK));
+  mrb_define_const(mrb, cnst, "NOCTTY", mrb_fixnum_value(MRB_O_NOCTTY));
+  mrb_define_const(mrb, cnst, "BINARY", mrb_fixnum_value(MRB_O_BINARY));
+  mrb_define_const(mrb, cnst, "SHARE_DELETE", mrb_fixnum_value(MRB_O_SHARE_DELETE));
+  mrb_define_const(mrb, cnst, "SYNC", mrb_fixnum_value(MRB_O_SYNC));
+  mrb_define_const(mrb, cnst, "DSYNC", mrb_fixnum_value(MRB_O_DSYNC));
+  mrb_define_const(mrb, cnst, "RSYNC", mrb_fixnum_value(MRB_O_RSYNC));
+  mrb_define_const(mrb, cnst, "NOFOLLOW", mrb_fixnum_value(MRB_O_NOFOLLOW));
+  mrb_define_const(mrb, cnst, "NOATIME", mrb_fixnum_value(MRB_O_NOATIME));
+  mrb_define_const(mrb, cnst, "DIRECT", mrb_fixnum_value(MRB_O_DIRECT));
+  mrb_define_const(mrb, cnst, "TMPFILE", mrb_fixnum_value(MRB_O_TMPFILE));
 }

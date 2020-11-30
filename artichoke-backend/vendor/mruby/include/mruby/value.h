@@ -34,10 +34,6 @@ typedef uint32_t mrb_sym;
 typedef uint8_t mrb_bool;
 struct mrb_state;
 
-#if defined(MRB_INT16) && defined(MRB_INT64)
-# error "You can't define MRB_INT16 and MRB_INT64 at the same time."
-#endif
-
 #if defined _MSC_VER && _MSC_VER < 1800
 # define PRIo64 "llo"
 # define PRId64 "lld"
@@ -63,14 +59,6 @@ struct mrb_state;
 # define MRB_PRIo PRIo64
 # define MRB_PRId PRId64
 # define MRB_PRIx PRIx64
-#elif defined(MRB_INT16)
-  typedef int16_t mrb_int;
-# define MRB_INT_BIT 16
-# define MRB_INT_MIN (INT16_MIN>>MRB_FIXNUM_SHIFT)
-# define MRB_INT_MAX (INT16_MAX>>MRB_FIXNUM_SHIFT)
-# define MRB_PRIo PRIo16
-# define MRB_PRId PRId16
-# define MRB_PRIx PRIx16
 #else
   typedef int32_t mrb_int;
 # define MRB_INT_BIT 32
@@ -115,32 +103,31 @@ static const unsigned int IEEE754_INFINITY_BITS_SINGLE = 0x7F800000;
 #endif
 
 enum mrb_vtype {
-  MRB_TT_FALSE = 0,   /*   0 */
-  MRB_TT_TRUE,        /*   1 */
-  MRB_TT_FLOAT,       /*   2 */
-  MRB_TT_FIXNUM,      /*   3 */
-  MRB_TT_SYMBOL,      /*   4 */
-  MRB_TT_UNDEF,       /*   5 */
-  MRB_TT_CPTR,        /*   6 */
-  MRB_TT_FREE,        /*   7 */
-  MRB_TT_OBJECT,      /*   8 */
-  MRB_TT_CLASS,       /*   9 */
-  MRB_TT_MODULE,      /*  10 */
-  MRB_TT_ICLASS,      /*  11 */
-  MRB_TT_SCLASS,      /*  12 */
-  MRB_TT_PROC,        /*  13 */
-  MRB_TT_ARRAY,       /*  14 */
-  MRB_TT_HASH,        /*  15 */
-  MRB_TT_STRING,      /*  16 */
-  MRB_TT_RANGE,       /*  17 */
-  MRB_TT_EXCEPTION,   /*  18 */
-  MRB_TT_FILE,        /*  19 */
-  MRB_TT_ENV,         /*  20 */
-  MRB_TT_DATA,        /*  21 */
-  MRB_TT_FIBER,       /*  22 */
-  MRB_TT_ISTRUCT,     /*  23 */
-  MRB_TT_BREAK,       /*  24 */
-  MRB_TT_MAXDEFINE    /*  25 */
+  MRB_TT_FALSE = 0,
+  MRB_TT_TRUE,
+  MRB_TT_FLOAT,
+  MRB_TT_FIXNUM,
+  MRB_TT_SYMBOL,
+  MRB_TT_UNDEF,
+  MRB_TT_CPTR,
+  MRB_TT_FREE,
+  MRB_TT_OBJECT,
+  MRB_TT_CLASS,
+  MRB_TT_MODULE,
+  MRB_TT_ICLASS,
+  MRB_TT_SCLASS,
+  MRB_TT_PROC,
+  MRB_TT_ARRAY,
+  MRB_TT_HASH,
+  MRB_TT_STRING,
+  MRB_TT_RANGE,
+  MRB_TT_EXCEPTION,
+  MRB_TT_ENV,
+  MRB_TT_DATA,
+  MRB_TT_FIBER,
+  MRB_TT_ISTRUCT,
+  MRB_TT_BREAK,
+  MRB_TT_MAXDEFINE
 };
 
 #include <mruby/object.h>
@@ -161,6 +148,13 @@ typedef void mrb_value;
 
 #endif
 
+#if defined(MRB_WORD_BOXING) || (defined(MRB_NAN_BOXING) && defined(MRB_64BIT))
+struct RCptr {
+  MRB_OBJECT_HEADER;
+  void *p;
+};
+#endif
+
 #if defined(MRB_NAN_BOXING)
 #include "boxing_nan.h"
 #elif defined(MRB_WORD_BOXING)
@@ -169,9 +163,15 @@ typedef void mrb_value;
 #include "boxing_no.h"
 #endif
 
-#if !defined(MRB_SYMBOL_BITSIZE)
-#define MRB_SYMBOL_BITSIZE (sizeof(mrb_sym) * CHAR_BIT)
-#define MRB_SYMBOL_MAX      UINT32_MAX
+#define MRB_SYMBOL_BIT (sizeof(mrb_sym) * CHAR_BIT - MRB_SYMBOL_SHIFT)
+#define MRB_SYMBOL_MAX (UINT32_MAX >> MRB_SYMBOL_SHIFT)
+
+#if INTPTR_MAX < MRB_INT_MAX
+  typedef intptr_t mrb_ssize;
+# define MRB_SSIZE_MAX (INTPTR_MAX>>MRB_FIXNUM_SHIFT)
+#else
+  typedef mrb_int mrb_ssize;
+# define MRB_SSIZE_MAX MRB_INT_MAX
 #endif
 
 #ifndef mrb_immediate_p
@@ -238,9 +238,6 @@ typedef void mrb_value;
 #endif
 #ifndef mrb_range_p
 #define mrb_range_p(o) (mrb_type(o) == MRB_TT_RANGE)
-#endif
-#ifndef mrb_file_p
-#define mrb_file_p(o) (mrb_type(o) == MRB_TT_FILE)
 #endif
 #ifndef mrb_env_p
 #define mrb_env_p(o) (mrb_type(o) == MRB_TT_ENV)

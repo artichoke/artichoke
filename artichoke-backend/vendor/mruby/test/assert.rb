@@ -56,7 +56,9 @@ def assertion_string(err, str, iso=nil, e=nil, bt=nil)
   msg = "#{err}#{str}"
   msg += " [#{iso}]" if iso && !iso.empty?
   msg += " => #{e}" if e && !e.to_s.empty?
-  msg += " (#{GEMNAME == 'mruby-test' ? 'core' : "mrbgems: #{GEMNAME}"})"
+  if Object.const_defined?(:GEMNAME)
+    msg += " (#{GEMNAME == 'mruby-test' ? 'core' : "mrbgems: #{GEMNAME}"})"
+  end
   if $mrbtest_assert
     $mrbtest_assert.each do |idx, assert_msg, diff|
       msg += "\n - Assertion[#{idx}]"
@@ -64,7 +66,7 @@ def assertion_string(err, str, iso=nil, e=nil, bt=nil)
       msg += "\n#{diff}" if diff && !diff.empty?
     end
   end
-  msg += "\nbacktrace:\n        #{bt.join("\n        ")}" if bt
+  msg += "\nbacktrace:\n        #{bt.join("\n        ")}" if bt && !bt.empty?
   msg
 end
 
@@ -122,8 +124,7 @@ def assert(str = 'assert', iso = '')
     $mrbtest_child_noassert[-2] += 1
     t_print('?')
   rescue Exception => e
-    bt = e.backtrace if $mrbtest_verbose
-    $asserts.push(assertion_string("#{e.class}: ", str, iso, e, bt))
+    $asserts.push(assertion_string("#{e.class}: ", str, iso, e, e.backtrace))
     $kill_test += 1
     t_print('X')
   ensure
