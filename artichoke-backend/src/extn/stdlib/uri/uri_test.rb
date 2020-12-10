@@ -99,7 +99,7 @@ def uri_regexp(skipped: true)
 
   # You should not rely on the number of parentheses
   html_string.scan(URI::DEFAULT_PARSER.make_regexp) do |*_matches|
-    p $&
+    p Regexp.last_match(0)
   end
 end
 
