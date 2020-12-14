@@ -1,5 +1,6 @@
 use core::iter::FusedIterator;
-use core::str::Chars;
+use core::slice;
+use core::str;
 
 /// Returns whether a [`char`] is ASCII and has a literal escape code.
 ///
@@ -99,7 +100,13 @@ pub const fn is_ascii_char_with_escape(ch: char) -> bool {
 /// [`format_debug_escape_into`]: crate::format_debug_escape_into
 #[derive(Debug, Clone)]
 #[must_use = "this `Literal` is an `Iterator`, which should be consumed if constructed"]
-pub struct Literal(Chars<'static>);
+pub struct Literal(slice::Iter<'static, u8>);
+
+impl Default for Literal {
+    fn default() -> Self {
+        Literal(b"".iter())
+    }
+}
 
 impl Literal {
     /// Views the underlying data as a subslice of the original data.
@@ -125,7 +132,7 @@ impl Literal {
     #[inline]
     #[must_use]
     pub fn as_str(&self) -> &'static str {
-        self.0.as_str()
+        str::from_utf8(self.0.as_slice()).unwrap_or_default()
     }
 
     /// Return the debug escape code for the given byte.
@@ -503,7 +510,7 @@ impl From<u8> for Literal {
     #[inline]
     fn from(byte: u8) -> Self {
         let escape = Self::debug_escape(byte);
-        Self(escape.chars())
+        Self(escape.as_bytes().iter())
     }
 }
 
@@ -512,12 +519,12 @@ impl Iterator for Literal {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
+        self.0.next().map(|&byte| byte as char)
     }
 
     #[inline]
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.0.nth(n)
+        self.0.nth(n).map(|&byte| byte as char)
     }
 
     #[inline]
@@ -532,19 +539,19 @@ impl Iterator for Literal {
 
     #[inline]
     fn last(self) -> Option<Self::Item> {
-        self.0.last()
+        self.0.last().map(|&byte| byte as char)
     }
 }
 
 impl DoubleEndedIterator for Literal {
     #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
-        self.0.next_back()
+        self.0.next_back().map(|&byte| byte as char)
     }
 
     #[inline]
     fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
-        self.0.nth_back(n)
+        self.0.nth_back(n).map(|&byte| byte as char)
     }
 }
 
