@@ -52,7 +52,6 @@ use bstr::ByteSlice;
 use core::convert::TryFrom;
 use core::fmt;
 use core::str::FromStr;
-use scolapasta_string_escape::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
 
 /// Valid types for Ruby identifiers.
 ///
@@ -430,10 +429,7 @@ fn is_special_global_name(name: &[u8]) -> bool {
         [b'-'] => false,
         [b'-', rest @ ..] if is_next_ident_exhausting(rest) => true,
         [b'-', ..] => false,
-        name => name
-            .char_indices()
-            .map(|(_, _, ch)| ch)
-            .all(char::is_numeric),
+        name => name.chars().all(char::is_numeric),
     }
 }
 
@@ -489,9 +485,9 @@ fn is_const_name(name: &[u8]) -> bool {
             .map(u8::is_ascii_uppercase)
             .unwrap_or_default(),
         name if name.is_utf8() => name
-            .char_indices()
+            .chars()
             .next()
-            .map(|(_, _, ch)| ch.is_uppercase()) // uses Unicode `Uppercase` property
+            .map(char::is_uppercase) // uses Unicode `Uppercase` property
             .unwrap_or_default(),
         _ => false,
     }
@@ -521,25 +517,21 @@ fn is_ident_char(ch: char) -> bool {
 ///
 /// Empty slices are not valid idents.
 #[inline]
-fn is_ident_until(name: &[u8]) -> Option<usize> {
+fn is_ident_until(mut name: &[u8]) -> Option<usize> {
     // Empty strings are not idents.
     if name.is_empty() {
         return Some(0);
     }
-    for (start, end, ch) in name.char_indices() {
+    let mut start = 0;
+    while !name.is_empty() {
+        let (ch, size) = bstr::decode_utf8(name);
         match ch {
-            // `char_indices` uses the Unicode replacement character to indicate
-            // the current char is invalid UTF-8. However, the replacement
-            // character itself _is_ valid UTF-8 and a valid Ruby identifier.
-            //
-            // If `char_indices` yields a replacement char and the byte span
-            // matches the UTF-8 encoding of the replacement char, continue.
-            REPLACEMENT_CHARACTER if name[start..end] == REPLACEMENT_CHARACTER_BYTES[..] => {}
-            // Otherwise, we've gotten invalid UTF-8, which means this is not an
-            // ident.
-            REPLACEMENT_CHARACTER => return Some(start),
-            ch if !is_ident_char(ch) => return Some(start),
-            _ => {}
+            Some(ch) if !is_ident_char(ch) => return Some(start),
+            None => return Some(start),
+            _ => {
+                name = &name[size..];
+                start += size;
+            }
         }
     }
     None
@@ -554,16 +546,10 @@ fn is_ident_until(name: &[u8]) -> Option<usize> {
 /// See also [`is_ident_char`].
 #[inline]
 fn is_next_ident_exhausting(name: &[u8]) -> bool {
-    let mut iter = name.char_indices();
-    match iter.next() {
-        Some((start, end, REPLACEMENT_CHARACTER))
-            if name[start..end] == REPLACEMENT_CHARACTER_BYTES[..] =>
-        {
-            iter.next().is_none()
-        }
-        Some((_, _, REPLACEMENT_CHARACTER)) => false,
-        Some((_, _, ch)) if is_ident_char(ch) => iter.next().is_none(),
-        _ => false,
+    let (ch, size) = bstr::decode_utf8(name);
+    match ch {
+        Some(ch) if is_ident_char(ch) => name.len() == size,
+        Some(_) | None => false,
     }
 }
 
