@@ -1,10 +1,7 @@
-use bstr::{ByteSlice, CharIndices};
 use core::convert::TryFrom;
 use core::fmt;
 use core::iter::FusedIterator;
-use scolapasta_string_escape::{
-    is_ascii_char_with_escape, Literal, REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES,
-};
+use scolapasta_string_escape::{is_ascii_char_with_escape, Literal};
 
 use crate::ident::IdentifierType;
 
@@ -317,7 +314,7 @@ impl DoubleEndedIterator for ByteLiteral {
 struct State<'a> {
     flags: Flags,
     forward_byte_literal: ByteLiteral,
-    iter: CharIndices<'a>,
+    bytes: &'a [u8],
     reverse_byte_literal: ByteLiteral,
 }
 
@@ -331,7 +328,7 @@ impl<'a> State<'a> {
         Self {
             flags: Flags::ident(),
             forward_byte_literal: ByteLiteral::default(),
-            iter: bytes.char_indices(),
+            bytes,
             reverse_byte_literal: ByteLiteral::default(),
         }
     }
@@ -344,7 +341,7 @@ impl<'a> State<'a> {
         Self {
             flags: Flags::quoted(),
             forward_byte_literal: ByteLiteral::default(),
-            iter: bytes.char_indices(),
+            bytes,
             reverse_byte_literal: ByteLiteral::default(),
         }
     }
@@ -374,26 +371,31 @@ impl<'a> Iterator for State<'a> {
         if let Some(ch) = self.forward_byte_literal.next() {
             return Some(ch);
         }
-        let bytes = self.iter.as_bytes();
-        if let Some((start, end, ch)) = self.iter.next() {
-            let end = end - start;
-            match ch {
-                REPLACEMENT_CHARACTER if bytes[..end] == REPLACEMENT_CHARACTER_BYTES[..] => {
-                    return Some(REPLACEMENT_CHARACTER);
-                }
-                REPLACEMENT_CHARACTER => {
-                    self.forward_byte_literal = ByteLiteral::from(&bytes[..end]);
-                    return self.forward_byte_literal.next();
-                }
-                '"' | '\\' if self.flags.is_ident() => return Some(ch),
-                ch if is_ascii_char_with_escape(ch) => {
-                    let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
-                    self.forward_byte_literal = ByteLiteral::one(ascii_byte);
-                    return self.forward_byte_literal.next();
-                }
-                ch => return Some(ch),
+        let (ch, size) = bstr::decode_utf8(self.bytes);
+        match ch {
+            Some('"') | Some('\\') if self.flags.is_ident() => {
+                self.bytes = &self.bytes[size..];
+                return ch;
             }
-        }
+            Some(ch) if is_ascii_char_with_escape(ch) => {
+                let (ascii_byte, remainder) = self.bytes.split_at(size);
+                self.forward_byte_literal = ByteLiteral::from(ascii_byte);
+                self.bytes = remainder;
+                return self.forward_byte_literal.next();
+            }
+            Some(ch) => {
+                self.bytes = &self.bytes[size..];
+                return Some(ch);
+            }
+            None if size == 0 => {}
+            None => {
+                let (invalid_utf8_bytes, remainder) = self.bytes.split_at(size);
+                // Invalid UTF-8 bytes are yielded as byte slices one byte at a time.
+                self.forward_byte_literal = ByteLiteral::from(invalid_utf8_bytes);
+                self.bytes = remainder;
+                return self.forward_byte_literal.next();
+            }
+        };
         if let Some(ch) = self.reverse_byte_literal.next() {
             return Some(ch);
         }
@@ -412,26 +414,31 @@ impl<'a> DoubleEndedIterator for State<'a> {
         if let Some(ch) = self.reverse_byte_literal.next_back() {
             return Some(ch);
         }
-        let bytes = self.iter.as_bytes();
-        if let Some((start, end, ch)) = self.iter.next_back() {
-            let start = bytes.len() - (end - start);
-            match ch {
-                REPLACEMENT_CHARACTER if bytes[start..] == REPLACEMENT_CHARACTER_BYTES[..] => {
-                    return Some(REPLACEMENT_CHARACTER);
-                }
-                REPLACEMENT_CHARACTER => {
-                    self.reverse_byte_literal = ByteLiteral::from(&bytes[start..]);
-                    return self.reverse_byte_literal.next_back();
-                }
-                '"' | '\\' if self.flags.is_ident() => return Some(ch),
-                ch if is_ascii_char_with_escape(ch) => {
-                    let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
-                    self.reverse_byte_literal = ByteLiteral::one(ascii_byte);
-                    return self.reverse_byte_literal.next_back();
-                }
-                ch => return Some(ch),
+        let (ch, size) = bstr::decode_last_utf8(self.bytes);
+        match ch {
+            Some('"') | Some('\\') if self.flags.is_ident() => {
+                self.bytes = &self.bytes[..self.bytes.len() - size];
+                return ch;
             }
-        }
+            Some(ch) if is_ascii_char_with_escape(ch) => {
+                let (remainder, ascii_byte) = self.bytes.split_at(self.bytes.len() - size);
+                self.reverse_byte_literal = ByteLiteral::from(ascii_byte);
+                self.bytes = remainder;
+                return self.reverse_byte_literal.next_back();
+            }
+            Some(ch) => {
+                self.bytes = &self.bytes[..self.bytes.len() - size];
+                return Some(ch);
+            }
+            None if size == 0 => {}
+            None => {
+                let (remainder, invalid_utf8_bytes) = self.bytes.split_at(self.bytes.len() - size);
+                // Invalid UTF-8 bytes are yielded as byte slices one byte at a time.
+                self.reverse_byte_literal = ByteLiteral::from(invalid_utf8_bytes);
+                self.bytes = remainder;
+                return self.reverse_byte_literal.next_back();
+            }
+        };
         if let Some(ch) = self.forward_byte_literal.next_back() {
             return Some(ch);
         }
