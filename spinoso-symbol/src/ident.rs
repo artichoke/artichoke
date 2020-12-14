@@ -652,8 +652,207 @@ fn is_special_global_punct(ch: u8) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{IdentifierType, ParseIdentifierError};
+    use super::{
+        is_ident_until, is_next_ident_exhausting, is_special_global_name, IdentifierType,
+        ParseIdentifierError,
+    };
     use core::convert::TryFrom;
+
+    #[test]
+    fn special_global_name() {
+        let name = &b"a"[..];
+        assert!(!is_special_global_name(name));
+        let name = "💎";
+        assert!(!is_special_global_name(name.as_bytes()));
+        let name = &b"ab"[..];
+        assert!(!is_special_global_name(name));
+        let name = "-💎";
+        assert!(is_special_global_name(name.as_bytes()));
+        let name = &b"$"[..];
+        assert!(is_special_global_name(name));
+        let name = &b"~"[..];
+        assert!(is_special_global_name(name));
+        let name = "�";
+        assert!(!is_special_global_name(name.as_bytes()));
+        let name = "-�";
+        assert!(is_special_global_name(name.as_bytes()));
+    }
+
+    #[test]
+    fn is_ident_until_empty() {
+        let name = &[];
+        assert_eq!(is_ident_until(name), Some(0));
+    }
+
+    #[test]
+    fn is_ident_until_lowercase_ascii() {
+        let name = &b"abc"[..];
+        assert_eq!(is_ident_until(name), None);
+        let name = &b"abc_123"[..];
+        assert_eq!(is_ident_until(name), None);
+        let name = &b"_"[..];
+        assert_eq!(is_ident_until(name), None);
+        let name = &b"_e"[..];
+        assert_eq!(is_ident_until(name), None);
+        let name = &b"_1"[..];
+        assert_eq!(is_ident_until(name), None);
+    }
+
+    #[test]
+    fn is_ident_until_ascii_constant() {
+        let name = &b"Abc"[..];
+        assert_eq!(is_ident_until(name), None);
+        let name = &b"ABC"[..];
+        assert_eq!(is_ident_until(name), None);
+        let name = &b"ABC_XYZ"[..];
+        assert_eq!(is_ident_until(name), None);
+        let name = &b"ABC_123"[..];
+        assert_eq!(is_ident_until(name), None);
+        let name = &b"HTTP2"[..];
+        assert_eq!(is_ident_until(name), None);
+    }
+
+    #[test]
+    fn is_ident_until_unicode() {
+        let name = "ábc";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+        let name = "abç";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+        let name = "abc_�";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+        let name = "abc_💎";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+
+        let name = "Ábc";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+        let name = "Abç";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+        let name = "Abc_�";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+        let name = "Abc_💎";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+
+        let name = "💎";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+        let name = "💎abc";
+        assert_eq!(is_ident_until(name.as_bytes()), None);
+    }
+
+    #[test]
+    fn is_ident_until_invalid_utf8() {
+        let name = &b"\xFF"[..];
+        assert_eq!(is_ident_until(name), Some(0));
+        let name = &b"abc\xFF"[..];
+        assert_eq!(is_ident_until(name), Some(3));
+        let name = &b"abc\xFFxyz"[..];
+        assert_eq!(is_ident_until(name), Some(3));
+
+        let name = &b"\xFF\xFE"[..];
+        assert_eq!(is_ident_until(name), Some(0));
+        let name = &b"abc\xFF\xFE"[..];
+        assert_eq!(is_ident_until(name), Some(3));
+        let name = &b"abc\xFF\xFExyz"[..];
+        assert_eq!(is_ident_until(name), Some(3));
+
+        let name = &b"\xEF\xBF\xBD\xFF"[..];
+        assert_eq!(is_ident_until(name), Some(3));
+        let name = &b"\xF0\x9F\x92\x8E\xFF"[..];
+        assert_eq!(is_ident_until(name), Some(4));
+    }
+
+    #[test]
+    fn is_next_ident_exhausting_empty() {
+        let name = &[];
+        assert!(!is_next_ident_exhausting(name));
+    }
+
+    #[test]
+    fn is_next_ident_exhausting_lowercase_ascii() {
+        let name = &b"a"[..];
+        assert!(is_next_ident_exhausting(name));
+        let name = &b"abc"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"1"[..];
+        assert!(is_next_ident_exhausting(name));
+        let name = &b"abc_123"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"_"[..];
+        assert!(is_next_ident_exhausting(name));
+        let name = &b"_e"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"_1"[..];
+        assert!(!is_next_ident_exhausting(name));
+    }
+
+    #[test]
+    fn is_next_ident_exhausting_ascii_constant() {
+        let name = &b"A"[..];
+        assert!(is_next_ident_exhausting(name));
+        let name = &b"Abc"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"ABC"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"ABC_XYZ"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"ABC_123"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"HTTP2"[..];
+        assert!(!is_next_ident_exhausting(name));
+    }
+
+    #[test]
+    fn is_next_ident_exhausting_unicode() {
+        let name = "ábc";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+        let name = "abç";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+        let name = "abc_�";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+        let name = "abc_💎";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+
+        let name = "Ábc";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+        let name = "Abç";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+        let name = "Abc_�";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+        let name = "Abc_💎";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+        let name = "💎abc";
+        assert!(!is_next_ident_exhausting(name.as_bytes()));
+
+        let name = "á";
+        assert!(is_next_ident_exhausting(name.as_bytes()));
+        let name = "ç";
+        assert!(is_next_ident_exhausting(name.as_bytes()));
+        let name = "�";
+        assert!(is_next_ident_exhausting(name.as_bytes()));
+        let name = "💎";
+        assert!(is_next_ident_exhausting(name.as_bytes()));
+    }
+
+    #[test]
+    fn is_next_ident_exhausting_invalid_utf8() {
+        let name = &b"\xFF"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"abc\xFF"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"abc\xFFxyz"[..];
+        assert!(!is_next_ident_exhausting(name));
+
+        let name = &b"\xFF\xFE"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"abc\xFF\xFE"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"abc\xFF\xFExyz"[..];
+        assert!(!is_next_ident_exhausting(name));
+
+        let name = &b"\xEF\xBF\xBD\xFF"[..];
+        assert!(!is_next_ident_exhausting(name));
+        let name = &b"\xF0\x9F\x92\x8E\xFF"[..];
+        assert!(!is_next_ident_exhausting(name));
+    }
 
     #[test]
     fn ascii_ident() {
