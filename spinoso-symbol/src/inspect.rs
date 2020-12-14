@@ -1,5 +1,6 @@
 use bstr::{ByteSlice, CharIndices};
 use core::convert::TryFrom;
+use core::fmt;
 use core::iter::FusedIterator;
 use scolapasta_string_escape::{
     is_ascii_char_with_escape, Literal, REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES,
@@ -13,8 +14,8 @@ use crate::ident::IdentifierType;
 /// This struct is created by the [`inspect`] method on [`Symbol`]. See its
 /// documentation for more.
 ///
-/// To format a `Symbol` directly into a writer, see [`format_inspect_into`] or
-/// [`write_inspect_into`].
+/// To format a `Symbol` directly into a writer, see [`format_into`] or
+/// [`write_into`].
 ///
 /// # Examples
 ///
@@ -53,8 +54,8 @@ use crate::ident::IdentifierType;
 ///
 /// [`inspect`]: crate::Symbol::inspect
 /// [`Symbol`]: crate::Symbol
-/// [`format_inspect_into`]: crate::Symbol::format_inspect_into
-/// [`write_inspect_into`]: crate::Symbol::write_inspect_into
+/// [`format_into`]: Self::format_into
+/// [`write_into`]: Self::write_into
 #[derive(Default, Debug, Clone)]
 #[must_use = "this `Inspect` is an `Iterator`, which should be consumed if constructed"]
 #[cfg_attr(docsrs, doc(cfg(feature = "inspect")))]
@@ -93,6 +94,100 @@ impl<'a> DoubleEndedIterator for Inspect<'a> {
 }
 
 impl<'a> FusedIterator for Inspect<'a> {}
+
+impl<'a> Inspect<'a> {
+    /// Write an `Inspect` iterator into the given destination using the debug
+    /// representation of the interned byteslice associated with the symbol in
+    /// the underlying interner.
+    ///
+    /// This formatter writes content like `:spinoso` and `:"invalid-\xFF-utf8"`.
+    /// To see example output of the underlying iterator, see the `Inspect`
+    /// documentation.
+    ///
+    /// To write binary output, use [`write_into`], which requires the **std**
+    /// feature to be activated.
+    ///
+    /// # Errors
+    ///
+    /// If the given writer returns an error as it is being written to, that
+    /// error is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use core::fmt::Write;
+    /// # use spinoso_symbol::Inspect;
+    /// let mut buf = String::new();
+    /// let iter = Inspect::from("spinoso");
+    /// iter.format_into(&mut buf);
+    /// assert_eq!(buf, ":spinoso");
+    ///
+    /// let mut buf = String::new();
+    /// let iter = Inspect::from(&b"\xFF"[..]);
+    /// iter.format_into(&mut buf);
+    /// assert_eq!(buf, r#":"\xFF""#);
+    /// ```
+    ///
+    /// [`write_into`]: Self::write_into
+    #[inline]
+    pub fn format_into<W>(self, mut dest: W) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        for ch in self {
+            dest.write_char(ch)?;
+        }
+        Ok(())
+    }
+
+    /// Write an `Inspect` iterator into the given destination using the debug
+    /// representation of the interned byteslice associated with the symbol in
+    /// the underlying interner.
+    ///
+    /// This formatter writes content like `:spinoso` and `:"invalid-\xFF-utf8"`.
+    /// To see example output of the underlying iterator, see the `Inspect`
+    /// documentation.
+    ///
+    /// To write to a [formatter], use [`format_into`].
+    ///
+    /// # Errors
+    ///
+    /// If the given writer returns an error as it is being written to, that
+    /// error is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::io::Write;
+    /// # use spinoso_symbol::Inspect;
+    /// let mut buf = Vec::new();
+    /// let iter = Inspect::from("spinoso");
+    /// iter.write_into(&mut buf);
+    /// assert_eq!(buf, &b":spinoso"[..]);
+    ///
+    /// let mut buf = Vec::new();
+    /// let iter = Inspect::from(&b"\xFF"[..]);
+    /// iter.write_into(&mut buf);
+    /// assert_eq!(buf, &[b':', b'"', b'\\', b'x', b'F', b'F', b'"']);
+    /// ```
+    ///
+    /// [formatter]: fmt::Write
+    /// [`format_into`]: Self::format_into
+    #[inline]
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn write_into<W>(self, mut dest: W) -> std::io::Result<()>
+    where
+        W: std::io::Write,
+    {
+        let mut buf = [0; 4];
+        for ch in self {
+            let utf8 = ch.encode_utf8(&mut buf);
+            dest.write_all(utf8.as_bytes())?;
+        }
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Flags(u8);
