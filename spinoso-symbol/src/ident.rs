@@ -528,7 +528,7 @@ fn is_ident_until(mut name: &[u8]) -> Option<usize> {
         match ch {
             Some(ch) if !is_ident_char(ch) => return Some(start),
             None => return Some(start),
-            _ => {
+            Some(_) => {
                 name = &name[size..];
                 start += size;
             }
