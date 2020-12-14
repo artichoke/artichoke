@@ -95,28 +95,135 @@ impl<'a> DoubleEndedIterator for Inspect<'a> {
 impl<'a> FusedIterator for Inspect<'a> {}
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-enum LeadingColonSigil {
-    Emit,
-    None,
+struct Flags(u8);
+
+impl Flags {
+    #[inline]
+    const fn ident() -> Self {
+        Self(0b1000_0001)
+    }
+
+    #[inline]
+    const fn quoted() -> Self {
+        Self(0b0000_0111)
+    }
+
+    #[inline]
+    fn emit_leading_colon(&mut self) -> Option<char> {
+        if self.0 & 0b0000_0001 > 0 {
+            self.0 &= 0b1111_1110;
+            Some(':')
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    fn emit_leading_quote(&mut self) -> Option<char> {
+        if self.0 & 0b0000_0010 > 0 {
+            self.0 &= 0b1111_1101;
+            Some('"')
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    fn emit_trailing_quote(&mut self) -> Option<char> {
+        if self.0 & 0b0000_0100 > 0 {
+            self.0 &= 0b1111_1011;
+            Some('"')
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    const fn is_ident(self) -> bool {
+        self.0 & 0b1000_0000 > 0
+    }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-enum Quote {
-    Emit,
-    None,
+#[derive(Default, Debug, Clone)]
+struct ByteLiteral {
+    one: Option<Literal>,
+    two: Option<Literal>,
+    three: Option<Literal>,
+}
+
+impl ByteLiteral {
+    #[inline]
+    fn one(byte: u8) -> Self {
+        Self {
+            one: Some(Literal::from(byte)),
+            two: None,
+            three: None,
+        }
+    }
+
+    #[inline]
+    fn two(left: u8, right: u8) -> Self {
+        Self {
+            one: Some(Literal::from(left)),
+            two: Some(Literal::from(right)),
+            three: None,
+        }
+    }
+
+    #[inline]
+    fn three(left: u8, mid: u8, right: u8) -> Self {
+        Self {
+            one: Some(Literal::from(left)),
+            two: Some(Literal::from(mid)),
+            three: Some(Literal::from(right)),
+        }
+    }
+}
+
+impl<'a> From<&'a [u8]> for ByteLiteral {
+    #[inline]
+    fn from(bytes: &'a [u8]) -> Self {
+        match bytes {
+            [] => Self::default(),
+            [byte] => Self::one(*byte),
+            [left, right] => Self::two(*left, *right),
+            [left, mid, right] => Self::three(*left, *mid, *right),
+            _ => panic!("Invalid UTF-8 byte literal sequences can be at most three bytes"),
+        }
+    }
+}
+
+impl Iterator for ByteLiteral {
+    type Item = char;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.one
+            .as_mut()
+            .and_then(Iterator::next)
+            .or_else(|| self.two.as_mut().and_then(Iterator::next))
+            .or_else(|| self.three.as_mut().and_then(Iterator::next))
+    }
+}
+
+impl DoubleEndedIterator for ByteLiteral {
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.three
+            .as_mut()
+            .and_then(DoubleEndedIterator::next_back)
+            .or_else(|| self.two.as_mut().and_then(DoubleEndedIterator::next_back))
+            .or_else(|| self.one.as_mut().and_then(DoubleEndedIterator::next_back))
+    }
 }
 
 #[derive(Debug, Clone)]
 #[must_use = "this `State` is an `Iterator`, which should be consumed if constructed"]
 struct State<'a> {
-    is_ident: bool,
-    string: &'a [u8],
-    leading_colon_sigil: LeadingColonSigil,
-    open_quote: Quote,
-    next: [Option<Literal>; 3],
+    flags: Flags,
+    forward_byte_literal: ByteLiteral,
     iter: CharIndices<'a>,
-    next_back: [Option<Literal>; 3],
-    close_quote: Quote,
+    reverse_byte_literal: ByteLiteral,
 }
 
 impl<'a> State<'a> {
@@ -127,14 +234,10 @@ impl<'a> State<'a> {
     #[inline]
     fn ident(bytes: &'a [u8]) -> Self {
         Self {
-            is_ident: true,
-            string: bytes,
-            leading_colon_sigil: LeadingColonSigil::Emit,
-            open_quote: Quote::None,
-            next: [None, None, None],
+            flags: Flags::ident(),
+            forward_byte_literal: ByteLiteral::default(),
             iter: bytes.char_indices(),
-            next_back: [None, None, None],
-            close_quote: Quote::None,
+            reverse_byte_literal: ByteLiteral::default(),
         }
     }
 
@@ -144,14 +247,10 @@ impl<'a> State<'a> {
     #[inline]
     fn quoted(bytes: &'a [u8]) -> Self {
         Self {
-            is_ident: false,
-            string: bytes,
-            leading_colon_sigil: LeadingColonSigil::Emit,
-            open_quote: Quote::Emit,
-            next: [None, None, None],
+            flags: Flags::quoted(),
+            forward_byte_literal: ByteLiteral::default(),
             iter: bytes.char_indices(),
-            next_back: [None, None, None],
-            close_quote: Quote::Emit,
+            reverse_byte_literal: ByteLiteral::default(),
         }
     }
 }
@@ -171,72 +270,40 @@ impl<'a> Iterator for State<'a> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        if let LeadingColonSigil::Emit = self.leading_colon_sigil {
-            self.leading_colon_sigil = LeadingColonSigil::None;
-            return Some(':');
+        if let Some(ch) = self.flags.emit_leading_colon() {
+            return Some(ch);
         }
-        if let Quote::Emit = self.open_quote {
-            self.open_quote = Quote::None;
-            return Some('"');
+        if let Some(ch) = self.flags.emit_leading_quote() {
+            return Some(ch);
         }
-        for cell in &mut self.next {
-            let next = if let Some(ref mut lit) = cell {
-                lit.next()
-            } else {
-                None
-            };
-            if next.is_some() {
-                return next;
-            } else {
-                *cell = None;
-            }
+        if let Some(ch) = self.forward_byte_literal.next() {
+            return Some(ch);
         }
+        let bytes = self.iter.as_bytes();
         if let Some((start, end, ch)) = self.iter.next() {
+            let end = end - start;
             match ch {
-                REPLACEMENT_CHARACTER
-                    if self.string[start..end] == REPLACEMENT_CHARACTER_BYTES[..] =>
-                {
+                REPLACEMENT_CHARACTER if bytes[..end] == REPLACEMENT_CHARACTER_BYTES[..] => {
                     return Some(REPLACEMENT_CHARACTER);
                 }
                 REPLACEMENT_CHARACTER => {
-                    let mut next = None::<char>;
-                    let slice = &self.string[start..end];
-                    let iter = slice.iter().zip(self.next.iter_mut()).enumerate();
-                    for (idx, (&byte, cell)) in iter {
-                        let mut lit = Literal::from(byte);
-                        if idx == 0 {
-                            next = lit.next();
-                        }
-                        *cell = Some(lit);
-                    }
-                    return next;
+                    self.forward_byte_literal = ByteLiteral::from(&bytes[..end]);
+                    return self.forward_byte_literal.next();
                 }
-                '"' | '\\' if self.is_ident => return Some(ch),
+                '"' | '\\' if self.flags.is_ident() => return Some(ch),
                 ch if is_ascii_char_with_escape(ch) => {
                     let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
-                    let mut lit = Literal::from(ascii_byte);
-                    let next = lit.next();
-                    self.next[0] = Some(lit);
-                    return next;
+                    self.forward_byte_literal = ByteLiteral::one(ascii_byte);
+                    return self.forward_byte_literal.next();
                 }
                 ch => return Some(ch),
             }
         }
-        for cell in &mut self.next_back {
-            let next = if let Some(ref mut lit) = cell {
-                lit.next()
-            } else {
-                None
-            };
-            if next.is_some() {
-                return next;
-            } else {
-                *cell = None;
-            }
+        if let Some(ch) = self.reverse_byte_literal.next() {
+            return Some(ch);
         }
-        if let Quote::Emit = self.close_quote {
-            self.close_quote = Quote::None;
-            return Some('"');
+        if let Some(ch) = self.flags.emit_trailing_quote() {
+            return Some(ch);
         }
         None
     }
@@ -244,76 +311,40 @@ impl<'a> Iterator for State<'a> {
 
 impl<'a> DoubleEndedIterator for State<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        if let Quote::Emit = self.close_quote {
-            self.close_quote = Quote::None;
-            return Some('"');
+        if let Some(ch) = self.flags.emit_trailing_quote() {
+            return Some(ch);
         }
-        for cell in &mut self.next_back.iter_mut().rev() {
-            let next = if let Some(ref mut lit) = cell {
-                lit.next_back()
-            } else {
-                None
-            };
-            if next.is_some() {
-                return next;
-            } else {
-                *cell = None;
-            }
+        if let Some(ch) = self.reverse_byte_literal.next_back() {
+            return Some(ch);
         }
+        let bytes = self.iter.as_bytes();
         if let Some((start, end, ch)) = self.iter.next_back() {
+            let start = bytes.len() - (end - start);
             match ch {
-                REPLACEMENT_CHARACTER
-                    if self.string[start..end] == REPLACEMENT_CHARACTER_BYTES[..] =>
-                {
+                REPLACEMENT_CHARACTER if bytes[start..] == REPLACEMENT_CHARACTER_BYTES[..] => {
                     return Some(REPLACEMENT_CHARACTER);
                 }
                 REPLACEMENT_CHARACTER => {
-                    let mut next = None::<char>;
-                    let slice = &self.string[start..end];
-                    let iter = slice
-                        .iter()
-                        .zip(self.next_back.iter_mut())
-                        .rev()
-                        .enumerate();
-                    for (idx, (&byte, cell)) in iter {
-                        let mut lit = Literal::from(byte);
-                        if idx == 0 {
-                            next = lit.next_back();
-                        }
-                        *cell = Some(lit);
-                    }
-                    return next;
+                    self.reverse_byte_literal = ByteLiteral::from(&bytes[start..]);
+                    return self.reverse_byte_literal.next_back();
                 }
-                '"' | '\\' if self.is_ident => return Some(ch),
+                '"' | '\\' if self.flags.is_ident() => return Some(ch),
                 ch if is_ascii_char_with_escape(ch) => {
                     let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
-                    let mut lit = Literal::from(ascii_byte);
-                    let next = lit.next_back();
-                    self.next_back[2] = Some(lit);
-                    return next;
+                    self.reverse_byte_literal = ByteLiteral::one(ascii_byte);
+                    return self.reverse_byte_literal.next_back();
                 }
                 ch => return Some(ch),
             }
         }
-        for cell in self.next.iter_mut().rev() {
-            let next = if let Some(ref mut lit) = cell {
-                lit.next_back()
-            } else {
-                None
-            };
-            if next.is_some() {
-                return next;
-            } else {
-                *cell = None;
-            }
+        if let Some(ch) = self.forward_byte_literal.next_back() {
+            return Some(ch);
         }
-        if let Quote::Emit = self.open_quote {
-            self.open_quote = Quote::None;
-            return Some('"');
+        if let Some(ch) = self.flags.emit_leading_quote() {
+            return Some(ch);
         }
-        if let LeadingColonSigil::Emit = self.leading_colon_sigil {
-            self.leading_colon_sigil = LeadingColonSigil::None;
-            return Some(':');
+        if let Some(ch) = self.flags.emit_leading_colon() {
+            return Some(ch);
         }
         None
     }
@@ -629,8 +660,44 @@ mod tests {
 
 #[cfg(test)]
 mod specs {
-    use super::Inspect;
+    use super::{Flags, Inspect};
     use alloc::string::String;
+
+    #[test]
+    fn flags_ident() {
+        let mut flags = Flags::ident();
+        assert!(flags.is_ident());
+        assert_eq!(flags.emit_leading_colon(), Some(':'));
+        assert!(flags.is_ident());
+        assert_eq!(flags.emit_leading_colon(), None);
+        assert!(flags.is_ident());
+
+        assert_eq!(flags.emit_leading_quote(), None);
+        assert!(flags.is_ident());
+
+        assert_eq!(flags.emit_trailing_quote(), None);
+        assert!(flags.is_ident());
+    }
+
+    #[test]
+    fn flags_quoted() {
+        let mut flags = Flags::quoted();
+        assert!(!flags.is_ident());
+        assert_eq!(flags.emit_leading_colon(), Some(':'));
+        assert!(!flags.is_ident());
+        assert_eq!(flags.emit_leading_colon(), None);
+        assert!(!flags.is_ident());
+
+        assert_eq!(flags.emit_leading_quote(), Some('"'));
+        assert!(!flags.is_ident());
+        assert_eq!(flags.emit_leading_quote(), None);
+        assert!(!flags.is_ident());
+
+        assert_eq!(flags.emit_trailing_quote(), Some('"'));
+        assert!(!flags.is_ident());
+        assert_eq!(flags.emit_trailing_quote(), None);
+        assert!(!flags.is_ident());
+    }
 
     // From spec/core/symbol/inspect_spec.rb:
     //
