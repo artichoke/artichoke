@@ -107,8 +107,6 @@ readme!();
 
 mod literal;
 mod string;
-mod unicode;
 
 pub use literal::*;
 pub use string::*;
-pub use unicode::*;

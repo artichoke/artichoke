@@ -1,8 +1,6 @@
-use bstr::ByteSlice;
 use core::fmt::{self, Write};
 
 use crate::literal::{is_ascii_char_with_escape, Literal};
-use crate::unicode::{REPLACEMENT_CHARACTER, REPLACEMENT_CHARACTER_BYTES};
 
 /// Write a UTF-8 debug representation of a byte slice into the given writer.
 ///
@@ -34,42 +32,30 @@ where
     W: Write,
     T: AsRef<[u8]>,
 {
-    let mut enc = [0; 4];
-    let message = message.as_ref();
-    for (start, end, ch) in message.char_indices() {
+    let mut buf = [0; 4];
+    let mut message = message.as_ref();
+    while !message.is_empty() {
+        let (ch, size) = bstr::decode_utf8(message);
         match ch {
-            // `char_indices` uses the Unicode replacement character to
-            // indicate the current char is invalid UTF-8. However, the
-            // replacement character itself _is_ valid UTF-8 and a valid
-            // unescaped String character.
-            //
-            // If `char_indices` yields a replacement char and the byte span
-            // matches the UTF-8 encoding of the replacement char, continue.
-            REPLACEMENT_CHARACTER if message[start..end] == REPLACEMENT_CHARACTER_BYTES[..] => {
-                let part = REPLACEMENT_CHARACTER.encode_utf8(&mut enc);
-                dest.write_str(part)?;
-            }
-            // Otherwise, we've gotten invalid UTF-8, which means this is not an
-            // printable char.
-            REPLACEMENT_CHARACTER => {
-                for &byte in &message[start..end] {
-                    let escaped = Literal::debug_escape(byte);
-                    dest.write_str(escaped)?;
-                }
-            }
-            // If the character is ASCII and has a non-trivial escape, retrieve
-            // it and write it to the destination.
-            ch if is_ascii_char_with_escape(ch) => {
+            Some(ch) if is_ascii_char_with_escape(ch) => {
                 let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
                 let escaped = Literal::debug_escape(ascii_byte);
                 dest.write_str(escaped)?;
             }
-            // Otherwise, encode the char to a UTF-8 str and write it out.
-            ch => {
-                let part = ch.encode_utf8(&mut enc);
-                dest.write_str(part)?;
+            Some(ch) => {
+                let enc = ch.encode_utf8(&mut buf);
+                dest.write_str(enc)?;
+            }
+            // Otherwise, we've gotten invalid UTF-8, which means this is not an
+            // printable char.
+            None => {
+                for &byte in &message[..size] {
+                    let escaped = Literal::debug_escape(byte);
+                    dest.write_str(escaped)?;
+                }
             }
         }
+        message = &message[size..];
     }
     Ok(())
 }
