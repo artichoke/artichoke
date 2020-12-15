@@ -6,25 +6,16 @@ use crate::extn::prelude::*;
 
 pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
     let string = value.try_into_mut::<&[u8]>(interp)?;
-
-    let ord = if let Some((start, end, ch)) = string.char_indices().next() {
-        if ch == '\u{FFFD}' {
-            let slice = &string[start..end];
-            match slice {
-                [] => 0,
-                [a] => u32::from_le_bytes([*a, 0, 0, 0]),
-                [a, b] => u32::from_le_bytes([*a, *b, 0, 0]),
-                [a, b, c] => u32::from_le_bytes([*a, *b, *c, 0]),
-                [a, b, c, d] => u32::from_le_bytes([*a, *b, *c, *d]),
-                _ => return Err(ArgumentError::from("Unicode out of range").into()),
-            }
-        } else {
-            // All `char`s are valid `u32`s
-            // https://github.com/rust-lang/rust/blob/1.41.0/src/libcore/char/convert.rs#L12-L20
-            ch as u32
-        }
-    } else {
-        return Err(ArgumentError::from("empty string").into());
+    // NOTE: This implementation assumes all `String`s have encoding =
+    // `Encoding::UTF_8`. Artichoke does not implement the `Encoding` APIs and
+    // `String`s are assumed to be UTF-8 encoded.
+    let (ch, size) = bstr::decode_utf8(string);
+    let ord = match ch {
+        // All `char`s are valid `u32`s
+        // https://github.com/rust-lang/rust/blob/1.48.0/library/core/src/char/convert.rs#L12-L20
+        Some(ch) => u32::from(ch),
+        None if size == 0 => return Err(ArgumentError::from("empty string").into()),
+        None => return Err(ArgumentError::from("invalid byte sequence in UTF-8").into()),
     };
     Ok(interp.convert(ord))
 }
