@@ -7,8 +7,7 @@
 [![Backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
 
 `artichoke-backend` crate provides a Ruby interpreter. It currently is
-implemented with [mruby](https://github.com/mruby/mruby) bindings exported by
-the [`sys`](src/sys) module.
+implemented with [mruby] bindings exported by the [`sys`](src/sys) module.
 
 ## Execute Ruby Code
 
@@ -17,8 +16,7 @@ the interpreter.
 
 ### Evaling Source Code
 
-The `artichoke-backend` interpreter implements
-[`Eval` from `artichoke-core`](https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html).
+The `artichoke-backend` interpreter implements [`Eval` from `artichoke-core`].
 
 ```rust
 use artichoke_backend::prelude::*;
@@ -34,9 +32,8 @@ fn example() -> Result<(), Error> {
 
 ### Calling Functions on Ruby Objects
 
-`Value`s returned by the `artichoke-backend` interpreter implement
-[`Value` from `artichoke-core`](https://artichoke.github.io/artichoke/artichoke_core/value/trait.Value.html),
-which enables calling Ruby functions from Rust.
+`Value`s returned by the `artichoke-backend` interpreter implement [`Value` from
+`artichoke-core`], which enables calling Ruby functions from Rust.
 
 ```rust
 use artichoke_backend::prelude::*;
@@ -87,17 +84,25 @@ between boxed Ruby values and native Rust types like `i64` and
 `artichoke-backend` is licensed with the [MIT License](../LICENSE) (c) Ryan
 Lopopolo.
 
-Some portions of artichoke-backend are derived from
-[mruby](https://github.com/mruby/mruby) which is Copyright (c) 2019 mruby
-developers. mruby is licensed with the
-[MIT License](https://github.com/mruby/mruby/blob/master/LICENSE).
+Some portions of artichoke-backend are derived from [mruby] which is Copyright
+(c) 2019 mruby developers. mruby is licensed with the [MIT
+License][mruby-license].
 
-Some portions of artichoke-backend are derived from Ruby @
-[2.6.3](https://github.com/ruby/ruby/tree/v2_6_3) which is copyright Yukihiro
-Matsumoto \<matz@netlab.jp\>. Ruby is licensed with the
-[2-clause BSDL License](https://github.com/ruby/ruby/blob/v2_6_3/COPYING).
+Some portions of artichoke-backend are derived from Ruby @ [2.6.3][ruby-2.6.3]
+which is copyright Yukihiro Matsumoto \<matz@netlab.jp\>. Ruby is licensed with
+the [2-clause BSDL License][ruby-license].
 
-artichoke-backend vendors headers provided by
-[emsdk](https://github.com/emscripten-core/emsdk) which is Copyright (c) 2018
-Emscripten authors. emsdk is licensed with the
-[MIT/Expat License](https://github.com/emscripten-core/emsdk/blob/master/LICENSE).
+artichoke-backend vendors headers provided by [emsdk] which is Copyright (c)
+2018 Emscripten authors. emsdk is licensed with the [MIT/Expat
+License][emsdk-license].
+
+[`eval` from `artichoke-core`]:
+  https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html
+[`value` from `artichoke-core`]:
+  https://artichoke.github.io/artichoke/artichoke_core/value/trait.Value.html
+[mruby]: https://github.com/mruby/mruby
+[mruby-license]: https://github.com/mruby/mruby/blob/master/LICENSE
+[ruby-2.6.3]: https://github.com/ruby/ruby/tree/v2_6_3
+[ruby-license]: https://github.com/ruby/ruby/blob/v2_6_3/COPYING
+[emsdk]: https://github.com/emscripten-core/emsdk
+[emsdk-license]: https://github.com/emscripten-core/emsdk/blob/master/LICENSE

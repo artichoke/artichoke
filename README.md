@@ -6,7 +6,7 @@
 <br>
 [![Crate](https://img.shields.io/crates/v/artichoke.svg)](https://crates.io/crates/artichoke)
 [![API](https://docs.rs/artichoke/badge.svg)](https://docs.rs/artichoke)
-[![API master](https://img.shields.io/badge/docs-master-blue.svg)](https://artichoke.github.io/artichoke/artichoke/)
+[![API trunk](https://img.shields.io/badge/docs-trunk-blue.svg)](https://artichoke.github.io/artichoke/artichoke/)
 
 <p align="center">
   <a href="https://www.artichokeruby.org">
@@ -38,7 +38,7 @@ Playground][playground-repo] runs a [WebAssembly] build of Artichoke.
 [Download a prebuilt binary from artichoke/nightly][nightlies]. Binaries are
 available for Linux, Linux/musl, macOS, and Windows.
 
-These daily binaries track the latest master branch of Artichoke.
+These daily binaries track the latest trunk branch of Artichoke.
 
 Binaries are also distributed through [ruby-build]. To install with [rbenv]:
 

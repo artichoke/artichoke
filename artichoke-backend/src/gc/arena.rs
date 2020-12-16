@@ -88,10 +88,8 @@ impl From<Box<ArenaSavepointError>> for Box<dyn RubyException> {
 /// the C API.
 ///
 /// mruby manages objects created via the C API in a memory construct called
-/// the
-/// [arena](https://github.com/mruby/mruby/blob/master/doc/guides/gc-arena-howto.md).
-/// The arena is a stack and objects stored there are permanently alive to avoid
-/// having to track lifetimes externally to the interperter.
+/// the [arena]. The arena is a stack and objects stored there are permanently
+/// alive to avoid having to track lifetimes externally to the interperter.
 ///
 /// An [`ArenaIndex`] is an index to some position of the stack. When restoring
 /// an `ArenaIndex`, the stack pointer is moved. All objects beyond the pointer
@@ -99,6 +97,8 @@ impl From<Box<ArenaSavepointError>> for Box<dyn RubyException> {
 ///
 /// `ArenaIndex` implements [`Drop`], so letting it go out of scope is
 /// sufficient to ensure objects get collected eventually.
+///
+/// [arena]: https://github.com/mruby/mruby/blob/master/doc/guides/gc-arena-howto.md
 #[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
 pub struct ArenaIndex<'a> {
