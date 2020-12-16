@@ -13,10 +13,7 @@ impl HeapAllocatedData for Box<Container> {
     const RUBY_TYPE: &'static str = "Container";
 }
 
-unsafe extern "C" fn container_initialize(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn container_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let inner = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
@@ -27,10 +24,7 @@ unsafe extern "C" fn container_initialize(
     result.inner()
 }
 
-unsafe extern "C" fn container_value(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn container_value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut value = Value::from(slf);
     let result = if let Ok(data) = Box::<Container>::unbox_from_value(&mut value, &mut guard) {
@@ -61,9 +55,7 @@ impl File for Container {
 #[test]
 fn define_rust_backed_ruby_class() {
     let mut interp = artichoke_backend::interpreter().unwrap();
-    interp
-        .def_file_for_type::<_, Container>("container.rb")
-        .unwrap();
+    interp.def_file_for_type::<_, Container>("container.rb").unwrap();
 
     let _ = interp.eval(b"require 'container'").unwrap();
     let result = interp.eval(b"Container.new(15).value").unwrap();

@@ -73,29 +73,17 @@ pub trait RegexpType {
         block: Option<Block>,
     ) -> Result<Value, Error>;
 
-    fn match_operator(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-    ) -> Result<Option<usize>, Error>;
+    fn match_operator(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<Option<usize>, Error>;
 
     fn named_captures(&self) -> Result<NameToCaptureLocations, Error>;
 
-    fn named_captures_for_haystack(
-        &self,
-        haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Error>;
+    fn named_captures_for_haystack(&self, haystack: &[u8]) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Error>;
 
     fn names(&self) -> Vec<Vec<u8>>;
 
     fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Error>;
 
-    fn scan(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-        block: Option<Block>,
-    ) -> Result<Scan, Error>;
+    fn scan(&self, interp: &mut Artichoke, haystack: &[u8], block: Option<Block>) -> Result<Scan, Error>;
 }
 
 impl Clone for Box<dyn RegexpType> {
@@ -142,8 +130,7 @@ impl Hash for &dyn RegexpType {
 
 impl PartialEq for &dyn RegexpType {
     fn eq(&self, other: &Self) -> bool {
-        self.derived_config().pattern == other.derived_config().pattern
-            && self.encoding() == other.encoding()
+        self.derived_config().pattern == other.derived_config().pattern && self.encoding() == other.encoding()
     }
 }
 

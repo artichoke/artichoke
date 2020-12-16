@@ -277,10 +277,7 @@ mod tests {
         let root = interp.eval(b"Exception.new").unwrap();
         assert_eq!(Ruby::Exception, types::ruby_from_mrb_value(root.inner()));
         let stderror = interp.eval(b"StandardError.new").unwrap();
-        assert_eq!(
-            Ruby::Exception,
-            types::ruby_from_mrb_value(stderror.inner())
-        );
+        assert_eq!(Ruby::Exception, types::ruby_from_mrb_value(stderror.inner()));
         let index = interp.eval(b"IndexError.new").unwrap();
         assert_eq!(Ruby::Exception, types::ruby_from_mrb_value(index.inner()));
         let domain = interp.eval(b"Math::DomainError.new").unwrap();

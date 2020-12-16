@@ -136,11 +136,7 @@ pub trait BoxUnboxVmValue {
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error>;
 
-    fn box_into_value(
-        value: Self::Unboxed,
-        into: Value,
-        interp: &mut Artichoke,
-    ) -> Result<Value, Error>;
+    fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error>;
 
     fn free(data: *mut c_void);
 }
@@ -166,10 +162,7 @@ where
         }
 
         let mut rclass = {
-            let state = interp
-                .state
-                .as_ref()
-                .ok_or(InterpreterExtractError::new())?;
+            let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
             let spec = state
                 .classes
                 .get::<Self>()
@@ -181,8 +174,7 @@ where
         };
 
         // Sanity check that the RClass matches.
-        let value_rclass =
-            interp.with_ffi_boundary(|mrb| sys::mrb_sys_class_of_value(mrb, value.inner()))?;
+        let value_rclass = interp.with_ffi_boundary(|mrb| sys::mrb_sys_class_of_value(mrb, value.inner()))?;
         if !ptr::eq(value_rclass, rclass.as_mut()) {
             let mut message = String::from("Could not extract ");
             message.push_str(Self::RUBY_TYPE);
@@ -191,17 +183,14 @@ where
         }
 
         // Copy data pointer out of the `mrb_value` box.
-        let state = interp
-            .state
-            .as_ref()
-            .ok_or(InterpreterExtractError::new())?;
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let spec = state
             .classes
             .get::<Self>()
             .ok_or_else(|| NotDefinedError::class(Self::RUBY_TYPE))?;
         let data_type = spec.data_type();
-        let embedded_data_ptr = interp
-            .with_ffi_boundary(|mrb| sys::mrb_data_check_get_ptr(mrb, value.inner(), data_type))?;
+        let embedded_data_ptr =
+            interp.with_ffi_boundary(|mrb| sys::mrb_data_check_get_ptr(mrb, value.inner(), data_type))?;
         if embedded_data_ptr.is_null() {
             // `Object#allocate` can be used to create `MRB_TT_DATA` without calling
             // `#initialize`. These objects will return a NULL pointer.
@@ -219,10 +208,7 @@ where
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
         let mut rclass = {
-            let state = interp
-                .state
-                .as_ref()
-                .ok_or(InterpreterExtractError::new())?;
+            let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
             let spec = state
                 .classes
                 .get::<Self>()
@@ -237,10 +223,7 @@ where
         let ptr = Box::into_raw(data);
 
         // Allocate a new `mrb_value` and inject the raw data pointer.
-        let state = interp
-            .state
-            .as_ref()
-            .ok_or(InterpreterExtractError::new())?;
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let spec = state
             .classes
             .get::<Self>()
@@ -248,8 +231,7 @@ where
         let data_type = spec.data_type();
         let obj = unsafe {
             interp.with_ffi_boundary(|mrb| {
-                let alloc =
-                    sys::mrb_data_object_alloc(mrb, rclass.as_mut(), ptr as *mut c_void, data_type);
+                let alloc = sys::mrb_data_object_alloc(mrb, rclass.as_mut(), ptr as *mut c_void, data_type);
                 sys::mrb_sys_obj_value(alloc as *mut c_void)
             })?
         };
@@ -257,15 +239,8 @@ where
         Ok(interp.protect(Value::from(obj)))
     }
 
-    fn box_into_value(
-        value: Self::Unboxed,
-        into: Value,
-        interp: &mut Artichoke,
-    ) -> Result<Value, Error> {
-        let state = interp
-            .state
-            .as_ref()
-            .ok_or(InterpreterExtractError::new())?;
+    fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
+        let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let spec = state
             .classes
             .get::<Self>()
@@ -303,10 +278,7 @@ mod tests {
     #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
     struct Container(String);
 
-    unsafe extern "C" fn container_value(
-        mrb: *mut sys::mrb_state,
-        slf: sys::mrb_value,
-    ) -> sys::mrb_value {
+    unsafe extern "C" fn container_value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         unwrap_interpreter!(mrb, to => guard);
 
         let mut value = Value::from(slf);
@@ -333,8 +305,7 @@ mod tests {
     #[test]
     fn convert_obj_roundtrip() {
         let mut interp = interpreter().unwrap();
-        let spec =
-            class::Spec::new("Container", None, Some(def::box_unbox_free::<Container>)).unwrap();
+        let spec = class::Spec::new("Container", None, Some(def::box_unbox_free::<Container>)).unwrap();
         class::Builder::for_spec(&mut interp, &spec)
             .value_is_rust_object()
             .add_method("value", container_value, sys::mrb_args_none())
@@ -364,8 +335,7 @@ mod tests {
     fn convert_obj_not_data() {
         let mut interp = interpreter().unwrap();
 
-        let spec =
-            class::Spec::new("Container", None, Some(def::box_unbox_free::<Container>)).unwrap();
+        let spec = class::Spec::new("Container", None, Some(def::box_unbox_free::<Container>)).unwrap();
         class::Builder::for_spec(&mut interp, &spec)
             .value_is_rust_object()
             .add_method("value", container_value, sys::mrb_args_none())

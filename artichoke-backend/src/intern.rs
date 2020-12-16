@@ -39,10 +39,7 @@ impl Artichoke {
         Ok(symbol)
     }
 
-    pub fn check_interned_bytes_with_trailing_nul(
-        &self,
-        bytes: &[u8],
-    ) -> Result<Option<u32>, Error> {
+    pub fn check_interned_bytes_with_trailing_nul(&self, bytes: &[u8]) -> Result<Option<u32>, Error> {
         let state = self.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let symbol = state.symbols.check_interned(bytes);
         if let Some(symbol) = symbol {

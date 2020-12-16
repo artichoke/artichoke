@@ -24,11 +24,7 @@ pub trait DefineConstant {
     /// If the given constant name is not valid, an error is returned.
     ///
     /// If the interpreter cannot define the constant, an error is returned.
-    fn define_global_constant(
-        &mut self,
-        constant: &str,
-        value: Self::Value,
-    ) -> Result<(), Self::Error>;
+    fn define_global_constant(&mut self, constant: &str, value: Self::Value) -> Result<(), Self::Error>;
 
     /// Define a class constant.
     ///
@@ -41,11 +37,7 @@ pub trait DefineConstant {
     /// If the given constant name is not valid, an error is returned.
     ///
     /// If the interpreter cannot define the constant, an error is returned.
-    fn define_class_constant<T>(
-        &mut self,
-        constant: &str,
-        value: Self::Value,
-    ) -> Result<(), Self::Error>
+    fn define_class_constant<T>(&mut self, constant: &str, value: Self::Value) -> Result<(), Self::Error>
     where
         T: 'static;
 
@@ -60,11 +52,7 @@ pub trait DefineConstant {
     /// If the given constant name is not valid, an error is returned.
     ///
     /// If the interpreter cannot define the constant, an error is returned.
-    fn define_module_constant<T>(
-        &mut self,
-        constant: &str,
-        value: Self::Value,
-    ) -> Result<(), Self::Error>
+    fn define_module_constant<T>(&mut self, constant: &str, value: Self::Value) -> Result<(), Self::Error>
     where
         T: 'static;
 }

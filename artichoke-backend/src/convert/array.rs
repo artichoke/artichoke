@@ -272,10 +272,7 @@ impl TryConvertMut<Value, Vec<Vec<u8>>> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Vec<u8>>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
-            array
-                .iter()
-                .map(|elem| self.try_convert_mut(elem))
-                .collect()
+            array.iter().map(|elem| self.try_convert_mut(elem)).collect()
         } else {
             Err(UnboxRubyError::new(&value, Rust::Vec).into())
         }
@@ -288,10 +285,7 @@ impl TryConvertMut<Value, Vec<Option<Vec<u8>>>> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Option<Vec<u8>>>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
-            array
-                .iter()
-                .map(|elem| self.try_convert_mut(elem))
-                .collect()
+            array.iter().map(|elem| self.try_convert_mut(elem)).collect()
         } else {
             Err(UnboxRubyError::new(&value, Rust::Vec).into())
         }
@@ -304,10 +298,7 @@ impl<'a> TryConvertMut<Value, Vec<&'a [u8]>> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<&'a [u8]>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
-            array
-                .iter()
-                .map(|elem| self.try_convert_mut(elem))
-                .collect()
+            array.iter().map(|elem| self.try_convert_mut(elem)).collect()
         } else {
             Err(UnboxRubyError::new(&value, Rust::Vec).into())
         }
@@ -320,10 +311,7 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a [u8]>>> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Option<&'a [u8]>>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
-            array
-                .iter()
-                .map(|elem| self.try_convert_mut(elem))
-                .collect()
+            array.iter().map(|elem| self.try_convert_mut(elem)).collect()
         } else {
             Err(UnboxRubyError::new(&value, Rust::Vec).into())
         }
@@ -336,10 +324,7 @@ impl TryConvertMut<Value, Vec<String>> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<String>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
-            array
-                .iter()
-                .map(|elem| self.try_convert_mut(elem))
-                .collect()
+            array.iter().map(|elem| self.try_convert_mut(elem)).collect()
         } else {
             Err(UnboxRubyError::new(&value, Rust::Vec).into())
         }
@@ -352,10 +337,7 @@ impl TryConvertMut<Value, Vec<Option<String>>> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Option<String>>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
-            array
-                .iter()
-                .map(|elem| self.try_convert_mut(elem))
-                .collect()
+            array.iter().map(|elem| self.try_convert_mut(elem)).collect()
         } else {
             Err(UnboxRubyError::new(&value, Rust::Vec).into())
         }
@@ -368,10 +350,7 @@ impl<'a> TryConvertMut<Value, Vec<&'a str>> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<&'a str>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
-            array
-                .iter()
-                .map(|elem| self.try_convert_mut(elem))
-                .collect()
+            array.iter().map(|elem| self.try_convert_mut(elem)).collect()
         } else {
             Err(UnboxRubyError::new(&value, Rust::Vec).into())
         }
@@ -384,10 +363,7 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a str>>> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Option<&'a str>>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
-            array
-                .iter()
-                .map(|elem| self.try_convert_mut(elem))
-                .collect()
+            array.iter().map(|elem| self.try_convert_mut(elem)).collect()
         } else {
             Err(UnboxRubyError::new(&value, Rust::Vec).into())
         }

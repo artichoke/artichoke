@@ -517,9 +517,7 @@ pub fn gamma(value: f64) -> Result<f64, DomainError> {
             r#"Numerical argument is out of domain - "gamma""#,
         )),
         value if value.is_infinite() => Ok(f64::INFINITY),
-        value if matches!(value.classify(), FpCategory::Zero) && value.is_sign_negative() => {
-            Ok(f64::NEG_INFINITY)
-        }
+        value if matches!(value.classify(), FpCategory::Zero) && value.is_sign_negative() => Ok(f64::NEG_INFINITY),
         value if matches!(value.classify(), FpCategory::Zero) => Ok(f64::INFINITY),
         value if (value - value.floor()).abs() < f64::EPSILON && value.is_sign_negative() => Err(
             DomainError::with_message(r#"Numerical argument is out of domain - "gamma""#),

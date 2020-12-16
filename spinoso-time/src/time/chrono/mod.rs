@@ -223,8 +223,8 @@ impl ToA {
     #[must_use]
     pub fn to_tuple(self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, Offset) {
         (
-            self.sec, self.min, self.hour, self.day, self.month, self.year, self.wday, self.yday,
-            self.isdst, self.zone,
+            self.sec, self.min, self.hour, self.day, self.month, self.year, self.wday, self.yday, self.isdst,
+            self.zone,
         )
     }
 }
@@ -262,12 +262,10 @@ impl TryFrom<ToA> for Time {
             ..
         } = time;
 
-        let date =
-            NaiveDate::from_ymd_opt(year, month, day).ok_or(ComponentOutOfRangeError::Date)?;
+        let date = NaiveDate::from_ymd_opt(year, month, day).ok_or(ComponentOutOfRangeError::Date)?;
         let time = if sec == 60 {
             // Leap second - chrono stores the 60th second in the nanos.
-            NaiveTime::from_hms_nano_opt(hour, min, 59, NANOS_IN_SECOND)
-                .ok_or(ComponentOutOfRangeError::Time)?
+            NaiveTime::from_hms_nano_opt(hour, min, 59, NANOS_IN_SECOND).ok_or(ComponentOutOfRangeError::Time)?
         } else {
             NaiveTime::from_hms_opt(hour, min, sec).ok_or(ComponentOutOfRangeError::Time)?
         };
@@ -370,10 +368,7 @@ mod tests {
     #[test]
     fn properties_fixed() {
         let hour = 3600;
-        let time = Time::from(DateTime::<FixedOffset>::from_utc(
-            date(),
-            FixedOffset::west(7 * hour),
-        ));
+        let time = Time::from(DateTime::<FixedOffset>::from_utc(date(), FixedOffset::west(7 * hour)));
         assert_eq!(time.year(), 2019);
         assert_eq!(time.month(), 4);
         assert_eq!(time.day(), 6);

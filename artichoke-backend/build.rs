@@ -56,10 +56,7 @@ mod buildpath {
         }
 
         pub fn mruby_vendored_include_dir() -> PathBuf {
-            super::crate_root()
-                .join("vendor")
-                .join("mruby")
-                .join("include")
+            super::crate_root().join("vendor").join("mruby").join("include")
         }
 
         pub fn mruby_vendored_source_dir() -> PathBuf {
@@ -87,10 +84,7 @@ mod buildpath {
         }
 
         pub fn mruby_sys_ext_source_file() -> PathBuf {
-            mruby_sys_ext_source_dir()
-                .join("src")
-                .join("mruby-sys")
-                .join("ext.c")
+            mruby_sys_ext_source_dir().join("src").join("mruby-sys").join("ext.c")
         }
     }
 }
@@ -262,11 +256,7 @@ mod libmruby {
             .define("ARTICHOKE", None);
 
         for gem in gems() {
-            let dir = if gem == "mruby-compiler" {
-                "core"
-            } else {
-                "include"
-            };
+            let dir = if gem == "mruby-compiler" { "core" } else { "include" };
             let gem_include_dir = mruby_source_dir().join("mrbgems").join(gem).join(dir);
             build.include(gem_include_dir);
         }
@@ -324,11 +314,7 @@ mod libmruby {
             bindgen = bindgen.clang_arg("-DARTICHOKE");
         }
 
-        bindgen
-            .generate()
-            .unwrap()
-            .write_to_file(bindings_out_path)
-            .unwrap();
+        bindgen.generate().unwrap().write_to_file(bindings_out_path).unwrap();
     }
 
     pub fn build(target: &Triple) {
@@ -361,11 +347,7 @@ mod build {
 
         let _ = fs::remove_file(libmruby::mruby_build_config());
         fs::create_dir_all(libmruby::mruby_build_dir()).unwrap();
-        fs::copy(
-            buildpath::source::mruby_build_config(),
-            libmruby::mruby_build_config(),
-        )
-        .unwrap();
+        fs::copy(buildpath::source::mruby_build_config(), libmruby::mruby_build_config()).unwrap();
         fs::copy(
             buildpath::source::mruby_bootstrap_gembox(),
             libmruby::bootstrap_gembox(),
@@ -391,11 +373,7 @@ mod build {
         let mut stack = vec![PathBuf::from(from.as_ref())];
         let dest_root = PathBuf::from(to.as_ref());
         let input_root_depth = from.as_ref().components().count();
-        println!(
-            "copying {} -> {}",
-            from.as_ref().display(),
-            to.as_ref().display()
-        );
+        println!("copying {} -> {}", from.as_ref().display(), to.as_ref().display());
 
         while let Some(from) = stack.pop() {
             let dest = from.components().skip(input_root_depth);

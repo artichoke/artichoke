@@ -2,15 +2,9 @@ use bstr::BString;
 use std::fmt;
 use std::io::{self, Write};
 
-#[cfg(all(
-    not(feature = "output-strategy-capture"),
-    not(feature = "output-strategy-null")
-))]
+#[cfg(all(not(feature = "output-strategy-capture"), not(feature = "output-strategy-null")))]
 pub type Strategy = Process;
-#[cfg(all(
-    feature = "output-strategy-capture",
-    not(feature = "output-strategy-null")
-))]
+#[cfg(all(feature = "output-strategy-capture", not(feature = "output-strategy-null")))]
 pub type Strategy = Captured;
 #[cfg(all(feature = "output-strategy-capture", feature = "output-strategy-null"))]
 pub type Strategy = Null;

@@ -207,8 +207,7 @@ impl Mt {
         state[0] = Wrapping(seed);
 
         for i in 1..N {
-            state[i] = Wrapping(1_812_433_253) * (state[i - 1] ^ (state[i - 1] >> 30))
-                + Wrapping(i as u32);
+            state[i] = Wrapping(1_812_433_253) * (state[i - 1] ^ (state[i - 1] >> 30)) + Wrapping(i as u32);
         }
     }
 
@@ -238,9 +237,8 @@ impl Mt {
             }
         }
         for _ in 0..N - 1 {
-            state[i] = (state[i]
-                ^ ((state[i - 1] ^ (state[i - 1] >> 30)) * Wrapping(1_566_083_941)))
-                - Wrapping(i as u32);
+            state[i] =
+                (state[i] ^ ((state[i - 1] ^ (state[i - 1] >> 30)) * Wrapping(1_566_083_941))) - Wrapping(i as u32);
             i += 1;
             if i >= N {
                 state[0] = state[N - 1];
@@ -273,11 +271,7 @@ fn mixbits(u: Wrapping<u32>, v: Wrapping<u32>) -> Wrapping<u32> {
 #[inline]
 fn twist(u: Wrapping<u32>, v: Wrapping<u32>) -> Wrapping<u32> {
     let left = mixbits(u, v) >> 1;
-    let right = if v & ONE == ONE {
-        MATRIX_A
-    } else {
-        Wrapping(0)
-    };
+    let right = if v & ONE == ONE { MATRIX_A } else { Wrapping(0) };
     left ^ right
 }
 

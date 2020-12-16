@@ -38,16 +38,8 @@ where
     T: 'static + BoxUnboxVmValue,
 {
     if data.is_null() {
-        error!(
-            "Received null pointer in box_unbox_free<{}>: {:p}",
-            T::RUBY_TYPE,
-            data
-        );
-        eprintln!(
-            "Received null pointer in box_unbox_free<{}>: {:p}",
-            T::RUBY_TYPE,
-            data
-        );
+        error!("Received null pointer in box_unbox_free<{}>: {:p}", T::RUBY_TYPE, data);
+        eprintln!("Received null pointer in box_unbox_free<{}>: {:p}", T::RUBY_TYPE, data);
     }
     T::free(data);
 }
@@ -86,8 +78,7 @@ mod free_test {
 ///
 /// To extract method arguments, use [`mrb_get_args!`] and the supplied
 /// interpreter.
-pub type Method =
-    unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
+pub type Method = unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct ClassScope {
@@ -187,8 +178,7 @@ impl EnclosingRubyScope {
             }
             Self::Module(scope) => {
                 let enclosing_scope = scope.enclosing_scope.clone().map(|scope| *scope);
-                module::Rclass::new(scope.name_symbol, scope.cstring.clone(), enclosing_scope)
-                    .resolve(mrb)
+                module::Rclass::new(scope.name_symbol, scope.cstring.clone(), enclosing_scope).resolve(mrb)
             }
         }
     }
@@ -278,10 +268,7 @@ impl RubyException for ConstantNameError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let value = interp
-            .new_instance::<NameError>(&[message])
-            .ok()
-            .flatten()?;
+        let value = interp.new_instance::<NameError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }
@@ -440,10 +427,7 @@ impl RubyException for NotDefinedError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let value = interp
-            .new_instance::<ScriptError>(&[message])
-            .ok()
-            .flatten()?;
+        let value = interp.new_instance::<ScriptError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }
@@ -506,50 +490,26 @@ mod tests {
             // Setup: define module and class hierarchy
             let mut interp = interpreter().unwrap();
             let root = module::Spec::new(&mut interp, "A", None).unwrap();
-            let mod_under_root =
-                module::Spec::new(&mut interp, "B", Some(EnclosingRubyScope::module(&root)))
-                    .unwrap();
-            let cls_under_root =
-                class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None).unwrap();
+            let mod_under_root = module::Spec::new(&mut interp, "B", Some(EnclosingRubyScope::module(&root))).unwrap();
+            let cls_under_root = class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None).unwrap();
             let cls_under_mod =
-                class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None)
-                    .unwrap();
-            let mod_under_cls = module::Spec::new(
-                &mut interp,
-                "E",
-                Some(EnclosingRubyScope::class(&cls_under_root)),
-            )
-            .unwrap();
-            let cls_under_cls =
-                class::Spec::new("F", Some(EnclosingRubyScope::class(&cls_under_root)), None)
-                    .unwrap();
-            module::Builder::for_spec(&mut interp, &root)
-                .define()
-                .unwrap();
+                class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None).unwrap();
+            let mod_under_cls =
+                module::Spec::new(&mut interp, "E", Some(EnclosingRubyScope::class(&cls_under_root))).unwrap();
+            let cls_under_cls = class::Spec::new("F", Some(EnclosingRubyScope::class(&cls_under_root)), None).unwrap();
+            module::Builder::for_spec(&mut interp, &root).define().unwrap();
             module::Builder::for_spec(&mut interp, &mod_under_root)
                 .define()
                 .unwrap();
-            class::Builder::for_spec(&mut interp, &cls_under_root)
-                .define()
-                .unwrap();
-            class::Builder::for_spec(&mut interp, &cls_under_mod)
-                .define()
-                .unwrap();
-            module::Builder::for_spec(&mut interp, &mod_under_cls)
-                .define()
-                .unwrap();
-            class::Builder::for_spec(&mut interp, &cls_under_cls)
-                .define()
-                .unwrap();
+            class::Builder::for_spec(&mut interp, &cls_under_root).define().unwrap();
+            class::Builder::for_spec(&mut interp, &cls_under_mod).define().unwrap();
+            module::Builder::for_spec(&mut interp, &mod_under_cls).define().unwrap();
+            class::Builder::for_spec(&mut interp, &cls_under_cls).define().unwrap();
             interp.def_module::<Root>(root).unwrap();
-            interp
-                .def_module::<ModuleUnderRoot>(mod_under_root)
-                .unwrap();
+            interp.def_module::<ModuleUnderRoot>(mod_under_root).unwrap();
             interp.def_class::<ClassUnderRoot>(cls_under_root).unwrap();
             interp.def_class::<ClassUnderModule>(cls_under_mod).unwrap();
-            interp
-                .def_module::<ModuleUnderClass>(mod_under_cls)
-                .unwrap();
+            interp.def_module::<ModuleUnderClass>(mod_under_cls).unwrap();
             interp.def_class::<ClassUnderClass>(cls_under_cls).unwrap();
 
             let root = interp.module_spec::<Root>().unwrap().unwrap();

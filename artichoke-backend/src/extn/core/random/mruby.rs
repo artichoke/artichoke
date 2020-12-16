@@ -22,18 +22,14 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.def_class::<Rng>(spec)?;
 
     let default = Rng::Global;
-    let default = Rng::alloc_value(default, interp)
-        .map_err(|_| NotDefinedError::class_constant("Random::DEFAULT"))?;
+    let default = Rng::alloc_value(default, interp).map_err(|_| NotDefinedError::class_constant("Random::DEFAULT"))?;
     interp.define_class_constant::<Rng>("DEFAULT", default)?;
     let _ = interp.eval(&include_bytes!("random.rb")[..])?;
     trace!("Patched Random onto interpreter");
     Ok(())
 }
 
-unsafe extern "C" fn random_initialize(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn random_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let seed = mrb_get_args!(mrb, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
@@ -92,10 +88,7 @@ unsafe extern "C" fn random_seed(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     }
 }
 
-unsafe extern "C" fn random_self_new_seed(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn random_self_new_seed(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let result = trampoline::new_seed(&mut guard);
@@ -105,10 +98,7 @@ unsafe extern "C" fn random_self_new_seed(
     }
 }
 
-unsafe extern "C" fn random_self_srand(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn random_self_srand(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let number = mrb_get_args!(mrb, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let number = number.map(Value::from);
@@ -119,10 +109,7 @@ unsafe extern "C" fn random_self_srand(
     }
 }
 
-unsafe extern "C" fn random_self_urandom(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn random_self_urandom(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let size = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let size = Value::from(size);

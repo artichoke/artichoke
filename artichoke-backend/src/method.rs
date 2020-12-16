@@ -79,20 +79,12 @@ impl Spec {
     ///
     /// This method requires that the [`sys::mrb_state`] has a valid `top_self`
     /// object.
-    pub unsafe fn define(
-        &self,
-        interp: &mut Artichoke,
-        into: &mut sys::RClass,
-    ) -> Result<(), NotDefinedError> {
+    pub unsafe fn define(&self, interp: &mut Artichoke, into: &mut sys::RClass) -> Result<(), NotDefinedError> {
         interp
             .with_ffi_boundary(|mrb| match self.method_type {
-                Type::Class => sys::mrb_define_class_method(
-                    mrb,
-                    into,
-                    self.name_c_str().as_ptr(),
-                    Some(self.method),
-                    self.args,
-                ),
+                Type::Class => {
+                    sys::mrb_define_class_method(mrb, into, self.name_c_str().as_ptr(), Some(self.method), self.args)
+                }
                 Type::Global => sys::mrb_define_singleton_method(
                     mrb,
                     (*mrb).top_self,
@@ -100,13 +92,9 @@ impl Spec {
                     Some(self.method),
                     self.args,
                 ),
-                Type::Instance => sys::mrb_define_method(
-                    mrb,
-                    into,
-                    self.name_c_str().as_ptr(),
-                    Some(self.method),
-                    self.args,
-                ),
+                Type::Instance => {
+                    sys::mrb_define_method(mrb, into, self.name_c_str().as_ptr(), Some(self.method), self.args)
+                }
                 Type::Module => sys::mrb_define_module_function(
                     mrb,
                     into,

@@ -33,26 +33,15 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;
     let spec = module::Spec::new(interp, "Kernel", Some(scope))?;
     module::Builder::for_spec(interp, &spec)
-        .add_method(
-            "Integer",
-            artichoke_kernel_integer,
-            sys::mrb_args_req_and_opt(1, 1),
-        )?
-        .add_self_method(
-            "Integer",
-            artichoke_kernel_integer,
-            sys::mrb_args_req_and_opt(1, 1),
-        )?
+        .add_method("Integer", artichoke_kernel_integer, sys::mrb_args_req_and_opt(1, 1))?
+        .add_self_method("Integer", artichoke_kernel_integer, sys::mrb_args_req_and_opt(1, 1))?
         .define()?;
     interp.def_module::<artichoke::Kernel>(spec)?;
     trace!("Patched Artichoke::Kernel onto interpreter");
     Ok(())
 }
 
-unsafe extern "C" fn artichoke_kernel_integer(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_kernel_integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let arg = Value::from(arg);
@@ -64,10 +53,7 @@ unsafe extern "C" fn artichoke_kernel_integer(
     }
 }
 
-unsafe extern "C" fn artichoke_kernel_load(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_kernel_load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let file = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let file = Value::from(file);
@@ -78,10 +64,7 @@ unsafe extern "C" fn artichoke_kernel_load(
     }
 }
 
-unsafe extern "C" fn artichoke_kernel_p(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_kernel_p(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -92,10 +75,7 @@ unsafe extern "C" fn artichoke_kernel_p(
     }
 }
 
-unsafe extern "C" fn artichoke_kernel_print(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_kernel_print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -106,10 +86,7 @@ unsafe extern "C" fn artichoke_kernel_print(
     }
 }
 
-unsafe extern "C" fn artichoke_kernel_puts(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_kernel_puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -120,10 +97,7 @@ unsafe extern "C" fn artichoke_kernel_puts(
     }
 }
 
-unsafe extern "C" fn artichoke_kernel_require(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_kernel_require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let file = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let file = Value::from(file);

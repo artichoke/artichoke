@@ -49,8 +49,9 @@ pub fn escape_into(text: &str, buf: &mut String) {
 #[must_use]
 pub fn is_meta_character(c: char) -> bool {
     match c {
-        '\\' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{' | '}' | '^' | '$'
-        | '#' | '&' | '-' | '~' => true,
+        '\\' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{' | '}' | '^' | '$' | '#' | '&' | '-' | '~' => {
+            true
+        }
         // This match arm differs from `regex-syntax` by including '/'.
         // Ruby uses '/' to mark `Regexp` literals in source code.
         '/' => true,

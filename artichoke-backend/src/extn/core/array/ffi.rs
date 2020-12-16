@@ -18,10 +18,7 @@ unsafe extern "C" fn mrb_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
 
 // MRB_API mrb_value mrb_ary_new_capa(mrb_state*, mrb_int);
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_new_capa(
-    mrb: *mut sys::mrb_state,
-    capa: sys::mrb_int,
-) -> sys::mrb_value {
+unsafe extern "C" fn mrb_ary_new_capa(mrb: *mut sys::mrb_state, capa: sys::mrb_int) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let capacity = usize::try_from(capa).unwrap_or_default();
     let result = Array::with_capacity(capacity);
@@ -76,10 +73,7 @@ unsafe extern "C" fn mrb_assoc_new(
 
 // MRB_API mrb_value mrb_ary_splat(mrb_state *mrb, mrb_value value);
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_splat(
-    mrb: *mut sys::mrb_state,
-    value: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn mrb_ary_splat(mrb: *mut sys::mrb_state, value: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut value = Value::from(value);
     let result = if Array::unbox_from_value(&mut value, &mut guard).is_ok() {
@@ -99,11 +93,7 @@ unsafe extern "C" fn mrb_ary_splat(
 //
 // This function corresponds to the `OP_ARYCAT` VM opcode.
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_concat(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-    other: sys::mrb_value,
-) {
+unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value, other: sys::mrb_value) {
     unwrap_interpreter!(mrb, to => guard, or_else = ());
     let mut array = Value::from(ary);
     let mut other = Value::from(other);
@@ -148,11 +138,7 @@ unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
 
 // MRB_API void mrb_ary_push(mrb_state *mrb, mrb_value array, mrb_value value);
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_push(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-    value: sys::mrb_value,
-) {
+unsafe extern "C" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value, value: sys::mrb_value) {
     unwrap_interpreter!(mrb, to => guard, or_else = ());
     let mut array = Value::from(ary);
     let value = Value::from(value);
@@ -228,10 +214,7 @@ unsafe extern "C" fn mrb_ary_set(
 
 // MRB_API mrb_value mrb_ary_shift(mrb_state *mrb, mrb_value self)
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_shift(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
@@ -330,6 +313,9 @@ unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut 
     // it. Prefer to leak the `Vec` if this happens so we don't segfault.
     warn!(
         "Attempted to free Array with unaligned pointer: ptr = {:p}, offset = {:x}, len = {}, capa = {}",
-        ptr, ptr.align_offset(0x10), len, capacity
+        ptr,
+        ptr.align_offset(0x10),
+        len,
+        capacity
     );
 }

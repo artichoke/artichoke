@@ -31,9 +31,8 @@ impl Lazy {
     }
 
     pub fn regexp(&self) -> Result<&Regexp, Error> {
-        self.regexp.get_or_try_init(|| {
-            Regexp::new(self.literal.clone(), self.literal.clone(), self.encoding)
-        })
+        self.regexp
+            .get_or_try_init(|| Regexp::new(self.literal.clone(), self.literal.clone(), self.encoding))
     }
 }
 
@@ -101,15 +100,11 @@ impl RegexpType for Lazy {
     }
 
     fn inspect(&self) -> Vec<u8> {
-        self.regexp()
-            .map(|regexp| regexp.inner().inspect())
-            .unwrap_or_default()
+        self.regexp().map(|regexp| regexp.inner().inspect()).unwrap_or_default()
     }
 
     fn string(&self) -> &[u8] {
-        self.regexp()
-            .map(|regexp| regexp.inner().string())
-            .unwrap_or_default()
+        self.regexp().map(|regexp| regexp.inner().string()).unwrap_or_default()
     }
 
     fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Error> {
@@ -130,11 +125,7 @@ impl RegexpType for Lazy {
         self.regexp()?.inner().match_(interp, haystack, pos, block)
     }
 
-    fn match_operator(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-    ) -> Result<Option<usize>, Error> {
+    fn match_operator(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<Option<usize>, Error> {
         self.regexp()?.inner().match_operator(interp, haystack)
     }
 
@@ -142,29 +133,19 @@ impl RegexpType for Lazy {
         self.regexp()?.inner().named_captures()
     }
 
-    fn named_captures_for_haystack(
-        &self,
-        haystack: &[u8],
-    ) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Error> {
+    fn named_captures_for_haystack(&self, haystack: &[u8]) -> Result<Option<HashMap<Vec<u8>, NilableString>>, Error> {
         self.regexp()?.inner().named_captures_for_haystack(haystack)
     }
 
     fn names(&self) -> Vec<Vec<u8>> {
-        self.regexp()
-            .map(|regexp| regexp.inner().names())
-            .unwrap_or_default()
+        self.regexp().map(|regexp| regexp.inner().names()).unwrap_or_default()
     }
 
     fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Error> {
         self.regexp()?.inner().pos(haystack, at)
     }
 
-    fn scan(
-        &self,
-        interp: &mut Artichoke,
-        haystack: &[u8],
-        block: Option<Block>,
-    ) -> Result<Scan, Error> {
+    fn scan(&self, interp: &mut Artichoke, haystack: &[u8], block: Option<Block>) -> Result<Scan, Error> {
         self.regexp()?.inner().scan(interp, haystack, block)
     }
 }

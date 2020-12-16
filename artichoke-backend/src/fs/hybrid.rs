@@ -25,9 +25,7 @@ impl Filesystem for Hybrid {
     }
 
     fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
-        self.memory
-            .read_file(path)
-            .or_else(|_| self.native.read_file(path))
+        self.memory.read_file(path).or_else(|_| self.native.read_file(path))
     }
 
     fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {

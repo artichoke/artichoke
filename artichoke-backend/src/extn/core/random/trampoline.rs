@@ -3,11 +3,7 @@
 use super::{Random, Rng, Seed};
 use crate::extn::prelude::*;
 
-pub fn initialize(
-    interp: &mut Artichoke,
-    seed: Option<Value>,
-    into: Value,
-) -> Result<Value, Error> {
+pub fn initialize(interp: &mut Artichoke, seed: Option<Value>, into: Value) -> Result<Value, Error> {
     let seed: Seed = interp.try_convert_mut(seed)?;
     let random = Random::with_array_seed(seed.to_mt_seed())?;
     let random = Rng::Value(Box::new(random));

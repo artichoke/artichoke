@@ -103,16 +103,11 @@ impl Value {
     #[must_use]
     pub fn is_dead(&self, interp: &mut Artichoke) -> bool {
         let value = self.inner();
-        let is_dead =
-            unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_sys_value_is_dead(mrb, value)) };
+        let is_dead = unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_sys_value_is_dead(mrb, value)) };
         is_dead.unwrap_or_default()
     }
 
-    pub fn is_range(
-        &self,
-        interp: &mut Artichoke,
-        len: Int,
-    ) -> Result<Option<protect::Range>, Error> {
+    pub fn is_range(&self, interp: &mut Artichoke, len: Int) -> Result<Option<protect::Range>, Error> {
         let mut arena = interp.create_arena_savepoint()?;
         let result = unsafe {
             arena
@@ -133,9 +128,7 @@ impl Value {
             if let Some(int) = int {
                 int
             } else {
-                return Err(TypeError::from(
-                    "no implicit conversion from nil to integer",
-                ));
+                return Err(TypeError::from("no implicit conversion from nil to integer"));
             }
         } else if let Ok(true) = self.respond_to(interp, "to_int") {
             if let Ok(maybe) = self.funcall(interp, "to_int", &[], None) {
@@ -167,10 +160,7 @@ impl Value {
         Ok(int)
     }
 
-    pub fn implicitly_convert_to_string(
-        &mut self,
-        interp: &mut Artichoke,
-    ) -> Result<&[u8], TypeError> {
+    pub fn implicitly_convert_to_string(&mut self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
         let string = if let Ok(string) = self.try_into_mut::<&[u8]>(interp) {
             string
         } else if let Ok(sym) = unsafe { Symbol::unbox_from_value(self, interp) } {
@@ -293,8 +283,7 @@ impl ValueCore for Value {
 
     fn is_frozen(&self, interp: &mut Self::Artichoke) -> bool {
         let value = self.inner();
-        let is_frozen =
-            unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_sys_obj_frozen(mrb, value)) };
+        let is_frozen = unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_sys_obj_frozen(mrb, value)) };
         is_frozen.unwrap_or_default()
     }
 
@@ -452,10 +441,7 @@ impl RubyException for ArgCountError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.to_string());
-        let value = interp
-            .new_instance::<ArgumentError>(&[message])
-            .ok()
-            .flatten()?;
+        let value = interp.new_instance::<ArgumentError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }
@@ -691,9 +677,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let nil = Value::nil();
         let s = interp.convert_mut("foo");
-        let err = nil
-            .funcall(&mut interp, "garbage_method_name", &[s], None)
-            .unwrap_err();
+        let err = nil.funcall(&mut interp, "garbage_method_name", &[s], None).unwrap_err();
         assert_eq!("NoMethodError", err.name().as_ref());
         assert_eq!(
             b"undefined method 'garbage_method_name'".as_bstr(),

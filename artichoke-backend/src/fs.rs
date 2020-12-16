@@ -141,11 +141,7 @@ where
     let (mut components, cwd_is_relative) = if let Some(Component::RootDir) = iter.peek() {
         (Vec::with_capacity(hint.1.unwrap_or(hint.0)), false)
     } else {
-        let mut components = cwd
-            .as_ref()
-            .components()
-            .map(Component::as_os_str)
-            .collect::<Vec<_>>();
+        let mut components = cwd.as_ref().components().map(Component::as_os_str).collect::<Vec<_>>();
         components.reserve(hint.1.unwrap_or(hint.0));
         (components, cwd.as_ref().is_relative())
     };
@@ -218,30 +214,18 @@ mod tests {
     fn absolutize_relative_path() {
         let path = Path::new("foo/bar");
         let cwd = Path::new("/home/artichoke");
-        assert_eq!(
-            absolutize_relative_to(&path, cwd),
-            Path::new("/home/artichoke/foo/bar")
-        );
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/home/artichoke/foo/bar"));
         let cwd = Path::new("relative/path");
-        assert_eq!(
-            absolutize_relative_to(&path, cwd),
-            Path::new("relative/path/foo/bar")
-        );
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("relative/path/foo/bar"));
     }
 
     #[test]
     fn absolutize_relative_path_dedot_current_dir() {
         let path = Path::new("././././foo/./bar/./././.");
         let cwd = Path::new("/home/artichoke");
-        assert_eq!(
-            absolutize_relative_to(&path, cwd),
-            Path::new("/home/artichoke/foo/bar")
-        );
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("/home/artichoke/foo/bar"));
         let cwd = Path::new("relative/path");
-        assert_eq!(
-            absolutize_relative_to(&path, cwd),
-            Path::new("relative/path/foo/bar")
-        );
+        assert_eq!(absolutize_relative_to(&path, cwd), Path::new("relative/path/foo/bar"));
     }
 
     #[test]

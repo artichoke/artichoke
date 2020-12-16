@@ -10,11 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Array", None, Some(def::box_unbox_free::<array::Array>))?;
     class::Builder::for_spec(interp, &spec)
         .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))?
-        .add_method(
-            "[]=",
-            ary_element_assignment,
-            sys::mrb_args_req_and_opt(2, 1),
-        )?
+        .add_method("[]=", ary_element_assignment, sys::mrb_args_req_and_opt(2, 1))?
         .add_method("concat", ary_concat, sys::mrb_args_any())?
         .add_method(
             "initialize",
@@ -85,10 +81,7 @@ unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -
     }
 }
 
-unsafe extern "C" fn ary_initialize(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn ary_initialize(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let (first, second, block) = mrb_get_args!(mrb, optional = 2, &block);
     unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
@@ -105,10 +98,7 @@ unsafe extern "C" fn ary_initialize(
     }
 }
 
-unsafe extern "C" fn ary_initialize_copy(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn ary_initialize_copy(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
@@ -124,10 +114,7 @@ unsafe extern "C" fn ary_initialize_copy(
     }
 }
 
-unsafe extern "C" fn ary_reverse_bang(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn ary_reverse_bang(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
@@ -142,10 +129,7 @@ unsafe extern "C" fn ary_reverse_bang(
     }
 }
 
-unsafe extern "C" fn ary_element_reference(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn ary_element_reference(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let elem = Value::from(elem);
@@ -158,10 +142,7 @@ unsafe extern "C" fn ary_element_reference(
     }
 }
 
-unsafe extern "C" fn ary_element_assignment(
-    mrb: *mut sys::mrb_state,
-    ary: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn ary_element_assignment(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     let (first, second, third) = mrb_get_args!(mrb, required = 2, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let first = Value::from(first);

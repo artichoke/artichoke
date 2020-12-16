@@ -29,9 +29,7 @@ use crate::Artichoke;
 /// This function assumes that the user data pointer was created with
 /// [`Box::into_raw`] and that the pointer is to a non-free'd
 /// [`Box`]`<`[`State`]`>`.
-pub unsafe fn from_user_data(
-    mrb: *mut sys::mrb_state,
-) -> Result<Artichoke, InterpreterExtractError> {
+pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, InterpreterExtractError> {
     trace!("Extracting Artichoke State from FFI boundary");
 
     let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
@@ -190,10 +188,7 @@ impl RubyException for ConvertBytesError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let value = interp
-            .new_instance::<ArgumentError>(&[message])
-            .ok()
-            .flatten()?;
+        let value = interp.new_instance::<ArgumentError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }

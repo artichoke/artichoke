@@ -79,11 +79,7 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     Ok(interp.convert(result))
 }
 
-pub fn concat(
-    interp: &mut Artichoke,
-    mut ary: Value,
-    other: Option<Value>,
-) -> Result<Value, Error> {
+pub fn concat(interp: &mut Artichoke, mut ary: Value, other: Option<Value>) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::from("can't modify frozen Array").into());
     }
@@ -141,11 +137,7 @@ pub fn initialize(
     Array::box_into_value(array, into, interp)
 }
 
-pub fn initialize_copy(
-    interp: &mut Artichoke,
-    ary: Value,
-    mut from: Value,
-) -> Result<Value, Error> {
+pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> Result<Value, Error> {
     let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
     let result = from.clone();
     Array::box_into_value(result, ary, interp)
@@ -158,8 +150,7 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = if let Some(count) = count {
         let count = count.implicitly_convert_to_int(interp)?;
-        let count =
-            usize::try_from(count).map_err(|_| ArgumentError::from("negative array size"))?;
+        let count = usize::try_from(count).map_err(|_| ArgumentError::from("negative array size"))?;
         let shifted = array.shift_n(count);
 
         Array::alloc_value(shifted, interp)

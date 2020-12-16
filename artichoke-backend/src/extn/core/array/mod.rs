@@ -193,8 +193,7 @@ impl Array {
         let vector = match (first, second, block) {
             (Some(mut array_or_len), default, None) => {
                 if let Ok(len) = array_or_len.try_into::<Int>(interp) {
-                    let len = usize::try_from(len)
-                        .map_err(|_| ArgumentError::from("negative array size"))?;
+                    let len = usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
                     let default = default.unwrap_or_else(Value::nil);
                     SpinosoArray::with_len_and_default(len, default.inner())
                 } else {
@@ -218,8 +217,7 @@ impl Array {
                         }
                     } else {
                         let len = array_or_len.implicitly_convert_to_int(interp)?;
-                        let len = usize::try_from(len)
-                            .map_err(|_| ArgumentError::from("negative array size"))?;
+                        let len = usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
                         let default = default.unwrap_or_else(Value::nil);
                         SpinosoArray::with_len_and_default(len, default.inner())
                     }
@@ -227,16 +225,14 @@ impl Array {
             }
             (Some(mut array_or_len), default, Some(block)) => {
                 if let Ok(len) = array_or_len.try_into::<Int>(interp) {
-                    let len = usize::try_from(len)
-                        .map_err(|_| ArgumentError::from("negative array size"))?;
+                    let len = usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
                     if default.is_some() {
                         interp.warn(b"warning: block supersedes default value argument")?;
                     }
                     let mut buffer = SpinosoArray::with_capacity(len);
                     for idx in 0..len {
-                        let idx = Int::try_from(idx).map_err(|_| {
-                            RangeError::from("bignum too big to convert into `long'")
-                        })?;
+                        let idx = Int::try_from(idx)
+                            .map_err(|_| RangeError::from("bignum too big to convert into `long'"))?;
                         let idx = interp.convert(idx);
                         let elem = block.yield_arg(interp, &idx)?;
                         buffer.push(elem.inner());
@@ -263,16 +259,14 @@ impl Array {
                         }
                     } else {
                         let len = array_or_len.implicitly_convert_to_int(interp)?;
-                        let len = usize::try_from(len)
-                            .map_err(|_| ArgumentError::from("negative array size"))?;
+                        let len = usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
                         if default.is_some() {
                             interp.warn(b"warning: block supersedes default value argument")?;
                         }
                         let mut buffer = SpinosoArray::with_capacity(len);
                         for idx in 0..len {
-                            let idx = Int::try_from(idx).map_err(|_| {
-                                RangeError::from("bignum too big to convert into `long'")
-                            })?;
+                            let idx = Int::try_from(idx)
+                                .map_err(|_| RangeError::from("bignum too big to convert into `long'"))?;
                             let idx = interp.convert(idx);
                             let elem = block.yield_arg(interp, &idx)?;
                             buffer.push(elem.inner());
@@ -334,8 +328,7 @@ impl Array {
         second: Value,
         third: Option<Value>,
     ) -> Result<Value, Error> {
-        let (start, drain, mut elem) =
-            args::element_assignment(interp, first, second, third, self.0.len())?;
+        let (start, drain, mut elem) = args::element_assignment(interp, first, second, third, self.0.len())?;
 
         if let Some(drain) = drain {
             if let Ok(other) = unsafe { Self::unbox_from_value(&mut elem, interp) } {
@@ -495,12 +488,7 @@ impl Array {
         if !matches!(into.ruby_type(), Ruby::Array) {
             panic!("Tried to box Array into {:?} value", into.ruby_type());
         }
-        sys::mrb_sys_repack_into_rarray(
-            ptr,
-            len as sys::mrb_int,
-            capacity as sys::mrb_int,
-            into.inner(),
-        );
+        sys::mrb_sys_repack_into_rarray(ptr, len as sys::mrb_int, capacity as sys::mrb_int, into.inner());
         Ok(())
     }
 }
@@ -554,11 +542,7 @@ impl BoxUnboxVmValue for Array {
         Ok(interp.protect(value.into()))
     }
 
-    fn box_into_value(
-        value: Self::Unboxed,
-        into: Value,
-        interp: &mut Artichoke,
-    ) -> Result<Value, Error> {
+    fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
         let _ = interp;
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         unsafe {

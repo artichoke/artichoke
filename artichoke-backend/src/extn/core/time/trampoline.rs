@@ -98,11 +98,7 @@ where
     Err(NotImplementedError::new().into())
 }
 
-pub fn initialize_copy(
-    interp: &mut Artichoke,
-    time: Value,
-    mut from: Value,
-) -> Result<Value, Error> {
+pub fn initialize_copy(interp: &mut Artichoke, time: Value, mut from: Value) -> Result<Value, Error> {
     let from = unsafe { Time::unbox_from_value(&mut from, interp)? };
     let result = *from;
     Time::box_into_value(result, time, interp)
@@ -110,11 +106,7 @@ pub fn initialize_copy(
 
 // Mutators and converters
 
-pub fn mutate_to_local(
-    interp: &mut Artichoke,
-    time: Value,
-    offset: Option<Value>,
-) -> Result<Value, Error> {
+pub fn mutate_to_local(interp: &mut Artichoke, time: Value, offset: Option<Value>) -> Result<Value, Error> {
     let _ = interp;
     let _ = time;
     let _ = offset;
@@ -127,11 +119,7 @@ pub fn mutate_to_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, E
     Ok(time)
 }
 
-pub fn as_local(
-    interp: &mut Artichoke,
-    time: Value,
-    offset: Option<Value>,
-) -> Result<Value, Error> {
+pub fn as_local(interp: &mut Artichoke, time: Value, offset: Option<Value>) -> Result<Value, Error> {
     let _ = interp;
     let _ = time;
     let _ = offset;
@@ -203,11 +191,7 @@ pub fn succ(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     Time::alloc_value(next, interp)
 }
 
-pub fn round(
-    interp: &mut Artichoke,
-    time: Value,
-    num_digits: Option<Value>,
-) -> Result<Value, Error> {
+pub fn round(interp: &mut Artichoke, time: Value, num_digits: Option<Value>) -> Result<Value, Error> {
     let _ = interp;
     let _ = time;
     let _ = num_digits;

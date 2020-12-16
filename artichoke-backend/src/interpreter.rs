@@ -60,9 +60,7 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
     let mut arena = interp.create_arena_savepoint()?;
 
     unsafe {
-        arena
-            .interp()
-            .with_ffi_boundary(|mrb| sys::mrb_init_mrbgems(mrb))?;
+        arena.interp().with_ffi_boundary(|mrb| sys::mrb_init_mrbgems(mrb))?;
     }
     arena.restore();
 

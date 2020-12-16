@@ -391,9 +391,7 @@ fn parse(name: &[u8]) -> Option<IdentifierType> {
 fn parse_ident(name: &[u8], id_type: IdentifierType) -> Option<IdentifierType> {
     match name {
         [] => None,
-        [first, name @ .., b'=']
-            if *first != b'_' && first.is_ascii() && !first.is_ascii_alphabetic() =>
-        {
+        [first, name @ .., b'='] if *first != b'_' && first.is_ascii() && !first.is_ascii_alphabetic() => {
             if let None | Some(IdentifierType::AttrSet) = parse_ident(name, id_type) {
                 None
             } else {
@@ -479,11 +477,7 @@ fn is_symbolic_method_name(name: &[u8]) -> bool {
 fn is_const_name(name: &[u8]) -> bool {
     match name {
         [] => false,
-        name if name.is_ascii() => name
-            .iter()
-            .next()
-            .map(u8::is_ascii_uppercase)
-            .unwrap_or_default(),
+        name if name.is_ascii() => name.iter().next().map(u8::is_ascii_uppercase).unwrap_or_default(),
         name if name.is_utf8() => name
             .chars()
             .next()
@@ -639,8 +633,7 @@ fn is_special_global_punct(ch: u8) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        is_ident_until, is_next_ident_exhausting, is_special_global_name, IdentifierType,
-        ParseIdentifierError,
+        is_ident_until, is_next_ident_exhausting, is_special_global_name, IdentifierType, ParseIdentifierError,
     };
     use core::convert::TryFrom;
 
@@ -842,54 +835,27 @@ mod tests {
 
     #[test]
     fn ascii_ident() {
-        assert_eq!(
-            "foobar".parse::<IdentifierType>(),
-            Ok(IdentifierType::Local)
-        );
-        assert_eq!(
-            "ruby_is_simple".parse::<IdentifierType>(),
-            Ok(IdentifierType::Local)
-        );
+        assert_eq!("foobar".parse::<IdentifierType>(), Ok(IdentifierType::Local));
+        assert_eq!("ruby_is_simple".parse::<IdentifierType>(), Ok(IdentifierType::Local));
     }
 
     #[test]
     fn ascii_constant() {
-        assert_eq!(
-            "Foobar".parse::<IdentifierType>(),
-            Ok(IdentifierType::Constant)
-        );
-        assert_eq!(
-            "FooBar".parse::<IdentifierType>(),
-            Ok(IdentifierType::Constant)
-        );
-        assert_eq!(
-            "FOOBAR".parse::<IdentifierType>(),
-            Ok(IdentifierType::Constant)
-        );
-        assert_eq!(
-            "FOO_BAR".parse::<IdentifierType>(),
-            Ok(IdentifierType::Constant)
-        );
-        assert_eq!(
-            "RUBY_IS_SIMPLE".parse::<IdentifierType>(),
-            Ok(IdentifierType::Constant)
-        );
+        assert_eq!("Foobar".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
+        assert_eq!("FooBar".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
+        assert_eq!("FOOBAR".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
+        assert_eq!("FOO_BAR".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
+        assert_eq!("RUBY_IS_SIMPLE".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
     }
 
     #[test]
     fn empty() {
-        assert_eq!(
-            "".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
+        assert_eq!("".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
     }
 
     #[test]
     fn single_nul() {
-        assert_eq!(
-            "\0".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
+        assert_eq!("\0".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
     }
 
     #[test]
@@ -904,90 +870,36 @@ mod tests {
 
     #[test]
     fn recursive_ident() {
-        assert_eq!(
-            "@@@foo".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "@@@@foo".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "@$foo".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "@$-w".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "@@$foo".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "@@$-w".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "$@foo".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "$@@foo".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "$$-w".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
+        assert_eq!("@@@foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("@@@@foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("@$foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("@$-w".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("@@$foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("@@$-w".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("$@foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("$@@foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("$$-w".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
     }
 
     #[test]
     fn attr_bang() {
-        assert_eq!(
-            "@foo!".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "@@foo!".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "$foo!".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
+        assert_eq!("@foo!".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("@@foo!".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("$foo!".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
     }
 
     #[test]
     fn attr_question() {
-        assert_eq!(
-            "@foo?".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "@@foo?".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "$foo?".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
+        assert_eq!("@foo?".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("@@foo?".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("$foo?".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
     }
 
     #[test]
     fn attr_setter() {
-        assert_eq!(
-            "@foo=".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "@@foo=".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            "$foo=".parse::<IdentifierType>(),
-            Err(ParseIdentifierError::new())
-        );
+        assert_eq!("@foo=".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("@@foo=".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+        assert_eq!("$foo=".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
     }
 
     #[test]
@@ -1002,10 +914,7 @@ mod tests {
     fn emoji() {
         assert_eq!(IdentifierType::try_from("💎"), Ok(IdentifierType::Local));
         assert_eq!(IdentifierType::try_from("$💎"), Ok(IdentifierType::Global));
-        assert_eq!(
-            IdentifierType::try_from("@💎"),
-            Ok(IdentifierType::Instance)
-        );
+        assert_eq!(IdentifierType::try_from("@💎"), Ok(IdentifierType::Instance));
         assert_eq!(IdentifierType::try_from("@@💎"), Ok(IdentifierType::Class));
     }
 
@@ -1017,18 +926,9 @@ mod tests {
         assert_eq!(IdentifierType::try_from("@@�"), Ok(IdentifierType::Class));
 
         assert_eq!(IdentifierType::try_from("abc�"), Ok(IdentifierType::Local));
-        assert_eq!(
-            IdentifierType::try_from("$abc�"),
-            Ok(IdentifierType::Global)
-        );
-        assert_eq!(
-            IdentifierType::try_from("@abc�"),
-            Ok(IdentifierType::Instance)
-        );
-        assert_eq!(
-            IdentifierType::try_from("@@abc�"),
-            Ok(IdentifierType::Class)
-        );
+        assert_eq!(IdentifierType::try_from("$abc�"), Ok(IdentifierType::Global));
+        assert_eq!(IdentifierType::try_from("@abc�"), Ok(IdentifierType::Instance));
+        assert_eq!(IdentifierType::try_from("@@abc�"), Ok(IdentifierType::Class));
     }
 
     #[test]
@@ -1042,14 +942,8 @@ mod tests {
     #[test]
     fn replacement_char_special_global() {
         assert_eq!(IdentifierType::try_from("$-�"), Ok(IdentifierType::Global));
-        assert_eq!(
-            IdentifierType::try_from("$-�a"),
-            Err(ParseIdentifierError::new())
-        );
-        assert_eq!(
-            IdentifierType::try_from("$-��"),
-            Err(ParseIdentifierError::new())
-        );
+        assert_eq!(IdentifierType::try_from("$-�a"), Err(ParseIdentifierError::new()));
+        assert_eq!(IdentifierType::try_from("$-��"), Err(ParseIdentifierError::new()));
     }
 }
 

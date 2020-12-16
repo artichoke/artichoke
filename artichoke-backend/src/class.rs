@@ -48,11 +48,7 @@ impl<'a> Builder<'a> {
         T: Any,
         U: Into<Cow<'static, str>>,
     {
-        let state = self
-            .interp
-            .state
-            .as_ref()
-            .ok_or(InterpreterExtractError::new())?;
+        let state = self.interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
         let rclass = if let Some(spec) = state.classes.get::<T>() {
             spec.rclass()
         } else {
@@ -67,12 +63,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add_method<T>(
-        mut self,
-        name: T,
-        method: Method,
-        args: sys::mrb_aspec,
-    ) -> Result<Self, ConstantNameError>
+    pub fn add_method<T>(mut self, name: T, method: Method, args: sys::mrb_aspec) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
@@ -122,10 +113,7 @@ impl<'a> Builder<'a> {
         let mut rclass = if let Ok(Some(rclass)) = rclass {
             rclass
         } else if let Some(enclosing_scope) = self.spec.enclosing_scope() {
-            let scope = unsafe {
-                self.interp
-                    .with_ffi_boundary(|mrb| enclosing_scope.rclass(mrb))
-            };
+            let scope = unsafe { self.interp.with_ffi_boundary(|mrb| enclosing_scope.rclass(mrb)) };
             if let Ok(Some(mut scope)) = scope {
                 let rclass = unsafe {
                     self.interp.with_ffi_boundary(|mrb| {
@@ -135,9 +123,7 @@ impl<'a> Builder<'a> {
                 let rclass = rclass.map_err(|_| NotDefinedError::class(self.spec.name()))?;
                 NonNull::new(rclass).ok_or_else(|| NotDefinedError::class(self.spec.name()))?
             } else {
-                return Err(NotDefinedError::enclosing_scope(
-                    enclosing_scope.fqname().into_owned(),
-                ));
+                return Err(NotDefinedError::enclosing_scope(enclosing_scope.fqname().into_owned()));
             }
         } else {
             let rclass = unsafe {
@@ -174,10 +160,7 @@ pub struct Rclass {
 impl Rclass {
     #[must_use]
     pub const fn new(name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
-        Self {
-            name,
-            enclosing_scope,
-        }
+        Self { name, enclosing_scope }
     }
 
     /// Resolve a type's [`sys::RClass`] using its enclosing scope and name.

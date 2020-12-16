@@ -518,10 +518,7 @@ mod tests {
 
     #[test]
     fn invalid_utf8_byte() {
-        assert_eq!(
-            Inspect::from(&b"\xFF"[..]).collect::<String>(),
-            r#":"\xFF""#
-        );
+        assert_eq!(Inspect::from(&b"\xFF"[..]).collect::<String>(), r#":"\xFF""#);
     }
 
     #[test]
@@ -667,10 +664,7 @@ mod tests {
     #[test]
     fn escape_slash() {
         assert_eq!(Inspect::from("\\").collect::<String>(), r#":"\\""#);
-        assert_eq!(
-            Inspect::from("foo\\bar").collect::<String>(),
-            r#":"foo\\bar""#
-        );
+        assert_eq!(Inspect::from("foo\\bar").collect::<String>(), r#":"foo\\bar""#);
     }
 
     #[test]
@@ -746,10 +740,7 @@ mod tests {
 
     #[test]
     fn invalid_utf8_special_global() {
-        assert_eq!(
-            Inspect::from(&b"$-\xFF"[..]).collect::<String>(),
-            r#":"$-\xFF""#
-        );
+        assert_eq!(Inspect::from(&b"$-\xFF"[..]).collect::<String>(), r#":"$-\xFF""#);
     }
 
     #[test]
@@ -915,14 +906,8 @@ mod specs {
         assert_eq!(Inspect::from("$ruby?").collect::<String>(), r#":"$ruby?""#);
         assert_eq!(Inspect::from("@ruby!").collect::<String>(), r#":"@ruby!""#);
         assert_eq!(Inspect::from("@ruby?").collect::<String>(), r#":"@ruby?""#);
-        assert_eq!(
-            Inspect::from("@@ruby!").collect::<String>(),
-            r#":"@@ruby!""#
-        );
-        assert_eq!(
-            Inspect::from("@@ruby?").collect::<String>(),
-            r#":"@@ruby?""#
-        );
+        assert_eq!(Inspect::from("@@ruby!").collect::<String>(), r#":"@@ruby!""#);
+        assert_eq!(Inspect::from("@@ruby?").collect::<String>(), r#":"@@ruby?""#);
 
         // globals
         assert_eq!(Inspect::from("$-w").collect::<String>(), ":$-w");
@@ -1001,10 +986,7 @@ mod specs {
         assert_eq!(Inspect::from(r#""""#).collect::<String>(), r#":"\"\"""#);
 
         assert_eq!(Inspect::from("9").collect::<String>(), r#":"9""#);
-        assert_eq!(
-            Inspect::from("foo bar").collect::<String>(),
-            r#":"foo bar""#
-        );
+        assert_eq!(Inspect::from("foo bar").collect::<String>(), r#":"foo bar""#);
         assert_eq!(Inspect::from("*foo").collect::<String>(), r#":"*foo""#);
         assert_eq!(Inspect::from("foo ").collect::<String>(), r#":"foo ""#);
         assert_eq!(Inspect::from(" foo").collect::<String>(), r#":" foo""#);

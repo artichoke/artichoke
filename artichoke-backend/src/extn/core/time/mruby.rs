@@ -97,10 +97,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 
 // Constructor
 
-unsafe extern "C" fn time_self_now(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_self_now(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let result = trampoline::now(&mut guard);
@@ -110,10 +107,7 @@ unsafe extern "C" fn time_self_now(
     }
 }
 
-unsafe extern "C" fn time_self_at(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_self_at(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -124,10 +118,7 @@ unsafe extern "C" fn time_self_at(
     }
 }
 
-unsafe extern "C" fn time_self_mkutc(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_self_mkutc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -138,10 +129,7 @@ unsafe extern "C" fn time_self_mkutc(
     }
 }
 
-unsafe extern "C" fn time_self_mktime(
-    mrb: *mut sys::mrb_state,
-    _slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_self_mktime(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -165,10 +153,7 @@ unsafe extern "C" fn time_to_int(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     }
 }
 
-unsafe extern "C" fn time_to_float(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_to_float(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -179,10 +164,7 @@ unsafe extern "C" fn time_to_float(
     }
 }
 
-unsafe extern "C" fn time_to_rational(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_to_rational(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -228,10 +210,7 @@ unsafe extern "C" fn time_hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     }
 }
 
-unsafe extern "C" fn time_initialize(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -243,10 +222,7 @@ unsafe extern "C" fn time_initialize(
     }
 }
 
-unsafe extern "C" fn time_initialize_copy(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_initialize_copy(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -260,10 +236,7 @@ unsafe extern "C" fn time_initialize_copy(
 
 // Mutators and converters
 
-unsafe extern "C" fn time_mutate_to_local(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_mutate_to_local(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let utc_offset = mrb_get_args!(mrb, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -275,10 +248,7 @@ unsafe extern "C" fn time_mutate_to_local(
     }
 }
 
-unsafe extern "C" fn time_mutate_to_utc(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_mutate_to_utc(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -289,10 +259,7 @@ unsafe extern "C" fn time_mutate_to_utc(
     }
 }
 
-unsafe extern "C" fn time_as_local(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_as_local(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let utc_offset = mrb_get_args!(mrb, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -328,10 +295,7 @@ unsafe extern "C" fn time_asctime(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     }
 }
 
-unsafe extern "C" fn time_to_string(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_to_string(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -342,10 +306,7 @@ unsafe extern "C" fn time_to_string(
     }
 }
 
-unsafe extern "C" fn time_to_array(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_to_array(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -486,10 +447,7 @@ unsafe extern "C" fn time_weekday(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     }
 }
 
-unsafe extern "C" fn time_year_day(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_year_day(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -522,10 +480,7 @@ unsafe extern "C" fn time_zone(mrb: *mut sys::mrb_state, slf: sys::mrb_value) ->
     }
 }
 
-unsafe extern "C" fn time_utc_offset(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_utc_offset(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -551,10 +506,7 @@ unsafe extern "C" fn time_is_utc(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
 
 // Day of week
 
-unsafe extern "C" fn time_is_sunday(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_is_sunday(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -565,10 +517,7 @@ unsafe extern "C" fn time_is_sunday(
     }
 }
 
-unsafe extern "C" fn time_is_monday(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_is_monday(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -579,10 +528,7 @@ unsafe extern "C" fn time_is_monday(
     }
 }
 
-unsafe extern "C" fn time_is_tuesday(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_is_tuesday(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -593,10 +539,7 @@ unsafe extern "C" fn time_is_tuesday(
     }
 }
 
-unsafe extern "C" fn time_is_wednesday(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_is_wednesday(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -607,10 +550,7 @@ unsafe extern "C" fn time_is_wednesday(
     }
 }
 
-unsafe extern "C" fn time_is_thursday(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_is_thursday(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -621,10 +561,7 @@ unsafe extern "C" fn time_is_thursday(
     }
 }
 
-unsafe extern "C" fn time_is_friday(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_is_friday(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -635,10 +572,7 @@ unsafe extern "C" fn time_is_friday(
     }
 }
 
-unsafe extern "C" fn time_is_saturday(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_is_saturday(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -651,10 +585,7 @@ unsafe extern "C" fn time_is_saturday(
 
 // Unix time value
 
-unsafe extern "C" fn time_microsecond(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_microsecond(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -665,10 +596,7 @@ unsafe extern "C" fn time_microsecond(
     }
 }
 
-unsafe extern "C" fn time_nanosecond(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_nanosecond(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);
@@ -692,10 +620,7 @@ unsafe extern "C" fn time_subsec(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
 
 // Time format
 
-unsafe extern "C" fn time_strftime(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn time_strftime(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let format = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let time = Value::from(slf);

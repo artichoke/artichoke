@@ -146,8 +146,7 @@ impl TryConvert<Value, u32> for Artichoke {
         if let Ruby::Fixnum = value.ruby_type() {
             let inner = value.inner();
             let num = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
-            let num =
-                u32::try_from(num).map_err(|_| UnboxRubyError::new(&value, Rust::UnsignedInt))?;
+            let num = u32::try_from(num).map_err(|_| UnboxRubyError::new(&value, Rust::UnsignedInt))?;
             Ok(num)
         } else {
             Err(UnboxRubyError::new(&value, Rust::SignedInt).into())
@@ -162,8 +161,7 @@ impl TryConvert<Value, usize> for Artichoke {
         if let Ruby::Fixnum = value.ruby_type() {
             let inner = value.inner();
             let num = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
-            let num =
-                usize::try_from(num).map_err(|_| UnboxRubyError::new(&value, Rust::UnsignedInt))?;
+            let num = usize::try_from(num).map_err(|_| UnboxRubyError::new(&value, Rust::UnsignedInt))?;
             Ok(num)
         } else {
             Err(UnboxRubyError::new(&value, Rust::SignedInt).into())

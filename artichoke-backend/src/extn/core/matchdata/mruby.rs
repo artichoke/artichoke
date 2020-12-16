@@ -6,19 +6,11 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<matchdata::MatchData>() {
         return Ok(());
     }
-    let spec = class::Spec::new(
-        "MatchData",
-        None,
-        Some(def::box_unbox_free::<matchdata::MatchData>),
-    )?;
+    let spec = class::Spec::new("MatchData", None, Some(def::box_unbox_free::<matchdata::MatchData>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("begin", artichoke_matchdata_begin, sys::mrb_args_req(1))?
-        .add_method(
-            "captures",
-            artichoke_matchdata_captures,
-            sys::mrb_args_none(),
-        )?
+        .add_method("captures", artichoke_matchdata_captures, sys::mrb_args_none())?
         .add_method(
             "[]",
             artichoke_matchdata_element_reference,
@@ -32,16 +24,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         )?
         .add_method("names", artichoke_matchdata_names, sys::mrb_args_none())?
         .add_method("offset", artichoke_matchdata_offset, sys::mrb_args_req(1))?
-        .add_method(
-            "post_match",
-            artichoke_matchdata_post_match,
-            sys::mrb_args_none(),
-        )?
-        .add_method(
-            "pre_match",
-            artichoke_matchdata_pre_match,
-            sys::mrb_args_none(),
-        )?
+        .add_method("post_match", artichoke_matchdata_post_match, sys::mrb_args_none())?
+        .add_method("pre_match", artichoke_matchdata_pre_match, sys::mrb_args_none())?
         .add_method("regexp", artichoke_matchdata_regexp, sys::mrb_args_none())?
         .add_method("size", artichoke_matchdata_length, sys::mrb_args_none())?
         .add_method("string", artichoke_matchdata_string, sys::mrb_args_none())?
@@ -55,10 +39,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-unsafe extern "C" fn artichoke_matchdata_begin(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_begin(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let begin = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -70,10 +51,7 @@ unsafe extern "C" fn artichoke_matchdata_begin(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_captures(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_captures(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -100,10 +78,7 @@ unsafe extern "C" fn artichoke_matchdata_element_reference(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_end(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_end(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let end = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -115,10 +90,7 @@ unsafe extern "C" fn artichoke_matchdata_end(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_length(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_length(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -143,10 +115,7 @@ unsafe extern "C" fn artichoke_matchdata_named_captures(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_names(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -157,10 +126,7 @@ unsafe extern "C" fn artichoke_matchdata_names(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_offset(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_offset(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let offset = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -172,10 +138,7 @@ unsafe extern "C" fn artichoke_matchdata_offset(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_post_match(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_post_match(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -186,10 +149,7 @@ unsafe extern "C" fn artichoke_matchdata_post_match(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_pre_match(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_pre_match(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -200,10 +160,7 @@ unsafe extern "C" fn artichoke_matchdata_pre_match(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_regexp(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_regexp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -214,10 +171,7 @@ unsafe extern "C" fn artichoke_matchdata_regexp(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_string(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_string(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -228,10 +182,7 @@ unsafe extern "C" fn artichoke_matchdata_string(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_to_a(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_to_a(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
@@ -242,10 +193,7 @@ unsafe extern "C" fn artichoke_matchdata_to_a(
     }
 }
 
-unsafe extern "C" fn artichoke_matchdata_to_s(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_matchdata_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);

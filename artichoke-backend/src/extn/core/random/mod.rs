@@ -22,8 +22,7 @@
 use core::convert::TryFrom;
 use core::ops::{Deref, DerefMut};
 use spinoso_random::{
-    ArgumentError as RandomArgumentError, InitializeError, NewSeedError, Random as SpinosoRandom,
-    UrandomError,
+    ArgumentError as RandomArgumentError, InitializeError, NewSeedError, Random as SpinosoRandom, UrandomError,
 };
 
 use crate::convert::HeapAllocatedData;

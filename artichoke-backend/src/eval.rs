@@ -22,10 +22,7 @@ impl Eval for Artichoke {
         trace!("Attempting eval of Ruby source");
         let result = unsafe {
             let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
-            let parser = state
-                .parser
-                .as_mut()
-                .ok_or(InterpreterExtractError::new())?;
+            let parser = state.parser.as_mut().ok_or(InterpreterExtractError::new())?;
             let context: *mut sys::mrbc_context = parser.context_mut();
             self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
         };
@@ -109,10 +106,7 @@ mod tests {
         #[derive(Debug)]
         struct NestedEval;
 
-        unsafe extern "C" fn nested_eval_file(
-            mrb: *mut sys::mrb_state,
-            _slf: sys::mrb_value,
-        ) -> sys::mrb_value {
+        unsafe extern "C" fn nested_eval_file(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
             unwrap_interpreter!(mrb, to => guard);
             let result = if let Ok(value) = guard.eval(b"__FILE__") {
                 value
@@ -142,9 +136,7 @@ mod tests {
         // this test is known broken
         fn eval_context_is_a_stack() {
             let mut interp = interpreter().unwrap();
-            interp
-                .def_file_for_type::<_, NestedEval>("nested_eval.rb")
-                .unwrap();
+            interp.def_file_for_type::<_, NestedEval>("nested_eval.rb").unwrap();
             let code = br#"require 'nested_eval'; NestedEval.file"#;
             let result = interp.eval(code).unwrap();
             let result = result.try_into_mut::<&str>(&mut interp).unwrap();

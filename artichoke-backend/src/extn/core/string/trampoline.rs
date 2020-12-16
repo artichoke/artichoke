@@ -20,12 +20,7 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
     Ok(interp.convert(ord))
 }
 
-pub fn scan(
-    interp: &mut Artichoke,
-    value: Value,
-    mut pattern: Value,
-    block: Option<Block>,
-) -> Result<Value, Error> {
+pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Option<Block>) -> Result<Value, Error> {
     if let Ruby::Symbol = pattern.ruby_type() {
         let mut message = String::from("wrong argument type ");
         message.push_str(interp.inspect_type_name_for_value(pattern));
@@ -82,11 +77,7 @@ pub fn scan(
             }
             if matches > 0 {
                 let regex = Regexp::lazy(pattern_bytes.to_vec());
-                let matchdata = MatchData::new(
-                    string.to_vec(),
-                    regex,
-                    last_pos..last_pos + pattern_bytes.len(),
-                );
+                let matchdata = MatchData::new(string.to_vec(), regex, last_pos..last_pos + pattern_bytes.len());
                 let data = MatchData::alloc_value(matchdata, interp)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
             } else {

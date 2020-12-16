@@ -722,9 +722,7 @@ mod tests {
     use core::ops::Not;
     use rand::CryptoRng;
 
-    use super::{
-        alphanumeric, base64, hex, random_bytes, random_number, uuid, DomainError, Error, Max, Rand,
-    };
+    use super::{alphanumeric, base64, hex, random_bytes, random_number, uuid, DomainError, Error, Max, Rand};
 
     fn rng_must_be_cryptographically_secure<T: CryptoRng>(_rng: T) {}
 
@@ -782,14 +780,8 @@ mod tests {
     #[test]
     fn random_number_domain_error() {
         assert_eq!(random_number(Max::Float(f64::NAN)), Err(DomainError::new()));
-        assert_eq!(
-            random_number(Max::Float(f64::INFINITY)),
-            Err(DomainError::new())
-        );
-        assert_eq!(
-            random_number(Max::Float(f64::NEG_INFINITY)),
-            Err(DomainError::new())
-        );
+        assert_eq!(random_number(Max::Float(f64::INFINITY)), Err(DomainError::new()));
+        assert_eq!(random_number(Max::Float(f64::NEG_INFINITY)), Err(DomainError::new()));
     }
 
     #[test]
@@ -797,27 +789,15 @@ mod tests {
         assert!(matches!(random_number(Max::None), Ok(Rand::Float(_))));
         assert!(matches!(random_number(Max::Float(0.5)), Ok(Rand::Float(_))));
         assert!(matches!(random_number(Max::Float(1.0)), Ok(Rand::Float(_))));
-        assert!(matches!(
-            random_number(Max::Float(9000.63)),
-            Ok(Rand::Float(_))
-        ));
+        assert!(matches!(random_number(Max::Float(9000.63)), Ok(Rand::Float(_))));
         assert!(matches!(random_number(Max::Float(0.0)), Ok(Rand::Float(_))));
-        assert!(matches!(
-            random_number(Max::Float(-0.0)),
-            Ok(Rand::Float(_))
-        ));
-        assert!(matches!(
-            random_number(Max::Float(-1.0)),
-            Ok(Rand::Float(_))
-        ));
+        assert!(matches!(random_number(Max::Float(-0.0)), Ok(Rand::Float(_))));
+        assert!(matches!(random_number(Max::Float(-1.0)), Ok(Rand::Float(_))));
     }
 
     #[test]
     fn random_number_in_neg_integer_out_float() {
-        assert!(matches!(
-            random_number(Max::Integer(-1)),
-            Ok(Rand::Float(_))
-        ));
+        assert!(matches!(random_number(Max::Integer(-1)), Ok(Rand::Float(_))));
     }
 
     #[test]
@@ -827,18 +807,9 @@ mod tests {
 
     #[test]
     fn random_number_in_pos_integer_out_integer() {
-        assert!(matches!(
-            random_number(Max::Integer(1)),
-            Ok(Rand::Integer(_))
-        ));
-        assert!(matches!(
-            random_number(Max::Integer(9000)),
-            Ok(Rand::Integer(_))
-        ));
-        assert!(matches!(
-            random_number(Max::Integer(i64::MAX)),
-            Ok(Rand::Integer(_))
-        ));
+        assert!(matches!(random_number(Max::Integer(1)), Ok(Rand::Integer(_))));
+        assert!(matches!(random_number(Max::Integer(9000)), Ok(Rand::Integer(_))));
+        assert!(matches!(random_number(Max::Integer(i64::MAX)), Ok(Rand::Integer(_))));
     }
 
     #[test]

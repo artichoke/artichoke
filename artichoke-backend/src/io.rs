@@ -87,10 +87,7 @@ impl RubyException for IOError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let value = interp
-            .new_instance::<exception::IOError>(&[message])
-            .ok()
-            .flatten()?;
+        let value = interp.new_instance::<exception::IOError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }

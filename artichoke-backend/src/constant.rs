@@ -13,29 +13,19 @@ impl DefineConstant for Artichoke {
 
     type Error = Error;
 
-    fn define_global_constant(
-        &mut self,
-        constant: &str,
-        value: Self::Value,
-    ) -> Result<(), Self::Error> {
+    fn define_global_constant(&mut self, constant: &str, value: Self::Value) -> Result<(), Self::Error> {
         let name = if let Ok(name) = CString::new(constant) {
             name
         } else {
             return Err(ConstantNameError::from(String::from(constant)).into());
         };
         unsafe {
-            self.with_ffi_boundary(|mrb| {
-                sys::mrb_define_global_const(mrb, name.as_ptr(), value.inner())
-            })?;
+            self.with_ffi_boundary(|mrb| sys::mrb_define_global_const(mrb, name.as_ptr(), value.inner()))?;
         }
         Ok(())
     }
 
-    fn define_class_constant<T>(
-        &mut self,
-        constant: &str,
-        value: Self::Value,
-    ) -> Result<(), Self::Error>
+    fn define_class_constant<T>(&mut self, constant: &str, value: Self::Value) -> Result<(), Self::Error>
     where
         T: 'static,
     {
@@ -64,11 +54,7 @@ impl DefineConstant for Artichoke {
         }
     }
 
-    fn define_module_constant<T>(
-        &mut self,
-        constant: &str,
-        value: Self::Value,
-    ) -> Result<(), Self::Error>
+    fn define_module_constant<T>(&mut self, constant: &str, value: Self::Value) -> Result<(), Self::Error>
     where
         T: 'static,
     {

@@ -40,10 +40,7 @@ impl RubyException for NoBlockGiven {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.convert_mut(self.message());
-        let value = interp
-            .new_instance::<TypeError>(&[message])
-            .ok()
-            .flatten()?;
+        let value = interp.new_instance::<TypeError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
 }
@@ -165,9 +162,7 @@ impl Block {
     }
 
     pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Error> {
-        let result = unsafe {
-            interp.with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))?
-        };
+        let result = unsafe { interp.with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))? };
         match result {
             Ok(value) => {
                 let value = interp.protect(Value::from(value));

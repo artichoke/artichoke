@@ -70,11 +70,7 @@ impl CaughtException {
     #[must_use]
     pub fn with_value_class_and_message(value: Value, name: String, message: Vec<u8>) -> Self {
         let message = message.into();
-        Self {
-            value,
-            name,
-            message,
-        }
+        Self { value, name, message }
     }
 }
 
@@ -183,9 +179,7 @@ mod tests {
     #[test]
     fn return_exception() {
         let mut interp = interpreter().unwrap();
-        let err = interp
-            .eval(b"raise ArgumentError.new('waffles')")
-            .unwrap_err();
+        let err = interp.eval(b"raise ArgumentError.new('waffles')").unwrap_err();
         assert_eq!("ArgumentError", err.name().as_ref());
         assert_eq!(b"waffles".as_bstr(), err.message().as_ref().as_bstr());
         let expected_backtrace = b"(eval):1".to_vec();

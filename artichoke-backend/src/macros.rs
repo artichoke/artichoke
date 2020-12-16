@@ -205,11 +205,7 @@ macro_rules! mrb_get_args {
             }
             2 => {
                 let req1 = req1.assume_init();
-                let opt1 = if has_opt1 {
-                    Some(opt1.assume_init())
-                } else {
-                    None
-                };
+                let opt1 = if has_opt1 { Some(opt1.assume_init()) } else { None };
                 let block = block.assume_init();
                 (req1, opt1, $crate::block::Block::new(block))
             }
@@ -279,16 +275,8 @@ macro_rules! mrb_get_args {
         );
         let has_opt1 = has_opt1.assume_init() != 0;
         let has_opt2 = has_opt2.assume_init() != 0;
-        let opt1 = if has_opt1 {
-            Some(opt1.assume_init())
-        } else {
-            None
-        };
-        let opt2 = if has_opt2 {
-            Some(opt2.assume_init())
-        } else {
-            None
-        };
+        let opt1 = if has_opt1 { Some(opt1.assume_init()) } else { None };
+        let opt2 = if has_opt2 { Some(opt2.assume_init()) } else { None };
         let block = block.assume_init();
         (opt1, opt2, $crate::block::Block::new(block))
     }};

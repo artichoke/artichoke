@@ -32,10 +32,7 @@ impl HeapAllocatedData for Container {
     const RUBY_TYPE: &'static str = "Container";
 }
 
-unsafe extern "C" fn container_initialize(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn container_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let inner = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
@@ -72,9 +69,7 @@ fn rust_backed_mrb_value_smart_pointer_leak() {
         .with_tolerance(LEAK_TOLERANCE)
         .check_leaks(|| {
             let mut interp = artichoke_backend::interpreter().unwrap();
-            interp
-                .def_file_for_type::<_, Container>("container")
-                .unwrap();
+            interp.def_file_for_type::<_, Container>("container").unwrap();
 
             let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
             let result = interp.eval(code);

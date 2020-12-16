@@ -14,10 +14,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.def_rb_source_file("uri/common.rb", &include_bytes!("vendor/uri/common.rb")[..])?;
     interp.def_rb_source_file("uri/file.rb", &include_bytes!("vendor/uri/file.rb")[..])?;
     interp.def_rb_source_file("uri/ftp.rb", &include_bytes!("vendor/uri/ftp.rb")[..])?;
-    interp.def_rb_source_file(
-        "uri/generic.rb",
-        &include_bytes!("vendor/uri/generic.rb")[..],
-    )?;
+    interp.def_rb_source_file("uri/generic.rb", &include_bytes!("vendor/uri/generic.rb")[..])?;
     interp.def_rb_source_file("uri/http.rb", &include_bytes!("vendor/uri/http.rb")[..])?;
     interp.def_rb_source_file("uri/https.rb", &include_bytes!("vendor/uri/https.rb")[..])?;
     interp.def_rb_source_file("uri/ldap.rb", &include_bytes!("vendor/uri/ldap.rb")[..])?;

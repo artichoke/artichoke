@@ -21,9 +21,7 @@ impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
         for (key, val) in value {
             let key = key.inner();
             let val = val.inner();
-            let _ = unsafe {
-                self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key, val))
-            };
+            let _ = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key, val)) };
         }
         hash
     }
@@ -40,9 +38,7 @@ impl TryConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
             let key = self.try_convert_mut(key)?;
             let val = self.try_convert_mut(val)?;
             let _ = unsafe {
-                self.with_ffi_boundary(|mrb| {
-                    sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner())
-                })
+                self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))
             };
         }
         Ok(hash)
@@ -58,9 +54,7 @@ impl ConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
             let key = self.convert_mut(key);
             let val = self.convert_mut(val);
             let _ = unsafe {
-                self.with_ffi_boundary(|mrb| {
-                    sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner())
-                })
+                self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))
             };
         }
         hash
@@ -77,9 +71,7 @@ impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke 
                 let key = self.convert_mut(key);
                 let val = self.convert_mut(val);
                 let _ = unsafe {
-                    self.with_ffi_boundary(|mrb| {
-                        sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner())
-                    })
+                    self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))
                 };
             }
             hash
@@ -102,9 +94,7 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
 
             let mut pairs = Vec::with_capacity(array.len());
             for key in &*array {
-                let value = unsafe {
-                    self.with_ffi_boundary(|mrb| sys::mrb_hash_get(mrb, hash, key.inner()))?
-                };
+                let value = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_get(mrb, hash, key.inner()))? };
                 pairs.push((key, self.protect(Value::from(value))))
             }
             Ok(pairs)
@@ -130,9 +120,7 @@ mod tests {
         if len != hash.len() {
             return false;
         }
-        let recovered = value
-            .try_into_mut::<Vec<(Value, Value)>>(&mut interp)
-            .unwrap();
+        let recovered = value.try_into_mut::<Vec<(Value, Value)>>(&mut interp).unwrap();
         if recovered.len() != hash.len() {
             return false;
         }

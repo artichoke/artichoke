@@ -36,11 +36,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
     result
 }
 
-pub fn require(
-    interp: &mut Artichoke,
-    mut filename: Value,
-    base: Option<RelativePath>,
-) -> Result<bool, Error> {
+pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<RelativePath>) -> Result<bool, Error> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::from("path name contains null byte").into());
@@ -186,9 +182,7 @@ mod test {
     #[test]
     fn functional() {
         let mut interp = interpreter().unwrap();
-        interp
-            .def_file_for_type::<_, MockSourceFile>("file.rb")
-            .unwrap();
+        interp.def_file_for_type::<_, MockSourceFile>("file.rb").unwrap();
         let result = interp.eval(b"require 'file'").unwrap();
         let require_result = result.try_into::<bool>(&interp).unwrap();
         assert!(require_result);
@@ -265,10 +259,7 @@ mod test {
         assert!(result, "successfully required foo.rb");
         let result = interp.eval(b"Foo::RUBY + Foo::RUST").unwrap();
         let result = result.try_into::<i64>(&interp).unwrap();
-        assert_eq!(
-            result, 10,
-            "defined Ruby and Rust sources from single require"
-        );
+        assert_eq!(result, 10, "defined Ruby and Rust sources from single require");
     }
 
     #[test]
@@ -285,9 +276,6 @@ mod test {
         assert!(result, "successfully required foo.rb");
         let result = interp.eval(b"Foo::RUBY + Foo::RUST").unwrap();
         let result = result.try_into::<i64>(&interp).unwrap();
-        assert_eq!(
-            result, 10,
-            "defined Ruby and Rust sources from single require"
-        );
+        assert_eq!(result, 10, "defined Ruby and Rust sources from single require");
     }
 }

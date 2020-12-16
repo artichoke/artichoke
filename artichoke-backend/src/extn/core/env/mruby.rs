@@ -14,11 +14,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;
-    let spec = class::Spec::new(
-        "Environ",
-        Some(scope),
-        Some(def::box_unbox_free::<env::Environ>),
-    )?;
+    let spec = class::Spec::new("Environ", Some(scope), Some(def::box_unbox_free::<env::Environ>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("[]", env_element_reference, sys::mrb_args_req(1))?
@@ -33,10 +29,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-unsafe extern "C" fn env_initialize(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn env_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
@@ -47,10 +40,7 @@ unsafe extern "C" fn env_initialize(
     }
 }
 
-unsafe extern "C" fn env_element_reference(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn env_element_reference(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let name = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let obj = Value::from(slf);
@@ -62,10 +52,7 @@ unsafe extern "C" fn env_element_reference(
     }
 }
 
-unsafe extern "C" fn env_element_assignment(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn env_element_assignment(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (name, value) = mrb_get_args!(mrb, required = 2);
     unwrap_interpreter!(mrb, to => guard);
     let obj = Value::from(slf);

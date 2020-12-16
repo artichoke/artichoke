@@ -186,9 +186,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn nanosecond(self) -> u32 {
-        let Self {
-            sub_second_nanos, ..
-        } = self;
+        let Self { sub_second_nanos, .. } = self;
         // `chrono` stores leap seconds in the `sub_second_nanos` field.
         // Normalize so nanos is `0..1_000_000_000`.
         sub_second_nanos
