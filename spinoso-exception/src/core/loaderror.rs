@@ -1,10 +1,13 @@
+// @generated
+
 use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
-use scolapasta_string_escape::format_debug_escape_into;
 #[cfg(feature = "std")]
 use std::error;
+
+use scolapasta_string_escape::format_debug_escape_into;
 
 use crate::RubyException;
 
@@ -46,6 +49,23 @@ impl LoadError {
         // `raise RuntimeError` or `RuntimeError.new` have `message`
         // equal to the exception's class name.
         let message = Cow::Borrowed(DEFAULT_MESSAGE);
+        Self { message }
+    }
+
+    /// Construct a new, `LoadError` Ruby exception with the given
+    /// message.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_exception::*;
+    /// let exception = LoadError::with_message("an error occurred");
+    /// assert_eq!(exception.message(), b"an error occurred");
+    /// ```
+    #[inline]
+    #[must_use]
+    pub const fn with_message(message: &'static str) -> Self {
+        let message = Cow::Borrowed(message.as_bytes());
         Self { message }
     }
 

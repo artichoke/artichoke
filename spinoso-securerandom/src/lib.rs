@@ -81,7 +81,7 @@
 //! # fn example() -> Result<(), spinoso_securerandom::Error> {
 //! let uuid = spinoso_securerandom::uuid()?;
 //! assert_eq!(uuid.len(), 36);
-//! assert!(uuid.is_ascii());
+//! assert!(uuid.chars().all(|ch| ch == '-' || ch.is_ascii_hexdigit()));
 //! # Ok(())
 //! # }
 //! # example().unwrap()
@@ -719,10 +719,12 @@ pub fn uuid() -> Result<String, RandomBytesError> {
 
 #[cfg(test)]
 mod tests {
+    use core::ops::Not;
+    use rand::CryptoRng;
+
     use super::{
         alphanumeric, base64, hex, random_bytes, random_number, uuid, DomainError, Error, Max, Rand,
     };
-    use rand::CryptoRng;
 
     fn rng_must_be_cryptographically_secure<T: CryptoRng>(_rng: T) {}
 
@@ -844,15 +846,13 @@ mod tests {
         let id = uuid().unwrap();
         assert_eq!(id.len(), 36);
         assert!(id.chars().all(|ch| ch == '-' || ch.is_ascii_hexdigit()));
-        assert!(id.find(char::is_uppercase).is_none());
+        assert!(id.chars().any(char::is_uppercase).not());
         assert_eq!(&id[14..15], "4");
     }
 
     #[test]
     fn alphanumeric_format() {
         let random = alphanumeric(Some(1024)).unwrap();
-        assert!(random
-            .find(|ch: char| !ch.is_ascii_alphanumeric())
-            .is_none());
+        assert!(random.chars().all(|ch| ch.is_ascii_alphanumeric()));
     }
 }

@@ -50,12 +50,10 @@ impl State {
     /// an interpreter.
     #[must_use]
     pub fn is_code_block_open(self) -> bool {
-        match self {
-            Self::Valid | Self::UnexpectedEnd | Self::UnexpectedRegexpBegin | Self::CodeTooLong => {
-                false
-            }
-            _ => true,
-        }
+        !matches!(
+            self,
+            Self::Valid | Self::UnexpectedEnd | Self::UnexpectedRegexpBegin | Self::CodeTooLong
+        )
     }
 
     /// Whether this variant is a recoverable error.
@@ -64,7 +62,7 @@ impl State {
     /// buffer.
     #[must_use]
     pub fn is_recoverable_error(self) -> bool {
-        self == Self::CodeTooLong
+        matches!(self, Self::CodeTooLong)
     }
 
     /// Whether this variant is a fatal parse error.
@@ -73,7 +71,7 @@ impl State {
     /// again.
     #[must_use]
     pub fn is_fatal(self) -> bool {
-        self == Self::ParseError
+        matches!(self, Self::ParseError)
     }
 }
 

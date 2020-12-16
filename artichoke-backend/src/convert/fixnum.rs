@@ -41,10 +41,7 @@ impl TryConvert<u64, Value> for Artichoke {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
         } else {
-            Err(Error::from(BoxIntoRubyError::new(
-                Rust::UnsignedInt,
-                Ruby::Fixnum,
-            )))
+            Err(BoxIntoRubyError::new(Rust::UnsignedInt, Ruby::Fixnum).into())
         }
     }
 }
@@ -61,10 +58,7 @@ impl TryConvert<usize, Value> for Artichoke {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
         } else {
-            Err(Error::from(BoxIntoRubyError::new(
-                Rust::UnsignedInt,
-                Ruby::Fixnum,
-            )))
+            Err(BoxIntoRubyError::new(Rust::UnsignedInt, Ruby::Fixnum).into())
         }
     }
 }
@@ -102,10 +96,7 @@ impl TryConvert<isize, Value> for Artichoke {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
         } else {
-            Err(Error::from(BoxIntoRubyError::new(
-                Rust::SignedInt,
-                Ruby::Fixnum,
-            )))
+            Err(BoxIntoRubyError::new(Rust::SignedInt, Ruby::Fixnum).into())
         }
     }
 }

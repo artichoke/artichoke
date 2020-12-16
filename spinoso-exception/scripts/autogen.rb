@@ -4,13 +4,16 @@
 require 'fileutils'
 
 TEMPLATE = <<~AUTOGEN
+  // @generated
+
   use alloc::borrow::Cow;
   use alloc::string::String;
   use alloc::vec::Vec;
   use core::fmt;
-  use scolapasta_string_escape::format_debug_escape_into;
   #[cfg(feature = "std")]
   use std::error;
+
+  use scolapasta_string_escape::format_debug_escape_into;
 
   use crate::RubyException;
 
@@ -52,6 +55,23 @@ TEMPLATE = <<~AUTOGEN
           // `raise RuntimeError` or `RuntimeError.new` have `message`
           // equal to the exception's class name.
           let message = Cow::Borrowed(DEFAULT_MESSAGE);
+          Self { message }
+      }
+
+      /// Construct a new, `$$exc_class_name$$` Ruby exception with the given
+      /// message.
+      ///
+      /// # Examples
+      ///
+      /// ```
+      /// # use spinoso_exception::*;
+      /// let exception = $$exc_type_name$$::with_message("an error occurred");
+      /// assert_eq!(exception.message(), b"an error occurred");
+      /// ```
+      #[inline]
+      #[must_use]
+      pub const fn with_message(message: &'static str) -> Self {
+          let message = Cow::Borrowed(message.as_bytes());
           Self { message }
       }
 
@@ -217,18 +237,24 @@ FileUtils.mkdir_p(File.join(__dir__, '..', 'src', 'core'))
 filename = File.join(__dir__, '..', 'src', 'core', 'mod.rs')
 
 File.open(filename, 'w') do |rs|
+  rs.puts '// @generated'
+  rs.puts ''
   rs.puts '//! Ruby exception class implementations.'
   rs.puts '//!'
   rs.puts '//! See crate-level documentation for more about the types exposed in this'
   rs.puts '//! module.'
   rs.puts
-  exception_classes.each do |config|
+
+  configs = exception_classes.sort_by do |config|
+    config.fetch(:type_name).downcase
+  end
+  configs.each do |config|
     type = config.fetch(:type_name)
     mod = type.downcase
     rs.puts "mod #{mod};"
   end
   rs.puts
-  exception_classes.each do |config|
+  configs.each do |config|
     type = config.fetch(:type_name)
     mod = type.downcase
     rs.puts "pub use #{mod}::#{type};"

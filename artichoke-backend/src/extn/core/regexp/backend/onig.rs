@@ -68,8 +68,8 @@ impl Onig {
 
 impl fmt::Display for Onig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        string::format_unicode_debug_into(f, self.derived.pattern.as_slice())
-            .map_err(string::WriteError::into_inner)
+        let pattern = self.derived.pattern.as_slice();
+        format_unicode_debug_into(f, pattern).map_err(WriteError::into_inner)
     }
 }
 
@@ -148,9 +148,9 @@ impl RegexpType for Onig {
         // cannot panic.
         //
         // In practice this error will never be triggered since the only
-        // fallible call in `string::format_unicode_debug_into` is to `write!` which never
-        // `panic!`s for a `String` formatter, which we are using here.
-        let _ = string::format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
+        // fallible call in `format_unicode_debug_into` is to `write!` which
+        // never `panic!`s for a `String` formatter, which we are using here.
+        let _ = format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
         debug.push_str(self.literal.options.as_display_modifier());

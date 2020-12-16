@@ -22,7 +22,7 @@ pub use crate::module;
 pub use crate::module_registry::ModuleRegistry;
 pub use crate::prelude::*;
 pub use crate::state::parser::Context;
-pub use crate::string;
+pub use crate::string::{format_unicode_debug_into, WriteError};
 pub use crate::sys;
 pub use crate::types::{Fp, Int};
 pub use crate::value::Value;

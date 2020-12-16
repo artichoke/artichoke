@@ -295,6 +295,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use bstr::ByteSlice;
+
     use crate::test::prelude::*;
 
     // this struct is heap allocated.
@@ -345,7 +347,7 @@ mod tests {
         let mut value = Container::alloc_value(obj, &mut interp).unwrap();
         let class = value.funcall(&mut interp, "class", &[], None).unwrap();
         let class_display = class.to_s(&mut interp);
-        assert_eq!(class_display, b"Container");
+        assert_eq!(class_display.as_bstr(), b"Container".as_bstr());
 
         let data = unsafe { Container::unbox_from_value(&mut value, &mut interp) }.unwrap();
 
@@ -382,7 +384,7 @@ mod tests {
         let mut value = interp.convert_mut("string");
         let class = value.funcall(&mut interp, "class", &[], None).unwrap();
         let class_display = class.to_s(&mut interp);
-        assert_eq!(class_display, b"String");
+        assert_eq!(class_display.as_bstr(), b"String".as_bstr());
 
         let data = unsafe { Container::unbox_from_value(&mut value, &mut interp) };
         assert!(data.is_err());
@@ -391,7 +393,7 @@ mod tests {
         let mut value = Box::<Flag>::alloc_value(flag, &mut interp).unwrap();
         let class = value.funcall(&mut interp, "class", &[], None).unwrap();
         let class_display = class.to_s(&mut interp);
-        assert_eq!(class_display, b"Flag");
+        assert_eq!(class_display.as_bstr(), b"Flag".as_bstr());
 
         let data = unsafe { Container::unbox_from_value(&mut value, &mut interp) };
         assert!(data.is_err());

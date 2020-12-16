@@ -1,3 +1,5 @@
+// @generated
+
 //! Ruby exception class implementations.
 //!
 //! See crate-level documentation for more about the types exposed in this
