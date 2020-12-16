@@ -22,10 +22,7 @@ const INLINE_EVAL_SWITCH_FILENAME: &[u8] = b"-e";
 mod filename_test {
     #[test]
     fn inline_eval_switch_filename_does_not_contain_nul_byte() {
-        let contains_nul_byte = super::INLINE_EVAL_SWITCH_FILENAME
-            .iter()
-            .copied()
-            .any(|b| b == b'\0');
+        let contains_nul_byte = super::INLINE_EVAL_SWITCH_FILENAME.iter().copied().any(|b| b == b'\0');
         assert!(!contains_nul_byte);
     }
 }
@@ -65,11 +62,7 @@ where
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(Ok(()))
     } else if !opt.commands.is_empty() {
-        Ok(execute_inline_eval(
-            error,
-            opt.commands,
-            opt.fixture.as_deref(),
-        )?)
+        Ok(execute_inline_eval(error, opt.commands, opt.fixture.as_deref())?)
     } else if let Some(programfile) = opt.programfile.filter(|file| file != Path::new("-")) {
         execute_program_file(error, programfile.as_path(), opt.fixture.as_deref())
     } else {
@@ -155,9 +148,7 @@ fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Res
     let data = if let Ok(data) = std::fs::read(fixture.as_ref()) {
         data
     } else {
-        return Err(
-            LoadError::from(load_error(fixture.as_ref(), "No such file or directory")?).into(),
-        );
+        return Err(LoadError::from(load_error(fixture.as_ref(), "No such file or directory")?).into());
     };
     let value = interp.convert_mut(data);
     interp.set_global_variable(&b"$fixture"[..], &value)?;

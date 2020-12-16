@@ -33,12 +33,7 @@ use focaccia::CaseFold;
 /// [`Symbol`]: https://ruby-doc.org/core-2.6.3/Symbol.html
 #[inline]
 #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
-pub fn case_eq<T, U>(
-    interner: &T,
-    left: U,
-    right: U,
-    fold: CaseFold,
-) -> Result<Option<bool>, T::Error>
+pub fn case_eq<T, U>(interner: &T, left: U, right: U, fold: CaseFold) -> Result<Option<bool>, T::Error>
 where
     T: Intern<Symbol = U>,
     U: Copy,

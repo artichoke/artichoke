@@ -246,11 +246,7 @@ impl MatchData {
                             return Ok(CaptureMatch::None);
                         }
                     };
-                    let matches = captures
-                        .into_iter()
-                        .skip(start)
-                        .take(len)
-                        .collect::<Vec<_>>();
+                    let matches = captures.into_iter().skip(start).take(len).collect::<Vec<_>>();
                     Ok(CaptureMatch::Range(matches))
                 } else {
                     Ok(CaptureMatch::None)

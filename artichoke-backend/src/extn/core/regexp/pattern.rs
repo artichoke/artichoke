@@ -142,10 +142,7 @@ mod tests {
     fn parse_literal_string_pattern() {
         let opts = Options::new();
         let parsed = super::parse("foo", opts);
-        assert_eq!(
-            BString::from("(?-mix:foo)"),
-            BString::from(parsed.into_pattern())
-        );
+        assert_eq!(BString::from("(?-mix:foo)"), BString::from(parsed.into_pattern()));
     }
 
     // The below tests are extracted from `Regexp#to_s` ruby/specs.
@@ -157,10 +154,7 @@ mod tests {
         opts.extended = RegexpOption::Enabled;
         opts.ignore_case = RegexpOption::Enabled;
         let parsed = super::parse("abc", opts);
-        assert_eq!(
-            BString::from("(?mix:abc)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?mix:abc)"), BString::from(parsed.into_pattern()),);
     }
 
     #[test]
@@ -168,20 +162,14 @@ mod tests {
         let mut opts = Options::new();
         opts.ignore_case = RegexpOption::Enabled;
         let parsed = super::parse("abc", opts);
-        assert_eq!(
-            BString::from("(?i-mx:abc)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?i-mx:abc)"), BString::from(parsed.into_pattern()),);
     }
 
     #[test]
     fn parse_patterns_with_no_enabled_options_and_expand_with_all_modifiers_excluded() {
         let opts = Options::new();
         let parsed = super::parse("abc", opts);
-        assert_eq!(
-            BString::from("(?-mix:abc)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?-mix:abc)"), BString::from(parsed.into_pattern()),);
     }
 
     #[test]
@@ -191,16 +179,10 @@ mod tests {
         opts.extended = RegexpOption::Enabled;
         opts.ignore_case = RegexpOption::Enabled;
         let parsed = super::parse("ab+c", opts);
-        assert_eq!(
-            BString::from("(?mix:ab+c)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?mix:ab+c)"), BString::from(parsed.into_pattern()),);
         let opts = Options::new();
         let parsed = super::parse("xyz", opts);
-        assert_eq!(
-            BString::from("(?-mix:xyz)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?-mix:xyz)"), BString::from(parsed.into_pattern()),);
     }
 
     #[test]
@@ -246,16 +228,10 @@ mod tests {
     fn parse_lookahead_groups() {
         let opts = Options::new();
         let parsed = super::parse("(?=5)", opts);
-        assert_eq!(
-            BString::from("(?-mix:(?=5))"),
-            BString::from(parsed.into_pattern())
-        );
+        assert_eq!(BString::from("(?-mix:(?=5))"), BString::from(parsed.into_pattern()));
         let opts = Options::new();
         let parsed = super::parse("(?!5)", opts);
-        assert_eq!(
-            BString::from("(?-mix:(?!5))"),
-            BString::from(parsed.into_pattern())
-        );
+        assert_eq!(BString::from("(?-mix:(?!5))"), BString::from(parsed.into_pattern()));
     }
 
     #[test]
@@ -264,31 +240,19 @@ mod tests {
         opts.ignore_case = RegexpOption::Enabled;
         opts.extended = RegexpOption::Enabled;
         let parsed = super::parse("ab+c", opts);
-        assert_eq!(
-            BString::from("(?ix-m:ab+c)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?ix-m:ab+c)"), BString::from(parsed.into_pattern()),);
         let opts = Options::new();
         let parsed = super::parse("(?i:.)", opts);
-        assert_eq!(
-            BString::from("(?i-mx:.)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?i-mx:.)"), BString::from(parsed.into_pattern()),);
         let opts = Options::new();
         let parsed = super::parse("(?:.)", opts);
-        assert_eq!(
-            BString::from("(?-mix:.)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?-mix:.)"), BString::from(parsed.into_pattern()),);
     }
 
     #[test]
     fn parse_abusive_options_literals() {
         let opts = Options::new();
         let parsed = super::parse("(?mmmmix-miiiix:)", opts);
-        assert_eq!(
-            BString::from("(?-mix:)"),
-            BString::from(parsed.into_pattern()),
-        );
+        assert_eq!(BString::from("(?-mix:)"), BString::from(parsed.into_pattern()),);
     }
 }

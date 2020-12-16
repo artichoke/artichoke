@@ -7,27 +7,18 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // any of the `json/add` sources for serializing "extra" types like `Time`
     // and `BigDecimal`, not all of which Artichoke supports.
     interp.def_rb_source_file("json.rb", &include_bytes!("vendor/json.rb")[..])?;
-    interp.def_rb_source_file(
-        "json/common.rb",
-        &include_bytes!("vendor/json/common.rb")[..],
-    )?;
+    interp.def_rb_source_file("json/common.rb", &include_bytes!("vendor/json/common.rb")[..])?;
     interp.def_rb_source_file(
         "json/generic_object.rb",
         &include_bytes!("vendor/json/generic_object.rb")[..],
     )?;
-    interp.def_rb_source_file(
-        "json/version.rb",
-        &include_bytes!("vendor/json/version.rb")[..],
-    )?;
+    interp.def_rb_source_file("json/version.rb", &include_bytes!("vendor/json/version.rb")[..])?;
     interp.def_rb_source_file("json/pure.rb", &include_bytes!("vendor/json/pure.rb")[..])?;
     interp.def_rb_source_file(
         "json/pure/generator.rb",
         &include_bytes!("vendor/json/pure/generator.rb")[..],
     )?;
-    interp.def_rb_source_file(
-        "json/pure/parser.rb",
-        &include_bytes!("vendor/json/pure/parser.rb")[..],
-    )?;
+    interp.def_rb_source_file("json/pure/parser.rb", &include_bytes!("vendor/json/pure/parser.rb")[..])?;
     Ok(())
 }
 

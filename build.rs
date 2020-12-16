@@ -34,8 +34,7 @@ impl fmt::Display for Date {
 }
 
 pub fn build_release_metadata(target: &Triple) {
-    let version =
-        env::var_os("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION was not set in build.rs");
+    let version = env::var_os("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION was not set in build.rs");
     let version = version
         .to_str()
         .expect("CARGO_PKG_VERSION was not a valid UTF-8 String");
@@ -87,11 +86,7 @@ fn revision_count() -> Option<usize> {
         .arg("HEAD")
         .output()
         .ok()?;
-    String::from_utf8(revision_count.stdout)
-        .ok()?
-        .trim()
-        .parse()
-        .ok()
+    String::from_utf8(revision_count.stdout).ok()?.trim().parse().ok()
 }
 
 fn platform(target: &Triple) -> String {
@@ -100,10 +95,7 @@ fn platform(target: &Triple) -> String {
 
 fn copyright(birth_date: Date, build_date: Date) -> String {
     if birth_date.year == build_date.year {
-        format!(
-            "Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
-            birth_date.year
-        )
+        format!("Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>", birth_date.year)
     } else {
         format!(
             "Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
@@ -112,12 +104,7 @@ fn copyright(birth_date: Date, build_date: Date) -> String {
     }
 }
 
-fn description(
-    version: &str,
-    release_date: Date,
-    revision_count: Option<usize>,
-    platform: &str,
-) -> String {
+fn description(version: &str, release_date: Date, revision_count: Option<usize>, platform: &str) -> String {
     if let Some(revision_count) = revision_count {
         format!(
             "artichoke {} ({} revision {}) [{}]",
@@ -136,10 +123,7 @@ fn compiler_version() -> Option<String> {
 
 fn main() {
     let target = env::var_os("TARGET").expect("TARGET not set in build.rs");
-    let target = target
-        .to_str()
-        .expect("TARGET was not a valid UTF-8 String");
-    let target =
-        Triple::from_str(target).unwrap_or_else(|_| panic!("Invalid TARGET triple: {}", target));
+    let target = target.to_str().expect("TARGET was not a valid UTF-8 String");
+    let target = Triple::from_str(target).unwrap_or_else(|_| panic!("Invalid TARGET triple: {}", target));
     build_release_metadata(&target)
 }

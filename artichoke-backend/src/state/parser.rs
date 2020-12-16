@@ -23,10 +23,7 @@ impl State {
         let context = unsafe { sys::mrbc_context_new(mrb) };
         let mut context = NonNull::new(context)?;
         reset_context_filename(mrb, unsafe { context.as_mut() });
-        Some(Self {
-            context,
-            stack: vec![],
-        })
+        Some(Self { context, stack: vec![] })
     }
 
     pub fn close(mut self, mrb: &mut sys::mrb_state) {
@@ -68,8 +65,7 @@ impl State {
         let new = old
             .checked_add(val)
             .ok_or_else(|| IncrementLinenoError::Overflow(usize::from(u16::MAX)))?;
-        let store = u16::try_from(new)
-            .map_err(|_| IncrementLinenoError::Overflow(usize::from(u16::MAX)))?;
+        let store = u16::try_from(new).map_err(|_| IncrementLinenoError::Overflow(usize::from(u16::MAX)))?;
         unsafe {
             self.context.as_mut().lineno = store;
         }

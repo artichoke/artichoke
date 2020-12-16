@@ -33,12 +33,7 @@ impl<'a> Builder<'a> {
         }
     }
 
-    pub fn add_method<T>(
-        mut self,
-        name: T,
-        method: Method,
-        args: sys::mrb_aspec,
-    ) -> Result<Self, ConstantNameError>
+    pub fn add_method<T>(mut self, name: T, method: Method, args: sys::mrb_aspec) -> Result<Self, ConstantNameError>
     where
         T: Into<Cow<'static, str>>,
     {
@@ -84,28 +79,19 @@ impl<'a> Builder<'a> {
         let mut rclass = if let Ok(Some(rclass)) = rclass {
             rclass
         } else if let Some(enclosing_scope) = self.spec.enclosing_scope() {
-            let scope = unsafe {
-                self.interp
-                    .with_ffi_boundary(|mrb| enclosing_scope.rclass(mrb))
-            };
+            let scope = unsafe { self.interp.with_ffi_boundary(|mrb| enclosing_scope.rclass(mrb)) };
             if let Ok(Some(mut scope)) = scope {
                 let rclass = unsafe {
-                    self.interp.with_ffi_boundary(|mrb| {
-                        sys::mrb_define_module_under(mrb, scope.as_mut(), name)
-                    })
+                    self.interp
+                        .with_ffi_boundary(|mrb| sys::mrb_define_module_under(mrb, scope.as_mut(), name))
                 };
                 let rclass = rclass.map_err(|_| NotDefinedError::module(self.spec.name()))?;
                 NonNull::new(rclass).ok_or_else(|| NotDefinedError::module(self.spec.name()))?
             } else {
-                return Err(NotDefinedError::enclosing_scope(
-                    enclosing_scope.fqname().into_owned(),
-                ));
+                return Err(NotDefinedError::enclosing_scope(enclosing_scope.fqname().into_owned()));
             }
         } else {
-            let rclass = unsafe {
-                self.interp
-                    .with_ffi_boundary(|mrb| sys::mrb_define_module(mrb, name))
-            };
+            let rclass = unsafe { self.interp.with_ffi_boundary(|mrb| sys::mrb_define_module(mrb, name)) };
             let rclass = rclass.map_err(|_| NotDefinedError::module(self.spec.name()))?;
             NonNull::new(rclass).ok_or_else(|| NotDefinedError::module(self.spec.name()))?
         };
@@ -128,11 +114,7 @@ pub struct Rclass {
 
 impl Rclass {
     #[must_use]
-    pub const fn new(
-        sym: u32,
-        name: Box<CStr>,
-        enclosing_scope: Option<EnclosingRubyScope>,
-    ) -> Self {
+    pub const fn new(sym: u32, name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
         Self {
             sym,
             name,
@@ -152,11 +134,8 @@ impl Rclass {
         if let Some(ref scope) = self.enclosing_scope {
             // Short circuit if enclosing scope does not exist.
             let mut scope = scope.rclass(mrb)?;
-            let is_defined_under = sys::mrb_const_defined_at(
-                mrb,
-                sys::mrb_sys_obj_value(scope.cast::<c_void>().as_mut()),
-                self.sym,
-            );
+            let is_defined_under =
+                sys::mrb_const_defined_at(mrb, sys::mrb_sys_obj_value(scope.cast::<c_void>().as_mut()), self.sym);
             if is_defined_under == 0 {
                 // Enclosing scope exists.
                 // Module is not defined under the enclosing scope.
@@ -194,11 +173,7 @@ pub struct Spec {
 }
 
 impl Spec {
-    pub fn new<T>(
-        interp: &mut Artichoke,
-        name: T,
-        enclosing_scope: Option<EnclosingRubyScope>,
-    ) -> Result<Self, Error>
+    pub fn new<T>(interp: &mut Artichoke, name: T, enclosing_scope: Option<EnclosingRubyScope>) -> Result<Self, Error>
     where
         T: Into<Cow<'static, str>>,
     {

@@ -528,9 +528,7 @@ impl fmt::Display for ArgumentError {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
-            ArgumentErrorInner::Default | ArgumentErrorInner::DomainError => {
-                f.write_str(self.message())
-            }
+            ArgumentErrorInner::Default | ArgumentErrorInner::DomainError => f.write_str(self.message()),
             #[cfg(feature = "rand")]
             ArgumentErrorInner::Rand(max) => write!(f, "invalid argument - {}", max),
         }

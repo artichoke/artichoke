@@ -136,9 +136,7 @@ impl Default for PromptConfig {
 }
 
 fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
-    let description = interp
-        .eval(b"RUBY_DESCRIPTION")?
-        .try_into_mut::<&str>(interp)?;
+    let description = interp.eval(b"RUBY_DESCRIPTION")?.try_into_mut::<&str>(interp)?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")?
         .try_into_mut::<&str>(interp)?;
@@ -227,15 +225,11 @@ where
                         output.write_all(config.result_prefix.as_bytes())?;
                         output.write_all(result.as_slice())?;
                     }
-                    Err(ref exc) => {
-                        backtrace::format_repl_trace_into(&mut error, &mut interp, exc)?
-                    }
+                    Err(ref exc) => backtrace::format_repl_trace_into(&mut error, &mut interp, exc)?,
                 }
                 for line in buf.lines() {
                     rl.add_history_entry(line);
-                    interp
-                        .add_fetch_lineno(1)
-                        .map_err(|_| ParserLineCountError::new())?;
+                    interp.add_fetch_lineno(1).map_err(|_| ParserLineCountError::new())?;
                 }
                 // Eval successful, so reset the REPL state for the next
                 // expression.

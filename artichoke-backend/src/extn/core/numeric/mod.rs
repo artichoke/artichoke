@@ -82,9 +82,7 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Er
             return Err(SystemStackError::from("stack level too deep").into());
         }
         match (x.ruby_type(), y.ruby_type()) {
-            (Ruby::Float, Ruby::Float) => {
-                Ok(Coercion::Float(x.try_into(interp)?, y.try_into(interp)?))
-            }
+            (Ruby::Float, Ruby::Float) => Ok(Coercion::Float(x.try_into(interp)?, y.try_into(interp)?)),
             (Ruby::Float, Ruby::Fixnum) => {
                 let y = y.try_into::<Integer>(interp)?;
                 Ok(Coercion::Float(x.try_into(interp)?, y.as_f64()))
@@ -93,9 +91,7 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Er
                 let x = x.try_into::<Integer>(interp)?;
                 Ok(Coercion::Float(x.as_f64(), y.try_into(interp)?))
             }
-            (Ruby::Fixnum, Ruby::Fixnum) => {
-                Ok(Coercion::Integer(x.try_into(interp)?, y.try_into(interp)?))
-            }
+            (Ruby::Fixnum, Ruby::Fixnum) => Ok(Coercion::Integer(x.try_into(interp)?, y.try_into(interp)?)),
             _ => {
                 let class_of_numeric = interp
                     .class_of::<Numeric>()?

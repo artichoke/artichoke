@@ -1134,8 +1134,7 @@ where
         if index == self.0.len() {
             self.0.extend_from_slice(values);
         } else {
-            self.0
-                .splice(index..index + drained, values.iter().cloned());
+            self.0.splice(index..index + drained, values.iter().cloned());
         }
 
         drained
@@ -1490,8 +1489,7 @@ mod test {
     }
 
     #[test]
-    fn non_empty_array_set_slice_interior_non_empty_drain_greater_than_insert_length_overrun_tail()
-    {
+    fn non_empty_array_set_slice_interior_non_empty_drain_greater_than_insert_length_overrun_tail() {
         let mut ary = Array::from([1, 2, 3, 4]);
         let drained = ary.set_slice(3, 10, &[7, 8, 9]);
         assert_eq!(drained, 1);

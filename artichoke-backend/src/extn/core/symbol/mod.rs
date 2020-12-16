@@ -47,11 +47,7 @@ impl BoxUnboxVmValue for Symbol {
         Ok(Value::from(obj))
     }
 
-    fn box_into_value(
-        value: Self::Unboxed,
-        into: Value,
-        interp: &mut Artichoke,
-    ) -> Result<Value, Error> {
+    fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
         let _ = value;
         let _ = into;
         let _ = interp;

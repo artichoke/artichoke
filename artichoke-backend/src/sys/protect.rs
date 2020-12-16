@@ -13,12 +13,7 @@ pub unsafe fn funcall(
     args: &[sys::mrb_value],
     block: Option<sys::mrb_value>,
 ) -> Result<sys::mrb_value, sys::mrb_value> {
-    let data = Funcall {
-        slf,
-        func,
-        args,
-        block,
-    };
+    let data = Funcall { slf, func, args, block };
     protect(mrb, data)
 }
 
@@ -80,12 +75,7 @@ impl<'a> Protect for Funcall<'a> {
         // `protect` must be `Copy` because the call to a function in the
         // `mrb_funcall...` family can unwind with `longjmp` which does not
         // allow Rust to run destructors.
-        let Self {
-            slf,
-            func,
-            args,
-            block,
-        } = *Box::from_raw(ptr as *mut Self);
+        let Self { slf, func, args, block } = *Box::from_raw(ptr as *mut Self);
 
         // This will always unwrap because we've already checked that we
         // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
@@ -179,21 +169,11 @@ impl Protect for IsRange {
         let Self { value, len } = *Box::from_raw(ptr as *mut Self);
         let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let mut range_len = mem::MaybeUninit::<sys::mrb_int>::uninit();
-        let check_range = sys::mrb_range_beg_len(
-            mrb,
-            value,
-            start.as_mut_ptr(),
-            range_len.as_mut_ptr(),
-            len,
-            0_u8,
-        );
+        let check_range = sys::mrb_range_beg_len(mrb, value, start.as_mut_ptr(), range_len.as_mut_ptr(), len, 0_u8);
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
             let start = start.assume_init();
             let range_len = range_len.assume_init();
-            let out = Range {
-                start,
-                len: range_len,
-            };
+            let out = Range { start, len: range_len };
             let out = Box::new(out);
             let out = Box::into_raw(out);
             sys::mrb_sys_cptr_value(mrb, out as *mut c_void)

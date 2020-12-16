@@ -63,9 +63,7 @@ mod tests {
     #[test]
     fn debug_hash_value_as_classlike() {
         let mut interp = interpreter().unwrap();
-        let value = interp
-            .try_convert_mut(vec![(b"foo".to_vec(), vec![1, 2, 3])])
-            .unwrap();
+        let value = interp.try_convert_mut(vec![(b"foo".to_vec(), vec![1, 2, 3])]).unwrap();
         assert_eq!(interp.inspect_type_name_for_value(value), "Hash");
     }
 

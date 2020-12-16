@@ -27,8 +27,7 @@ pub fn element_reference(
     } else if let Ok(index) = elem.implicitly_convert_to_int(interp) {
         Ok(ElementReference::Index(index))
     } else {
-        let rangelen =
-            Int::try_from(ary_len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
+        let rangelen = Int::try_from(ary_len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
         if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
             if let Ok(len) = usize::try_from(len) {
                 Ok(ElementReference::StartLen(start, len))
@@ -95,14 +94,11 @@ pub fn element_assignment(
             }
         }
     } else {
-        let rangelen =
-            Int::try_from(len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
+        let rangelen = Int::try_from(len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
         if let Some(protect::Range { start, len }) = first.is_range(interp, rangelen)? {
-            let start = usize::try_from(start).unwrap_or_else(|_| {
-                unimplemented!("should throw RangeError (-11..1 out of range)")
-            });
-            let len = usize::try_from(len)
-                .unwrap_or_else(|_| unreachable!("Range can't have negative length"));
+            let start = usize::try_from(start)
+                .unwrap_or_else(|_| unimplemented!("should throw RangeError (-11..1 out of range)"));
+            let len = usize::try_from(len).unwrap_or_else(|_| unreachable!("Range can't have negative length"));
             Ok((start, Some(len), second))
         } else {
             let start = first.funcall(interp, "begin", &[], None)?;

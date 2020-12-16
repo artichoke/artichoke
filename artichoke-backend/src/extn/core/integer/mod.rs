@@ -165,9 +165,7 @@ impl Integer {
                 let x = interp.convert(self);
                 let coerced = numeric::coerce(interp, x, denominator)?;
                 match coerced {
-                    Coercion::Float(_, denom) if denom == 0.0 => {
-                        Err(ZeroDivisionError::from("divided by 0").into())
-                    }
+                    Coercion::Float(_, denom) if denom == 0.0 => Err(ZeroDivisionError::from("divided by 0").into()),
                     Coercion::Integer(_, 0) => Err(ZeroDivisionError::from("divided by 0").into()),
                     Coercion::Float(numer, denom) => Ok((numer / denom).into()),
                     Coercion::Integer(numer, denom) if numer < 0 && (numer % denom) != 0 => {
@@ -202,20 +200,12 @@ mod tests {
                     return false;
                 }
                 let expr = format!("0 / {}", x).into_bytes();
-                let quotient = interp
-                    .eval(expr.as_slice())
-                    .unwrap()
-                    .try_into::<Int>(&interp)
-                    .unwrap();
+                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
                 quotient == 0
             }
             (x, y) => {
                 let expr = format!("{} / {}", x, y).into_bytes();
-                let quotient = interp
-                    .eval(expr.as_slice())
-                    .unwrap()
-                    .try_into::<Int>(&interp)
-                    .unwrap();
+                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
                 let expected = Int::from(x) / Int::from(y);
                 quotient == expected
             }
@@ -233,20 +223,12 @@ mod tests {
                     return false;
                 }
                 let expr = format!("0.send('/', {})", x).into_bytes();
-                let quotient = interp
-                    .eval(expr.as_slice())
-                    .unwrap()
-                    .try_into::<Int>(&interp)
-                    .unwrap();
+                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
                 quotient == 0
             }
             (x, y) => {
                 let expr = format!("{}.send('/', {})", x, y).into_bytes();
-                let quotient = interp
-                    .eval(expr.as_slice())
-                    .unwrap()
-                    .try_into::<Int>(&interp)
-                    .unwrap();
+                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
                 let expected = Int::from(x) / Int::from(y);
                 quotient == expected
             }
@@ -264,20 +246,12 @@ mod tests {
                     return false;
                 }
                 let expr = format!("0 / -{}", x).into_bytes();
-                let quotient = interp
-                    .eval(expr.as_slice())
-                    .unwrap()
-                    .try_into::<Int>(&interp)
-                    .unwrap();
+                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
                 quotient == 0
             }
             (x, y) => {
                 let expr = format!("-{} / {}", x, y).into_bytes();
-                let quotient = interp
-                    .eval(expr.as_slice())
-                    .unwrap()
-                    .try_into::<Int>(&interp)
-                    .unwrap();
+                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
                 if x % y == 0 {
                     let expected = -Int::from(x) / Int::from(y);
                     quotient == expected
@@ -301,20 +275,12 @@ mod tests {
                     return false;
                 }
                 let expr = format!("0.send('/', -{})", x).into_bytes();
-                let quotient = interp
-                    .eval(expr.as_slice())
-                    .unwrap()
-                    .try_into::<Int>(&interp)
-                    .unwrap();
+                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
                 quotient == 0
             }
             (x, y) => {
                 let expr = format!("-{}.send('/', {})", x, y).into_bytes();
-                let quotient = interp
-                    .eval(expr.as_slice())
-                    .unwrap()
-                    .try_into::<Int>(&interp)
-                    .unwrap();
+                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
                 if x % y == 0 {
                     let expected = -Int::from(x) / Int::from(y);
                     quotient == expected

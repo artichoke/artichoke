@@ -2,11 +2,7 @@ use crate::extn::core::kernel;
 use crate::extn::core::kernel::require::RelativePath;
 use crate::extn::prelude::*;
 
-pub fn integer(
-    interp: &mut Artichoke,
-    mut arg: Value,
-    base: Option<Value>,
-) -> Result<Value, Error> {
+pub fn integer(interp: &mut Artichoke, mut arg: Value, base: Option<Value>) -> Result<Value, Error> {
     let base = base.and_then(|base| interp.convert(base));
     let arg = interp.try_convert_mut(&mut arg)?;
     let base = interp.try_convert_mut(base)?;

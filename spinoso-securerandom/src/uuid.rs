@@ -79,9 +79,7 @@ mod tests {
         for _ in 0..ITERATIONS {
             let gen = uuid().unwrap();
             validate(gen.as_str());
-            let uuid_only_contains_chars_in_alphabet = gen
-                .chars()
-                .all(|ch| matches!(ch, 'a'..='f' | '0'..='9' | '-'));
+            let uuid_only_contains_chars_in_alphabet = gen.chars().all(|ch| matches!(ch, 'a'..='f' | '0'..='9' | '-'));
             assert!(
                 uuid_only_contains_chars_in_alphabet,
                 "Expected alphabet 'a'..='f', '0'..='9', '-', found '{}'",

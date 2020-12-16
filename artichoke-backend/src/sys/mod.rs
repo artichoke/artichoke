@@ -64,15 +64,9 @@ pub fn mrb_sys_mruby_version(verbose: bool) -> String {
         return String::from(env!("CARGO_PKG_VERSION"));
     }
     let engine = CStr::from_bytes_with_nul(MRUBY_RUBY_ENGINE);
-    let engine = engine
-        .ok()
-        .and_then(|cstr| cstr.to_str().ok())
-        .unwrap_or("unknown");
+    let engine = engine.ok().and_then(|cstr| cstr.to_str().ok()).unwrap_or("unknown");
     let version = CStr::from_bytes_with_nul(MRUBY_RUBY_VERSION);
-    let version = version
-        .ok()
-        .and_then(|cstr| cstr.to_str().ok())
-        .unwrap_or("0.0.0");
+    let version = version.ok().and_then(|cstr| cstr.to_str().ok()).unwrap_or("0.0.0");
     let mut out = String::new();
     out.push_str(engine);
     out.push(' ');
@@ -96,15 +90,9 @@ pub fn mrb_sys_mruby_version(verbose: bool) -> String {
 #[must_use]
 pub fn mrb_sys_state_debug(mrb: *mut mrb_state) -> String {
     let engine = CStr::from_bytes_with_nul(MRUBY_RUBY_ENGINE);
-    let engine = engine
-        .ok()
-        .and_then(|cstr| cstr.to_str().ok())
-        .unwrap_or("unknown");
+    let engine = engine.ok().and_then(|cstr| cstr.to_str().ok()).unwrap_or("unknown");
     let version = CStr::from_bytes_with_nul(MRUBY_RUBY_VERSION);
-    let version = version
-        .ok()
-        .and_then(|cstr| cstr.to_str().ok())
-        .unwrap_or("0.0.0");
+    let version = version.ok().and_then(|cstr| cstr.to_str().ok()).unwrap_or("0.0.0");
     let mut debug = String::new();
     // Explicitly supressed error since we are only generating debug info and
     // cannot panic.
@@ -132,10 +120,7 @@ mod tests {
         unsafe {
             let mrb = interp.mrb.as_mut();
             let debug = sys::mrb_sys_state_debug(mrb);
-            assert_eq!(
-                debug,
-                format!("mruby 2.0 (v2.1.2) interpreter at {:p}", &*mrb)
-            );
+            assert_eq!(debug, format!("mruby 2.0 (v2.1.2) interpreter at {:p}", &*mrb));
         };
     }
 }

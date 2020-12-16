@@ -7,11 +7,7 @@ use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
 #[no_mangle]
-unsafe extern "C" fn mrb_intern(
-    mrb: *mut sys::mrb_state,
-    name: *const i8,
-    len: usize,
-) -> sys::mrb_sym {
+unsafe extern "C" fn mrb_intern(mrb: *mut sys::mrb_state, name: *const i8, len: usize) -> sys::mrb_sym {
     let bytes = slice::from_raw_parts(name as *const u8, len);
     let bytes = bytes.to_vec();
     unwrap_interpreter!(mrb, to => guard, or_else = 0);
@@ -21,11 +17,7 @@ unsafe extern "C" fn mrb_intern(
 }
 
 #[no_mangle]
-unsafe extern "C" fn mrb_intern_static(
-    mrb: *mut sys::mrb_state,
-    name: *const i8,
-    len: usize,
-) -> sys::mrb_sym {
+unsafe extern "C" fn mrb_intern_static(mrb: *mut sys::mrb_state, name: *const i8, len: usize) -> sys::mrb_sym {
     let bytes = slice::from_raw_parts::<'static, _>(name as *const u8, len);
     unwrap_interpreter!(mrb, to => guard, or_else = 0);
     let sym = guard.intern_bytes(bytes);
@@ -44,10 +36,7 @@ unsafe extern "C" fn mrb_intern_cstr(mrb: *mut sys::mrb_state, name: *const i8) 
 }
 
 #[no_mangle]
-unsafe extern "C" fn mrb_intern_str(
-    mrb: *mut sys::mrb_state,
-    name: sys::mrb_value,
-) -> sys::mrb_sym {
+unsafe extern "C" fn mrb_intern_str(mrb: *mut sys::mrb_state, name: sys::mrb_value) -> sys::mrb_sym {
     unwrap_interpreter!(mrb, to => guard, or_else = 0);
     let name = Value::from(name);
     if let Ok(bytes) = name.try_into_mut::<Vec<u8>>(&mut guard) {
@@ -60,11 +49,7 @@ unsafe extern "C" fn mrb_intern_str(
 }
 
 #[no_mangle]
-unsafe extern "C" fn mrb_check_intern(
-    mrb: *mut sys::mrb_state,
-    name: *const i8,
-    len: usize,
-) -> sys::mrb_value {
+unsafe extern "C" fn mrb_check_intern(mrb: *mut sys::mrb_state, name: *const i8, len: usize) -> sys::mrb_value {
     let bytes = slice::from_raw_parts(name as *const u8, len);
     unwrap_interpreter!(mrb, to => guard);
     let symbol = if let Ok(Some(sym)) = guard.check_interned_bytes(bytes) {
@@ -76,10 +61,7 @@ unsafe extern "C" fn mrb_check_intern(
 }
 
 #[no_mangle]
-unsafe extern "C" fn mrb_check_intern_cstr(
-    mrb: *mut sys::mrb_state,
-    name: *const i8,
-) -> sys::mrb_value {
+unsafe extern "C" fn mrb_check_intern_cstr(mrb: *mut sys::mrb_state, name: *const i8) -> sys::mrb_value {
     let string = CStr::from_ptr(name);
     let bytes = string.to_bytes_with_nul();
     unwrap_interpreter!(mrb, to => guard);
@@ -92,10 +74,7 @@ unsafe extern "C" fn mrb_check_intern_cstr(
 }
 
 #[no_mangle]
-unsafe extern "C" fn mrb_check_intern_str(
-    mrb: *mut sys::mrb_state,
-    name: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn mrb_check_intern_str(mrb: *mut sys::mrb_state, name: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let name = Value::from(name);
     let symbol = if let Ok(bytes) = name.try_into_mut::<&[u8]>(&mut guard) {

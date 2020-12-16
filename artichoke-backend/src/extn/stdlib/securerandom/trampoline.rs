@@ -26,11 +26,7 @@ pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error
 }
 
 #[inline]
-pub fn urlsafe_base64(
-    interp: &mut Artichoke,
-    len: Option<Value>,
-    padding: Option<Value>,
-) -> Result<Value, Error> {
+pub fn urlsafe_base64(interp: &mut Artichoke, len: Option<Value>, padding: Option<Value>) -> Result<Value, Error> {
     let padding = match padding {
         None => false,
         Some(val) if val.is_nil() => false,

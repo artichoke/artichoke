@@ -25,10 +25,7 @@ impl LoadSources for Artichoke {
             path = &absolute_path;
         }
         state.vfs.register_extension(path, T::require)?;
-        trace!(
-            "Added Rust extension to interpreter filesystem -- {}",
-            path.display()
-        );
+        trace!("Added Rust extension to interpreter filesystem -- {}", path.display());
         Ok(())
     }
 
@@ -45,10 +42,7 @@ impl LoadSources for Artichoke {
             path = &absolute_path;
         }
         state.vfs.write_file(path, contents.into())?;
-        trace!(
-            "Added Ruby source to interpreter filesystem -- {}",
-            path.display()
-        );
+        trace!("Added Ruby source to interpreter filesystem -- {}", path.display());
         Ok(())
     }
 

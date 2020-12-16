@@ -69,21 +69,13 @@ pub fn eql(interp: &mut Artichoke, mut regexp: Value, other: Value) -> Result<Va
     Ok(interp.convert(cmp))
 }
 
-pub fn case_compare(
-    interp: &mut Artichoke,
-    mut regexp: Value,
-    other: Value,
-) -> Result<Value, Error> {
+pub fn case_compare(interp: &mut Artichoke, mut regexp: Value, other: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let cmp = regexp.case_compare(interp, other)?;
     Ok(interp.convert(cmp))
 }
 
-pub fn match_operator(
-    interp: &mut Artichoke,
-    mut regexp: Value,
-    mut pattern: Value,
-) -> Result<Value, Error> {
+pub fn match_operator(interp: &mut Artichoke, mut regexp: Value, mut pattern: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let pattern = pattern.implicitly_convert_to_nilable_string(interp)?;
     let pos = regexp.match_operator(interp, pattern)?;

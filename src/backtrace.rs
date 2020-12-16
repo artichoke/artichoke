@@ -33,11 +33,7 @@ use crate::prelude::*;
 /// # Errors
 ///
 /// If writing into the provided `out` writer fails, an error is returned.
-pub fn format_repl_trace_into<W, E>(
-    mut error: W,
-    interp: &mut Artichoke,
-    exc: &E,
-) -> Result<(), Box<dyn error::Error>>
+pub fn format_repl_trace_into<W, E>(mut error: W, interp: &mut Artichoke, exc: &E) -> Result<(), Box<dyn error::Error>>
 where
     W: io::Write + WriteColor,
     E: RubyException,
@@ -98,11 +94,7 @@ where
 /// # Errors
 ///
 /// If writing into the provided `out` writer fails, an error is returned.
-pub fn format_cli_trace_into<W, E>(
-    mut error: W,
-    interp: &mut Artichoke,
-    exc: &E,
-) -> Result<(), Box<dyn error::Error>>
+pub fn format_cli_trace_into<W, E>(mut error: W, interp: &mut Artichoke, exc: &E) -> Result<(), Box<dyn error::Error>>
 where
     W: io::Write + WriteColor,
     E: RubyException,

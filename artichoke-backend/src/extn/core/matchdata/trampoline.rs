@@ -52,8 +52,7 @@ pub fn element_reference(
         // NOTE(lopopolo): Encapsulation is broken here by reaching into the
         // inner regexp.
         let captures_len = data.regexp.inner().captures_len(None)?;
-        let rangelen = Int::try_from(captures_len)
-            .map_err(|_| ArgumentError::from("input string too long"))?;
+        let rangelen = Int::try_from(captures_len).map_err(|_| ArgumentError::from("input string too long"))?;
         if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
             CaptureAt::StartLen(start, len)
         } else {

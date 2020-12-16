@@ -122,11 +122,7 @@ impl PartialEq for Regexp {
 impl Eq for Regexp {}
 
 impl Regexp {
-    pub fn new(
-        literal_config: Config,
-        derived_config: Config,
-        encoding: Encoding,
-    ) -> Result<Self, Error> {
+    pub fn new(literal_config: Config, derived_config: Config, encoding: Encoding) -> Result<Self, Error> {
         #[cfg(feature = "core-regexp-oniguruma")]
         {
             // Patterns must be parsable by Oniguruma.
@@ -160,23 +156,22 @@ impl Regexp {
         options: Option<Options>,
         encoding: Option<Encoding>,
     ) -> Result<Self, Error> {
-        let literal_config =
-            if let Ok(regexp) = unsafe { Self::unbox_from_value(&mut pattern, interp) } {
-                if options.is_some() || encoding.is_some() {
-                    interp.warn(&b"flags ignored when initializing from Regexp"[..])?;
-                }
-                let options = regexp.inner().literal_config().options;
-                Config {
-                    pattern: regexp.inner().literal_config().pattern.clone(),
-                    options,
-                }
-            } else {
-                let bytes = pattern.implicitly_convert_to_string(interp)?;
-                Config {
-                    pattern: bytes.into(),
-                    options: options.unwrap_or_default(),
-                }
-            };
+        let literal_config = if let Ok(regexp) = unsafe { Self::unbox_from_value(&mut pattern, interp) } {
+            if options.is_some() || encoding.is_some() {
+                interp.warn(&b"flags ignored when initializing from Regexp"[..])?;
+            }
+            let options = regexp.inner().literal_config().options;
+            Config {
+                pattern: regexp.inner().literal_config().pattern.clone(),
+                options,
+            }
+        } else {
+            let bytes = pattern.implicitly_convert_to_string(interp)?;
+            Config {
+                pattern: bytes.into(),
+                options: options.unwrap_or_default(),
+            }
+        };
         let pattern = pattern::parse(&literal_config.pattern, literal_config.options);
         let options = pattern.options();
         let derived_config = Config {
@@ -327,11 +322,7 @@ impl Regexp {
     }
 
     #[inline]
-    pub fn match_operator(
-        &self,
-        interp: &mut Artichoke,
-        pattern: Option<&[u8]>,
-    ) -> Result<Option<usize>, Error> {
+    pub fn match_operator(&self, interp: &mut Artichoke, pattern: Option<&[u8]>) -> Result<Option<usize>, Error> {
         if let Some(pattern) = pattern {
             self.0.match_operator(interp, pattern)
         } else {
@@ -394,9 +385,7 @@ pub struct Config {
     options: Options,
 }
 
-impl TryConvertMut<(Option<Value>, Option<Value>), (Option<Options>, Option<Encoding>)>
-    for Artichoke
-{
+impl TryConvertMut<(Option<Value>, Option<Value>), (Option<Options>, Option<Encoding>)> for Artichoke {
     type Error = Error;
 
     fn try_convert_mut(

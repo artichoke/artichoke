@@ -16,10 +16,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-unsafe extern "C" fn artichoke_string_ord(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_string_ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let result = trampoline::ord(&mut guard, value);
@@ -29,10 +26,7 @@ unsafe extern "C" fn artichoke_string_ord(
     }
 }
 
-unsafe extern "C" fn artichoke_string_scan(
-    mrb: *mut sys::mrb_state,
-    slf: sys::mrb_value,
-) -> sys::mrb_value {
+unsafe extern "C" fn artichoke_string_scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);

@@ -295,11 +295,7 @@ impl<'a> ParseState<'a> {
 
 pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Error> {
     let mut state = ParseState::new(arg);
-    let mut chars = arg
-        .inner()
-        .chars()
-        .skip_while(|c| c.is_whitespace())
-        .peekable();
+    let mut chars = arg.inner().chars().skip_while(|c| c.is_whitespace()).peekable();
     let mut prev = None::<char>;
 
     while let Some(current) = chars.next() {
