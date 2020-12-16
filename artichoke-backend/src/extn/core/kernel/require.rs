@@ -1,6 +1,7 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
 use bstr::ByteSlice;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use crate::extn::prelude::*;
@@ -53,10 +54,10 @@ pub fn require(
         } else {
             Path::new(RUBY_LOAD_PATH).join(path)
         };
-        let is_rb = path
-            .extension()
-            .filter(|ext| ext == &RUBY_EXTENSION)
-            .is_some();
+        let is_rb = matches!(
+            path.extension(),
+            Some(ext) if *ext == *OsStr::new(RUBY_EXTENSION)
+        );
         if is_rb {
             (path, None)
         } else {
@@ -143,6 +144,8 @@ impl RelativePath {
 
 #[cfg(test)]
 mod test {
+    use bstr::ByteSlice;
+
     use crate::test::prelude::*;
 
     #[derive(Debug)]
@@ -200,11 +203,12 @@ mod test {
         assert_eq!(second_i_result, 1000);
         let err = interp.eval(b"require 'non-existent-source'").unwrap_err();
         assert_eq!(
-            &b"cannot load such file -- non-existent-source"[..],
-            err.message().as_ref()
+            b"cannot load such file -- non-existent-source".as_bstr(),
+            err.message().as_ref().as_bstr()
         );
-        let expected = vec![Vec::from(&b"(eval):1"[..])];
-        assert_eq!(Some(expected), err.vm_backtrace(&mut interp),);
+        let expected_backtrace = b"(eval):1".to_vec();
+        let actual_backtrace = bstr::join("\n", err.vm_backtrace(&mut interp).unwrap());
+        assert_eq!(expected_backtrace.as_bstr(), actual_backtrace.as_bstr());
     }
 
     #[test]
@@ -239,11 +243,12 @@ mod test {
         let mut interp = interpreter().unwrap();
         let err = interp.eval(b"require '/src'").unwrap_err();
         assert_eq!(
-            &b"cannot load such file -- /src"[..],
-            err.message().as_ref()
+            b"cannot load such file -- /src".as_bstr(),
+            err.message().as_ref().as_bstr()
         );
-        let expected = vec![Vec::from(&b"(eval):1"[..])];
-        assert_eq!(Some(expected), err.vm_backtrace(&mut interp));
+        let expected_backtrace = b"(eval):1".to_vec();
+        let actual_backtrace = bstr::join("\n", err.vm_backtrace(&mut interp).unwrap());
+        assert_eq!(expected_backtrace.as_bstr(), actual_backtrace.as_bstr());
     }
 
     #[test]

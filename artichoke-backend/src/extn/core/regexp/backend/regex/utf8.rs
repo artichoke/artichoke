@@ -1,4 +1,4 @@
-use regex::{Regex, RegexBuilder};
+use regex::{Match, Regex, RegexBuilder};
 use std::collections::HashMap;
 use std::convert::{self, TryFrom};
 use std::fmt;
@@ -47,8 +47,8 @@ impl Utf8 {
 
 impl fmt::Display for Utf8 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        string::format_unicode_debug_into(f, self.derived.pattern.as_slice())
-            .map_err(string::WriteError::into_inner)
+        let pattern = self.derived.pattern.as_slice();
+        format_unicode_debug_into(f, pattern).map_err(WriteError::into_inner)
     }
 }
 
@@ -116,7 +116,7 @@ impl RegexpType for Utf8 {
             .captures(haystack)
             .and_then(|captures| captures.get(0))
             .as_ref()
-            .map(regex::Match::as_str)
+            .map(Match::as_str)
             .map(str::as_bytes);
         Ok(result)
     }
@@ -128,9 +128,9 @@ impl RegexpType for Utf8 {
         // cannot panic.
         //
         // In practice this error will never be triggered since the only
-        // fallible call in `string::format_unicode_debug_into` is to `write!` which never
-        // `panic!`s for a `String` formatter, which we are using here.
-        let _ = string::format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
+        // fallible call in `format_unicode_debug_into` is to `write!` which
+        // never `panic!`s for a `String` formatter, which we are using here.
+        let _ = format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
         debug.push_str(self.literal.options.as_display_modifier());
@@ -186,7 +186,7 @@ impl RegexpType for Utf8 {
             let fullmatch = captures
                 .get(0)
                 .as_ref()
-                .map(regex::Match::as_str)
+                .map(Match::as_str)
                 .map(str::as_bytes);
             let value = interp.convert_mut(fullmatch);
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
@@ -194,7 +194,7 @@ impl RegexpType for Utf8 {
                 let capture = captures
                     .get(group)
                     .as_ref()
-                    .map(regex::Match::as_str)
+                    .map(Match::as_str)
                     .map(str::as_bytes);
                 let value = interp.convert_mut(capture);
                 let group = unsafe { NonZeroUsize::new_unchecked(group) };
@@ -292,7 +292,7 @@ impl RegexpType for Utf8 {
             let fullmatch = captures
                 .get(0)
                 .as_ref()
-                .map(regex::Match::as_str)
+                .map(Match::as_str)
                 .map(str::as_bytes);
             let value = interp.convert_mut(fullmatch);
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
@@ -300,7 +300,7 @@ impl RegexpType for Utf8 {
                 let capture = captures
                     .get(group)
                     .as_ref()
-                    .map(regex::Match::as_str)
+                    .map(Match::as_str)
                     .map(str::as_bytes);
                 let value = interp.convert_mut(capture);
                 let group = unsafe { NonZeroUsize::new_unchecked(group) };
@@ -352,7 +352,7 @@ impl RegexpType for Utf8 {
             let fullmatch = captures
                 .get(0)
                 .as_ref()
-                .map(regex::Match::as_str)
+                .map(Match::as_str)
                 .map(str::as_bytes);
             let value = interp.convert_mut(fullmatch);
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
@@ -360,7 +360,7 @@ impl RegexpType for Utf8 {
                 let capture = captures
                     .get(group)
                     .as_ref()
-                    .map(regex::Match::as_str)
+                    .map(Match::as_str)
                     .map(str::as_bytes);
                 let value = interp.convert_mut(capture);
                 let group = unsafe { NonZeroUsize::new_unchecked(group) };
@@ -482,7 +482,7 @@ impl RegexpType for Utf8 {
                     let matched = captures
                         .get(0)
                         .as_ref()
-                        .map(regex::Match::as_str)
+                        .map(Match::as_str)
                         .map(str::as_bytes);
                     let capture = interp.convert_mut(matched);
                     interp.set_global_variable(regexp::LAST_MATCHED_STRING, &capture)?;
@@ -492,7 +492,7 @@ impl RegexpType for Utf8 {
                         let matched = captures
                             .get(group)
                             .as_ref()
-                            .map(regex::Match::as_str)
+                            .map(Match::as_str)
                             .map(str::as_bytes);
                         let capture = interp.convert_mut(matched);
                         let group = unsafe { NonZeroUsize::new_unchecked(group) };
@@ -541,7 +541,7 @@ impl RegexpType for Utf8 {
                         let matched = captures
                             .get(group)
                             .as_ref()
-                            .map(regex::Match::as_str)
+                            .map(Match::as_str)
                             .map(str::as_bytes)
                             .map(Vec::from);
                         groups.push(matched);

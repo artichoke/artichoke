@@ -7,7 +7,6 @@ use std::num::NonZeroU32;
 use std::str::{self, FromStr};
 
 use crate::extn::prelude::*;
-use crate::string::WriteError;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Radix(NonZeroU32);
@@ -164,7 +163,7 @@ impl<'a> TryConvertMut<&'a mut Value, IntegerString<'a>> for Artichoke {
                 Ok(converted)
             } else {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
-                string::format_unicode_debug_into(&mut message, arg)?;
+                format_unicode_debug_into(&mut message, arg)?;
                 message.push('"');
                 Err(ArgumentError::from(message).into())
             }
@@ -217,7 +216,7 @@ impl<'a> ParseState<'a> {
         match self {
             Self::Sign(arg, _) | Self::Accumulate(arg, _, _) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
-                string::format_unicode_debug_into(&mut message, arg.into())?;
+                format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
                 Err(ArgumentError::from(message).into())
             }
@@ -249,7 +248,7 @@ impl<'a> ParseState<'a> {
             Self::Accumulate(arg, sign, digits) => (arg, sign, digits),
             Self::Initial(arg) | Self::Sign(arg, _) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
-                string::format_unicode_debug_into(&mut message, arg.into())?;
+                format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
                 return Err(ArgumentError::from(message).into());
             }
@@ -276,7 +275,7 @@ impl<'a> ParseState<'a> {
                 let next = char::from(*y);
                 if !next.is_numeric() && !next.is_alphabetic() {
                     let mut message = String::from(r#"invalid value for Integer(): ""#);
-                    string::format_unicode_debug_into(&mut message, arg.into())?;
+                    format_unicode_debug_into(&mut message, arg.into())?;
                     message.push('"');
                     return Err(ArgumentError::from(message).into());
                 } else if '0' == first {
@@ -317,7 +316,7 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Error
         if current.is_whitespace() {
             if let Some('+') | Some('-') = prev {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
-                string::format_unicode_debug_into(&mut message, arg.into())?;
+                format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
                 return Err(ArgumentError::from(message).into());
             } else {
@@ -348,7 +347,7 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Error
         Ok(parsed_int)
     } else {
         let mut message = String::from(r#"invalid value for Integer(): ""#);
-        string::format_unicode_debug_into(&mut message, arg.into())?;
+        format_unicode_debug_into(&mut message, arg.into())?;
         message.push('"');
         Err(ArgumentError::from(message).into())
     }

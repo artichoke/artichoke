@@ -486,6 +486,8 @@ impl From<Box<ArgCountError>> for Box<dyn RubyException> {
 
 #[cfg(test)]
 mod tests {
+    use bstr::ByteSlice;
+
     use crate::gc::MrbGarbageCollection;
     use crate::test::prelude::*;
 
@@ -495,7 +497,7 @@ mod tests {
 
         let value = interp.convert(true);
         let string = value.to_s(&mut interp);
-        assert_eq!(string, b"true");
+        assert_eq!(string.as_bstr(), b"true".as_bstr());
     }
 
     #[test]
@@ -504,7 +506,7 @@ mod tests {
 
         let value = interp.convert(true);
         let debug = value.inspect(&mut interp);
-        assert_eq!(debug, b"true");
+        assert_eq!(debug.as_bstr(), b"true".as_bstr());
     }
 
     #[test]
@@ -513,7 +515,7 @@ mod tests {
 
         let value = interp.convert(false);
         let string = value.to_s(&mut interp);
-        assert_eq!(string, b"false");
+        assert_eq!(string.as_bstr(), b"false".as_bstr());
     }
 
     #[test]
@@ -522,7 +524,7 @@ mod tests {
 
         let value = interp.convert(false);
         let debug = value.inspect(&mut interp);
-        assert_eq!(debug, b"false");
+        assert_eq!(debug.as_bstr(), b"false".as_bstr());
     }
 
     #[test]
@@ -531,7 +533,7 @@ mod tests {
 
         let value = Value::nil();
         let string = value.to_s(&mut interp);
-        assert_eq!(string, b"");
+        assert_eq!(string.as_bstr(), b"".as_bstr());
     }
 
     #[test]
@@ -540,7 +542,7 @@ mod tests {
 
         let value = Value::nil();
         let debug = value.inspect(&mut interp);
-        assert_eq!(debug, b"nil");
+        assert_eq!(debug.as_bstr(), b"nil".as_bstr());
     }
 
     #[test]
@@ -549,7 +551,7 @@ mod tests {
 
         let value = Convert::<_, Value>::convert(&*interp, 255);
         let string = value.to_s(&mut interp);
-        assert_eq!(string, b"255");
+        assert_eq!(string.as_bstr(), b"255".as_bstr());
     }
 
     #[test]
@@ -558,7 +560,7 @@ mod tests {
 
         let value = Convert::<_, Value>::convert(&*interp, 255);
         let debug = value.inspect(&mut interp);
-        assert_eq!(debug, b"255");
+        assert_eq!(debug.as_bstr(), b"255".as_bstr());
     }
 
     #[test]
@@ -567,7 +569,7 @@ mod tests {
 
         let value = interp.convert_mut("interstate");
         let string = value.to_s(&mut interp);
-        assert_eq!(string, b"interstate");
+        assert_eq!(string.as_bstr(), b"interstate".as_bstr());
     }
 
     #[test]
@@ -576,7 +578,7 @@ mod tests {
 
         let value = interp.convert_mut("interstate");
         let debug = value.inspect(&mut interp);
-        assert_eq!(debug, br#""interstate""#);
+        assert_eq!(debug.as_bstr(), br#""interstate""#.as_bstr());
     }
 
     #[test]
@@ -585,7 +587,7 @@ mod tests {
 
         let value = interp.convert_mut("");
         let string = value.to_s(&mut interp);
-        assert_eq!(string, b"");
+        assert_eq!(string.as_bstr(), b"".as_bstr());
     }
 
     #[test]
@@ -594,7 +596,7 @@ mod tests {
 
         let value = interp.convert_mut("");
         let debug = value.inspect(&mut interp);
-        assert_eq!(debug, br#""""#);
+        assert_eq!(debug.as_bstr(), br#""""#.as_bstr());
     }
 
     #[test]
@@ -679,8 +681,8 @@ mod tests {
             .unwrap_err();
         assert_eq!("TypeError", err.name().as_ref());
         assert_eq!(
-            &b"nil cannot be converted to String"[..],
-            err.message().as_ref()
+            b"nil cannot be converted to String".as_bstr(),
+            err.message().as_ref().as_bstr()
         );
     }
 
@@ -694,8 +696,8 @@ mod tests {
             .unwrap_err();
         assert_eq!("NoMethodError", err.name().as_ref());
         assert_eq!(
-            &b"undefined method 'garbage_method_name'"[..],
-            err.message().as_ref()
+            b"undefined method 'garbage_method_name'".as_bstr(),
+            err.message().as_ref().as_bstr()
         );
     }
 }

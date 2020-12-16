@@ -3,7 +3,6 @@ use std::mem;
 
 use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
-use crate::string::WriteError;
 
 pub mod mruby;
 pub mod trampoline;

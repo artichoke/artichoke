@@ -72,6 +72,8 @@ impl Eval for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    use bstr::ByteSlice;
+
     use crate::test::prelude::*;
 
     #[test]
@@ -90,7 +92,7 @@ mod tests {
         let _ = interp.eval(b"15").unwrap();
         let context = interp.peek_context().unwrap();
         let filename = context.unwrap().filename();
-        assert_eq!(filename, &b"context.rb"[..]);
+        assert_eq!(filename.as_bstr(), b"context.rb".as_bstr());
     }
 
     #[test]

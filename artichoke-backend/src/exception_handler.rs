@@ -6,7 +6,7 @@ use std::fmt;
 use crate::core::{TryConvertMut, Value as _};
 use crate::error::{Error, RubyException};
 use crate::gc::MrbGarbageCollection;
-use crate::string;
+use crate::string::{format_unicode_debug_into, WriteError};
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -82,8 +82,7 @@ impl fmt::Display for CaughtException {
     fn fmt(&self, mut f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.name())?;
         f.write_str(" (")?;
-        string::format_unicode_debug_into(&mut f, &self.message())
-            .map_err(string::WriteError::into_inner)?;
+        format_unicode_debug_into(&mut f, &self.message()).map_err(WriteError::into_inner)?;
         f.write_str(")")?;
         Ok(())
     }
@@ -177,6 +176,8 @@ pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Error, Err
 
 #[cfg(test)]
 mod tests {
+    use bstr::ByteSlice;
+
     use crate::test::prelude::*;
 
     #[test]
@@ -186,11 +187,10 @@ mod tests {
             .eval(b"raise ArgumentError.new('waffles')")
             .unwrap_err();
         assert_eq!("ArgumentError", err.name().as_ref());
-        assert_eq!(&b"waffles"[..], err.message().as_ref());
-        assert_eq!(
-            Some(vec![Vec::from(&b"(eval):1"[..])]),
-            err.vm_backtrace(&mut interp)
-        );
+        assert_eq!(b"waffles".as_bstr(), err.message().as_ref().as_bstr());
+        let expected_backtrace = b"(eval):1".to_vec();
+        let backtrace = bstr::join("\n", err.vm_backtrace(&mut interp).unwrap());
+        assert_eq!(backtrace.as_bstr(), expected_backtrace.as_bstr());
     }
 
     #[test]
@@ -198,7 +198,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let err = interp.eval(b"def bad; (; end").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
-        assert_eq!(&b"syntax error"[..], err.message().as_ref());
+        assert_eq!(b"syntax error".as_bstr(), err.message().as_ref().as_bstr());
         assert_eq!(None, err.vm_backtrace(&mut interp));
     }
 

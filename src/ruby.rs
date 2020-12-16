@@ -12,7 +12,7 @@ use termcolor::WriteColor;
 
 use crate::backend::ffi;
 use crate::backend::state::parser::Context;
-use crate::backend::string;
+use crate::backend::string::format_unicode_debug_into;
 use crate::backtrace;
 use crate::prelude::*;
 
@@ -140,7 +140,7 @@ fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Error> 
     let mut buf = String::from(message);
     buf.push_str(" -- ");
     let path = ffi::os_str_to_bytes(file.as_ref())?;
-    string::format_unicode_debug_into(&mut buf, path)?;
+    format_unicode_debug_into(&mut buf, path)?;
     Ok(buf)
 }
 

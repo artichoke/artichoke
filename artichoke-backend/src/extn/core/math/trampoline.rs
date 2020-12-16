@@ -3,7 +3,6 @@
 use core::convert::TryFrom;
 
 use crate::extn::prelude::*;
-use crate::string::WriteError;
 
 pub fn acos(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
     let value = interp.coerce_to_float(value)?;

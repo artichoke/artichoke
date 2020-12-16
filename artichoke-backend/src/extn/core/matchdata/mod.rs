@@ -19,7 +19,6 @@ use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
-use crate::string::WriteError;
 
 mod boxing;
 pub mod mruby;
@@ -227,7 +226,7 @@ impl MatchData {
                     Ok(CaptureMatch::Single(capture.map(<[_]>::to_vec)))
                 } else {
                     let mut message = String::from("undefined group name reference: \"");
-                    string::format_unicode_debug_into(&mut message, name)?;
+                    format_unicode_debug_into(&mut message, name)?;
                     message.push('"');
                     Err(IndexError::from(message).into())
                 }
