@@ -9,11 +9,12 @@
 //! [matchdata]: https://ruby-doc.org/core-2.6.3/MatchData.html
 //! [rubyspec]: https://github.com/ruby/spec
 
-use bstr::BString;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::ops::{Bound, RangeBounds};
 use std::str;
+
+use bstr::BString;
 
 use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;

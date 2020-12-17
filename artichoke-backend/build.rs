@@ -7,6 +7,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+
 use target_lexicon::Triple;
 
 fn enumerate_sources<T>(path: T, paths: &mut Vec<PathBuf>) -> io::Result<()>
@@ -97,6 +98,7 @@ mod libmruby {
     use std::path::PathBuf;
     use std::process::Command;
     use std::str;
+
     use target_lexicon::{Architecture, OperatingSystem, Triple};
 
     use super::buildpath;

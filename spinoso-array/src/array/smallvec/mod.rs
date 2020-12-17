@@ -4,6 +4,7 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp;
 use core::slice::{Iter, IterMut};
+
 use smallvec::SmallVec;
 
 use crate::array::INLINE_CAPACITY;

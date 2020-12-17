@@ -4,11 +4,12 @@
 //! multi-line Ruby expressions, CTRL-C to break out of an expression, and can
 //! inspect return values and exception backtraces.
 
-use rustyline::error::ReadlineError;
-use rustyline::Editor;
 use std::error;
 use std::fmt;
 use std::io;
+
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 use termcolor::WriteColor;
 
 use crate::backend::state::parser::Context;

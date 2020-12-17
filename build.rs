@@ -2,12 +2,13 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::restriction)]
 
-use chrono::prelude::*;
 use std::env;
 use std::ffi::OsString;
 use std::fmt;
 use std::process::Command;
 use std::str::{self, FromStr};
+
+use chrono::prelude::*;
 use target_lexicon::Triple;
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]

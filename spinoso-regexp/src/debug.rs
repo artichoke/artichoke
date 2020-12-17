@@ -1,5 +1,6 @@
 use core::fmt;
 use core::iter::FusedIterator;
+
 use scolapasta_string_escape::Literal;
 
 #[derive(Debug, Clone, Copy)]

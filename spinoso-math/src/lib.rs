@@ -78,14 +78,13 @@
 //! [`NaN`]: f64::NAN
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 
-use core::fmt;
-#[cfg(feature = "std")]
-use std::error;
-
 #[doc(inline)]
 pub use core::f64::consts::E;
 #[doc(inline)]
 pub use core::f64::consts::PI;
+use core::fmt;
+#[cfg(feature = "std")]
+use std::error;
 
 mod math;
 

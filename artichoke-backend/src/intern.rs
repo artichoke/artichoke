@@ -1,5 +1,6 @@
-use intaglio::SymbolOverflowError;
 use std::borrow::Cow;
+
+use intaglio::SymbolOverflowError;
 
 use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;

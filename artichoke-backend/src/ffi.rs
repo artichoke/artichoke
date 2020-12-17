@@ -2,13 +2,14 @@
 //!
 //! These functions are unsafe. Use them carefully.
 
-use bstr::{ByteSlice, ByteVec};
 use std::borrow::Cow;
 use std::error;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
 use std::mem;
 use std::ptr::{self, NonNull};
+
+use bstr::{ByteSlice, ByteVec};
 
 use crate::class_registry::ClassRegistry;
 use crate::core::ConvertMut;

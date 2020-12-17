@@ -1,5 +1,4 @@
 use core::mem::size_of;
-use onig::{Regex, Syntax};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
@@ -7,11 +6,12 @@ use std::num::NonZeroUsize;
 use std::rc::Rc;
 use std::str;
 
+use onig::{Regex, Syntax};
+
+use super::{NameToCaptureLocations, NilableString};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan, Source};
 use crate::extn::prelude::*;
-
-use super::{NameToCaptureLocations, NilableString};
 
 // The oniguruma `Regexp` backend requries that `u32` can be widened to `usize`
 // losslessly.

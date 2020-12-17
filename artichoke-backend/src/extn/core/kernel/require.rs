@@ -1,8 +1,9 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
-use bstr::ByteSlice;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
+
+use bstr::ByteSlice;
 
 use crate::extn::prelude::*;
 use crate::ffi;

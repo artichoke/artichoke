@@ -21,15 +21,15 @@
 
 use core::convert::TryFrom;
 use core::ops::{Deref, DerefMut};
+
 use spinoso_random::{
     ArgumentError as RandomArgumentError, InitializeError, NewSeedError, Random as SpinosoRandom, UrandomError,
 };
+#[doc(inline)]
+pub use spinoso_random::{Max, Rand};
 
 use crate::convert::HeapAllocatedData;
 use crate::extn::prelude::*;
-
-#[doc(inline)]
-pub use spinoso_random::{Max, Rand};
 
 pub mod mruby;
 pub mod trampoline;

@@ -1,6 +1,7 @@
-use bstr::BString;
 use std::fmt;
 use std::io::{self, Write};
+
+use bstr::BString;
 
 #[cfg(all(not(feature = "output-strategy-capture"), not(feature = "output-strategy-null")))]
 pub type Strategy = Process;

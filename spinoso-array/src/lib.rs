@@ -155,7 +155,6 @@ mod array;
 
 #[cfg(feature = "small-array")]
 pub use array::smallvec::SmallArray;
+pub use array::vec::Array;
 #[cfg(feature = "small-array")]
 pub use array::INLINE_CAPACITY;
-
-pub use array::vec::Array;

@@ -41,12 +41,13 @@
 //!     <programfile>
 //! ```
 
-use artichoke::ruby::{self, Args};
-use clap::{App, Arg};
 use std::ffi::OsString;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process;
+
+use artichoke::ruby::{self, Args};
+use clap::{App, Arg};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 fn main() {

@@ -1,6 +1,7 @@
-use bstr::ByteSlice;
 use std::ffi::OsStr;
 use std::path::Path;
+
+use bstr::ByteSlice;
 
 use crate::core::{Eval, LoadSources, Parser, Value as _};
 use crate::error::Error;

@@ -1,6 +1,7 @@
 use core::convert::TryFrom;
 use core::fmt;
 use core::iter::FusedIterator;
+
 use scolapasta_string_escape::{is_ascii_char_with_escape, Literal};
 
 use crate::ident::IdentifierType;

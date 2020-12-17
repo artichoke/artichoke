@@ -1,7 +1,8 @@
 //! ASCII case folding comparisons for byte content resolved from `Symbol`s.
 
-use artichoke_core::intern::Intern;
 use core::cmp::Ordering;
+
+use artichoke_core::intern::Intern;
 
 /// Compare the byte contents of two symbols using ASCII case-insensitive
 /// comparison.

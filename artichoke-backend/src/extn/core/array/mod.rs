@@ -1,9 +1,10 @@
-use spinoso_array::Array as SpinosoArray;
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::iter::FromIterator;
 use std::ops::{Deref, DerefMut};
 use std::slice;
+
+use spinoso_array::Array as SpinosoArray;
 
 use crate::convert::UnboxedValueGuard;
 use crate::extn::prelude::*;
@@ -590,8 +591,9 @@ impl<'a> DerefMut for UnboxedValueGuard<'a, Array> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "Array";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("array_functional_test.rb");

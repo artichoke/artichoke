@@ -405,9 +405,8 @@ impl Filesystem for Memory {
 
 #[cfg(test)]
 mod hook_prototype_tests {
-    use crate::test::prelude::*;
-
     use super::Extension;
+    use crate::test::prelude::*;
 
     struct TestFile;
 

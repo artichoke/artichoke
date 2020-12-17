@@ -27,9 +27,10 @@
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
-use artichoke::repl;
 use std::io::{self, Write};
 use std::process;
+
+use artichoke::repl;
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 fn main() {

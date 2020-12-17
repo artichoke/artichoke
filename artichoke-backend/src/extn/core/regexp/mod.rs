@@ -10,14 +10,14 @@ use std::hash::{Hash, Hasher};
 use std::num::NonZeroUsize;
 use std::str;
 
-use crate::extn::core::array::Array;
-use crate::extn::prelude::*;
-
 #[doc(inline)]
 pub use spinoso_regexp::{
     nth_match_group, Config, Encoding, Flags, InvalidEncodingError, Options, RegexpError, RegexpOption, Source,
     HIGHEST_MATCH_GROUP, LAST_MATCH, LAST_MATCHED_STRING, STRING_LEFT_OF_MATCH, STRING_RIGHT_OF_MATCH,
 };
+
+use crate::extn::core::array::Array;
+use crate::extn::prelude::*;
 
 pub mod backend;
 mod boxing;
@@ -28,12 +28,11 @@ pub mod pattern;
 pub mod syntax;
 pub mod trampoline;
 
-pub use backend::{NilableString, RegexpType, Scan};
-
 use backend::lazy::Lazy;
 #[cfg(feature = "core-regexp-oniguruma")]
 use backend::onig::Onig;
 use backend::regex::utf8::Utf8;
+pub use backend::{NilableString, RegexpType, Scan};
 
 pub type NameToCaptureLocations = Vec<(Vec<u8>, Vec<Int>)>;
 

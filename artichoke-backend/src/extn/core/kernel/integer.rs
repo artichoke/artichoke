@@ -1,10 +1,11 @@
-use bstr::ByteSlice;
 use std::convert::{TryFrom, TryInto};
 use std::error;
 use std::fmt;
 use std::iter::Iterator;
 use std::num::NonZeroU32;
 use std::str::{self, FromStr};
+
+use bstr::ByteSlice;
 
 use crate::extn::prelude::*;
 

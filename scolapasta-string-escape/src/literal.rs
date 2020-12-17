@@ -584,8 +584,9 @@ impl FusedIterator for Literal {}
 /// ```
 #[cfg(test)]
 mod tests {
-    use super::Literal;
     use alloc::string::String;
+
+    use super::Literal;
 
     #[test]
     #[allow(clippy::too_many_lines)]

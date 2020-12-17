@@ -2,6 +2,7 @@
 
 use std::error;
 use std::io;
+
 use termcolor::{ColorSpec, WriteColor};
 
 use crate::prelude::*;

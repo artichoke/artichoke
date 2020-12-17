@@ -55,9 +55,10 @@ impl<'a> TryConvertMut<Value, &'a str> for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck::quickcheck;
     use std::convert::TryFrom;
     use std::slice;
+
+    use quickcheck::quickcheck;
 
     use crate::test::prelude::*;
 

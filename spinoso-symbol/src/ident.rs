@@ -48,10 +48,11 @@
 //! assert_eq!("spinoso_symbol=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
 //! ```
 
-use bstr::ByteSlice;
 use core::convert::TryFrom;
 use core::fmt;
 use core::str::FromStr;
+
+use bstr::ByteSlice;
 
 /// Valid types for Ruby identifiers.
 ///
@@ -630,10 +631,11 @@ fn is_special_global_punct(ch: u8) -> bool {
 #[cfg(test)]
 #[allow(clippy::shadow_unrelated)]
 mod tests {
+    use core::convert::TryFrom;
+
     use super::{
         is_ident_until, is_next_ident_exhausting, is_special_global_name, IdentifierType, ParseIdentifierError,
     };
-    use core::convert::TryFrom;
 
     #[test]
     fn special_global_name() {

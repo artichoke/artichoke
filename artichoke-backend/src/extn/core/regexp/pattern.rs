@@ -1,7 +1,8 @@
 //! Regexp pattern parsers.
 
-use bstr::ByteSlice;
 use core::iter;
+
+use bstr::ByteSlice;
 
 use super::{Flags, Options, RegexpOption};
 

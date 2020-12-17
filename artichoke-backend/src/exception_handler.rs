@@ -1,7 +1,8 @@
-use bstr::BString;
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
+
+use bstr::BString;
 
 use crate::core::{TryConvertMut, Value as _};
 use crate::error::{Error, RubyException};

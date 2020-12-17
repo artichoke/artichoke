@@ -1,7 +1,8 @@
-use bstr::{ByteSlice, ByteVec};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::env;
+
+use bstr::{ByteSlice, ByteVec};
 
 use crate::{ArgumentError, Error, InvalidError};
 
