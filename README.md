@@ -52,7 +52,7 @@ You can install a pre-release build of Artichoke using `cargo`, Rust's package
 manager, by running:
 
 ```sh
-cargo install --git https://github.com/artichoke/artichoke --locked artichoke
+cargo install --git https://github.com/artichoke/artichoke --branch trunk --locked artichoke
 ```
 
 To install via `cargo install` or to checkout and build locally, you'll need
