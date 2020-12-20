@@ -47,6 +47,6 @@ mod tests {
         let mut buf_b = [0; 256];
         urandom(&mut buf_a).unwrap();
         urandom(&mut buf_b).unwrap();
-        assert_ne!(buf_a[..], buf_b[..]);
+        assert_ne!(buf_a, buf_b);
     }
 }

@@ -127,7 +127,7 @@ impl RngCore for Mt {
     /// [`fill_bytes`]: Mt::fill_bytes
     #[inline]
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        self.fill_bytes(dest);
+        Self::fill_bytes(self, dest);
         Ok(())
     }
 }
