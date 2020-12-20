@@ -25,6 +25,12 @@ pub enum Max {
     None,
 }
 
+impl Default for Max {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 impl fmt::Display for Max {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

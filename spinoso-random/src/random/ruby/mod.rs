@@ -37,8 +37,11 @@ const LOWER_MASK: Wrapping<u32> = Wrapping(0x7fff_ffff);
 /// [`Box`]: https://doc.rust-lang.org/std/boxed/struct.Box.html
 #[derive(Clone)]
 #[cfg_attr(docsrs, doc(alias = "Mersenne"))]
+#[cfg_attr(docsrs, doc(alias = "Twister"))]
+#[cfg_attr(docsrs, doc(alias = "Mersenne Twister"))]
 #[cfg_attr(docsrs, doc(alias = "mersenne"))]
 #[cfg_attr(docsrs, doc(alias = "twister"))]
+#[cfg_attr(docsrs, doc(alias = "mersenne twister"))]
 #[cfg_attr(docsrs, doc(alias = "MT"))]
 #[cfg_attr(docsrs, doc(alias = "MT19937"))]
 #[allow(missing_copy_implementations)] // RNGs should not implement `Copy`
@@ -295,6 +298,8 @@ const fn temper(mut x: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
+    use core::iter;
+
     use super::Mt;
 
     #[test]
@@ -306,10 +311,11 @@ mod tests {
         let mt = Mt::with_seed(123_456);
         let debug = format!("{:?}", mt);
         assert!(!debug.contains("123456"));
+        assert_eq!(debug, "Mt {}");
     }
 
     #[test]
     fn seed_with_empty_iter_returns() {
-        let _ = Mt::new_with_key(core::iter::empty());
+        let _ = Mt::new_with_key(iter::empty());
     }
 }

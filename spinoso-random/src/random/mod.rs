@@ -79,6 +79,27 @@ impl fmt::Debug for Random {
     }
 }
 
+impl From<u32> for Random {
+    #[inline]
+    fn from(seed: u32) -> Self {
+        Self::with_seed(seed)
+    }
+}
+
+impl From<[u32; DEFAULT_SEED_CNT]> for Random {
+    #[inline]
+    fn from(seed: [u32; DEFAULT_SEED_CNT]) -> Self {
+        Self::with_array_seed(seed)
+    }
+}
+
+impl From<[u8; DEFAULT_SEED_BYTES]> for Random {
+    #[inline]
+    fn from(seed: [u8; DEFAULT_SEED_BYTES]) -> Self {
+        Self::with_byte_array_seed(seed)
+    }
+}
+
 impl Random {
     /// Create a new Mersenne Twister random number generator with a randomly
     /// generated seed.
@@ -283,8 +304,9 @@ fn int_pair_to_real_inclusive(a: u32, b: u32) -> f64 {
 pub fn seed_to_key(seed: [u8; DEFAULT_SEED_BYTES]) -> [u32; DEFAULT_SEED_CNT] {
     let mut key = [0_u32; DEFAULT_SEED_CNT];
     let iter = key.iter_mut().zip(seed.chunks_exact(size_of::<u32>()));
+
+    let mut bytes = [0; size_of::<u32>()];
     for (cell, chunk) in iter {
-        let mut bytes = [0; size_of::<u32>()];
         bytes.copy_from_slice(chunk);
         *cell = u32::from_le_bytes(bytes);
     }
