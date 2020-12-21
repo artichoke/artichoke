@@ -6,7 +6,7 @@ GEM
     parser (2.7.2.0)
       ast (~> 2.4.1)
     rainbow (3.0.0)
-    rake (13.0.1)
+    rake (13.0.3)
     regexp_parser (2.0.0)
     rexml (3.2.4)
     rubocop (1.6.1)
