@@ -10,10 +10,8 @@ edition = "2018"
 cargo-fuzz = true
 
 [dependencies]
+artichoke = { path = "..", default-features = false, features = ["kitchen-sink"] }
 libfuzzer-sys = "0.3"
-
-[dependencies.artichoke]
-path = ".."
 
 # Prevent this from interfering with workspaces
 [workspace]

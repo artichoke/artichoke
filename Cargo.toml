@@ -64,6 +64,15 @@ lto = true
 [features]
 default = [
   "cli",
+  "kitchen-sink",
+]
+# Enable a CLI frontend for Artichoke, including a `ruby`-equivalent CLI and
+# REPL.
+cli = ["backtrace", "rustyline", "structopt"]
+# Enable a module for formtting backtraces from Ruby exceptions.
+backtrace = ["termcolor"]
+# Enable all features of Ruby Core, Standard Library, and the underlying VM.
+kitchen-sink = [
   "core-env",
   "core-env-system",
   "core-math",
@@ -72,9 +81,8 @@ default = [
   "core-regexp-oniguruma",
   "core-time",
   "native-filesystem-access",
-  "stdlib-securerandom"
+  "stdlib-securerandom",
 ]
-cli = ["rustyline", "structopt", "termcolor"]
 # Enable resolving environment variables with the `ENV` core object.
 core-env = ["artichoke-backend/core-env"]
 # Enable resolving environment variables with the `ENV` core object using native
