@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![warn(clippy::clippy::needless_borrow)]
+#![allow(clippy::option_if_let_else)]
 #![allow(unknown_lints)]
 #![warn(broken_intra_doc_links)]
 #![warn(missing_docs)]
@@ -183,10 +184,7 @@ pub fn is_require_path(config: &model::Config, name: &str) -> Option<()> {
         }
     }
     if let Some(ref specs) = suite.specs {
-        specs
-            .iter()
-            .position(|name| spec_name.starts_with(name))
-            .map(|_| ())
+        specs.iter().position(|name| spec_name.starts_with(name)).map(|_| ())
     } else {
         Some(())
     }
