@@ -1,6 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![warn(clippy::cargo)]
+// #![warn(clippy::cargo)]
 #![warn(clippy::needless_borrow)]
 // https://github.com/rust-lang/rust-clippy/pull/5998#issuecomment-731855891
 #![allow(clippy::map_err_ignore)]
