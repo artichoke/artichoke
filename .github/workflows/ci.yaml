@@ -216,6 +216,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --workspace --all-features
 
+      - name: Check formatting (spec-runner)
+        run: cargo fmt -- --check --color=auto
+        working-directory: "spec-runner"
+
+      - name: Lint with Clippy (spec-runner)
+        run: cargo clippy --workspace --all-features --all-targets
+        working-directory: "spec-runner"
+
   ruby:
     name: Lint and format Ruby
     runs-on: ubuntu-latest

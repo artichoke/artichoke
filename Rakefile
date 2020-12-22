@@ -17,6 +17,9 @@ namespace :lint do
       FileUtils.touch(root)
     end
     sh 'cargo clippy --workspace --all-features'
+    Dir.chdir('spec-runner') do
+      sh 'cargo clippy --workspace --all-features --all-targets'
+    end
   end
 
   desc 'Lint Rust sources with Clippy restriction pass (unenforced lints)'
@@ -48,6 +51,9 @@ namespace :format do
   desc 'Format Rust sources with rustfmt'
   task :rust do
     sh 'cargo fmt -- --color=auto'
+    Dir.chdir('spec-runner') do
+      sh 'cargo fmt -- --color=auto'
+    end
   end
 
   desc 'Format text, YAML, and Markdown sources with prettier'
@@ -68,6 +74,9 @@ namespace :fmt do
   desc 'Format Rust sources with rustfmt'
   task :rust do
     sh 'cargo fmt -- --color=auto'
+    Dir.chdir('spec-runner') do
+      sh 'cargo fmt -- --color=auto'
+    end
   end
 
   desc 'Format text, YAML, and Markdown sources with prettier'
