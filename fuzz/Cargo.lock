@@ -193,9 +193,9 @@ checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
 
 [[package]]
 name = "intaglio"
-version = "1.1.1"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f9fbe65d085ad0f3592dc1cfbd379fa7b280c2e1e27a226b000820bb02eb206"
+checksum = "da4b877f1da0e0ee602fdbf203184ebd8cc5c5d9175195edafeaccae37b201e6"
 
 [[package]]
 name = "itoa"
