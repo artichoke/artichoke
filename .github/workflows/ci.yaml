@@ -224,6 +224,41 @@ jobs:
         run: cargo clippy --workspace --all-features --all-targets
         working-directory: "spec-runner"
 
+  rust-minimal-versions:
+    name: Compile with minimum dependency versions
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt, clippy
+
+      - name: Install Rust nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+
+      - name: Test compile with minimal versions
+        run: |
+          cargo +nightly generate-lockfile -Z minimal-versions
+          cargo build --workspace --verbose
+          cargo test --workspace --no-run
+
+      - name: Test compile with minimal versions (spec-runner)
+        run: |
+          cargo +nightly generate-lockfile -Z minimal-versions
+          cargo build --workspace --verbose
+          cargo test --workspace --no-run
+        working-directory: "spec-runner"
+
   ruby:
     name: Lint and format Ruby
     runs-on: ubuntu-latest
