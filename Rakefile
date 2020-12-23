@@ -123,7 +123,7 @@ end
 desc 'Run enforced ruby/spec suite'
 task :spec do
   Dir.chdir('spec-runner') do
-    sh 'cargo run -q -- enforced-specs.yaml'
+    sh 'cargo run -q -- enforced-specs.toml'
   end
 end
 

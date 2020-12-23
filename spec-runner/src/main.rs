@@ -27,29 +27,28 @@
 //! specs, or specific specs, like the `Array#drop` spec. The manifest supports
 //! marking specs as skipped.
 //!
-//! ```yaml
-//! core:
-//!   - suite: array
-//!     specs:
-//!       - any
-//!       - append
-//!       - drop
-//!   - suite: comparable
-//!   - suite: string
-//!     specs:
-//!       - scan
-//! library:
-//!   - suite: stringscanner
-//!   - suite: uri
-//!     skip:
-//!       - parse
+//! ```toml
+//! [specs.core.array]
+//! include = "set"
+//! specs = [
+//!   "any",
+//!   "append",
+//!   "drop",
+//! ]
+//!
+//! [specs.library.stringscanner]
+//! include = "all"
+//!
+//! [specs.library.uri]
+//! include = "all"
+//! skip = ["parse"]
 //! ```
 //!
 //! # Usage
 //!
 //! ```console
 //! $ cargo run -q -p spec-runner -- --help
-//! spec-runner 0.1.0
+//! spec-runner 0.3.0
 //! ruby/spec runner for Artichoke.
 //!
 //! USAGE:
@@ -60,7 +59,7 @@
 //!     -V, --version    Prints version information
 //!
 //! ARGS:
-//!     <config>    Path to YAML config file
+//!     <config>    Path to TOML config file
 //! ```
 
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
@@ -69,6 +68,7 @@
 #[macro_use]
 extern crate rust_embed;
 
+use artichoke::backtrace;
 use artichoke::prelude::*;
 use std::error::Error;
 use std::ffi::OsStr;
@@ -84,11 +84,13 @@ mod model;
 mod mspec;
 mod rubyspec;
 
+use model::{Config, Suite};
+
 /// CLI specification for `spec-runner`.
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, StructOpt)]
 #[structopt(name = "spec-runner", about = "ruby/spec runner for Artichoke.")]
 struct Opt {
-    /// Path to YAML config file.
+    /// Path to TOML config file.
     #[structopt(parse(from_os_str))]
     config: PathBuf,
 }
@@ -125,7 +127,7 @@ where
 {
     let config = fs::read(config)?;
     let config = str::from_utf8(config.as_slice())?;
-    let config = serde_yaml::from_str::<model::Config>(config)?;
+    let config = toml::from_str::<Config>(config)?;
 
     let mut interp = artichoke::interpreter()?;
 
@@ -147,7 +149,7 @@ where
             }
             continue;
         }
-        if is_require_path(&config, &name).is_some() {
+        if is_require_path(&config, &name) {
             specs.push(name.into_owned())
         }
     }
@@ -155,7 +157,7 @@ where
     let result = match mspec::run(&mut interp, specs.iter().map(String::as_str)) {
         Ok(result) => Ok(result),
         Err(exc) => {
-            artichoke::backtrace::format_cli_trace_into(stderr, &mut interp, &exc)?;
+            backtrace::format_cli_trace_into(stderr, &mut interp, &exc)?;
             Err(exc.into())
         }
     };
@@ -168,24 +170,27 @@ where
 /// This function evaluates a ruby/spec source file against the parsed spec
 /// manifest config to determine if the source should be tested.
 #[must_use]
-pub fn is_require_path(config: &model::Config, name: &str) -> Option<()> {
-    let path = Path::new(name);
-    let mut components = path.components();
-    let family = components.next()?.as_os_str();
-    let suites = config.suites_for_family(family)?;
-    let suite_name = components.next()?.as_os_str();
-    let suite = suites
-        .iter()
-        .find(|suite| OsStr::new(suite.suite.as_str()) == suite_name)?;
-    let spec_name = components.next()?.as_os_str().to_str()?;
-    if let Some(ref skip) = suite.skip {
-        if skip.iter().any(|name| spec_name.starts_with(name)) {
-            return None;
+pub fn is_require_path(config: &Config, name: &str) -> bool {
+    // Use an inner function to allow short-circuiting `None` with the `?`
+    // operator.
+    fn inner(config: &Config, name: &str) -> Option<bool> {
+        let path = Path::new(name);
+        let mut components = path.components();
+        let family = components.next()?.as_os_str();
+
+        let suites = config.suites_for_family(family)?;
+        let suite_name = components.next()?.as_os_str();
+        let (_, suite) = suites.iter().find(|(name, _)| OsStr::new(name) == suite_name)?;
+        let spec_name = components.next()?.as_os_str().to_str()?;
+
+        match suite {
+            Suite::All(ref all) if all.skip.iter().flatten().any(|name| spec_name.starts_with(name)) => Some(false),
+            Suite::All(..) => Some(true),
+            Suite::None => Some(false),
+            Suite::Set(ref set) if set.specs.iter().any(|name| spec_name.starts_with(name)) => Some(true),
+            Suite::Set(..) => Some(false),
         }
     }
-    if let Some(ref specs) = suite.specs {
-        specs.iter().position(|name| spec_name.starts_with(name)).map(|_| ())
-    } else {
-        Some(())
-    }
+    // And the convert to the expected `bool`.
+    matches!(inner(config, name), Some(true))
 }
