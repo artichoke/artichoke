@@ -39,6 +39,9 @@
 //! [specs.library.stringscanner]
 //! include = "all"
 //!
+//! [specs.library.time]
+//! include = "none"
+//!
 //! [specs.library.uri]
 //! include = "all"
 //! skip = ["parse"]

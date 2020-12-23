@@ -3,14 +3,12 @@
 [![GitHub Actions](https://github.com/artichoke/artichoke/workflows/CI/badge.svg)](https://github.com/artichoke/artichoke/actions)
 [![Discord](https://img.shields.io/discord/607683947496734760)](https://discord.gg/QCe2tp2)
 [![Twitter](https://img.shields.io/twitter/follow/artichokeruby?label=Follow&style=social)](https://twitter.com/artichokeruby)
-<br>
-[![Spec runner documentation](https://img.shields.io/badge/docs-spec--runner-blue.svg)](https://artichoke.github.io/artichoke/spec_runner/)
 
-`spec-runner` is the ruby/spec runner for Artichoke.
+`spec-runner` is the [ruby/spec][ruby-spec] runner for Artichoke.
 
-`spec-runner` is a wrapper around `MSpec` and ruby/spec that works with the
-Artichoke virtual filesystem. `spec-runner` runs the specs declared in a
-manifest file.
+`spec-runner` is a wrapper around [`MSpec`][mspec-sources] and [vendored
+ruby/spec sources][ruby-spec-sources] that works with the Artichoke virtual
+filesystem. `spec-runner` runs the specs declared in a [manifest file].
 
 ## Spec Manifest
 
@@ -19,29 +17,31 @@ The manifest can run whole suites, like all of the `StringScanner` specs, or
 specific specs, like the `Array#drop` spec. The manifest supports marking specs
 as skipped.
 
-```yaml
-core:
-  - suite: array
-    specs:
-      - any
-      - append
-      - drop
-  - suite: comparable
-  - suite: string
-    specs:
-      - scan
-library:
-  - suite: stringscanner
-  - suite: uri
-    skip:
-      - parse
+```toml
+[specs.core.array]
+include = "set"
+specs = [
+  "any",
+  "append",
+  "drop",
+]
+
+[specs.library.stringscanner]
+include = "all"
+
+[specs.library.time]
+include = "none"
+
+[specs.library.uri]
+include = "all"
+skip = ["parse"]
 ```
 
 ## Usage
 
 ```console
 $ cargo run -q -p spec-runner -- --help
-spec-runner 0.1.0
+spec-runner 0.3.0
 ruby/spec runner for Artichoke.
 
 USAGE:
@@ -52,5 +52,10 @@ FLAGS:
     -V, --version    Prints version information
 
 ARGS:
-    <config>    Path to YAML config file
+    <config>    Path to TOML config file
 ```
+
+[ruby-spec]: https://github.com/ruby/spec
+[mspec-sources]: vendor/mspec
+[ruby-spec-sources]: vendor/spec
+[manifest file]: enforced-specs.toml
