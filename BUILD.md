@@ -23,8 +23,7 @@ cargo build --release --target wasm32-unknown-unknown
 
 This on its own does not produce a usable artifact. To build a WebAssembly
 bundle, depend on `artichoke` in a crate with a main. See the
-[artichoke/playground](https://github.com/artichoke/playground) repository for
-an example.
+[artichoke/playground] repository for an example.
 
 ## Prerequisites
 
@@ -39,9 +38,8 @@ compiler.
 
 #### Installation
 
-The recommended way to install the Rust toolchain is with
-[rustup](https://rustup.rs/). On macOS, you can install rustup with
-[Homebrew](https://docs.brew.sh/Installation):
+The recommended way to install the Rust toolchain is with [rustup]. On macOS,
+you can install rustup with [Homebrew]:
 
 ```sh
 brew install rustup-init
@@ -70,18 +68,17 @@ cargo build --workspace
 ### C Toolchain
 
 Some artichoke dependencies, like the mruby [`sys`](artichoke-backend/src/sys)
-FFI bindings and the [`onig`](https://crates.io/crates/onig) crate, build C
-static libraries and require a C compiler.
+FFI bindings and the [`onig`] crate, build C static libraries and require a C
+compiler.
 
 Artichoke specifically requires clang. WebAssembly targets require clang-8 or
 newer.
 
 #### `cc` Crate
 
-Artichoke and some of its dependencies use the Rust
-[`cc` crate](https://crates.io/crates/cc) to build. `cc` uses a
-[platform-dependent C compiler](https://github.com/alexcrichton/cc-rs#compile-time-requirements)
-to compile C sources. On Unix, `cc` crate uses the `cc` binary.
+Artichoke and some of its dependencies use the Rust [`cc` crate] to build. `cc`
+uses a [platform-dependent C compiler] to compile C sources. On Unix, `cc` crate
+uses the `cc` binary.
 
 ### mruby Bindings
 
@@ -89,7 +86,6 @@ To build the Artichoke mruby backend, you will need a C compiler toolchain. By
 default, mruby requires the following to compile:
 
 - clang
-- bison
 - ar
 
 You can override the requirement for clang by setting the `CC` and `LD`
@@ -97,19 +93,18 @@ environment variables.
 
 ### Ruby Toolchain
 
-Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
+Artichoke requires a recent Ruby 2.x and [bundler] 2.x. The
 [`.ruby-version`](.ruby-version) file in this repository specifies Ruby 2.6.3.
 
-If you use [RVM](https://rvm.io/), you can install Ruby dependencies by running:
+If you use [RVM], you can install Ruby dependencies by running:
 
 ```sh
 rvm install "$(cat .ruby-version)"
 gem install bundler
 ```
 
-If you use [rbenv](https://github.com/rbenv/rbenv) and
-[ruby-build](https://github.com/rbenv/ruby-build), you can install Ruby
-dependencies by running:
+If you use [rbenv] and [ruby-build], you can install Ruby dependencies by
+running:
 
 ```sh
 rbenv install "$(cat .ruby-version)"
@@ -123,3 +118,15 @@ can install these dependencies by running:
 ```sh
 bundle install
 ```
+
+[artichoke/playground]: https://github.com/artichoke/playground
+[rustup]: https://rustup.rs/
+[homebrew]: https://docs.brew.sh/Installation
+[`onig`]: https://crates.io/crates/onig
+[`cc` crate]: https://crates.io/crates/cc
+[platform-dependent c compiler]:
+  https://github.com/alexcrichton/cc-rs#compile-time-requirements
+[bundler]: https://bundler.io/
+[rvm]: https://rvm.io/
+[rbenv]: https://github.com/rbenv/rbenv
+[ruby-build]: https://github.com/rbenv/ruby-build

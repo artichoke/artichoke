@@ -42,8 +42,7 @@ how to [convert] between Ruby VM and Rust types.
 
 ## Examples
 
-[`artichoke-backend`](https://artichoke.github.io/artichoke/artichoke_backend/)
-is one implementation of the `artichoke-core` traits.
+[`artichoke-backend`] is one implementation of the `artichoke-core` traits.
 
 To use all of the APIs defined in Artichoke Core, bring the traits into scope by
 importing the prelude:
@@ -98,3 +97,4 @@ Lopopolo.
   https://artichoke.github.io/artichoke/artichoke_core/top_self/trait.TopSelf.html
 [`warn`]:
   https://artichoke.github.io/artichoke/artichoke_core/warn/trait.Warn.html
+[`artichoke-backend`]: https://artichoke.github.io/artichoke/artichoke_backend/
