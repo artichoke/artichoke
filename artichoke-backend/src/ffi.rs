@@ -140,7 +140,7 @@ pub fn bytes_to_os_str(value: &[u8]) -> Result<&OsStr, ConvertBytesError> {
 /// Unsupported platforms fallback to converting through `str`.
 #[inline]
 pub fn os_str_to_bytes(value: &OsStr) -> Result<&[u8], ConvertBytesError> {
-    <[u8]>::from_os_str(value).ok_or(ConvertBytesError::new())
+    <[u8]>::from_os_str(value).ok_or_else(ConvertBytesError::new)
 }
 
 /// Convert a platform-specific [`OsString`] to a byte vec.

@@ -48,7 +48,7 @@ impl<'a> Builder<'a> {
         T: Any,
         U: Into<Cow<'static, str>>,
     {
-        let state = self.interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
+        let state = self.interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
         let rclass = if let Some(spec) = state.classes.get::<T>() {
             spec.rclass()
         } else {

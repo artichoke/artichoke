@@ -162,7 +162,7 @@ where
         }
 
         let mut rclass = {
-            let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
+            let state = interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
             let spec = state
                 .classes
                 .get::<Self>()
@@ -183,7 +183,7 @@ where
         }
 
         // Copy data pointer out of the `mrb_value` box.
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
+        let state = interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
         let spec = state
             .classes
             .get::<Self>()
@@ -208,7 +208,7 @@ where
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
         let mut rclass = {
-            let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
+            let state = interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
             let spec = state
                 .classes
                 .get::<Self>()
@@ -223,7 +223,7 @@ where
         let ptr = Box::into_raw(data);
 
         // Allocate a new `mrb_value` and inject the raw data pointer.
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
+        let state = interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
         let spec = state
             .classes
             .get::<Self>()
@@ -240,7 +240,7 @@ where
     }
 
     fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
-        let state = interp.state.as_ref().ok_or(InterpreterExtractError::new())?;
+        let state = interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
         let spec = state
             .classes
             .get::<Self>()
