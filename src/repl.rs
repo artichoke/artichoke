@@ -115,22 +115,51 @@ impl error::Error for UnhandledReadlineError {
 
 /// Configuration for the REPL readline prompt.
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct PromptConfig {
+pub struct PromptConfig<'a, 'b, 'c> {
     /// Basic prompt for start of a new expression.
-    pub simple: String,
+    pub simple: &'a str,
     /// Altered prompt when an expression is not terminated.
-    pub continued: String,
+    pub continued: &'b str,
     /// Prefix for the result of `$expression.inspect`. A newline is printed
     /// after the Ruby result.
-    pub result_prefix: String,
+    pub result_prefix: &'c str,
 }
 
-impl Default for PromptConfig {
+impl<'a, 'b, 'c> Default for PromptConfig<'a, 'b, 'c> {
     fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, 'b, 'c> PromptConfig<'a, 'b, 'c> {
+    /// Create a new, default REPL prompt.
+    ///
+    /// # Default configuration
+    ///
+    /// The `PromptConfig` is setup with the following literals:
+    ///
+    /// - `simple`: `>>> `
+    /// - `continued`: `... `
+    /// - `result_prefix`: `=> `
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use artichoke::repl::PromptConfig;
+    /// let config = PromptConfig {
+    ///     simple: ">>> ",
+    ///     continued: "... ",
+    ///     result_prefix: "=> ",
+    /// };
+    /// assert_eq!(config, PromptConfig::new());
+    /// assert_eq!(config, PromptConfig::default());
+    /// ```
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
-            simple: String::from(">>> "),
-            continued: String::from("... "),
-            result_prefix: String::from("=> "),
+            simple: ">>> ",
+            continued: "... ",
+            result_prefix: "=> ",
         }
     }
 }
@@ -166,7 +195,7 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
 pub fn run<Wout, Werr>(
     mut output: Wout,
     mut error: Werr,
-    config: Option<PromptConfig>,
+    config: Option<PromptConfig<'_, '_, '_>>,
 ) -> Result<(), Box<dyn error::Error>>
 where
     Wout: io::Write,
@@ -197,9 +226,9 @@ where
     loop {
         // Allow shell users to identify that they have an open code block.
         let prompt = if parser_state.is_code_block_open() {
-            config.continued.as_str()
+            config.continued
         } else {
-            config.simple.as_str()
+            config.simple
         };
 
         let readline = rl.readline(prompt);
