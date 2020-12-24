@@ -299,9 +299,8 @@ impl FromStr for IdentifierType {
     type Err = ParseIdentifierError;
 
     #[inline]
-    #[allow(clippy::or_fun_call)] // https://github.com/rust-lang/rust-clippy/issues/5886
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        parse(s.as_bytes()).ok_or(ParseIdentifierError::new())
+        parse(s.as_bytes()).ok_or_else(ParseIdentifierError::new)
     }
 }
 
@@ -309,9 +308,8 @@ impl TryFrom<&str> for IdentifierType {
     type Error = ParseIdentifierError;
 
     #[inline]
-    #[allow(clippy::or_fun_call)] // https://github.com/rust-lang/rust-clippy/issues/5886
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        parse(value.as_bytes()).ok_or(ParseIdentifierError::new())
+        parse(value.as_bytes()).ok_or_else(ParseIdentifierError::new)
     }
 }
 
@@ -319,9 +317,8 @@ impl TryFrom<&[u8]> for IdentifierType {
     type Error = ParseIdentifierError;
 
     #[inline]
-    #[allow(clippy::or_fun_call)] // https://github.com/rust-lang/rust-clippy/issues/5886
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        parse(value).ok_or(ParseIdentifierError::new())
+        parse(value).ok_or_else(ParseIdentifierError::new)
     }
 }
 

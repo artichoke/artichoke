@@ -184,10 +184,7 @@ where
     // - A test asserts that `REPL_FILENAME` has no NUL bytes.
     let context = unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) };
     interp.push_context(context)?;
-    // disable or_fun_call lint until release of:
-    // https://github.com/rust-lang/rust-clippy/pull/5889
-    #[allow(clippy::or_fun_call)]
-    let mut parser = Parser::new(&mut interp).ok_or(ParserAllocError::new())?;
+    let mut parser = Parser::new(&mut interp).ok_or_else(ParserAllocError::new)?;
 
     let mut rl = Editor::<()>::new();
     // If a code block is open, accumulate code from multiple readlines in this

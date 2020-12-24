@@ -21,8 +21,8 @@ impl Eval for Artichoke {
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
         trace!("Attempting eval of Ruby source");
         let result = unsafe {
-            let state = self.state.as_mut().ok_or(InterpreterExtractError::new())?;
-            let parser = state.parser.as_mut().ok_or(InterpreterExtractError::new())?;
+            let state = self.state.as_mut().ok_or_else(InterpreterExtractError::new)?;
+            let parser = state.parser.as_mut().ok_or_else(InterpreterExtractError::new)?;
             let context: *mut sys::mrbc_context = parser.context_mut();
             self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
         };
