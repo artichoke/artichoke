@@ -1,35 +1,32 @@
 # Contributing to Artichoke
 
-👋 Hi and welcome to [Artichoke](https://github.com/artichoke). Thanks for
-taking the time to contribute! 💪💎🙌
+👋 Hi and welcome to [Artichoke]. Thanks for taking the time to contribute!
+💪💎🙌
 
 Artichoke aspires to be a Ruby 2.6.3-compatible implementation of the Ruby
-programming language.
-[There is lots to do](https://github.com/artichoke/artichoke/issues).
+programming language. [There is lots to do].
 
 If Artichoke does not run Ruby source code in the same way that MRI does, it is
-a bug and we would appreciate if you
-[filed an issue so we can fix it](https://github.com/artichoke/artichoke/issues/new).
+a bug and we would appreciate if you [filed an issue so we can fix it].
 
 If you would like to contribute code 👩‍💻👨‍💻, find an issue that looks interesting
 and leave a comment that you're beginning to investigate. If there is no issue,
-please file one before beginning to work on a PR.
-[Good first issues are labeled `E-easy`](https://github.com/artichoke/artichoke/labels/E-easy).
+please file one before beginning to work on a PR. [Good first issues are labeled
+`E-easy`].
 
 ## Discussion
 
-If you'd like to engage in a discussion outside of GitHub, you can
-[join Artichoke's public Discord server](https://discord.gg/QCe2tp2).
+If you'd like to engage in a discussion outside of GitHub, you can [join
+Artichoke's public Discord server].
 
 ## Implementation Philosophy
 
 - Prefer pure Ruby implementations when initially implementing features.
 - A feature is not done until it passes [ruby/spec](RUBYSPEC.md).
-- Move implementations to Rust for performance, e.g.
-  [using Serde to implement the JSON package](https://github.com/artichoke/artichoke/issues/77).
+- Move implementations to Rust for performance, e.g. [using Serde to implement
+  the JSON package].
 - If there is a Rust crate that does what we need, prefer to use it. Forking is
-  OK, too, e.g.
-  [artichoke/rust-onig](https://github.com/artichoke/rust-onig/tree/artichoke-vendor).
+  OK, too, e.g. [artichoke/rust-onig].
 
 ## Setup
 
@@ -46,15 +43,14 @@ Toolchain requirements are documented in [`BUILD.md`](BUILD.md#rust-toolchain).
 
 ### C Toolchain
 
-Some Artichoke dependencies, like the mruby [`sys`](artichoke-backend/src/sys)
-module and the [`onig`](https://crates.io/crates/onig) crate, build C static
-libraries and require a C compiler.
+Some Artichoke dependencies, like the mruby [`sys`] module and the [`onig`]
+crate, build C static libraries and require a C compiler.
 
 Toolchain requirements are documented in [`BUILD.md`](BUILD.md#c-toolchain).
 
 ### Ruby
 
-Artichoke requires a recent Ruby 2.x and [bundler](https://bundler.io/) 2.x. The
+Artichoke requires a recent Ruby 2.x and [bundler] 2.x. The
 [`.ruby-version`](.ruby-version) file in this repository specifies Ruby 2.6.3.
 
 Toolchain requirements are documented in [`BUILD.md`](BUILD.md#ruby-toolchain).
@@ -86,8 +82,7 @@ rake spec                         # Run enforced ruby/spec suite
 rake test                         # Run Artichoke unit tests
 ```
 
-To lint Ruby sources, Artichoke uses
-[RuboCop](https://github.com/rubocop-hq/rubocop). RuboCop runs as part of the
+To lint Ruby sources, Artichoke uses [RuboCop]. RuboCop runs as part of the
 `lint` task. To run RuboCop by itself, invoke the `lint:rubocop` task.
 
 ```console
@@ -98,7 +93,7 @@ $ bundle exec rake lint:rubocop
 ### Node.js
 
 Node.js is an optional dependency that is used for formatting text sources with
-[prettier](https://prettier.io/).
+[prettier].
 
 Node.js is only required for formatting if modifying the following filetypes:
 
@@ -111,11 +106,8 @@ Node.js is only required for formatting if modifying the following filetypes:
 - `yaml`
 - `yml`
 
-You will need to install
-[Node.js](https://nodejs.org/en/download/package-manager/).
-
-On macOS, you can install Node.js with
-[Homebrew](https://docs.brew.sh/Installation):
+You will need to install [Node.js]. On macOS, you can install Node.js with
+[Homebrew]:
 
 ```sh
 brew install node
@@ -136,11 +128,10 @@ Merges will be blocked by CI if there are lint errors.
 
 ### Testing
 
-A PR must have new or existing tests for it to be merged. The
-[Rust book chapter on testing](https://doc.rust-lang.org/book/ch11-00-testing.html)
-is a good place to start. If you'd like to see some examples in Artichoke, take
-a look at the `Value` tests in
-[`artichoke-backend/src/value/mod.rs`](artichoke-backend/src/value.rs).
+A PR must have new or existing tests for it to be merged. The [Rust book chapter
+on testing] is a good place to start. If you'd like to see some examples in
+Artichoke, take a look at the `Value` tests in
+[`artichoke-backend/src/value/mod.rs`].
 
 To run tests:
 
@@ -169,25 +160,44 @@ Tests are run for every PR. All builds must pass before merging a PR.
 ### Rust Toolchain
 
 Upgrades to the Rust toolchain should happen in a dedicated PR that addresses
-any changes to ructc warnings and clippy lints. See
-[GH-482](https://github.com/artichoke/artichoke/pull/482) for an example.
+any changes to ructc warnings and clippy lints. See [artichoke/artichoke#482]
+for an example.
 
 ### Rust Crates
 
 Version specifiers in `Cargo.toml` are NPM caret-style by default. A version
 specifier of `4.1.2` means `4.1.2 <= version < 5.0.0`.
 
-To see what crates are outdated, you can use
-[cargo-outdated](https://github.com/kbknapp/cargo-outdated).
+To see what crates are outdated, you can use [cargo-outdated].
 
 If you need to pull in an updated version of a crate for a bugfix or a new
 feature, update the version number in `Cargo.toml`. See
-[GH-548](https://github.com/artichoke/artichoke/pull/548) for an example.
+[artichoke/artichoke#548] for an example.
 
-Regular dependency bumps are handled by [@dependabot](https://dependabot.com/).
+Regular dependency bumps are handled by [@dependabot].
 
-### Node.js Packages
-
-To see what packages are outdated, you can run `npm outdated`.
-
-Dependency bumps are handled by [@dependabot](https://dependabot.com/).
+[artichoke]: https://github.com/artichoke
+[there is lots to do]: https://github.com/artichoke/artichoke/issues
+[filed an issue so we can fix it]:
+  https://github.com/artichoke/artichoke/issues/new
+[good first issues are labeled `e-easy`]:
+  https://github.com/artichoke/artichoke/labels/E-easy
+[join artichoke's public discord server]: https://discord.gg/QCe2tp2
+[using serde to implement the json package]:
+  https://github.com/artichoke/artichoke/issues/77
+[artichoke/rust-onig]:
+  https://github.com/artichoke/rust-onig/tree/artichoke-vendor
+[`sys`]: artichoke-backend/src/sys
+[`onig`]: https://crates.io/crates/onig
+[bundler]: https://bundler.io/
+[rubocop]: https://github.com/rubocop-hq/rubocop
+[prettier]: https://prettier.io/
+[node.js]: https://nodejs.org/en/download/package-manager/
+[homebrew]: https://docs.brew.sh/Installation
+[rust book chapter on testing]:
+  https://doc.rust-lang.org/book/ch11-00-testing.html
+[`artichoke-backend/src/value/mod.rs`]: artichoke-backend/src/value.rs
+[artichoke/artichoke#482]: https://github.com/artichoke/artichoke/pull/482
+[cargo-outdated]: https://github.com/kbknapp/cargo-outdated
+[artichoke/artichoke#548]: https://github.com/artichoke/artichoke/pull/548
+[@dependabot]: https://dependabot.com/
