@@ -224,6 +224,7 @@ where
                         let result = value.inspect(&mut interp);
                         output.write_all(config.result_prefix.as_bytes())?;
                         output.write_all(result.as_slice())?;
+                        output.write_all(b"\n")?;
                     }
                     Err(ref exc) => backtrace::format_repl_trace_into(&mut error, &mut interp, exc)?,
                 }
