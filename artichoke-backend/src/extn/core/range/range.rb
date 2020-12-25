@@ -104,6 +104,7 @@ class Range
     unless n.is_a?(Integer)
       raise TypeError, "can't convert #{arg.class} to Integer (#{arg.class}#to_int gives #{n.class})"
     end
+    raise ArgumentError, 'negative array size (or size too big)' if n.negative?
 
     each.take(n).to_a
   end
