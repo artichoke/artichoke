@@ -174,20 +174,19 @@ impl Mt {
     /// ```
     #[inline]
     pub fn fill_bytes(&mut self, dest: &mut [u8]) {
-        let mut dest_chunks = dest.chunks_exact_mut(size_of::<u32>());
-        while let Some(chunk) = dest_chunks.next() {
-            let bytes = self.next_int32().to_le_bytes();
-            chunk.copy_from_slice(&bytes);
+        const CHUNK: usize = size_of::<u32>();
+        let mut left = dest;
+        while left.len() >= CHUNK {
+            let (next, remainder) = left.split_at_mut(CHUNK);
+            left = remainder;
+            let chunk: [u8; CHUNK] = self.next_int32().to_le_bytes();
+            next.copy_from_slice(&chunk);
         }
-        let remainder = dest_chunks.into_remainder();
-        // Don't consume more from the RNG if we already filled the buffer.
-        if remainder.is_empty() {
-            return;
+        let n = left.len();
+        if n > 0 {
+            let chunk: [u8; CHUNK] = self.next_int32().to_le_bytes();
+            left.copy_from_slice(&chunk[..n]);
         }
-        let bytes = self.next_int32().to_le_bytes();
-        // chunks_mut_exact guarantees `remainder.len()` is less than the chunk
-        // size of `size_of::<u32>()`
-        remainder.copy_from_slice(&bytes[..remainder.len()]);
     }
 
     /// Reseed a Mersenne Twister from a single `u32`.

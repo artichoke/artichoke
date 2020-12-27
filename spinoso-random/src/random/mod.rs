@@ -352,9 +352,11 @@ mod tests {
         let random = Random::with_seed(874);
         let debug = format!("{:?}", random);
         assert!(!debug.contains("894"));
+        assert_eq!(debug, "Random {}");
 
         let random = Random::with_seed(123_456);
         let debug = format!("{:?}", random);
         assert!(!debug.contains("123456"));
+        assert_eq!(debug, "Random {}");
     }
 }
