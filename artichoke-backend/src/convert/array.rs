@@ -399,7 +399,8 @@ mod tests {
     }
 
     #[quickcheck]
-    fn arr_int(arr: Vec<Int>) -> bool {
+    #[allow(clippy::needless_pass_by_value)]
+    fn arr_int_borrowed(arr: Vec<Int>) -> bool {
         let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.try_convert_mut(arr.as_slice()).unwrap();
@@ -417,6 +418,13 @@ mod tests {
         if recovered != arr {
             return false;
         }
+        true
+    }
+
+    #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
+    fn arr_int_owned(arr: Vec<Int>) -> bool {
+        let mut interp = interpreter().unwrap();
         // Owned converter
         let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -437,7 +445,8 @@ mod tests {
     }
 
     #[quickcheck]
-    fn arr_utf8(arr: Vec<String>) -> bool {
+    #[allow(clippy::needless_pass_by_value)]
+    fn arr_utf8_borrowed(arr: Vec<String>) -> bool {
         let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.try_convert_mut(arr.as_slice()).unwrap();
@@ -455,6 +464,13 @@ mod tests {
         if recovered != arr {
             return false;
         }
+        true
+    }
+
+    #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
+    fn arr_utf8_owned(arr: Vec<String>) -> bool {
+        let mut interp = interpreter().unwrap();
         // Owned converter
         let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -475,7 +491,8 @@ mod tests {
     }
 
     #[quickcheck]
-    fn arr_nilable_bstr(arr: Vec<Option<Vec<u8>>>) -> bool {
+    #[allow(clippy::needless_pass_by_value)]
+    fn arr_nilable_bstr_borrowed(arr: Vec<Option<Vec<u8>>>) -> bool {
         let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.try_convert_mut(arr.as_slice()).unwrap();
@@ -493,6 +510,13 @@ mod tests {
         if recovered != arr {
             return false;
         }
+        true
+    }
+
+    #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
+    fn arr_nilable_bstr_owned(arr: Vec<Option<Vec<u8>>>) -> bool {
+        let mut interp = interpreter().unwrap();
         // Owned converter
         let value = interp.try_convert_mut(arr.to_vec()).unwrap();
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();

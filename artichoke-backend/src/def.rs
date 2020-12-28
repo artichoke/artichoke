@@ -461,27 +461,27 @@ mod tests {
     mod fqname {
         use crate::test::prelude::*;
 
-        /// A
+        /// `A`
         #[derive(Debug)]
         struct Root;
 
-        /// A::B
+        /// `A::B`
         #[derive(Debug)]
         struct ModuleUnderRoot;
 
-        /// A::C
+        /// `A::C`
         #[derive(Debug)]
         struct ClassUnderRoot;
 
-        /// A::B::D
+        /// `A::B::D`
         #[derive(Debug)]
         struct ClassUnderModule;
 
-        /// A::C::E
+        /// `A::C::E`
         #[derive(Debug)]
         struct ModuleUnderClass;
 
-        /// A::C::F
+        /// `A::C::F`
         #[derive(Debug)]
         struct ClassUnderClass;
 

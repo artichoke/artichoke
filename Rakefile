@@ -16,7 +16,7 @@ namespace :lint do
     FileList['**/{build,lib,main}.rs'].each do |root|
       FileUtils.touch(root)
     end
-    sh 'cargo clippy --workspace --all-features'
+    sh 'cargo clippy --workspace --all-features --all-targets'
     Dir.chdir('spec-runner') do
       sh 'cargo clippy --workspace --all-features --all-targets'
     end

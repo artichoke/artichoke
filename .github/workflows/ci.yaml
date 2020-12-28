@@ -214,7 +214,7 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --all-features
+          args: --workspace --all-features --all-targets
 
       - name: Check formatting (spec-runner)
         run: cargo fmt -- --check --color=auto

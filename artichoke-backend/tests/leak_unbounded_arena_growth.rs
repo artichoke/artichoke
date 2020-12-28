@@ -67,7 +67,7 @@ end
                 let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
                 let display = result.to_s(&mut arena);
                 assert_eq!(display, expected.as_bytes());
-                drop(result);
+                let _ = result;
                 arena.restore();
                 interp.incremental_gc();
             },
@@ -87,7 +87,7 @@ end
                 let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
                 let debug = result.inspect(&mut arena);
                 assert_eq!(debug, expected);
-                drop(result);
+                let _ = result;
                 arena.restore();
                 interp.incremental_gc();
             },

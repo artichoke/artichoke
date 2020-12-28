@@ -38,15 +38,15 @@ impl<'a> Detector<'a> {
 
     pub fn check_leaks<F>(self, execute: F)
     where
-        F: for<'b> FnMut(&'b mut Artichoke) -> (),
+        F: for<'b> FnMut(&'b mut Artichoke),
     {
         self.check_leaks_with_finalizer(execute, |_| {});
     }
 
     pub fn check_leaks_with_finalizer<F, G>(self, mut execute: F, finalize: G)
     where
-        F: for<'b> FnMut(&'b mut Artichoke) -> (),
-        G: for<'b> FnOnce(&'b mut Artichoke) -> (),
+        F: for<'b> FnMut(&'b mut Artichoke),
+        G: for<'b> FnOnce(&'b mut Artichoke),
     {
         let start_mem = resident_memsize();
         for _ in 0..self.iterations {
@@ -96,15 +96,15 @@ impl Looper {
 
     pub fn check_leaks<F>(self, execute: F)
     where
-        F: FnMut() -> (),
+        F: FnMut(),
     {
         self.check_leaks_with_finalizer(execute, || {});
     }
 
     pub fn check_leaks_with_finalizer<F, G>(self, mut execute: F, finalize: G)
     where
-        F: FnMut() -> (),
-        G: FnOnce() -> (),
+        F: FnMut(),
+        G: FnOnce(),
     {
         let start_mem = resident_memsize();
         for _ in 0..self.iterations {

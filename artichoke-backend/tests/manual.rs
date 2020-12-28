@@ -18,7 +18,7 @@ unsafe extern "C" fn container_initialize(mrb: *mut sys::mrb_state, slf: sys::mr
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
     let inner = Value::from(inner);
-    let inner = inner.try_into::<Int>(&mut guard).unwrap_or_default();
+    let inner = inner.try_into::<Int>(&guard).unwrap_or_default();
     let container = Box::new(Container(inner));
     let result = Box::<Container>::box_into_value(container, slf, &mut guard).unwrap_or_default();
     result.inner()

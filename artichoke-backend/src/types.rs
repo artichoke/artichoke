@@ -168,7 +168,7 @@ mod tests {
         assert_eq!(Ruby::Symbol, types::ruby_from_mrb_value(empty.inner()));
         let utf8 = interp.eval(b":Artichoke").unwrap();
         assert_eq!(Ruby::Symbol, types::ruby_from_mrb_value(utf8.inner()));
-        let binary = interp.eval(r#":"\xFE""#.as_bytes()).unwrap();
+        let binary = interp.eval(br#":"\xFE""#).unwrap();
         assert_eq!(Ruby::Symbol, types::ruby_from_mrb_value(binary.inner()));
     }
 
