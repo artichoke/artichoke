@@ -112,6 +112,7 @@ mod tests {
     use crate::test::prelude::*;
 
     #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
     fn roundtrip_kv(hash: HashMap<Vec<u8>, Vec<u8>>) -> bool {
         let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(hash.clone());

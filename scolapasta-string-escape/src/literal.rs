@@ -571,6 +571,7 @@ mod tests {
     use alloc::string::String;
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn exhaustive() {
         let iter = Literal::from(0x0_u8);
         assert_eq!(iter.collect::<String>(), r"\x00");

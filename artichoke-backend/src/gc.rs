@@ -210,7 +210,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let baseline_object_count = arena.live_object_count();
-        drop(&mut arena.eval(b"").unwrap());
+        let _ = arena.eval(b"").unwrap();
         arena.restore();
         interp.full_gc();
         assert_eq!(interp.live_object_count(), baseline_object_count);

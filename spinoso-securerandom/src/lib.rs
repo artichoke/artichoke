@@ -724,7 +724,9 @@ mod tests {
 
     use super::{alphanumeric, base64, hex, random_bytes, random_number, uuid, DomainError, Error, Max, Rand};
 
-    fn rng_must_be_cryptographically_secure<T: CryptoRng>(_rng: T) {}
+    fn rng_must_be_cryptographically_secure<T: CryptoRng>(rng: T) {
+        drop(rng);
+    }
 
     #[test]
     fn rand_thread_rng_must_be_cryptographically_secure() {

@@ -166,6 +166,7 @@ where
 }
 
 #[cfg(test)]
+#[allow(clippy::shadow_unrelated)]
 mod tests {
     use std::path::Path;
 

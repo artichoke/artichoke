@@ -72,8 +72,8 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
     fn convert_to_string(s: String) -> bool {
         let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(s.clone());
@@ -90,8 +90,8 @@ mod tests {
         s.as_bytes() == string
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
     fn string_with_value(s: String) -> bool {
         let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(s.clone());
@@ -99,7 +99,8 @@ mod tests {
     }
 
     #[quickcheck]
-    fn utf8string(string: String) -> bool {
+    #[allow(clippy::needless_pass_by_value)]
+    fn utf8string_borrowed(string: String) -> bool {
         let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(string.as_str());
@@ -120,15 +121,20 @@ mod tests {
             if first != Some(ch.to_string()) {
                 return false;
             }
-        } else {
-            if first.is_some() {
-                return false;
-            }
+        } else if first.is_some() {
+            return false;
         }
         let recovered: String = interp.try_convert_mut(value).unwrap();
         if recovered != string {
             return false;
         }
+        true
+    }
+
+    #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
+    fn utf8string_owned(string: String) -> bool {
+        let mut interp = interpreter().unwrap();
         // Owned converter
         let value = interp.convert_mut(string.clone());
         let len = value
@@ -148,10 +154,8 @@ mod tests {
             if first != Some(ch.to_string()) {
                 return false;
             }
-        } else {
-            if first.is_some() {
-                return false;
-            }
+        } else if first.is_some() {
+            return false;
         }
         let recovered: String = interp.try_convert_mut(value).unwrap();
         if recovered != string {
@@ -160,8 +164,8 @@ mod tests {
         true
     }
 
-    #[allow(clippy::needless_pass_by_value)]
     #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
     fn roundtrip(s: String) -> bool {
         let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(s.clone());

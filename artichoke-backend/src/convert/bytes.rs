@@ -132,7 +132,8 @@ mod tests {
     }
 
     #[quickcheck]
-    fn bytestring(bytes: Vec<u8>) -> bool {
+    #[allow(clippy::needless_pass_by_value)]
+    fn bytestring_borrowed(bytes: Vec<u8>) -> bool {
         let mut interp = interpreter().unwrap();
         // Borrowed converter
         let value = interp.convert_mut(bytes.as_slice());
@@ -156,6 +157,13 @@ mod tests {
         if recovered != bytes {
             return false;
         }
+        true
+    }
+
+    #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
+    fn bytestring_owned(bytes: Vec<u8>) -> bool {
+        let mut interp = interpreter().unwrap();
         // Owned converter
         let value = interp.convert_mut(bytes.to_vec());
         let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -182,6 +190,7 @@ mod tests {
     }
 
     #[quickcheck]
+    #[allow(clippy::needless_pass_by_value)]
     fn roundtrip(bytes: Vec<u8>) -> bool {
         let mut interp = interpreter().unwrap();
         let value = interp.convert_mut(bytes.as_slice());
