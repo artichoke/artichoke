@@ -15,26 +15,25 @@
 
 use artichoke_backend::prelude::*;
 
-mod leak;
-
 const ITERATIONS: usize = 100;
-const LEAK_TOLERANCE: i64 = 1024 * 1024 * 30;
 
 #[test]
-fn funcall_arena() {
-    let mut interp = artichoke_backend::interpreter().expect("init");
+fn funcall_arena_leak() {
+    let mut interp = artichoke_backend::interpreter().unwrap();
     let s = interp.convert_mut("a".repeat(1024 * 1024));
-    let expected = format!(r#""{}""#, "a".repeat(1024 * 1024));
 
-    leak::Detector::new("ValueLike::funcall", &mut interp)
-        .with_iterations(ITERATIONS)
-        .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks(|interp| {
-            // we have to call a function that calls into the Ruby VM, so we
-            // can't just use `to_s`.
-            let inspect = s.funcall(interp, "inspect", &[], None).unwrap();
-            let inspect = inspect.try_into_mut::<String>(interp).unwrap();
-            assert_eq!(inspect, expected);
-            interp.incremental_gc();
-        });
+    let mut expected = String::from('"');
+    expected.push_str(&"a".repeat(1024 * 1024));
+    expected.push('"');
+    let expected = expected;
+
+    for _ in 0..ITERATIONS {
+        // we have to call a function that calls into the Ruby VM, so we can't
+        // just use `to_s`.
+        let inspect = s.funcall(&mut interp, "inspect", &[], None).unwrap();
+        let inspect = inspect.try_into_mut::<String>(&mut interp).unwrap();
+        assert_eq!(inspect, expected);
+        interp.incremental_gc();
+    }
+    interp.close();
 }

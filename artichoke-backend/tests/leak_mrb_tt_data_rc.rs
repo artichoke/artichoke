@@ -20,10 +20,7 @@ extern crate artichoke_backend;
 
 use artichoke_backend::extn::prelude::*;
 
-mod leak;
-
 const ITERATIONS: usize = 100;
-const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Container(String);
@@ -64,16 +61,13 @@ impl File for Container {
 
 #[test]
 fn rust_backed_mrb_value_smart_pointer_leak() {
-    leak::Looper::new("smart pointer")
-        .with_iterations(ITERATIONS)
-        .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks(|| {
-            let mut interp = artichoke_backend::interpreter().unwrap();
-            interp.def_file_for_type::<_, Container>("container").unwrap();
+    for _ in 0..ITERATIONS {
+        let mut interp = artichoke_backend::interpreter().unwrap();
+        interp.def_file_for_type::<_, Container>("container").unwrap();
 
-            let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
-            let result = interp.eval(code);
-            result.unwrap();
-            interp.close();
-        });
+        let code = b"require 'container'; Container.new('a' * 1024 * 1024)";
+        let result = interp.eval(code);
+        result.unwrap();
+        interp.close();
+    }
 }
