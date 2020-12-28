@@ -111,7 +111,7 @@ impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck_macros::quickcheck;
+    use quickcheck::quickcheck;
 
     use crate::test::prelude::*;
 
@@ -124,85 +124,82 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[quickcheck]
-    fn convert_to_vec(bytes: Vec<u8>) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(bytes);
-        value.ruby_type() == Ruby::String
-    }
+    quickcheck! {
+        fn convert_to_vec(bytes: Vec<u8>) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(bytes);
+            value.ruby_type() == Ruby::String
+        }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn bytestring_borrowed(bytes: Vec<u8>) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Borrowed converter
-        let value = interp.convert_mut(bytes.as_slice());
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != bytes.len() {
-            return false;
+        #[allow(clippy::needless_pass_by_value)]
+        fn bytestring_borrowed(bytes: Vec<u8>) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Borrowed converter
+            let value = interp.convert_mut(bytes.as_slice());
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != bytes.len() {
+                return false;
+            }
+            let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+            let empty = empty.try_into::<bool>(&interp).unwrap();
+            if empty != bytes.is_empty() {
+                return false;
+            }
+            let zero = interp.convert(0);
+            let first = value.funcall(&mut interp, "[]", &[zero], None).unwrap();
+            let first = first.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
+            if first != bytes.get(0..1) {
+                return false;
+            }
+            let recovered: Vec<u8> = interp.try_convert_mut(value).unwrap();
+            if recovered != bytes {
+                return false;
+            }
+            true
         }
-        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
-        if empty != bytes.is_empty() {
-            return false;
-        }
-        let zero = interp.convert(0);
-        let first = value.funcall(&mut interp, "[]", &[zero], None).unwrap();
-        let first = first.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
-        if first != bytes.get(0..1) {
-            return false;
-        }
-        let recovered: Vec<u8> = interp.try_convert_mut(value).unwrap();
-        if recovered != bytes {
-            return false;
-        }
-        true
-    }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn bytestring_owned(bytes: Vec<u8>) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Owned converter
-        let value = interp.convert_mut(bytes.to_vec());
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != bytes.len() {
-            return false;
+        #[allow(clippy::needless_pass_by_value)]
+        fn bytestring_owned(bytes: Vec<u8>) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Owned converter
+            let value = interp.convert_mut(bytes.to_vec());
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != bytes.len() {
+                return false;
+            }
+            let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+            let empty = empty.try_into::<bool>(&interp).unwrap();
+            if empty != bytes.is_empty() {
+                return false;
+            }
+            let zero = interp.convert(0);
+            let first = value.funcall(&mut interp, "[]", &[zero], None).unwrap();
+            let first = first.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
+            if first != bytes.get(0..1) {
+                return false;
+            }
+            let recovered: Vec<u8> = interp.try_convert_mut(value).unwrap();
+            if recovered != bytes {
+                return false;
+            }
+            true
         }
-        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
-        if empty != bytes.is_empty() {
-            return false;
-        }
-        let zero = interp.convert(0);
-        let first = value.funcall(&mut interp, "[]", &[zero], None).unwrap();
-        let first = first.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
-        if first != bytes.get(0..1) {
-            return false;
-        }
-        let recovered: Vec<u8> = interp.try_convert_mut(value).unwrap();
-        if recovered != bytes {
-            return false;
-        }
-        true
-    }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn roundtrip(bytes: Vec<u8>) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(bytes.as_slice());
-        let value = value.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
-        value == bytes
-    }
+        #[allow(clippy::needless_pass_by_value)]
+        fn roundtrip(bytes: Vec<u8>) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(bytes.as_slice());
+            let value = value.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
+            value == bytes
+        }
 
-    #[quickcheck]
-    fn roundtrip_err(b: bool) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert(b);
-        let value = value.try_into_mut::<Vec<u8>>(&mut interp);
-        value.is_err()
+        fn roundtrip_err(b: bool) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert(b);
+            let value = value.try_into_mut::<Vec<u8>>(&mut interp);
+            value.is_err()
+        }
     }
 }

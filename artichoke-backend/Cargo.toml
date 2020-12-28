@@ -36,7 +36,6 @@ optional = true
 
 [dev-dependencies]
 quickcheck = { version = "0.9", default-features = false }
-quickcheck_macros = "0.9"
 
 [build-dependencies]
 bindgen = { version = "0.56.0", default-features = false, features = ["runtime"] }

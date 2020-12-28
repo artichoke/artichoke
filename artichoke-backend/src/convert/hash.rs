@@ -106,33 +106,34 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck_macros::quickcheck;
+    use quickcheck::quickcheck;
     use std::collections::HashMap;
 
     use crate::test::prelude::*;
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn roundtrip_kv(hash: HashMap<Vec<u8>, Vec<u8>>) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(hash.clone());
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != hash.len() {
-            return false;
-        }
-        let recovered = value.try_into_mut::<Vec<(Value, Value)>>(&mut interp).unwrap();
-        if recovered.len() != hash.len() {
-            return false;
-        }
-        for (key, val) in recovered {
-            let key = key.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
-            let val = val.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
-            match hash.get(&key) {
-                Some(retrieved) if retrieved == &val => {}
-                _ => return false,
+    quickcheck! {
+        #[allow(clippy::needless_pass_by_value)]
+        fn roundtrip_kv(hash: HashMap<Vec<u8>, Vec<u8>>) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(hash.clone());
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != hash.len() {
+                return false;
             }
+            let recovered = value.try_into_mut::<Vec<(Value, Value)>>(&mut interp).unwrap();
+            if recovered.len() != hash.len() {
+                return false;
+            }
+            for (key, val) in recovered {
+                let key = key.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
+                let val = val.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
+                match hash.get(&key) {
+                    Some(retrieved) if retrieved == &val => {}
+                    _ => return false,
+                }
+            }
+            true
         }
-        true
     }
 }

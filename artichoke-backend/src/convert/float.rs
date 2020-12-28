@@ -29,7 +29,7 @@ impl TryConvert<Value, Fp> for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck_macros::quickcheck;
+    use quickcheck::quickcheck;
 
     use crate::test::prelude::*;
 
@@ -42,35 +42,33 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[quickcheck]
-    fn convert_to_float(f: Fp) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(f);
-        value.ruby_type() == Ruby::Float
-    }
+    quickcheck! {
+        fn convert_to_float(f: Fp) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(f);
+            value.ruby_type() == Ruby::Float
+        }
 
-    #[quickcheck]
-    fn float_with_value(f: Fp) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(f);
-        let inner = value.inner();
-        let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
-        (cdouble - f).abs() < Fp::EPSILON
-    }
+        fn float_with_value(f: Fp) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(f);
+            let inner = value.inner();
+            let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
+            (cdouble - f).abs() < Fp::EPSILON
+        }
 
-    #[quickcheck]
-    fn roundtrip(f: Fp) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(f);
-        let value = value.try_into::<Fp>(&interp).unwrap();
-        (value - f).abs() < Fp::EPSILON
-    }
+        fn roundtrip(f: Fp) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(f);
+            let value = value.try_into::<Fp>(&interp).unwrap();
+            (value - f).abs() < Fp::EPSILON
+        }
 
-    #[quickcheck]
-    fn roundtrip_err(b: bool) -> bool {
-        let interp = interpreter().unwrap();
-        let value = interp.convert(b);
-        let value = value.try_into::<Fp>(&interp);
-        value.is_err()
+        fn roundtrip_err(b: bool) -> bool {
+            let interp = interpreter().unwrap();
+            let value = interp.convert(b);
+            let value = value.try_into::<Fp>(&interp);
+            value.is_err()
+        }
     }
 }
