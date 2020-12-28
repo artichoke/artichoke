@@ -15,7 +15,7 @@
 //! This test fails before commit
 //! `34ee3ddc1c5f4eb1d20f19dd772b0ca348391b2f` with a fairly massive leak.
 
-use artichoke_backend::extn::prelude::*;
+use artichoke_backend::gc::MrbGarbageCollection;
 
 const ITERATIONS: usize = 10_000;
 

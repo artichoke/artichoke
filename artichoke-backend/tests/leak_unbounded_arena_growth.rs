@@ -21,14 +21,10 @@
 
 use artichoke_backend::prelude::*;
 
-mod leak;
-
 const ITERATIONS: usize = 100;
-const LEAK_TOLERANCE: i64 = 1024 * 1024 * 15;
 
 #[test]
-fn unbounded_arena_growth() {
-    // ArtichokeApi::current_exception
+fn unbounded_arena_growth_leak_current_exception() {
     let mut interp = artichoke_backend::interpreter().unwrap();
     let code = r#"
 def bad_code
@@ -40,58 +36,54 @@ end
         Vec::from(&b"(eval):2:in bad_code"[..]),
         Vec::from(&b"(eval):1"[..]),
     ]);
-    leak::Detector::new("current exception", &mut interp)
-        .with_iterations(ITERATIONS)
-        .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks(|interp| {
-            let code = b"bad_code";
-            let mut arena = interp.create_arena_savepoint().unwrap();
-            let result = arena.eval(code).unwrap_err();
-            let backtrace = result.vm_backtrace(&mut arena);
-            assert_eq!(expected, backtrace);
-            drop(result);
-            arena.restore();
-            interp.incremental_gc();
-        });
+    for _ in 0..ITERATIONS {
+        let code = b"bad_code";
+        let mut arena = interp.create_arena_savepoint().unwrap();
+        let result = arena.eval(code).unwrap_err();
+        let backtrace = result.vm_backtrace(&mut arena);
+        assert_eq!(expected, backtrace);
+        drop(result);
+        arena.restore();
+        interp.incremental_gc();
+    }
     interp.close();
+}
 
-    // Value::to_s
+#[test]
+fn unbounded_arena_growth_leak_to_s() {
     let mut interp = artichoke_backend::interpreter().unwrap();
     let expected = "a".repeat(1024 * 1024);
-    leak::Detector::new("to_s", &mut interp)
-        .with_iterations(ITERATIONS)
-        .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks_with_finalizer(
-            |interp| {
-                let mut arena = interp.create_arena_savepoint().unwrap();
-                let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
-                let display = result.to_s(&mut arena);
-                assert_eq!(display, expected.as_bytes());
-                let _ = result;
-                arena.restore();
-                interp.incremental_gc();
-            },
-            |interp| interp.full_gc(),
-        );
+    for _ in 0..ITERATIONS {
+        let mut arena = interp.create_arena_savepoint().unwrap();
+        let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
+        let display = result.to_s(&mut arena);
+        assert_eq!(display, expected.as_bytes());
+        let _ = result;
+        arena.restore();
+        interp.incremental_gc();
+    }
+    interp.full_gc();
     interp.close();
+}
 
-    // Value::inspect
+#[test]
+fn unbounded_arena_growth_leak_inspect() {
     let mut interp = artichoke_backend::interpreter().unwrap();
-    let expected = format!(r#""{}""#, "a".repeat(1024 * 1024)).into_bytes();
-    leak::Detector::new("inspect", &mut interp)
-        .with_iterations(ITERATIONS)
-        .with_tolerance(LEAK_TOLERANCE)
-        .check_leaks_with_finalizer(
-            |interp| {
-                let mut arena = interp.create_arena_savepoint().unwrap();
-                let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
-                let debug = result.inspect(&mut arena);
-                assert_eq!(debug, expected);
-                let _ = result;
-                arena.restore();
-                interp.incremental_gc();
-            },
-            |interp| interp.full_gc(),
-        );
+
+    let mut expected = String::from('"');
+    expected.push_str(&"a".repeat(1024 * 1024));
+    expected.push('"');
+    let expected = expected.into_bytes();
+
+    for _ in 0..ITERATIONS {
+        let mut arena = interp.create_arena_savepoint().unwrap();
+        let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
+        let debug = result.inspect(&mut arena);
+        assert_eq!(debug, expected);
+        let _ = result;
+        arena.restore();
+        interp.incremental_gc();
+    }
+    interp.full_gc();
     interp.close();
 }

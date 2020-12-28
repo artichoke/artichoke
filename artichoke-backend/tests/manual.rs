@@ -65,4 +65,6 @@ fn define_rust_backed_ruby_class() {
     let result = interp.eval(b"Container.new(105).value").unwrap();
     let result = result.try_into::<Int>(&interp).unwrap();
     assert_eq!(result, 105);
+
+    interp.close();
 }

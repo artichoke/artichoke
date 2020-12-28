@@ -40,7 +40,6 @@ dependencies = [
  "cc",
  "intaglio",
  "itoa",
- "libc",
  "log",
  "once_cell",
  "onig",

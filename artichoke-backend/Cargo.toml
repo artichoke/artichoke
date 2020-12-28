@@ -34,7 +34,6 @@ default-features = false
 optional = true
 
 [dev-dependencies]
-libc = "0.2"
 quickcheck = { version = "0.9", default-features = false }
 quickcheck_macros = "0.9"
 
