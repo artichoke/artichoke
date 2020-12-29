@@ -1,14 +1,19 @@
+use core::convert::{self, TryFrom};
+use core::fmt;
+use core::iter::Enumerate;
+use core::num::NonZeroUsize;
+use core::str;
 use regex::{Match, Regex, RegexBuilder};
+use scolapasta_string_escape::format_debug_escape_into;
 use std::collections::HashMap;
-use std::convert::{self, TryFrom};
-use std::fmt;
-use std::num::NonZeroUsize;
-use std::str;
 
-use crate::extn::core::matchdata::MatchData;
 use crate::{Config, Encoding};
 
-use super::super::{NameToCaptureLocations, NilableString};
+mod iter;
+
+pub use iter::{CaptureIndices, Captures};
+
+pub type NilableString = Option<Vec<u8>>;
 
 #[derive(Debug, Clone)]
 pub struct Utf8 {
@@ -18,17 +23,26 @@ pub struct Utf8 {
     regex: Regex,
 }
 
+impl fmt::Display for Utf8 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let pattern = self.derived.pattern.as_slice();
+        format_debug_escape_into(f, pattern).map_err(WriteError::into_inner)
+    }
+}
+
 impl Utf8 {
-    pub fn new(literal: Config, derived: Config, encoding: Encoding) -> Result<Self, Error> {
-        let pattern = str::from_utf8(derived.pattern.as_slice())
-            .map_err(|_| ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 patterns"))?;
+    pub fn with_literal_derived_encoding(literal: Config, derived: Config, encoding: Encoding) -> Result<Self, Error> {
+        let pattern = str::from_utf8(derived.pattern.as_slice()).map_err(|_| {
+            ArgumentError::with_message("regex crate utf8 backend for Regexp only supports UTF-8 patterns")
+        })?;
         let mut builder = RegexBuilder::new(pattern);
-        builder.case_insensitive(derived.options.ignore_case.into());
-        builder.multi_line(derived.options.multiline.into());
-        builder.ignore_whitespace(derived.options.extended.into());
+        builder.case_insensitive(derived.options.ignore_case().is_enabled());
+        builder.multi_line(derived.options.multiline().is_enabled());
+        builder.ignore_whitespace(derived.options.extended().is_enabled());
+
         let regex = match builder.build() {
             Ok(regex) => regex,
-            Err(err) if literal.options.literal => {
+            Err(err) if literal.options.is_literal() => {
                 return Err(SyntaxError::from(err.to_string()).into());
             }
             Err(err) => return Err(RegexpError::from(err.to_string()).into()),
@@ -41,96 +55,53 @@ impl Utf8 {
         };
         Ok(regexp)
     }
-}
 
-impl fmt::Display for Utf8 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let pattern = self.derived.pattern.as_slice();
-        format_unicode_debug_into(f, pattern).map_err(WriteError::into_inner)
-    }
-}
-
-impl RegexpType for Utf8 {
-    fn box_clone(&self) -> Box<dyn RegexpType> {
-        Box::new(self.clone())
+    pub fn captures(&self, haystack: &[u8]) -> Result<Captures<'_>, Error> {
+        let haystack =
+            str::from_utf8(haystack).map_err(|_| ArgumentError::with_message("invalid byte sequence in UTF-8"))?;
+        Ok(Captures::from(self.regex.captures(haystack)))
     }
 
-    fn captures(&self, haystack: &[u8]) -> Result<Option<Vec<NilableString>>, Error> {
-        let haystack = str::from_utf8(haystack)
-            .map_err(|_| ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks"))?;
+    fn capture_indexes_for_name<'a, 'b>(&'a self, name: &'b [u8]) -> Result<CaptureIndices<'a, 'b>, Error> {
+        CaptureIndices::with_name_and_iter(name, self.regexp.capture_names())
+    }
+
+    /// Returns the number of captures.
+    fn captures_len(&self) -> usize {
+        self.regex.captures_len()
+    }
+
+    /// The number of captures for a match of `haystack` against this regexp.
+    ///
+    /// Captures represents a group of captured strings for a single match.
+    ///
+    /// If there is a match, the returned value is always greater than 0; the
+    /// 0th capture always corresponds to the entire match.
+    fn capture_count_for_haystack(&self, haystack: &[u8]) -> Result<usize, ArgumentError> {
+        let haystack =
+            str::from_utf8(haystack).map_err(|_| ArgumentError::with_message("invalid byte sequence in UTF-8"))?;
         if let Some(captures) = self.regex.captures(haystack) {
-            let mut result = Vec::with_capacity(captures.len());
-            for capture in captures.iter() {
-                if let Some(capture) = capture {
-                    result.push(Some(capture.as_str().into()));
-                } else {
-                    result.push(None);
-                }
-            }
-            Ok(Some(result))
+            captures.len()
+        } else {
+            0
+        }
+    }
+
+    /// Return the 0th capture group if `haystack` is matched by this regexp.
+    ///
+    /// The 0th capture always corresponds to the entire match.
+    fn entire_match<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Error> {
+        let haystack =
+            str::from_utf8(haystack).map_err(|_| ArgumentError::with_message("invalid byte sequence in UTF-8"))?;
+        if let Some(captures) = self.regex.captures(haystack) {
+            let entire_match = captures.get(0);
+            entire_match.as_ref().map(Match::as_str).map(str::as_bytes)
         } else {
             Ok(None)
         }
     }
 
-    fn capture_indexes_for_name(&self, name: &[u8]) -> Result<Option<Vec<usize>>, Error> {
-        let mut result = vec![];
-        for (index, group) in self.regex.capture_names().enumerate() {
-            if Some(name) == group.map(str::as_bytes) {
-                result.push(index);
-            }
-        }
-        if result.is_empty() {
-            Ok(None)
-        } else {
-            Ok(Some(result))
-        }
-    }
-
-    fn captures_len(&self, haystack: Option<&[u8]>) -> Result<usize, Error> {
-        let result = if let Some(haystack) = haystack {
-            let haystack = str::from_utf8(haystack).map_err(|_| {
-                ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks")
-            })?;
-            self.regex
-                .captures(haystack)
-                .map(|captures| captures.len())
-                .unwrap_or_default()
-        } else {
-            self.regex.captures_len()
-        };
-        Ok(result)
-    }
-
-    fn capture0<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Error> {
-        let haystack = str::from_utf8(haystack)
-            .map_err(|_| ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 haystacks"))?;
-        let result = self
-            .regex
-            .captures(haystack)
-            .and_then(|captures| captures.get(0))
-            .as_ref()
-            .map(Match::as_str)
-            .map(str::as_bytes);
-        Ok(result)
-    }
-
-    fn debug(&self) -> String {
-        let mut debug = String::from("/");
-        let mut pattern = String::new();
-        // Explicitly supress this error because `debug` is infallible and
-        // cannot panic.
-        //
-        // In practice this error will never be triggered since the only
-        // fallible call in `format_unicode_debug_into` is to `write!` which
-        // never `panic!`s for a `String` formatter, which we are using here.
-        let _ = format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
-        debug.push_str(pattern.replace("/", r"\/").as_str());
-        debug.push('/');
-        debug.push_str(self.literal.options.as_display_modifier());
-        debug.push_str(self.encoding.modifier_string());
-        debug
-    }
+    fn debug(&self) -> Debug<'_> {}
 
     fn literal_config(&self) -> &Config {
         &self.literal
