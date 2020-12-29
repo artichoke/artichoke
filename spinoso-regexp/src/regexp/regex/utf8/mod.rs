@@ -7,7 +7,7 @@ use regex::{Match, Regex, RegexBuilder};
 use scolapasta_string_escape::format_debug_escape_into;
 use std::collections::HashMap;
 
-use crate::{Config, Encoding};
+use crate::{ArgumentError, Config, Encoding, Error, SyntaxError};
 
 mod iter;
 
