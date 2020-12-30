@@ -1,0 +1,28 @@
+[package]
+name = "spinoso-regexp"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+description = """
+Regex implementation for Ruby Regexp core type in Artichoke Ruby
+"""
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["artichoke", "onig", "regex", "regexp", "ruby"]
+categories = ["data-structures", "parser-implementations"]
+
+[dependencies]
+bitflags = "1.2"
+bstr = { version = "0.2, >= 0.2.2", default-features = false }
+itoa = "0.4"
+onig = { version = "6.1", default-features = false, optional = true }
+regex = { version = "1, >= 1.3", default-features = false, features = ["std", "unicode-perl"] }
+scolapasta-string-escape = { version = "0.1", path = "../scolapasta-string-escape" }
+
+[features]
+default = ["oniguruma", "regex-full"]
+oniguruma = ["onig"]
+regex-full = ["regex-perf", "regex-unicode"]
+regex-perf = ["regex/perf"]
+regex-unicode = ["regex/unicode"]

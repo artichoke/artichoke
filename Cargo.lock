@@ -619,6 +619,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "spinoso-regexp"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "bstr",
+ "itoa",
+ "onig",
+ "regex",
+ "scolapasta-string-escape",
+]
+
+[[package]]
 name = "spinoso-securerandom"
 version = "0.1.0"
 dependencies = [
