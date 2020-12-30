@@ -1,0 +1,17 @@
+# This config file lists the ruby/specs that should pass for Artichoke Ruby.
+#
+# Valid values for `include` are:
+#
+# - all - run all specs. When `include` is set to `all`, the optional `skip`
+#   field may list specs to skip.
+# - none - run no specs, equivalent to the section not being present in this
+#   config file.
+# - `set` - run an enumerated set of specs. When `include` is set to `set`, the
+#   set of specs must be listed in the required `specs` field, which is a list
+#   of strings.
+
+## Ruby Core
+
+[specs.core.regexp]
+include = "set"
+specs = ["new"]
