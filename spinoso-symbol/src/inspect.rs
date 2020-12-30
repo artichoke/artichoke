@@ -275,11 +275,11 @@ impl ByteLiteral {
 impl<'a> From<&'a [u8]> for ByteLiteral {
     #[inline]
     fn from(bytes: &'a [u8]) -> Self {
-        match bytes {
+        match *bytes {
             [] => Self::default(),
-            [byte] => Self::one(*byte),
-            [left, right] => Self::two(*left, *right),
-            [left, mid, right] => Self::three(*left, *mid, *right),
+            [byte] => Self::one(byte),
+            [left, right] => Self::two(left, right),
+            [left, mid, right] => Self::three(left, mid, right),
             _ => panic!("Invalid UTF-8 byte literal sequences can be at most three bytes"),
         }
     }
