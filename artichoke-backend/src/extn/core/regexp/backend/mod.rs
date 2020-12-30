@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 
-use crate::extn::core::regexp::{Config, Encoding};
+use crate::extn::core::regexp::{Config, Encoding, Source};
 use crate::extn::prelude::*;
 
 pub mod lazy;
@@ -43,9 +43,9 @@ pub trait RegexpType {
 
     fn debug(&self) -> String;
 
-    fn literal_config(&self) -> &Config;
+    fn source(&self) -> &Source;
 
-    fn derived_config(&self) -> &Config;
+    fn config(&self) -> &Config;
 
     fn encoding(&self) -> &Encoding;
 
@@ -124,13 +124,13 @@ impl fmt::Debug for &dyn RegexpType {
 
 impl Hash for &dyn RegexpType {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.literal_config().hash(state);
+        self.source().hash(state);
     }
 }
 
 impl PartialEq for &dyn RegexpType {
     fn eq(&self, other: &Self) -> bool {
-        self.derived_config().pattern == other.derived_config().pattern && self.encoding() == other.encoding()
+        self.config().pattern() == other.config().pattern() && self.encoding() == other.encoding()
     }
 }
 

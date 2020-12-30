@@ -4,7 +4,6 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
-use bstr::BString;
 use std::collections::hash_map::DefaultHasher;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
@@ -16,8 +15,8 @@ use crate::extn::prelude::*;
 
 #[doc(inline)]
 pub use spinoso_regexp::{
-    nth_match_group, Encoding, Flags, InvalidEncodingError, Options, RegexpError, RegexpOption, HIGHEST_MATCH_GROUP,
-    LAST_MATCH, LAST_MATCHED_STRING, STRING_LEFT_OF_MATCH, STRING_RIGHT_OF_MATCH,
+    nth_match_group, Config, Encoding, Flags, InvalidEncodingError, Options, RegexpError, RegexpOption, Source,
+    HIGHEST_MATCH_GROUP, LAST_MATCH, LAST_MATCHED_STRING, STRING_LEFT_OF_MATCH, STRING_RIGHT_OF_MATCH,
 };
 
 pub mod backend;
@@ -66,12 +65,12 @@ impl PartialEq for Regexp {
 impl Eq for Regexp {}
 
 impl Regexp {
-    pub fn new(literal_config: Config, derived_config: Config, encoding: Encoding) -> Result<Self, Error> {
+    pub fn new(source: Source, config: Config, encoding: Encoding) -> Result<Self, Error> {
         #[cfg(feature = "core-regexp-oniguruma")]
         {
             // Patterns must be parsable by Oniguruma.
-            let onig = Onig::new(literal_config.clone(), derived_config.clone(), encoding)?;
-            if let Ok(regex) = Utf8::new(literal_config, derived_config, encoding) {
+            let onig = Onig::new(source.clone(), config.clone(), encoding)?;
+            if let Ok(regex) = Utf8::new(source, config, encoding) {
                 Ok(Self(Box::new(regex)))
             } else {
                 Ok(Self(Box::new(onig)))
@@ -79,18 +78,15 @@ impl Regexp {
         }
         #[cfg(not(feature = "core-regexp-oniguruma"))]
         {
-            let regex = Utf8::new(literal_config, derived_config, encoding)?;
+            let regex = Utf8::new(source, config, encoding)?;
             Ok(Self(Box::new(regex)))
         }
     }
 
     #[must_use]
     pub fn lazy(pattern: Vec<u8>) -> Self {
-        let literal_config = Config {
-            pattern: pattern.into(),
-            options: Options::new(),
-        };
-        let backend = Box::new(Lazy::from(literal_config));
+        let config = Config::with_pattern_and_options(pattern, Options::new());
+        let backend = Box::new(Lazy::from(config));
         Self(backend)
     }
 
@@ -100,29 +96,19 @@ impl Regexp {
         options: Option<Options>,
         encoding: Option<Encoding>,
     ) -> Result<Self, Error> {
-        let literal_config = if let Ok(regexp) = unsafe { Self::unbox_from_value(&mut pattern, interp) } {
+        let source = if let Ok(regexp) = unsafe { Self::unbox_from_value(&mut pattern, interp) } {
             if options.is_some() || encoding.is_some() {
                 interp.warn(&b"flags ignored when initializing from Regexp"[..])?;
             }
-            let options = regexp.inner().literal_config().options;
-            Config {
-                pattern: regexp.inner().literal_config().pattern.clone(),
-                options,
-            }
+            regexp.inner().source().clone()
         } else {
             let bytes = pattern.implicitly_convert_to_string(interp)?;
-            Config {
-                pattern: bytes.into(),
-                options: options.unwrap_or_default(),
-            }
+            Source::with_pattern_and_options(bytes.to_vec(), options.unwrap_or_default())
         };
-        let pattern = pattern::parse(&literal_config.pattern, literal_config.options);
+        let pattern = pattern::parse(source.pattern(), source.options());
         let options = pattern.options();
-        let derived_config = Config {
-            pattern: pattern.into_pattern().into(),
-            options,
-        };
-        Self::new(literal_config, derived_config, encoding.unwrap_or_default())
+        let config = Config::with_pattern_and_options(pattern.into_pattern(), options);
+        Self::new(source, config, encoding.unwrap_or_default())
     }
 
     pub fn escape(pattern: &[u8]) -> Result<String, Error> {
@@ -139,9 +125,8 @@ impl Regexp {
     {
         fn extract_pattern(interp: &mut Artichoke, value: &mut Value) -> Result<Vec<u8>, Error> {
             if let Ok(regexp) = unsafe { Regexp::unbox_from_value(value, interp) } {
-                let config = regexp.inner().derived_config();
-                let pattern = config.pattern.clone();
-                Ok(pattern.into())
+                let source = regexp.inner().config();
+                Ok(source.pattern().to_vec())
             } else {
                 let bytes = value.implicitly_convert_to_string(interp)?;
                 if let Ok(pattern) = str::from_utf8(bytes) {
@@ -174,19 +159,13 @@ impl Regexp {
             b"(?!)".to_vec()
         };
 
-        let derived_config = {
+        let config = {
             let pattern = pattern::parse(&pattern, Options::new());
             let options = pattern.options();
-            Config {
-                pattern: pattern.into_pattern().into(),
-                options,
-            }
+            Config::with_pattern_and_options(pattern.into_pattern(), options)
         };
-        let literal_config = Config {
-            pattern: pattern.into(),
-            options: Options::new(),
-        };
-        Self::new(literal_config, derived_config, Encoding::new())
+        let source = Source::with_pattern_and_options(pattern, Options::new());
+        Self::new(source, config, Encoding::new())
     }
 
     #[inline]
@@ -231,7 +210,7 @@ impl Regexp {
     #[inline]
     #[must_use]
     pub fn is_casefold(&self) -> bool {
-        self.0.literal_config().options.ignore_case().is_enabled()
+        self.0.source().is_casefold()
     }
 
     #[must_use]
@@ -300,14 +279,15 @@ impl Regexp {
     #[inline]
     #[must_use]
     pub fn options(&self) -> Int {
-        let opts = self.0.literal_config().options;
-        Int::from(opts) | Int::from(self.0.encoding())
+        let options = self.0.source().options().flags();
+        let encoding = self.0.encoding().flags();
+        Int::from((options | encoding).bits())
     }
 
     #[inline]
     #[must_use]
     pub fn source(&self) -> &[u8] {
-        self.0.literal_config().pattern.as_slice()
+        self.0.source().pattern()
     }
 
     #[inline]
@@ -321,12 +301,6 @@ impl From<Box<dyn RegexpType>> for Regexp {
     fn from(regexp: Box<dyn RegexpType>) -> Self {
         Self(regexp)
     }
-}
-
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Config {
-    pattern: BString,
-    options: Options,
 }
 
 impl TryConvertMut<(Option<Value>, Option<Value>), (Option<Options>, Option<Encoding>)> for Artichoke {

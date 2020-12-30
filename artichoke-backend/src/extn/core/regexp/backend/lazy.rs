@@ -2,14 +2,15 @@ use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType, Scan};
+use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType, Scan, Source};
 use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
 
 #[derive(Default, Debug)]
 pub struct Lazy {
-    literal: Config,
+    source: Source,
+    config: Config,
     encoding: Encoding,
     regexp: OnceCell<Regexp>,
 }
@@ -17,7 +18,8 @@ pub struct Lazy {
 impl From<Config> for Lazy {
     fn from(config: Config) -> Self {
         Self {
-            literal: config,
+            source: Source::from(config.clone()),
+            config,
             encoding: Encoding::new(),
             regexp: OnceCell::new(),
         }
@@ -32,20 +34,20 @@ impl Lazy {
 
     pub fn regexp(&self) -> Result<&Regexp, Error> {
         self.regexp
-            .get_or_try_init(|| Regexp::new(self.literal.clone(), self.literal.clone(), self.encoding))
+            .get_or_try_init(|| Regexp::new(self.source.clone(), self.config.clone(), self.encoding))
     }
 }
 
 impl fmt::Display for Lazy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let pattern = self.literal.pattern.as_slice();
+        let pattern = self.config.pattern();
         format_unicode_debug_into(f, pattern).map_err(WriteError::into_inner)
     }
 }
 
 impl Clone for Lazy {
     fn clone(&self) -> Self {
-        self.literal.clone().into()
+        self.config.clone().into()
     }
 }
 
@@ -79,20 +81,20 @@ impl RegexpType for Lazy {
         // In practice this error will never be triggered since the only
         // fallible call in `format_unicode_debug_into` is to `write!` which
         // never `panic!`s for a `String` formatter, which we are using here.
-        let _ = format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
+        let _ = format_unicode_debug_into(&mut pattern, self.config.pattern());
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
-        debug.push_str(self.literal.options.as_display_modifier());
+        debug.push_str(self.config.options().as_display_modifier());
         debug.push_str(self.encoding.modifier_string());
         debug
     }
 
-    fn literal_config(&self) -> &Config {
-        &self.literal
+    fn source(&self) -> &Source {
+        &self.source
     }
 
-    fn derived_config(&self) -> &Config {
-        &self.literal
+    fn config(&self) -> &Config {
+        &self.config
     }
 
     fn encoding(&self) -> &Encoding {

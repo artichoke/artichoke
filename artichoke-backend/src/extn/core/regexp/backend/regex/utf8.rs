@@ -6,39 +6,39 @@ use std::num::NonZeroUsize;
 use std::str;
 
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan};
+use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan, Source};
 use crate::extn::prelude::*;
 
 use super::super::{NameToCaptureLocations, NilableString};
 
 #[derive(Debug, Clone)]
 pub struct Utf8 {
-    literal: Config,
-    derived: Config,
+    source: Source,
+    config: Config,
     encoding: Encoding,
     regex: Regex,
 }
 
 impl Utf8 {
-    pub fn new(literal: Config, derived: Config, encoding: Encoding) -> Result<Self, Error> {
-        let pattern = str::from_utf8(derived.pattern.as_slice())
+    pub fn new(source: Source, config: Config, encoding: Encoding) -> Result<Self, Error> {
+        let pattern = str::from_utf8(config.pattern())
             .map_err(|_| ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 patterns"))?;
 
         let mut builder = RegexBuilder::new(pattern);
-        builder.case_insensitive(derived.options.ignore_case().into());
-        builder.multi_line(derived.options.multiline().into());
-        builder.ignore_whitespace(derived.options.extended().into());
+        builder.case_insensitive(config.options().ignore_case().into());
+        builder.multi_line(config.options().multiline().into());
+        builder.ignore_whitespace(config.options().extended().into());
 
         let regex = match builder.build() {
             Ok(regex) => regex,
-            Err(err) if literal.options.is_literal() => {
+            Err(err) if source.is_literal() => {
                 return Err(SyntaxError::from(err.to_string()).into());
             }
             Err(err) => return Err(RegexpError::from(err.to_string()).into()),
         };
         let regexp = Self {
-            literal,
-            derived,
+            source,
+            config,
             encoding,
             regex,
         };
@@ -48,7 +48,7 @@ impl Utf8 {
 
 impl fmt::Display for Utf8 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let pattern = self.derived.pattern.as_slice();
+        let pattern = self.config.pattern();
         format_unicode_debug_into(f, pattern).map_err(WriteError::into_inner)
     }
 }
@@ -127,20 +127,20 @@ impl RegexpType for Utf8 {
         // In practice this error will never be triggered since the only
         // fallible call in `format_unicode_debug_into` is to `write!` which
         // never `panic!`s for a `String` formatter, which we are using here.
-        let _ = format_unicode_debug_into(&mut pattern, self.literal.pattern.as_slice());
+        let _ = format_unicode_debug_into(&mut pattern, self.source.pattern());
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
-        debug.push_str(self.literal.options.as_display_modifier());
+        debug.push_str(self.source.options().as_display_modifier());
         debug.push_str(self.encoding.modifier_string());
         debug
     }
 
-    fn literal_config(&self) -> &Config {
-        &self.literal
+    fn source(&self) -> &Source {
+        &self.source
     }
 
-    fn derived_config(&self) -> &Config {
-        &self.derived
+    fn config(&self) -> &Config {
+        &self.config
     }
 
     fn encoding(&self) -> &Encoding {
@@ -149,21 +149,21 @@ impl RegexpType for Utf8 {
 
     fn inspect(&self) -> Vec<u8> {
         // pattern length + 2x '/' + mix + encoding
-        let mut inspect = Vec::with_capacity(self.literal.pattern.len() + 2 + 4);
+        let mut inspect = Vec::with_capacity(self.source.pattern().len() + 2 + 4);
         inspect.push(b'/');
-        if let Ok(pat) = str::from_utf8(self.literal.pattern.as_slice()) {
-            inspect.extend(pat.replace("/", r"\/").as_bytes());
+        if let Ok(pat) = str::from_utf8(self.source.pattern()) {
+            inspect.extend_from_slice(pat.replace("/", r"\/").as_bytes());
         } else {
-            inspect.extend(self.literal.pattern.iter());
+            inspect.extend_from_slice(self.source.pattern());
         }
         inspect.push(b'/');
-        inspect.extend(self.literal.options.as_display_modifier().as_bytes());
-        inspect.extend(self.encoding.modifier_string().as_bytes());
+        inspect.extend_from_slice(self.source.options().as_display_modifier().as_bytes());
+        inspect.extend_from_slice(self.encoding.modifier_string().as_bytes());
         inspect
     }
 
     fn string(&self) -> &[u8] {
-        self.derived.pattern.as_slice()
+        self.config.pattern()
     }
 
     fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Error> {
