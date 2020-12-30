@@ -1,9 +1,9 @@
 //! Regexp pattern parsers.
 
 use bstr::ByteSlice;
-use std::iter;
+use core::iter;
 
-use crate::extn::core::regexp::{Options, RegexpOption};
+use super::{Flags, Options, RegexpOption};
 
 /// A Regexp pattern including its derived `Options`.
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -86,13 +86,13 @@ pub fn parse<T: AsRef<[u8]>>(pattern: T, options: Options) -> Pattern {
         match token {
             b'-' => enable_literal_option = RegexpOption::Disabled,
             b'i' => {
-                options.ignore_case = enable_literal_option;
+                options.set(Flags::IGNORECASE, enable_literal_option.into());
             }
             b'm' => {
-                options.multiline = enable_literal_option;
+                options.set(Flags::MULTILINE, enable_literal_option.into());
             }
             b'x' => {
-                options.extended = enable_literal_option;
+                options.set(Flags::EXTENDED, enable_literal_option.into());
             }
             b':' => break,
             _ => return build_pattern(pattern.bytes(), options),
@@ -136,7 +136,7 @@ pub fn parse<T: AsRef<[u8]>>(pattern: T, options: Options) -> Pattern {
 mod tests {
     use bstr::BString;
 
-    use crate::extn::core::regexp::{Options, RegexpOption};
+    use crate::extn::core::regexp::{Flags, Options};
 
     #[test]
     fn parse_literal_string_pattern() {
@@ -149,18 +149,14 @@ mod tests {
 
     #[test]
     fn parse_options_if_included_and_expand() {
-        let mut opts = Options::new();
-        opts.multiline = RegexpOption::Enabled;
-        opts.extended = RegexpOption::Enabled;
-        opts.ignore_case = RegexpOption::Enabled;
+        let opts = Options::from(Flags::ALL_REGEXP_OPTS);
         let parsed = super::parse("abc", opts);
         assert_eq!(BString::from("(?mix:abc)"), BString::from(parsed.into_pattern()),);
     }
 
     #[test]
     fn parse_non_included_options_and_embed_expanded_modifiers_prefixed_by_a_minus_sign() {
-        let mut opts = Options::new();
-        opts.ignore_case = RegexpOption::Enabled;
+        let opts = Options::from(Flags::IGNORECASE);
         let parsed = super::parse("abc", opts);
         assert_eq!(BString::from("(?i-mx:abc)"), BString::from(parsed.into_pattern()),);
     }
@@ -174,10 +170,7 @@ mod tests {
 
     #[test]
     fn embeds_the_pattern_after_the_options_after_parsing() {
-        let mut opts = Options::new();
-        opts.multiline = RegexpOption::Enabled;
-        opts.extended = RegexpOption::Enabled;
-        opts.ignore_case = RegexpOption::Enabled;
+        let opts = Options::from(Flags::ALL_REGEXP_OPTS);
         let parsed = super::parse("ab+c", opts);
         assert_eq!(BString::from("(?mix:ab+c)"), BString::from(parsed.into_pattern()),);
         let opts = Options::new();
@@ -193,8 +186,7 @@ mod tests {
             BString::from("(?-mix:(?ix:foo)(?m:bar))"),
             BString::from(parsed.into_pattern()),
         );
-        let mut opts = Options::new();
-        opts.multiline = RegexpOption::Enabled;
+        let opts = Options::from(Flags::MULTILINE);
         let parsed = super::parse("(?ix:foo)bar", opts);
         assert_eq!(
             BString::from("(?m-ix:(?ix:foo)bar)"),
@@ -214,9 +206,7 @@ mod tests {
 
     #[test]
     fn parse_uncaptured_groups() {
-        let mut opts = Options::new();
-        opts.ignore_case = RegexpOption::Enabled;
-        opts.extended = RegexpOption::Enabled;
+        let opts = Options::from(Flags::IGNORECASE | Flags::EXTENDED);
         let parsed = super::parse("whatever(?:0d)", opts);
         assert_eq!(
             BString::from("(?ix-m:whatever(?:0d))"),
@@ -236,9 +226,7 @@ mod tests {
 
     #[test]
     fn parse_to_fully_expanded_options_inline() {
-        let mut opts = Options::new();
-        opts.ignore_case = RegexpOption::Enabled;
-        opts.extended = RegexpOption::Enabled;
+        let opts = Options::from(Flags::IGNORECASE | Flags::EXTENDED);
         let parsed = super::parse("ab+c", opts);
         assert_eq!(BString::from("(?ix-m:ab+c)"), BString::from(parsed.into_pattern()),);
         let opts = Options::new();
