@@ -52,6 +52,7 @@ dependencies = [
  "spinoso-exception",
  "spinoso-math",
  "spinoso-random",
+ "spinoso-regexp",
  "spinoso-securerandom",
  "spinoso-symbol",
  "spinoso-time",
@@ -616,6 +617,18 @@ dependencies = [
  "libm",
  "rand",
  "rand_core",
+]
+
+[[package]]
+name = "spinoso-regexp"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "bstr",
+ "itoa",
+ "onig",
+ "regex",
+ "scolapasta-string-escape",
 ]
 
 [[package]]

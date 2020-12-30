@@ -1,5 +1,5 @@
 use core::mem::size_of;
-use onig::{Regex, RegexOptions, Syntax};
+use onig::{Regex, Syntax};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
@@ -8,7 +8,7 @@ use std::rc::Rc;
 use std::str;
 
 use crate::extn::core::matchdata::MatchData;
-use crate::extn::core::regexp::{self, Config, Encoding, Options, Regexp, RegexpType, Scan};
+use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan};
 use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
@@ -19,22 +19,6 @@ use super::{NameToCaptureLocations, NilableString};
 // This const-evaluated expression ensures that `usize` is always at least as
 // wide as `usize`.
 const _: () = [()][!(size_of::<usize>() >= size_of::<u32>()) as usize];
-
-impl From<Options> for RegexOptions {
-    fn from(opts: Options) -> Self {
-        let mut bits = RegexOptions::REGEX_OPTION_NONE;
-        if opts.multiline.is_enabled() {
-            bits |= RegexOptions::REGEX_OPTION_MULTILINE;
-        }
-        if opts.ignore_case.is_enabled() {
-            bits |= RegexOptions::REGEX_OPTION_IGNORECASE;
-        }
-        if opts.extended.is_enabled() {
-            bits |= RegexOptions::REGEX_OPTION_EXTEND;
-        }
-        bits
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct Onig {
@@ -50,7 +34,9 @@ impl Onig {
             .map_err(|_| ArgumentError::from("Oniguruma backend for Regexp only supports UTF-8 patterns"))?;
         let regex = match Regex::with_options(pattern, derived.options.into(), Syntax::ruby()) {
             Ok(regex) => regex,
-            Err(err) if literal.options.literal => return Err(SyntaxError::from(err.description().to_owned()).into()),
+            Err(err) if literal.options.is_literal() => {
+                return Err(SyntaxError::from(err.description().to_owned()).into())
+            }
             Err(err) => return Err(RegexpError::from(err.description().to_owned()).into()),
         };
         let regexp = Self {

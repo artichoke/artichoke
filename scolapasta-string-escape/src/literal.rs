@@ -104,11 +104,28 @@ pub struct Literal(slice::Iter<'static, u8>);
 
 impl Default for Literal {
     fn default() -> Self {
-        Literal(b"".iter())
+        Self::empty()
     }
 }
 
 impl Literal {
+    /// Create an empty literal iterator.
+    ///
+    /// The returned `Literal` always yields [`None`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::Literal;
+    ///
+    /// let mut literal = Literal::empty();
+    /// assert_eq!(literal.as_str(), "");
+    /// assert_eq!(literal.next(), None);
+    /// ```
+    pub fn empty() -> Self {
+        Literal(b"".iter())
+    }
+
     /// Views the underlying data as a subslice of the original data.
     ///
     /// This has `'static` lifetime, and so the iterator can continue to be used

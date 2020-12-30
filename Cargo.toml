@@ -52,6 +52,7 @@ members = [
   "spinoso-exception",
   "spinoso-math",
   "spinoso-random",
+  "spinoso-regexp",
   "spinoso-securerandom",
   "spinoso-symbol",
   "spinoso-time",
@@ -78,6 +79,7 @@ kitchen-sink = [
   "core-math",
   "core-math-full",
   "core-random",
+  "core-regexp",
   "core-regexp-oniguruma",
   "core-time",
   "native-filesystem-access",
@@ -96,6 +98,9 @@ core-math-full = ["core-math", "artichoke-backend/core-math-full"]
 # Implement the `Random` core class and add an interpreter-default PRNG to
 # Artichoke. This feature adds dependencies on `rand_core` and `rand_pcg`.
 core-random = ["artichoke-backend/core-random"]
+# Implement the `Regexp` and `MatchData` core classes. This feature adds a
+# dependency on `regex`.
+core-regexp = ["artichoke-backend/core-regexp"]
 # Enable an oniguruma engine backend to the `Regexp` core class. With this
 # feature, Regexp patterns must be parsable by oniguruma regardless of the
 # backend they execute on. The `regex` crate backend remains the default as long

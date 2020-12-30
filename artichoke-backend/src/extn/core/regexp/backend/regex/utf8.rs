@@ -23,13 +23,15 @@ impl Utf8 {
     pub fn new(literal: Config, derived: Config, encoding: Encoding) -> Result<Self, Error> {
         let pattern = str::from_utf8(derived.pattern.as_slice())
             .map_err(|_| ArgumentError::from("regex crate utf8 backend for Regexp only supports UTF-8 patterns"))?;
+
         let mut builder = RegexBuilder::new(pattern);
-        builder.case_insensitive(derived.options.ignore_case.into());
-        builder.multi_line(derived.options.multiline.into());
-        builder.ignore_whitespace(derived.options.extended.into());
+        builder.case_insensitive(derived.options.ignore_case().into());
+        builder.multi_line(derived.options.multiline().into());
+        builder.ignore_whitespace(derived.options.extended().into());
+
         let regex = match builder.build() {
             Ok(regex) => regex,
-            Err(err) if literal.options.literal => {
+            Err(err) if literal.options.is_literal() => {
                 return Err(SyntaxError::from(err.to_string()).into());
             }
             Err(err) => return Err(RegexpError::from(err.to_string()).into()),

@@ -5,7 +5,6 @@
 //! the `Args` struct for invoking the function.
 
 use bstr::BString;
-use std::borrow::Cow;
 use std::collections::hash_map::DefaultHasher;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
@@ -14,6 +13,12 @@ use std::str;
 
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
+
+#[doc(inline)]
+pub use spinoso_regexp::{
+    nth_match_group, Encoding, Flags, InvalidEncodingError, Options, RegexpError, RegexpOption, HIGHEST_MATCH_GROUP,
+    LAST_MATCH, LAST_MATCHED_STRING, STRING_LEFT_OF_MATCH, STRING_RIGHT_OF_MATCH,
+};
 
 pub mod backend;
 mod boxing;
@@ -25,8 +30,6 @@ pub mod syntax;
 pub mod trampoline;
 
 pub use backend::{NilableString, RegexpType, Scan};
-pub use enc::Encoding;
-pub use opts::{Options, RegexpOption};
 
 use backend::lazy::Lazy;
 #[cfg(feature = "core-regexp-oniguruma")]
@@ -34,65 +37,6 @@ use backend::onig::Onig;
 use backend::regex::utf8::Utf8;
 
 pub type NameToCaptureLocations = Vec<(Vec<u8>, Vec<Int>)>;
-
-pub const IGNORECASE: Int = 1;
-pub const EXTENDED: Int = 2;
-pub const MULTILINE: Int = 4;
-const ALL_REGEXP_OPTS: Int = IGNORECASE | EXTENDED | MULTILINE;
-
-pub const FIXEDENCODING: Int = 16;
-pub const NOENCODING: Int = 32;
-
-pub const LITERAL: Int = 128;
-
-/// The string matched by the last successful match.
-pub const LAST_MATCHED_STRING: &[u8] = b"$&";
-/// The string to the left of the last successful match.
-pub const STRING_LEFT_OF_MATCH: &[u8] = b"$`";
-/// The string to the right of the last successful match.
-pub const STRING_RIGHT_OF_MATCH: &[u8] = b"$'";
-/// The highest group matched by the last successful match.
-// TODO: implement this.
-pub const HIGHEST_MATCH_GROUP: &[u8] = b"$+";
-/// The information about the last match in the current scope.
-pub const LAST_MATCH: &[u8] = b"$~";
-
-/// Global variable name for the nth capture group from a `Regexp` match.
-#[inline]
-#[must_use]
-pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, [u8]> {
-    match group.get() {
-        1 => b"$1".as_ref().into(),
-        2 => b"$2".as_ref().into(),
-        3 => b"$3".as_ref().into(),
-        4 => b"$4".as_ref().into(),
-        5 => b"$5".as_ref().into(),
-        6 => b"$6".as_ref().into(),
-        7 => b"$7".as_ref().into(),
-        8 => b"$8".as_ref().into(),
-        9 => b"$9".as_ref().into(),
-        10 => b"$10".as_ref().into(),
-        11 => b"$11".as_ref().into(),
-        12 => b"$12".as_ref().into(),
-        13 => b"$13".as_ref().into(),
-        14 => b"$14".as_ref().into(),
-        15 => b"$15".as_ref().into(),
-        16 => b"$16".as_ref().into(),
-        17 => b"$17".as_ref().into(),
-        18 => b"$18".as_ref().into(),
-        19 => b"$19".as_ref().into(),
-        20 => b"$20".as_ref().into(),
-        num => {
-            let mut buf = String::from("$");
-            // Suppress fmt errors because this function is infallible.
-            //
-            // In practice `itoa::fmt` will never error because the `fmt::Write`
-            // impl for `String` never panics.
-            let _ = itoa::fmt(&mut buf, num);
-            buf.into_bytes().into()
-        }
-    }
-}
 
 pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Error> {
     let mut idx = interp.active_regexp_globals()?;
@@ -287,7 +231,7 @@ impl Regexp {
     #[inline]
     #[must_use]
     pub fn is_casefold(&self) -> bool {
-        self.0.literal_config().options.ignore_case.is_enabled()
+        self.0.literal_config().options.ignore_case().is_enabled()
     }
 
     #[must_use]
