@@ -1,6 +1,8 @@
 use bstr::ByteSlice;
 
+#[cfg(feature = "core-regexp")]
 use crate::extn::core::matchdata::MatchData;
+#[cfg(feature = "core-regexp")]
 use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::prelude::*;
 
@@ -25,12 +27,16 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
         let mut message = String::from("wrong argument type ");
         message.push_str(interp.inspect_type_name_for_value(pattern));
         message.push_str(" (expected Regexp)");
-        Err(TypeError::from(message).into())
-    } else if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut pattern, interp) } {
+        return Err(TypeError::from(message).into());
+    }
+    #[cfg(feature = "core-regexp")]
+    if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut pattern, interp) } {
         let haystack = value.try_into_mut::<&[u8]>(interp)?;
         let scan = regexp.inner().scan(interp, haystack, block)?;
-        Ok(interp.try_convert_mut(scan)?.unwrap_or(value))
-    } else if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
+        return Ok(interp.try_convert_mut(scan)?.unwrap_or(value));
+    }
+    #[cfg(feature = "core-regexp")]
+    if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
         let string = value.try_into_mut::<&[u8]>(interp)?;
         if let Some(ref block) = block {
             let regex = Regexp::lazy(pattern_bytes.to_vec());
@@ -63,7 +69,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
             } else {
                 interp.unset_global_variable(regexp::LAST_MATCH)?;
             }
-            Ok(value)
+            return Ok(value);
         } else {
             let (matches, last_pos) = string
                 .find_iter(pattern_bytes)
@@ -83,12 +89,42 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
             } else {
                 interp.unset_global_variable(regexp::LAST_MATCH)?;
             }
-            interp.try_convert_mut(result)
+            return interp.try_convert_mut(result);
         }
-    } else {
-        let mut message = String::from("wrong argument type ");
-        message.push_str(interp.inspect_type_name_for_value(pattern));
-        message.push_str(" (expected Regexp)");
-        Err(TypeError::from(message).into())
     }
+    #[cfg(not(feature = "core-regexp"))]
+    if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
+        let string = value.try_into_mut::<&[u8]>(interp)?;
+        if let Some(ref block) = block {
+            let patlen = pattern_bytes.len();
+            if let Some(pos) = string.find(pattern_bytes) {
+                let block_arg = interp.convert_mut(pattern_bytes);
+                let _ = block.yield_arg(interp, &block_arg)?;
+
+                let offset = pos + patlen;
+                let string = string.get(offset..).unwrap_or_default();
+                for _ in string.find_iter(pattern_bytes) {
+                    let block_arg = interp.convert_mut(pattern_bytes);
+                    let _ = block.yield_arg(interp, &block_arg)?;
+                }
+            }
+            return Ok(value);
+        } else {
+            let matches = string
+                .find_iter(pattern_bytes)
+                .enumerate()
+                .last()
+                .map(|(m, _)| m + 1)
+                .unwrap_or_default();
+            let mut result = Vec::with_capacity(matches);
+            for _ in 0..matches {
+                result.push(interp.convert_mut(pattern_bytes));
+            }
+            return interp.try_convert_mut(result);
+        }
+    }
+    let mut message = String::from("wrong argument type ");
+    message.push_str(interp.inspect_type_name_for_value(pattern));
+    message.push_str(" (expected Regexp)");
+    Err(TypeError::from(message).into())
 }
