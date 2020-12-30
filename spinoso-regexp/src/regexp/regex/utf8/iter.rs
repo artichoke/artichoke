@@ -1,6 +1,7 @@
-use core::iter::Enumerate;
+use core::iter::{Enumerate, FusedIterator};
+use regex::CaptureNames;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Captures<'a> {
     captures: regex::Captures<'a>,
     idx: usize,
@@ -16,7 +17,7 @@ impl<'a> Iterator for Captures<'a> {
     type Item = Option<&'a [u8]>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let subcapture = match self.captures().iter.skip(self.idx).next() {
+        let subcapture = match self.captures.iter().skip(self.idx).next() {
             Some(Some(capture)) => Some(capture.as_str().as_bytes()),
             Some(None) => None,
             None => return None,
@@ -42,14 +43,13 @@ impl<'a> Iterator for Captures<'a> {
 
 impl<'a> FusedIterator for Captures<'a> {}
 
-#[derive(Debug, Clone)]
 pub struct CaptureIndices<'a, 'b> {
     name: &'b [u8],
     capture_names: Enumerate<CaptureNames<'a>>,
 }
 
 impl<'a, 'b> CapturesIndices<'a, 'b> {
-    pub(crate) const fn with_name_and_iter(name: &'b [u8], iter: CaptureNames<'a>) -> Self {
+    pub(crate) fn with_name_and_iter(name: &'b [u8], iter: CaptureNames<'a>) -> Self {
         Self {
             name,
             capture_names: iter.enumerate(),
