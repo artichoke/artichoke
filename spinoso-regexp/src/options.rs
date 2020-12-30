@@ -28,7 +28,7 @@ impl RegexpOption {
     ///
     /// An option is enabled if it is equal to [`RegexpOption::Enabled`].
     #[must_use]
-    pub fn is_enabled(self) -> bool {
+    pub const fn is_enabled(self) -> bool {
         matches!(self, Self::Enabled)
     }
 }

@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate bitflags;
 
+use bstr::ByteSlice;
+use core::fmt;
 use core::num::NonZeroUsize;
 use std::borrow::Cow;
 
@@ -47,10 +49,122 @@ pub const HIGHEST_MATCH_GROUP: &[u8] = b"$+";
 /// The information about the last match in the current scope.
 pub const LAST_MATCH: &[u8] = b"$~";
 
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Source {
+    pattern: Vec<u8>,
+    options: Options,
+}
+
+impl fmt::Debug for Source {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Source")
+            .field("pattern", &self.pattern.as_bstr())
+            .field("options", &self.options)
+            .finish()
+    }
+}
+
+impl From<Config> for Source {
+    fn from(config: Config) -> Self {
+        Self::with_pattern_and_options(config.pattern.clone(), config.options)
+    }
+}
+
+impl From<&Config> for Source {
+    fn from(config: &Config) -> Self {
+        Self::with_pattern_and_options(config.pattern.clone(), config.options)
+    }
+}
+
+impl Source {
+    /// Construct a new, empty `Source`.
+    pub const fn new() -> Self {
+        Self {
+            pattern: Vec::new(),
+            options: Options::new(),
+        }
+    }
+
+    /// Construct a new `Source` with the given pattern and [`Options`].
+    pub const fn with_pattern_and_options(pattern: Vec<u8>, options: Options) -> Self {
+        Self { pattern, options }
+    }
+
+    /// Whether this source was parsed with ignore case enabled.
+    pub const fn is_casefold(&self) -> bool {
+        self.options.ignore_case().is_enabled()
+    }
+
+    /// Whether the Regexp was parsed as a literal, e.g. `'/artichoke/i`.
+    ///
+    /// This enables Ruby parsers to inject whether a Regexp is a literal to the
+    /// core library. Literal Regexps have some special behavior regrding
+    /// capturing groups and report parse failures differently.
+    pub const fn is_literal(&self) -> bool {
+        self.options.is_literal()
+    }
+
+    /// Extracts a slice containing the entire pattern.
+    pub fn pattern(&self) -> &[u8] {
+        self.pattern.as_slice()
+    }
+
+    /// Return a copy of the underlying [`Options`].
+    pub const fn options(&self) -> Options {
+        self.options
+    }
+}
+
+#[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Config {
     pattern: Vec<u8>,
     options: Options,
+}
+
+impl fmt::Debug for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Source")
+            .field("pattern", &self.pattern.as_bstr())
+            .field("options", &self.options)
+            .finish()
+    }
+}
+
+impl From<Source> for Config {
+    fn from(source: Source) -> Self {
+        Self::with_pattern_and_options(source.pattern.clone(), source.options)
+    }
+}
+
+impl From<&Source> for Config {
+    fn from(source: &Source) -> Self {
+        Self::with_pattern_and_options(source.pattern.clone(), source.options)
+    }
+}
+
+impl Config {
+    /// Construct a new, empty `Config`.
+    pub const fn new() -> Self {
+        Self {
+            pattern: Vec::new(),
+            options: Options::new(),
+        }
+    }
+
+    /// Construct a new `Config` with the given pattern and [`Options`].
+    pub const fn with_pattern_and_options(pattern: Vec<u8>, options: Options) -> Self {
+        Self { pattern, options }
+    }
+
+    /// Extracts a slice containing the entire pattern.
+    pub fn pattern(&self) -> &[u8] {
+        self.pattern.as_slice()
+    }
+
+    /// Return a copy of the underlying [`Options`].
+    pub const fn options(&self) -> Options {
+        self.options
+    }
 }
 
 /// Global variable name for the nth capture group from a `Regexp` match.
