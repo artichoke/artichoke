@@ -64,19 +64,19 @@ pub fn is_meta_character(c: char) -> bool {
 
 /// Returns true if the given character is non-printable and needs to be quoted.
 #[must_use]
-pub fn is_non_printable_character(c: char) -> bool {
-    match c {
-        '\n' | '\r' | '\t' => true,
+pub const fn is_non_printable_character(c: char) -> bool {
+    matches!(
+        c,
+        '\n' | '\r' | '\t' |
         // form feed aka "\f"
-        '\u{C}' => true,
-        _ => false,
-    }
+        '\u{C}'
+    )
 }
 
 /// Returns `Some(_)` if the given character is non-printable and Rust does not
 /// support the escape sequence.
 #[must_use]
-pub fn is_non_supported_non_printable_character(c: char) -> Option<&'static str> {
+pub const fn is_non_supported_non_printable_character(c: char) -> Option<&'static str> {
     match c {
         // form feed aka "\f"
         '\u{C}' => Some(r"\f"),
