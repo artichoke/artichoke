@@ -222,7 +222,7 @@ mod tests {
         assert!(matches!(rand(&mut random, Max::Integer(1)), Ok(Rand::Integer(0))));
         assert!(matches!(
             rand(&mut random, Max::Integer(9000)),
-            Ok(Rand::Integer(num)) if num < 9000 && num >= 0
+            Ok(Rand::Integer(ref num)) if (0..9000).contains(num)
         ));
         assert!(matches!(
             rand(&mut random, Max::Integer(i64::MAX)),
