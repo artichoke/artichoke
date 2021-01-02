@@ -11,6 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     class::Builder::for_spec(interp, &spec)
         .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))?
         .add_method("[]=", ary_element_assignment, sys::mrb_args_req_and_opt(2, 1))?
+        .add_method("clear", ary_clear, sys::mrb_args_none())?
         .add_method("concat", ary_concat, sys::mrb_args_any())?
         .add_method(
             "initialize",
@@ -71,6 +72,21 @@ unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -
     let array = Value::from(ary);
     let other = other.map(Value::from);
     let result = array::trampoline::concat(&mut guard, array, other);
+    match result {
+        Ok(value) => {
+            let basic = sys::mrb_sys_basic_ptr(ary);
+            sys::mrb_write_barrier(mrb, basic);
+            value.inner()
+        }
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn ary_clear(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let array = Value::from(ary);
+    let result = array::trampoline::clear(&mut guard, array);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
