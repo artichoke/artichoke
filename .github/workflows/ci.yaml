@@ -29,11 +29,6 @@ jobs:
         with:
           profile: minimal
 
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-
       # Avoid using the `choco` package manager to install deps on Windows
       # runners because it takes a non-trivial amount of time to initialize on
       # first use. Instead, install `bison` directly from GitHub releases using
@@ -87,11 +82,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
 
       - name: Compile with locked Cargo.lock
         run: cargo build --locked
@@ -201,11 +191,6 @@ jobs:
         with:
           profile: minimal
           components: rustfmt, clippy
-
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
 
       - name: Check formatting
         run: cargo fmt -- --check --color=auto

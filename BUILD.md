@@ -91,34 +91,6 @@ default, mruby requires the following to compile:
 You can override the requirement for clang by setting the `CC` and `LD`
 environment variables.
 
-### Ruby Toolchain
-
-Artichoke requires a recent Ruby 2.x and [bundler] 2.x. The
-[`.ruby-version`](.ruby-version) file in this repository specifies Ruby 2.6.3.
-
-If you use [RVM], you can install Ruby dependencies by running:
-
-```sh
-rvm install "$(cat .ruby-version)"
-gem install bundler
-```
-
-If you use [rbenv] and [ruby-build], you can install Ruby dependencies by
-running:
-
-```sh
-rbenv install "$(cat .ruby-version)"
-gem install bundler
-rbenv rehash
-```
-
-The [`Gemfile`](Gemfile) in Artichoke specifies several dev dependencies. You
-can install these dependencies by running:
-
-```sh
-bundle install
-```
-
 [artichoke/playground]: https://github.com/artichoke/playground
 [rustup]: https://rustup.rs/
 [homebrew]: https://docs.brew.sh/Installation
@@ -126,7 +98,3 @@ bundle install
 [`cc` crate]: https://crates.io/crates/cc
 [platform-dependent c compiler]:
   https://github.com/alexcrichton/cc-rs#compile-time-requirements
-[bundler]: https://bundler.io/
-[rvm]: https://rvm.io/
-[rbenv]: https://github.com/rbenv/rbenv
-[ruby-build]: https://github.com/rbenv/ruby-build

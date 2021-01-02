@@ -44,11 +44,6 @@ mod buildpath {
         use std::path::PathBuf;
 
         pub fn rerun_if_changed(paths: &mut Vec<PathBuf>) {
-            paths.push(mruby_build_config());
-            paths.push(mruby_bootstrap_gembox());
-            paths.push(mruby_bootstrap_gembox());
-            paths.push(mruby_noop());
-
             crate::enumerate_sources(mruby_vendored_include_dir(), paths).unwrap();
             crate::enumerate_sources(mruby_vendored_source_dir(), paths).unwrap();
             crate::enumerate_sources(mruby_sys_ext_include_dir(), paths).unwrap();
@@ -61,18 +56,6 @@ mod buildpath {
 
         pub fn mruby_vendored_source_dir() -> PathBuf {
             super::crate_root().join("vendor").join("mruby").join("src")
-        }
-
-        pub fn mruby_build_config() -> PathBuf {
-            super::crate_root().join("mruby_build_config_null.rb")
-        }
-
-        pub fn mruby_bootstrap_gembox() -> PathBuf {
-            super::crate_root().join("bootstrap.gembox")
-        }
-
-        pub fn mruby_noop() -> PathBuf {
-            super::crate_root().join("scripts").join("noop.rb")
         }
 
         pub fn mruby_sys_ext_source_dir() -> PathBuf {
@@ -95,7 +78,6 @@ mod libmruby {
     use std::ffi::OsStr;
     use std::fs;
     use std::path::PathBuf;
-    use std::process::Command;
     use std::str;
     use target_lexicon::{Architecture, OperatingSystem, Triple};
 
@@ -117,18 +99,6 @@ mod libmruby {
         ]
     }
 
-    pub fn mruby_build_config() -> PathBuf {
-        mruby_source_dir().join("build_config.rb")
-    }
-
-    pub fn bootstrap_gembox() -> PathBuf {
-        mruby_source_dir().join("bootstrap.gembox")
-    }
-
-    pub fn builder_noop() -> PathBuf {
-        mruby_source_dir().join("noop.rb")
-    }
-
     fn wasm_include_dir() -> PathBuf {
         buildpath::crate_root()
             .join("vendor")
@@ -142,10 +112,6 @@ mod libmruby {
         buildpath::build_root().join("mruby")
     }
 
-    fn mruby_minirake() -> PathBuf {
-        mruby_source_dir().join("minirake")
-    }
-
     fn mruby_include_dir() -> PathBuf {
         mruby_source_dir().join("include")
     }
@@ -154,47 +120,12 @@ mod libmruby {
         buildpath::build_root().join("mruby-build")
     }
 
-    fn mruby_generated_source_dir() -> PathBuf {
-        mruby_build_dir().join("sys")
-    }
-
-    fn mruby_generated_gembox() -> PathBuf {
-        mruby_source_dir().join("sys.gembox")
-    }
-
     fn bindgen_source_header() -> PathBuf {
         buildpath::source::mruby_sys_ext_include_dir().join("mruby-sys.h")
     }
 
-    fn generate_mrbgem_config() {
-        let mut gembox = String::from("MRuby::GemBox.new do |conf|");
-        for gem in gems() {
-            gembox.push_str("  conf.gem core: '");
-            gembox.push_str(gem);
-            gembox.push_str("'\n");
-        }
-        gembox.push_str("end\n");
-        fs::write(mruby_generated_gembox(), gembox).unwrap();
-    }
-
     /// Build the mruby static library with its built in minirake build system.
     fn staticlib(target: &Triple, mrb_int: &str) {
-        // minirake dynamically generates some c source files so we can't build
-        // directly with the `cc` crate. We must first hijack the mruby build
-        // system to do the codegen for us.
-        generate_mrbgem_config();
-        let status = Command::new("ruby")
-            .arg(mruby_minirake())
-            .arg("--verbose")
-            .env("MRUBY_BUILD_DIR", mruby_build_dir())
-            .env("MRUBY_CONFIG", mruby_build_config())
-            .current_dir(mruby_source_dir())
-            .status()
-            .unwrap();
-        if !status.success() {
-            panic!("minirake failed");
-        }
-
         let mut sources = HashMap::new();
         sources.insert(
             buildpath::source::mruby_sys_ext_source_file(),
@@ -226,20 +157,6 @@ mod libmruby {
             }
         }
 
-        let mut mruby_codegen_sources = vec![];
-        crate::enumerate_sources(mruby_generated_source_dir(), &mut mruby_codegen_sources).unwrap();
-        for source in mruby_codegen_sources {
-            let relative_source = source.strip_prefix(mruby_generated_source_dir()).unwrap();
-            let is_test_source = relative_source
-                .components()
-                .any(|component| component.as_os_str() == OsStr::new("test"));
-            if is_test_source {
-                continue;
-            }
-            if source.extension().and_then(OsStr::to_str) == Some("c") {
-                sources.insert(relative_source.to_owned(), source.to_owned());
-            }
-        }
         // Build the extension library
         let mut build = cc::Build::new();
         build
@@ -345,15 +262,7 @@ mod build {
         )
         .unwrap();
 
-        let _ = fs::remove_file(libmruby::mruby_build_config());
         fs::create_dir_all(libmruby::mruby_build_dir()).unwrap();
-        fs::copy(buildpath::source::mruby_build_config(), libmruby::mruby_build_config()).unwrap();
-        fs::copy(
-            buildpath::source::mruby_bootstrap_gembox(),
-            libmruby::bootstrap_gembox(),
-        )
-        .unwrap();
-        fs::copy(buildpath::source::mruby_noop(), libmruby::builder_noop()).unwrap();
     }
 
     pub fn rerun_if_changed() {
