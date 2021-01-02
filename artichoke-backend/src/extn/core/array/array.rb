@@ -329,11 +329,6 @@ class Array
     satisfied ? low : nil
   end
 
-  def clear
-    self[0, length] = []
-    self
-  end
-
   def collect(&block)
     return to_enum :collect unless block
 
