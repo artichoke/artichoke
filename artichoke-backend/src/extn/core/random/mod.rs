@@ -133,7 +133,7 @@ pub fn urandom(size: Int) -> Result<Vec<u8>, Error> {
             spinoso_random::urandom(&mut buf)?;
             Ok(buf)
         }
-        Err(_) => Err(ArgumentError::from("negative string size (or size too big)").into()),
+        Err(_) => Err(ArgumentError::with_message("negative string size (or size too big)").into()),
     }
 }
 
@@ -204,7 +204,7 @@ impl Random {
                 self.fill_bytes(&mut buf);
                 Ok(buf)
             }
-            Err(_) => Err(ArgumentError::from("negative string size (or size too big)").into()),
+            Err(_) => Err(ArgumentError::with_message("negative string size (or size too big)").into()),
         }
     }
 

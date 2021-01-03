@@ -16,8 +16,8 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
         // All `char`s are valid `u32`s
         // https://github.com/rust-lang/rust/blob/1.48.0/library/core/src/char/convert.rs#L12-L20
         Some(ch) => u32::from(ch),
-        None if size == 0 => return Err(ArgumentError::from("empty string").into()),
-        None => return Err(ArgumentError::from("invalid byte sequence in UTF-8").into()),
+        None if size == 0 => return Err(ArgumentError::with_message("empty string").into()),
+        None => return Err(ArgumentError::with_message("invalid byte sequence in UTF-8").into()),
     };
     Ok(interp.convert(ord))
 }

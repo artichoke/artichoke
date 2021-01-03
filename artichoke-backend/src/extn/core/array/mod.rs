@@ -193,7 +193,7 @@ impl Array {
         let vector = match (first, second, block) {
             (Some(mut array_or_len), default, None) => {
                 if let Ok(len) = array_or_len.try_into::<Int>(interp) {
-                    let len = usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
+                    let len = usize::try_from(len).map_err(|_| ArgumentError::with_message("negative array size"))?;
                     let default = default.unwrap_or_else(Value::nil);
                     SpinosoArray::with_len_and_default(len, default.inner())
                 } else {
@@ -217,7 +217,8 @@ impl Array {
                         }
                     } else {
                         let len = array_or_len.implicitly_convert_to_int(interp)?;
-                        let len = usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
+                        let len =
+                            usize::try_from(len).map_err(|_| ArgumentError::with_message("negative array size"))?;
                         let default = default.unwrap_or_else(Value::nil);
                         SpinosoArray::with_len_and_default(len, default.inner())
                     }
@@ -225,14 +226,14 @@ impl Array {
             }
             (Some(mut array_or_len), default, Some(block)) => {
                 if let Ok(len) = array_or_len.try_into::<Int>(interp) {
-                    let len = usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
+                    let len = usize::try_from(len).map_err(|_| ArgumentError::with_message("negative array size"))?;
                     if default.is_some() {
                         interp.warn(b"warning: block supersedes default value argument")?;
                     }
                     let mut buffer = SpinosoArray::with_capacity(len);
                     for idx in 0..len {
                         let idx = Int::try_from(idx)
-                            .map_err(|_| RangeError::from("bignum too big to convert into `long'"))?;
+                            .map_err(|_| RangeError::with_message("bignum too big to convert into `long'"))?;
                         let idx = interp.convert(idx);
                         let elem = block.yield_arg(interp, &idx)?;
                         buffer.push(elem.inner());
@@ -259,14 +260,15 @@ impl Array {
                         }
                     } else {
                         let len = array_or_len.implicitly_convert_to_int(interp)?;
-                        let len = usize::try_from(len).map_err(|_| ArgumentError::from("negative array size"))?;
+                        let len =
+                            usize::try_from(len).map_err(|_| ArgumentError::with_message("negative array size"))?;
                         if default.is_some() {
                             interp.warn(b"warning: block supersedes default value argument")?;
                         }
                         let mut buffer = SpinosoArray::with_capacity(len);
                         for idx in 0..len {
                             let idx = Int::try_from(idx)
-                                .map_err(|_| RangeError::from("bignum too big to convert into `long'"))?;
+                                .map_err(|_| RangeError::with_message("bignum too big to convert into `long'"))?;
                             let idx = interp.convert(idx);
                             let elem = block.yield_arg(interp, &idx)?;
                             buffer.push(elem.inner());

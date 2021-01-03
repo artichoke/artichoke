@@ -17,7 +17,7 @@ pub fn begin(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<
     let begin = data.begin(capture)?;
     match begin.map(Int::try_from) {
         Some(Ok(begin)) => Ok(interp.convert(begin)),
-        Some(Err(_)) => Err(ArgumentError::from("input string too long").into()),
+        Some(Err(_)) => Err(ArgumentError::with_message("input string too long").into()),
         None => Ok(Value::nil()),
     }
 }
@@ -52,7 +52,8 @@ pub fn element_reference(
         // NOTE(lopopolo): Encapsulation is broken here by reaching into the
         // inner regexp.
         let captures_len = data.regexp.inner().captures_len(None)?;
-        let rangelen = Int::try_from(captures_len).map_err(|_| ArgumentError::from("input string too long"))?;
+        let rangelen =
+            Int::try_from(captures_len).map_err(|_| ArgumentError::with_message("input string too long"))?;
         if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
             CaptureAt::StartLen(start, len)
         } else {
@@ -73,7 +74,7 @@ pub fn end(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Va
     let end = data.end(capture)?;
     match end.map(Int::try_from) {
         Some(Ok(end)) => Ok(interp.convert(end)),
-        Some(Err(_)) => Err(ArgumentError::from("input string too long").into()),
+        Some(Err(_)) => Err(ArgumentError::with_message("input string too long").into()),
         None => Ok(Value::nil()),
     }
 }
@@ -84,7 +85,7 @@ pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> 
     if let Ok(len) = Int::try_from(len) {
         Ok(interp.convert(len))
     } else {
-        Err(ArgumentError::from("input string too long").into())
+        Err(ArgumentError::with_message("input string too long").into())
     }
 }
 
@@ -112,7 +113,7 @@ pub fn offset(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result
             let ary = Array::assoc(interp.convert(begin), interp.convert(end));
             Array::alloc_value(ary, interp)
         } else {
-            Err(ArgumentError::from("input string too long").into())
+            Err(ArgumentError::with_message("input string too long").into())
         }
     } else {
         let ary = Array::assoc(Value::nil(), Value::nil());

@@ -150,7 +150,7 @@ impl Integer {
                 let denom = denominator.try_into::<Int>(interp)?;
                 let value = self.as_i64();
                 if denom == 0 {
-                    Err(ZeroDivisionError::from("divided by 0").into())
+                    Err(ZeroDivisionError::with_message("divided by 0").into())
                 } else if value < 0 && (value % denom) != 0 {
                     Ok(((value / denom) - 1).into())
                 } else {
@@ -165,8 +165,10 @@ impl Integer {
                 let x = interp.convert(self);
                 let coerced = numeric::coerce(interp, x, denominator)?;
                 match coerced {
-                    Coercion::Float(_, denom) if denom == 0.0 => Err(ZeroDivisionError::from("divided by 0").into()),
-                    Coercion::Integer(_, 0) => Err(ZeroDivisionError::from("divided by 0").into()),
+                    Coercion::Float(_, denom) if denom == 0.0 => {
+                        Err(ZeroDivisionError::with_message("divided by 0").into())
+                    }
+                    Coercion::Integer(_, 0) => Err(ZeroDivisionError::with_message("divided by 0").into()),
                     Coercion::Float(numer, denom) => Ok((numer / denom).into()),
                     Coercion::Integer(numer, denom) if numer < 0 && (numer % denom) != 0 => {
                         Ok(((numer / denom) - 1).into())

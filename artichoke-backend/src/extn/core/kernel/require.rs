@@ -14,7 +14,7 @@ const RUBY_EXTENSION: &str = "rb";
 pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
-        return Err(ArgumentError::from("path name contains null byte").into());
+        return Err(ArgumentError::with_message("path name contains null byte").into());
     }
     let file = ffi::bytes_to_os_str(filename)?;
     let pathbuf;
@@ -29,7 +29,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
         return Err(LoadError::from(message).into());
     }
     let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-        .ok_or_else(|| ArgumentError::from("path name contains null byte"))?;
+        .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
     interp.push_context(context)?;
     let result = interp.load_source(path);
     let _ = interp.pop_context()?;
@@ -39,7 +39,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
 pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<RelativePath>) -> Result<bool, Error> {
     let filename = filename.implicitly_convert_to_string(interp)?;
     if filename.find_byte(b'\0').is_some() {
-        return Err(ArgumentError::from("path name contains null byte").into());
+        return Err(ArgumentError::with_message("path name contains null byte").into());
     }
     let file = ffi::bytes_to_os_str(filename)?;
     let path = Path::new(file);
@@ -66,7 +66,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<Relativ
     };
     if interp.source_is_file(&path)? {
         let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-            .ok_or_else(|| ArgumentError::from("path name contains null byte"))?;
+            .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         interp.push_context(context)?;
         let result = interp.require_source(&path);
         let _ = interp.pop_context()?;
@@ -75,7 +75,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<Relativ
     if let Some(path) = alternate {
         if interp.source_is_file(&path)? {
             let context = Context::new(ffi::os_str_to_bytes(path.as_os_str())?.to_vec())
-                .ok_or_else(|| ArgumentError::from("path name contains null byte"))?;
+                .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
             interp.push_context(context)?;
             let result = interp.require_source(&path);
             let _ = interp.pop_context()?;

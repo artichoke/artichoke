@@ -111,7 +111,7 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
     let exponent = match exponent {
         Ok(exp) => exp,
         Err(Ok(exp)) if exp.is_nan() => {
-            return Err(RangeError::from("float NaN out of range of integer").into());
+            return Err(RangeError::with_message("float NaN out of range of integer").into());
         }
         Err(Ok(exp)) => {
             // This saturating cast will be rejected by the `i32::try_from`

@@ -58,7 +58,7 @@ impl Eval for Artichoke {
 
     fn eval_file(&mut self, file: &Path) -> Result<Self::Value, Self::Error> {
         let context = Context::new(ffi::os_str_to_bytes(file.as_os_str())?.to_vec())
-            .ok_or_else(|| ArgumentError::from("path name contains null byte"))?;
+            .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         self.push_context(context)?;
         let code = self.read_source_file_contents(file)?.into_owned();
         let result = self.eval(code.as_slice());

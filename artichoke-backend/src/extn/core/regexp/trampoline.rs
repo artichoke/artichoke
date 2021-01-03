@@ -81,7 +81,7 @@ pub fn match_operator(interp: &mut Artichoke, mut regexp: Value, mut pattern: Va
     let pos = regexp.match_operator(interp, pattern)?;
     match pos.map(Int::try_from) {
         Some(Ok(pos)) => Ok(interp.convert(pos)),
-        Some(Err(_)) => Err(ArgumentError::from("string too long").into()),
+        Some(Err(_)) => Err(ArgumentError::with_message("string too long").into()),
         None => Ok(Value::nil()),
     }
 }

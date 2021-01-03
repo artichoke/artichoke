@@ -115,7 +115,7 @@ impl Regexp {
         if let Ok(pattern) = str::from_utf8(pattern) {
             Ok(syntax::escape(pattern))
         } else {
-            Err(ArgumentError::from("invalid encoding (non UTF-8)").into())
+            Err(ArgumentError::with_message("invalid encoding (non UTF-8)").into())
         }
     }
 
@@ -132,7 +132,7 @@ impl Regexp {
                 if let Ok(pattern) = str::from_utf8(bytes) {
                     Ok(syntax::escape(pattern).into_bytes())
                 } else {
-                    Err(ArgumentError::from("invalid encoding (non UTF-8)").into())
+                    Err(ArgumentError::with_message("invalid encoding (non UTF-8)").into())
                 }
             }
         }
@@ -262,7 +262,7 @@ impl Regexp {
                 if let Ok(idx) = Int::try_from(idx) {
                     fixnums.push(idx);
                 } else {
-                    return Err(ArgumentError::from("string too long").into());
+                    return Err(ArgumentError::with_message("string too long").into());
                 }
             }
             converted.push((name, fixnums));
