@@ -21,7 +21,7 @@ impl CoerceToNumeric for Artichoke {
         match value.ruby_type() {
             Ruby::Float => return value.try_into(self),
             Ruby::Fixnum => return value.try_into::<i64>(self).map(|int| int as f64),
-            Ruby::Nil => return Err(TypeError::from("can't convert nil into Float").into()),
+            Ruby::Nil => return Err(TypeError::with_message("can't convert nil into Float").into()),
             _ => {}
         }
         // TODO: This branch should use `numeric::coerce`

@@ -58,7 +58,7 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
     fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Option<Radix>, Self::Error> {
         if let Some(value) = value {
             let num = value.implicitly_convert_to_int(self)?;
-            let radix = u32::try_from(num).map_err(|_| ArgumentError::from("invalid radix"))?;
+            let radix = u32::try_from(num).map_err(|_| ArgumentError::with_message("invalid radix"))?;
             if (2..=36).contains(&radix) {
                 Ok(Radix::new(radix))
             } else {

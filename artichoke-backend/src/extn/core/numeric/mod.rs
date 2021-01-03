@@ -79,7 +79,7 @@ pub enum Coercion {
 pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Error> {
     fn do_coerce(interp: &mut Artichoke, x: Value, y: Value, depth: u8) -> Result<Coercion, Error> {
         if depth > MAX_COERCE_DEPTH {
-            return Err(SystemStackError::from("stack level too deep").into());
+            return Err(SystemStackError::with_message("stack level too deep").into());
         }
         match (x.ruby_type(), y.ruby_type()) {
             (Ruby::Float, Ruby::Float) => Ok(Coercion::Float(x.try_into(interp)?, y.try_into(interp)?)),
@@ -103,16 +103,16 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Er
                         let coerced = y.funcall(interp, "coerce", &[x], None)?;
                         let coerced: Vec<Value> = interp
                             .try_convert_mut(coerced)
-                            .map_err(|_| TypeError::from("coerce must return [x, y]"))?;
+                            .map_err(|_| TypeError::with_message("coerce must return [x, y]"))?;
                         let mut coerced = coerced.into_iter();
                         let y = coerced
                             .next()
-                            .ok_or_else(|| TypeError::from("coerce must return [x, y]"))?;
+                            .ok_or_else(|| TypeError::with_message("coerce must return [x, y]"))?;
                         let x = coerced
                             .next()
-                            .ok_or_else(|| TypeError::from("coerce must return [x, y]"))?;
+                            .ok_or_else(|| TypeError::with_message("coerce must return [x, y]"))?;
                         if coerced.next().is_some() {
-                            Err(TypeError::from("coerce must return [x, y]").into())
+                            Err(TypeError::with_message("coerce must return [x, y]").into())
                         } else {
                             do_coerce(interp, x, y, depth + 1)
                         }

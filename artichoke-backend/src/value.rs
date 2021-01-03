@@ -128,7 +128,7 @@ impl Value {
             if let Some(int) = int {
                 int
             } else {
-                return Err(TypeError::from("no implicit conversion from nil to integer"));
+                return Err(TypeError::with_message("no implicit conversion from nil to integer"));
             }
         } else if let Ok(true) = self.respond_to(interp, "to_int") {
             if let Ok(maybe) = self.funcall(interp, "to_int", &[], None) {
