@@ -118,7 +118,14 @@ fn description(version: &str, release_date: Date, revision_count: Option<usize>,
 fn compiler_version() -> Option<String> {
     let cmd = env::var_os("RUSTC").unwrap_or_else(|| OsString::from("rustc"));
     let compiler_version = Command::new(cmd).arg("-V").output().ok()?;
-    String::from_utf8(compiler_version.stdout).ok()
+    let compiler_version = String::from_utf8(compiler_version.stdout).ok()?;
+    let mut compiler_version = compiler_version.trim().to_owned();
+    if let Ok(compiler_host) = env::var("HOST") {
+        compiler_version.push_str(" [");
+        compiler_version.push_str(&compiler_host);
+        compiler_version.push(']');
+    }
+    Some(compiler_version)
 }
 
 fn main() {
