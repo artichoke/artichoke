@@ -121,9 +121,8 @@ fn compiler_version() -> Option<String> {
     let compiler_version = String::from_utf8(compiler_version.stdout).ok()?;
     let mut compiler_version = compiler_version.trim().to_owned();
     if let Ok(compiler_host) = env::var("HOST") {
-        compiler_version.push_str(" [");
+        compiler_version.push_str(" on ");
         compiler_version.push_str(&compiler_host);
-        compiler_version.push(']');
     }
     Some(compiler_version)
 }
