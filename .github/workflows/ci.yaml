@@ -63,97 +63,129 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
-      - name: Compile with locked Cargo.lock
-        run: cargo build --locked
+      - name: Check with locked Cargo.lock
+        run: cargo check --locked
 
-      - name: Compile fuzz with locked Cargo.lock
-        run: cargo build --locked
+      - name: Check fuzz with locked Cargo.lock
+        run: cargo check --locked
         working-directory: "fuzz"
 
-      - name: Compile spec-runner with locked Cargo.lock
-        run: cargo build --locked
+      - name: Check spec-runner with locked Cargo.lock
+        run: cargo check --locked
         working-directory: "spec-runner"
 
-      - name: Compile artichoke with no default features
-        run: cargo build --verbose --no-default-features
+      - name: Check artichoke with no default features
+        run: cargo check --verbose --no-default-features
 
-      - name: Compile artichoke with all features
-        run: cargo build --verbose --all-features
+      - name: Check artichoke with all features
+        run: cargo check --verbose --all-features
 
-      - name: Compile spinoso-array with no default features
-        run: cargo build --verbose --no-default-features
+      - name: Check spinoso-array with no default features
+        run: cargo check --verbose --no-default-features
         working-directory: "spinoso-array"
 
-      - name: Compile spinoso-array with all features
-        run: cargo build --verbose --all-features
+      - name: Check spinoso-array with all features
+        run: cargo check --verbose --all-features
         working-directory: "spinoso-array"
 
-      - name: Compile spinoso-env with no default features
-        run: cargo build --verbose --no-default-features
+      - name: Check spinoso-env with no default features
+        run: cargo check --verbose --no-default-features
         working-directory: "spinoso-env"
 
-      - name: Compile spinoso-env with all features
-        run: cargo build --verbose --all-features
+      - name: Check spinoso-env with all features
+        run: cargo check --verbose --all-features
         working-directory: "spinoso-env"
 
-      - name: Compile spinoso-math with no default features
-        run: cargo build --verbose --no-default-features
+      - name: Check spinoso-exception with no default features
+        run: cargo check --verbose --no-default-features
+        working-directory: "spinoso-exception"
+
+      - name: Check spinoso-exception with all features
+        run: cargo check --verbose --all-features
+        working-directory: "spinoso-exception"
+
+      - name: Check spinoso-math with no default features
+        run: cargo check --verbose --no-default-features
         working-directory: "spinoso-math"
 
-      - name: Compile spinoso-math with all features
-        run: cargo build --verbose --all-features
+      - name: Check spinoso-math with all features
+        run: cargo check --verbose --all-features
         working-directory: "spinoso-math"
 
-      - name: Compile spinoso-random with no default features
-        run: cargo build --verbose --no-default-features
+      - name: Check spinoso-random with no default features
+        run: cargo check --verbose --no-default-features
         working-directory: "spinoso-random"
 
-      - name: Compile spinoso-random with all features
-        run: cargo build --verbose --all-features
+      - name: Check spinoso-random with all features
+        run: cargo check --verbose --all-features
         working-directory: "spinoso-random"
 
-      - name: Compile spinoso-random with some features
+      - name: Check spinoso-random with some features
         run: |
-          cargo build --verbose --no-default-features --features rand-core
-          cargo build --verbose --no-default-features --features std
-          cargo build --verbose --no-default-features --features rand
+          cargo check --verbose --no-default-features --features rand-core
+          cargo check --verbose --no-default-features --features std
+          cargo check --verbose --no-default-features --features rand
         working-directory: "spinoso-random"
 
-      - name: Compile spinoso-symbol with no default features
-        run: cargo build --verbose --no-default-features
+      - name: Check spinoso-regexp with no default features
+        run: cargo check --verbose --no-default-features
+        working-directory: "spinoso-regexp"
+
+      - name: Check spinoso-regexp with all features
+        run: cargo check --verbose --all-features
+        working-directory: "spinoso-regexp"
+
+      - name: Check spinoso-securerandom with no default features
+        run: cargo check --verbose --no-default-features
+        working-directory: "spinoso-securerandom"
+
+      - name: Check spinoso-securerandom with all features
+        run: cargo check --verbose --all-features
+        working-directory: "spinoso-securerandom"
+
+      - name: Check spinoso-symbol with no default features
+        run: cargo check --verbose --no-default-features
         working-directory: "spinoso-symbol"
 
-      - name: Compile spinoso-symbol with all features
-        run: cargo build --verbose --all-features
+      - name: Check spinoso-symbol with all features
+        run: cargo check --verbose --all-features
         working-directory: "spinoso-symbol"
 
       - name: Compile spinoso-symbol with some features
         run: |
-          cargo build --verbose --no-default-features --features ident-parser
-          cargo build --verbose --no-default-features --features inspect
-          cargo build --verbose --no-default-features --features inspect,artichoke
+          cargo check --verbose --no-default-features --features ident-parser
+          cargo check --verbose --no-default-features --features inspect
+          cargo check --verbose --no-default-features --features inspect,artichoke
         working-directory: "spinoso-symbol"
 
+      - name: Check spinoso-time with no default features
+        run: cargo check --verbose --no-default-features
+        working-directory: "spinoso-time"
+
+      - name: Check spinoso-time with all features
+        run: cargo check --verbose --all-features
+        working-directory: "spinoso-time"
+
       - name: Compile scolapasta-hex with no default features
-        run: cargo build --verbose --no-default-features
+        run: cargo check --verbose --no-default-features
         working-directory: "scolapasta-hex"
 
       - name: Compile scolapasta-hex with all features
-        run: cargo build --verbose --all-features
+        run: cargo check --verbose --all-features
         working-directory: "scolapasta-hex"
 
       - name: Compile scolapasta-hex with some features
         run: |
-          cargo build --verbose --no-default-features --features alloc
-          cargo build --verbose --no-default-features --features alloc,std
+          cargo check --verbose --no-default-features --features alloc
+          cargo check --verbose --no-default-features --features alloc,std
         working-directory: "scolapasta-hex"
 
       - name: Compile scolapasta-string-escape with no default features
-        run: cargo build --verbose --no-default-features
+        run: cargo check --verbose --no-default-features
         working-directory: "scolapasta-string-escape"
 
       - name: Compile scolapasta-string-escape with all features
-        run: cargo build --verbose --all-features
+        run: cargo check --verbose --all-features
         working-directory: "scolapasta-string-escape"
 
   rust:
@@ -216,17 +248,15 @@ jobs:
           toolchain: nightly
           profile: minimal
 
-      - name: Test compile with minimal versions
+      - name: Check artichoke with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
-          cargo build --workspace --verbose
-          cargo test --workspace --no-run
+          cargo check
 
-      - name: Test compile with minimal versions (spec-runner)
+      - name: Check spec-runner with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
-          cargo build --workspace --verbose
-          cargo test --workspace --no-run
+          cargo check
         working-directory: "spec-runner"
 
   rust-sanitizer:
