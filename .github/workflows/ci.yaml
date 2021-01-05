@@ -127,6 +127,14 @@ jobs:
           cargo check --verbose --no-default-features --features rand
         working-directory: "spinoso-random"
 
+      - name: Check spinoso-regexp with no default features
+        run: cargo check --verbose --no-default-features
+        working-directory: "spinoso-regexp"
+
+      - name: Check spinoso-regexp with all features
+        run: cargo check --verbose --all-features
+        working-directory: "spinoso-regexp"
+
       - name: Check spinoso-symbol with no default features
         run: cargo check --verbose --no-default-features
         working-directory: "spinoso-symbol"
