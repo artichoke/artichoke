@@ -158,6 +158,14 @@ jobs:
           cargo check --verbose --no-default-features --features inspect,artichoke
         working-directory: "spinoso-symbol"
 
+      - name: Check spinoso-time with no default features
+        run: cargo check --verbose --no-default-features
+        working-directory: "spinoso-time"
+
+      - name: Check spinoso-time with all features
+        run: cargo check --verbose --all-features
+        working-directory: "spinoso-time"
+
       - name: Compile scolapasta-hex with no default features
         run: cargo check --verbose --no-default-features
         working-directory: "scolapasta-hex"
