@@ -43,8 +43,47 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
-  build-features:
-    name: Build (non-default features)
+  check-artichoke:
+    name: Check artichoke workspace
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt, clippy
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
+
+      - name: Check artichoke formatting
+        run: cargo fmt -- --check --color=auto
+
+      - name: Lint artichoke with Clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --workspace --all-features --all-targets
+
+      - name: Check artichoke with locked Cargo.lock
+        run: cargo check --locked
+
+      - name: Check artichoke with no default features
+        run: cargo check --verbose --no-default-features
+
+      - name: Check artichoke with all features
+        run: cargo check --verbose --all-features
+
+  check-fuzz:
+    name: Check fuzz workspace
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -D warnings
@@ -63,22 +102,62 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
-      - name: Check with locked Cargo.lock
-        run: cargo check --locked
-
       - name: Check fuzz with locked Cargo.lock
         run: cargo check --locked
         working-directory: "fuzz"
+
+  check-spec-runner:
+    name: Check spec-runner workspace
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustfmt, clippy
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
+
+      - name: Check spec-runner formatting
+        run: cargo fmt -- --check --color=auto
+        working-directory: "spec-runner"
+
+      - name: Lint spec-runner with Clippy
+        run: cargo clippy --workspace --all-features --all-targets
+        working-directory: "spec-runner"
 
       - name: Check spec-runner with locked Cargo.lock
         run: cargo check --locked
         working-directory: "spec-runner"
 
-      - name: Check artichoke with no default features
-        run: cargo check --verbose --no-default-features
+  check-sub-crates:
+    name: Check spinoso and scolapasta crates
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Check artichoke with all features
-        run: cargo check --verbose --all-features
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
 
       - name: Check spinoso-array with no default features
         run: cargo check --verbose --no-default-features
@@ -187,44 +266,6 @@ jobs:
       - name: Compile scolapasta-string-escape with all features
         run: cargo check --verbose --all-features
         working-directory: "scolapasta-string-escape"
-
-  rust:
-    name: Lint and format Rust
-    runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -D warnings
-      RUST_BACKTRACE: 1
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          components: rustfmt, clippy
-
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-
-      - name: Check formatting
-        run: cargo fmt -- --check --color=auto
-
-      - name: Lint with Clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --all-features --all-targets
-
-      - name: Check formatting (spec-runner)
-        run: cargo fmt -- --check --color=auto
-        working-directory: "spec-runner"
-
-      - name: Lint with Clippy (spec-runner)
-        run: cargo clippy --workspace --all-features --all-targets
-        working-directory: "spec-runner"
 
   rust-minimal-versions:
     name: Compile with minimum dependency versions
