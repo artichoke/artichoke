@@ -216,17 +216,15 @@ jobs:
           toolchain: nightly
           profile: minimal
 
-      - name: Test compile with minimal versions
+      - name: Check artichoke with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
-          cargo build --workspace --verbose
-          cargo test --workspace --no-run
+          cargo check
 
-      - name: Test compile with minimal versions (spec-runner)
+      - name: Check spec-runner with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
-          cargo build --workspace --verbose
-          cargo test --workspace --no-run
+          cargo check
         working-directory: "spec-runner"
 
   rust-sanitizer:
