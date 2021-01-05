@@ -1,5 +1,5 @@
 ---
-name: Fuzz
+name: Fuzz and Sanitize
 "on":
   push:
     branches:
@@ -7,7 +7,7 @@ name: Fuzz
   schedule:
     - cron: "0 12 * * *"
 jobs:
-  eval:
+  fuzz-eval:
     name: Fuzz eval
     runs-on: ubuntu-latest
     env:
@@ -38,3 +38,28 @@ jobs:
       - name: Fuzz eval
         if: github.event_name == 'schedule'
         run: cargo fuzz run eval -- -max_total_time=1800 # 30 minutes
+
+  leak-san:
+    name: Compile and test with LeakSanitizer
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings -Z sanitizer=leak
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install nightly Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          target: x86_64-unknown-linux-gnu
+          override: true
+
+      - name: Test with leak sanitizer and all features
+        run: cargo test --workspace --all-features --target x86_64-unknown-linux-gnu
+
+      - name: Test spec-runner with leak sanitizer and all features
+        run: cargo test --workspace --all-features --target x86_64-unknown-linux-gnu
+        working-directory: "spec-runner"

@@ -300,35 +300,6 @@ jobs:
           cargo check
         working-directory: "spec-runner"
 
-  rust-sanitizer:
-    name: Compile and test with sanitizers
-    runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: -D warnings
-      RUST_BACKTRACE: 1
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install nightly Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          target: x86_64-unknown-linux-gnu
-          override: true
-
-      - name: Test with leak sanitizer and all features
-        run: cargo test --workspace --all-features --target x86_64-unknown-linux-gnu
-        env:
-          RUSTFLAGS: "-Z sanitizer=leak"
-
-      - name: Test spec-runner with leak sanitizer and all features
-        run: cargo test --workspace --all-features --target x86_64-unknown-linux-gnu
-        working-directory: "spec-runner"
-        env:
-          RUSTFLAGS: "-Z sanitizer=leak"
-
   ruby:
     name: Lint and format Ruby
     runs-on: ubuntu-latest
