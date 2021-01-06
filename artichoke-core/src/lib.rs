@@ -81,7 +81,7 @@
 //! [`Regexp`]: https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
 //! [convert]: crate::convert
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 #![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_core")]
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
@@ -101,6 +101,8 @@ macro_rules! readme {
 readme!();
 
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod coerce_to_numeric;
 pub mod constant;

@@ -76,13 +76,10 @@
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 //! [`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html
 
-// `spinoso-symbol` is a `no_std` crate unless the `std` feature is enabled.
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 
-// Having access to `String` in tests is convenient to collect `Inspect`
-// iterators for whole content comparisons.
-#[cfg(test)]
-extern crate alloc;
+#[cfg(any(feature = "std", test, doctest))]
+extern crate std;
 
 // Ensure code blocks in README.md compile
 #[cfg(doctest)]
@@ -95,7 +92,7 @@ macro_rules! readme {
         readme!(include_str!("../README.md"));
     };
 }
-#[cfg(doctest)]
+#[cfg(all(feature = "inspect", doctest))]
 readme!();
 
 #[cfg(feature = "artichoke")]

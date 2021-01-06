@@ -54,7 +54,9 @@
 //! Generate random numbers in a range:
 //!
 //! ```
+//! # #[cfg(feature = "rand")]
 //! # use spinoso_random::{rand, Error, Max, Rand, Random};
+//! # #[cfg(feature = "rand")]
 //! # fn example() -> Result<(), Error> {
 //! let mut random = Random::new()?;
 //! let max = Max::Integer(10);
@@ -62,6 +64,7 @@
 //! assert!(matches!(rand, Rand::Integer(x) if x < 10));
 //! # Ok(())
 //! # }
+//! # #[cfg(feature = "rand")]
 //! # example().unwrap();
 //! ```
 //!
@@ -89,7 +92,10 @@
 //! [`rand`]: rand_
 //! [`rand_core`]: rand_core_
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
+
+#[cfg(any(feature = "std", test, doctest))]
+extern crate std;
 
 use core::fmt;
 #[cfg(feature = "std")]
@@ -117,7 +123,7 @@ macro_rules! readme {
         readme!(include_str!("../README.md"));
     };
 }
-#[cfg(doctest)]
+#[cfg(all(feature = "rand", doctest))]
 readme!();
 
 /// Sum type of all errors possibly returned from `Random` functions.

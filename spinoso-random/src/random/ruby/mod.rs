@@ -298,6 +298,7 @@ const fn temper(mut x: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use core::iter;
+    use std::format;
 
     use super::Mt;
 

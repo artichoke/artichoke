@@ -119,9 +119,11 @@
 //! [`SystemExit`]: https://ruby-doc.org/core-2.6.3/SystemExit.html
 //! [`SystemStackError`]: https://ruby-doc.org/core-2.6.3/SystemStackError.html
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 
 extern crate alloc;
+#[cfg(feature = "std")]
+extern crate std;
 
 use alloc::borrow::Cow;
 
