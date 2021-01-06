@@ -1,5 +1,6 @@
 //! Fixtures for tests.
 
+#[cfg(feature = "ident-parser")]
 pub static IDENTS: &[&str] = &[
     r##"!"##,
     r##"%"##,
@@ -1816,6 +1817,7 @@ pub static IDENTS: &[&str] = &[
     r##"$-a"##,
 ];
 
+#[cfg(feature = "inspect")]
 pub static IDENT_INSPECTS: &[&str] = &[
     r##":!"##,
     r##":%"##,
