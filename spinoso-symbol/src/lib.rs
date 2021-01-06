@@ -92,7 +92,7 @@ macro_rules! readme {
         readme!(include_str!("../README.md"));
     };
 }
-#[cfg(doctest)]
+#[cfg(all(feature = "inspect", doctest))]
 readme!();
 
 #[cfg(feature = "artichoke")]
