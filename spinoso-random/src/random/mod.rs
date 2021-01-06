@@ -345,6 +345,8 @@ pub fn new_seed() -> Result<[u32; DEFAULT_SEED_CNT], NewSeedError> {
 
 #[cfg(test)]
 mod tests {
+    use std::format;
+
     use super::Random;
 
     #[test]

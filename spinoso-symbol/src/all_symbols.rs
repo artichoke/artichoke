@@ -205,10 +205,11 @@ impl FusedIterator for AllSymbols {}
 
 #[cfg(test)]
 mod tests {
+    use artichoke_core::intern::Intern;
+    use std::borrow::Cow;
+
     use super::InternerAllSymbols;
     use crate::Symbol;
-    use alloc::borrow::Cow;
-    use artichoke_core::intern::Intern;
 
     #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
     struct Interner(u32);

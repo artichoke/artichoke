@@ -456,8 +456,9 @@ impl<'a> FusedIterator for State<'a> {}
 
 #[cfg(test)]
 mod tests {
+    use std::string::String;
+
     use super::Inspect;
-    use alloc::string::String;
 
     #[test]
     fn empty() {
@@ -753,8 +754,9 @@ mod tests {
 
 #[cfg(test)]
 mod specs {
+    use std::string::String;
+
     use super::{Flags, Inspect};
-    use alloc::string::String;
 
     #[test]
     fn flags_ident() {
@@ -1014,6 +1016,8 @@ mod specs {
 /// ```
 #[cfg(test)]
 mod functionals {
+    use std::string::String;
+
     use super::Inspect;
     use crate::fixtures::{IDENTS, IDENT_INSPECTS};
 
