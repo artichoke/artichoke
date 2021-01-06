@@ -71,13 +71,14 @@
 //! [Base 16 encoding]: https://tools.ietf.org/html/rfc4648#section-8
 //! [`io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
 
-// `scolapasta-hex` is a `no_std` crate unless the `std` feature is enabled.
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
 
 // Having access to `String` in tests is convenient to collect `Inspect`
 // iterators for whole content comparisons.
-#[cfg(any(feature = "alloc", test, doctest))]
+#[cfg(any(feature = "alloc"))]
 extern crate alloc;
+#[cfg(any(feature = "std", test, doctest))]
+extern crate std;
 
 // Ensure code blocks in README.md compile
 #[cfg(doctest)]

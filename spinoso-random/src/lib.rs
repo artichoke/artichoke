@@ -89,7 +89,10 @@
 //! [`rand`]: rand_
 //! [`rand_core`]: rand_core_
 
-#![cfg_attr(not(feature = "std"), no_std)]
+#![no_std]
+
+#[cfg(any(feature = "std", test, doctest))]
+extern crate std;
 
 use core::fmt;
 #[cfg(feature = "std")]
