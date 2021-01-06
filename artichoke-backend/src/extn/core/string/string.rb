@@ -687,34 +687,25 @@ class String
   end
 
   def tr(from_str, to_str)
-    # TODO: Support character ranges c1-c2
-    # TODO: Support backslash escapes
-    to_str = to_str.rjust(from_str.length, to_str[-1]) if to_str.length.positive?
-
-    gsub(Regexp.compile("[#{from_str}]")) do |char|
-      to_str[from_str.index(char) || index(char)] || to_str[-1] || ''
-    end
+    _tr(from_str, to_str, false)
   end
 
   def tr!(from_str, to_str)
-    raise 'frozen string' if frozen?
+    raise FrozenError if frozen?
 
     replaced = tr(from_str, to_str)
     self[0..-1] = replaced unless self == replaced
   end
 
-  def tr_s(_from_str, _to_str)
-    # TODO: Support character ranges c1-c2
-    # TODO: Support backslash escapes
-    raise NotImplementedError
+  def tr_s(from_str, to_str)
+    _tr(from_str, to_str, true)
   end
 
-  def tr_s!(_from_str, _to_str)
-    raise 'frozen string' if frozen?
+  def tr_s!(from_str, to_str)
+    raise FrozenError if frozen?
 
-    # TODO: Support character ranges c1-c2
-    # TODO: Support backslash escapes
-    raise NotImplementedError
+    replaced = tr_s(from_str, to_str)
+    self[0..-1] = replaced unless self == replaced
   end
 
   def undump
@@ -784,5 +775,68 @@ class String
     # mruby does not support encoding, all Strings are UTF-8. This method is a
     # NOOP and is here for compatibility.
     true
+  end
+
+  private
+
+  def tr_expand_str(str)
+    arr = []
+    str_a = str.chars
+    i = 0
+    while i < str_a.length
+      if str_a[i + 1] == '-' && !str_a[i + 2].nil?
+        r = (str_a[i]..str_a[i + 2]).to_a
+        raise ArgumentError if r.empty?
+
+        r[1] = r[0] if r.length == 1
+        r.each do |c|
+          arr.push(c)
+        end
+        i += 3
+      else
+        arr.push(str_a[i])
+        i += 1
+      end
+    end
+    arr
+  end
+
+  def tr_compose_str(container, from, to, skip_double, index_check, retrieve_value)
+    last_c = ''
+    chars.map do |c|
+      index = from.index(c)
+      container << if index_check.call(index)
+                     new_c = retrieve_value.call(to, index)
+                     res = if skip_double && new_c == last_c
+                             ''
+                           else
+                             new_c
+                           end
+                     last_c = new_c
+                     res
+                   else
+                     last_c = ''
+                     c
+                   end
+    end.join
+  end
+
+  def _tr(from_str, to_str, skip_double)
+    from_str = from_str.to_str
+    to_str = to_str.to_str
+
+    result = self.class.new
+
+    if from_str.start_with?('^') && from_str.length > 1
+      from_str = from_str[1..-1]
+      from = tr_expand_str(from_str)
+      to = tr_expand_str(to_str)
+      tr_compose_str(result, from, to, skip_double, ->(index) { index.nil? }, ->(lookup, _) { lookup.last })
+    else
+      from = tr_expand_str(from_str)
+      to = tr_expand_str(to_str)
+      tr_compose_str(result, from, to, skip_double, ->(index) { !index.nil? }, ->(lookup, index) { lookup[index] || lookup.last || '' })
+    end
+    result
   end
 end
