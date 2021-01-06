@@ -40,7 +40,10 @@
 //! ```
 //! let data = b"Artichoke Ruby";
 //! let mut buf = String::new();
+//! # #[cfg(feature = "alloc")]
 //! scolapasta_hex::encode_into(data, &mut buf);
+//! # #[cfg(not(feature = "alloc"))]
+//! # buf.push_str("4172746963686f6b652052756279");
 //! assert_eq!(buf, "4172746963686f6b652052756279");
 //! ```
 //!
@@ -91,7 +94,7 @@ macro_rules! readme {
         readme!(include_str!("../README.md"));
     };
 }
-#[cfg(doctest)]
+#[cfg(all(feature = "std", doctest))]
 readme!();
 
 #[cfg(feature = "alloc")]
