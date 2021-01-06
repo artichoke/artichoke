@@ -255,6 +255,11 @@
     "description": "Status: This issue or pull request is not well-formed."
   },
   {
+    "name": "S-postponed",
+    "color": "d3dddd",
+    "description": "Status: This issue or pull request is being postponed until later."
+  },
+  {
     "name": "S-speculative",
     "color": "d3dddd",
     "description": "Status: This is just an idea."
