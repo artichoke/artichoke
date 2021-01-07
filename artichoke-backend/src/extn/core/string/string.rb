@@ -1,5 +1,67 @@
 # frozen_string_literal: true
 
+module Artichoke
+  class String
+    def self.tr_expand_str(str)
+      arr = []
+      str_a = str.chars
+      i = 0
+      while i < str_a.length
+        if str_a[i + 1] == '-' && !str_a[i + 2].nil?
+          range = (str_a[i]..str_a[i + 2]).to_a
+          raise ArgumentError if range.empty?
+
+          range[1] = range[0] if range.length == 1
+          range.each do |c|
+            arr.push(c)
+          end
+          i += 3
+        else
+          arr.push(str_a[i])
+          i += 1
+        end
+      end
+      arr
+    end
+
+    def self.tr_compose_str(src, container, from, to, skip_double, index_check, retrieve_value)
+      previous_char = ''
+      src.chars.map do |c|
+        index = from.index(c)
+        if index_check.call(index)
+          proposed_replacement_char = retrieve_value.call(to, index)
+          replacement_char = proposed_replacement_char
+          replacement_char = '' if skip_double && proposed_replacement_char == previous_char
+          previous_char = proposed_replacement_char
+          container << replacement_char
+        else
+          previous_char = ''
+          container << c
+        end
+      end.join
+    end
+
+    def self.tr(src, from_str, to_str, skip_double)
+      from_str = from_str.to_str
+      to_str = to_str.to_str
+
+      result = src.class.new
+
+      if from_str.start_with?('^') && from_str.length > 1
+        from_str = from_str[1..-1]
+        from = tr_expand_str(from_str)
+        to = tr_expand_str(to_str)
+        tr_compose_str(src, result, from, to, skip_double, ->(index) { index.nil? }, ->(lookup, _) { lookup.last })
+      else
+        from = tr_expand_str(from_str)
+        to = tr_expand_str(to_str)
+        tr_compose_str(src, result, from, to, skip_double, ->(index) { !index.nil? }, ->(lookup, index) { lookup[index] || lookup.last || '' })
+      end
+      result
+    end
+  end
+end
+
 class Encoding
   class CompatibilityError < StandardError; end
 
@@ -687,7 +749,7 @@ class String
   end
 
   def tr(from_str, to_str)
-    _tr(from_str, to_str, false)
+    Artichoke::String.tr(self, from_str, to_str, false)
   end
 
   def tr!(from_str, to_str)
@@ -698,7 +760,7 @@ class String
   end
 
   def tr_s(from_str, to_str)
-    _tr(from_str, to_str, true)
+    Artichoke::String.tr(self, from_str, to_str, true)
   end
 
   def tr_s!(from_str, to_str)
@@ -775,68 +837,5 @@ class String
     # mruby does not support encoding, all Strings are UTF-8. This method is a
     # NOOP and is here for compatibility.
     true
-  end
-
-  private
-
-  def tr_expand_str(str)
-    arr = []
-    str_a = str.chars
-    i = 0
-    while i < str_a.length
-      if str_a[i + 1] == '-' && !str_a[i + 2].nil?
-        r = (str_a[i]..str_a[i + 2]).to_a
-        raise ArgumentError if r.empty?
-
-        r[1] = r[0] if r.length == 1
-        r.each do |c|
-          arr.push(c)
-        end
-        i += 3
-      else
-        arr.push(str_a[i])
-        i += 1
-      end
-    end
-    arr
-  end
-
-  def tr_compose_str(container, from, to, skip_double, index_check, retrieve_value)
-    last_c = ''
-    chars.map do |c|
-      index = from.index(c)
-      container << if index_check.call(index)
-                     new_c = retrieve_value.call(to, index)
-                     res = if skip_double && new_c == last_c
-                             ''
-                           else
-                             new_c
-                           end
-                     last_c = new_c
-                     res
-                   else
-                     last_c = ''
-                     c
-                   end
-    end.join
-  end
-
-  def _tr(from_str, to_str, skip_double)
-    from_str = from_str.to_str
-    to_str = to_str.to_str
-
-    result = self.class.new
-
-    if from_str.start_with?('^') && from_str.length > 1
-      from_str = from_str[1..-1]
-      from = tr_expand_str(from_str)
-      to = tr_expand_str(to_str)
-      tr_compose_str(result, from, to, skip_double, ->(index) { index.nil? }, ->(lookup, _) { lookup.last })
-    else
-      from = tr_expand_str(from_str)
-      to = tr_expand_str(to_str)
-      tr_compose_str(result, from, to, skip_double, ->(index) { !index.nil? }, ->(lookup, index) { lookup[index] || lookup.last || '' })
-    end
-    result
   end
 end
