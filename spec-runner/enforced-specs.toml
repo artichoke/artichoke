@@ -89,7 +89,7 @@ include = "all"
 
 [specs.core.string]
 include = "set"
-specs = ["scan"]
+specs = ["scan", "tr", "tr_s"]
 
 [specs.core.symbol]
 include = "all"
