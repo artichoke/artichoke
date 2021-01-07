@@ -46,12 +46,6 @@ jobs:
           path: ~/.cargo/registry
           key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
-
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
@@ -98,12 +92,6 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
@@ -155,12 +143,6 @@ jobs:
           path: ~/.cargo/registry
           key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
 
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
-
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
@@ -207,12 +189,6 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
@@ -262,12 +238,6 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
@@ -415,12 +385,6 @@ jobs:
           path: ~/.cargo/registry
           key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
-
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
@@ -463,12 +427,6 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v1
-        with:
-          path: ~/.cargo/git
-          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
