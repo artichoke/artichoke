@@ -44,19 +44,19 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
-          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
           path: target
-          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Compile
         run: cargo build --workspace --verbose
@@ -97,19 +97,19 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
-          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
           path: target
-          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Check artichoke formatting
         run: cargo fmt -- --check --color=auto
@@ -153,19 +153,19 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
+          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
 
       - name: Cache cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
-          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
+          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
           path: target
-          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
 
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
@@ -206,19 +206,19 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Cache cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
-          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
           path: target
-          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Check spec-runner formatting
         run: cargo fmt -- --check --color=auto
@@ -261,19 +261,19 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
-          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
           path: target
-          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Check spinoso-array with no default features
         run: cargo check --verbose --no-default-features
@@ -413,19 +413,19 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
-          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
           path: target
-          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Check artichoke with minimal versions
         run: |
@@ -462,19 +462,19 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Cache cargo index
         uses: actions/cache@v1
         with:
           path: ~/.cargo/git
-          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+          key: cargo-index-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
           path: spec-runner/target
-          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Check spec-runner with minimal versions
         run: |
