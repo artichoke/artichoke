@@ -24,6 +24,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set toolchain versions
+        shell: bash
+        run: |
+          echo "::set-output name=rust::$(cat rust-toolchain)"
+        id: toolchain_versions
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -33,6 +39,24 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Compile
         run: cargo build --workspace --verbose
@@ -53,6 +77,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set toolchain versions
+        run: |
+          echo "::set-output name=rust::$(cat rust-toolchain)"
+        id: toolchain_versions
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -63,6 +92,24 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Check artichoke formatting
         run: cargo fmt -- --check --color=auto
@@ -92,10 +139,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set toolchain versions
+        run: |
+          echo "::set-output name=rust::$(cat rust-toolchain)"
+        id: toolchain_versions
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}
 
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
@@ -116,6 +186,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set toolchain versions
+        run: |
+          echo "::set-output name=rust::$(cat rust-toolchain)"
+        id: toolchain_versions
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -126,6 +201,24 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Check spec-runner formatting
         run: cargo fmt -- --check --color=auto
@@ -149,6 +242,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set toolchain versions
+        run: |
+          echo "::set-output name=rust::$(cat rust-toolchain)"
+        id: toolchain_versions
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -158,6 +256,24 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
 
       - name: Check spinoso-array with no default features
         run: cargo check --verbose --no-default-features
@@ -267,8 +383,8 @@ jobs:
         run: cargo check --verbose --all-features
         working-directory: "scolapasta-string-escape"
 
-  rust-minimal-versions:
-    name: Compile with minimum dependency versions
+  minimal-versions-artichoke:
+    name: Minimum dependency versions (artichoke)
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -D warnings
@@ -277,11 +393,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Set toolchain versions
+        run: |
+          echo "::set-output name=rust::$(cat rust-toolchain)"
+        id: toolchain_versions
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: rustfmt, clippy
 
       - name: Install Rust nightly toolchain
         uses: actions-rs/toolchain@v1
@@ -289,10 +409,72 @@ jobs:
           toolchain: nightly
           profile: minimal
 
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: target
+          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+
       - name: Check artichoke with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
           cargo check
+
+  minimal-versions-spec-runner:
+    name: Minimum dependency versions (spec-runner)
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set toolchain versions
+        run: |
+          echo "::set-output name=rust::$(cat rust-toolchain)"
+        id: toolchain_versions
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Install Rust nightly toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+
+      - name: Cache cargo registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/git
+          key: cargo-index-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v1
+        with:
+          path: spec-runner/target
+          key: cargo-build-target-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}
 
       - name: Check spec-runner with minimal versions
         run: |
