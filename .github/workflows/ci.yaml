@@ -44,13 +44,13 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.cargo/registry
-          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-registry-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v2
 
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
           path: target
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v2
 
       - name: Compile
         run: cargo build --workspace --verbose
