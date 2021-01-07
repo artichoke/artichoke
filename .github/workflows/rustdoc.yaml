@@ -48,11 +48,8 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
-          path: |-
-            target/*/.*
-            target/*/build
-            target/*/deps
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v3
+          path: target
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v4
 
       - name: Build Documentation
         run: cargo doc --workspace

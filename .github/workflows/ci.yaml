@@ -43,11 +43,8 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
-          path: |-
-            target/*/.*
-            target/*/build
-            target/*/deps
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v3
+          path: target
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v4
 
       - name: Compile
         run: cargo build --workspace --verbose
@@ -93,11 +90,8 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
-          path: |-
-            target/*/.*
-            target/*/build
-            target/*/deps
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v3
+          path: target
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v4
 
       - name: Check artichoke formatting
         run: cargo fmt -- --check --color=auto
@@ -146,11 +140,8 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
-          path: |-
-            target/*/.*
-            target/*/build
-            target/*/deps
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}-v3
+          path: target
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('fuzz/Cargo.lock') }}-v4
 
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
@@ -196,11 +187,8 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
-          path: |-
-            target/*/.*
-            target/*/build
-            target/*/deps
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}-v3
+          path: target
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}-v4
 
       - name: Check spec-runner formatting
         run: cargo fmt -- --check --color=auto
@@ -248,11 +236,8 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
-          path: |-
-            target/*/.*
-            target/*/build
-            target/*/deps
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v3
+          path: target
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v4
 
       - name: Check spinoso-array with no default features
         run: cargo check --verbose --no-default-features
@@ -397,11 +382,8 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
-          path: |-
-            target/*/.*
-            target/*/build
-            target/*/deps
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v3
+          path: target
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('Cargo.lock') }}-v4
 
       - name: Check artichoke with minimal versions
         run: |
@@ -443,11 +425,8 @@ jobs:
       - name: Cache cargo build
         uses: actions/cache@v1
         with:
-          path: |-
-            spec-runner/target/*/.*
-            spec-runner/target/*/build
-            spec-runner/target/*/deps
-          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}-v3
+          path: spec-runner/target
+          key: cargo-build-target-${{ github.workflow }}-${{ github.job }}-${{ runner.os }}-rust-${{ steps.toolchain_versions.outputs.rust }}-${{ hashFiles('spec-runner/Cargo.lock') }}-v4
 
       - name: Check spec-runner with minimal versions
         run: |
