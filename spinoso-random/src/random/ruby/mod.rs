@@ -6,7 +6,7 @@ use core::fmt;
 use core::mem::size_of;
 use core::num::Wrapping;
 
-#[cfg(feature = "rand-core")]
+#[cfg(feature = "rand-traits")]
 mod rand;
 
 const N: usize = 624;

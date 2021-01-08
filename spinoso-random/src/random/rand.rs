@@ -1,4 +1,4 @@
-use rand_core_::{Error, RngCore, SeedableRng};
+use rand_core::{Error, RngCore, SeedableRng};
 
 use super::{seed_to_key, Random, DEFAULT_SEED_BYTES};
 use crate::Mt;

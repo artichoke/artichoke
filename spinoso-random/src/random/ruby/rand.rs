@@ -1,5 +1,5 @@
-use rand_core_::impls::next_u64_via_u32;
-use rand_core_::{Error, RngCore, SeedableRng};
+use rand_core::impls::next_u64_via_u32;
+use rand_core::{Error, RngCore, SeedableRng};
 
 use super::Mt;
 use crate::random::{seed_to_key, DEFAULT_SEED_BYTES};
