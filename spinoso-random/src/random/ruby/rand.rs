@@ -1,5 +1,5 @@
-use rand_core_::impls::next_u64_via_u32;
-use rand_core_::{Error, RngCore, SeedableRng};
+use rand_core::impls::next_u64_via_u32;
+use rand_core::{Error, RngCore, SeedableRng};
 
 use super::Mt;
 use crate::random::{seed_to_key, DEFAULT_SEED_BYTES};
@@ -12,7 +12,7 @@ impl SeedableRng for Mt {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core_::{RngCore, SeedableRng};
+    /// # use rand_core::{RngCore, SeedableRng};
     /// # use spinoso_random::Mt;
     /// // Default MT seed
     /// let seed = 5489_u128.to_le_bytes();
@@ -35,7 +35,7 @@ impl RngCore for Mt {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core_::RngCore;
+    /// # use rand_core::RngCore;
     /// # use spinoso_random::Mt;
     /// let mut mt = Mt::with_seed(5489);
     /// assert_ne!(mt.next_u64(), mt.next_u64());
@@ -54,7 +54,7 @@ impl RngCore for Mt {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core_::RngCore;
+    /// # use rand_core::RngCore;
     /// # use spinoso_random::Mt;
     /// let mut mt = Mt::with_seed(5489);
     /// assert_ne!(mt.next_u32(), mt.next_u32());
@@ -76,7 +76,7 @@ impl RngCore for Mt {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core_::RngCore;
+    /// # use rand_core::RngCore;
     /// # use spinoso_random::Mt;
     /// let mut mt = Mt::with_seed(5489);
     /// let mut buf = [0; 32];
@@ -104,7 +104,7 @@ impl RngCore for Mt {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core_::{Error, RngCore};
+    /// # use rand_core::{Error, RngCore};
     /// # use spinoso_random::Mt;
     /// # fn example() -> Result<(), Error> {
     /// let mut mt = Mt::with_seed(5489);

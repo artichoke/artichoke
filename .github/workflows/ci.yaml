@@ -201,9 +201,9 @@ jobs:
 
       - name: Check spinoso-random with some features
         run: |
-          cargo check --verbose --no-default-features --features rand-core
+          cargo check --verbose --no-default-features --features rand-traits
           cargo check --verbose --no-default-features --features std
-          cargo check --verbose --no-default-features --features rand
+          cargo check --verbose --no-default-features --features random-rand
         working-directory: "spinoso-random"
 
       - name: Check spinoso-regexp with no default features

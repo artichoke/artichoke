@@ -533,23 +533,23 @@ pub fn random_number(max: Max) -> Result<Rand, DomainError> {
             Err(DomainError::new())
         }
         Max::Float(max) if max <= 0.0 => {
-            let number = rng.gen_range(0.0, 1.0);
+            let number = rng.gen_range(0.0..1.0);
             Ok(Rand::Float(number))
         }
         Max::Float(max) => {
-            let number = rng.gen_range(0.0, max);
+            let number = rng.gen_range(0.0..max);
             Ok(Rand::Float(number))
         }
         Max::Integer(max) if !max.is_positive() => {
-            let number = rng.gen_range(0.0, 1.0);
+            let number = rng.gen_range(0.0..1.0);
             Ok(Rand::Float(number))
         }
         Max::Integer(max) => {
-            let number = rng.gen_range(0, max);
+            let number = rng.gen_range(0..max);
             Ok(Rand::Integer(number))
         }
         Max::None => {
-            let number = rng.gen_range(0.0, 1.0);
+            let number = rng.gen_range(0.0..1.0);
             Ok(Rand::Float(number))
         }
     }
@@ -655,11 +655,15 @@ pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> 
 /// random ASCII alphanumeric bytes. If `len` is [`None`], generate 16 random
 /// alphanumeric bytes.
 ///
+/// The returned [`Vec<u8>`](Vec) is guaranteed to contain only ASCII bytes.
+///
 /// # Examples
 ///
 /// ```rust
-/// # fn example() -> Result<(), spinoso_securerandom::Error> {
+/// # use std::error::Error;
+/// # fn example() -> Result<(), Box<dyn Error>> {
 /// let bytes = spinoso_securerandom::alphanumeric(Some(1024))?;
+/// let bytes = String::from_utf8(bytes)?;
 /// assert_eq!(bytes.len(), 1024);
 /// assert!(bytes.is_ascii());
 /// assert!(bytes.find(|ch: char| !ch.is_ascii_alphanumeric()).is_none());
@@ -675,9 +679,9 @@ pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> 
 /// If the underlying source of randomness returns an error, return a
 /// [`RandomBytesError`].
 #[inline]
-pub fn alphanumeric(len: Option<i64>) -> Result<String, ArgumentError> {
+pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, ArgumentError> {
     let len = match len.map(usize::try_from) {
-        Some(Ok(0)) => return Ok(String::new()),
+        Some(Ok(0)) => return Ok(Vec::new()),
         Some(Ok(len)) => len,
         Some(Err(_)) => {
             let err = ArgumentError::with_message("negative string size (or size too big)");
@@ -826,6 +830,6 @@ mod tests {
     #[test]
     fn alphanumeric_format() {
         let random = alphanumeric(Some(1024)).unwrap();
-        assert!(random.chars().all(|ch| ch.is_ascii_alphanumeric()));
+        assert!(random.iter().all(|&byte| byte.is_ascii_alphanumeric()));
     }
 }

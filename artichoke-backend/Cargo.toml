@@ -35,7 +35,7 @@ default-features = false
 optional = true
 
 [dev-dependencies]
-quickcheck = { version = "0.9", default-features = false }
+quickcheck = { version = "1.0", default-features = false }
 
 [build-dependencies]
 bindgen = { version = "0.56.0", default-features = false, features = ["runtime"] }

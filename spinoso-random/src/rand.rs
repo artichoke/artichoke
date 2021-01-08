@@ -1,15 +1,15 @@
 use core::fmt;
-use rand_::Rng;
+use rand::Rng;
 
 use crate::{ArgumentError, Random};
 
 /// A range constraint for generating random numbers.
 ///
-/// This enum is an input to the [`rand`] function. See its documentation for
+/// This enum is an input to the [`rand()`] function. See its documentation for
 /// more details.
 // TODO: Add range variants
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
 pub enum Max {
     /// A maximum float bound.
     ///
@@ -43,19 +43,19 @@ impl fmt::Display for Max {
 
 /// A generated random number.
 ///
-/// This enum is returned by the [`rand`] function. See its documentation for
+/// This enum is returned by the [`rand()`] function. See its documentation for
 /// more details.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
 pub enum Rand {
     /// A random float.
     ///
-    /// A random float is returned from [`rand`] when given [`Max::Float`] or
+    /// A random float is returned from [`rand()`] when given [`Max::Float`] or
     /// [`Max::None`] max constraint.
     Float(f64),
     /// A random integer.
     ///
-    /// A random integer is returned from [`rand`] when given [`Max::Integer`]
+    /// A random integer is returned from [`rand()`] when given [`Max::Integer`]
     /// max constraint.
     Integer(i64),
 }
@@ -121,8 +121,8 @@ pub enum Rand {
 ///
 /// When `max` is a non-finite `f64`, `rand` returns a domain error
 /// [`ArgumentError`].
-#[cfg(feature = "rand")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+#[cfg(feature = "random-rand")]
+#[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
 pub fn rand(rng: &mut Random, max: Max) -> Result<Rand, ArgumentError> {
     let constraint = max;
     match constraint {
@@ -139,7 +139,7 @@ pub fn rand(rng: &mut Random, max: Max) -> Result<Rand, ArgumentError> {
             Ok(Rand::Float(number))
         }
         Max::Float(max) => {
-            let number = rng.gen_range(0.0, max);
+            let number = rng.gen_range(0.0..max);
             Ok(Rand::Float(number))
         }
         Max::Integer(max) if max < 1 => {
@@ -147,7 +147,7 @@ pub fn rand(rng: &mut Random, max: Max) -> Result<Rand, ArgumentError> {
             Err(err)
         }
         Max::Integer(max) => {
-            let number = rng.gen_range(0, max);
+            let number = rng.gen_range(0..max);
             Ok(Rand::Integer(number))
         }
         Max::None => {

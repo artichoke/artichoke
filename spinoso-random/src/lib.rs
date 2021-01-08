@@ -54,9 +54,9 @@
 //! Generate random numbers in a range:
 //!
 //! ```
-//! # #[cfg(feature = "rand")]
+//! # #[cfg(feature = "random-rand")]
 //! # use spinoso_random::{rand, Error, Max, Rand, Random};
-//! # #[cfg(feature = "rand")]
+//! # #[cfg(feature = "random-rand")]
 //! # fn example() -> Result<(), Error> {
 //! let mut random = Random::new()?;
 //! let max = Max::Integer(10);
@@ -64,7 +64,7 @@
 //! assert!(matches!(rand, Rand::Integer(x) if x < 10));
 //! # Ok(())
 //! # }
-//! # #[cfg(feature = "rand")]
+//! # #[cfg(feature = "random-rand")]
 //! # example().unwrap();
 //! ```
 //!
@@ -77,10 +77,10 @@
 //!
 //! All features are enabled by default.
 //!
-//! - **rand** - Enables range sampling methods for the [`rand()`] function.
-//!   Activating this feature also activates the **rand-core** feature. Dropping
-//!   this feature removes the [`rand`] dependency.
-//! - **rand-core** - Enables implementations of [`RngCore`] on [`Random`] and
+//! - **random-rand** - Enables range sampling methods for the [`rand()`]
+//!   function.  Activating this feature also activates the **rand-traits**
+//!   feature. Dropping this feature removes the [`rand`] dependency.
+//! - **rand-traits** - Enables implementations of [`RngCore`] on [`Random`] and
 //!   [`Mt`] types. Dropping this feature removes the [`rand_core`] dependency.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this
@@ -88,9 +88,8 @@
 //!
 //! [ruby-random]: https://ruby-doc.org/core-2.6.3/Random.html
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
-//! [`RngCore`]: rand_core_::RngCore
-//! [`rand`]: rand_
-//! [`rand_core`]: rand_core_
+//! [`rand`]: ::rand
+//! [`RngCore`]: rand_core::RngCore
 
 #![no_std]
 
@@ -101,13 +100,13 @@ use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
 
-#[cfg(feature = "rand")]
+#[cfg(feature = "random-rand")]
 mod rand;
 mod random;
 mod urandom;
 
-#[cfg(feature = "rand")]
-pub use rand::{rand, Max, Rand};
+#[cfg(feature = "random-rand")]
+pub use self::rand::{rand, Max, Rand};
 pub use random::ruby::Mt;
 pub use random::{new_seed, seed_to_key, Random};
 pub use urandom::urandom;
@@ -427,8 +426,8 @@ pub struct ArgumentError(ArgumentErrorInner);
 enum ArgumentErrorInner {
     Default,
     DomainError,
-    #[cfg(feature = "rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+    #[cfg(feature = "random-rand")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
     Rand(Max),
 }
 
@@ -474,8 +473,8 @@ impl ArgumentError {
     /// ```
     #[inline]
     #[must_use]
-    #[cfg(feature = "rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+    #[cfg(feature = "random-rand")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
     pub const fn with_rand_max(max: Max) -> Self {
         Self(ArgumentErrorInner::Rand(max))
     }
@@ -505,7 +504,7 @@ impl ArgumentError {
         match self.0 {
             ArgumentErrorInner::Default => "ArgumentError",
             ArgumentErrorInner::DomainError => "Numerical argument out of domain",
-            #[cfg(feature = "rand")]
+            #[cfg(feature = "random-rand")]
             ArgumentErrorInner::Rand(_) => "invalid argument",
         }
     }
@@ -535,7 +534,7 @@ impl fmt::Display for ArgumentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
             ArgumentErrorInner::Default | ArgumentErrorInner::DomainError => f.write_str(self.message()),
-            #[cfg(feature = "rand")]
+            #[cfg(feature = "random-rand")]
             ArgumentErrorInner::Rand(max) => write!(f, "invalid argument - {}", max),
         }
     }
