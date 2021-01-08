@@ -7,7 +7,6 @@ use std::error;
 use std::ffi::{OsStr, OsString};
 use std::io;
 use std::path::{Path, PathBuf};
-use structopt::StructOpt;
 use termcolor::WriteColor;
 
 use crate::backend::ffi;
@@ -27,23 +26,57 @@ mod filename_test {
     }
 }
 
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, StructOpt)]
-#[structopt(name = "artichoke", about = "Artichoke is a Ruby made with Rust.")]
-struct Opt {
+/// Command line arguments for Artichoke `ruby` frontend.
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Args {
     /// print the copyright
-    #[structopt(long)]
     copyright: bool,
-
-    /// one line of script. Several -e's allowed. Omit [programfile]
-    #[structopt(short = "e", parse(from_os_str))]
+    /// one line of script. Several -e's allowed. Omit \[programfile\]
     commands: Vec<OsString>,
-
     /// file whose contents will be read into the `$fixture` global
-    #[structopt(long = "with-fixture", parse(from_os_str))]
     fixture: Option<PathBuf>,
-
-    #[structopt(parse(from_os_str))]
     programfile: Option<PathBuf>,
+}
+
+impl Args {
+    /// Construct a new, empty `Args`.
+    #[must_use]
+    pub const fn empty() -> Self {
+        Self {
+            copyright: false,
+            commands: Vec::new(),
+            fixture: None,
+            programfile: None,
+        }
+    }
+
+    /// Add a parsed copyright flag to this `Args`.
+    #[must_use]
+    pub fn with_copyright(mut self, copyright: bool) -> Self {
+        self.copyright = copyright;
+        self
+    }
+
+    /// Add a parsed set of `-e` inline eval commands to this `Args`.
+    #[must_use]
+    pub fn with_commands(mut self, commands: Vec<OsString>) -> Self {
+        self.commands = commands;
+        self
+    }
+
+    /// Add a parsed fixture path to this `Args`.
+    #[must_use]
+    pub fn with_fixture(mut self, fixture: Option<PathBuf>) -> Self {
+        self.fixture = fixture;
+        self
+    }
+
+    /// Add a parsed program file path to this `Args`.
+    #[must_use]
+    pub fn with_programfile(mut self, programfile: Option<PathBuf>) -> Self {
+        self.programfile = programfile;
+        self
+    }
 }
 
 /// Main entrypoint for Artichoke's version of the `ruby` CLI.
@@ -51,20 +84,19 @@ struct Opt {
 /// # Errors
 ///
 /// If an exception is raised on the interpreter, then an error is returned.
-pub fn entrypoint<R, W>(mut input: R, error: W) -> Result<Result<(), ()>, Box<dyn error::Error>>
+pub fn entrypoint<R, W>(args: Args, mut input: R, error: W) -> Result<Result<(), ()>, Box<dyn error::Error>>
 where
     R: io::Read,
     W: io::Write + WriteColor,
 {
-    let opt = Opt::from_args();
-    if opt.copyright {
+    if args.copyright {
         let mut interp = crate::interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(Ok(()))
-    } else if !opt.commands.is_empty() {
-        Ok(execute_inline_eval(error, opt.commands, opt.fixture.as_deref())?)
-    } else if let Some(programfile) = opt.programfile.filter(|file| file != Path::new("-")) {
-        execute_program_file(error, programfile.as_path(), opt.fixture.as_deref())
+    } else if !args.commands.is_empty() {
+        Ok(execute_inline_eval(error, args.commands, args.fixture.as_deref())?)
+    } else if let Some(programfile) = args.programfile.filter(|file| file != Path::new("-")) {
+        execute_program_file(error, programfile.as_path(), args.fixture.as_deref())
     } else {
         let mut interp = crate::interpreter()?;
         let mut program = vec![];

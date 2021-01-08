@@ -73,6 +73,7 @@ extern crate rust_embed;
 
 use artichoke::backtrace;
 use artichoke::prelude::*;
+use clap::{App, Arg};
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
@@ -80,7 +81,6 @@ use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process;
 use std::str;
-use structopt::StructOpt;
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 mod model;
@@ -90,19 +90,38 @@ mod rubyspec;
 use model::{Config, Suite};
 
 /// CLI specification for `spec-runner`.
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, StructOpt)]
-#[structopt(name = "spec-runner", about = "ruby/spec runner for Artichoke.")]
-struct Opt {
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+struct Args {
     /// Path to TOML config file.
-    #[structopt(parse(from_os_str))]
     config: PathBuf,
 }
 
 /// Main entrypoint.
 pub fn main() {
-    let opt = Opt::from_args();
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
-    match try_main(&mut stderr, opt.config.as_path()) {
+
+    let app = App::new("spec-runner");
+    let app = app
+        .about("CLI specification for `spec-runner`")
+        .about("ruby/spec runner for Artichoke.");
+    let app = app.arg(
+        Arg::with_name("config")
+            .takes_value(true)
+            .multiple(false)
+            .required(true)
+            .help("Path to TOML config file"),
+    );
+    let app = app.version(env!("CARGO_PKG_VERSION"));
+
+    let matches = app.get_matches();
+    let args = if let Some(config) = matches.value_of_os("config") {
+        Args { config: config.into() }
+    } else {
+        let _ = writeln!(&mut stderr, "Missing required spec configuration");
+        process::exit(1);
+    };
+
+    match try_main(&mut stderr, &args.config) {
         Ok(true) => process::exit(0),
         Ok(false) => process::exit(1),
         Err(err) => {
