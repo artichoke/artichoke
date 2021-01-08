@@ -54,14 +54,38 @@ mod tests {
             let value = interp.convert_mut(f);
             let inner = value.inner();
             let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
-            (cdouble - f).abs() < Fp::EPSILON
+            if f.is_nan() {
+                cdouble.is_nan()
+            } else if f.is_infinite() {
+                f.is_infinite() && cdouble.signum() == f.signum()
+            } else if cdouble >= f {
+                let difference = cdouble - f;
+                difference < Fp::EPSILON
+            } else if f >= cdouble {
+                let difference = f - cdouble;
+                difference < Fp::EPSILON
+            } else {
+                false
+            }
         }
 
         fn roundtrip(f: Fp) -> bool {
             let mut interp = interpreter().unwrap();
             let value = interp.convert_mut(f);
             let value = value.try_into::<Fp>(&interp).unwrap();
-            (value - f).abs() < Fp::EPSILON
+            if f.is_nan() {
+                value.is_nan()
+            } else if f.is_infinite() {
+                value.is_infinite() && value.signum() == f.signum()
+            } else if value >= f {
+                let difference = value - f;
+                difference < Fp::EPSILON
+            } else if f >= value {
+                let difference = f - value;
+                difference < Fp::EPSILON
+            } else {
+                false
+            }
         }
 
         fn roundtrip_err(b: bool) -> bool {

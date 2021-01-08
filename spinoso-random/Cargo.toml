@@ -21,7 +21,7 @@ rand_core = { version = "0.6", optional = true, default-features = false }
 [features]
 default = ["random-rand", "rand-traits", "std"]
 # Enables range sampling methods for the `rand()` function.
-random-rand = ["rand"]
+random-rand = ["rand", "rand-traits"]
 # Enables implementations of `RngCore` on `Random` and `Mt` types.
 rand-traits = ["rand_core"]
 std = []

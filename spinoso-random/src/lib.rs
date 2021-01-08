@@ -88,9 +88,8 @@
 //!
 //! [ruby-random]: https://ruby-doc.org/core-2.6.3/Random.html
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
-//! [`RngCore`]: rand_core_::RngCore
-//! [`rand`]: rand_
-//! [`rand_core`]: rand_core_
+//! [`rand`]: ::rand
+//! [`RngCore`]: rand_core::RngCore
 
 #![no_std]
 

@@ -830,6 +830,6 @@ mod tests {
     #[test]
     fn alphanumeric_format() {
         let random = alphanumeric(Some(1024)).unwrap();
-        assert!(random.chars().all(|ch| ch.is_ascii_alphanumeric()));
+        assert!(random.iter().all(|&byte| byte.is_ascii_alphanumeric()));
     }
 }

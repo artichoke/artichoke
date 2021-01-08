@@ -5,7 +5,7 @@ use crate::{ArgumentError, Random};
 
 /// A range constraint for generating random numbers.
 ///
-/// This enum is an input to the [`rand`] function. See its documentation for
+/// This enum is an input to the [`rand()`] function. See its documentation for
 /// more details.
 // TODO: Add range variants
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -43,19 +43,19 @@ impl fmt::Display for Max {
 
 /// A generated random number.
 ///
-/// This enum is returned by the [`rand`] function. See its documentation for
+/// This enum is returned by the [`rand()`] function. See its documentation for
 /// more details.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 #[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
 pub enum Rand {
     /// A random float.
     ///
-    /// A random float is returned from [`rand`] when given [`Max::Float`] or
+    /// A random float is returned from [`rand()`] when given [`Max::Float`] or
     /// [`Max::None`] max constraint.
     Float(f64),
     /// A random integer.
     ///
-    /// A random integer is returned from [`rand`] when given [`Max::Integer`]
+    /// A random integer is returned from [`rand()`] when given [`Max::Integer`]
     /// max constraint.
     Integer(i64),
 }
