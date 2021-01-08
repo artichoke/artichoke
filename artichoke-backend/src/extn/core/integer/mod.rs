@@ -187,109 +187,107 @@ impl Integer {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck_macros::quickcheck;
+    use quickcheck::quickcheck;
 
     use crate::test::prelude::*;
 
-    #[quickcheck]
-    fn positive_integer_division_vm_opcode(x: u8, y: u8) -> bool {
-        let mut interp = interpreter().unwrap();
-        match (x, y) {
-            (0, 0) => interp.eval(b"0 / 0").is_err(),
-            (x, 0) | (0, x) => {
-                let expr = format!("{} / 0", x).into_bytes();
-                if interp.eval(expr.as_slice()).is_ok() {
-                    return false;
+    quickcheck! {
+        fn positive_integer_division_vm_opcode(x: u8, y: u8) -> bool {
+            let mut interp = interpreter().unwrap();
+            match (x, y) {
+                (0, 0) => interp.eval(b"0 / 0").is_err(),
+                (x, 0) | (0, x) => {
+                    let expr = format!("{} / 0", x).into_bytes();
+                    if interp.eval(expr.as_slice()).is_ok() {
+                        return false;
+                    }
+                    let expr = format!("0 / {}", x).into_bytes();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    quotient == 0
                 }
-                let expr = format!("0 / {}", x).into_bytes();
-                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                quotient == 0
-            }
-            (x, y) => {
-                let expr = format!("{} / {}", x, y).into_bytes();
-                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                let expected = Int::from(x) / Int::from(y);
-                quotient == expected
-            }
-        }
-    }
-
-    #[quickcheck]
-    fn positive_integer_division_send(x: u8, y: u8) -> bool {
-        let mut interp = interpreter().unwrap();
-        match (x, y) {
-            (0, 0) => interp.eval(b"0.send('/', 0)").is_err(),
-            (x, 0) | (0, x) => {
-                let expr = format!("{}.send('/', 0)", x).into_bytes();
-                if interp.eval(expr.as_slice()).is_ok() {
-                    return false;
-                }
-                let expr = format!("0.send('/', {})", x).into_bytes();
-                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                quotient == 0
-            }
-            (x, y) => {
-                let expr = format!("{}.send('/', {})", x, y).into_bytes();
-                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                let expected = Int::from(x) / Int::from(y);
-                quotient == expected
-            }
-        }
-    }
-
-    #[quickcheck]
-    fn negative_integer_division_vm_opcode(x: u8, y: u8) -> bool {
-        let mut interp = interpreter().unwrap();
-        match (x, y) {
-            (0, 0) => interp.eval(b"-0 / 0").is_err(),
-            (x, 0) | (0, x) => {
-                let expr = format!("-{} / 0", x).into_bytes();
-                if interp.eval(expr.as_slice()).is_ok() {
-                    return false;
-                }
-                let expr = format!("0 / -{}", x).into_bytes();
-                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                quotient == 0
-            }
-            (x, y) => {
-                let expr = format!("-{} / {}", x, y).into_bytes();
-                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                if x % y == 0 {
-                    let expected = -Int::from(x) / Int::from(y);
-                    quotient == expected
-                } else {
-                    // Round negative integer division toward negative infinity.
-                    let expected = (-Int::from(x) / Int::from(y)) - 1;
+                (x, y) => {
+                    let expr = format!("{} / {}", x, y).into_bytes();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    let expected = Int::from(x) / Int::from(y);
                     quotient == expected
                 }
             }
         }
-    }
 
-    #[quickcheck]
-    fn negative_integer_division_send(x: u8, y: u8) -> bool {
-        let mut interp = interpreter().unwrap();
-        match (x, y) {
-            (0, 0) => interp.eval(b"-0.send('/', 0)").is_err(),
-            (x, 0) | (0, x) => {
-                let expr = format!("-{}.send('/', 0)", x).into_bytes();
-                if interp.eval(expr.as_slice()).is_ok() {
-                    return false;
+        fn positive_integer_division_send(x: u8, y: u8) -> bool {
+            let mut interp = interpreter().unwrap();
+            match (x, y) {
+                (0, 0) => interp.eval(b"0.send('/', 0)").is_err(),
+                (x, 0) | (0, x) => {
+                    let expr = format!("{}.send('/', 0)", x).into_bytes();
+                    if interp.eval(expr.as_slice()).is_ok() {
+                        return false;
+                    }
+                    let expr = format!("0.send('/', {})", x).into_bytes();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    quotient == 0
                 }
-                let expr = format!("0.send('/', -{})", x).into_bytes();
-                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                quotient == 0
+                (x, y) => {
+                    let expr = format!("{}.send('/', {})", x, y).into_bytes();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    let expected = Int::from(x) / Int::from(y);
+                    quotient == expected
+                }
             }
-            (x, y) => {
-                let expr = format!("-{}.send('/', {})", x, y).into_bytes();
-                let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                if x % y == 0 {
-                    let expected = -Int::from(x) / Int::from(y);
-                    quotient == expected
-                } else {
-                    // Round negative integer division toward negative infinity.
-                    let expected = (-Int::from(x) / Int::from(y)) - 1;
-                    quotient == expected
+        }
+
+        fn negative_integer_division_vm_opcode(x: u8, y: u8) -> bool {
+            let mut interp = interpreter().unwrap();
+            match (x, y) {
+                (0, 0) => interp.eval(b"-0 / 0").is_err(),
+                (x, 0) | (0, x) => {
+                    let expr = format!("-{} / 0", x).into_bytes();
+                    if interp.eval(expr.as_slice()).is_ok() {
+                        return false;
+                    }
+                    let expr = format!("0 / -{}", x).into_bytes();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    quotient == 0
+                }
+                (x, y) => {
+                    let expr = format!("-{} / {}", x, y).into_bytes();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    if x % y == 0 {
+                        let expected = -Int::from(x) / Int::from(y);
+                        quotient == expected
+                    } else {
+                        // Round negative integer division toward negative infinity.
+                        let expected = (-Int::from(x) / Int::from(y)) - 1;
+                        quotient == expected
+                    }
+                }
+            }
+        }
+
+        fn negative_integer_division_send(x: u8, y: u8) -> bool {
+            let mut interp = interpreter().unwrap();
+            match (x, y) {
+                (0, 0) => interp.eval(b"-0.send('/', 0)").is_err(),
+                (x, 0) | (0, x) => {
+                    let expr = format!("-{}.send('/', 0)", x).into_bytes();
+                    if interp.eval(expr.as_slice()).is_ok() {
+                        return false;
+                    }
+                    let expr = format!("0.send('/', -{})", x).into_bytes();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    quotient == 0
+                }
+                (x, y) => {
+                    let expr = format!("-{}.send('/', {})", x, y).into_bytes();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    if x % y == 0 {
+                        let expected = -Int::from(x) / Int::from(y);
+                        quotient == expected
+                    } else {
+                        // Round negative integer division toward negative infinity.
+                        let expected = (-Int::from(x) / Int::from(y)) - 1;
+                        quotient == expected
+                    }
                 }
             }
         }

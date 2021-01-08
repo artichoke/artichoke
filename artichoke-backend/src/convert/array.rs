@@ -385,7 +385,7 @@ impl TryConvertMut<Value, Vec<Int>> for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck_macros::quickcheck;
+    use quickcheck::quickcheck;
 
     use crate::test::prelude::*;
 
@@ -398,149 +398,144 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn arr_int_borrowed(arr: Vec<Int>) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Borrowed converter
-        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != arr.len() {
-            return false;
+    quickcheck! {
+        #[allow(clippy::needless_pass_by_value)]
+        fn arr_int_borrowed(arr: Vec<Int>) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Borrowed converter
+            let value = interp.try_convert_mut(arr.as_slice()).unwrap();
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != arr.len() {
+                return false;
+            }
+            let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+            let empty = empty.try_into::<bool>(&interp).unwrap();
+            if empty != arr.is_empty() {
+                return false;
+            }
+            let recovered: Vec<Int> = interp.try_convert_mut(value).unwrap();
+            if recovered != arr {
+                return false;
+            }
+            true
         }
-        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
-        if empty != arr.is_empty() {
-            return false;
-        }
-        let recovered: Vec<Int> = interp.try_convert_mut(value).unwrap();
-        if recovered != arr {
-            return false;
-        }
-        true
-    }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn arr_int_owned(arr: Vec<Int>) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Owned converter
-        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != arr.len() {
-            return false;
+        #[allow(clippy::needless_pass_by_value)]
+        fn arr_int_owned(arr: Vec<Int>) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Owned converter
+            let value = interp.try_convert_mut(arr.to_vec()).unwrap();
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != arr.len() {
+                return false;
+            }
+            let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+            let empty = empty.try_into::<bool>(&interp).unwrap();
+            if empty != arr.is_empty() {
+                return false;
+            }
+            let recovered: Vec<Int> = interp.try_convert_mut(value).unwrap();
+            if recovered != arr {
+                return false;
+            }
+            true
         }
-        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
-        if empty != arr.is_empty() {
-            return false;
-        }
-        let recovered: Vec<Int> = interp.try_convert_mut(value).unwrap();
-        if recovered != arr {
-            return false;
-        }
-        true
-    }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn arr_utf8_borrowed(arr: Vec<String>) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Borrowed converter
-        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != arr.len() {
-            return false;
+        #[allow(clippy::needless_pass_by_value)]
+        fn arr_utf8_borrowed(arr: Vec<String>) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Borrowed converter
+            let value = interp.try_convert_mut(arr.as_slice()).unwrap();
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != arr.len() {
+                return false;
+            }
+            let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+            let empty = empty.try_into::<bool>(&interp).unwrap();
+            if empty != arr.is_empty() {
+                return false;
+            }
+            let recovered: Vec<String> = interp.try_convert_mut(value).unwrap();
+            if recovered != arr {
+                return false;
+            }
+            true
         }
-        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
-        if empty != arr.is_empty() {
-            return false;
-        }
-        let recovered: Vec<String> = interp.try_convert_mut(value).unwrap();
-        if recovered != arr {
-            return false;
-        }
-        true
-    }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn arr_utf8_owned(arr: Vec<String>) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Owned converter
-        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != arr.len() {
-            return false;
+        #[allow(clippy::needless_pass_by_value)]
+        fn arr_utf8_owned(arr: Vec<String>) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Owned converter
+            let value = interp.try_convert_mut(arr.to_vec()).unwrap();
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != arr.len() {
+                return false;
+            }
+            let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+            let empty = empty.try_into::<bool>(&interp).unwrap();
+            if empty != arr.is_empty() {
+                return false;
+            }
+            let recovered: Vec<String> = interp.try_convert_mut(value).unwrap();
+            if recovered != arr {
+                return false;
+            }
+            true
         }
-        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
-        if empty != arr.is_empty() {
-            return false;
-        }
-        let recovered: Vec<String> = interp.try_convert_mut(value).unwrap();
-        if recovered != arr {
-            return false;
-        }
-        true
-    }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn arr_nilable_bstr_borrowed(arr: Vec<Option<Vec<u8>>>) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Borrowed converter
-        let value = interp.try_convert_mut(arr.as_slice()).unwrap();
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != arr.len() {
-            return false;
+        #[allow(clippy::needless_pass_by_value)]
+        fn arr_nilable_bstr_borrowed(arr: Vec<Option<Vec<u8>>>) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Borrowed converter
+            let value = interp.try_convert_mut(arr.as_slice()).unwrap();
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != arr.len() {
+                return false;
+            }
+            let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+            let empty = empty.try_into::<bool>(&interp).unwrap();
+            if empty != arr.is_empty() {
+                return false;
+            }
+            let recovered: Vec<Option<Vec<u8>>> = interp.try_convert_mut(value).unwrap();
+            if recovered != arr {
+                return false;
+            }
+            true
         }
-        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
-        if empty != arr.is_empty() {
-            return false;
-        }
-        let recovered: Vec<Option<Vec<u8>>> = interp.try_convert_mut(value).unwrap();
-        if recovered != arr {
-            return false;
-        }
-        true
-    }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn arr_nilable_bstr_owned(arr: Vec<Option<Vec<u8>>>) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Owned converter
-        let value = interp.try_convert_mut(arr.to_vec()).unwrap();
-        let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
-        if len != arr.len() {
-            return false;
+        #[allow(clippy::needless_pass_by_value)]
+        fn arr_nilable_bstr_owned(arr: Vec<Option<Vec<u8>>>) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Owned converter
+            let value = interp.try_convert_mut(arr.to_vec()).unwrap();
+            let len = value.funcall(&mut interp, "length", &[], None).unwrap();
+            let len = len.try_into::<usize>(&interp).unwrap();
+            if len != arr.len() {
+                return false;
+            }
+            let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
+            let empty = empty.try_into::<bool>(&interp).unwrap();
+            if empty != arr.is_empty() {
+                return false;
+            }
+            let recovered: Vec<Option<Vec<u8>>> = interp.try_convert_mut(value).unwrap();
+            if recovered != arr {
+                return false;
+            }
+            true
         }
-        let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
-        if empty != arr.is_empty() {
-            return false;
-        }
-        let recovered: Vec<Option<Vec<u8>>> = interp.try_convert_mut(value).unwrap();
-        if recovered != arr {
-            return false;
-        }
-        true
-    }
 
-    #[quickcheck]
-    fn roundtrip_err(i: i64) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert(i);
-        let value = value.try_into_mut::<Vec<Value>>(&mut interp);
-        value.is_err()
+        fn roundtrip_err(i: i64) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert(i);
+            let value = value.try_into_mut::<Vec<Value>>(&mut interp);
+            value.is_err()
+        }
     }
 }

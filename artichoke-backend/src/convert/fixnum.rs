@@ -171,7 +171,7 @@ impl TryConvert<Value, usize> for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck_macros::quickcheck;
+    use quickcheck::quickcheck;
 
     use crate::test::prelude::*;
 
@@ -184,36 +184,34 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[quickcheck]
-    fn convert_to_fixnum(i: Int) -> bool {
-        let interp = interpreter().unwrap();
-        let value = interp.convert(i);
-        value.ruby_type() == Ruby::Fixnum
-    }
+    quickcheck! {
+        fn convert_to_fixnum(i: Int) -> bool {
+            let interp = interpreter().unwrap();
+            let value = interp.convert(i);
+            value.ruby_type() == Ruby::Fixnum
+        }
 
-    #[quickcheck]
-    fn fixnum_with_value(i: Int) -> bool {
-        let interp = interpreter().unwrap();
-        let value = interp.convert(i);
-        let inner = value.inner();
-        let cint = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
-        cint == i
-    }
+        fn fixnum_with_value(i: Int) -> bool {
+            let interp = interpreter().unwrap();
+            let value = interp.convert(i);
+            let inner = value.inner();
+            let cint = unsafe { sys::mrb_sys_fixnum_to_cint(inner) };
+            cint == i
+        }
 
-    #[quickcheck]
-    fn roundtrip(i: Int) -> bool {
-        let interp = interpreter().unwrap();
-        let value = interp.convert(i);
-        let value = value.try_into::<Int>(&interp).unwrap();
-        value == i
-    }
+        fn roundtrip(i: Int) -> bool {
+            let interp = interpreter().unwrap();
+            let value = interp.convert(i);
+            let value = value.try_into::<Int>(&interp).unwrap();
+            value == i
+        }
 
-    #[quickcheck]
-    fn roundtrip_err(b: bool) -> bool {
-        let interp = interpreter().unwrap();
-        let value = interp.convert(b);
-        let value = value.try_into::<Int>(&interp);
-        value.is_err()
+        fn roundtrip_err(b: bool) -> bool {
+            let interp = interpreter().unwrap();
+            let value = interp.convert(b);
+            let value = value.try_into::<Int>(&interp);
+            value.is_err()
+        }
     }
 
     #[test]

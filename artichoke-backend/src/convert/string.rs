@@ -54,10 +54,8 @@ impl<'a> TryConvertMut<Value, &'a str> for Artichoke {
 }
 
 #[cfg(test)]
-// Convert<String> is implemented in terms of Convert<&str> so only implement
-// the tests for String to exercise both code paths.
 mod tests {
-    use quickcheck_macros::quickcheck;
+    use quickcheck::quickcheck;
     use std::convert::TryFrom;
     use std::slice;
 
@@ -72,112 +70,108 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn convert_to_string(s: String) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(s.clone());
-        let string = unsafe {
-            interp
-                .with_ffi_boundary(|mrb| {
-                    let ptr = sys::mrb_string_value_ptr(mrb, value.inner());
-                    let len = sys::mrb_string_value_len(mrb, value.inner());
-                    let len = usize::try_from(len).unwrap();
-                    slice::from_raw_parts(ptr as *const u8, len)
-                })
-                .unwrap()
-        };
-        s.as_bytes() == string
-    }
-
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn string_with_value(s: String) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(s.clone());
-        value.to_s(&mut interp) == s.as_bytes()
-    }
-
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn utf8string_borrowed(string: String) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Borrowed converter
-        let value = interp.convert_mut(string.as_str());
-        let len = value
-            .funcall(&mut interp, "length", &[], None)
-            .and_then(|value| value.try_into::<usize>(&interp))
-            .unwrap();
-        if len != string.chars().count() {
-            return false;
+    quickcheck! {
+        #[allow(clippy::needless_pass_by_value)]
+        fn convert_to_string(s: String) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(s.clone());
+            let string = unsafe {
+                interp
+                    .with_ffi_boundary(|mrb| {
+                        let ptr = sys::mrb_string_value_ptr(mrb, value.inner());
+                        let len = sys::mrb_string_value_len(mrb, value.inner());
+                        let len = usize::try_from(len).unwrap();
+                        slice::from_raw_parts(ptr as *const u8, len)
+                    })
+                    .unwrap()
+            };
+            s.as_bytes() == string
         }
-        let zero = interp.convert(0);
-        let first = value
-            .funcall(&mut interp, "[]", &[zero], None)
-            .and_then(|value| value.try_into_mut::<Option<String>>(&mut interp))
-            .unwrap();
-        let mut iter = string.chars();
-        if let Some(ch) = iter.next() {
-            if first != Some(ch.to_string()) {
+
+        #[allow(clippy::needless_pass_by_value)]
+        fn string_with_value(s: String) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(s.clone());
+            value.to_s(&mut interp) == s.as_bytes()
+        }
+
+        #[allow(clippy::needless_pass_by_value)]
+        fn utf8string_borrowed(string: String) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Borrowed converter
+            let value = interp.convert_mut(string.as_str());
+            let len = value
+                .funcall(&mut interp, "length", &[], None)
+                .and_then(|value| value.try_into::<usize>(&interp))
+                .unwrap();
+            if len != string.chars().count() {
                 return false;
             }
-        } else if first.is_some() {
-            return false;
-        }
-        let recovered: String = interp.try_convert_mut(value).unwrap();
-        if recovered != string {
-            return false;
-        }
-        true
-    }
-
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn utf8string_owned(string: String) -> bool {
-        let mut interp = interpreter().unwrap();
-        // Owned converter
-        let value = interp.convert_mut(string.clone());
-        let len = value
-            .funcall(&mut interp, "length", &[], None)
-            .and_then(|value| value.try_into::<usize>(&interp))
-            .unwrap();
-        if len != string.chars().count() {
-            return false;
-        }
-        let zero = interp.convert(0);
-        let first = value
-            .funcall(&mut interp, "[]", &[zero], None)
-            .and_then(|value| value.try_into_mut::<Option<String>>(&mut interp))
-            .unwrap();
-        let mut iter = string.chars();
-        if let Some(ch) = iter.next() {
-            if first != Some(ch.to_string()) {
+            let zero = interp.convert(0);
+            let first = value
+                .funcall(&mut interp, "[]", &[zero], None)
+                .and_then(|value| value.try_into_mut::<Option<String>>(&mut interp))
+                .unwrap();
+            let mut iter = string.chars();
+            if let Some(ch) = iter.next() {
+                if first != Some(ch.to_string()) {
+                    return false;
+                }
+            } else if first.is_some() {
                 return false;
             }
-        } else if first.is_some() {
-            return false;
+            let recovered: String = interp.try_convert_mut(value).unwrap();
+            if recovered != string {
+                return false;
+            }
+            true
         }
-        let recovered: String = interp.try_convert_mut(value).unwrap();
-        if recovered != string {
-            return false;
+
+        #[allow(clippy::needless_pass_by_value)]
+        fn utf8string_owned(string: String) -> bool {
+            let mut interp = interpreter().unwrap();
+            // Owned converter
+            let value = interp.convert_mut(string.clone());
+            let len = value
+                .funcall(&mut interp, "length", &[], None)
+                .and_then(|value| value.try_into::<usize>(&interp))
+                .unwrap();
+            if len != string.chars().count() {
+                return false;
+            }
+            let zero = interp.convert(0);
+            let first = value
+                .funcall(&mut interp, "[]", &[zero], None)
+                .and_then(|value| value.try_into_mut::<Option<String>>(&mut interp))
+                .unwrap();
+            let mut iter = string.chars();
+            if let Some(ch) = iter.next() {
+                if first != Some(ch.to_string()) {
+                    return false;
+                }
+            } else if first.is_some() {
+                return false;
+            }
+            let recovered: String = interp.try_convert_mut(value).unwrap();
+            if recovered != string {
+                return false;
+            }
+            true
         }
-        true
-    }
 
-    #[quickcheck]
-    #[allow(clippy::needless_pass_by_value)]
-    fn roundtrip(s: String) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert_mut(s.clone());
-        let value = value.try_into_mut::<String>(&mut interp).unwrap();
-        value == s
-    }
+        #[allow(clippy::needless_pass_by_value)]
+        fn roundtrip(s: String) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert_mut(s.clone());
+            let value = value.try_into_mut::<String>(&mut interp).unwrap();
+            value == s
+        }
 
-    #[quickcheck]
-    fn roundtrip_err(b: bool) -> bool {
-        let mut interp = interpreter().unwrap();
-        let value = interp.convert(b);
-        let result = value.try_into_mut::<String>(&mut interp);
-        result.is_err()
+        fn roundtrip_err(b: bool) -> bool {
+            let mut interp = interpreter().unwrap();
+            let value = interp.convert(b);
+            let result = value.try_into_mut::<String>(&mut interp);
+            result.is_err()
+        }
     }
 }
