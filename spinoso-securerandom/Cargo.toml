@@ -14,7 +14,7 @@ categories = ["algorithms"]
 
 [dependencies]
 base64 = "0.13"
-rand = "0.7"
+rand = "0.8"
 
 [dependencies.scolapasta-hex]
 version = "0.1"
