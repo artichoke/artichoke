@@ -1,11 +1,71 @@
+use core::mem;
+
 use artichoke_core::debug::Debug as _;
 use artichoke_core::value::Value as _;
 use spinoso_exception::TypeError;
 
+use crate::convert::{BoxUnboxVmValue, UnboxedValueGuard};
 use crate::error::Error;
+use crate::extn::core::array::Array;
 use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
+
+pub unsafe fn implicitly_convert_to_array<'a>(
+    interp: &mut Artichoke,
+    value: &'a mut Value,
+) -> Result<UnboxedValueGuard<'a, Array>, TypeError> {
+    // This is a hack to work around double borrowing.
+    let val = *value;
+    if let Ok(array) = Array::unbox_from_value(value, interp) {
+        return Ok(array);
+    }
+    if let Ok(true) = val.respond_to(interp, "to_ary") {
+        if let Ok(mut maybe) = val.funcall(interp, "to_ary", &[], None) {
+            if let Ok(array) = Array::unbox_from_value(&mut maybe, interp) {
+                // Safety:
+                //
+                // The `mrb_value` contained in the `maybe` binding is
+                // freshly allocated and has been protected from GC using
+                // `mrb_gc_protect`.
+                //
+                // This transmute extends the lifetime of the retrieved
+                // `Array` to the lifetime of the given `value`.
+                //
+                // Neither the lifetime of `value`, `maybe`, nor the `interp`
+                // are accurate.
+                //
+                // The safety of this operation relies on no GC collecting
+                // this value, which is true as long as execution does not
+                // return to the mruby VM. Tying the lifetime of the
+                // returned `Array` to this `Value` combined with the
+                // convention to never store `Value`s unless they are alive
+                // in the interpreter heap effectively does that.
+                Ok(mem::transmute(array))
+            } else {
+                let mut message = String::from("can't convert ");
+                let name = interp.inspect_type_name_for_value(val);
+                message.push_str(name);
+                message.push_str(" to Array (");
+                message.push_str(name);
+                message.push_str("#to_ary gives ");
+                message.push_str(interp.inspect_type_name_for_value(maybe));
+                message.push(')');
+                Err(TypeError::from(message))
+            }
+        } else {
+            let mut message = String::from("no implicit conversion of ");
+            message.push_str(interp.inspect_type_name_for_value(val));
+            message.push_str(" into Array");
+            Err(TypeError::from(message))
+        }
+    } else {
+        let mut message = String::from("no implicit conversion of ");
+        message.push_str(interp.inspect_type_name_for_value(val));
+        message.push_str(" into Array");
+        Err(TypeError::from(message))
+    }
+}
 
 /// Attempt to implicitly convert a [`Value`] to an integer.
 ///
