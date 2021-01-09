@@ -1,6 +1,7 @@
 //! Parse options parameter to `Regexp#initialize` and `Regexp::compile`.
 
 use super::Options;
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 
 impl ConvertMut<Value, Options> for Artichoke {
@@ -9,7 +10,7 @@ impl ConvertMut<Value, Options> for Artichoke {
         // Regexp::EXTENDED, Regexp::IGNORECASE, and Regexp::MULTILINE, logically
         // or-ed together. Otherwise, if options is not nil or false, the regexp
         // will be case insensitive.
-        if let Ok(options) = value.implicitly_convert_to_int(self) {
+        if let Ok(options) = implicitly_convert_to_int(self, value) {
             Options::from(options)
         } else if let Ok(options) = value.try_into::<Option<bool>>(self) {
             Options::from(options)

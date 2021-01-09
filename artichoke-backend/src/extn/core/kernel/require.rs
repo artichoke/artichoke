@@ -4,6 +4,7 @@ use bstr::ByteSlice;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
+use crate::convert::implicitly_convert_to_string;
 use crate::extn::prelude::*;
 use crate::ffi;
 use crate::fs::RUBY_LOAD_PATH;
@@ -12,7 +13,7 @@ use crate::state::parser::Context;
 const RUBY_EXTENSION: &str = "rb";
 
 pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
-    let filename = filename.implicitly_convert_to_string(interp)?;
+    let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }
@@ -37,7 +38,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
 }
 
 pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<RelativePath>) -> Result<bool, Error> {
-    let filename = filename.implicitly_convert_to_string(interp)?;
+    let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }

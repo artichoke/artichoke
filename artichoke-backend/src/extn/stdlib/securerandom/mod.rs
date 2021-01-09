@@ -16,6 +16,7 @@
 //! [`SecureRandom`]: https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
 //! [`getrandom`]: https://crates.io/crates/getrandom
 
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::exception as exc;
 use crate::extn::prelude::*;
 
@@ -80,9 +81,9 @@ impl TryConvertMut<Option<Value>, Max> for Artichoke {
                     Ok(Max::Float(max))
                 }
                 _ => {
-                    let max = max.implicitly_convert_to_int(self).map_err(|_| {
+                    let max = implicitly_convert_to_int(self, max).map_err(|_| {
                         let mut message = b"invalid argument - ".to_vec();
-                        message.extend(max.inspect(self).as_slice());
+                        message.extend_from_slice(max.inspect(self).as_slice());
                         exc::ArgumentError::from(message)
                     })?;
                     Ok(Max::Integer(max))

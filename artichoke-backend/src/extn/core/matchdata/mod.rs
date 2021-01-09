@@ -15,6 +15,7 @@ use std::convert::TryFrom;
 use std::ops::{Bound, RangeBounds};
 use std::str;
 
+use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;
 use crate::extn::core::symbol::Symbol;
@@ -92,13 +93,13 @@ impl<'a> TryConvertMut<&'a mut Value, CaptureExtract<'a>> for Artichoke {
     type Error = TypeError;
 
     fn try_convert_mut(&mut self, value: &'a mut Value) -> Result<CaptureExtract<'a>, Self::Error> {
-        if let Ok(idx) = value.implicitly_convert_to_int(self) {
+        if let Ok(idx) = implicitly_convert_to_int(self, *value) {
             Ok(CaptureExtract::GroupIndex(idx))
         } else if let Ok(symbol) = unsafe { Symbol::unbox_from_value(value, self) } {
             let sym = symbol.id();
             Ok(CaptureExtract::Symbol(sym.into()))
         } else {
-            let name = value.implicitly_convert_to_string(self)?;
+            let name = unsafe { implicitly_convert_to_string(self, value)? };
             Ok(CaptureExtract::GroupName(name))
         }
     }

@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 
+use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
@@ -39,11 +40,11 @@ pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<
 
 pub fn mul(interp: &mut Artichoke, mut ary: Value, mut joiner: Value) -> Result<Value, Error> {
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    if let Ok(separator) = joiner.implicitly_convert_to_string(interp) {
+    if let Ok(separator) = unsafe { implicitly_convert_to_string(interp, &mut joiner) } {
         let s = array.join(interp, separator)?;
         Ok(interp.convert_mut(s))
     } else {
-        let n = joiner.implicitly_convert_to_int(interp)?;
+        let n = implicitly_convert_to_int(interp, joiner)?;
         if let Ok(n) = usize::try_from(n) {
             let value = array.repeat(n)?;
             let result = Array::alloc_value(value, interp)?;
@@ -186,7 +187,7 @@ pub fn first(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Resu
         if matches!(num.ruby_type(), Ruby::Float) {
             return Err(RangeError::with_message("bignum too big to convert into `long'").into());
         }
-        let n = num.implicitly_convert_to_int(interp)?;
+        let n = implicitly_convert_to_int(interp, num)?;
         if let Ok(n) = usize::try_from(n) {
             let slice = array.0.first_n(n);
             let result = Array::from(slice);
@@ -224,7 +225,7 @@ pub fn last(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Resul
         if matches!(num.ruby_type(), Ruby::Float) {
             return Err(RangeError::with_message("bignum too big to convert into `long'").into());
         }
-        let n = num.implicitly_convert_to_int(interp)?;
+        let n = implicitly_convert_to_int(interp, num)?;
         if let Ok(n) = usize::try_from(n) {
             let slice = array.0.last_n(n);
             let result = Array::from(slice);
@@ -297,7 +298,7 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = if let Some(count) = count {
-        let count = count.implicitly_convert_to_int(interp)?;
+        let count = implicitly_convert_to_int(interp, count)?;
         let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative array size"))?;
         let shifted = array.shift_n(count);
 

@@ -1,12 +1,13 @@
 //! Glue between mruby FFI and `securerandom` Rust implementation.
 
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 use crate::extn::stdlib::securerandom;
 
 #[inline]
 pub fn alphanumeric(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error> {
     let alpha = if let Some(len) = len {
-        let len = len.implicitly_convert_to_int(interp)?;
+        let len = implicitly_convert_to_int(interp, len)?;
         securerandom::alphanumeric(Some(len))?
     } else {
         securerandom::alphanumeric(None)?
@@ -17,7 +18,7 @@ pub fn alphanumeric(interp: &mut Artichoke, len: Option<Value>) -> Result<Value,
 #[inline]
 pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error> {
     let base64 = if let Some(len) = len {
-        let len = len.implicitly_convert_to_int(interp)?;
+        let len = implicitly_convert_to_int(interp, len)?;
         securerandom::base64(Some(len))?
     } else {
         securerandom::base64(None)?
@@ -38,7 +39,7 @@ pub fn urlsafe_base64(interp: &mut Artichoke, len: Option<Value>, padding: Optio
         }
     };
     let base64 = if let Some(len) = len {
-        let len = len.implicitly_convert_to_int(interp)?;
+        let len = implicitly_convert_to_int(interp, len)?;
         securerandom::urlsafe_base64(Some(len), padding)?
     } else {
         securerandom::urlsafe_base64(None, padding)?
@@ -49,7 +50,7 @@ pub fn urlsafe_base64(interp: &mut Artichoke, len: Option<Value>, padding: Optio
 #[inline]
 pub fn hex(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error> {
     let hex = if let Some(len) = len {
-        let len = len.implicitly_convert_to_int(interp)?;
+        let len = implicitly_convert_to_int(interp, len)?;
         securerandom::hex(Some(len))?
     } else {
         securerandom::hex(None)?
@@ -64,7 +65,7 @@ pub fn random_bytes(interp: &mut Artichoke, len: Option<Value>) -> Result<Value,
         // int.
         //
         // https://github.com/ruby/ruby/blob/v2_6_3/lib/securerandom.rb#L135
-        let len = len.implicitly_convert_to_int(interp)?;
+        let len = implicitly_convert_to_int(interp, len)?;
         securerandom::random_bytes(Some(len))?
     } else {
         securerandom::random_bytes(None)?
