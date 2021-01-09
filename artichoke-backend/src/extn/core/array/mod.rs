@@ -5,7 +5,7 @@ use std::iter::FromIterator;
 use std::ops::{Deref, DerefMut};
 use std::slice;
 
-use crate::convert::UnboxedValueGuard;
+use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string, UnboxedValueGuard};
 use crate::extn::prelude::*;
 
 pub mod args;
@@ -216,7 +216,7 @@ impl Array {
                             return Err(TypeError::from(message).into());
                         }
                     } else {
-                        let len = array_or_len.implicitly_convert_to_int(interp)?;
+                        let len = implicitly_convert_to_int(interp, array_or_len)?;
                         let len =
                             usize::try_from(len).map_err(|_| ArgumentError::with_message("negative array size"))?;
                         let default = default.unwrap_or_else(Value::nil);
@@ -259,7 +259,7 @@ impl Array {
                             return Err(TypeError::from(message).into());
                         }
                     } else {
-                        let len = array_or_len.implicitly_convert_to_int(interp)?;
+                        let len = implicitly_convert_to_int(interp, array_or_len)?;
                         let len =
                             usize::try_from(len).map_err(|_| ArgumentError::with_message("negative array size"))?;
                         if default.is_some() {
@@ -302,7 +302,7 @@ impl Array {
                 for elem in ary.iter() {
                     flatten(interp, elem, out)?;
                 }
-            } else if let Ok(s) = value.implicitly_convert_to_string(interp) {
+            } else if let Ok(s) = unsafe { implicitly_convert_to_string(interp, &mut value) } {
                 out.push(s.to_vec());
             } else {
                 let s = value.to_s(interp);

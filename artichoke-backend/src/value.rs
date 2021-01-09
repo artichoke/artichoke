@@ -1,19 +1,17 @@
 use artichoke_core::convert::{Convert, ConvertMut, TryConvert};
-use artichoke_core::debug::Debug;
 use artichoke_core::intern::Intern;
 use artichoke_core::value::Value as ValueCore;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::error;
 use std::fmt;
-use std::mem;
 use std::ptr;
 
 use crate::class_registry::ClassRegistry;
 use crate::convert::BoxUnboxVmValue;
 use crate::error::{Error, RubyException};
 use crate::exception_handler;
-use crate::extn::core::exception::{ArgumentError, Fatal, TypeError};
+use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::extn::core::symbol::Symbol;
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
@@ -120,99 +118,6 @@ impl Value {
                 let exception = Self::from(exception);
                 Err(exception_handler::last_error(&mut arena, exception)?)
             }
-        }
-    }
-
-    pub fn implicitly_convert_to_int(&self, interp: &mut Artichoke) -> Result<Int, TypeError> {
-        let int = if let Ok(int) = self.try_into::<Option<Int>>(interp) {
-            if let Some(int) = int {
-                int
-            } else {
-                return Err(TypeError::with_message("no implicit conversion from nil to integer"));
-            }
-        } else if let Ok(true) = self.respond_to(interp, "to_int") {
-            if let Ok(maybe) = self.funcall(interp, "to_int", &[], None) {
-                if let Ok(int) = maybe.try_into::<Int>(interp) {
-                    int
-                } else {
-                    let mut message = String::from("can't convert ");
-                    let name = interp.inspect_type_name_for_value(*self);
-                    message.push_str(name);
-                    message.push_str(" to Integer (");
-                    message.push_str(name);
-                    message.push_str("#to_int gives ");
-                    message.push_str(interp.inspect_type_name_for_value(maybe));
-                    message.push(')');
-                    return Err(TypeError::from(message));
-                }
-            } else {
-                let mut message = String::from("no implicit conversion of ");
-                message.push_str(interp.inspect_type_name_for_value(*self));
-                message.push_str(" into Integer");
-                return Err(TypeError::from(message));
-            }
-        } else {
-            let mut message = String::from("no implicit conversion of ");
-            message.push_str(interp.inspect_type_name_for_value(*self));
-            message.push_str(" into Integer");
-            return Err(TypeError::from(message));
-        };
-        Ok(int)
-    }
-
-    pub fn implicitly_convert_to_string(&mut self, interp: &mut Artichoke) -> Result<&[u8], TypeError> {
-        let string = if let Ok(string) = self.try_into_mut::<&[u8]>(interp) {
-            string
-        } else if let Ok(sym) = unsafe { Symbol::unbox_from_value(self, interp) } {
-            let bytes = sym.bytes(interp);
-            // Safety:
-            //
-            // Symbols are valid for the lifetime of the interpreter, which is a
-            // longer lifetime than `self`.
-            //
-            // This transmute shrinks the lifetime of the interned bytes to the
-            // lifetime of this `Value`.
-            unsafe { mem::transmute(bytes) }
-        } else if let Ok(true) = self.respond_to(interp, "to_str") {
-            if let Ok(maybe) = self.funcall(interp, "to_str", &[], None) {
-                if let Ok(string) = maybe.try_into_mut::<&[u8]>(interp) {
-                    string
-                } else {
-                    let mut message = String::from("can't convert ");
-                    let name = interp.inspect_type_name_for_value(*self);
-                    message.push_str(name);
-                    message.push_str(" to String (");
-                    message.push_str(name);
-                    message.push_str("#to_str gives ");
-                    message.push_str(interp.inspect_type_name_for_value(maybe));
-                    message.push(')');
-                    return Err(TypeError::from(message));
-                }
-            } else {
-                let mut message = String::from("no implicit conversion of ");
-                message.push_str(interp.inspect_type_name_for_value(*self));
-                message.push_str(" into String");
-                return Err(TypeError::from(message));
-            }
-        } else {
-            let mut message = String::from("no implicit conversion of ");
-            message.push_str(interp.inspect_type_name_for_value(*self));
-            message.push_str(" into String");
-            return Err(TypeError::from(message));
-        };
-        Ok(string)
-    }
-
-    #[inline]
-    pub fn implicitly_convert_to_nilable_string(
-        &mut self,
-        interp: &mut Artichoke,
-    ) -> Result<Option<&[u8]>, TypeError> {
-        if self.is_nil() {
-            Ok(None)
-        } else {
-            let string = self.implicitly_convert_to_string(interp)?;
-            Ok(Some(string))
         }
     }
 }

@@ -1,6 +1,7 @@
 //! Glue between mruby FFI and `ENV` Rust implementation.
 
 use super::{Random, Rng, Seed};
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 
 pub fn initialize(interp: &mut Artichoke, seed: Option<Value>, into: Value) -> Result<Value, Error> {
@@ -20,7 +21,7 @@ pub fn equal(interp: &mut Artichoke, mut rand: Value, mut other: Value) -> Resul
 
 pub fn bytes(interp: &mut Artichoke, mut rand: Value, size: Value) -> Result<Value, Error> {
     let mut random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
-    let size = size.implicitly_convert_to_int(interp)?;
+    let size = implicitly_convert_to_int(interp, size)?;
     let buf = match random.as_mut() {
         Rng::Global => interp.prng_mut()?.bytes(size)?,
         Rng::Value(random) => random.bytes(size)?,
@@ -59,7 +60,7 @@ pub fn srand(interp: &mut Artichoke, seed: Option<Value>) -> Result<Value, Error
 }
 
 pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Error> {
-    let size = size.implicitly_convert_to_int(interp)?;
+    let size = implicitly_convert_to_int(interp, size)?;
     let buf = super::urandom(size)?;
     Ok(interp.convert_mut(buf))
 }
