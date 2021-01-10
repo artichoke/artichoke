@@ -235,6 +235,11 @@
     "description": "Target: Support for building on Windows targets like `x86_64-pc-windows-msvc`."
   },
   {
+    "name": "S-archive",
+    "color": "d3dddd",
+    "description": "Status: This pull request exists to archive an unmerged branch."
+  },
+  {
     "name": "S-blocked",
     "color": "d3dddd",
     "description": "Status: Marked as blocked ❌ on something else such as other implementation work."
