@@ -44,15 +44,18 @@ target-lexicon = "0.11.1"
 
 [features]
 default = [
+  "core-full",
+  "stdlib-full",
+]
+
+core-full = [
   "core-env",
   "core-env-system",
   "core-math",
   "core-math-full",
   "core-random",
-  "core-regexp",
   "core-regexp-oniguruma",
   "core-time",
-  "stdlib-securerandom"
 ]
 core-env = ["spinoso-env"]
 core-env-system = ["core-env", "spinoso-env/system-env"]
@@ -62,10 +65,41 @@ core-random = ["spinoso-random"]
 core-regexp = ["spinoso-regexp"]
 core-regexp-oniguruma = ["spinoso-regexp/oniguruma", "onig"]
 core-time = ["spinoso-time"]
+
 native-filesystem-access = []
 output-strategy-capture = []
 output-strategy-null = ["output-strategy-capture"]
+
+stdlib-full = [
+  "stdlib-abbrev",
+  "stdlib-base64",
+  "stdlib-cmath",
+  "stdlib-delegate",
+  "stdlib-forwardable",
+  "stdlib-json",
+  "stdlib-monitor",
+  "stdlib-ostruct",
+  "stdlib-securerandom",
+  "stdlib-set",
+  "stdlib-shellwords",
+  "stdlib-strscan",
+  "stdlib-time",
+  "stdlib-uri",
+]
+stdlib-abbrev = []
+stdlib-base64 = []
+stdlib-cmath = []
+stdlib-delegate = []
+stdlib-forwardable = []
+stdlib-json = []
+stdlib-monitor = []
+stdlib-ostruct = []
 stdlib-securerandom = ["spinoso-securerandom"]
+stdlib-set = []
+stdlib-shellwords = []
+stdlib-strscan = []
+stdlib-time = []
+stdlib-uri = []
 
 [package.metadata.docs.rs]
 all-features = true
