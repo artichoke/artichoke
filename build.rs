@@ -68,25 +68,28 @@ where
 }
 
 fn birthdate() -> Date {
+    // ```console
+    // $ git rev-list --format=%B --max-parents=0 trunk
+    // commit db318759dad41686be679c87c349fcb5ff0a396c
+    // Initial commit
     // $ git show -s --format="%ct" db318759dad41686be679c87c349fcb5ff0a396c
     // 1554600621
     // $ git show -s --format="%ci" db318759dad41686be679c87c349fcb5ff0a396c
     // 2019-04-06 18:30:21 -0700
-    // $ git rev-list --count db318759dad41686be679c87c349fcb5ff0a396c
-    // 1
+    // ```
     let time = 1_554_600_621;
     Utc.timestamp(time, 0).into()
 }
 
 fn revision_count() -> Option<usize> {
-    let cmd = OsString::from("git");
-    let revision_count = Command::new(cmd)
+    let revision_count = Command::new("git")
         .arg("rev-list")
         .arg("--count")
         .arg("HEAD")
         .output()
         .ok()?;
-    String::from_utf8(revision_count.stdout).ok()?.trim().parse().ok()
+    let output = String::from_utf8(revision_count.stdout).ok()?;
+    output.trim().parse::<usize>().ok()
 }
 
 fn platform(target: &Triple) -> String {
@@ -95,10 +98,13 @@ fn platform(target: &Triple) -> String {
 
 fn copyright(birth_date: Date, build_date: Date) -> String {
     if birth_date.year == build_date.year {
-        format!("Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>", birth_date.year)
+        format!(
+            "artichoke - Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
+            birth_date.year
+        )
     } else {
         format!(
-            "Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
+            "artichoke - Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
             birth_date.year, build_date.year
         )
     }
