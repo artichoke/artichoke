@@ -10,9 +10,6 @@ use crate::types::{Int, Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
-// TODO(GH-28): implement `PartialEq`, `Eq`, and `Hash` on `Value`.
-// TODO(GH-29): implement `Convert<HashMap<Value, Value>>`.
-
 impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<(Value, Value)>) -> Value {
         let capa = Int::try_from(value.len()).unwrap_or_default();
