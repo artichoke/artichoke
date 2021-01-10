@@ -1,17 +1,15 @@
 # Artichoke Ruby Memory Management
 
-Artichoke has no garbage collector and relies on
-[Rust's built-in memory management](https://pcwalton.github.io/2013/03/18/an-overview-of-memory-management-in-rust.html)
-and a [cycle-aware reference-counted smart pointer](/cactusref) of its own
+Artichoke has no garbage collector and relies on [Rust's built-in memory
+management] and a [cycle-aware reference-counted smart pointer] of its own
 invention to reclaim memory when Ruby [`Value`](value.md)s are no longer
 reachable from the VM.
 
 This document refers to data structures with backticks if it is refering to a
 specific implementation, for example, [`Value`](value.md). If the data structure
 is not formatted as code, the document is referring to the general concept, for
-example, HashMap does not refer to
-[`HashMap`](https://doc.rust-lang.org/std/collections/struct.HashMap.html), but
-rather the concept of a hash table.
+example, HashMap does not refer to [`HashMap`], but rather the concept of a hash
+table.
 
 ## `BasicObject#object_id`
 
@@ -58,13 +56,9 @@ components of the VM can retrieve `Value`s from the heap.
 
 Mediating access to the underlying `Value`s via the `ObjectId` allows us to
 centrally implement guards around mutability. For example, `Value`s can be
-marked immutable with
-[`Object#freeze`](https://ruby-doc.org/core-2.6.3/Object.html#method-i-freeze).
-`ObjectId` implements
-[`Deref`](https://doc.rust-lang.org/std/ops/trait.Deref.html) and
-[`DerefMut`](https://doc.rust-lang.org/std/ops/trait.DerefMut.html) that resolve
-a `Value` on the heap via its `ObjectId` and enforces mutability guarantees of
-the VM.
+marked immutable with [`Object#freeze`]. `ObjectId` implements [`Deref`] and
+[`DerefMut`] that resolve a `Value` on the heap via its `ObjectId` and enforces
+mutability guarantees of the VM.
 
 ## The Heap
 
@@ -215,3 +209,12 @@ Once we return from the function, the variable bindings get dropped:
 
 When `ring` is dropped or reassigned, `CactusRef` detects an orphaned cycle and
 will deallocate all of the `Value`s.
+
+[rust's built-in memory management]:
+  https://pcwalton.github.io/2013/03/18/an-overview-of-memory-management-in-rust.html
+[cycle-aware reference-counted smart pointer]:
+  https://github.com/artichoke/cactusref
+[`hashmap`]: https://doc.rust-lang.org/std/collections/struct.HashMap.html
+[`object#freeze`]: https://ruby-doc.org/core-2.6.3/Object.html#method-i-freeze
+[`deref`]: https://doc.rust-lang.org/std/ops/trait.Deref.html
+[`derefmut`]: https://doc.rust-lang.org/std/ops/trait.DerefMut.html

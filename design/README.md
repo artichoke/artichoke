@@ -1,8 +1,7 @@
 # Artichoke Ruby VM Design
 
-Artichoke aims to be a source-compatible, [ruby/spec](/spec-runner/spec/ruby)
-compliant implementation of Ruby 2.6.3 written in safe Rust (excluding crate
-dependencies).
+Artichoke aims to be a source-compatible, [ruby/spec] compliant implementation
+of Ruby 2.6.3 written in safe Rust (excluding crate dependencies).
 
 These documents discuss the design of the Artichoke VM.
 
@@ -16,3 +15,5 @@ These documents discuss the design of the Artichoke VM.
   with no GIL.
 - [Parser](parser.md)
 - [AST](ast.md)
+
+[ruby/spec]: https://github.com/artichoke/spec
