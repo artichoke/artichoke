@@ -75,6 +75,13 @@ cli = ["backtrace", "clap", "rustyline"]
 backtrace = ["termcolor"]
 # Enable all features of Ruby Core, Standard Library, and the underlying VM.
 kitchen-sink = [
+  "core-full",
+  "native-filesystem-access",
+  "stdlib-full",
+]
+
+# Enable every API in Ruby Core
+core-full = [
   "core-env",
   "core-env-system",
   "core-math",
@@ -83,8 +90,6 @@ kitchen-sink = [
   "core-regexp",
   "core-regexp-oniguruma",
   "core-time",
-  "native-filesystem-access",
-  "stdlib-securerandom",
 ]
 # Enable resolving environment variables with the `ENV` core object.
 core-env = ["artichoke-backend/core-env"]
@@ -110,6 +115,7 @@ core-regexp-oniguruma = ["artichoke-backend/core-regexp-oniguruma"]
 # Implement the `Time` core class. This feature adds dependencies on `chrono`
 # and `chrono-tz`.
 core-time = ["artichoke-backend/core-time"]
+
 # Extend the Artichoke virtual filesystem to have native/host access.
 # This feature enables requiring sources from local disk.
 native-filesystem-access = ["artichoke-backend/native-filesystem-access"]
@@ -118,9 +124,40 @@ output-strategy-capture = ["artichoke-backend/output-strategy-capture"]
 # Override the `stdout` and `stdin` streams to write to be discarded.
 # `output-strategy-null` implies the `output-strategy-capture` feature.
 output-strategy-null = ["artichoke-backend/output-strategy-null"]
+
+# Enable every integrated standard library package.
+stdlib-full = [
+  "stdlib-abbrev",
+  "stdlib-base64",
+  "stdlib-cmath",
+  "stdlib-delegate",
+  "stdlib-forwardable",
+  "stdlib-json",
+  "stdlib-monitor",
+  "stdlib-ostruct",
+  "stdlib-securerandom",
+  "stdlib-set",
+  "stdlib-shellwords",
+  "stdlib-strscan",
+  "stdlib-time",
+  "stdlib-uri",
+]
+stdlib-abbrev = ["artichoke-backend/stdlib-abbrev"]
+stdlib-base64 = ["artichoke-backend/stdlib-base64"]
+stdlib-cmath = ["artichoke-backend/stdlib-cmath"]
+stdlib-delegate = ["artichoke-backend/stdlib-delegate"]
+stdlib-forwardable = ["artichoke-backend/stdlib-forwardable"]
+stdlib-json = ["artichoke-backend/stdlib-json"]
+stdlib-monitor = ["artichoke-backend/stdlib-monitor"]
+stdlib-ostruct = ["artichoke-backend/stdlib-ostruct"]
 # Implement the `SecureRandom` Standard Library package. This feature adds
-# dependencies on `base64`, `hex`, `rand`, `rand_core`, and `uuid`.
+# dependencies on `base64`, `rand`, `rand_core`.
 stdlib-securerandom = ["artichoke-backend/stdlib-securerandom"]
+stdlib-set = ["artichoke-backend/stdlib-set"]
+stdlib-shellwords = ["artichoke-backend/stdlib-shellwords"]
+stdlib-strscan = ["artichoke-backend/stdlib-strscan"]
+stdlib-time = ["artichoke-backend/stdlib-time"]
+stdlib-uri = ["artichoke-backend/stdlib-uri"]
 
 [package.metadata.docs.rs]
 all-features = true
