@@ -34,6 +34,10 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: v3
+
       - name: Compile
         run: cargo build --workspace --verbose
 
@@ -63,6 +67,8 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+
+      - uses: Swatinem/rust-cache@v1
 
       - name: Check artichoke formatting
         run: cargo fmt -- --check --color=auto
@@ -102,6 +108,10 @@ jobs:
         with:
           ruby-version: ".ruby-version"
 
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: "fuzz"
+
       - name: Check fuzz with locked Cargo.lock
         run: cargo check --locked
         working-directory: "fuzz"
@@ -126,6 +136,10 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: "spec-runner"
 
       - name: Check spec-runner formatting
         run: cargo fmt -- --check --color=auto
@@ -158,6 +172,8 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+
+      - uses: Swatinem/rust-cache@v1
 
       - name: Check spinoso-array with no default features
         run: cargo check --verbose --no-default-features
@@ -288,6 +304,13 @@ jobs:
         with:
           toolchain: nightly
           profile: minimal
+
+      - uses: Swatinem/rust-cache@v1
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          working-directory: "spec-runner"
+          key: spec-runner
 
       - name: Check artichoke with minimal versions
         run: |
