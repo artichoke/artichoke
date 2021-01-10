@@ -85,7 +85,7 @@ impl Seed {
 }
 
 impl TryConvertMut<Value, Seed> for Artichoke {
-    type Error = TypeError;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Seed, Self::Error> {
         let seed = implicitly_convert_to_int(self, value)?;
@@ -94,7 +94,7 @@ impl TryConvertMut<Value, Seed> for Artichoke {
 }
 
 impl TryConvertMut<Option<Value>, Seed> for Artichoke {
-    type Error = TypeError;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Seed, Self::Error> {
         if let Some(value) = value {
