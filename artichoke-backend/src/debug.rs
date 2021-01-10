@@ -13,18 +13,20 @@ impl Debug for Artichoke {
             Ok(Some(true)) => "true",
             Ok(Some(false)) => "false",
             Ok(None) => "nil",
-            Err(_) if matches!(value.ruby_type(), Ruby::Data | Ruby::Object) => {
-                if let Ok(class) = value.funcall(self, "class", &[], None) {
-                    if let Ok(class) = class.funcall(self, "name", &[], None) {
-                        if let Ok(class) = class.try_into_mut(self) {
-                            return class;
-                        }
-                    }
-                }
-                ""
-            }
+            Err(_) if matches!(value.ruby_type(), Ruby::Data | Ruby::Object) => self.class_name_for_value(value),
             Err(_) => value.ruby_type().class_name(),
         }
+    }
+
+    fn class_name_for_value(&mut self, value: Self::Value) -> &str {
+        if let Ok(class) = value.funcall(self, "class", &[], None) {
+            if let Ok(class) = class.funcall(self, "name", &[], None) {
+                if let Ok(class) = class.try_into_mut(self) {
+                    return class;
+                }
+            }
+        }
+        ""
     }
 }
 
