@@ -193,17 +193,31 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
 ///
 /// If an unhandled readline state is encountered, a fatal error is returned.
 pub fn run<Wout, Werr>(
-    mut output: Wout,
-    mut error: Werr,
+    output: Wout,
+    error: Werr,
     config: Option<PromptConfig<'_, '_, '_>>,
 ) -> Result<(), Box<dyn error::Error>>
 where
     Wout: io::Write,
     Werr: io::Write + WriteColor,
 {
-    let config = config.unwrap_or_default();
     let mut interp = crate::interpreter()?;
-    writeln!(output, "{}", preamble(&mut interp)?)?;
+    let result = repl_loop(&mut interp, output, error, &config.unwrap_or_default());
+    interp.close();
+    result
+}
+
+fn repl_loop<Wout, Werr>(
+    interp: &mut Artichoke,
+    mut output: Wout,
+    mut error: Werr,
+    config: &PromptConfig<'_, '_, '_>,
+) -> Result<(), Box<dyn error::Error>>
+where
+    Wout: io::Write,
+    Werr: io::Write + WriteColor,
+{
+    writeln!(output, "{}", preamble(interp)?)?;
 
     interp.reset_parser()?;
     // safety:
@@ -213,7 +227,7 @@ where
     // - A test asserts that `REPL_FILENAME` has no NUL bytes.
     let context = unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) };
     interp.push_context(context)?;
-    let mut parser = Parser::new(&mut interp).ok_or_else(ParserAllocError::new)?;
+    let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
 
     let mut rl = Editor::<()>::new();
     // If a code block is open, accumulate code from multiple readlines in this
@@ -247,12 +261,12 @@ where
                 }
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
-                        let result = value.inspect(&mut interp);
+                        let result = value.inspect(interp);
                         output.write_all(config.result_prefix.as_bytes())?;
                         output.write_all(result.as_slice())?;
                         output.write_all(b"\n")?;
                     }
-                    Err(ref exc) => backtrace::format_repl_trace_into(&mut error, &mut interp, exc)?,
+                    Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
                 }
                 for line in buf.lines() {
                     rl.add_history_entry(line);
