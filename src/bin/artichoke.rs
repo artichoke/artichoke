@@ -90,7 +90,7 @@ fn main() {
         .with_programfile(matches.value_of_os("programfile").map(PathBuf::from));
 
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
-    match ruby::entrypoint(args, io::stdin(), &mut stderr) {
+    match ruby::run(args, io::stdin(), &mut stderr) {
         Ok(Ok(())) => {}
         Ok(Err(())) => process::exit(1),
         Err(err) => {

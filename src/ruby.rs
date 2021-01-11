@@ -5,6 +5,7 @@
 
 use std::error;
 use std::ffi::{OsStr, OsString};
+use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use termcolor::WriteColor;
@@ -84,27 +85,46 @@ impl Args {
 /// # Errors
 ///
 /// If an exception is raised on the interpreter, then an error is returned.
-pub fn entrypoint<R, W>(args: Args, mut input: R, error: W) -> Result<Result<(), ()>, Box<dyn error::Error>>
+pub fn run<R, W>(args: Args, input: R, error: W) -> Result<Result<(), ()>, Box<dyn error::Error>>
+where
+    R: io::Read,
+    W: io::Write + WriteColor,
+{
+    let mut interp = crate::interpreter()?;
+    let result = entrypoint(&mut interp, args, input, error);
+    interp.close();
+    result
+}
+
+/// Main entrypoint for Artichoke's version of the `ruby` CLI.
+///
+/// # Errors
+///
+/// If an exception is raised on the interpreter, then an error is returned.
+pub fn entrypoint<R, W>(
+    interp: &mut Artichoke,
+    args: Args,
+    mut input: R,
+    error: W,
+) -> Result<Result<(), ()>, Box<dyn error::Error>>
 where
     R: io::Read,
     W: io::Write + WriteColor,
 {
     if args.copyright {
-        let mut interp = crate::interpreter()?;
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
         Ok(Ok(()))
     } else if !args.commands.is_empty() {
-        Ok(execute_inline_eval(error, args.commands, args.fixture.as_deref())?)
+        execute_inline_eval(interp, error, args.commands, args.fixture.as_deref())
     } else if let Some(programfile) = args.programfile.filter(|file| file != Path::new("-")) {
-        execute_program_file(error, programfile.as_path(), args.fixture.as_deref())
+        execute_program_file(interp, error, programfile.as_path(), args.fixture.as_deref())
     } else {
-        let mut interp = crate::interpreter()?;
         let mut program = vec![];
         input
             .read_to_end(&mut program)
             .map_err(|_| IOError::from("Could not read program from STDIN"))?;
         if let Err(ref exc) = interp.eval(program.as_slice()) {
-            backtrace::format_cli_trace_into(error, &mut interp, exc)?;
+            backtrace::format_cli_trace_into(error, interp, exc)?;
             return Ok(Err(()));
         }
         Ok(Ok(()))
@@ -112,6 +132,7 @@ where
 }
 
 fn execute_inline_eval<W>(
+    interp: &mut Artichoke,
     error: W,
     commands: Vec<OsString>,
     fixture: Option<&Path>,
@@ -119,7 +140,6 @@ fn execute_inline_eval<W>(
 where
     W: io::Write + WriteColor,
 {
-    let mut interp = crate::interpreter()?;
     interp.pop_context()?;
     // safety:
     //
@@ -129,11 +149,11 @@ where
     let context = unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH_FILENAME) };
     interp.push_context(context)?;
     if let Some(fixture) = fixture {
-        setup_fixture_hack(&mut interp, fixture)?;
+        setup_fixture_hack(interp, fixture)?;
     }
     for command in commands {
         if let Err(ref exc) = interp.eval_os_str(command.as_os_str()) {
-            backtrace::format_cli_trace_into(error, &mut interp, exc)?;
+            backtrace::format_cli_trace_into(error, interp, exc)?;
             // short circuit, but don't return an error since we already printed it
             return Ok(Err(()));
         }
@@ -143,6 +163,7 @@ where
 }
 
 fn execute_program_file<W>(
+    interp: &mut Artichoke,
     error: W,
     programfile: &Path,
     fixture: Option<&Path>,
@@ -150,12 +171,11 @@ fn execute_program_file<W>(
 where
     W: io::Write + WriteColor,
 {
-    let mut interp = crate::interpreter()?;
     if let Some(fixture) = fixture {
-        setup_fixture_hack(&mut interp, fixture)?;
+        setup_fixture_hack(interp, fixture)?;
     }
     if let Err(ref exc) = interp.eval_file(programfile) {
-        backtrace::format_cli_trace_into(error, &mut interp, exc)?;
+        backtrace::format_cli_trace_into(error, interp, exc)?;
         return Ok(Err(()));
     }
     Ok(Ok(()))
@@ -172,12 +192,12 @@ fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Error> 
 // This function exists to provide a workaround for Artichoke not being able to
 // read from the local filesystem.
 //
-// By passing the `--fixture PATH` argument, this function loads the file at
-// `PATH` into memory and stores it in the interpreter bound to the `$fixture`
-// global.
+// By passing the `--with-fixture PATH` argument, this function loads the file
+// at `PATH` into memory and stores it in the interpreter bound to the
+// `$fixture` global.
 #[inline]
 fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Result<(), Error> {
-    let data = if let Ok(data) = std::fs::read(fixture.as_ref()) {
+    let data = if let Ok(data) = fs::read(fixture.as_ref()) {
         data
     } else {
         return Err(LoadError::from(load_error(fixture.as_ref(), "No such file or directory")?).into());
