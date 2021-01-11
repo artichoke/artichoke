@@ -187,23 +187,29 @@ impl<'a> Inspect<'a> {
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-struct Flags(u8);
+struct Flags {
+    bits: u8,
+}
 
 impl Flags {
-    #[inline]
-    const fn ident() -> Self {
-        Self(0b1000_0001)
-    }
+    // Bit flags
+    const IS_IDENT: Self = Self { bits: 0b1000_0000 };
+    const EMIT_LEADING_COLON: Self = Self { bits: 0b0000_1000 };
+    const EMIT_LEADING_QUOTE: Self = Self { bits: 0b0000_0001 };
+    const EMIT_TRAILING_QUOTE: Self = Self { bits: 0b0000_0010 };
 
-    #[inline]
-    const fn quoted() -> Self {
-        Self(0b0000_0111)
-    }
+    // Initial states
+    const IDENT: Self = Self {
+        bits: Self::IS_IDENT.bits | Self::EMIT_LEADING_COLON.bits,
+    };
+    const QUOTED: Self = Self {
+        bits: Self::EMIT_LEADING_COLON.bits | Self::EMIT_LEADING_QUOTE.bits | Self::EMIT_TRAILING_QUOTE.bits,
+    };
 
     #[inline]
     fn emit_leading_colon(&mut self) -> Option<char> {
-        if self.0 & 0b0000_0001 > 0 {
-            self.0 &= 0b1111_1110;
+        if (self.bits & Self::EMIT_LEADING_COLON.bits) == Self::EMIT_LEADING_COLON.bits {
+            self.bits &= !Self::EMIT_LEADING_COLON.bits;
             Some(':')
         } else {
             None
@@ -212,8 +218,8 @@ impl Flags {
 
     #[inline]
     fn emit_leading_quote(&mut self) -> Option<char> {
-        if self.0 & 0b0000_0010 > 0 {
-            self.0 &= 0b1111_1101;
+        if (self.bits & Self::EMIT_LEADING_QUOTE.bits) == Self::EMIT_LEADING_QUOTE.bits {
+            self.bits &= !Self::EMIT_LEADING_QUOTE.bits;
             Some('"')
         } else {
             None
@@ -222,8 +228,8 @@ impl Flags {
 
     #[inline]
     fn emit_trailing_quote(&mut self) -> Option<char> {
-        if self.0 & 0b0000_0100 > 0 {
-            self.0 &= 0b1111_1011;
+        if (self.bits & Self::EMIT_TRAILING_QUOTE.bits) == Self::EMIT_TRAILING_QUOTE.bits {
+            self.bits &= !Self::EMIT_TRAILING_QUOTE.bits;
             Some('"')
         } else {
             None
@@ -232,7 +238,7 @@ impl Flags {
 
     #[inline]
     const fn is_ident(self) -> bool {
-        self.0 & 0b1000_0000 > 0
+        (self.bits & Self::IS_IDENT.bits) == Self::IS_IDENT.bits
     }
 }
 
@@ -326,7 +332,7 @@ impl<'a> State<'a> {
     #[inline]
     fn ident(bytes: &'a [u8]) -> Self {
         Self {
-            flags: Flags::ident(),
+            flags: Flags::IDENT,
             forward_byte_literal: ByteLiteral::default(),
             bytes,
             reverse_byte_literal: ByteLiteral::default(),
@@ -339,7 +345,7 @@ impl<'a> State<'a> {
     #[inline]
     fn quoted(bytes: &'a [u8]) -> Self {
         Self {
-            flags: Flags::quoted(),
+            flags: Flags::QUOTED,
             forward_byte_literal: ByteLiteral::default(),
             bytes,
             reverse_byte_literal: ByteLiteral::default(),
@@ -760,7 +766,7 @@ mod specs {
 
     #[test]
     fn flags_ident() {
-        let mut flags = Flags::ident();
+        let mut flags = Flags::IDENT;
         assert!(flags.is_ident());
         assert_eq!(flags.emit_leading_colon(), Some(':'));
         assert!(flags.is_ident());
@@ -776,7 +782,7 @@ mod specs {
 
     #[test]
     fn flags_quoted() {
-        let mut flags = Flags::quoted();
+        let mut flags = Flags::QUOTED;
         assert!(!flags.is_ident());
         assert_eq!(flags.emit_leading_colon(), Some(':'));
         assert!(!flags.is_ident());
