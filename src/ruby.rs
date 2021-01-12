@@ -206,3 +206,68 @@ fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Res
     interp.set_global_variable(&b"$fixture"[..], &value)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use std::ffi::OsString;
+    use std::path::PathBuf;
+    use termcolor::Ansi;
+
+    use super::{run, Args};
+
+    #[test]
+    fn run_with_copyright() {
+        let args = Args::empty().with_copyright(true);
+        let input = Vec::<u8>::new();
+        let mut err = Ansi::new(Vec::new());
+        assert!(matches!(run(args, &input[..], &mut err), Ok(Ok(_))));
+    }
+
+    #[test]
+    fn run_with_programfile_from_stdin() {
+        let args = Args::empty().with_programfile(Some(PathBuf::from("-")));
+        let input = b"2 + 7";
+        let mut err = Ansi::new(Vec::new());
+        assert!(matches!(run(args, &input[..], &mut err), Ok(Ok(_))));
+    }
+
+    #[test]
+    fn run_with_programfile_from_stdin_raise_exception() {
+        let args = Args::empty().with_programfile(Some(PathBuf::from("-")));
+        let input = b"raise ArgumentError";
+        let mut err = Ansi::new(Vec::new());
+        assert!(matches!(run(args, &input[..], &mut err), Ok(Err(_))));
+    }
+
+    #[test]
+    fn run_with_stdin() {
+        let args = Args::empty();
+        let input = b"2 + 7";
+        let mut err = Ansi::new(Vec::new());
+        assert!(matches!(run(args, &input[..], &mut err), Ok(Ok(_))));
+    }
+
+    #[test]
+    fn run_with_stdin_raise_exception() {
+        let args = Args::empty();
+        let input = b"raise ArgumentError";
+        let mut err = Ansi::new(Vec::new());
+        assert!(matches!(run(args, &input[..], &mut err), Ok(Err(_))));
+    }
+
+    #[test]
+    fn run_with_inline_eval() {
+        let args = Args::empty().with_commands(vec![OsString::from("2 + 7")]);
+        let input = Vec::<u8>::new();
+        let mut err = Ansi::new(Vec::new());
+        assert!(matches!(run(args, input.as_slice(), &mut err), Ok(Ok(_))));
+    }
+
+    #[test]
+    fn run_with_inline_eval_raise_exception() {
+        let args = Args::empty().with_commands(vec![OsString::from("raise ArgumentError")]);
+        let input = Vec::<u8>::new();
+        let mut err = Ansi::new(Vec::new());
+        assert!(matches!(run(args, &input[..], &mut err), Ok(Err(_))));
+    }
+}
