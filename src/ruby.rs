@@ -14,18 +14,8 @@ use crate::backend::ffi;
 use crate::backend::state::parser::Context;
 use crate::backend::string::format_unicode_debug_into;
 use crate::backtrace;
+use crate::filename::INLINE_EVAL_SWITCH;
 use crate::prelude::*;
-
-const INLINE_EVAL_SWITCH_FILENAME: &[u8] = b"-e";
-
-#[cfg(test)]
-mod filename_test {
-    #[test]
-    fn inline_eval_switch_filename_does_not_contain_nul_byte() {
-        let contains_nul_byte = super::INLINE_EVAL_SWITCH_FILENAME.iter().copied().any(|b| b == b'\0');
-        assert!(!contains_nul_byte);
-    }
-}
 
 /// Command line arguments for Artichoke `ruby` frontend.
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -141,12 +131,12 @@ where
     W: io::Write + WriteColor,
 {
     interp.pop_context()?;
-    // safety:
+    // Safety:
     //
     // - `Context::new_unchecked` requires that its argument has no NUL bytes.
-    // - `INLINE_EVAL_SWITCH_FILENAME` is controlled by this crate.
-    // - A test asserts that `INLINE_EVAL_SWITCH_FILENAME` has no NUL bytes.
-    let context = unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH_FILENAME) };
+    // - `INLINE_EVAL_SWITCH` is controlled by this crate.
+    // - A test asserts that `INLINE_EVAL_SWITCH` has no NUL bytes.
+    let context = unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH) };
     interp.push_context(context)?;
     if let Some(fixture) = fixture {
         setup_fixture_hack(interp, fixture)?;

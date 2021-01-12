@@ -13,19 +13,9 @@ use termcolor::WriteColor;
 
 use crate::backend::state::parser::Context;
 use crate::backtrace;
+use crate::filename::REPL;
 use crate::parser::{Parser, State};
 use crate::prelude::{Parser as _, *};
-
-const REPL_FILENAME: &[u8] = b"(airb)";
-
-#[cfg(test)]
-mod filename_test {
-    #[test]
-    fn repl_filename_does_not_contain_nul_byte() {
-        let contains_nul_byte = super::REPL_FILENAME.iter().copied().any(|b| b == b'\0');
-        assert!(!contains_nul_byte);
-    }
-}
 
 /// Failed to initialize parser during REPL boot.
 ///
@@ -220,12 +210,12 @@ where
     writeln!(output, "{}", preamble(interp)?)?;
 
     interp.reset_parser()?;
-    // safety:
+    // Safety:
     //
     // - `Context::new_unchecked` requires that its argument has no NUL bytes.
-    // - `REPL_FILENAME` is controlled by this crate.
-    // - A test asserts that `REPL_FILENAME` has no NUL bytes.
-    let context = unsafe { Context::new_unchecked(REPL_FILENAME.to_vec()) };
+    // - `REPL` is controlled by this crate.
+    // - A test asserts that `REPL` has no NUL bytes.
+    let context = unsafe { Context::new_unchecked(REPL.to_vec()) };
     interp.push_context(context)?;
     let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
 
