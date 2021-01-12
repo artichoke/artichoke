@@ -97,6 +97,8 @@ pub use artichoke_backend as backend;
 
 #[cfg(feature = "backtrace")]
 pub mod backtrace;
+#[cfg(feature = "cli")]
+mod filename;
 pub mod parser;
 #[cfg(feature = "cli")]
 pub mod repl;
