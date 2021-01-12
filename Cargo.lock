@@ -404,9 +404,9 @@ dependencies = [
 
 [[package]]
 name = "quickcheck"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efc008b226fa5bdeabfc788d6679692223e940da371a95e26d87678333dac7c8"
+checksum = "03e10546770d370e4eb8ac183a4bdbf9044059afdcbbba3c98627412f93461e3"
 dependencies = [
  "rand",
 ]
