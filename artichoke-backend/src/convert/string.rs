@@ -96,6 +96,7 @@ mod tests {
         }
 
         #[allow(clippy::needless_pass_by_value)]
+        #[cfg(feature = "core-regexp")]
         fn utf8string_borrowed(string: String) -> bool {
             let mut interp = interpreter().unwrap();
             // Borrowed converter
@@ -128,6 +129,7 @@ mod tests {
         }
 
         #[allow(clippy::needless_pass_by_value)]
+        #[cfg(feature = "core-regexp")]
         fn utf8string_owned(string: String) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter

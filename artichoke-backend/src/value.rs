@@ -638,10 +638,13 @@ mod tests {
             .and_then(|value| value.try_into::<bool>(&interp))
             .unwrap();
         assert!(!string_is_nil);
-        let delim = interp.convert_mut("");
-        let split = s.funcall(&mut interp, "split", &[delim], None).unwrap();
-        let split = split.try_into_mut::<Vec<&str>>(&mut interp).unwrap();
-        assert_eq!(split, vec!["f", "o", "o"])
+        #[cfg(feature = "core-regexp")]
+        {
+            let delim = interp.convert_mut("");
+            let split = s.funcall(&mut interp, "split", &[delim], None).unwrap();
+            let split = split.try_into_mut::<Vec<&str>>(&mut interp).unwrap();
+            assert_eq!(split, vec!["f", "o", "o"])
+        }
     }
 
     #[test]
