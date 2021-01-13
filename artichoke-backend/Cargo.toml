@@ -88,7 +88,7 @@ stdlib-full = [
 ]
 stdlib-abbrev = []
 stdlib-base64 = []
-stdlib-cmath = []
+stdlib-cmath = ["core-math"]
 stdlib-delegate = []
 stdlib-forwardable = []
 stdlib-json = []
