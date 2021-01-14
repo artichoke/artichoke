@@ -497,10 +497,19 @@ impl fmt::Display for OrdError {
 #[cfg(feature = "std")]
 impl std::error::Error for OrdError {}
 
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct String {
     buf: Vec<u8>,
     encoding: Encoding,
+}
+
+impl fmt::Debug for String {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("String")
+            .field("buf", &self.buf.as_bstr())
+            .field("encoding", &self.encoding)
+            .finish()
+    }
 }
 
 // Constructors
