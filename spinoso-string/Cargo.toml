@@ -1,0 +1,25 @@
+[package]
+name = "spinoso-string"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2018"
+description = """
+Encoding-aware string implementation for Ruby String core type in Artichoke Ruby
+"""
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["encoding", "no_std", "spinoso", "string", "utf8"]
+categories = ["data-structures", "encoding", "no-std"]
+
+[dependencies]
+bstr = { version = "0.2", default-features = false, features = ["std"] }
+focaccia = { version = "1.0", optional = true, default-features = false }
+
+[dev-dependencies]
+quickcheck = { version = "1.0", default-features = false }
+
+[features]
+default = ["casecmp", "std"]
+casecmp = ["focaccia"]
+std = []

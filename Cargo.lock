@@ -594,6 +594,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "spinoso-string"
+version = "0.1.0"
+dependencies = [
+ "bstr",
+ "focaccia",
+ "quickcheck",
+]
+
+[[package]]
 name = "spinoso-symbol"
 version = "0.1.0"
 dependencies = [
