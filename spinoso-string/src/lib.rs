@@ -2070,6 +2070,10 @@ mod tests {
         let mut s = String::utf8("αύριο".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "Αύριο");
+
+        let mut s = String::utf8("έτος".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "Έτος");
     }
 
     #[test]
@@ -2121,6 +2125,10 @@ mod tests {
         let mut s = String::ascii("αύριο".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "αύριο");
+
+        let mut s = String::ascii("έτος".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "έτος");
     }
 
     #[test]
@@ -2172,6 +2180,10 @@ mod tests {
         let mut s = String::binary("αύριο".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "αύριο");
+
+        let mut s = String::binary("έτος".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "έτος");
     }
 
     #[test]
