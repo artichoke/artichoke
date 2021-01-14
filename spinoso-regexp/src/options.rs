@@ -134,15 +134,9 @@ impl From<Option<bool>> for Options {
 impl From<&str> for Options {
     fn from(options: &str) -> Self {
         let mut flags = Flags::empty();
-        if options.contains('m') {
-            flags.set(Flags::MULTILINE, true);
-        }
-        if options.contains('i') {
-            flags.set(Flags::IGNORECASE, true);
-        }
-        if options.contains('x') {
-            flags.set(Flags::EXTENDED, true);
-        }
+        flags.set(Flags::MULTILINE, options.contains('m'));
+        flags.set(Flags::IGNORECASE, options.contains('i'));
+        flags.set(Flags::EXTENDED, options.contains('x'));
         Self { flags }
     }
 }
@@ -150,15 +144,9 @@ impl From<&str> for Options {
 impl From<&[u8]> for Options {
     fn from(options: &[u8]) -> Self {
         let mut flags = Flags::empty();
-        if options.find_byte(b'm').is_some() {
-            flags.set(Flags::MULTILINE, true);
-        }
-        if options.find_byte(b'i').is_some() {
-            flags.set(Flags::IGNORECASE, true);
-        }
-        if options.find_byte(b'x').is_some() {
-            flags.set(Flags::EXTENDED, true);
-        }
+        flags.set(Flags::MULTILINE, options.find_byte(b'm').is_some());
+        flags.set(Flags::IGNORECASE, options.find_byte(b'i').is_some());
+        flags.set(Flags::EXTENDED, options.find_byte(b'x').is_some());
         Self { flags }
     }
 }

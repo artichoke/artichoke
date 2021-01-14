@@ -210,6 +210,9 @@ impl fmt::Display for Encoding {
 }
 
 impl Encoding {
+    /// Construct a new [`None`] encoding.
+    ///
+    /// [`None`]: Self::None
     #[must_use]
     pub const fn new() -> Self {
         Self::None
