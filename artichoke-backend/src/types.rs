@@ -186,8 +186,11 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let object = interp.eval(b"Object.new").unwrap();
         assert_eq!(Ruby::Object, types::ruby_from_mrb_value(object.inner()));
-        let env = interp.eval(b"ENV").unwrap();
-        assert_eq!(Ruby::Object, types::ruby_from_mrb_value(env.inner()));
+        #[cfg(feature = "core-env")]
+        {
+            let env = interp.eval(b"ENV").unwrap();
+            assert_eq!(Ruby::Object, types::ruby_from_mrb_value(env.inner()));
+        }
     }
 
     #[test]
@@ -197,8 +200,11 @@ mod tests {
         assert_eq!(Ruby::Class, types::ruby_from_mrb_value(builtin.inner()));
         let data = interp.eval(b"Array").unwrap();
         assert_eq!(Ruby::Class, types::ruby_from_mrb_value(data.inner()));
-        let source = interp.eval(b"Math::DomainError").unwrap();
-        assert_eq!(Ruby::Class, types::ruby_from_mrb_value(source.inner()));
+        #[cfg(feature = "core-math")]
+        {
+            let source = interp.eval(b"Math::DomainError").unwrap();
+            assert_eq!(Ruby::Class, types::ruby_from_mrb_value(source.inner()));
+        }
     }
 
     #[test]
@@ -206,8 +212,11 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let builtin = interp.eval(b"Comparable").unwrap();
         assert_eq!(Ruby::Module, types::ruby_from_mrb_value(builtin.inner()));
-        let data = interp.eval(b"Math").unwrap();
-        assert_eq!(Ruby::Module, types::ruby_from_mrb_value(data.inner()));
+        #[cfg(feature = "core-math")]
+        {
+            let data = interp.eval(b"Math").unwrap();
+            assert_eq!(Ruby::Module, types::ruby_from_mrb_value(data.inner()));
+        }
         let artichoke = interp.eval(b"Artichoke").unwrap();
         assert_eq!(Ruby::Module, types::ruby_from_mrb_value(artichoke.inner()));
     }
@@ -241,8 +250,11 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let empty = interp.eval(b"[]").unwrap();
         assert_eq!(Ruby::Array, types::ruby_from_mrb_value(empty.inner()));
-        let array = interp.eval(b"[1, /./, Object.new]").unwrap();
-        assert_eq!(Ruby::Array, types::ruby_from_mrb_value(array.inner()));
+        #[cfg(feature = "core-regexp")]
+        {
+            let array = interp.eval(b"[1, /./, Object.new]").unwrap();
+            assert_eq!(Ruby::Array, types::ruby_from_mrb_value(array.inner()));
+        }
         let ary = vec!["a", "b", "c"];
         let converted = interp.try_convert_mut(ary).unwrap();
         assert_eq!(Ruby::Array, types::ruby_from_mrb_value(converted.inner()));
@@ -253,8 +265,11 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let empty = interp.eval(b"{}").unwrap();
         assert_eq!(Ruby::Hash, types::ruby_from_mrb_value(empty.inner()));
-        let hash = interp.eval(b"{a: 1, b: [/./]}").unwrap();
-        assert_eq!(Ruby::Hash, types::ruby_from_mrb_value(hash.inner()));
+        #[cfg(feature = "core-regexp")]
+        {
+            let hash = interp.eval(b"{a: 1, b: [/./]}").unwrap();
+            assert_eq!(Ruby::Hash, types::ruby_from_mrb_value(hash.inner()));
+        }
         let mut map = HashMap::default();
         map.insert(b"a".to_vec(), vec![0_u8]);
         map.insert(b"b".to_vec(), b"binary".to_vec());
@@ -280,7 +295,10 @@ mod tests {
         assert_eq!(Ruby::Exception, types::ruby_from_mrb_value(stderror.inner()));
         let index = interp.eval(b"IndexError.new").unwrap();
         assert_eq!(Ruby::Exception, types::ruby_from_mrb_value(index.inner()));
-        let domain = interp.eval(b"Math::DomainError.new").unwrap();
-        assert_eq!(Ruby::Exception, types::ruby_from_mrb_value(domain.inner()));
+        #[cfg(feature = "core-math")]
+        {
+            let domain = interp.eval(b"Math::DomainError.new").unwrap();
+            assert_eq!(Ruby::Exception, types::ruby_from_mrb_value(domain.inner()));
+        }
     }
 }

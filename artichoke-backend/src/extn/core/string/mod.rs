@@ -5,6 +5,7 @@ pub mod trampoline;
 pub struct String;
 
 #[cfg(test)]
+#[cfg(feature = "core-regexp")]
 mod tests {
     use crate::test::prelude::*;
     use bstr::ByteSlice;
