@@ -2030,6 +2030,13 @@ mod tests {
     }
 
     #[test]
+    fn make_capitalized_utf8_string_empty() {
+        let mut s = String::utf8(b"".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "");
+    }
+
+    #[test]
     fn make_capitalized_utf8_string_ascii() {
         let mut s = String::utf8(b"abc".to_vec());
         s.make_capitalized();
@@ -2075,6 +2082,108 @@ mod tests {
     #[test]
     fn make_capitalized_utf8_string_unicode_replacement_character() {
         let mut s = String::utf8("�".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "�");
+    }
+
+    #[test]
+    fn make_capitalized_ascii_string_empty() {
+        let mut s = String::ascii(b"".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "");
+    }
+
+    #[test]
+    fn make_capitalized_ascii_string_ascii() {
+        let mut s = String::ascii(b"abc".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::ascii(b"aBC".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::ascii(b"ABC".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::ascii(b"aBC, 123, ABC, baby you and me girl".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc, 123, abc, baby you and me girl");
+    }
+
+    #[test]
+    fn make_capitalized_ascii_string_utf8() {
+        let mut s = String::ascii("ß".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "ß");
+
+        let mut s = String::ascii("αύριο".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "αύριο");
+    }
+
+    #[test]
+    fn make_capitalized_ascii_string_invalid_utf8() {
+        let mut s = String::ascii(b"\xFF\xFE".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+    }
+
+    #[test]
+    fn make_capitalized_ascii_string_unicode_replacement_character() {
+        let mut s = String::ascii("�".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "�");
+    }
+
+    #[test]
+    fn make_capitalized_binary_string_empty() {
+        let mut s = String::binary(b"".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "");
+    }
+
+    #[test]
+    fn make_capitalized_binary_string_ascii() {
+        let mut s = String::binary(b"abc".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::ascii(b"aBC".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::ascii(b"ABC".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::ascii(b"aBC, 123, ABC, baby you and me girl".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc, 123, abc, baby you and me girl");
+    }
+
+    #[test]
+    fn make_capitalized_binary_string_utf8() {
+        let mut s = String::binary("ß".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "ß");
+
+        let mut s = String::binary("αύριο".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "αύριο");
+    }
+
+    #[test]
+    fn make_capitalized_binary_string_invalid_utf8() {
+        let mut s = String::binary(b"\xFF\xFE".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+    }
+
+    #[test]
+    fn make_capitalized_binary_string_unicode_replacement_character() {
+        let mut s = String::binary("�".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "�");
     }
