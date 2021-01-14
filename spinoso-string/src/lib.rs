@@ -1808,6 +1808,7 @@ fn conventionally_utf8_bytestring_len<T: AsRef<[u8]>>(bytes: T) -> usize {
 
 #[cfg(test)]
 #[allow(clippy::clippy::shadow_unrelated)]
+#[allow(clippy::invisible_characters)]
 mod tests {
     use alloc::string::ToString;
     use alloc::vec::Vec;
@@ -1902,6 +1903,82 @@ mod tests {
         // \xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF
         let bytes = b"\xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF";
         assert_eq!(conventionally_utf8_bytestring_len(&bytes), 6);
+    }
+
+    #[test]
+    fn utf8_char_len_utf8() {
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L147-L157
+        let s = "Ω≈ç√∫˜µ≤≥÷";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 10);
+        let s = "åß∂ƒ©˙∆˚¬…æ";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 11);
+        let s = "œ∑´®†¥¨ˆøπ“‘";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 12);
+        let s = "¡™£¢∞§¶•ªº–≠";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 12);
+        let s = "¸˛Ç◊ı˜Â¯˘¿";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 10);
+        let s = "ÅÍÎÏ˝ÓÔÒÚÆ☃";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 12);
+        let s = "Œ„´‰ˇÁ¨ˆØ∏”’";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 12);
+        let s = "`⁄€‹›ﬁﬂ‡°·‚—±";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 13);
+        let s = "⅛⅜⅝⅞";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 4);
+        let s = "ЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 79);
+    }
+
+    #[test]
+    fn utf8_char_len_vmware_super_string() {
+        // A super string recommended by VMware Inc. Globalization Team: can
+        // effectively cause rendering issues or character-length issues to
+        // validate product globalization readiness.
+        //
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L202-L224
+        let s = "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 17);
+    }
+
+    #[test]
+    fn utf8_char_len_two_byte_chars() {
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L188-L196
+        let s = "田中さんにあげて下さい";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 11);
+        let s = "パーティーへ行かないか";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 11);
+        let s = "和製漢語";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 4);
+        let s = "部落格";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 3);
+        let s = "사회과학원 어학연구소";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 11);
+        let s = "찦차를 타고 온 펲시맨과 쑛다리 똠방각하";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 22);
+        let s = "社會科學院語學研究所";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 10);
+        let s = "울란바토르";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 5);
+        let s = "𠜎𠜱𠝹𠱓𠱸𠲖𠳏";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 7);
+    }
+
+    #[test]
+    fn utf8_char_len_space_chars() {
+        // Whitespace: all of the characters with category Zs, Zl, or Zp (in Unicode
+        // version 8.0.0), plus U+0009 (HT), U+000B (VT), U+000C (FF), U+0085 (NEL),
+        // and U+200B (ZERO WIDTH SPACE), which are in the C categories but are often
+        // treated as whitespace in some contexts.
+        // This file unfortunately cannot express strings containing
+        // U+0000, U+000A, or U+000D (NUL, LF, CR).
+        // The next line may appear to be blank or mojibake in some viewers.
+        // The next line may be flagged for "trailing whitespace" in some viewers.
+        //
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L131
+        let s = "	              ​    　
+";
+        assert_eq!(conventionally_utf8_bytestring_len(s), 24);
     }
 
     quickcheck! {
@@ -2083,6 +2160,22 @@ mod tests {
         let mut s = String::utf8("έτος".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "Έτος");
+
+        // two-byte characters
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L198-L200
+        let mut s = String::utf8(
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+                .to_string()
+                .into_bytes(),
+        );
+        s.make_capitalized();
+        assert_eq!(s, "𐐜 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮");
+
+        // Change length when lowercased
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
+        let mut s = String::utf8("zȺȾ".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "Zⱥⱦ");
     }
 
     #[test]
@@ -2138,6 +2231,22 @@ mod tests {
         let mut s = String::ascii("έτος".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "έτος");
+
+        // two-byte characters
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L198-L200
+        let mut s = String::ascii(
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+                .to_string()
+                .into_bytes(),
+        );
+        s.make_capitalized();
+        assert_eq!(s, "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
+
+        // Change length when lowercased
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
+        let mut s = String::ascii("zȺȾ".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "ZȺȾ");
     }
 
     #[test]
@@ -2193,6 +2302,22 @@ mod tests {
         let mut s = String::binary("έτος".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "έτος");
+
+        // two-byte characters
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L198-L200
+        let mut s = String::binary(
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+                .to_string()
+                .into_bytes(),
+        );
+        s.make_capitalized();
+        assert_eq!(s, "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
+
+        // Change length when lowercased
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
+        let mut s = String::binary("zȺȾ".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "ZȺȾ");
     }
 
     #[test]
