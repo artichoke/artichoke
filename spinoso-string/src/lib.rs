@@ -32,7 +32,6 @@ extern crate std;
 
 use alloc::boxed::Box;
 use alloc::vec::{self, Vec};
-use core::char::REPLACEMENT_CHARACTER;
 use core::cmp::Ordering;
 use core::convert::TryFrom;
 use core::fmt::{self, Write};
@@ -1306,8 +1305,7 @@ impl String {
     pub fn make_capitalized(&mut self) {
         match self.encoding {
             Encoding::Ascii | Encoding::Binary => {
-                if !self.buf.is_empty() {
-                    let (head, tail) = self.buf.split_at_mut(1);
+                if let Some((head, tail)) = self.buf.split_first_mut() {
                     head.make_ascii_uppercase();
                     tail.make_ascii_lowercase();
                 }
@@ -1317,38 +1315,36 @@ impl String {
                 // and lowercasing `char`s do not change the length of the
                 // `String`.
                 let mut replacement = Vec::with_capacity(self.buf.len());
-                let mut iter = self.buf.chars();
-                match iter.next() {
-                    // `ByteSlice::chars` uses the Unicode replacement character
-                    // to represent both invalid UTF-8 bytes and the Unicode
-                    // replacement character itself. Neither of these byte
-                    // sequences can be uppercased.
-                    Some(REPLACEMENT_CHARACTER) => {}
-                    // Empty string is a no-op.
-                    None => return,
-                    // A UTF-8 character is the first character in the string.
-                    Some(ch) => {
+                let mut bytes = self.buf.as_slice();
+                match bstr::decode_utf8(bytes) {
+                    (Some(ch), size) => {
                         // Converting a UTF-8 character to uppercase may yield
                         // multiple codepoints.
-                        let upper = ch.to_uppercase();
-                        for ch in upper {
+                        for ch in ch.to_uppercase() {
                             replacement.push_char(ch)
                         }
+                        bytes = &bytes[size..];
+                    }
+                    (None, size) if size == 0 => return,
+                    (None, size) => {
+                        let (substring, remainder) = bytes.split_at(size);
+                        replacement.extend_from_slice(substring);
+                        bytes = remainder;
                     }
                 }
-                for ch in iter {
-                    if let REPLACEMENT_CHARACTER = ch {
-                        // `ByteSlice::chars` uses the Unicode replacement
-                        // character to represent both invalid UTF-8 bytes and
-                        // the Unicode replacement character itself. Neither of
-                        // these byte sequences can be lowercased.
-                        continue;
-                    }
-                    // Converting a UTF-8 character to lowercase may yield
-                    // multiple codepoints.
-                    let lower = ch.to_lowercase();
-                    for ch in lower {
-                        replacement.push_char(ch);
+                while !bytes.is_empty() {
+                    let (ch, size) = bstr::decode_utf8(bytes);
+                    if let Some(ch) = ch {
+                        // Converting a UTF-8 character to lowercase may yield
+                        // multiple codepoints.
+                        for ch in ch.to_lowercase() {
+                            replacement.push_char(ch);
+                        }
+                        bytes = &bytes[size..];
+                    } else {
+                        let (substring, remainder) = bytes.split_at(size);
+                        replacement.extend_from_slice(substring);
+                        bytes = remainder;
                     }
                 }
                 self.buf = replacement;
@@ -1804,6 +1800,7 @@ fn conventionally_utf8_bytestring_len<T: AsRef<[u8]>>(bytes: T) -> usize {
 #[cfg(test)]
 #[allow(clippy::clippy::shadow_unrelated)]
 mod tests {
+    use alloc::string::ToString;
     use alloc::vec::Vec;
     use core::str;
     use quickcheck::quickcheck;
@@ -2030,5 +2027,55 @@ mod tests {
             let s = String::binary(contents);
             s.bytesize() == expected
         }
+    }
+
+    #[test]
+    fn make_capitalized_utf8_string_ascii() {
+        let mut s = String::utf8(b"abc".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::utf8(b"aBC".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::utf8(b"ABC".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc");
+
+        let mut s = String::utf8(b"aBC, 123, ABC, baby you and me girl".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, "Abc, 123, abc, baby you and me girl");
+    }
+
+    #[test]
+    fn make_capitalized_utf8_string_utf8() {
+        let mut s = String::utf8("ß".to_string().into_bytes());
+        s.make_capitalized();
+        // This differs from MRI:
+        //
+        // ```console
+        // [2.6.3] > "ß".capitalize
+        // => "Ss"
+        // ```
+        assert_eq!(s, "SS");
+
+        let mut s = String::utf8("αύριο".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "Αύριο");
+    }
+
+    #[test]
+    fn make_capitalized_utf8_string_invalid_utf8() {
+        let mut s = String::utf8(b"\xFF\xFE".to_vec());
+        s.make_capitalized();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+    }
+
+    #[test]
+    fn make_capitalized_utf8_string_unicode_replacement_character() {
+        let mut s = String::utf8("�".to_string().into_bytes());
+        s.make_capitalized();
+        assert_eq!(s, "�");
     }
 }
