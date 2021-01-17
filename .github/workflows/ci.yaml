@@ -80,13 +80,13 @@ jobs:
           args: --workspace --all-features --all-targets
 
       - name: Check artichoke with locked Cargo.lock
-        run: cargo check --locked --all-targets
+        run: cargo check --locked --all-targets --profile=test
 
       - name: Check artichoke with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
 
       - name: Check artichoke with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
 
   check-fuzz:
     name: Check fuzz workspace
@@ -113,7 +113,7 @@ jobs:
           working-directory: "fuzz"
 
       - name: Check fuzz with locked Cargo.lock
-        run: cargo check --locked --all-targets
+        run: cargo check --locked --all-targets --profile=test
         working-directory: "fuzz"
 
   check-spec-runner:
@@ -150,7 +150,7 @@ jobs:
         working-directory: "spec-runner"
 
       - name: Check spec-runner with locked Cargo.lock
-        run: cargo check --locked --all-targets
+        run: cargo check --locked --all-targets --profile=test
         working-directory: "spec-runner"
 
   check-sub-crates:
@@ -176,111 +176,111 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Check spinoso-array with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-array"
 
       - name: Check spinoso-array with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-array"
 
       - name: Check spinoso-env with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-env"
 
       - name: Check spinoso-env with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-env"
 
       - name: Check spinoso-exception with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-exception"
 
       - name: Check spinoso-exception with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-exception"
 
       - name: Check spinoso-math with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-math"
 
       - name: Check spinoso-math with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-math"
 
       - name: Check spinoso-random with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-random"
 
       - name: Check spinoso-random with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-random"
 
       - name: Check spinoso-random with some features
         run: |
-          cargo check --verbose --no-default-features --features rand-traits --all-targets
-          cargo check --verbose --no-default-features --features std --all-targets
-          cargo check --verbose --no-default-features --features random-rand --all-targets
+          cargo check --verbose --no-default-features --features rand-traits --all-targets --profile=test
+          cargo check --verbose --no-default-features --features std --all-targets --profile=test
+          cargo check --verbose --no-default-features --features random-rand --all-targets --profile=test
         working-directory: "spinoso-random"
 
       - name: Check spinoso-regexp with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-regexp"
 
       - name: Check spinoso-regexp with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-regexp"
 
       - name: Check spinoso-securerandom with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-securerandom"
 
       - name: Check spinoso-securerandom with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-securerandom"
 
       - name: Check spinoso-symbol with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-symbol"
 
       - name: Check spinoso-symbol with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-symbol"
 
       - name: Compile spinoso-symbol with some features
         run: |
-          cargo check --verbose --no-default-features --features ident-parser --all-targets
-          cargo check --verbose --no-default-features --features inspect --all-targets
-          cargo check --verbose --no-default-features --features inspect,artichoke --all-targets
+          cargo check --verbose --no-default-features --features ident-parser --all-targets --profile=test
+          cargo check --verbose --no-default-features --features inspect --all-targets --profile=test
+          cargo check --verbose --no-default-features --features inspect,artichoke --all-targets --profile=test
         working-directory: "spinoso-symbol"
 
       - name: Check spinoso-time with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-time"
 
       - name: Check spinoso-time with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-time"
 
       - name: Compile scolapasta-hex with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "scolapasta-hex"
 
       - name: Compile scolapasta-hex with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "scolapasta-hex"
 
       - name: Compile scolapasta-hex with some features
         run: |
-          cargo check --verbose --no-default-features --features alloc --all-targets
-          cargo check --verbose --no-default-features --features alloc,std --all-targets
+          cargo check --verbose --no-default-features --features alloc --all-targets --profile=test
+          cargo check --verbose --no-default-features --features alloc,std --all-targets --profile=test
         working-directory: "scolapasta-hex"
 
       - name: Compile scolapasta-string-escape with no default features
-        run: cargo check --verbose --no-default-features --all-targets
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "scolapasta-string-escape"
 
       - name: Compile scolapasta-string-escape with all features
-        run: cargo check --verbose --all-features --all-targets
+        run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "scolapasta-string-escape"
 
   rust-minimal-versions:
@@ -315,12 +315,12 @@ jobs:
       - name: Check artichoke with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
-          cargo check --all-targets
+          cargo check --all-targets --profile=test
 
       - name: Check spec-runner with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
-          cargo check --all-targets
+          cargo check --all-targets --profile=test
         working-directory: "spec-runner"
 
   ruby:
