@@ -12,7 +12,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))?
         .add_method("[]=", ary_element_assignment, sys::mrb_args_req_and_opt(2, 1))?
         .add_method("clear", ary_clear, sys::mrb_args_none())?
-        .add_method("concat", ary_concat, sys::mrb_args_any())?
+        .add_method("concat", ary_concat, sys::mrb_args_rest())?
         .add_method(
             "initialize",
             ary_initialize,
@@ -67,11 +67,11 @@ unsafe extern "C" fn ary_len(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
 }
 
 unsafe extern "C" fn ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
-    let other = mrb_get_args!(mrb, optional = 1);
+    let others = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let array = Value::from(ary);
-    let other = other.map(Value::from);
-    let result = array::trampoline::concat(&mut guard, array, other);
+    let others = others.iter().map(|&other| Value::from(other));
+    let result = array::trampoline::concat(&mut guard, array, others);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);

@@ -428,41 +428,6 @@ class Array
     reject!(&:nil?)
   end
 
-  def concat(*args)
-    raise FrozenError, "can't modify frozen Array" if frozen?
-    return self if args.length.zero?
-
-    idx = 0
-    len = args.length
-    while idx < len
-      arg = args[idx]
-      args[idx] = arg.dup if arg.equal?(self)
-
-      idx += 1
-    end
-
-    idx = 0
-    while idx < len
-      other = args[idx]
-      ary =
-        if other.is_a?(Array)
-          other
-        elsif other.respond_to?(:to_ary)
-          other = other.to_ary
-          unless other.is_a?(Array)
-            raise TypeError, "can't convert #{classname} to Array (#{classname}#to_ary gives #{other.class})"
-          end
-
-          other
-        else
-          raise TypeError, "no implicit conversion of #{classname} into Array" unless other.is_a?(Array)
-        end
-      self[length, 0] = ary
-      idx += 1
-    end
-    self
-  end
-
   def count(obj = (not_set = true), &block)
     count = 0
     idx = 0

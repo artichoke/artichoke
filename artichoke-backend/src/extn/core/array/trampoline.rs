@@ -79,21 +79,47 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     Ok(interp.convert(result))
 }
 
-pub fn concat(interp: &mut Artichoke, mut ary: Value, other: Option<Value>) -> Result<Value, Error> {
+pub fn concat<I>(interp: &mut Artichoke, mut ary: Value, others: I) -> Result<Value, Error>
+where
+    I: IntoIterator<Item = Value>,
+{
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
-    if let Some(other) = other {
-        let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-        array.concat(interp, other)?;
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-        drop(array);
-        unsafe {
-            Array::rebox_into_value(ary, ptr, len, capacity)?;
+    // Allocate a new buffer and concatenate into it to allow preserving the'
+    // original `Array` items if `ary` is concatenated with itself.
+    let mut replacement = Array::with_capacity(array.len());
+    replacement.0.concat(array.0.as_slice());
+
+    for mut other in others {
+        if let Ok(other) = unsafe { Array::unbox_from_value(&mut other, interp) } {
+            replacement.0.reserve(other.len());
+            replacement.0.concat(other.0.as_slice());
+        } else if other.respond_to(interp, "to_ary")? {
+            let mut other = other.funcall(interp, "to_ary", &[], None)?;
+            if let Ok(other) = unsafe { Array::unbox_from_value(&mut other, interp) } {
+                replacement.0.reserve(other.len());
+                replacement.0.concat(other.0.as_slice());
+            } else {
+                let mut message = String::from("can't convert ");
+                let name = interp.inspect_type_name_for_value(other);
+                message.push_str(name);
+                message.push_str(" to Array (");
+                message.push_str(name);
+                message.push_str("#to_ary gives ");
+                message.push_str(interp.inspect_type_name_for_value(other));
+                return Err(TypeError::from(message).into());
+            }
+        } else {
+            let mut message = String::from("no implicit conversion of ");
+            message.push_str(interp.inspect_type_name_for_value(other));
+            message.push_str(" into Array");
+            return Err(TypeError::from(message).into());
         }
     }
-    Ok(ary)
+    Array::box_into_value(replacement, ary, interp)
 }
 
 pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Error> {

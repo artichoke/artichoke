@@ -24,6 +24,7 @@ specs = [
   "collect",
   "combination",
   "compact",
+  "concat",
   "count",
   "cycle",
   "delete",
