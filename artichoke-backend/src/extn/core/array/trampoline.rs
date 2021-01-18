@@ -4,6 +4,39 @@ use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
 
+pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let result = if let Ok(other) = unsafe { Array::unbox_from_value(&mut other, interp) } {
+        let mut result = Array::with_capacity(array.len() + other.len());
+        result.0.concat(array.0.as_slice());
+        result.0.concat(other.0.as_slice());
+        result
+    } else if other.respond_to(interp, "to_ary")? {
+        let mut other_converted = other.funcall(interp, "to_ary", &[], None)?;
+        if let Ok(other) = unsafe { Array::unbox_from_value(&mut other_converted, interp) } {
+            let mut result = Array::with_capacity(array.len() + other.len());
+            result.0.concat(array.0.as_slice());
+            result.0.concat(other.0.as_slice());
+            result
+        } else {
+            let mut message = String::from("can't convert ");
+            let name = interp.inspect_type_name_for_value(other);
+            message.push_str(name);
+            message.push_str(" to Array (");
+            message.push_str(name);
+            message.push_str("#to_ary gives ");
+            message.push_str(interp.inspect_type_name_for_value(other_converted));
+            return Err(TypeError::from(message).into());
+        }
+    } else {
+        let mut message = String::from("no implicit conversion of ");
+        message.push_str(interp.inspect_type_name_for_value(other));
+        message.push_str(" into Array");
+        return Err(TypeError::from(message).into());
+    };
+    Array::alloc_value(result, interp)
+}
+
 pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
@@ -98,8 +131,8 @@ where
             replacement.0.reserve(other.len());
             replacement.0.concat(other.0.as_slice());
         } else if other.respond_to(interp, "to_ary")? {
-            let mut other = other.funcall(interp, "to_ary", &[], None)?;
-            if let Ok(other) = unsafe { Array::unbox_from_value(&mut other, interp) } {
+            let mut other_converted = other.funcall(interp, "to_ary", &[], None)?;
+            if let Ok(other) = unsafe { Array::unbox_from_value(&mut other_converted, interp) } {
                 replacement.0.reserve(other.len());
                 replacement.0.concat(other.0.as_slice());
             } else {
@@ -109,7 +142,7 @@ where
                 message.push_str(" to Array (");
                 message.push_str(name);
                 message.push_str("#to_ary gives ");
-                message.push_str(interp.inspect_type_name_for_value(other));
+                message.push_str(interp.inspect_type_name_for_value(other_converted));
                 return Err(TypeError::from(message).into());
             }
         } else {
@@ -120,6 +153,48 @@ where
         }
     }
     Array::box_into_value(replacement, ary, interp)
+}
+
+pub fn first(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    if let Some(num) = num {
+        // Hack to detect `BigNum`
+        if matches!(num.ruby_type(), Ruby::Float) {
+            return Err(RangeError::with_message("bignum too big to convert into `long'").into());
+        }
+        let n = num.implicitly_convert_to_int(interp)?;
+        if let Ok(n) = usize::try_from(n) {
+            let slice = array.0.first_n(n);
+            let result = Array::from(slice);
+            Array::alloc_value(result, interp)
+        } else {
+            Err(ArgumentError::with_message("negative array size").into())
+        }
+    } else {
+        let last = array.0.first().copied().map(Value::from);
+        Ok(interp.convert(last))
+    }
+}
+
+pub fn last(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    if let Some(num) = num {
+        // Hack to detect `BigNum`
+        if matches!(num.ruby_type(), Ruby::Float) {
+            return Err(RangeError::with_message("bignum too big to convert into `long'").into());
+        }
+        let n = num.implicitly_convert_to_int(interp)?;
+        if let Ok(n) = usize::try_from(n) {
+            let slice = array.0.last_n(n);
+            let result = Array::from(slice);
+            Array::alloc_value(result, interp)
+        } else {
+            Err(ArgumentError::with_message("negative array size").into())
+        }
+    } else {
+        let last = array.0.last().copied().map(Value::from);
+        Ok(interp.convert(last))
+    }
 }
 
 pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Error> {
@@ -136,6 +211,13 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
     }
 
     Ok(ary)
+}
+
+pub fn reverse(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let mut reversed = array.clone();
+    reversed.reverse();
+    Array::alloc_value(reversed, interp)
 }
 
 pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
