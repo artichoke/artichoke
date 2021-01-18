@@ -27,6 +27,10 @@ pub struct Args {
     /// file whose contents will be read into the `$fixture` global
     fixture: Option<PathBuf>,
     programfile: Option<PathBuf>,
+    /// Trailing positional arguments.
+    ///
+    /// Requires `programfile` to be present.
+    argv: Vec<OsString>,
 }
 
 impl Args {
@@ -38,6 +42,7 @@ impl Args {
             commands: Vec::new(),
             fixture: None,
             programfile: None,
+            argv: Vec::new(),
         }
     }
 
@@ -66,6 +71,13 @@ impl Args {
     #[must_use]
     pub fn with_programfile(mut self, programfile: Option<PathBuf>) -> Self {
         self.programfile = programfile;
+        self
+    }
+
+    /// Add a parsed ARGV to this `Args`.
+    #[must_use]
+    pub fn with_argv(mut self, argv: Vec<OsString>) -> Self {
+        self.argv = argv;
         self
     }
 }
@@ -103,8 +115,21 @@ where
 {
     if args.copyright {
         let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
-        Ok(Ok(()))
-    } else if !args.commands.is_empty() {
+        return Ok(Ok(()));
+    }
+
+    // Inject ARGV global.
+    let mut ruby_program_argv = Vec::new();
+    for argument in &args.argv {
+        let argument = ffi::os_str_to_bytes(argument)?;
+        let mut argument = interp.try_convert_mut(argument)?;
+        argument.freeze(interp)?;
+        ruby_program_argv.push(argument);
+    }
+    let ruby_program_argv = interp.try_convert_mut(ruby_program_argv)?;
+    interp.define_global_constant("ARGV", ruby_program_argv)?;
+
+    if !args.commands.is_empty() {
         execute_inline_eval(interp, error, args.commands, args.fixture.as_deref())
     } else if let Some(programfile) = args.programfile.filter(|file| file != Path::new("-")) {
         execute_program_file(interp, error, programfile.as_path(), args.fixture.as_deref())
