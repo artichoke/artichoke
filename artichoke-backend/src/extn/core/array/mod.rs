@@ -376,32 +376,6 @@ impl Array {
         self.0.set_slice(start, drain, src)
     }
 
-    pub fn concat(&mut self, interp: &mut Artichoke, mut other: Value) -> Result<(), Error> {
-        if let Ok(other) = unsafe { Self::unbox_from_value(&mut other, interp) } {
-            self.0.concat(other.0.as_slice());
-        } else if other.respond_to(interp, "to_ary")? {
-            let mut arr = other.funcall(interp, "to_ary", &[], None)?;
-            if let Ok(other) = unsafe { Self::unbox_from_value(&mut arr, interp) } {
-                self.0.concat(other.0.as_slice());
-            } else {
-                let mut message = String::from("can't convert ");
-                let name = interp.inspect_type_name_for_value(other);
-                message.push_str(name);
-                message.push_str(" to Array (");
-                message.push_str(name);
-                message.push_str("#to_ary gives ");
-                message.push_str(interp.inspect_type_name_for_value(arr));
-                return Err(TypeError::from(message).into());
-            }
-        } else {
-            let mut message = String::from("no implicit conversion of ");
-            message.push_str(interp.inspect_type_name_for_value(other));
-            message.push_str(" into Array");
-            return Err(TypeError::from(message).into());
-        };
-        Ok(())
-    }
-
     pub fn pop(&mut self) -> Option<Value> {
         self.0.pop().map(Value::from)
     }
