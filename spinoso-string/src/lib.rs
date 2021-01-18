@@ -1791,6 +1791,57 @@ impl String {
             Encoding::Utf8 => conventionally_utf8_bytestring_len(self.buf.as_slice()),
         }
     }
+
+    /// Returns true for a `String` which is encoded correctly.
+    ///
+    /// For this method to return true, `String`s with [conventionally UTF-8]
+    /// must be well-formed UTF-8; [ASCII]-encoded `String`s must only contain
+    /// bytes in the range `0..=127`; [binary]-encoded `String`s may contain any
+    /// byte sequence.
+    ///
+    /// This method is suitable for implementing the Ruby method
+    /// [`String#valid_encoding?`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// let s = String::utf8(b"xyz".to_vec());
+    /// assert!(s.is_valid_encoding());
+    /// let s = String::utf8("🚀".to_string().into_bytes());
+    /// assert!(s.is_valid_encoding());
+    /// let s = String::utf8(b"abc\xFF\xFExyz".to_vec());
+    /// assert!(!s.is_valid_encoding());
+    ///
+    /// let s = String::ascii(b"xyz".to_vec());
+    /// assert!(s.is_valid_encoding());
+    /// let s = String::ascii("🚀".to_string().into_bytes());
+    /// assert!(!s.is_valid_encoding());
+    /// let s = String::ascii(b"abc\xFF\xFExyz".to_vec());
+    /// assert!(!s.is_valid_encoding());
+    ///
+    /// let s = String::binary(b"xyz".to_vec());
+    /// assert!(s.is_valid_encoding());
+    /// let s = String::binary("🚀".to_string().into_bytes());
+    /// assert!(s.is_valid_encoding());
+    /// let s = String::binary(b"abc\xFF\xFExyz".to_vec());
+    /// assert!(s.is_valid_encoding());
+    /// ```
+    ///
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
+    /// [ASCII]: crate::Encoding::Ascii
+    /// [binary]: crate::Encoding::Binary
+    /// [`String#valid_encoding?`]: https://ruby-doc.org/core-3.0.0/String.html#method-i-valid_encoding-3F
+    #[inline]
+    #[must_use]
+    pub fn is_valid_encoding(&self) -> bool {
+        match self.encoding {
+            Encoding::Utf8 => self.buf.is_utf8(),
+            Encoding::Ascii => self.buf.is_ascii(),
+            Encoding::Binary => true,
+        }
+    }
 }
 
 #[inline]
