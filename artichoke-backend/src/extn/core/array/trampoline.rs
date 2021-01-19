@@ -127,7 +127,7 @@ where
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
-    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
     // Allocate a new buffer and concatenate into it to allow preserving the'
     // original `Array` items if `ary` is concatenated with itself.
@@ -160,7 +160,14 @@ where
             return Err(TypeError::from(message).into());
         }
     }
-    Array::box_into_value(replacement, ary, interp)
+    *array.as_mut() = replacement;
+
+    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    drop(array);
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
+    Ok(ary)
 }
 
 pub fn first(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Result<Value, Error> {
