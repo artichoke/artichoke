@@ -79,17 +79,6 @@ class Array
     array
   end
 
-  def *(other)
-    return join(other) if other.is_a?(String)
-
-    count = Integer(other)
-    ary = []
-    count.times do
-      ary.concat(self)
-    end
-    ary
-  end
-
   def -(other)
     ary = other.to_ary if other.respond_to?(:to_ary)
     classname = other.class

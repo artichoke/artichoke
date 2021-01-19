@@ -286,6 +286,39 @@ impl Array {
         Ok(Self(vector))
     }
 
+    pub fn repeat(&self, n: usize) -> Result<Self, ArgumentError> {
+        if let Some(repeated) = self.0.repeat(n) {
+            Ok(Array::from(repeated))
+        } else {
+            Err(ArgumentError::with_message("argument too big"))
+        }
+    }
+
+    pub fn join(&self, interp: &mut Artichoke, sep: &[u8]) -> Result<Vec<u8>, Error> {
+        fn flatten(interp: &mut Artichoke, mut value: Value, out: &mut Vec<Vec<u8>>) -> Result<(), Error> {
+            if let Ruby::Array = value.ruby_type() {
+                let ary = unsafe { Array::unbox_from_value(&mut value, interp)? };
+                out.reserve(ary.len());
+                for elem in ary.iter() {
+                    flatten(interp, elem, out)?;
+                }
+            } else if let Ok(s) = value.implicitly_convert_to_string(interp) {
+                out.push(s.to_vec());
+            } else {
+                let s = value.to_s(interp);
+                out.push(s);
+            }
+            Ok(())
+        }
+
+        let mut vec = Vec::with_capacity(self.len());
+        for elem in self {
+            flatten(interp, elem, &mut vec)?;
+        }
+
+        Ok(bstr::join(sep, vec))
+    }
+
     fn element_reference(
         &self,
         interp: &mut Artichoke,

@@ -37,6 +37,30 @@ pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<
     Array::alloc_value(result, interp)
 }
 
+pub fn mul(interp: &mut Artichoke, mut ary: Value, mut joiner: Value) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    if let Ok(separator) = joiner.implicitly_convert_to_string(interp) {
+        let s = array.join(interp, separator)?;
+        Ok(interp.convert_mut(s))
+    } else {
+        let n = joiner.implicitly_convert_to_int(interp)?;
+        if let Ok(n) = usize::try_from(n) {
+            let value = array.repeat(n)?;
+            let result = Array::alloc_value(value, interp)?;
+            let result_value = result.inner();
+            let ary_value = ary.inner();
+            unsafe {
+                let ary_rbasic = ary_value.value.p.cast::<sys::RBasic>();
+                let result_rbasic = result_value.value.p.cast::<sys::RBasic>();
+                (*result_rbasic).c = (*ary_rbasic).c;
+            }
+            Ok(result)
+        } else {
+            Err(ArgumentError::with_message("negative argument").into())
+        }
+    }
+}
+
 pub fn element_reference(
     interp: &mut Artichoke,
     mut ary: Value,

@@ -42,6 +42,7 @@ specs = [
   "last",
   "length",
   "map",
+  "multiply",
   "plus",
   "prepend",
   "push",

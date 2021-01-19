@@ -908,14 +908,52 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::Array;
-    /// let mut ary = Array::from(&[1, 2, 4]);
+    /// # use spinoso_array::SmallArray;
+    /// let mut ary = SmallArray::from(&[1, 2, 4]);
     /// ary.concat(&[7, 8, 9]);
     /// assert_eq!(ary.len(), 6);
     /// ```
     #[inline]
     pub fn concat(&mut self, other: &[T]) {
         self.0.extend_from_slice(other);
+    }
+
+    /// Creates a new array by repeating this array `n` times.
+    ///
+    /// This function will not panic. If the resulting `Array`'s capacity would
+    /// overflow, [`None`] is returned.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// # use spinoso_array::SmallArray;
+    /// # fn example() -> Option<()> {
+    /// let mut ary = SmallArray::from(&[1, 2]);
+    /// let repeated_ary = ary.repeat(3)?;
+    /// assert_eq!(repeated_ary, &[1, 2, 1, 2, 1, 2]);
+    /// # Some(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
+    ///
+    /// [`None`] should be returned on overflow:
+    ///
+    /// ```
+    /// # use spinoso_array::SmallArray;
+    /// let mut ary = SmallArray::from(&[1, 2]);
+    /// let repeated_ary = ary.repeat(usize::MAX);
+    /// assert_eq!(repeated_ary, None);
+    /// ```
+    #[must_use]
+    pub fn repeat(&self, n: usize) -> Option<Self> {
+        let slice = self.0.as_slice();
+        if slice.len().checked_mul(n).is_some() {
+            Some(Self::from(slice.repeat(n)))
+        } else {
+            None
+        }
     }
 
     /// Prepends the elements of `other` to self.
