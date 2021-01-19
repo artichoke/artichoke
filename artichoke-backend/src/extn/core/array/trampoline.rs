@@ -4,20 +4,37 @@ use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
 use crate::gc::{MrbGarbageCollection, State as GcState};
 
-pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
-    if ary.is_frozen(interp) {
-        return Err(FrozenError::with_message("can't modify frozen Array").into());
-    }
-    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    array.clear();
-
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-    drop(array);
-    unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
-    }
-
-    Ok(ary)
+pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let result = if let Ok(other) = unsafe { Array::unbox_from_value(&mut other, interp) } {
+        let mut result = Array::with_capacity(array.len() + other.len());
+        result.0.concat(array.0.as_slice());
+        result.0.concat(other.0.as_slice());
+        result
+    } else if other.respond_to(interp, "to_ary")? {
+        let mut other_converted = other.funcall(interp, "to_ary", &[], None)?;
+        if let Ok(other) = unsafe { Array::unbox_from_value(&mut other_converted, interp) } {
+            let mut result = Array::with_capacity(array.len() + other.len());
+            result.0.concat(array.0.as_slice());
+            result.0.concat(other.0.as_slice());
+            result
+        } else {
+            let mut message = String::from("can't convert ");
+            let name = interp.inspect_type_name_for_value(other);
+            message.push_str(name);
+            message.push_str(" to Array (");
+            message.push_str(name);
+            message.push_str("#to_ary gives ");
+            message.push_str(interp.inspect_type_name_for_value(other_converted));
+            return Err(TypeError::from(message).into());
+        }
+    } else {
+        let mut message = String::from("no implicit conversion of ");
+        message.push_str(interp.inspect_type_name_for_value(other));
+        message.push_str(" into Array");
+        return Err(TypeError::from(message).into());
+    };
+    Array::alloc_value(result, interp)
 }
 
 pub fn element_reference(
@@ -63,12 +80,12 @@ pub fn element_assignment(
     result
 }
 
-pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
+pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    let result = array.pop();
+    array.clear();
 
     let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
     drop(array);
@@ -76,7 +93,7 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
         Array::rebox_into_value(ary, ptr, len, capacity)?;
     }
 
-    Ok(interp.convert(result))
+    Ok(ary)
 }
 
 pub fn concat<I>(interp: &mut Artichoke, mut ary: Value, others: I) -> Result<Value, Error>
@@ -98,8 +115,8 @@ where
             replacement.0.reserve(other.len());
             replacement.0.concat(other.0.as_slice());
         } else if other.respond_to(interp, "to_ary")? {
-            let mut other = other.funcall(interp, "to_ary", &[], None)?;
-            if let Ok(other) = unsafe { Array::unbox_from_value(&mut other, interp) } {
+            let mut other_converted = other.funcall(interp, "to_ary", &[], None)?;
+            if let Ok(other) = unsafe { Array::unbox_from_value(&mut other_converted, interp) } {
                 replacement.0.reserve(other.len());
                 replacement.0.concat(other.0.as_slice());
             } else {
@@ -109,7 +126,7 @@ where
                 message.push_str(" to Array (");
                 message.push_str(name);
                 message.push_str("#to_ary gives ");
-                message.push_str(interp.inspect_type_name_for_value(other));
+                message.push_str(interp.inspect_type_name_for_value(other_converted));
                 return Err(TypeError::from(message).into());
             }
         } else {
@@ -120,6 +137,86 @@ where
         }
     }
     Array::box_into_value(replacement, ary, interp)
+}
+
+pub fn first(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    if let Some(num) = num {
+        // Hack to detect `BigNum`
+        if matches!(num.ruby_type(), Ruby::Float) {
+            return Err(RangeError::with_message("bignum too big to convert into `long'").into());
+        }
+        let n = num.implicitly_convert_to_int(interp)?;
+        if let Ok(n) = usize::try_from(n) {
+            let slice = array.0.first_n(n);
+            let result = Array::from(slice);
+            Array::alloc_value(result, interp)
+        } else {
+            Err(ArgumentError::with_message("negative array size").into())
+        }
+    } else {
+        let last = array.0.first().copied().map(Value::from);
+        Ok(interp.convert(last))
+    }
+}
+
+pub fn initialize(
+    interp: &mut Artichoke,
+    into: Value,
+    first: Option<Value>,
+    second: Option<Value>,
+    block: Option<Block>,
+) -> Result<Value, Error> {
+    let array = Array::initialize(interp, first, second, block)?;
+    Array::box_into_value(array, into, interp)
+}
+
+pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> Result<Value, Error> {
+    let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
+    let result = from.clone();
+    Array::box_into_value(result, ary, interp)
+}
+
+pub fn last(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    if let Some(num) = num {
+        // Hack to detect `BigNum`
+        if matches!(num.ruby_type(), Ruby::Float) {
+            return Err(RangeError::with_message("bignum too big to convert into `long'").into());
+        }
+        let n = num.implicitly_convert_to_int(interp)?;
+        if let Ok(n) = usize::try_from(n) {
+            let slice = array.0.last_n(n);
+            let result = Array::from(slice);
+            Array::alloc_value(result, interp)
+        } else {
+            Err(ArgumentError::with_message("negative array size").into())
+        }
+    } else {
+        let last = array.0.last().copied().map(Value::from);
+        Ok(interp.convert(last))
+    }
+}
+
+pub fn len(interp: &mut Artichoke, mut ary: Value) -> Result<usize, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    Ok(array.len())
+}
+
+pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
+    if ary.is_frozen(interp) {
+        return Err(FrozenError::with_message("can't modify frozen Array").into());
+    }
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let result = array.pop();
+
+    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    drop(array);
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
+
+    Ok(interp.convert(result))
 }
 
 pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Error> {
@@ -138,6 +235,13 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
     Ok(ary)
 }
 
+pub fn reverse(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let mut reversed = array.clone();
+    reversed.reverse();
+    Array::alloc_value(reversed, interp)
+}
+
 pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
@@ -145,28 +249,6 @@ pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Err
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.reverse();
     Ok(ary)
-}
-
-pub fn len(interp: &mut Artichoke, mut ary: Value) -> Result<usize, Error> {
-    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    Ok(array.len())
-}
-
-pub fn initialize(
-    interp: &mut Artichoke,
-    into: Value,
-    first: Option<Value>,
-    second: Option<Value>,
-    block: Option<Block>,
-) -> Result<Value, Error> {
-    let array = Array::initialize(interp, first, second, block)?;
-    Array::box_into_value(array, into, interp)
-}
-
-pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> Result<Value, Error> {
-    let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
-    let result = from.clone();
-    Array::box_into_value(result, ary, interp)
 }
 
 pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Result<Value, Error> {

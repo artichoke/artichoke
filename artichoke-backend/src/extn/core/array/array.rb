@@ -43,10 +43,6 @@ class Array
   Enumerable.append_features(self)
   Enumerable.included(self)
 
-  def self.[](*args)
-    Array.new(args.length) { |idx| args[idx] }
-  end
-
   def self.try_convert(other)
     ary = other.to_ary
     return nil if ary.nil?
@@ -92,15 +88,6 @@ class Array
       ary.concat(self)
     end
     ary
-  end
-
-  def +(other)
-    ary = other.to_ary if other.respond_to?(:to_ary)
-    classname = other.class
-    classname = other.inspect if other.nil? || other.equal?(false) || other.equal?(true)
-    raise TypeError, "no implicit conversion of #{classname} into #{self.class}" unless ary.is_a?(Array)
-
-    dup.concat(ary)
   end
 
   def -(other)
@@ -786,33 +773,6 @@ class Array
     nil
   end
 
-  def first(num = (not_set = true))
-    return self[0] if not_set
-
-    count =
-      if num.is_a?(Integer)
-        num
-      elsif num.nil?
-        raise TypeError, 'no implicit conversion from nil to integer'
-      elsif num.respond_to?(:to_int)
-        classname = num.class
-        classname = num.inspect if index.equal?(false) || index.equal?(true)
-        num = num.to_int
-        unless num.is_a?(Integer)
-          raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})"
-        end
-
-        num
-      else
-        classname = num.class
-        classname = num.inspect if index.equal?(false) || index.equal?(true)
-        raise TypeError, "no implicit conversion of #{classname} into Integer"
-      end
-    raise ArgumentError, 'negative array size' if count.negative?
-
-    self[0, count]
-  end
-
   def flatten(depth = nil)
     res = dup
     res.flatten! depth
@@ -928,36 +888,6 @@ class Array
       end
     end
     self
-  end
-
-  def last(num = (not_set = true))
-    return self[-1] if not_set
-
-    count =
-      if num.is_a?(Integer)
-        num
-      elsif num.nil?
-        raise TypeError, 'no implicit conversion from nil to integer'
-      elsif num.respond_to?(:to_int)
-        classname = num.class
-        classname = num.inspect if index.equal?(false) || index.equal?(true)
-        num = num.to_int
-        unless num.is_a?(Integer)
-          raise TypeError, "can't convert #{classname} to Integer (#{classname}#to_int gives #{num.class})"
-        end
-
-        num
-      else
-        classname = num.class
-        classname = num.inspect if index.equal?(false) || index.equal?(true)
-        raise TypeError, "no implicit conversion of #{classname} into Integer"
-      end
-    raise ArgumentError, 'negative array size' if count.negative?
-
-    return [] if count.zero?
-    return dup if count > length
-
-    self[-count..-1]
   end
 
   def max(*)
@@ -1108,10 +1038,6 @@ class Array
       end
     self[0, length] = ary
     self
-  end
-
-  def reverse
-    dup.reverse!
   end
 
   def reverse_each(&block)
