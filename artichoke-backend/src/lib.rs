@@ -41,6 +41,7 @@
 //! let result = interp.eval(b"10 * 10")?;
 //! let result = result.try_into::<i64>(&interp)?;
 //! assert_eq!(result, 100);
+//! # interp.close();
 //! # Ok(())
 //! # }
 //! # example().unwrap();
@@ -61,6 +62,7 @@
 //! let result = result.funcall(&mut interp, "length", &[], None)?;
 //! let result = result.try_into::<i64>(&mut interp)?;
 //! assert_eq!(result, 12);
+//! # interp.close();
 //! # Ok(())
 //! # }
 //! # example().unwrap();
