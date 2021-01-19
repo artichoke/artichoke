@@ -26,6 +26,7 @@ fn example() -> Result<(), Error> {
     let result = interp.eval(b"10 * 10")?;
     let result = result.try_into::<i64>(&interp)?;
     assert_eq!(100, result);
+    interp.close();
     Ok(())
 }
 ```
@@ -44,6 +45,7 @@ fn example() -> Result<(), Error> {
     let len = s.funcall(&mut interp, "length", &[], None)?;
     let len = len.try_into::<usize>(&interp)?;
     assert_eq!(12, len);
+    interp.close();
     Ok(())
 }
 ```
