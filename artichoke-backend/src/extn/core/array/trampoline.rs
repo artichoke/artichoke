@@ -37,22 +37,6 @@ pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<
     Array::alloc_value(result, interp)
 }
 
-pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
-    if ary.is_frozen(interp) {
-        return Err(FrozenError::with_message("can't modify frozen Array").into());
-    }
-    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    array.clear();
-
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-    drop(array);
-    unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
-    }
-
-    Ok(ary)
-}
-
 pub fn element_reference(
     interp: &mut Artichoke,
     mut ary: Value,
@@ -96,12 +80,12 @@ pub fn element_assignment(
     result
 }
 
-pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
+pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    let result = array.pop();
+    array.clear();
 
     let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
     drop(array);
@@ -109,7 +93,7 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
         Array::rebox_into_value(ary, ptr, len, capacity)?;
     }
 
-    Ok(interp.convert(result))
+    Ok(ary)
 }
 
 pub fn concat<I>(interp: &mut Artichoke, mut ary: Value, others: I) -> Result<Value, Error>
@@ -176,6 +160,23 @@ pub fn first(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Resu
     }
 }
 
+pub fn initialize(
+    interp: &mut Artichoke,
+    into: Value,
+    first: Option<Value>,
+    second: Option<Value>,
+    block: Option<Block>,
+) -> Result<Value, Error> {
+    let array = Array::initialize(interp, first, second, block)?;
+    Array::box_into_value(array, into, interp)
+}
+
+pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> Result<Value, Error> {
+    let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
+    let result = from.clone();
+    Array::box_into_value(result, ary, interp)
+}
+
 pub fn last(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Result<Value, Error> {
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     if let Some(num) = num {
@@ -195,6 +196,27 @@ pub fn last(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Resul
         let last = array.0.last().copied().map(Value::from);
         Ok(interp.convert(last))
     }
+}
+
+pub fn len(interp: &mut Artichoke, mut ary: Value) -> Result<usize, Error> {
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    Ok(array.len())
+}
+
+pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
+    if ary.is_frozen(interp) {
+        return Err(FrozenError::with_message("can't modify frozen Array").into());
+    }
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let result = array.pop();
+
+    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    drop(array);
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
+
+    Ok(interp.convert(result))
 }
 
 pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Error> {
@@ -227,28 +249,6 @@ pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Err
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.reverse();
     Ok(ary)
-}
-
-pub fn len(interp: &mut Artichoke, mut ary: Value) -> Result<usize, Error> {
-    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    Ok(array.len())
-}
-
-pub fn initialize(
-    interp: &mut Artichoke,
-    into: Value,
-    first: Option<Value>,
-    second: Option<Value>,
-    block: Option<Block>,
-) -> Result<Value, Error> {
-    let array = Array::initialize(interp, first, second, block)?;
-    Array::box_into_value(array, into, interp)
-}
-
-pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> Result<Value, Error> {
-    let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
-    let result = from.clone();
-    Array::box_into_value(result, ary, interp)
 }
 
 pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Result<Value, Error> {
