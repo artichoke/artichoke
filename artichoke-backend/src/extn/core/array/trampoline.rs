@@ -123,15 +123,24 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
 pub fn concat<I>(interp: &mut Artichoke, mut ary: Value, others: I) -> Result<Value, Error>
 where
     I: IntoIterator<Item = Value>,
+    I::IntoIter: Clone,
 {
+    // Assumption for the average length of an `Array` that will be concatenated
+    // into `ary`.
+    const OTHER_ARRAYS_AVG_LENGTH: usize = 5;
+
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let others = others.into_iter();
 
-    // Allocate a new buffer and concatenate into it to allow preserving the'
-    // original `Array` items if `ary` is concatenated with itself.
-    let mut replacement = Array::with_capacity(array.len());
+    // Allocate a new buffer and concatenate into it to allow preserving the
+    // original `Array`'s items if `ary` is concatenated with itself.
+    //
+    // This allocation assumes that each `Array` yielded by the iterator is
+    // "small", where small means 5 elements or fewer.
+    let mut replacement = Array::with_capacity(array.len() + others.clone().count() * OTHER_ARRAYS_AVG_LENGTH);
     replacement.0.concat(array.0.as_slice());
 
     for mut other in others {
