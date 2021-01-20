@@ -90,7 +90,7 @@ pub enum CaptureExtract<'a> {
 }
 
 impl<'a> TryConvertMut<&'a mut Value, CaptureExtract<'a>> for Artichoke {
-    type Error = TypeError;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: &'a mut Value) -> Result<CaptureExtract<'a>, Self::Error> {
         if let Ok(idx) = implicitly_convert_to_int(self, *value) {
