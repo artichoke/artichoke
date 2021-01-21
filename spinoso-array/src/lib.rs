@@ -136,6 +136,7 @@
 #![no_std]
 
 extern crate alloc;
+extern crate std;
 
 // Ensure code blocks in README.md compile
 #[cfg(doctest)]

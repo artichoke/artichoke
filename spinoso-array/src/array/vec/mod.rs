@@ -312,7 +312,7 @@ impl<T> Array<T> {
     /// pointer after calling this function.
     #[must_use]
     pub unsafe fn from_raw_parts(ptr: *mut T, length: usize, capacity: usize) -> Self {
-        Self(Vec::from_raw_parts(ptr, length, capacity))
+        Self(Vec::from_raw_parts(std::dbg!(ptr), length, capacity))
     }
 
     /// Decomposes an `Array<T>` into its raw components.
@@ -334,7 +334,7 @@ impl<T> Array<T> {
         // TODO: convert to `Vec::into_raw_parts` once it is stabilized.
         // See: https://doc.rust-lang.org/1.48.0/src/alloc/vec.rs.html#399-402
         let mut me = ManuallyDrop::new(self.0);
-        (me.as_mut_ptr(), me.len(), me.capacity())
+        (std::dbg!(me.as_mut_ptr()), me.len(), me.capacity())
     }
 
     /// Consume the array and return the inner [`Vec<T>`].
