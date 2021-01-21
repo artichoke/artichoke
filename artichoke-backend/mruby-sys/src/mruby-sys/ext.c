@@ -260,7 +260,7 @@ mrb_sys_alloc_rarray(struct mrb_state *mrb, mrb_value *ptr, mrb_int len, mrb_int
   a->as.heap.len = len;
   a->as.heap.aux.capa = capa;
 
-  return mrb_obj_value(a);
+  return mrb_ary_value(a);
 }
 
 MRB_API void

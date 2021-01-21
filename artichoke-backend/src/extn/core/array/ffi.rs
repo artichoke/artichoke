@@ -99,7 +99,7 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
     let mut other = Value::from(other);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         if let Ok(other) = Array::unbox_from_value(&mut other, &mut guard) {
-            array.extend(other.iter());
+            array.0.concat(other.0.as_slice());
         } else {
             warn!(
                 "Attempted to call mrb_ary_concat with a {:?} argument",
@@ -107,7 +107,8 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
             );
         }
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
+        drop(array);
         if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
             warn!("Failed to rebox Array");
         }
@@ -122,7 +123,8 @@ unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let result = guard.convert(array.pop());
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
+        drop(array);
         if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
             warn!("Failed to rebox Array");
         }
@@ -145,7 +147,8 @@ unsafe extern "C" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value,
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         array.push(value);
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
+        drop(array);
         if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
             warn!("Failed to rebox Array");
         }
@@ -203,7 +206,8 @@ unsafe extern "C" fn mrb_ary_set(
             array.set(offset, value);
         }
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
+        drop(array);
         if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
             warn!("Failed to rebox Array");
         }
@@ -218,10 +222,10 @@ unsafe extern "C" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        let result = array.get(0);
-        let _ = array.set_slice(0, 1, &[]);
+        let result = array.shift();
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
+        drop(array);
         if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
             warn!("Failed to rebox Array");
         }
@@ -244,18 +248,18 @@ unsafe extern "C" fn mrb_ary_unshift(
 ) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
-    let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        let _ = array.set_with_drain(0, 0, value);
+        array.0.unshift(value);
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
+        drop(array);
         if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
             warn!("Failed to rebox Array");
         }
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
-    value.inner()
+    value
 }
 
 #[no_mangle]
@@ -268,54 +272,7 @@ unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut 
     let len = (*ary).as_.heap.len as usize;
     let capacity = (*ary).as_.heap.aux.capa as usize;
 
-    // Zero capacity `Vec`s are created with a dangling `ptr`.
-    if len == 0 && capacity == 0 {
-        let _ = Array::from_raw_parts(ptr, len, capacity);
-        return;
-    }
+    println!("array ptr: {:p}", ptr);
 
-    // Non-empty `Vec<sys::mrb_value>`s always allocate 0x10 aligned pointers.
-    //
-    // Sample alignments from experimentation:
-    //
-    // ```
-    // ptr = 0x7ffa23438b20, len = 2, capa = 2
-    // ptr = 0x7ffa23439c70, len = 1, capa = 1
-    // ptr = 0x7ffa23439c90, len = 1, capa = 1
-    // ptr = 0x7ffa23439c60, len = 1, capa = 1
-    // ptr = 0x7ffa23438c10, len = 2, capa = 2
-    // ptr = 0x7ffa23439a60, len = 1, capa = 1
-    // ptr = 0x7ffa2343d000, len = 1, capa = 1
-    // ptr = 0x7ffa23441070, len = 1, capa = 1
-    // ptr = 0x7ffa2343be30, len = 1, capa = 1
-    // ptr = 0x7ffa23440900, len = 3, capa = 3
-    // ptr = 0x7ffa23441400, len = 1, capa = 1
-    // ptr = 0x7ffa23441ac0, len = 1, capa = 1
-    // ptr = 0x7ffa23441ad0, len = 1, capa = 1
-    // ptr = 0x8, len = 0, capa = 0
-    // ptr = 0x7ffa23445b00, len = 1, capa = 1
-    // ptr = 0x7ffa23445800, len = 1, capa = 1
-    // ptr = 0x7ffa234525d0, len = 1, capa = 1
-    // ptr = 0x7ffa234525c0, len = 1, capa = 1
-    // ptr = 0x7ffa234535c0, len = 1, capa = 1
-    // ptr = 0x7ffa234543a0, len = 1, capa = 1
-    // ptr = 0x7ffa23454180, len = 1, capa = 1
-    // ptr = 0x7ffa2344b2d0, len = 1, capa = 1
-    // ```
-    if ptr.align_offset(0x10) == 0x00 {
-        let _ = Array::from_raw_parts(ptr, len, capacity);
-        return;
-    }
-
-    // XXX: HACK.
-    //
-    // If the pointer we get is unaligned, there is no way we can safely free
-    // it. Prefer to leak the `Vec` if this happens so we don't segfault.
-    warn!(
-        "Attempted to free Array with unaligned pointer: ptr = {:p}, offset = {:x}, len = {}, capa = {}",
-        ptr,
-        ptr.align_offset(0x10),
-        len,
-        capacity
-    );
+    let _ = Array::from_raw_parts(ptr, len, capacity);
 }

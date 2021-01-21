@@ -401,14 +401,6 @@ impl Array {
         self.0.set(index, elem.inner());
     }
 
-    fn set_with_drain(&mut self, start: usize, drain: usize, elem: Value) -> usize {
-        self.0.set_with_drain(start, drain, elem.inner())
-    }
-
-    fn set_slice(&mut self, start: usize, drain: usize, src: &[sys::mrb_value]) -> usize {
-        self.0.set_slice(start, drain, src)
-    }
-
     pub fn pop(&mut self) -> Option<Value> {
         self.0.pop().map(Value::from)
     }
@@ -497,7 +489,7 @@ impl Array {
         if !matches!(into.ruby_type(), Ruby::Array) {
             panic!("Tried to box Array into {:?} value", into.ruby_type());
         }
-        sys::mrb_sys_repack_into_rarray(ptr, len as sys::mrb_int, capacity as sys::mrb_int, into.inner());
+        sys::mrb_sys_repack_into_rarray(dbg!(ptr), len as sys::mrb_int, capacity as sys::mrb_int, into.inner());
         Ok(())
     }
 }
@@ -534,7 +526,7 @@ impl BoxUnboxVmValue for Array {
         let ptr = (*ary).as_.heap.ptr;
         let len = (*ary).as_.heap.len as usize;
         let capacity = (*ary).as_.heap.aux.capa as usize;
-        let array = Array::from_raw_parts(ptr, len, capacity);
+        let array = Array::from_raw_parts(dbg!(ptr), len, capacity);
 
         Ok(UnboxedValueGuard::new(array))
     }
@@ -545,7 +537,7 @@ impl BoxUnboxVmValue for Array {
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
-                sys::mrb_sys_alloc_rarray(mrb, ptr, len as sys::mrb_int, capacity as sys::mrb_int)
+                sys::mrb_sys_alloc_rarray(mrb, dbg!(ptr), len as sys::mrb_int, capacity as sys::mrb_int)
             })?
         };
         Ok(interp.protect(value.into()))
@@ -555,7 +547,7 @@ impl BoxUnboxVmValue for Array {
         let _ = interp;
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         unsafe {
-            Self::rebox_into_value(into, ptr, len, capacity)?;
+            Self::rebox_into_value(into, dbg!(ptr), len, capacity)?;
         }
         Ok(interp.protect(into))
     }

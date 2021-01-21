@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
-use crate::gc::{MrbGarbageCollection, State as GcState};
 
 pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<Value, Error> {
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
@@ -89,19 +88,14 @@ pub fn element_assignment(
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
-    let prior_gc_state = interp.disable_gc();
-
     let result = array.element_assignment(interp, first, second, third);
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
     drop(array);
     unsafe {
         Array::rebox_into_value(ary, ptr, len, capacity)?;
     }
 
-    if let GcState::Enabled = prior_gc_state {
-        interp.enable_gc();
-    }
     result
 }
 
@@ -112,7 +106,7 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.clear();
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
     drop(array);
     unsafe {
         Array::rebox_into_value(ary, ptr, len, capacity)?;
@@ -172,7 +166,7 @@ where
     }
     *array.as_mut() = replacement;
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
     drop(array);
     unsafe {
         Array::rebox_into_value(ary, ptr, len, capacity)?;
@@ -251,7 +245,7 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = array.pop();
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
     drop(array);
     unsafe {
         Array::rebox_into_value(ary, ptr, len, capacity)?;
@@ -267,7 +261,7 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.push(value);
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
     drop(array);
     unsafe {
         Array::rebox_into_value(ary, ptr, len, capacity)?;
@@ -289,6 +283,12 @@ pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Err
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.reverse();
+
+    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
+    drop(array);
+    unsafe {
+        Array::rebox_into_value(ary, ptr, len, capacity)?;
+    }
     Ok(ary)
 }
 
@@ -308,7 +308,7 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
 
         Ok(interp.convert(shifted))
     };
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
+    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
     drop(array);
     unsafe {
         Array::rebox_into_value(ary, ptr, len, capacity)?;
