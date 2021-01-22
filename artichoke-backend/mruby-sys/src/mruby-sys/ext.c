@@ -263,16 +263,6 @@ mrb_sys_alloc_rarray(struct mrb_state *mrb, mrb_value *ptr, mrb_int len, mrb_int
   return mrb_ary_value(a);
 }
 
-MRB_API void
-mrb_sys_repack_into_rarray(mrb_value *ptr, mrb_int len, mrb_int capa, mrb_value into)
-{
-  struct RArray *a = RARRAY(into);
-
-  a->as.heap.ptr = ptr;
-  a->as.heap.len = len;
-  a->as.heap.aux.capa = capa;
-}
-
 MRB_API mrb_value
 mrb_ary_entry(mrb_value ary, mrb_int offset)
 {

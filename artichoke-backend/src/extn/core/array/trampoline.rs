@@ -82,6 +82,7 @@ pub fn element_assignment(
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
+    let rebox = ary;
     // TODO: properly handle self-referential sets.
     if ary == first || ary == second || Some(ary) == third {
         return Ok(Value::nil());
@@ -89,13 +90,9 @@ pub fn element_assignment(
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
     let result = array.element_assignment(interp, first, second, third);
-
-    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        array.rebox_into_value(rebox);
     }
-
     result
 }
 
@@ -103,15 +100,12 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
+    let rebox = ary;
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.clear();
-
-    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        array.rebox_into_value(rebox);
     }
-
     Ok(ary)
 }
 
@@ -127,6 +121,7 @@ where
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
+    let rebox = ary;
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let others = others.into_iter();
 
@@ -164,12 +159,9 @@ where
             return Err(TypeError::from(message).into());
         }
     }
-    *array.as_mut() = replacement;
-
-    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-    drop(array);
+    *array = replacement;
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        array.rebox_into_value(rebox);
     }
     Ok(ary)
 }
@@ -242,15 +234,12 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
+    let rebox = ary;
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = array.pop();
-
-    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        array.rebox_into_value(rebox);
     }
-
     Ok(interp.convert(result))
 }
 
@@ -258,15 +247,12 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
+    let rebox = ary;
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.push(value);
-
-    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        array.rebox_into_value(rebox);
     }
-
     Ok(ary)
 }
 
@@ -281,13 +267,11 @@ pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Err
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
+    let rebox = ary;
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.reverse();
-
-    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        array.rebox_into_value(rebox);
     }
     Ok(ary)
 }
@@ -296,6 +280,7 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
+    let rebox = ary;
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = if let Some(count) = count {
         let count = implicitly_convert_to_int(interp, count)?;
@@ -308,11 +293,8 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
 
         Ok(interp.convert(shifted))
     };
-    let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        array.rebox_into_value(rebox);
     }
-
     result
 }

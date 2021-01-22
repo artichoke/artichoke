@@ -198,6 +198,7 @@ where
             message.push_str(Self::RUBY_TYPE);
             return Err(TypeError::from(message).into());
         }
+        dbg!(embedded_data_ptr);
 
         // Move the data pointer into a `Box`.
         let value = Box::from_raw(embedded_data_ptr as *mut Self);
@@ -221,6 +222,7 @@ where
         // Convert to a raw pointer.
         let data = Box::new(value);
         let ptr = Box::into_raw(data);
+        dbg!(ptr);
 
         // Allocate a new `mrb_value` and inject the raw data pointer.
         let state = interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;

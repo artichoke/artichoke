@@ -469,29 +469,6 @@ impl Array {
     pub fn into_raw_parts(self) -> (*mut sys::mrb_value, usize, usize) {
         self.0.into_raw_parts()
     }
-
-    /// Pack the raw triple of an `Array` into an [`RArray`](sys::RArray)-backed
-    /// [`sys::mrb_value`].
-    ///
-    /// # Safety
-    ///
-    /// Calling this function takes ownership of the allocation pointed to by
-    /// `ptr`. `ptr` or its source cannot be safely accessed until calling
-    /// [`Array::from_raw_parts`].
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_sign_loss)]
-    pub unsafe fn rebox_into_value(
-        into: Value,
-        ptr: *mut sys::mrb_value,
-        len: usize,
-        capacity: usize,
-    ) -> Result<(), Error> {
-        if !matches!(into.ruby_type(), Ruby::Array) {
-            panic!("Tried to box Array into {:?} value", into.ruby_type());
-        }
-        sys::mrb_sys_repack_into_rarray(dbg!(ptr), len as sys::mrb_int, capacity as sys::mrb_int, into.inner());
-        Ok(())
-    }
 }
 
 impl BoxUnboxVmValue for Array {
@@ -532,8 +509,6 @@ impl BoxUnboxVmValue for Array {
     }
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
-        let _ = interp;
-
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
@@ -544,10 +519,19 @@ impl BoxUnboxVmValue for Array {
     }
 
     fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
-        let _ = interp;
+        if !matches!(into.ruby_type(), Ruby::Array) {
+            panic!(
+                "Tried to box Array into {:?} value with type {:?}",
+                value,
+                into.ruby_type()
+            );
+        }
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         unsafe {
-            Self::rebox_into_value(into, dbg!(ptr), len, capacity)?;
+            let a = into.inner().value.p.cast::<sys::RArray>();
+            (*a).as_.heap.ptr = ptr;
+            (*a).as_.heap.len = len as sys::mrb_int;
+            (*a).as_.heap.aux.capa = capacity as sys::mrb_int;
         }
         Ok(interp.protect(into))
     }
@@ -558,6 +542,36 @@ impl BoxUnboxVmValue for Array {
         //
         // Array should not have a destructor registered in the class registry.
         let _ = data;
+    }
+}
+
+impl<'a> UnboxedValueGuard<'a, Array> {
+    /// Pack the raw triple of an `Array` into an [`RArray`](sys::RArray)-backed
+    /// [`sys::mrb_value`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this function takes ownership of the allocation pointed to by
+    /// `ptr`. `ptr` or its source cannot be safely accessed until calling
+    /// [`Array::from_raw_parts`].
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    pub unsafe fn rebox_into_value(mut self, value: Value) {
+        if !matches!(value.ruby_type(), Ruby::Array) {
+            panic!(
+                "Tried to box Array into {:?} value with type {:?}",
+                value,
+                value.ruby_type()
+            );
+        }
+        let ptr = dbg!(self.as_mut_ptr());
+        let len = self.len();
+        let capacity = self.capacity();
+
+        let a = value.inner().value.p.cast::<sys::RArray>();
+        (*a).as_.heap.ptr = ptr;
+        (*a).as_.heap.len = len as sys::mrb_int;
+        (*a).as_.heap.aux.capa = capacity as sys::mrb_int;
     }
 }
 

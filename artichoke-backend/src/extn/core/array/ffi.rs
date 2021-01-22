@@ -100,17 +100,12 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         if let Ok(other) = Array::unbox_from_value(&mut other, &mut guard) {
             array.0.concat(other.0.as_slice());
+            array.rebox_into_value(ary.into());
         } else {
             warn!(
                 "Attempted to call mrb_ary_concat with a {:?} argument",
                 other.ruby_type()
             );
-        }
-
-        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-        drop(array);
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
         }
     }
 }
@@ -122,13 +117,7 @@ unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let result = guard.convert(array.pop());
-
-        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-        drop(array);
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
-
+        array.rebox_into_value(ary.into());
         result
     } else {
         Value::nil()
@@ -146,12 +135,7 @@ unsafe extern "C" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value,
     let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         array.push(value);
-
-        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-        drop(array);
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        array.rebox_into_value(ary.into());
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
@@ -205,12 +189,7 @@ unsafe extern "C" fn mrb_ary_set(
         if Value::from(ary) != value {
             array.set(offset, value);
         }
-
-        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-        drop(array);
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        array.rebox_into_value(ary.into());
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
@@ -223,13 +202,7 @@ unsafe extern "C" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let result = array.shift();
-
-        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-        drop(array);
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
-
+        array.rebox_into_value(ary.into());
         guard.convert(result)
     } else {
         Value::nil()
@@ -250,12 +223,7 @@ unsafe extern "C" fn mrb_ary_unshift(
     let mut array = Value::from(ary);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         array.0.unshift(value);
-
-        let (ptr, len, capacity) = (dbg!(array.as_mut_ptr()), array.len(), array.capacity());
-        drop(array);
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        array.rebox_into_value(ary.into());
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
@@ -272,7 +240,11 @@ unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut 
     let len = (*ary).as_.heap.len as usize;
     let capacity = (*ary).as_.heap.aux.capa as usize;
 
-    println!("array ptr: {:p}", ptr);
+    println!("array ptr: {:p}, len: {}, capa: {}", ptr, len, capacity);
+    if ptr as usize == 0x6020000008a0 {
+        //let value = Value::from(ptr.read());
+        //println!("array ptr: {:p}, value: {:?}", ptr, value);
+    }
 
     let _ = Array::from_raw_parts(ptr, len, capacity);
 }

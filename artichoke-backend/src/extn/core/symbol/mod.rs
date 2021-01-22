@@ -36,6 +36,7 @@ impl BoxUnboxVmValue for Symbol {
         // `u32` in the `sym` variant.
         let value = value.inner();
         let symbol_id = value.value.sym;
+        println!("sym as ptr: {:0x}", symbol_id);
         Ok(UnboxedValueGuard::new(Immediate::new(symbol_id.into())))
     }
 
@@ -43,6 +44,7 @@ impl BoxUnboxVmValue for Symbol {
         let _ = interp;
 
         let symbol_id = u32::from(value);
+        println!("sym as ptr: {:0x}", symbol_id);
         let obj = unsafe { sys::mrb_sys_new_symbol(symbol_id) };
         Ok(Value::from(obj))
     }
