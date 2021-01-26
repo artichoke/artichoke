@@ -242,6 +242,8 @@ unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut 
 
     println!("array ptr: {:p}, len: {}, capa: {}", ptr, len, capacity);
     if ptr as usize == 0x6020000008a0 {
+        let s = 2;
+        println!("{}", s);
         //let value = Value::from(ptr.read());
         //println!("array ptr: {:p}, value: {:?}", ptr, value);
     }

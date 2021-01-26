@@ -30,12 +30,17 @@ impl Artichoke {
     {
         let bytes = bytes.into();
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
-        let symbol = state.symbols.intern(bytes)?;
+        let symbol = state.symbols.intern(bytes.clone())?;
         let symbol = u32::from(symbol);
         // mruby expexts symbols to be non-zero.
         let symbol = symbol
             .checked_add(<Self as Intern>::SYMBOL_RANGE_START)
             .ok_or_else(SymbolOverflowError::new)?;
+        if symbol == 2208 {
+            let b: &[u8] = &bytes;
+            println!("symbol 2208: {}", bstr::ByteSlice::as_bstr(b));
+            // return Err(crate::prelude::ArgumentError::with_message("failllllllllllll trailing nul").into());
+        }
         Ok(symbol)
     }
 
@@ -70,12 +75,17 @@ impl Intern for Artichoke {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         let mut bytes = bytes.into_owned();
         bytes.push(b'\0');
-        let symbol = state.symbols.intern(bytes)?;
+        let symbol = state.symbols.intern(bytes.clone())?;
         let symbol = u32::from(symbol);
         // mruby expexts symbols to be non-zero.
         let symbol = symbol
             .checked_add(Self::SYMBOL_RANGE_START)
             .ok_or_else(SymbolOverflowError::new)?;
+        if symbol == 2208 {
+            let b: &[u8] = &bytes;
+            println!("symbol 2208: {}", bstr::ByteSlice::as_bstr(b));
+            // return Err(crate::prelude::ArgumentError::with_message("failllllllllllll regular").into());
+        }
         Ok(symbol)
     }
 
