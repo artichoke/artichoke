@@ -124,5 +124,3 @@ impl RubyException for Box<dyn RubyException> {
 }
 
 impl error::Error for Box<dyn RubyException> {}
-
-impl error::Error for &dyn RubyException {}
