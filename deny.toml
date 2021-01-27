@@ -27,9 +27,7 @@ allow = []
 deny = [
   { name = "time", version = ">=0.2.0" },
 ]
-skip = [
-  { name = "cfg-if", version = "0.1" },
-]
+skip = []
 skip-tree = []
 
 [sources]
