@@ -2,6 +2,7 @@
 
 class BasicObject
   # rubocop:disable Style/RedundantConditional
+  # rubocop:disable Style/IfWithBooleanLiteralBranches
   def !=(other)
     if self == other
       false
@@ -9,6 +10,7 @@ class BasicObject
       true
     end
   end
+  # rubocop:enable Style/IfWithBooleanLiteralBranches
   # rubocop:enable Style/RedundantConditional
 end
 
