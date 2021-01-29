@@ -36,7 +36,7 @@ impl BoxUnboxVmValue for Symbol {
         // `u32` in the `sym` variant.
         let value = value.inner();
         let symbol_id = value.value.sym;
-        println!("sym as ptr: {:0x}", symbol_id);
+        println!("sym as ptr: {:?}", symbol_id.to_le_bytes());
         Ok(UnboxedValueGuard::new(Immediate::new(symbol_id.into())))
     }
 

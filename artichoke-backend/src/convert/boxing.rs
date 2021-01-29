@@ -234,7 +234,9 @@ where
         let obj = unsafe {
             interp.with_ffi_boundary(|mrb| {
                 let alloc = sys::mrb_data_object_alloc(mrb, rclass.as_mut(), ptr as *mut c_void, data_type);
-                sys::mrb_sys_obj_value(alloc as *mut c_void)
+                let mut value = sys::mrb_sys_obj_value(alloc as *mut c_void);
+                value.tt = sys::mrb_vtype::MRB_TT_DATA;
+                value
             })?
         };
 

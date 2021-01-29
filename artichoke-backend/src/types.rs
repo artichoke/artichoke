@@ -45,88 +45,96 @@ pub use crate::core::{Ruby, Rust};
 pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
     use sys::mrb_vtype::*;
 
-    // Suppress lint to enumerate match arms in the same order they are defined
-    // in the `sys::mrb_vtype` enum C source.
-    #[allow(clippy::match_same_arms)]
     match value.tt {
-        // `nil` is implemented with the `MRB_TT_FALSE` type tag in mruby
-        // (since both values are falsy). The difference is that booleans are
-        // non-zero `Fixnum`s.
+        // `nil` is implemented with the `MRB_TT_FALSE` type tag in mruby (since
+        // both values are falsy). The difference is that booleans are non-zero
+        // `Fixnum`s.
         MRB_TT_FALSE if unsafe { sys::mrb_sys_value_is_nil(value) } => Ruby::Nil,
-        MRB_TT_FALSE => Ruby::Bool,
-        // `MRB_TT_FREE` is a marker type tag that indicates to the mruby
-        // VM that an object is unreachable and should be deallocated by the
-        // garbage collector.
-        MRB_TT_FREE => Ruby::Unreachable,
-        MRB_TT_TRUE => Ruby::Bool,
-        MRB_TT_FIXNUM => Ruby::Fixnum,
-        MRB_TT_SYMBOL => Ruby::Symbol,
-        // internal use: #undef; should not happen
-        MRB_TT_UNDEF => Ruby::Unreachable,
-        MRB_TT_FLOAT => Ruby::Float,
-        // `MRB_TT_CPTR` wraps a borrowed `void *` pointer.
-        MRB_TT_CPTR => Ruby::CPointer,
-        MRB_TT_OBJECT => Ruby::Object,
-        MRB_TT_CLASS => Ruby::Class,
-        MRB_TT_MODULE => Ruby::Module,
-        // `MRB_TT_ICLASS` is an internal use type tag meant for holding
-        // mixed in modules.
-        MRB_TT_ICLASS => Ruby::Unreachable,
-        // `MRB_TT_SCLASS` represents a singleton class, or a class that is
-        // defined anonymously, e.g. `c1` or `c2` below:
-        //
-        // ```ruby
-        // c1 = Class.new {
-        //   def foo; :foo; end
-        // }
-        // c2 = (class <<cls; self; end)
-        // ```
-        //
-        // mruby also uses the term singleton method to refer to methods
-        // defined on an object's eigenclass, e.g. `bar` below:
-        //
-        // ```ruby
-        // class Foo; end
-        // obj = Foo.new
-        // def obj.bar; 'bar'; end
-        // ```
-        MRB_TT_SCLASS => Ruby::SingletonClass,
-        MRB_TT_PROC => Ruby::Proc,
-        // `MRB_TT_ARRAY` refers to the mruby `mrb_array` implementation.
-        // Artichoke implements its own `Array` as a `Ruby::Data`, so this
-        // variant is unreachable.
-        MRB_TT_ARRAY => Ruby::Array,
-        MRB_TT_HASH => Ruby::Hash,
-        MRB_TT_STRING => Ruby::String,
-        MRB_TT_RANGE => Ruby::Range,
-        MRB_TT_EXCEPTION => Ruby::Exception,
-        // NOTE(lopopolo): This might be an internal closure symbol table,
-        // rather than the `ENV` core object.
-        MRB_TT_ENV => Ruby::Unreachable,
-        // `MRB_TT_DATA` is a type tag for wrapped C pointers. It is used
-        // to indicate that an `mrb_value` has an owned pointer to an
-        // external data structure stored in its `value.p` field.
-        MRB_TT_DATA => Ruby::Data,
-        // NOTE(lopopolo): `Fiber`s are unimplemented in Artichoke.
-        MRB_TT_FIBER => Ruby::Fiber,
-        // MRB_TT_ISTRUCT is an "inline structure", or a mrb_value that
-        // stores data in a char* buffer inside an mrb_value. These
-        // mrb_values cannot have a finalizer and cannot have instance
-        // variables.
-        //
-        // See vendor/mruby-*/include/mruby/istruct.h
-        MRB_TT_ISTRUCT => Ruby::InlineStruct,
-        // `MRB_TT_BREAK` is used internally to the mruby VM. BREAK is used as
-        // the return value of `mrb_yield` when the block has a non-local
-        // return.
-        //
-        // FIXME(lopopolo): The below "unreachable" designation is incorrect.
-        // BREAK should be handled by `sys::protect::block_yield`.
-        MRB_TT_BREAK => Ruby::Unreachable,
-        // `MRB_TT_MAXDEFINE` is a marker enum value used by the mruby VM to
-        // dynamically check if a type tag is valid using the less than
-        // operator. It does not correspond to an instantiated type.
-        MRB_TT_MAXDEFINE => Ruby::Unreachable,
+        _ => value.tt.into(),
+    }
+}
+
+impl From<sys::mrb_vtype> for Ruby {
+    fn from(tt: sys::mrb_vtype) -> Self {
+        use sys::mrb_vtype::*;
+
+        // Suppress lint to enumerate match arms in the same order they are defined
+        // in the `sys::mrb_vtype` enum C source.
+        #[allow(clippy::match_same_arms)]
+        match tt {
+            MRB_TT_FALSE => Ruby::Bool,
+            // `MRB_TT_FREE` is a marker type tag that indicates to the mruby
+            // VM that an object is unreachable and should be deallocated by the
+            // garbage collector.
+            MRB_TT_FREE => Ruby::Unreachable,
+            MRB_TT_TRUE => Ruby::Bool,
+            MRB_TT_FIXNUM => Ruby::Fixnum,
+            MRB_TT_SYMBOL => Ruby::Symbol,
+            // internal use: #undef; should not happen
+            MRB_TT_UNDEF => Ruby::Unreachable,
+            MRB_TT_FLOAT => Ruby::Float,
+            // `MRB_TT_CPTR` wraps a borrowed `void *` pointer.
+            MRB_TT_CPTR => Ruby::CPointer,
+            MRB_TT_OBJECT => Ruby::Object,
+            MRB_TT_CLASS => Ruby::Class,
+            MRB_TT_MODULE => Ruby::Module,
+            // `MRB_TT_ICLASS` is an internal use type tag meant for holding
+            // mixed in modules.
+            MRB_TT_ICLASS => Ruby::Unreachable,
+            // `MRB_TT_SCLASS` represents a singleton class, or a class that is
+            // defined anonymously, e.g. `c1` or `c2` below:
+            //
+            // ```ruby
+            // c1 = Class.new {
+            //   def foo; :foo; end
+            // }
+            // c2 = (class <<cls; self; end)
+            // ```
+            //
+            // mruby also uses the term singleton method to refer to methods
+            // defined on an object's eigenclass, e.g. `bar` below:
+            //
+            // ```ruby
+            // class Foo; end
+            // obj = Foo.new
+            // def obj.bar; 'bar'; end
+            // ```
+            MRB_TT_SCLASS => Ruby::SingletonClass,
+            MRB_TT_PROC => Ruby::Proc,
+            // `MRB_TT_ARRAY` refers to the mruby `mrb_array` implementation.
+            MRB_TT_ARRAY => Ruby::Array,
+            MRB_TT_HASH => Ruby::Hash,
+            MRB_TT_STRING => Ruby::String,
+            MRB_TT_RANGE => Ruby::Range,
+            MRB_TT_EXCEPTION => Ruby::Exception,
+            // NOTE(lopopolo): This might be an internal closure symbol table,
+            // rather than the `ENV` core object.
+            MRB_TT_ENV => Ruby::Unreachable,
+            // `MRB_TT_DATA` is a type tag for wrapped C pointers. It is used
+            // to indicate that an `mrb_value` has an owned pointer to an
+            // external data structure stored in its `value.p` field.
+            MRB_TT_DATA => Ruby::Data,
+            // NOTE(lopopolo): `Fiber`s are unimplemented in Artichoke.
+            MRB_TT_FIBER => Ruby::Fiber,
+            // MRB_TT_ISTRUCT is an "inline structure", or a mrb_value that
+            // stores data in a char* buffer inside an mrb_value. These
+            // mrb_values cannot have a finalizer and cannot have instance
+            // variables.
+            //
+            // See vendor/mruby-*/include/mruby/istruct.h
+            MRB_TT_ISTRUCT => Ruby::InlineStruct,
+            // `MRB_TT_BREAK` is used internally to the mruby VM. BREAK is used as
+            // the return value of `mrb_yield` when the block has a non-local
+            // return.
+            //
+            // FIXME(lopopolo): The below "unreachable" designation is incorrect.
+            // BREAK should be handled by `sys::protect::block_yield`.
+            MRB_TT_BREAK => Ruby::Unreachable,
+            // `MRB_TT_MAXDEFINE` is a marker enum value used by the mruby VM to
+            // dynamically check if a type tag is valid using the less than
+            // operator. It does not correspond to an instantiated type.
+            MRB_TT_MAXDEFINE => Ruby::Unreachable,
+        }
     }
 }
 

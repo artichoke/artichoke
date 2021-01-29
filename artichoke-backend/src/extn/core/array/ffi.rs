@@ -236,11 +236,17 @@ unsafe extern "C" fn mrb_ary_unshift(
 unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut sys::RArray) {
     let _ = mrb;
 
+    let tt = (*ary).tt();
+    let tt = Ruby::from(tt);
+
     let ptr = (*ary).as_.heap.ptr;
     let len = (*ary).as_.heap.len as usize;
     let capacity = (*ary).as_.heap.aux.capa as usize;
 
-    println!("array ptr: {:p}, len: {}, capa: {}", ptr, len, capacity);
+    println!(
+        "array ptr: {:p}, len: {}, capa: {}, tt: {:?}, rarray ptr: {:p}",
+        ptr, len, capacity, tt, ary
+    );
     if ptr as usize == 0x6020000008a0 {
         let s = 2;
         println!("{}", s);

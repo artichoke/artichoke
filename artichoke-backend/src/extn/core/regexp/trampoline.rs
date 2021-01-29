@@ -14,7 +14,11 @@ pub fn initialize(
 ) -> Result<Value, Error> {
     let (options, encoding) = interp.try_convert_mut((options, encoding))?;
     let regexp = Regexp::initialize(interp, pattern, options, encoding)?;
-    Regexp::box_into_value(regexp, into, interp)
+    let value = Regexp::box_into_value(regexp, into, interp)?;
+    println!("regexp value: {:?}, ptr: {:?}", value.ruby_type(), unsafe {
+        value.inner().value.p
+    });
+    Ok(value)
 }
 
 pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error> {

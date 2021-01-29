@@ -264,6 +264,7 @@ pub unsafe fn implicitly_convert_to_string<'a>(
     value: &'a mut Value,
 ) -> Result<&'a [u8], Error> {
     match value.try_into_mut::<Option<&'a [u8]>>(interp) {
+        Ok(Some(_)) if matches!(value.ruby_type(), Ruby::Array) => {}
         // successful conversion: the given value is an string.
         Ok(Some(s)) => return Ok(s),
         // `nil` does not implicitly convert to string:
