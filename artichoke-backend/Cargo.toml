@@ -38,7 +38,7 @@ optional = true
 quickcheck = { version = "1.0", default-features = false }
 
 [build-dependencies]
-bindgen = { version = "0.56.0", default-features = false, features = ["runtime"] }
+bindgen = { version = "0.57.0", default-features = false, features = ["runtime"] }
 cc = "1.0"
 target-lexicon = "0.11.1"
 
