@@ -234,9 +234,8 @@ where
         let obj = unsafe {
             interp.with_ffi_boundary(|mrb| {
                 let alloc = sys::mrb_data_object_alloc(mrb, rclass.as_mut(), ptr as *mut c_void, data_type);
-                let mut value = sys::mrb_sys_obj_value(alloc as *mut c_void);
-                value.tt = sys::mrb_vtype::MRB_TT_DATA;
-                value
+                println!("data alloc: {:p}", alloc);
+                sys::mrb_sys_data_value(alloc)
             })?
         };
 
@@ -244,6 +243,9 @@ where
     }
 
     fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
+        if into.ruby_type() != Ruby::Data {
+            panic!("bad ruby type: {:?}, {:?}", into.ruby_type(), into);
+        }
         let state = interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
         let spec = state
             .classes
@@ -253,12 +255,17 @@ where
         // Convert to a raw pointer.
         let data = Box::new(value);
         let ptr = Box::into_raw(data);
+        println!(
+            "box into value: {:?}, {:?}, ptr: {:p}, rbasic: {:p}",
+            into,
+            into.ruby_type(),
+            ptr,
+            unsafe { sys::mrb_sys_basic_ptr(into.inner()) }
+        );
 
         // Inject the raw data pointer into the given `mrb_value`.
-        let mut obj = into.inner();
-        unsafe {
-            sys::mrb_sys_data_init(&mut obj, ptr as *mut c_void, spec.data_type());
-        }
+        let obj = into.inner();
+        let obj = unsafe { sys::mrb_sys_data_init(obj, ptr as *mut c_void, spec.data_type()) };
         Ok(Value::from(obj))
     }
 

@@ -225,10 +225,11 @@ mrb_sys_set_instance_tt(struct RClass *class, enum mrb_vtype type)
   MRB_SET_INSTANCE_TT(class, type);
 }
 
-MRB_API void
-mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type)
+MRB_API mrb_value
+mrb_sys_data_init(mrb_value value, void *ptr, const mrb_data_type *type)
 {
-  mrb_data_init(*value, ptr, type);
+  mrb_data_init(value, ptr, type);
+  return value;
 }
 
 // Raise exceptions and debug info
