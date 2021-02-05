@@ -2,6 +2,7 @@
 
 use core::convert::TryFrom;
 
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 
 pub fn acos(interp: &mut Artichoke, value: Value) -> Result<Fp, Error> {
@@ -105,9 +106,7 @@ pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<Fp, E
 #[allow(clippy::cast_possible_truncation)]
 pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<Fp, Error> {
     let fraction = interp.coerce_to_float(fraction)?;
-    let exponent = exponent
-        .implicitly_convert_to_int(interp)
-        .map_err(|_| exponent.try_into::<Fp>(interp));
+    let exponent = implicitly_convert_to_int(interp, exponent).map_err(|_| exponent.try_into::<Fp>(interp));
     let exponent = match exponent {
         Ok(exp) => exp,
         Err(Ok(exp)) if exp.is_nan() => {

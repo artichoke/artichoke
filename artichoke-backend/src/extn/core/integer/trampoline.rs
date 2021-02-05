@@ -1,3 +1,4 @@
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
@@ -9,7 +10,7 @@ pub fn chr(interp: &mut Artichoke, value: Value, encoding: Option<Value>) -> Res
 
 pub fn element_reference(interp: &mut Artichoke, value: Value, bit: Value) -> Result<Value, Error> {
     let value = value.try_into::<Integer>(interp)?;
-    let bit = bit.implicitly_convert_to_int(interp)?;
+    let bit = implicitly_convert_to_int(interp, bit)?;
     let bit = value.bit(bit)?;
     Ok(interp.convert(bit))
 }

@@ -10,7 +10,9 @@ use std::hash::{Hash, Hasher};
 use std::num::NonZeroUsize;
 use std::str;
 
+use crate::convert::implicitly_convert_to_string;
 use crate::extn::core::array::Array;
+use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
 #[doc(inline)]
@@ -102,7 +104,7 @@ impl Regexp {
             }
             regexp.inner().source().clone()
         } else {
-            let bytes = pattern.implicitly_convert_to_string(interp)?;
+            let bytes = unsafe { implicitly_convert_to_string(interp, &mut pattern)? };
             Source::with_pattern_and_options(bytes.to_vec(), options.unwrap_or_default())
         };
         let pattern = pattern::parse(source.pattern(), source.options());
@@ -128,7 +130,7 @@ impl Regexp {
                 let source = regexp.inner().config();
                 Ok(source.pattern().to_vec())
             } else {
-                let bytes = value.implicitly_convert_to_string(interp)?;
+                let bytes = unsafe { implicitly_convert_to_string(interp, value)? };
                 if let Ok(pattern) = str::from_utf8(bytes) {
                     Ok(syntax::escape(pattern).into_bytes())
                 } else {
@@ -175,7 +177,12 @@ impl Regexp {
     }
 
     pub fn case_compare(&self, interp: &mut Artichoke, mut other: Value) -> Result<bool, Error> {
-        let pattern = if let Ok(pattern) = other.implicitly_convert_to_string(interp) {
+        let pattern_vec;
+        let pattern = if matches!(other.ruby_type(), Ruby::Symbol) {
+            let symbol = unsafe { Symbol::unbox_from_value(&mut other, interp)? };
+            pattern_vec = symbol.bytes(interp).to_vec();
+            pattern_vec.as_slice()
+        } else if let Ok(pattern) = unsafe { implicitly_convert_to_string(interp, &mut other) } {
             pattern
         } else {
             interp.unset_global_variable(LAST_MATCH)?;

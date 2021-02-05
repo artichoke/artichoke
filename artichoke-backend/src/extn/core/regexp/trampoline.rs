@@ -1,6 +1,8 @@
 use std::convert::TryFrom;
 
+use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_nilable_string, implicitly_convert_to_string};
 use crate::extn::core::regexp::Regexp;
+use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
 pub fn initialize(
@@ -16,7 +18,14 @@ pub fn initialize(
 }
 
 pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error> {
-    let pattern = pattern.implicitly_convert_to_string(interp)?;
+    let pattern_vec;
+    let pattern = if matches!(pattern.ruby_type(), Ruby::Symbol) {
+        let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
+        pattern_vec = symbol.bytes(interp).to_vec();
+        pattern_vec.as_slice()
+    } else {
+        unsafe { implicitly_convert_to_string(interp, &mut pattern)? }
+    };
     let pattern = Regexp::escape(pattern)?;
     Ok(interp.convert_mut(pattern))
 }
@@ -36,9 +45,9 @@ pub fn is_match(
     pos: Option<Value>,
 ) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let pattern = pattern.implicitly_convert_to_nilable_string(interp)?;
+    let pattern = unsafe { implicitly_convert_to_nilable_string(interp, &mut pattern)? };
     let pos = if let Some(pos) = pos {
-        Some(pos.implicitly_convert_to_int(interp)?)
+        Some(implicitly_convert_to_int(interp, pos)?)
     } else {
         None
     };
@@ -54,9 +63,16 @@ pub fn match_(
     block: Option<Block>,
 ) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let pattern = pattern.implicitly_convert_to_nilable_string(interp)?;
+    let pattern_vec;
+    let pattern = if matches!(pattern.ruby_type(), Ruby::Symbol) {
+        let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
+        pattern_vec = symbol.bytes(interp).to_vec();
+        Some(pattern_vec.as_slice())
+    } else {
+        unsafe { implicitly_convert_to_nilable_string(interp, &mut pattern)? }
+    };
     let pos = if let Some(pos) = pos {
-        Some(pos.implicitly_convert_to_int(interp)?)
+        Some(implicitly_convert_to_int(interp, pos)?)
     } else {
         None
     };
@@ -77,7 +93,14 @@ pub fn case_compare(interp: &mut Artichoke, mut regexp: Value, other: Value) -> 
 
 pub fn match_operator(interp: &mut Artichoke, mut regexp: Value, mut pattern: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let pattern = pattern.implicitly_convert_to_nilable_string(interp)?;
+    let pattern_vec;
+    let pattern = if matches!(pattern.ruby_type(), Ruby::Symbol) {
+        let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
+        pattern_vec = symbol.bytes(interp).to_vec();
+        Some(pattern_vec.as_slice())
+    } else {
+        unsafe { implicitly_convert_to_nilable_string(interp, &mut pattern)? }
+    };
     let pos = regexp.match_operator(interp, pattern)?;
     match pos.map(Int::try_from) {
         Some(Ok(pos)) => Ok(interp.convert(pos)),

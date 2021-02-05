@@ -1,5 +1,6 @@
 use bstr::ByteSlice;
 
+use crate::convert::implicitly_convert_to_string;
 #[cfg(feature = "core-regexp")]
 use crate::extn::core::matchdata::MatchData;
 #[cfg(feature = "core-regexp")]
@@ -36,7 +37,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
         return Ok(interp.try_convert_mut(scan)?.unwrap_or(value));
     }
     #[cfg(feature = "core-regexp")]
-    if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
+    if let Ok(pattern_bytes) = unsafe { implicitly_convert_to_string(interp, &mut pattern) } {
         let string = value.try_into_mut::<&[u8]>(interp)?;
         if let Some(ref block) = block {
             let regex = Regexp::lazy(pattern_bytes.to_vec());
@@ -93,7 +94,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
         }
     }
     #[cfg(not(feature = "core-regexp"))]
-    if let Ok(pattern_bytes) = pattern.implicitly_convert_to_string(interp) {
+    if let Ok(pattern_bytes) = unsafe { implicitly_convert_to_string(interp, &mut pattern) } {
         let string = value.try_into_mut::<&[u8]>(interp)?;
         if let Some(ref block) = block {
             let patlen = pattern_bytes.len();

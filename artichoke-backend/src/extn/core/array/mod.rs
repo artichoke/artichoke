@@ -5,7 +5,7 @@ use std::iter::FromIterator;
 use std::ops::{Deref, DerefMut};
 use std::slice;
 
-use crate::convert::UnboxedValueGuard;
+use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string, UnboxedValueGuard};
 use crate::extn::prelude::*;
 
 pub mod args;
@@ -216,7 +216,7 @@ impl Array {
                             return Err(TypeError::from(message).into());
                         }
                     } else {
-                        let len = array_or_len.implicitly_convert_to_int(interp)?;
+                        let len = implicitly_convert_to_int(interp, array_or_len)?;
                         let len =
                             usize::try_from(len).map_err(|_| ArgumentError::with_message("negative array size"))?;
                         let default = default.unwrap_or_else(Value::nil);
@@ -259,7 +259,7 @@ impl Array {
                             return Err(TypeError::from(message).into());
                         }
                     } else {
-                        let len = array_or_len.implicitly_convert_to_int(interp)?;
+                        let len = implicitly_convert_to_int(interp, array_or_len)?;
                         let len =
                             usize::try_from(len).map_err(|_| ArgumentError::with_message("negative array size"))?;
                         if default.is_some() {
@@ -296,17 +296,32 @@ impl Array {
 
     pub fn join(&self, interp: &mut Artichoke, sep: &[u8]) -> Result<Vec<u8>, Error> {
         fn flatten(interp: &mut Artichoke, mut value: Value, out: &mut Vec<Vec<u8>>) -> Result<(), Error> {
-            if let Ruby::Array = value.ruby_type() {
-                let ary = unsafe { Array::unbox_from_value(&mut value, interp)? };
-                out.reserve(ary.len());
-                for elem in ary.iter() {
-                    flatten(interp, elem, out)?;
+            match value.ruby_type() {
+                Ruby::Array => {
+                    let ary = unsafe { Array::unbox_from_value(&mut value, interp)? };
+                    out.reserve(ary.len());
+                    for elem in ary.iter() {
+                        flatten(interp, elem, out)?;
+                    }
                 }
-            } else if let Ok(s) = value.implicitly_convert_to_string(interp) {
-                out.push(s.to_vec());
-            } else {
-                let s = value.to_s(interp);
-                out.push(s);
+                Ruby::Fixnum => {
+                    let mut buf = Vec::new();
+                    let int = unsafe { sys::mrb_sys_fixnum_to_cint(value.inner()) };
+                    let _ = itoa::write(&mut buf, int);
+                    out.push(buf);
+                }
+                Ruby::Float => {
+                    let float = unsafe { sys::mrb_sys_float_to_cdouble(value.inner()) };
+                    let formatted = format!("{}", float);
+                    out.push(formatted.into_bytes());
+                }
+                _ => {
+                    if let Ok(s) = unsafe { implicitly_convert_to_string(interp, &mut value) } {
+                        out.push(s.to_vec());
+                    } else {
+                        out.push(value.to_s(interp));
+                    }
+                }
             }
             Ok(())
         }

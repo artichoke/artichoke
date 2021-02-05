@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 
+use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::array::Array;
 use crate::extn::core::matchdata::{Capture, CaptureAt, CaptureExtract, MatchData};
 use crate::extn::core::regexp::Regexp;
@@ -39,15 +40,15 @@ pub fn element_reference(
 ) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let at = if let Some(len) = len {
-        let start = elem.implicitly_convert_to_int(interp)?;
-        let len = len.implicitly_convert_to_int(interp)?;
+        let start = implicitly_convert_to_int(interp, elem)?;
+        let len = implicitly_convert_to_int(interp, len)?;
         CaptureAt::StartLen(start, len)
-    } else if let Ok(index) = elem.implicitly_convert_to_int(interp) {
+    } else if let Ok(index) = implicitly_convert_to_int(interp, elem) {
         CaptureAt::GroupIndex(index)
-    } else if let Ok(name) = elem.implicitly_convert_to_string(interp) {
-        CaptureAt::GroupName(name)
     } else if let Ok(symbol) = unsafe { Symbol::unbox_from_value(&mut elem, interp) } {
         CaptureAt::GroupName(symbol.bytes(interp))
+    } else if let Ok(name) = unsafe { implicitly_convert_to_string(interp, &mut elem) } {
+        CaptureAt::GroupName(name)
     } else {
         // NOTE(lopopolo): Encapsulation is broken here by reaching into the
         // inner regexp.

@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 use crate::sys::protect;
 
@@ -17,14 +18,14 @@ pub fn element_reference(
     ary_len: usize,
 ) -> Result<ElementReference, Error> {
     if let Some(len) = len {
-        let start = elem.implicitly_convert_to_int(interp)?;
-        let len = len.implicitly_convert_to_int(interp)?;
+        let start = implicitly_convert_to_int(interp, elem)?;
+        let len = implicitly_convert_to_int(interp, len)?;
         if let Ok(len) = usize::try_from(len) {
             Ok(ElementReference::StartLen(start, len))
         } else {
             Ok(ElementReference::Empty)
         }
-    } else if let Ok(index) = elem.implicitly_convert_to_int(interp) {
+    } else if let Ok(index) = implicitly_convert_to_int(interp, elem) {
         Ok(ElementReference::Index(index))
     } else {
         let rangelen = Int::try_from(ary_len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
@@ -48,7 +49,7 @@ pub fn element_assignment(
     len: usize,
 ) -> Result<(usize, Option<usize>, Value), Error> {
     if let Some(elem) = third {
-        let start = first.implicitly_convert_to_int(interp)?;
+        let start = implicitly_convert_to_int(interp, first)?;
         let start = if let Ok(start) = usize::try_from(start) {
             start
         } else {
@@ -66,7 +67,7 @@ pub fn element_assignment(
                 return Err(IndexError::from(message).into());
             }
         };
-        let slice_len = second.implicitly_convert_to_int(interp)?;
+        let slice_len = implicitly_convert_to_int(interp, second)?;
         if let Ok(slice_len) = usize::try_from(slice_len) {
             Ok((start, Some(slice_len), elem))
         } else {
@@ -75,7 +76,7 @@ pub fn element_assignment(
             message.push(')');
             Err(IndexError::from(message).into())
         }
-    } else if let Ok(index) = first.implicitly_convert_to_int(interp) {
+    } else if let Ok(index) = implicitly_convert_to_int(interp, first) {
         if let Ok(index) = usize::try_from(index) {
             Ok((index, None, second))
         } else {
@@ -102,9 +103,9 @@ pub fn element_assignment(
             Ok((start, Some(len), second))
         } else {
             let start = first.funcall(interp, "begin", &[], None)?;
-            let start = start.implicitly_convert_to_int(interp)?;
+            let start = implicitly_convert_to_int(interp, start)?;
             let end = first.funcall(interp, "last", &[], None)?;
-            let end = end.implicitly_convert_to_int(interp)?;
+            let end = implicitly_convert_to_int(interp, end)?;
             // TODO: This conditional is probably not doing the right thing
             if start + (end - start) < 0 {
                 let mut message = String::new();

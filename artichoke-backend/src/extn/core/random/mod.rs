@@ -25,7 +25,7 @@ use spinoso_random::{
     ArgumentError as RandomArgumentError, InitializeError, NewSeedError, Random as SpinosoRandom, UrandomError,
 };
 
-use crate::convert::HeapAllocatedData;
+use crate::convert::{implicitly_convert_to_int, HeapAllocatedData};
 use crate::extn::prelude::*;
 
 #[doc(inline)]
@@ -85,16 +85,16 @@ impl Seed {
 }
 
 impl TryConvertMut<Value, Seed> for Artichoke {
-    type Error = TypeError;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Seed, Self::Error> {
-        let seed = value.implicitly_convert_to_int(self)?;
+        let seed = implicitly_convert_to_int(self, value)?;
         Ok(Seed::New(seed))
     }
 }
 
 impl TryConvertMut<Option<Value>, Seed> for Artichoke {
-    type Error = TypeError;
+    type Error = Error;
 
     fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Seed, Self::Error> {
         if let Some(value) = value {
@@ -248,7 +248,7 @@ impl TryConvertMut<Option<Value>, Max> for Artichoke {
                     Ok(Max::Float(max))
                 }
                 _ => {
-                    let max = max.implicitly_convert_to_int(self).map_err(|_| {
+                    let max = implicitly_convert_to_int(self, max).map_err(|_| {
                         let mut message = b"invalid argument - ".to_vec();
                         message.extend(max.inspect(self));
                         ArgumentError::from(message)

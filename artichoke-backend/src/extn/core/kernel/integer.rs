@@ -6,6 +6,7 @@ use std::iter::Iterator;
 use std::num::NonZeroU32;
 use std::str::{self, FromStr};
 
+use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::prelude::*;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -57,7 +58,7 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
 
     fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Option<Radix>, Self::Error> {
         if let Some(value) = value {
-            let num = value.implicitly_convert_to_int(self)?;
+            let num = implicitly_convert_to_int(self, value)?;
             let radix = u32::try_from(num).map_err(|_| ArgumentError::with_message("invalid radix"))?;
             if (2..=36).contains(&radix) {
                 Ok(Radix::new(radix))
@@ -158,7 +159,7 @@ impl<'a> TryConvertMut<&'a mut Value, IntegerString<'a>> for Artichoke {
         message.push_str(self.inspect_type_name_for_value(*value));
         message.push_str(" into Integer");
 
-        if let Ok(arg) = value.implicitly_convert_to_string(self) {
+        if let Ok(arg) = unsafe { implicitly_convert_to_string(self, value) } {
             if let Some(converted) = IntegerString::from_slice(arg) {
                 Ok(converted)
             } else {

@@ -2,6 +2,7 @@
 
 use std::borrow::Cow;
 
+use crate::convert::{implicitly_convert_to_nilable_string, implicitly_convert_to_string};
 use crate::extn::core::env::Environ;
 use crate::extn::prelude::*;
 
@@ -13,7 +14,7 @@ pub fn initialize(interp: &mut Artichoke, into: Value) -> Result<Value, Error> {
 
 pub fn element_reference(interp: &mut Artichoke, mut environ: Value, mut name: Value) -> Result<Value, Error> {
     let environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
-    let name = name.implicitly_convert_to_string(interp)?;
+    let name = unsafe { implicitly_convert_to_string(interp, &mut name)? };
     let result = environ.get(name)?;
     let mut result = interp.convert_mut(result.as_ref().map(Cow::as_ref));
     result.freeze(interp)?;
@@ -27,8 +28,8 @@ pub fn element_assignment(
     mut value: Value,
 ) -> Result<Value, Error> {
     let mut environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
-    let name = name.implicitly_convert_to_string(interp)?;
-    let env_value = value.implicitly_convert_to_nilable_string(interp)?;
+    let name = unsafe { implicitly_convert_to_string(interp, &mut name)? };
+    let env_value = unsafe { implicitly_convert_to_nilable_string(interp, &mut value)? };
     environ.put(name, env_value)?;
     // Return original object, even if we converted it to a `String`.
     Ok(value)
