@@ -258,6 +258,10 @@ pub fn implicitly_convert_to_int(interp: &mut Artichoke, value: Value) -> Result
 /// - The given value is not a string and raises an error in its `:to_str`
 ///   method.
 ///
+/// # Safety
+///
+/// Callers must ensure that `value` does not outlive the given interpreter.
+///
 /// [`Symbol`]: crate::extn::core::symbol::Symbol
 pub unsafe fn implicitly_convert_to_string<'a>(
     interp: &mut Artichoke,
@@ -458,6 +462,10 @@ pub unsafe fn implicitly_convert_to_string<'a>(
 ///   `:to_str` method.
 /// - The given value is not a string and raises an error in its `:to_str`
 ///   method.
+///
+/// # Safety
+///
+/// Callers must ensure that `value` does not outlive the given interpreter.
 ///
 /// [`Symbol`]: crate::extn::core::symbol::Symbol
 pub unsafe fn implicitly_convert_to_nilable_string<'a>(
