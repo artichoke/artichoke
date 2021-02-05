@@ -12,6 +12,7 @@ use std::str;
 
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::core::array::Array;
+use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
 #[doc(inline)]
@@ -176,7 +177,16 @@ impl Regexp {
     }
 
     pub fn case_compare(&self, interp: &mut Artichoke, mut other: Value) -> Result<bool, Error> {
-        let pattern = if let Ok(pattern) = unsafe { implicitly_convert_to_string(interp, &mut other) } {
+        let pattern_vec;
+        let pattern = if matches!(other.ruby_type(), Ruby::Symbol) {
+            let symbol = unsafe { Symbol::unbox_from_value(&mut other, interp)? };
+            if let Some(bytes) = interp.lookup_symbol(symbol.id())? {
+                pattern_vec = bytes.to_vec();
+                pattern_vec.as_slice()
+            } else {
+                &[]
+            }
+        } else if let Ok(pattern) = unsafe { implicitly_convert_to_string(interp, &mut other) } {
             pattern
         } else {
             interp.unset_global_variable(LAST_MATCH)?;
