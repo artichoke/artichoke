@@ -283,10 +283,10 @@ pub unsafe fn implicitly_convert_to_string<'a>(
         //         1: from (irb):7:in `[]'
         // TypeError (no implicit conversion of nil into String)
         // ```
-        Ok(None) => return Err(TypeError::with_message("no implicit conversion from nil into String").into()),
+        Ok(None) => return Err(TypeError::with_message("no implicit conversion of nil into String").into()),
         Err(_) => {}
     }
-    if matches!(value.ruby_type(), Ruby::Symbol) {
+    if let Ruby::Symbol = value.ruby_type() {
         return Err(TypeError::with_message("no implicit conversion of Symbol into String").into());
     }
     if let Ok(true) = value.respond_to(interp, "to_str") {

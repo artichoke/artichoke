@@ -45,10 +45,10 @@ pub fn element_reference(
         CaptureAt::StartLen(start, len)
     } else if let Ok(index) = implicitly_convert_to_int(interp, elem) {
         CaptureAt::GroupIndex(index)
-    } else if let Ok(name) = unsafe { implicitly_convert_to_string(interp, &mut elem) } {
-        CaptureAt::GroupName(name)
     } else if let Ok(symbol) = unsafe { Symbol::unbox_from_value(&mut elem, interp) } {
         CaptureAt::GroupName(symbol.bytes(interp))
+    } else if let Ok(name) = unsafe { implicitly_convert_to_string(interp, &mut elem) } {
+        CaptureAt::GroupName(name)
     } else {
         // NOTE(lopopolo): Encapsulation is broken here by reaching into the
         // inner regexp.

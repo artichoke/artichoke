@@ -180,12 +180,8 @@ impl Regexp {
         let pattern_vec;
         let pattern = if matches!(other.ruby_type(), Ruby::Symbol) {
             let symbol = unsafe { Symbol::unbox_from_value(&mut other, interp)? };
-            if let Some(bytes) = interp.lookup_symbol(symbol.id())? {
-                pattern_vec = bytes.to_vec();
-                pattern_vec.as_slice()
-            } else {
-                &[]
-            }
+            pattern_vec = symbol.bytes(interp).to_vec();
+            pattern_vec.as_slice()
         } else if let Ok(pattern) = unsafe { implicitly_convert_to_string(interp, &mut other) } {
             pattern
         } else {

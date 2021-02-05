@@ -21,12 +21,8 @@ pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error
     let pattern_vec;
     let pattern = if matches!(pattern.ruby_type(), Ruby::Symbol) {
         let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
-        if let Some(bytes) = interp.lookup_symbol(symbol.id())? {
-            pattern_vec = bytes.to_vec();
-            pattern_vec.as_slice()
-        } else {
-            &[]
-        }
+        pattern_vec = symbol.bytes(interp).to_vec();
+        pattern_vec.as_slice()
     } else {
         unsafe { implicitly_convert_to_string(interp, &mut pattern)? }
     };
@@ -70,12 +66,8 @@ pub fn match_(
     let pattern_vec;
     let pattern = if matches!(pattern.ruby_type(), Ruby::Symbol) {
         let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
-        if let Some(bytes) = interp.lookup_symbol(symbol.id())? {
-            pattern_vec = bytes.to_vec();
-            Some(pattern_vec.as_slice())
-        } else {
-            None
-        }
+        pattern_vec = symbol.bytes(interp).to_vec();
+        Some(pattern_vec.as_slice())
     } else {
         unsafe { implicitly_convert_to_nilable_string(interp, &mut pattern)? }
     };
@@ -104,12 +96,8 @@ pub fn match_operator(interp: &mut Artichoke, mut regexp: Value, mut pattern: Va
     let pattern_vec;
     let pattern = if matches!(pattern.ruby_type(), Ruby::Symbol) {
         let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
-        if let Some(bytes) = interp.lookup_symbol(symbol.id())? {
-            pattern_vec = bytes.to_vec();
-            Some(pattern_vec.as_slice())
-        } else {
-            None
-        }
+        pattern_vec = symbol.bytes(interp).to_vec();
+        Some(pattern_vec.as_slice())
     } else {
         unsafe { implicitly_convert_to_nilable_string(interp, &mut pattern)? }
     };
