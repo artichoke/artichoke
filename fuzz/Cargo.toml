@@ -1,16 +1,16 @@
-
 [package]
 name = "artichoke-fuzz"
 version = "0.0.0"
 authors = ["Automatically generated"]
 publish = false
 edition = "2018"
+license = "MIT"
 
 [package.metadata]
 cargo-fuzz = true
 
 [dependencies]
-artichoke = { path = "..", default-features = false, features = ["kitchen-sink"] }
+artichoke = { version = "0.1.0-pre.0", path = "..", default-features = false, features = ["kitchen-sink"] }
 libfuzzer-sys = "0.3"
 
 # Prevent this from interfering with workspaces
