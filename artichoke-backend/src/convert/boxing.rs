@@ -246,6 +246,10 @@ where
         if into.ruby_type() != Ruby::Data {
             panic!("bad ruby type: {:?}, {:?}", into.ruby_type(), into);
         }
+        let rbasic_tt = unsafe { Ruby::from((*sys::mrb_sys_basic_ptr(into.inner())).tt()) };
+        if rbasic_tt != Ruby::Data {
+            panic!("bad rbasic ruby type: {:?}, {:?}", rbasic_tt, into);
+        }
         let state = interp.state.as_ref().ok_or_else(InterpreterExtractError::new)?;
         let spec = state
             .classes

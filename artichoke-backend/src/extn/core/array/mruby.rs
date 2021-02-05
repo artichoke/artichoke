@@ -37,21 +37,21 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-unsafe extern "C" fn ary_cls_constructor(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn ary_cls_constructor(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let rest = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let result = Array::from(rest);
     let result = Array::alloc_value(result, &mut guard);
     match result {
         Ok(value) => {
-            let rclass = ary.value.p.cast::<sys::RClass>();
-            let value = value.inner();
-            let target_rbasic = value.value.p.cast::<sys::RBasic>();
+            let rclass = sys::mrb_sys_class_ptr(slf);
+            let basic = sys::mrb_sys_basic_ptr(value.inner());
 
             // Copy `RClass` from source class to newly allocated `Array`.
-            (*target_rbasic).c = rclass;
+            (*basic).c = rclass;
 
-            value
+            sys::mrb_write_barrier(mrb, basic);
+            value.inner()
         }
         Err(exception) => error::raise(guard, exception),
     }
