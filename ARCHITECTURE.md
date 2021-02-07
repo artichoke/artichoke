@@ -14,6 +14,8 @@ This word may mean either a VM-based or interpreted Ruby engine.
 
 ## Overview
 
+<!-- source: https://whimsical.com/architecture-6tvfYsGZzs3FVqfk6J9KGw -->
+
 ![Artichoke Ruby architecture diagram](docs/architecture.png)
 
 Artichoke is organized into several layers:
