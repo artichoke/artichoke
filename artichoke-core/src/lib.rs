@@ -44,7 +44,7 @@
 //!   from interpreter disk or [`File`](file::File) gems.
 //! - [`Parser`](parser::Parser): Manipulate the parser state, e.g. setting the
 //!   current filename.
-//! - [`Prng`](prng::Prng): An interpreter-level psuedorandom number generator
+//! - [`Prng`](prng::Prng): An interpreter-level pseudorandom number generator
 //!   that is the backend for [`Random::DEFAULT`].
 //! - [`Regexp`](regexp::Regexp): Manipulate [`Regexp`] global state.
 //! - [`ReleaseMetadata`](release_metadata::ReleaseMetadata): Enable
