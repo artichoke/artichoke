@@ -20,25 +20,31 @@ interpreter agnostic implementations of Ruby Core and Standard Library.
 
 Artichoke Core defines traits for the following interpreter capabilities:
 
-- [`DefineConstant`]: Define global, class, and module constants to be arbitrary
-  Ruby [`Value`]s.
-- [`Eval`]: Execute Ruby source code on an interpreter from various sources.
-- [`Globals`]: Get, set, and unset interpreter-level global variables.
-- [`Intern`]: Intern bytestrings to a cheap to copy and compare symbol type.
-- [`Io`]: External I/O APIs, such as writing to the standard output of the
-  current process.
-- [`LoadSources`]: [Require][kernel#require] source code from interpreter disk
-  or [`File`] gems.
-- [`Parser`]: Manipulate the parser state, e.g. setting the current filename.
-- [`Prng`]: An interpreter-level psuedorandom number generator that is the
-  backend for [`Random::DEFAULT`].
-- [`Regexp`]: Manipulate [`Regexp`] global state.
-- [`ReleaseMetadata`]: Enable interpreters to describe themselves.
-- [`TopSelf`]: Access to the root execution context.
-- [`Warn`]: Emit warnings.
+- [`DefineConstant`][core-define-constant]: Define global, class, and module
+  constants to be arbitrary Ruby [`Value`][core-value]s.
+- [`Eval`][core-eval]: Execute Ruby source code on an interpreter from various
+  sources.
+- [`Globals`][core-globals]: Get, set, and unset interpreter-level global
+  variables.
+- [`Intern`][core-intern]: Intern bytestrings to a cheap to copy and compare
+  symbol type.
+- [`Io`][core-io]: External I/O APIs, such as writing to the standard output of
+  the current process.
+- [`LoadSources`][core-load-sources]: [Require][kernel#require] source code from
+  interpreter disk or [`File`][core-file] gems.
+- [`Parser`][core-parser]: Manipulate the parser state, e.g. setting the current
+  filename.
+- [`Prng`][core-prng]: An interpreter-level pseudorandom number generator that
+  is the backend for [`Random::DEFAULT`].
+- [`Regexp`][core-regexp]: Manipulate [`Regexp`][regexp-globals] global state.
+- [`ReleaseMetadata`][core-releasemetadata]: Enable interpreters to describe
+  themselves.
+- [`TopSelf`][core-topself]: Access to the root execution context.
+- [`Warn`][core-warn]: Emit warnings.
 
-Artichoke Core also describes what capabilities a Ruby [`Value`] must have and
-how to [convert] between Ruby VM and Rust types.
+Artichoke Core also describes what capabilities a Ruby [`Value`][core-value]
+must have and how to [convert][core-convert-module] between Ruby VM and Rust
+types.
 
 ## Examples
 
@@ -66,35 +72,35 @@ Lopopolo.
 
 [kernel#require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
 [`random::default`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT
-[`regexp`]:
+[regexp-globals]:
   https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
-[convert]:
+[core-convert-module]:
   https://artichoke.github.io/artichoke/artichoke_core/convert/index.html
-[`defineconstant`]:
+[core-define-constant]:
   https://artichoke.github.io/artichoke/artichoke_core/constant/trait.DefineConstant.html
-[`value`]:
+[core-value]:
   https://artichoke.github.io/artichoke/artichoke_core/value/trait.Value.html
-[`eval`]:
+[core-eval]:
   https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html
-[`globals`]:
+[core-globals]:
   https://artichoke.github.io/artichoke/artichoke_core/globals/trait.Globals.html
-[`intern`]:
+[core-intern]:
   https://artichoke.github.io/artichoke/artichoke_core/intern/trait.Intern.html
-[`io`]: https://artichoke.github.io/artichoke/artichoke_core/io/trait.Io.html
-[`loadsources`]:
+[core-io]: https://artichoke.github.io/artichoke/artichoke_core/io/trait.Io.html
+[core-load-sources]:
   https://artichoke.github.io/artichoke/artichoke_core/load/trait.LoadSources.html
-[`file`]:
+[core-file]:
   https://artichoke.github.io/artichoke/artichoke_core/file/trait.File.html
-[`parser`]:
+[core-parser]:
   https://artichoke.github.io/artichoke/artichoke_core/parser/trait.Parser.html
-[`prng`]:
+[core-prng]:
   https://artichoke.github.io/artichoke/artichoke_core/prng/trait.Prng.html
-[`regexp`]:
+[core-regexp]:
   https://artichoke.github.io/artichoke/artichoke_core/regexp/trait.Regexp.html
-[`releasemetadata`]:
+[core-releasemetadata]:
   https://artichoke.github.io/artichoke/artichoke_core/release_metadata/trait.ReleaseMetadata.html
-[`topself`]:
+[core-topself]:
   https://artichoke.github.io/artichoke/artichoke_core/top_self/trait.TopSelf.html
-[`warn`]:
+[core-warn]:
   https://artichoke.github.io/artichoke/artichoke_core/warn/trait.Warn.html
 [`artichoke-backend`]: https://artichoke.github.io/artichoke/artichoke_backend/
