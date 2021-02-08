@@ -83,7 +83,7 @@ impl Artichoke {
             // 4. This function moves the `State` into the `mrb`.
             // 5. If `mrb` re-enters `Artichoke` via trampoline, a new
             //    `Artichoke` is made by moving the `State` out of the `mrb`.
-            // 6. The `Artichoke` in the FFI entrypoint is wrapped in a `Guard`.
+            // 6. The `Artichoke` in the FFI entry point is wrapped in a `Guard`.
             // 7. On drop, `Guard` moves the `State` back into the `mrb`.
             // 8. On return from `mrb`, here, extract the `State` which should be
             //    moved back into the `mrb`.

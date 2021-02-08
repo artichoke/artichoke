@@ -68,7 +68,7 @@ pub mod argspec {
 }
 
 /// Extract [`sys::mrb_value`]s from a [`sys::mrb_state`] to adapt a C
-/// entrypoint to a Rust implementation of a Ruby function.
+/// entry point to a Rust implementation of a Ruby function.
 ///
 /// This macro exists because the mruby VM [does not validate argspecs] attached
 /// to native functions.

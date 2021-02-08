@@ -1,4 +1,4 @@
-//! Artichoke CLI entrypoint.
+//! Artichoke CLI entry point.
 //!
 //! Artichoke's version of the `ruby` CLI. This module is exported as the
 //! `artichoke` binary.
@@ -82,7 +82,7 @@ impl Args {
     }
 }
 
-/// Main entrypoint for Artichoke's version of the `ruby` CLI.
+/// Main entry point for Artichoke's version of the `ruby` CLI.
 ///
 /// # Errors
 ///
@@ -98,7 +98,7 @@ where
     result
 }
 
-/// Main entrypoint for Artichoke's version of the `ruby` CLI.
+/// Main entry point for Artichoke's version of the `ruby` CLI.
 ///
 /// # Errors
 ///

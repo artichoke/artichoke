@@ -28,7 +28,7 @@ Artichoke is organized into several layers:
 
 ### Frontend
 
-The entrypoint to Artichoke for running Ruby code is the `artichoke` crate. The
+The entry point to Artichoke for running Ruby code is the `artichoke` crate. The
 code for this crate is located in the [`src` directory](/src). All functionality
 of Artichoke Ruby is accessible through this crate. You'll likely want to create
 an interpreter with [`artichoke::interpreter()`] and import the
