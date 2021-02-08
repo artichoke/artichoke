@@ -96,7 +96,7 @@ struct Args {
     config: PathBuf,
 }
 
-/// Main entrypoint.
+/// Main entry point.
 pub fn main() {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
 
@@ -131,10 +131,10 @@ pub fn main() {
     }
 }
 
-/// Result-returning entrypoint.
+/// Result-returning entry point.
 ///
 /// Initializes an interpreter, parses the spec manifest, and invokes the
-/// Artichoke `MSpec` entrypoint.
+/// Artichoke `MSpec` entry point.
 ///
 /// # Errors
 ///

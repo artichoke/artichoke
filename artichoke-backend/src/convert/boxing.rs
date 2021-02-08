@@ -128,7 +128,7 @@ pub trait BoxUnboxVmValue {
     /// the underlying `mrb_value`, which may be garbage collected by mruby.
     ///
     /// The values returned by this method should not be stored for more than
-    /// the current FFI trampoline entrypoint.
+    /// the current FFI trampoline entry point.
     unsafe fn unbox_from_value<'a>(
         value: &'a mut Value,
         interp: &mut Artichoke,
