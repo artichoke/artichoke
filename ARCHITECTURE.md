@@ -83,7 +83,7 @@ Artichoke currently implements one interpreter backend [based on mruby
 #### `artichoke-backend`
 
 [`artichoke-backend`][artichoke-backend-docs] is an interpreter backend that
-uses the mruby VM and parser. The code for this crate is located in the
+uses the [mruby VM] and parser. The code for this crate is located in the
 [`artichoke-backend` directory][artichoke-backend-src].
 
 The [mruby C sources] are built into a static library using a [custom build
@@ -94,8 +94,15 @@ process][mruby-build] and exposed via [`bindgen`] in the [`sys` module].
 variables][mruby-globals]. Previous project goals and execution localized mruby
 `sys` calls to only core traits, for example [artichoke/artichoke#562][gh-562].
 
+As core APIs and data structures are implemented in _Spinoso_ crates,
+`artichoke-backend` will disable mruby C functions, [reimplement them in
+Rust][artichoke-strangler], and expose `unsafe extern "C" fn` replacements for
+interoperability with the remaining mruby pieces. This process is an application
+of the [Strangler Fig pattern].
+
 [artichoke-backend-docs]:
   https://artichoke.github.io/artichoke/artichoke_backend/
+[mruby vm]: https://github.com/mruby/mruby
 [artichoke-backend-src]: /artichoke-backend
 [mruby c sources]: /artichoke-backend/vendor/mruby
 [mruby-build]: /artichoke-backend/build.rs
@@ -104,6 +111,10 @@ variables][mruby-globals]. Previous project goals and execution localized mruby
   https://artichoke.github.io/artichoke/artichoke_backend/sys/index.html
 [mruby-globals]: /artichoke-backend/src/globals.rs
 [gh-562]: https://github.com/artichoke/artichoke/pull/562
+[artichoke-strangler]:
+  https://twitter.com/artichokeruby/status/1339578582222266368
+[strangler fig pattern]:
+  https://martinfowler.com/bliki/StranglerFigApplication.html
 
 ### Core Interpreter Traits
 
@@ -188,18 +199,18 @@ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of Sardinia. The
 data structures defined in the `spinoso` family of crates form the backbone of
 Ruby Core in Artichoke.)
 
-_Spinoso_ crates aim to have the following characteristics:
+_Spinoso_ crates aim to incorporate the following design goals:
 
-- `no_std` and/or no-`alloc` where possible.
+- Declare the crate as `no_std` and/or no-`alloc` where possible.
 - Depend on state-of-the-art crates.
 - Expose multiple implementations of the same data structure such that they are
   [source-compatible].
 - Gate independent functionality and optional implementations behind Cargo
   features.
 - `#![forbid(unsafe_code)]` where possible.
-- Fully documented, all APIs have examples, all APIs have panic docs and safety
-  docs where relevant.
-- Well-tested.
+- Require 100% API documentation: all APIs have examples, all APIs have panic
+  docs and safety docs where relevant.
+- Require unit tests.
 
 Backend and frontend crates should propagate as many Cargo features of _Spinoso_
 crates as possible.
@@ -334,11 +345,11 @@ $ docker run -it docker.io/artichokeruby/artichoke airb
 
 Currently supported Docker platforms are:
 
-- ubuntu - canonical mainline image, tagged with `latest`, `ubuntu-nightly`, and
-  `ubuntu18.04-nightly`.
-- debian-slim - Debian 10 (Buster) slim image, tagged `slim-nightly` and
+- `ubuntu` - canonical mainline image, tagged with `latest`, `ubuntu-nightly`,
+  and `ubuntu18.04-nightly`.
+- `debian-slim` - Debian 10 (Buster) slim image, tagged `slim-nightly` and
   `slim-buster-nightly`.
-- alpine - Alpine 3 image, tagged with `alpine-nightly` and `alpine3-nightly`.
+- `alpine` - Alpine 3 image, tagged with `alpine-nightly` and `alpine3-nightly`.
 
 [artichoke/docker-artichoke-nightly]:
   https://github.com/artichoke/docker-artichoke-nightly
@@ -354,6 +365,10 @@ The Artichoke project maintains a [Wasm]-based playground at
 Because of the mruby C dependency, the playground compiles to Wasm with Rust's
 [Emscripten] target.
 
+[wasm]: https://webassembly.org/
+[monaco editor]: https://microsoft.github.io/monaco-editor/
+[emscripten]: https://emscripten.org/
+
 #### Try Artichoke
 
 <p align="center">
@@ -368,9 +383,6 @@ You can [try Artichoke in your browser][playground]. The [Artichoke
 Playground][playground-repo] runs a [WebAssembly] build of
 [Artichoke][artichoke-repo].
 
-[wasm]: https://webassembly.org/
-[monaco editor]: https://microsoft.github.io/monaco-editor/
-[emscripten]: https://emscripten.org/
 [playground]: https://artichoke.run
 [playground-repo]: https://github.com/artichoke/playground
 [webassembly]: https://webassembly.org/
@@ -383,8 +395,8 @@ The Artichoke project hosts a project website at
 
 The website is a [Webpack]-generated static site which is deployed on [GitHub
 Pages]. The source code can be found in the [artichoke/www.artichokeruby.org]
-website and is [deployed automatically][github-actions-www-deploy] when PRs are
-merged.
+repository and is [deployed automatically][github-actions-www-deploy] when PRs
+are merged.
 
 [webpack]: https://webpack.js.org/
 [github pages]: https://pages.github.com/

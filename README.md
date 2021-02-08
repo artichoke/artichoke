@@ -42,8 +42,8 @@ These daily binaries track the latest trunk branch of Artichoke.
 
 Binaries are also distributed through [ruby-build]. To install with [rbenv]:
 
-```bash
-rbenv install artichoke-dev
+```console
+$ rbenv install artichoke-dev
 ```
 
 ### Cargo
@@ -51,8 +51,8 @@ rbenv install artichoke-dev
 You can install a pre-release build of Artichoke using `cargo`, Rust's package
 manager, by running:
 
-```sh
-cargo install --git https://github.com/artichoke/artichoke --branch trunk --locked artichoke
+```console
+$ cargo install --git https://github.com/artichoke/artichoke --branch trunk --locked artichoke
 ```
 
 To install via `cargo install` or to checkout and build locally, you'll need
@@ -80,7 +80,7 @@ and [REPL].
 
 `airb` is a readline-enabled shell, although it does not persist history.
 
-## `artichoke`
+### `artichoke`
 
 `artichoke` is the `ruby` binary frontend to Artichoke.
 
