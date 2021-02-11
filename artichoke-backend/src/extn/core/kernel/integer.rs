@@ -316,10 +316,9 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Error
                 format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
                 return Err(ArgumentError::from(message).into());
-            } else {
-                prev = Some(current);
-                continue;
             }
+            prev = Some(current);
+            continue;
         }
 
         state = match current {

@@ -71,27 +71,26 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
                 interp.unset_global_variable(regexp::LAST_MATCH)?;
             }
             return Ok(value);
-        } else {
-            let (matches, last_pos) = string
-                .find_iter(pattern_bytes)
-                .enumerate()
-                .last()
-                .map(|(m, p)| (m + 1, p))
-                .unwrap_or_default();
-            let mut result = Vec::with_capacity(matches);
-            for _ in 0..matches {
-                result.push(interp.convert_mut(pattern_bytes));
-            }
-            if matches > 0 {
-                let regex = Regexp::lazy(pattern_bytes.to_vec());
-                let matchdata = MatchData::new(string.to_vec(), regex, last_pos..last_pos + pattern_bytes.len());
-                let data = MatchData::alloc_value(matchdata, interp)?;
-                interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-            } else {
-                interp.unset_global_variable(regexp::LAST_MATCH)?;
-            }
-            return interp.try_convert_mut(result);
         }
+        let (matches, last_pos) = string
+            .find_iter(pattern_bytes)
+            .enumerate()
+            .last()
+            .map(|(m, p)| (m + 1, p))
+            .unwrap_or_default();
+        let mut result = Vec::with_capacity(matches);
+        for _ in 0..matches {
+            result.push(interp.convert_mut(pattern_bytes));
+        }
+        if matches > 0 {
+            let regex = Regexp::lazy(pattern_bytes.to_vec());
+            let matchdata = MatchData::new(string.to_vec(), regex, last_pos..last_pos + pattern_bytes.len());
+            let data = MatchData::alloc_value(matchdata, interp)?;
+            interp.set_global_variable(regexp::LAST_MATCH, &data)?;
+        } else {
+            interp.unset_global_variable(regexp::LAST_MATCH)?;
+        }
+        return interp.try_convert_mut(result);
     }
     #[cfg(not(feature = "core-regexp"))]
     if let Ok(pattern_bytes) = unsafe { implicitly_convert_to_string(interp, &mut pattern) } {
@@ -110,19 +109,18 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
                 }
             }
             return Ok(value);
-        } else {
-            let matches = string
-                .find_iter(pattern_bytes)
-                .enumerate()
-                .last()
-                .map(|(m, _)| m + 1)
-                .unwrap_or_default();
-            let mut result = Vec::with_capacity(matches);
-            for _ in 0..matches {
-                result.push(interp.convert_mut(pattern_bytes));
-            }
-            return interp.try_convert_mut(result);
         }
+        let matches = string
+            .find_iter(pattern_bytes)
+            .enumerate()
+            .last()
+            .map(|(m, _)| m + 1)
+            .unwrap_or_default();
+        let mut result = Vec::with_capacity(matches);
+        for _ in 0..matches {
+            result.push(interp.convert_mut(pattern_bytes));
+        }
+        return interp.try_convert_mut(result);
     }
     let mut message = String::from("wrong argument type ");
     message.push_str(interp.inspect_type_name_for_value(pattern));
