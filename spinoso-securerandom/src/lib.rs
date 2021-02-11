@@ -227,7 +227,7 @@ impl ArgumentError {
         Self("ArgumentError")
     }
 
-    /// Construct a new, argument error with a message.
+    /// Construct a new argument error with a message.
     ///
     /// # Examples
     ///
@@ -331,7 +331,7 @@ impl fmt::Display for DomainError {
 impl error::Error for DomainError {}
 
 impl DomainError {
-    /// Construct a new, default random bytes error.
+    /// Construct a new, default domain error.
     ///
     /// # Examples
     ///
@@ -346,7 +346,7 @@ impl DomainError {
         Self { _private: () }
     }
 
-    /// Retrieve the exception message associated with this random bytes error.
+    /// Retrieve the exception message associated with this domain error.
     ///
     /// # Examples
     ///
