@@ -63,7 +63,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::format_debug_escape_into;
-    use alloc::string::String;
+    use alloc::string::{String, ToString};
 
     #[test]
     fn format_ascii_message() {
