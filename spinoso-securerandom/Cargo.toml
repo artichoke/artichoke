@@ -13,7 +13,7 @@ keywords = ["artichoke", "rand", "random", "rng", "spinoso"]
 categories = ["algorithms"]
 
 [dependencies]
-base64 = "0.13"
+base64 = { version = "0.13", default-features = false, features = ["alloc"] }
 rand = "0.8"
 
 [dependencies.scolapasta-hex]
