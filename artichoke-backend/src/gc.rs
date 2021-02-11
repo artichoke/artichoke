@@ -130,7 +130,7 @@ mod tests {
         let mut arena = interp.create_arena_savepoint().unwrap();
         for _ in 0..2000 {
             let value = arena.eval(b"'a'").unwrap();
-            let _ = value.to_s(&mut arena);
+            let _display = value.to_s(&mut arena);
         }
         arena.restore();
         interp.full_gc();
@@ -151,7 +151,7 @@ mod tests {
             let mut arena = interp.create_arena_savepoint().unwrap();
             for _ in 0..2000 {
                 let value = arena.eval(b"'a'").unwrap();
-                let _ = value.to_s(&mut arena);
+                let _display = value.to_s(&mut arena);
             }
         }
         interp.full_gc();
