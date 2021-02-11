@@ -86,6 +86,8 @@
 //! [`Symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 
+#![no_std]
+
 // Having access to `String` in tests is convenient to collect `Inspect`
 // iterators for whole content comparisons.
 #[cfg(any(test, doctest))]
