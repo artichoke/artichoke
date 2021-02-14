@@ -1,13 +1,16 @@
 use std::convert::TryFrom;
+use std::ffi::CStr;
 
 use crate::extn::core::array::{trampoline, Array};
 use crate::extn::prelude::*;
+
+const ARRAY_CSTR: &CStr = cstr::cstr!("Array");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Array>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Array", None, Some(def::box_unbox_free::<Array>))?;
+    let spec = class::Spec::new("Array", ARRAY_CSTR, None, Some(def::box_unbox_free::<Array>))?;
     class::Builder::for_spec(interp, &spec)
         .add_self_method("[]", ary_cls_constructor, sys::mrb_args_rest())?
         .add_method("+", ary_plus, sys::mrb_args_req(1))?

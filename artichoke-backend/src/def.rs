@@ -82,15 +82,15 @@ pub type Method = unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_v
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct ClassScope {
-    name: String,
-    cstring: Box<CStr>,
+    name: Box<str>,
+    name_cstr: &'static CStr,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct ModuleScope {
-    name: String,
-    cstring: Box<CStr>,
+    name: Box<str>,
+    name_cstr: &'static CStr,
     name_symbol: u32,
     enclosing_scope: Option<Box<EnclosingRubyScope>>,
 }
@@ -124,15 +124,10 @@ impl EnclosingRubyScope {
     /// class registry.
     #[must_use]
     pub fn class(spec: &class::Spec) -> Self {
-        let cstring = spec.name_c_str();
-        // Safety
-        //
-        // This CStr is being constructed with another CStr including the nul
-        // byte.
-        let cstring = unsafe { CStr::from_bytes_with_nul_unchecked(cstring.to_bytes_with_nul()) };
+        let name_cstr = spec.name_c_str();
         Self::Class(ClassScope {
-            name: String::from(spec.name()),
-            cstring: cstring.into(),
+            name: String::from(spec.name()).into_boxed_str(),
+            name_cstr,
             enclosing_scope: spec.enclosing_scope().map(Clone::clone).map(Box::new),
         })
     }
@@ -144,15 +139,10 @@ impl EnclosingRubyScope {
     /// module registry.
     #[must_use]
     pub fn module(spec: &module::Spec) -> Self {
-        let cstring = spec.name_c_str();
-        // Safety
-        //
-        // This CStr is being constructed with another CStr including the nul
-        // byte.
-        let cstring = unsafe { CStr::from_bytes_with_nul_unchecked(cstring.to_bytes_with_nul()) };
+        let name_cstr = spec.name_c_str();
         Self::Module(ModuleScope {
-            name: String::from(spec.name()),
-            cstring: cstring.into(),
+            name: String::from(spec.name()).into_boxed_str(),
+            name_cstr,
             name_symbol: spec.name_symbol(),
             enclosing_scope: spec.enclosing_scope().map(Clone::clone).map(Box::new),
         })
@@ -174,11 +164,11 @@ impl EnclosingRubyScope {
         match self {
             Self::Class(scope) => {
                 let enclosing_scope = scope.enclosing_scope.clone().map(|scope| *scope);
-                class::Rclass::new(scope.cstring.clone(), enclosing_scope).resolve(mrb)
+                class::Rclass::new(scope.name_cstr, enclosing_scope).resolve(mrb)
             }
             Self::Module(scope) => {
                 let enclosing_scope = scope.enclosing_scope.clone().map(|scope| *scope);
-                module::Rclass::new(scope.name_symbol, scope.cstring.clone(), enclosing_scope).resolve(mrb)
+                module::Rclass::new(scope.name_symbol, scope.name_cstr, enclosing_scope).resolve(mrb)
             }
         }
     }
@@ -202,8 +192,8 @@ impl EnclosingRubyScope {
     #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {
         let (name, enclosing_scope) = match self {
-            Self::Class(scope) => (&scope.name, &scope.enclosing_scope),
-            Self::Module(scope) => (&scope.name, &scope.enclosing_scope),
+            Self::Class(scope) => (&*scope.name, &scope.enclosing_scope),
+            Self::Module(scope) => (&*scope.name, &scope.enclosing_scope),
         };
         if let Some(scope) = enclosing_scope {
             let mut fqname = String::from(scope.fqname());
@@ -489,14 +479,37 @@ mod tests {
         fn integration_test() {
             // Setup: define module and class hierarchy
             let mut interp = interpreter().unwrap();
-            let root = module::Spec::new(&mut interp, "A", None).unwrap();
-            let mod_under_root = module::Spec::new(&mut interp, "B", Some(EnclosingRubyScope::module(&root))).unwrap();
-            let cls_under_root = class::Spec::new("C", Some(EnclosingRubyScope::module(&root)), None).unwrap();
-            let cls_under_mod =
-                class::Spec::new("D", Some(EnclosingRubyScope::module(&mod_under_root)), None).unwrap();
-            let mod_under_cls =
-                module::Spec::new(&mut interp, "E", Some(EnclosingRubyScope::class(&cls_under_root))).unwrap();
-            let cls_under_cls = class::Spec::new("F", Some(EnclosingRubyScope::class(&cls_under_root)), None).unwrap();
+            let root = module::Spec::new(&mut interp, "A", cstr::cstr!("A"), None).unwrap();
+            let mod_under_root = module::Spec::new(
+                &mut interp,
+                "B",
+                cstr::cstr!("B"),
+                Some(EnclosingRubyScope::module(&root)),
+            )
+            .unwrap();
+            let cls_under_root =
+                class::Spec::new("C", cstr::cstr!("C"), Some(EnclosingRubyScope::module(&root)), None).unwrap();
+            let cls_under_mod = class::Spec::new(
+                "D",
+                cstr::cstr!("D"),
+                Some(EnclosingRubyScope::module(&mod_under_root)),
+                None,
+            )
+            .unwrap();
+            let mod_under_cls = module::Spec::new(
+                &mut interp,
+                "E",
+                cstr::cstr!("E"),
+                Some(EnclosingRubyScope::class(&cls_under_root)),
+            )
+            .unwrap();
+            let cls_under_cls = class::Spec::new(
+                "F",
+                cstr::cstr!("F"),
+                Some(EnclosingRubyScope::class(&cls_under_root)),
+                None,
+            )
+            .unwrap();
             module::Builder::for_spec(&mut interp, &root).define().unwrap();
             module::Builder::for_spec(&mut interp, &mod_under_root)
                 .define()
@@ -550,7 +563,13 @@ mod tests {
         #[test]
         fn define_method() {
             let mut interp = interpreter().unwrap();
-            let class = class::Spec::new("DefineMethodTestClass", None, None).unwrap();
+            let class = class::Spec::new(
+                "DefineMethodTestClass",
+                cstr::cstr!("DefineMethodTestClass"),
+                None,
+                None,
+            )
+            .unwrap();
             class::Builder::for_spec(&mut interp, &class)
                 .add_method("value", value, sys::mrb_args_none())
                 .unwrap()
@@ -559,7 +578,13 @@ mod tests {
                 .define()
                 .unwrap();
             interp.def_class::<Class>(class).unwrap();
-            let module = module::Spec::new(&mut interp, "DefineMethodTestModule", None).unwrap();
+            let module = module::Spec::new(
+                &mut interp,
+                "DefineMethodTestModule",
+                cstr::cstr!("DefineMethodTestModule"),
+                None,
+            )
+            .unwrap();
             module::Builder::for_spec(&mut interp, &module)
                 .add_method("value", value, sys::mrb_args_none())
                 .unwrap()

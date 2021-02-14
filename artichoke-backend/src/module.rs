@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::AsRef;
-use std::ffi::{c_void, CStr, CString};
+use std::ffi::{c_void, CStr};
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
@@ -108,13 +108,13 @@ impl<'a> Builder<'a> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rclass {
     sym: u32,
-    name: Box<CStr>,
+    name: &'static CStr,
     enclosing_scope: Option<EnclosingRubyScope>,
 }
 
 impl Rclass {
     #[must_use]
-    pub const fn new(sym: u32, name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
+    pub const fn new(sym: u32, name: &'static CStr, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
         Self {
             sym,
             name,
@@ -167,31 +167,32 @@ impl Rclass {
 #[derive(Debug)]
 pub struct Spec {
     name: Cow<'static, str>,
+    name_cstr: &'static CStr,
     sym: u32,
-    cstring: Box<CStr>,
     enclosing_scope: Option<EnclosingRubyScope>,
 }
 
 impl Spec {
-    pub fn new<T>(interp: &mut Artichoke, name: T, enclosing_scope: Option<EnclosingRubyScope>) -> Result<Self, Error>
+    pub fn new<T>(
+        interp: &mut Artichoke,
+        name: T,
+        name_cstr: &'static CStr,
+        enclosing_scope: Option<EnclosingRubyScope>,
+    ) -> Result<Self, Error>
     where
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        if let Ok(cstring) = CString::new(name.as_ref()) {
-            let sym = match name {
-                Cow::Borrowed(name) => interp.intern_string(name)?,
-                Cow::Owned(ref name) => interp.intern_string(name.clone())?,
-            };
-            Ok(Self {
-                name,
-                cstring: cstring.into_boxed_c_str(),
-                sym,
-                enclosing_scope,
-            })
-        } else {
-            Err(ConstantNameError::from(name).into())
-        }
+        let sym = match name {
+            Cow::Borrowed(name) => interp.intern_string(name)?,
+            Cow::Owned(ref name) => interp.intern_string(name.clone())?,
+        };
+        Ok(Self {
+            name,
+            name_cstr,
+            sym,
+            enclosing_scope,
+        })
     }
 
     #[must_use]
@@ -203,8 +204,8 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn name_c_str(&self) -> &CStr {
-        self.cstring.as_ref()
+    pub fn name_c_str(&self) -> &'static CStr {
+        self.name_cstr
     }
 
     #[must_use]
@@ -231,7 +232,7 @@ impl Spec {
 
     #[must_use]
     pub fn rclass(&self) -> Rclass {
-        Rclass::new(self.sym, self.cstring.clone(), self.enclosing_scope.clone())
+        Rclass::new(self.sym, self.name_cstr, self.enclosing_scope.clone())
     }
 }
 
@@ -258,7 +259,7 @@ mod tests {
     #[test]
     fn rclass_for_undef_root_module() {
         let mut interp = interpreter().unwrap();
-        let spec = Spec::new(&mut interp, "Foo", None).unwrap();
+        let spec = Spec::new(&mut interp, "Foo", cstr::cstr!("Foo"), None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_none());
     }
@@ -266,9 +267,9 @@ mod tests {
     #[test]
     fn rclass_for_undef_nested_module() {
         let mut interp = interpreter().unwrap();
-        let scope = Spec::new(&mut interp, "Kernel", None).unwrap();
+        let scope = Spec::new(&mut interp, "Kernel", cstr::cstr!("Kernel"), None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
-        let spec = Spec::new(&mut interp, "Foo", Some(scope)).unwrap();
+        let spec = Spec::new(&mut interp, "Foo", cstr::cstr!("Foo"), Some(scope)).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_none());
     }
@@ -276,7 +277,7 @@ mod tests {
     #[test]
     fn rclass_for_root_module() {
         let mut interp = interpreter().unwrap();
-        let spec = Spec::new(&mut interp, "Kernel", None).unwrap();
+        let spec = Spec::new(&mut interp, "Kernel", cstr::cstr!("Kernel"), None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }
@@ -285,9 +286,9 @@ mod tests {
     fn rclass_for_nested_module() {
         let mut interp = interpreter().unwrap();
         let _ = interp.eval(b"module Foo; module Bar; end; end").unwrap();
-        let scope = Spec::new(&mut interp, "Foo", None).unwrap();
+        let scope = Spec::new(&mut interp, "Foo", cstr::cstr!("Foo"), None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
-        let spec = Spec::new(&mut interp, "Bar", Some(scope)).unwrap();
+        let spec = Spec::new(&mut interp, "Bar", cstr::cstr!("Bar"), Some(scope)).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }
@@ -296,9 +297,9 @@ mod tests {
     fn rclass_for_nested_module_under_class() {
         let mut interp = interpreter().unwrap();
         let _ = interp.eval(b"class Foo; module Bar; end; end").unwrap();
-        let scope = class::Spec::new("Foo", None, None).unwrap();
+        let scope = class::Spec::new("Foo", cstr::cstr!("Foo"), None, None).unwrap();
         let scope = EnclosingRubyScope::class(&scope);
-        let spec = Spec::new(&mut interp, "Bar", Some(scope)).unwrap();
+        let spec = Spec::new(&mut interp, "Bar", cstr::cstr!("Bar"), Some(scope)).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }

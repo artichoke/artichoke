@@ -1,13 +1,17 @@
 //! FFI glue between the Rust trampolines and the mruby C interpreter.
 
+use std::ffi::CStr;
+
 use crate::extn::core::time::{self, trampoline};
 use crate::extn::prelude::*;
+
+const TIME_CSTR: &CStr = cstr::cstr!("Time");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<time::Time>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Time", None, Some(def::box_unbox_free::<time::Time>))?;
+    let spec = class::Spec::new("Time", TIME_CSTR, None, Some(def::box_unbox_free::<time::Time>))?;
     // NOTE: The ordering of method declarations in the builder below is the
     // same as in `Init_Time` in MRI `time.c`.
     class::Builder::for_spec(interp, &spec)

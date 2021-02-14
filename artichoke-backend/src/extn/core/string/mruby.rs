@@ -1,11 +1,15 @@
+use std::ffi::CStr;
+
 use crate::extn::core::string::{self, trampoline};
 use crate::extn::prelude::*;
+
+const STRING_CSTR: &CStr = cstr::cstr!("String");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<string::String>() {
         return Ok(());
     }
-    let spec = class::Spec::new("String", None, None)?;
+    let spec = class::Spec::new("String", STRING_CSTR, None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_method("ord", artichoke_string_ord, sys::mrb_args_none())?
         .add_method("scan", artichoke_string_scan, sys::mrb_args_req(1))?

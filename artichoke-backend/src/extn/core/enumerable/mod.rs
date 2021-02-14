@@ -1,10 +1,14 @@
+use std::ffi::CStr;
+
 use crate::extn::prelude::*;
+
+const ENUMERABLE_CSTR: &CStr = cstr::cstr!("Enumerable");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_module_defined::<Enumerable>() {
         return Ok(());
     }
-    let spec = module::Spec::new(interp, "Enumerable", None)?;
+    let spec = module::Spec::new(interp, "Enumerable", ENUMERABLE_CSTR, None)?;
     module::Builder::for_spec(interp, &spec).define()?;
     interp.def_module::<Enumerable>(spec)?;
     let _ = interp.eval(&include_bytes!("enumerable.rb")[..])?;

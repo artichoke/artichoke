@@ -1,14 +1,19 @@
 //! FFI glue between the Rust trampolines and the mruby C interpreter.
 
+use std::ffi::CStr;
+
 use crate::extn::core::math::trampoline;
 use crate::extn::core::math::{self, DomainError, Math};
 use crate::extn::prelude::*;
+
+const MATH_CSTR: &CStr = cstr::cstr!("Math");
+const DOMAIN_ERROR_CSTR: &CStr = cstr::cstr!("DomainError");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_module_defined::<Math>() {
         return Ok(());
     }
-    let spec = module::Spec::new(interp, "Math", None)?;
+    let spec = module::Spec::new(interp, "Math", MATH_CSTR, None)?;
     module::Builder::for_spec(interp, &spec)
         .add_module_method("acos", artichoke_math_acos, sys::mrb_args_req(1))?
         .add_module_method("acosh", artichoke_math_acosh, sys::mrb_args_req(1))?
@@ -38,7 +43,12 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_module_method("tanh", artichoke_math_tanh, sys::mrb_args_req(1))?
         .define()?;
 
-    let domainerror = class::Spec::new("DomainError", Some(EnclosingRubyScope::module(&spec)), None)?;
+    let domainerror = class::Spec::new(
+        "DomainError",
+        DOMAIN_ERROR_CSTR,
+        Some(EnclosingRubyScope::module(&spec)),
+        None,
+    )?;
     class::Builder::for_spec(interp, &domainerror)
         .with_super_class::<StandardError, _>("StandardError")?
         .define()?;

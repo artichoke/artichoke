@@ -1,7 +1,11 @@
+use std::ffi::CStr;
+
 use crate::extn::prelude::*;
 
+const ABBREV_CSTR: &CStr = cstr::cstr!("Abbrev");
+
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    let spec = module::Spec::new(interp, "Abbrev", None)?;
+    let spec = module::Spec::new(interp, "Abbrev", ABBREV_CSTR, None)?;
     interp.def_module::<Abbrev>(spec)?;
     interp.def_rb_source_file("abbrev.rb", &include_bytes!("vendor/abbrev.rb")[..])?;
     Ok(())

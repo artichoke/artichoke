@@ -1,13 +1,17 @@
 //! FFI glue between the Rust trampolines and the mruby C interpreter.
 
+use std::ffi::CStr;
+
 use super::{trampoline, Rng};
 use crate::extn::prelude::*;
+
+const RANDOM_CSTR: &CStr = cstr::cstr!("Random");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Rng>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Random", None, Some(def::box_unbox_free::<Rng>))?;
+    let spec = class::Spec::new("Random", RANDOM_CSTR, None, Some(def::box_unbox_free::<Rng>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_self_method("new_seed", random_self_new_seed, sys::mrb_args_req(1))?

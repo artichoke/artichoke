@@ -1,10 +1,14 @@
 //! FFI glue between the Rust trampolines and the mruby C interpreter.
 
+use std::ffi::CStr;
+
 use spinoso_env::RUBY_API_POLYFILLS;
 
 use crate::extn::core::artichoke;
 use crate::extn::core::env::{self, trampoline};
 use crate::extn::prelude::*;
+
+const ENVIRON_CSTR: &CStr = cstr::cstr!("Environ");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<env::Environ>() {
@@ -14,7 +18,12 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;
-    let spec = class::Spec::new("Environ", Some(scope), Some(def::box_unbox_free::<env::Environ>))?;
+    let spec = class::Spec::new(
+        "Environ",
+        ENVIRON_CSTR,
+        Some(scope),
+        Some(def::box_unbox_free::<env::Environ>),
+    )?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("[]", env_element_reference, sys::mrb_args_req(1))?

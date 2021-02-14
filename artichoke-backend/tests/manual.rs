@@ -41,7 +41,12 @@ impl File for Container {
     type Error = Error;
 
     fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
-        let spec = class::Spec::new("Container", None, Some(def::box_unbox_free::<Box<Self>>))?;
+        let spec = class::Spec::new(
+            "Container",
+            cstr::cstr!("Container"),
+            None,
+            Some(def::box_unbox_free::<Box<Self>>),
+        )?;
         class::Builder::for_spec(interp, &spec)
             .value_is_rust_object()
             .add_method("initialize", container_initialize, sys::mrb_args_req(1))?
