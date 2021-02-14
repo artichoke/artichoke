@@ -1,12 +1,16 @@
+use std::ffi::CStr;
+
 use crate::extn::core::integer::trampoline;
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
+
+const INTEGER_CSTR: &CStr = cstr::cstr!("Integer");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Integer>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Integer", None, None)?;
+    let spec = class::Spec::new("Integer", INTEGER_CSTR, None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_method("chr", artichoke_integer_chr, sys::mrb_args_opt(1))?
         .add_method("[]", artichoke_integer_element_reference, sys::mrb_args_req(1))?

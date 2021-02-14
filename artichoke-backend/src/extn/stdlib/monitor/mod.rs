@@ -1,7 +1,11 @@
+use std::ffi::CStr;
+
 use crate::extn::prelude::*;
 
+const MONITOR_CSTR: &CStr = cstr::cstr!("Monitor");
+
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    let spec = class::Spec::new("Monitor", None, None)?;
+    let spec = class::Spec::new("Monitor", MONITOR_CSTR, None, None)?;
     interp.def_class::<Monitor>(spec)?;
     interp.def_rb_source_file("monitor.rb", &include_bytes!("vendor/monitor.rb")[..])?;
     Ok(())

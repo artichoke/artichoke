@@ -1,4 +1,9 @@
+use std::ffi::CStr;
+
 use crate::extn::prelude::*;
+
+const THREAD_CSTR: &CStr = cstr::cstr!("Thread");
+const MUTEX_CSTR: &CStr = cstr::cstr!("Mutex");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Thread>() {
@@ -7,9 +12,9 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Mutex>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Thread", None, None)?;
+    let spec = class::Spec::new("Thread", THREAD_CSTR, None, None)?;
     interp.def_class::<Thread>(spec)?;
-    let spec = class::Spec::new("Mutex", None, None)?;
+    let spec = class::Spec::new("Mutex", MUTEX_CSTR, None, None)?;
     interp.def_class::<Mutex>(spec)?;
     interp.def_rb_source_file("thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization

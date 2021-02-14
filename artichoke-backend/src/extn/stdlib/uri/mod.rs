@@ -1,13 +1,19 @@
+use std::ffi::CStr;
+
 use crate::extn::prelude::*;
 
+const IP_SOCKET_CSTR: &CStr = cstr::cstr!("IPSocket");
+const IP_ADDR_CSTR: &CStr = cstr::cstr!("IPAddr");
+const URI_CSTR: &CStr = cstr::cstr!("URI");
+
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    let spec = class::Spec::new("IPSocket", None, None)?;
+    let spec = class::Spec::new("IPSocket", IP_SOCKET_CSTR, None, None)?;
     interp.def_class::<IpSocket>(spec)?;
 
-    let spec = class::Spec::new("IPAddr", None, None)?;
+    let spec = class::Spec::new("IPAddr", IP_ADDR_CSTR, None, None)?;
     interp.def_class::<IpAddr>(spec)?;
 
-    let spec = module::Spec::new(interp, "URI", None)?;
+    let spec = module::Spec::new(interp, "URI", URI_CSTR, None)?;
     interp.def_module::<Uri>(spec)?;
 
     interp.def_rb_source_file("uri.rb", &include_bytes!("vendor/uri.rb")[..])?;

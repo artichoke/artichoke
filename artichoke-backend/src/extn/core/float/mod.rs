@@ -1,11 +1,15 @@
+use std::ffi::CStr;
+
 use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
+
+const FLOAT_CSTR: &CStr = cstr::cstr!("Float");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Float>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Float", None, None)?;
+    let spec = class::Spec::new("Float", FLOAT_CSTR, None, None)?;
     interp.def_class::<Float>(spec)?;
     let _ = interp.eval(&include_bytes!("float.rb")[..])?;
 

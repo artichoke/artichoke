@@ -1,12 +1,20 @@
+use std::ffi::CStr;
+
 use crate::extn::core::matchdata::{self, trampoline};
 use crate::extn::prelude::*;
-use crate::sys;
+
+const MATCH_DATA_CSTR: &CStr = cstr::cstr!("MatchData");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<matchdata::MatchData>() {
         return Ok(());
     }
-    let spec = class::Spec::new("MatchData", None, Some(def::box_unbox_free::<matchdata::MatchData>))?;
+    let spec = class::Spec::new(
+        "MatchData",
+        MATCH_DATA_CSTR,
+        None,
+        Some(def::box_unbox_free::<matchdata::MatchData>),
+    )?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("begin", artichoke_matchdata_begin, sys::mrb_args_req(1))?

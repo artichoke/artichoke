@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::borrow::Cow;
 use std::collections::HashSet;
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::hash::{Hash, Hasher};
 use std::ptr::NonNull;
 
@@ -153,13 +153,13 @@ impl<'a> Builder<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rclass {
-    name: Box<CStr>,
+    name: &'static CStr,
     enclosing_scope: Option<EnclosingRubyScope>,
 }
 
 impl Rclass {
     #[must_use]
-    pub const fn new(name: Box<CStr>, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
+    pub const fn new(name: &'static CStr, enclosing_scope: Option<EnclosingRubyScope>) -> Self {
         Self { name, enclosing_scope }
     }
 
@@ -203,7 +203,7 @@ impl Rclass {
 #[derive(Debug)]
 pub struct Spec {
     name: Cow<'static, str>,
-    cstring: Box<CStr>,
+    name_cstr: &'static CStr,
     data_type: Box<sys::mrb_data_type>,
     enclosing_scope: Option<EnclosingRubyScope>,
 }
@@ -211,6 +211,7 @@ pub struct Spec {
 impl Spec {
     pub fn new<T>(
         name: T,
+        name_cstr: &'static CStr,
         enclosing_scope: Option<EnclosingRubyScope>,
         free: Option<Free>,
     ) -> Result<Self, ConstantNameError>
@@ -218,33 +219,27 @@ impl Spec {
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        if let Ok(cstring) = CString::new(name.as_ref()) {
-            let cstring = cstring.into_boxed_c_str();
-            // Safety:
-            //
-            // `data_type` and `cstring` have the same lifetime since they are
-            // stored in the same struct.
-            //
-            // `Spec` does not offer mutable access to these fields.
-            //
-            // This, the `struct_name` pointer in `data_type` will point to
-            // valid memory as long as this `Spec` is not dropped.
-            //
-            // This has implications on drop order of components in the `State`.
-            let data_type = sys::mrb_data_type {
-                struct_name: cstring.as_ptr(),
-                dfree: free,
-            };
-            let data_type = Box::new(data_type);
-            Ok(Self {
-                name,
-                cstring,
-                data_type,
-                enclosing_scope,
-            })
-        } else {
-            Err(name.into())
-        }
+        // Safety:
+        //
+        // `name_cstr` is `&'static` so it will outlive the `data_type`.
+        //
+        // `Spec` does not offer mutable access to these fields.
+        //
+        // This, the `struct_name` pointer in `data_type` will point to valid
+        // memory as long as this `Spec` is not dropped.
+        //
+        // This has implications on drop order of components in the `State`.
+        let data_type = sys::mrb_data_type {
+            struct_name: name_cstr.as_ptr(),
+            dfree: free,
+        };
+        let data_type = Box::new(data_type);
+        Ok(Self {
+            name,
+            name_cstr,
+            data_type,
+            enclosing_scope,
+        })
     }
 
     #[must_use]
@@ -261,8 +256,8 @@ impl Spec {
     }
 
     #[must_use]
-    pub fn name_c_str(&self) -> &CStr {
-        self.cstring.as_ref()
+    pub fn name_c_str(&self) -> &'static CStr {
+        self.name_cstr
     }
 
     #[must_use]
@@ -284,7 +279,7 @@ impl Spec {
 
     #[must_use]
     pub fn rclass(&self) -> Rclass {
-        Rclass::new(self.cstring.clone(), self.enclosing_scope.clone())
+        Rclass::new(self.name_cstr, self.enclosing_scope.clone())
     }
 }
 
@@ -314,7 +309,7 @@ mod tests {
     #[test]
     fn super_class() {
         let mut interp = interpreter().unwrap();
-        let spec = class::Spec::new("RustError", None, None).unwrap();
+        let spec = class::Spec::new("RustError", cstr::cstr!("RustError"), None, None).unwrap();
         class::Builder::for_spec(&mut interp, &spec)
             .with_super_class::<StandardError, _>("StandardError")
             .unwrap()
@@ -334,7 +329,7 @@ mod tests {
     #[test]
     fn rclass_for_undef_root_class() {
         let mut interp = interpreter().unwrap();
-        let spec = class::Spec::new("Foo", None, None).unwrap();
+        let spec = class::Spec::new("Foo", cstr::cstr!("Foo"), None, None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_none());
     }
@@ -343,7 +338,7 @@ mod tests {
     fn rclass_for_undef_nested_class() {
         let mut interp = interpreter().unwrap();
         let scope = interp.module_spec::<Kernel>().unwrap().unwrap();
-        let spec = class::Spec::new("Foo", Some(EnclosingRubyScope::module(scope)), None).unwrap();
+        let spec = class::Spec::new("Foo", cstr::cstr!("Foo"), Some(EnclosingRubyScope::module(scope)), None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_none());
     }
@@ -352,8 +347,8 @@ mod tests {
     fn rclass_for_nested_class() {
         let mut interp = interpreter().unwrap();
         let _ = interp.eval(b"module Foo; class Bar; end; end").unwrap();
-        let spec = module::Spec::new(&mut interp, "Foo", None).unwrap();
-        let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::module(&spec)), None).unwrap();
+        let spec = module::Spec::new(&mut interp, "Foo", cstr::cstr!("Foo"), None).unwrap();
+        let spec = class::Spec::new("Bar", cstr::cstr!("Bar"), Some(EnclosingRubyScope::module(&spec)), None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }
@@ -362,8 +357,8 @@ mod tests {
     fn rclass_for_nested_class_under_class() {
         let mut interp = interpreter().unwrap();
         let _ = interp.eval(b"class Foo; class Bar; end; end").unwrap();
-        let spec = class::Spec::new("Foo", None, None).unwrap();
-        let spec = class::Spec::new("Bar", Some(EnclosingRubyScope::class(&spec)), None).unwrap();
+        let spec = class::Spec::new("Foo", cstr::cstr!("Foo"), None, None).unwrap();
+        let spec = class::Spec::new("Bar", cstr::cstr!("Bar"), Some(EnclosingRubyScope::class(&spec)), None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }

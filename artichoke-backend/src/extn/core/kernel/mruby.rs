@@ -1,12 +1,16 @@
+use std::ffi::CStr;
+
 use crate::extn::core::artichoke;
 use crate::extn::core::kernel::{self, trampoline};
 use crate::extn::prelude::*;
+
+const KERNEL_CSTR: &CStr = cstr::cstr!("Kernel");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_module_defined::<kernel::Kernel>() {
         return Ok(());
     }
-    let spec = module::Spec::new(interp, "Kernel", None)?;
+    let spec = module::Spec::new(interp, "Kernel", KERNEL_CSTR, None)?;
     module::Builder::for_spec(interp, &spec)
         .add_method("require", artichoke_kernel_require, sys::mrb_args_rest())?
         .add_method(
@@ -31,7 +35,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
         .ok_or_else(|| NotDefinedError::module("Artichoke"))?;
-    let spec = module::Spec::new(interp, "Kernel", Some(scope))?;
+    let spec = module::Spec::new(interp, "Kernel", KERNEL_CSTR, Some(scope))?;
     module::Builder::for_spec(interp, &spec)
         .add_method("Integer", artichoke_kernel_integer, sys::mrb_args_req_and_opt(1, 1))?
         .add_self_method("Integer", artichoke_kernel_integer, sys::mrb_args_req_and_opt(1, 1))?

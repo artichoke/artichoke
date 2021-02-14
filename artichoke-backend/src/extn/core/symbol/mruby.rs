@@ -1,11 +1,15 @@
+use std::ffi::CStr;
+
 use crate::extn::core::symbol::{self, trampoline};
 use crate::extn::prelude::*;
+
+const SYMBOL_CSTR: &CStr = cstr::cstr!("Symbol");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<symbol::Symbol>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Symbol", None, None)?;
+    let spec = class::Spec::new("Symbol", SYMBOL_CSTR, None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_self_method("all_symbols", symbol_all_symbols, sys::mrb_args_none())?
         .add_method("==", symbol_equal_equal, sys::mrb_args_req(1))?

@@ -122,7 +122,7 @@ mod tests {
             type Error = Error;
 
             fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
-                let spec = module::Spec::new(interp, "NestedEval", None)?;
+                let spec = module::Spec::new(interp, "NestedEval", cstr::cstr!("NestedEval"), None)?;
                 module::Builder::for_spec(interp, &spec)
                     .add_self_method("file", nested_eval_file, sys::mrb_args_none())?
                     .define()?;

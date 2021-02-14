@@ -1,14 +1,16 @@
 use std::convert::TryFrom;
+use std::ffi::CStr;
 
 use super::{trampoline, Flags, Regexp};
 use crate::extn::prelude::*;
-use crate::sys;
+
+const REGEXP_CSTR: &CStr = cstr::cstr!("Regexp");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Regexp>() {
         return Ok(());
     }
-    let spec = class::Spec::new("Regexp", None, Some(def::box_unbox_free::<Regexp>))?;
+    let spec = class::Spec::new("Regexp", REGEXP_CSTR, None, Some(def::box_unbox_free::<Regexp>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
         .add_method("initialize", initialize, sys::mrb_args_req_and_opt(1, 2))?

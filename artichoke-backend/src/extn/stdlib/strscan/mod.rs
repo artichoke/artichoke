@@ -1,7 +1,11 @@
+use std::ffi::CStr;
+
 use crate::extn::prelude::*;
 
+const STRING_SCANNER_CSTR: &CStr = cstr::cstr!("StringScanner");
+
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    let spec = class::Spec::new("StringScanner", None, None)?;
+    let spec = class::Spec::new("StringScanner", STRING_SCANNER_CSTR, None, None)?;
     interp.def_class::<StringScanner>(spec)?;
     interp.def_rb_source_file("strscan.rb", &include_bytes!("strscan.rb")[..])?;
     Ok(())
