@@ -166,13 +166,20 @@ where
     if let Some(fixture) = fixture {
         setup_fixture_hack(interp, fixture)?;
     }
+    let mut commands = commands.into_iter();
+    let mut buf = if let Some(command) = commands.next() {
+        command
+    } else {
+        return Ok(Ok(()));
+    };
     for command in commands {
-        if let Err(ref exc) = interp.eval_os_str(command.as_os_str()) {
-            backtrace::format_cli_trace_into(error, interp, exc)?;
-            // short circuit, but don't return an error since we already printed it
-            return Ok(Err(()));
-        }
-        interp.add_fetch_lineno(1)?;
+        buf.push("\n");
+        buf.push(command);
+    }
+    if let Err(ref exc) = interp.eval_os_str(&buf) {
+        backtrace::format_cli_trace_into(error, interp, exc)?;
+        // short circuit, but don't return an error since we already printed it
+        return Ok(Err(()));
     }
     Ok(Ok(()))
 }
