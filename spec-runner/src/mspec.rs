@@ -32,9 +32,10 @@ pub fn run<'a, T>(interp: &mut Artichoke, specs: T) -> Result<bool, Error>
 where
     T: IntoIterator<Item = &'a str>,
 {
-    interp.def_rb_source_file("/src/lib/spec_helper.rb", &b""[..])?;
-    interp.def_rb_source_file("/src/lib/test/spec_runner", &include_bytes!("spec_runner.rb")[..])?;
-    interp.eval_file(Path::new("/src/lib/test/spec_runner"))?;
+    let virtual_root = Path::new(artichoke::backend::fs::RUBY_LOAD_PATH);
+    interp.def_rb_source_file(virtual_root.join("spec_helper.rb"), &b""[..])?;
+    interp.def_rb_source_file(virtual_root.join("spec_runner"), &include_bytes!("spec_runner.rb")[..])?;
+    interp.eval_file(&virtual_root.join("spec_runner"))?;
     let specs = interp.try_convert_mut(specs.into_iter().collect::<Vec<_>>())?;
     let result = interp.top_self().funcall(interp, "run_specs", &[specs], None)?;
     interp.try_convert(result)
@@ -43,8 +44,6 @@ where
 #[cfg(test)]
 mod tests {
     #[test]
-    // TODO(GH-528): fix failing tests on Windows.
-    #[cfg_attr(target_os = "windows", should_panic)]
     fn mspec_framework_loads() {
         let mut interp = artichoke::interpreter().unwrap();
         super::init(&mut interp).unwrap();

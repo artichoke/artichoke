@@ -189,8 +189,6 @@ mod tests {
     }
 
     #[test]
-    // TODO(GH-528): fix failing tests on Windows.
-    #[cfg_attr(target_os = "windows", should_panic)]
     fn file_magic_constant() {
         let mut interp = interpreter().unwrap();
         interp
@@ -198,7 +196,7 @@ mod tests {
             .unwrap();
         let result = interp.eval(b"require 'source'; file").unwrap();
         let result = result.try_into_mut::<&str>(&mut interp).unwrap();
-        assert_eq!(result, "/src/lib/source.rb");
+        assert_eq!(result, "/artichoke/virtual_root/src/lib/source.rb");
     }
 
     #[test]

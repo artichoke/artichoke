@@ -1,11 +1,14 @@
+use bstr::{BString, ByteSlice};
 use std::borrow::Cow;
 use std::collections::hash_map::Entry as HashEntry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::fs::{absolutize_relative_to, ExtensionHook, Filesystem, RUBY_LOAD_PATH};
+use crate::fs::{absolutize_relative_to, normalize_slashes, ExtensionHook, RUBY_LOAD_PATH};
+
+const CODE_DEFAULT_CONTENTS: &[u8] = b"# virtual source file";
 
 #[derive(Clone, Copy)]
 pub struct Extension {
@@ -19,7 +22,7 @@ impl From<ExtensionHook> for Extension {
 }
 
 impl Extension {
-    fn new(hook: ExtensionHook) -> Self {
+    pub fn new(hook: ExtensionHook) -> Self {
         Self { hook }
     }
 }
@@ -51,17 +54,15 @@ impl From<Code> for Cow<'static, [u8]> {
 
 impl From<Vec<u8>> for Code {
     fn from(content: Vec<u8>) -> Self {
-        Self {
-            content: content.into(),
-        }
+        let content = content.into();
+        Self { content }
     }
 }
 
 impl From<&'static [u8]> for Code {
     fn from(content: &'static [u8]) -> Self {
-        Self {
-            content: content.into(),
-        }
+        let content = content.into();
+        Self { content }
     }
 }
 
@@ -73,17 +74,15 @@ impl From<Cow<'static, [u8]>> for Code {
 
 impl From<String> for Code {
     fn from(content: String) -> Self {
-        Self {
-            content: content.into_bytes().into(),
-        }
+        let content = content.into_bytes().into();
+        Self { content }
     }
 }
 
 impl From<&'static str> for Code {
     fn from(content: &'static str) -> Self {
-        Self {
-            content: content.as_bytes().into(),
-        }
+        let content = content.as_bytes().into();
+        Self { content }
     }
 }
 
@@ -98,10 +97,9 @@ impl From<Cow<'static, str>> for Code {
 
 impl Code {
     #[must_use]
-    pub fn new() -> Self {
-        Self {
-            content: Cow::Borrowed(&b"# virtual source file"[..]),
-        }
+    pub const fn new() -> Self {
+        let content = Cow::Borrowed(CODE_DEFAULT_CONTENTS);
+        Self { content }
     }
 
     #[must_use]
@@ -114,7 +112,6 @@ impl Code {
 pub struct Entry {
     code: Option<Code>,
     extension: Option<Extension>,
-    required: bool,
 }
 
 impl From<Code> for Entry {
@@ -186,31 +183,22 @@ impl Entry {
         Self {
             code: None,
             extension: None,
-            required: false,
         }
     }
 
-    fn replace_content<T>(&mut self, content: T)
+    pub fn replace_content<T>(&mut self, content: T)
     where
         T: Into<Cow<'static, [u8]>>,
     {
         self.code.replace(Code::from(content.into()));
     }
 
-    fn set_extension(&mut self, hook: ExtensionHook) {
+    pub fn set_extension(&mut self, hook: ExtensionHook) {
         self.extension.replace(Extension::new(hook));
     }
 
-    fn extension(&self) -> Option<ExtensionHook> {
+    pub fn extension(&self) -> Option<ExtensionHook> {
         self.extension.as_ref().map(|ext| ext.hook)
-    }
-
-    fn is_required(&self) -> bool {
-        self.required
-    }
-
-    fn mark_required(&mut self) {
-        self.required = true;
     }
 }
 
@@ -232,7 +220,8 @@ impl Entry {
 /// [`extn::core::kernel::require`](crate::extn::core::kernel::require).
 #[derive(Debug)]
 pub struct Memory {
-    fs: HashMap<PathBuf, Entry>,
+    fs: HashMap<BString, Entry>,
+    loaded_features: HashSet<BString>,
     cwd: PathBuf,
 }
 
@@ -240,9 +229,11 @@ impl Default for Memory {
     /// Virtual filesystem with current working directory set to
     /// [`RUBY_LOAD_PATH`].
     fn default() -> Self {
+        let cwd = PathBuf::from(RUBY_LOAD_PATH);
         Self {
             fs: HashMap::default(),
-            cwd: PathBuf::from(RUBY_LOAD_PATH),
+            loaded_features: HashSet::default(),
+            cwd,
         }
     }
 }
@@ -252,7 +243,9 @@ impl Memory {
     ///
     /// Sets the current working directory of the VFS to [`RUBY_LOAD_PATH`] for
     /// storing Ruby source files. This path is searched by
-    /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`](crate::extn::core::kernel::require).
+    /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`].
+    ///
+    /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`]: crate::extn::core::kernel::require
     #[must_use]
     pub fn new() -> Self {
         Self::default()
@@ -260,26 +253,30 @@ impl Memory {
 
     /// Create a new in memory virtual filesystem with the given working
     /// directory.
-    ///
     #[must_use]
     pub fn with_working_directory<T>(cwd: T) -> Self
     where
         T: Into<PathBuf>,
     {
+        let cwd = cwd.into();
         Self {
             fs: HashMap::default(),
-            cwd: cwd.into(),
+            loaded_features: HashSet::default(),
+            cwd,
         }
     }
-}
 
-impl Filesystem for Memory {
     /// Check whether `path` points to a file in the virtual filesystem.
     ///
     /// This API is infallible and will return `false` for non-existent paths.
-    fn is_file(&self, path: &Path) -> bool {
+    #[must_use]
+    pub fn is_file(&self, path: &Path) -> bool {
         let path = absolutize_relative_to(path, &self.cwd);
-        self.fs.contains_key(&path)
+        if let Ok(path) = normalize_slashes(path) {
+            self.fs.contains_key(path.as_bstr())
+        } else {
+            false
+        }
     }
 
     /// Read file contents for the file at `path`.
@@ -292,9 +289,10 @@ impl Filesystem for Memory {
     ///
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
-    fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
+    pub fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
         let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(entry) = self.fs.get(&path) {
+        let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
+        if let Some(entry) = self.fs.get(path.as_bstr()) {
             if let Some(ref code) = entry.code {
                 match code.content {
                     Cow::Borrowed(content) => Ok(content.into()),
@@ -320,9 +318,10 @@ impl Filesystem for Memory {
     ///
     /// This API is currently infallible but returns [`io::Result`] to reserve
     /// the ability to return errors in the future.
-    fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {
+    pub fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {
         let path = absolutize_relative_to(path, &self.cwd);
-        match self.fs.entry(path) {
+        let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
+        match self.fs.entry(path.into()) {
             HashEntry::Occupied(mut entry) => {
                 entry.get_mut().replace_content(buf);
             }
@@ -336,9 +335,11 @@ impl Filesystem for Memory {
     /// Retrieve an extension hook for the file at `path`.
     ///
     /// This API is infallible and will return `None` for non-existent paths.
-    fn get_extension(&self, path: &Path) -> Option<ExtensionHook> {
+    #[must_use]
+    pub fn get_extension(&self, path: &Path) -> Option<ExtensionHook> {
         let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(entry) = self.fs.get(&path) {
+        let path = normalize_slashes(path).ok()?;
+        if let Some(entry) = self.fs.get(path.as_bstr()) {
             entry.extension()
         } else {
             None
@@ -354,9 +355,10 @@ impl Filesystem for Memory {
     ///
     /// This API is currently infallible but returns [`io::Result`] to reserve
     /// the ability to return errors in the future.
-    fn register_extension(&mut self, path: &Path, extension: ExtensionHook) -> io::Result<()> {
+    pub fn register_extension(&mut self, path: &Path, extension: ExtensionHook) -> io::Result<()> {
         let path = absolutize_relative_to(path, &self.cwd);
-        match self.fs.entry(path) {
+        let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
+        match self.fs.entry(path.into()) {
             HashEntry::Occupied(mut entry) => {
                 entry.get_mut().set_extension(extension);
             }
@@ -370,10 +372,11 @@ impl Filesystem for Memory {
     /// Check whether a file at `path` has been required already.
     ///
     /// This API is infallible and will return `false` for non-existent paths.
-    fn is_required(&self, path: &Path) -> bool {
+    #[must_use]
+    pub fn is_required(&self, path: &Path) -> bool {
         let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(entry) = self.fs.get(&path) {
-            entry.is_required()
+        if let Ok(path) = normalize_slashes(path) {
+            self.loaded_features.contains(path.as_bstr())
         } else {
             false
         }
@@ -389,22 +392,20 @@ impl Filesystem for Memory {
     ///
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
-    fn mark_required(&mut self, path: &Path) -> io::Result<()> {
+    pub fn mark_required(&mut self, path: &Path) -> io::Result<()> {
         let path = absolutize_relative_to(path, &self.cwd);
-        if let Some(entry) = self.fs.get_mut(&path) {
-            entry.mark_required();
-            Ok(())
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "file not found in virtual file system",
-            ))
+        match normalize_slashes(path) {
+            Ok(path) => {
+                self.loaded_features.insert(path.into());
+                Ok(())
+            }
+            Err(err) => Err(io::Error::new(io::ErrorKind::NotFound, err)),
         }
     }
 }
 
 #[cfg(test)]
-mod hook_prototype_tests {
+mod tests {
     use crate::test::prelude::*;
 
     use super::Extension;
@@ -421,7 +422,7 @@ mod hook_prototype_tests {
     }
 
     #[test]
-    fn prototype() {
+    fn extension_hook_prototype() {
         // must compile
         let _ = Extension::new(TestFile::require);
     }
