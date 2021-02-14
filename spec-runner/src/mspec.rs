@@ -44,8 +44,6 @@ where
 #[cfg(test)]
 mod tests {
     #[test]
-    // TODO(GH-528): fix failing tests on Windows.
-    #[cfg_attr(target_os = "windows", should_panic)]
     fn mspec_framework_loads() {
         let mut interp = artichoke::interpreter().unwrap();
         super::init(&mut interp).unwrap();

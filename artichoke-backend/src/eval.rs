@@ -189,8 +189,6 @@ mod tests {
     }
 
     #[test]
-    // TODO(GH-528): fix failing tests on Windows.
-    #[cfg_attr(target_os = "windows", should_panic)]
     fn file_magic_constant() {
         let mut interp = interpreter().unwrap();
         interp
