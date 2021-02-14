@@ -1,5 +1,45 @@
 # frozen_string_literal: true
 
+module Artichoke
+  class Hash
+    # rubocop:disable Lint/HashCompareByIdentity
+    def self.trace(obj, seen)
+      id = obj.object_id
+      return true if seen[id]
+
+      seen[obj.object_id] = true
+
+      case obj
+      when Hash
+        obj.each do |key, value|
+          return true if trace(key, seen)
+          return true if trace(value, seen)
+        end
+        obj.instance_variables.each do |iv|
+          iv = obj.instance_variable_get(iv)
+          return true if trace(iv, seen)
+        end
+      when Array
+        obj.each do |elem|
+          return true if trace(elem, seen)
+        end
+        obj.instance_variables.each do |iv|
+          iv = obj.instance_variable_get(iv)
+          return true if trace(iv, seen)
+        end
+      when Object
+        obj.instance_variables.each do |iv|
+          iv = obj.instance_variable_get(iv)
+          return true if trace(iv, seen)
+        end
+      end
+
+      false
+    end
+    # rubocop:enable Lint/HashCompareByIdentity
+  end
+end
+
 class Hash
   include Enumerable
 
@@ -193,25 +233,30 @@ class Hash
   end
 
   def inspect
-    return '{}' if size.zero?
+    return '{}' if empty?
 
-    items = keys.map do |key|
-      val = self[key]
-      key =
-        if object_id == key.object_id
-          '{...}'
-        else
-          key.inspect
-        end
-      val =
-        if object_id == val.object_id
-          '{...}'
-        else
-          val.inspect
-        end
-      "#{key}=>#{val}"
+    id = object_id
+    pairs = []
+    seen = { id => true }
+
+    each do |key, value|
+      if ::Artichoke::Hash.trace(key, seen)
+        key = '{...}'
+      else
+        key = key.inspect
+        key = key.to_s unless key.is_a?(String)
+      end
+      if ::Artichoke::Hash.trace(value, seen)
+        value = '{...}'
+      else
+        value = key.inspect
+        value = key.to_s unless key.is_a?(String)
+      end
+
+      pairs << "#{key}=>#{value}"
     end
-    "{#{items.join(', ')}}"
+
+    "{#{pairs.join(', ')}}"
   end
 
   def invert
