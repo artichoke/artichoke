@@ -201,9 +201,9 @@ dependencies = [
 
 [[package]]
 name = "focaccia"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a2b7597098968fec3b57e0b53de3aed8e0631bb830589260bfb9e81b0376524"
+checksum = "6dd5c2feb696773b3fd15cca8387ce57d7f770da86ed475c1f4832848e317ec0"
 
 [[package]]
 name = "fs2"
