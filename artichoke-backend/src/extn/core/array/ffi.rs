@@ -107,10 +107,8 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
             );
         }
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        let inner = array.take();
+        Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
     }
 }
 
@@ -122,10 +120,8 @@ unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         let result = guard.convert(array.pop());
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        let inner = array.take();
+        Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
 
         result
     } else {
@@ -145,10 +141,8 @@ unsafe extern "C" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value,
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         array.push(value);
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        let inner = array.take();
+        Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
@@ -203,10 +197,8 @@ unsafe extern "C" fn mrb_ary_set(
             array.set(offset, value);
         }
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        let inner = array.take();
+        Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
@@ -218,13 +210,10 @@ unsafe extern "C" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        let result = array.get(0);
-        let _ = array.set_slice(0, 1, &[]);
+        let result = array.shift();
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        let inner = array.take();
+        Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
 
         guard.convert(result)
     } else {
@@ -244,18 +233,15 @@ unsafe extern "C" fn mrb_ary_unshift(
 ) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
-    let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        let _ = array.set_with_drain(0, 0, value);
+        array.0.unshift(value);
 
-        let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-        if Array::rebox_into_value(ary.into(), ptr, len, capacity).is_err() {
-            warn!("Failed to rebox Array");
-        }
+        let inner = array.take();
+        Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
     }
     let basic = sys::mrb_sys_basic_ptr(ary);
     sys::mrb_write_barrier(mrb, basic);
-    value.inner()
+    value
 }
 
 #[no_mangle]

@@ -93,10 +93,9 @@ pub fn element_assignment(
 
     let result = array.element_assignment(interp, first, second, third);
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
     }
 
     if let GcState::Enabled = prior_gc_state {
@@ -112,10 +111,9 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.clear();
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
     }
 
     Ok(ary)
@@ -133,7 +131,7 @@ where
     if ary.is_frozen(interp) {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
-    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+    let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let others = others.into_iter();
 
     // Allocate a new buffer and concatenate into it to allow preserving the
@@ -170,13 +168,12 @@ where
             return Err(TypeError::from(message).into());
         }
     }
-    *array.as_mut() = replacement;
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        let _old = array.take();
+        Array::box_into_value(replacement, ary, interp)?;
     }
+
     Ok(ary)
 }
 
@@ -251,10 +248,9 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = array.pop();
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
     }
 
     Ok(interp.convert(result))
@@ -267,10 +263,9 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.push(value);
 
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-    drop(array);
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
     }
 
     Ok(ary)
@@ -289,6 +284,12 @@ pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Err
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     array.reverse();
+
+    unsafe {
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
+    }
+
     Ok(ary)
 }
 
@@ -308,10 +309,10 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
 
         Ok(interp.convert(shifted))
     };
-    let (ptr, len, capacity) = (array.as_mut_ptr(), array.len(), array.capacity());
-    drop(array);
+
     unsafe {
-        Array::rebox_into_value(ary, ptr, len, capacity)?;
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
     }
 
     result

@@ -416,14 +416,6 @@ impl Array {
         self.0.set(index, elem.inner());
     }
 
-    fn set_with_drain(&mut self, start: usize, drain: usize, elem: Value) -> usize {
-        self.0.set_with_drain(start, drain, elem.inner())
-    }
-
-    fn set_slice(&mut self, start: usize, drain: usize, src: &[sys::mrb_value]) -> usize {
-        self.0.set_slice(start, drain, src)
-    }
-
     pub fn pop(&mut self) -> Option<Value> {
         self.0.pop().map(Value::from)
     }
@@ -492,29 +484,6 @@ impl Array {
     pub fn into_raw_parts(self) -> (*mut sys::mrb_value, usize, usize) {
         self.0.into_raw_parts()
     }
-
-    /// Pack the raw triple of an `Array` into an [`RArray`](sys::RArray)-backed
-    /// [`sys::mrb_value`].
-    ///
-    /// # Safety
-    ///
-    /// Calling this function takes ownership of the allocation pointed to by
-    /// `ptr`. `ptr` or its source cannot be safely accessed until calling
-    /// [`Array::from_raw_parts`].
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_sign_loss)]
-    pub unsafe fn rebox_into_value(
-        into: Value,
-        ptr: *mut sys::mrb_value,
-        len: usize,
-        capacity: usize,
-    ) -> Result<(), Error> {
-        if !matches!(into.ruby_type(), Ruby::Array) {
-            panic!("Tried to box Array into {:?} value", into.ruby_type());
-        }
-        sys::mrb_sys_repack_into_rarray(ptr, len as sys::mrb_int, capacity as sys::mrb_int, into.inner());
-        Ok(())
-    }
 }
 
 impl BoxUnboxVmValue for Array {
@@ -568,10 +537,21 @@ impl BoxUnboxVmValue for Array {
 
     fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
         let _ = interp;
+
+        // Make sure we have an Array otherwise boxing will produce undefined
+        // behavior.
+        //
+        // This check is critical to the memory safety of future runs of the
+        // garbage collector.
+        if into.ruby_type() != Ruby::Array {
+            panic!("Tried to box Array into {:?} value", into.ruby_type());
+        }
+
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         unsafe {
-            Self::rebox_into_value(into, ptr, len, capacity)?;
+            sys::mrb_sys_repack_into_rarray(ptr, len as sys::mrb_int, capacity as sys::mrb_int, into.inner());
         }
+
         Ok(interp.protect(into))
     }
 
