@@ -3,6 +3,7 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp;
+use core::iter;
 use core::slice::{Iter, IterMut};
 use tinyvec::TinyVec;
 
@@ -289,29 +290,6 @@ where
         self.0.as_mut_ptr()
     }
 
-    /// Set the vector's length without dropping or moving out elements
-    ///
-    /// This method is unsafe because it changes the notion of the number of
-    /// "valid" elements in the vector. Use with care.
-    ///
-    /// # Safety
-    ///
-    /// - `new_len` must be less than or equal to capacity().
-    /// - The elements at `old_len..new_len` must be initialized.
-    ///
-    /// # Examples
-    ///
-    /// This method is primarily used when mutating a `Array` via a raw pointer
-    /// passed over FFI.
-    ///
-    /// See the [`ARY_PTR`] macro in mruby.
-    ///
-    /// [`ARY_PTR`]: https://github.com/artichoke/mruby/blob/d66440864d08f1c3ac5820d45f11df031b7d43c6/include/mruby/array.h#L52
-    #[inline]
-    pub unsafe fn set_len(&mut self, new_len: usize) {
-        self.0.set_len(new_len);
-    }
-
     /// Consume the array and return the inner
     /// [`TinyVec<[T; INLINE_CAPACITY]>`](TinyVec).
     ///
@@ -328,7 +306,12 @@ where
     pub fn into_inner(self) -> TinyVec<[T; INLINE_CAPACITY]> {
         self.0
     }
+}
 
+impl<T> TinyArray<T>
+where
+    T: Clone + Default,
+{
     /// Consume the array and return its elements as a [`Vec<T>`].
     ///
     /// For `TinyArray`s with `len() > INLINE_CAPACITY`, this is a cheap
@@ -347,7 +330,7 @@ where
     #[inline]
     #[must_use]
     pub fn into_vec(self) -> Vec<T> {
-        self.0.into_vec()
+        self.0.to_vec()
     }
 
     /// Converts the vector into [`Box<[T]>`](Box).
@@ -364,9 +347,14 @@ where
     #[inline]
     #[must_use]
     pub fn into_boxed_slice(self) -> Box<[T]> {
-        self.0.into_boxed_slice()
+        self.0.to_vec().into_boxed_slice()
     }
+}
 
+impl<T> TinyArray<T>
+where
+    T: Default,
+{
     /// Returns the number of elements the vector can hold without reallocating.
     ///
     /// The minimum capacity of a `TinyArray` is [`INLINE_CAPACITY`].
@@ -904,7 +892,7 @@ where
     #[inline]
     #[must_use]
     pub fn with_len_and_default(len: usize, default: T) -> Self {
-        Self(TinyVec::from_elem(default, len))
+        Self(iter::repeat(default).take(len).collect())
     }
 
     /// Appends the elements of `other` to self.
@@ -924,6 +912,38 @@ where
         self.0.extend_from_slice(other);
     }
 
+    /// Prepends the elements of `other` to self.
+    ///
+    /// To insert one element to the front of the vector, use
+    /// [`unshift`](Self::unshift).
+    ///
+    /// This operation is also known as "prepend".
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of elements in the vector overflows a `usize`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2]);
+    /// ary.unshift_n(&[0, 5, 9]);
+    /// assert_eq!(ary, &[0, 5, 9, 1, 2]);
+    /// ```
+    #[inline]
+    pub fn unshift_n(&mut self, other: &[T]) {
+        self.0.reserve(other.len());
+        let mut tail = self.0.split_off(0);
+        self.0.extend_from_slice(other);
+        self.0.append(&mut tail);
+    }
+}
+
+impl<T> TinyArray<T>
+where
+    T: Default + Copy,
+{
     /// Creates a new array by repeating this array `n` times.
     ///
     /// This function will not panic. If the resulting `Array`'s capacity would
@@ -960,31 +980,6 @@ where
         } else {
             None
         }
-    }
-
-    /// Prepends the elements of `other` to self.
-    ///
-    /// To insert one element to the front of the vector, use
-    /// [`unshift`](Self::unshift).
-    ///
-    /// This operation is also known as "prepend".
-    ///
-    /// # Panics
-    ///
-    /// Panics if the number of elements in the vector overflows a `usize`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use spinoso_array::TinyArray;
-    /// let mut ary = TinyArray::from(&[1, 2]);
-    /// ary.unshift_n(&[0, 5, 9]);
-    /// assert_eq!(ary, &[0, 5, 9, 1, 2]);
-    /// ```
-    #[inline]
-    pub fn unshift_n(&mut self, other: &[T]) {
-        self.0.reserve(other.len());
-        self.0.insert_from_slice(0, other);
     }
 }
 
@@ -1102,7 +1097,13 @@ where
         for _ in self.0.len()..index {
             self.0.push(T::default());
         }
-        self.0.insert_from_slice(index, values);
+        if index == self.0.len() {
+            self.0.extend_from_slice(values);
+        } else {
+            let mut tail = self.0.split_off(index);
+            self.0.extend_from_slice(values);
+            self.0.append(&mut tail);
+        }
     }
 
     /// Insert the elements from a slice at a position `index` in the vector and
@@ -1135,69 +1136,22 @@ where
     /// ```
     #[inline]
     pub fn set_slice(&mut self, index: usize, drain: usize, values: &[T]) -> usize {
+        let buflen = self.0.len();
+        let drained = cmp::min(buflen.checked_sub(index).unwrap_or_default(), drain);
+
         let additional = index.checked_sub(self.0.len()).unwrap_or_default() + values.len();
         self.0.reserve(additional);
 
-        // Extend the vector to account for out of bounds `index`.
         for _ in self.0.len()..index {
             self.0.push(T::default());
         }
-        // `self.len()` is at least `index` so the below sub can never overflow.
-        let tail = self.len() - index;
-        // This is a direct append to the end of the vector, either because the
-        // given `index` was the vector's length or because we have extended the
-        // vector from an out of bounds index.
-        if tail == 0 {
+        if index == self.0.len() {
             self.0.extend_from_slice(values);
-            return 0;
-        }
-        // If the tail of the vector is shorter than or as long as the number of
-        // elements to drain, we can truncate and extend the underlying vector.
-        // `truncate` does not affect the existing capacity of the vector.
-        if tail <= drain {
-            self.0.truncate(index);
-            self.0.extend_from_slice(values);
-            return tail;
+        } else {
+            self.0.splice(index..index + drained, values.iter().cloned());
         }
 
-        // Short circuit to a direct insert if `drain == 0`.
-        if drain == 0 {
-            self.0.insert_from_slice(index, values);
-            return 0;
-        }
-
-        // At this point, `index + drain` is guaranteed to be a valid index
-        // within the vector. There are two cases:
-        //
-        // - If `values.len() == drain`, we can drain elements by overwriting
-        //   them in the vector.
-        // - If `values.len() >= drain`, we can drain elements by overwriting
-        //   them in the vector and inserting the remainder.
-        // - Otherwise, overwrite `values` into the vector and remove the
-        //   remaining elements we must drain.
-        match values.len() {
-            0 => {
-                self.0.drain(index..index + drain);
-            }
-            len if len == drain => {
-                let slice = &mut self.0[index..index + drain];
-                slice.copy_from_slice(values);
-            }
-            len if len > drain => {
-                let slice = &mut self.0[index..index + drain];
-                let (overwrite, insert) = values.split_at(drain);
-                slice.copy_from_slice(overwrite);
-                self.0.insert_from_slice(index + drain, insert);
-            }
-            len => {
-                let slice = &mut self.0[index..index + len];
-                slice.copy_from_slice(values);
-                // Drain the remaining elements.
-                self.0.drain(index + len..index + drain);
-            }
-        }
-
-        drain
+        drained
     }
 }
 

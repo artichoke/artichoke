@@ -17,13 +17,13 @@ where
 {
     #[inline]
     fn from(values: Vec<T>) -> Self {
-        Self(values.into())
+        Self(values.into_iter().collect())
     }
 }
 
 impl<T> From<TinyArray<T>> for Vec<T>
 where
-    T: Default,
+    T: Clone + Default,
 {
     #[inline]
     fn from(values: TinyArray<T>) -> Self {
@@ -37,7 +37,7 @@ where
 {
     #[inline]
     fn from(values: &'a [T]) -> Self {
-        Self(TinyVec::from_slice(values))
+        Self(TinyVec::from(values))
     }
 }
 
@@ -47,7 +47,7 @@ where
 {
     #[inline]
     fn from(values: &'a mut [T]) -> Self {
-        Self(TinyVec::from_slice(values))
+        Self(TinyVec::from(values))
     }
 }
 
@@ -57,13 +57,13 @@ where
 {
     #[inline]
     fn from(values: Box<[T]>) -> Self {
-        Self(Vec::from(values).into())
+        Self(Vec::from(values).into_iter().collect())
     }
 }
 
 impl<T> From<TinyArray<T>> for Box<[T]>
 where
-    T: Default,
+    T: Clone + Default,
 {
     #[inline]
     fn from(values: TinyArray<T>) -> Self {
@@ -96,7 +96,7 @@ where
 
 impl<T> From<TinyArray<T>> for Rc<[T]>
 where
-    T: Default,
+    T: Clone + Default,
 {
     #[inline]
     fn from(values: TinyArray<T>) -> Self {
@@ -106,7 +106,7 @@ where
 
 impl<T> From<TinyArray<T>> for Arc<[T]>
 where
-    T: Default,
+    T: Clone + Default,
 {
     #[inline]
     fn from(values: TinyArray<T>) -> Self {
@@ -374,7 +374,7 @@ where
 {
     #[inline]
     fn from(values: &[T; INLINE_CAPACITY]) -> Self {
-        Self(TinyVec::from(*values))
+        Self(TinyVec::from(&values[..]))
     }
 }
 
@@ -386,7 +386,9 @@ macro_rules! __tinyarray_T_from_primitive_array {
         {
             #[inline]
             fn from(values: [T; $len]) -> Self {
-                Self(TinyVec::from_vec(Vec::from(values)))
+                // TODO: use a by-value array iter once `min_const_generics`
+                // stabilizes.
+                Self(Vec::from(values).into_iter().collect())
             }
         }
 
@@ -396,7 +398,7 @@ macro_rules! __tinyarray_T_from_primitive_array {
         {
             #[inline]
             fn from(values: &[T; $len]) -> Self {
-                Self(TinyVec::from_slice(values))
+                Self(TinyVec::from(&values[..]))
             }
         }
     };
