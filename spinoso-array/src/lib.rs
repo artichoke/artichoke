@@ -39,7 +39,11 @@
 //!   library. This Spinoso array type is enabled by default.
 //! - [`SmallArray`] is based on [`SmallVec`] and implements the small vector
 //!   optimization – small arrays are stored inline without a heap allocation.
-//!   This Spinoso array type requires the `small-array` Cargo feature.
+//!   This Spinoso array type requires the **small-array** Cargo feature.
+//! - [`TinyArray`] is based on [`TinyVec`] and implements the small vector
+//!   optimization – small arrays are stored inline without a heap allocation.
+//!   This Spinoso array type requires the **tiny-array** Cargo feature.
+//!
 //!
 //! # `no_std`
 //!
@@ -119,6 +123,7 @@
 //! [Artichoke Ruby]: https://www.artichokeruby.org/
 //! [`Vec`]: alloc::vec::Vec
 //! [`SmallVec`]: smallvec::SmallVec
+//! [`TinyVec`]: tinyvec::TinyVec
 //! [`From`]: core::convert::From
 //! [`FromIterator`]: core::iter::FromIterator
 //! [`Index`]: core::ops::Index
@@ -155,7 +160,9 @@ mod array;
 
 #[cfg(feature = "small-array")]
 pub use array::smallvec::SmallArray;
-#[cfg(feature = "small-array")]
+#[cfg(feature = "tiny-array")]
+pub use array::tinyvec::TinyArray;
+#[cfg(any(feature = "small-array", feature = "tiny-array"))]
 pub use array::INLINE_CAPACITY;
 
 pub use array::vec::Array;
