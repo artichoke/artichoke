@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! Ruby `Array` based on [`TinyVec`].
 
 use alloc::boxed::Box;
