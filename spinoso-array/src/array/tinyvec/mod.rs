@@ -76,7 +76,7 @@ mod impls;
 /// [`first_n`]: TinyArray::first_n
 /// [`last_n`]: TinyArray::last_n
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(docsrs, doc(cfg(feature = "small-array")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "tiny-array")))]
 pub struct TinyArray<T: Default>(TinyVec<[T; INLINE_CAPACITY]>);
 
 impl<T> Default for TinyArray<T>
