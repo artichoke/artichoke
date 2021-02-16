@@ -32,6 +32,12 @@ where
 }
 
 impl<'a, T> UnboxedValueGuard<'a, T> {
+    /// Construct a new guard around the given `T`.
+    ///
+    /// `UnboxedValueGuard` allows passing around a `&mut` reference without
+    /// dropping the `T` when returning control to mruby C code. This is
+    /// desirable because the `T` is owned by the mruby heap until the mruby
+    /// garbage collector frees the `mrb_value` that holds it.
     #[must_use]
     pub fn new(value: T) -> Self {
         Self {
@@ -40,16 +46,35 @@ impl<'a, T> UnboxedValueGuard<'a, T> {
         }
     }
 
+    /// Get a shared reference to the inner `T`.
     #[inline]
     #[must_use]
     pub fn as_inner_ref(&self) -> &T {
         &*self.guarded
     }
 
+    /// Get a unique reference to the inner `T`.
     #[inline]
     #[must_use]
     pub fn as_inner_mut(&mut self) -> &mut T {
         &mut *self.guarded
+    }
+
+    /// Take the inner `T` out of the guard.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that `T` is not dropped. Once `T` is taken out of
+    /// the guard, it must ultimately be passed to [`ManuallyDrop`] before it is
+    /// dropped.
+    ///
+    /// An example of safe usage is calling taking an `Array` out of the guard
+    /// and then immediately calling `Array::into_raw_parts` on the returned
+    /// value.
+    #[inline]
+    #[must_use]
+    pub unsafe fn take(mut self) -> T {
+        ManuallyDrop::take(&mut self.guarded)
     }
 }
 
