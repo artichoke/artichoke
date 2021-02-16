@@ -74,16 +74,22 @@ mod impls;
 /// [`last_n`]: TinyArray::last_n
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(docsrs, doc(cfg(feature = "small-array")))]
-pub struct TinyArray<T>(TinyVec<[T; INLINE_CAPACITY]>);
+pub struct TinyArray<T: Default>(TinyVec<[T; INLINE_CAPACITY]>);
 
-impl<T> Default for TinyArray<T> {
+impl<T> Default for TinyArray<T>
+where
+    T: Default,
+{
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> TinyArray<T> {
+impl<T> TinyArray<T>
+where
+    T: Default,
+{
     /// Construct a new, empty `TinyArray<T>`.
     ///
     /// The vector will not allocate until more than [`INLINE_CAPACITY`]
@@ -881,7 +887,7 @@ impl<T> TinyArray<T> {
 
 impl<T> TinyArray<T>
 where
-    T: Copy,
+    T: Clone + Default,
 {
     /// Construct a new `TinyArray<T>` with length `len` and all elements set
     /// to `default`. The `TinyArray` will have capacity at least `len`.
@@ -1070,7 +1076,7 @@ where
 
 impl<T> TinyArray<T>
 where
-    T: Default + Copy,
+    T: Default + Clone,
 {
     /// Insert the elements from a slice at a position `index` in the vector,
     /// extending the vector with `T::default()` if `index` is out of bounds.
