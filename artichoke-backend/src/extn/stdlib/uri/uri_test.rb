@@ -58,7 +58,7 @@ def uri_decode_www_form
   raise unless ary.assoc('b').last == '3'
   # this line fails on YARV
   # raise unless ary.rassoc('a').last == '2'
-  raise unless Hash[ary] == { 'a' => '2', 'b' => '3' }
+  raise unless ary.to_h == { 'a' => '2', 'b' => '3' }
 end
 
 def uri_encode_www_form
