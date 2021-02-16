@@ -8,7 +8,8 @@ use crate::array::INLINE_CAPACITY;
 
 impl<T, U> PartialEq<TinyVec<[U; INLINE_CAPACITY]>> for TinyArray<T>
 where
-    T: PartialEq<U>,
+    T: PartialEq<U> + Default,
+    U: Default,
 {
     #[inline]
     fn eq(&self, other: &TinyVec<[U; INLINE_CAPACITY]>) -> bool {
@@ -18,7 +19,8 @@ where
 
 impl<T, U> PartialEq<TinyArray<U>> for TinyVec<[T; INLINE_CAPACITY]>
 where
-    T: PartialEq<U>,
+    T: PartialEq<U> + Default,
+    U: Default,
 {
     #[inline]
     fn eq(&self, other: &TinyArray<U>) -> bool {
@@ -28,7 +30,7 @@ where
 
 impl<T, U> PartialEq<Vec<U>> for TinyArray<T>
 where
-    T: PartialEq<U>,
+    T: PartialEq<U> + Default,
 {
     #[inline]
     fn eq(&self, other: &Vec<U>) -> bool {
@@ -39,6 +41,7 @@ where
 impl<T, U> PartialEq<TinyArray<U>> for Vec<T>
 where
     T: PartialEq<U>,
+    U: Default,
 {
     #[inline]
     fn eq(&self, other: &TinyArray<U>) -> bool {
@@ -48,7 +51,7 @@ where
 
 impl<T, U> PartialEq<[U]> for TinyArray<T>
 where
-    T: PartialEq<U>,
+    T: PartialEq<U> + Default,
 {
     #[inline]
     fn eq(&self, other: &[U]) -> bool {
@@ -59,6 +62,7 @@ where
 impl<T, U> PartialEq<TinyArray<U>> for [T]
 where
     T: PartialEq<U>,
+    U: Default,
 {
     #[inline]
     fn eq(&self, other: &TinyArray<U>) -> bool {
@@ -68,7 +72,7 @@ where
 
 impl<T, U> PartialEq<Box<[U]>> for TinyArray<T>
 where
-    T: PartialEq<U>,
+    T: PartialEq<U> + Default,
 {
     #[inline]
     fn eq(&self, other: &Box<[U]>) -> bool {
@@ -79,6 +83,7 @@ where
 impl<T, U> PartialEq<TinyArray<U>> for Box<[T]>
 where
     T: PartialEq<U>,
+    U: Default,
 {
     #[inline]
     fn eq(&self, other: &TinyArray<U>) -> bool {
@@ -89,6 +94,7 @@ where
 impl<T, U> PartialEq<TinyArray<U>> for Array<T>
 where
     T: PartialEq<U>,
+    U: Default,
 {
     #[inline]
     fn eq(&self, other: &TinyArray<U>) -> bool {
@@ -98,7 +104,7 @@ where
 
 impl<T, U> PartialEq<Array<U>> for TinyArray<T>
 where
-    T: PartialEq<U>,
+    T: PartialEq<U> + Default,
 {
     #[inline]
     fn eq(&self, other: &Array<U>) -> bool {
@@ -110,7 +116,7 @@ macro_rules! __tinyarray_T_eq_primitive_array {
     ($len:expr) => {
         impl<T, U> PartialEq<[U; $len]> for TinyArray<T>
         where
-            T: PartialEq<U>,
+            T: PartialEq<U> + Default,
         {
             #[inline]
             fn eq(&self, other: &[U; $len]) -> bool {
@@ -121,6 +127,7 @@ macro_rules! __tinyarray_T_eq_primitive_array {
         impl<T, U> PartialEq<TinyArray<U>> for [T; $len]
         where
             T: PartialEq<U>,
+            U: Default,
         {
             #[inline]
             fn eq(&self, other: &TinyArray<U>) -> bool {
@@ -130,7 +137,7 @@ macro_rules! __tinyarray_T_eq_primitive_array {
 
         impl<T, U> PartialEq<&[U; $len]> for TinyArray<T>
         where
-            T: PartialEq<U>,
+            T: PartialEq<U> + Default,
         {
             #[inline]
             fn eq(&self, other: &&[U; $len]) -> bool {
@@ -141,6 +148,7 @@ macro_rules! __tinyarray_T_eq_primitive_array {
         impl<T, U> PartialEq<TinyArray<U>> for &[T; $len]
         where
             T: PartialEq<U>,
+            U: Default,
         {
             #[inline]
             fn eq(&self, other: &TinyArray<U>) -> bool {
