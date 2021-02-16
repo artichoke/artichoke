@@ -1,10 +1,10 @@
-//! Ruby `Array` based on [`SmallVec`].
+//! Ruby `Array` based on [`TinyVec`].
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp;
 use core::slice::{Iter, IterMut};
-use smallvec::SmallVec;
+use tinyvec::TinyVec;
 
 use crate::array::INLINE_CAPACITY;
 
@@ -13,25 +13,25 @@ mod eq;
 mod impls;
 
 /// A contiguous growable array type based on
-/// [`SmallVec<[T; INLINE_CAPACITY]>`](SmallVec) that implements the small vector
+/// [`TinyVec<[T; INLINE_CAPACITY]>`](TinyVec) that implements the small vector
 /// optimization.
 ///
-/// `SmallArray` is an alternate implementation of [`Array`] that implements the
-/// small vector optimization. For `SmallArray`s less then [`INLINE_CAPACITY`]
+/// `TinyArray` is an alternate implementation of [`Array`] that implements the
+/// small vector optimization. For `TinyArray`s less then [`INLINE_CAPACITY`]
 /// elements long, there is no heap allocation.
 ///
-/// `SmallArray` provides a nearly identical API to the one in [`Array`]. There
+/// `TinyArray` provides a nearly identical API to the one in [`Array`]. There
 /// are two important differences:
 ///
-/// 1. `SmallVec<[T; INLINE_CAPACITY]>` is used in some places where
+/// 1. `TinyVec<[T; INLINE_CAPACITY]>` is used in some places where
 ///    [`Vec<T>`](Vec) would have been used.
 /// 2. Trait bounds on some methods are more restrictive and require elements to
 ///    be [`Copy`].
 ///
-/// Similar to `Array`, `SmallArray` implements indexing and mutating APIs that
+/// Similar to `Array`, `TinyArray` implements indexing and mutating APIs that
 /// make an ideal backend for the [Ruby `Array` core class][ruby-array]. In
 /// practice, this results in less generic, more single-use APIs. For example,
-/// instead of [`Vec::drain`], `SmallArray` implements [`shift`], [`shift_n`],
+/// instead of [`Vec::drain`], `TinyArray` implements [`shift`], [`shift_n`],
 /// [`pop`], and [`pop_n`].
 ///
 /// Similarly, slicing APIs are more specialized, such as [`first_n`] and
@@ -41,8 +41,8 @@ mod impls;
 /// # Examples
 ///
 /// ```
-/// # use spinoso_array::SmallArray;
-/// let mut ary = SmallArray::new();
+/// # use spinoso_array::TinyArray;
+/// let mut ary = TinyArray::new();
 /// ary.push(1);
 /// ary.push(2);
 ///
@@ -65,26 +65,26 @@ mod impls;
 ///
 /// [`Array`]: crate::Array
 /// [ruby-array]: https://ruby-doc.org/core-2.6.3/Array.html
-/// [`shift`]: SmallArray::shift
-/// [`shift_n`]: SmallArray::shift_n
-/// [`drop_n`]: SmallArray::drop_n
-/// [`pop`]: SmallArray::pop
-/// [`pop_n`]: SmallArray::pop_n
-/// [`first_n`]: SmallArray::first_n
-/// [`last_n`]: SmallArray::last_n
+/// [`shift`]: TinyArray::shift
+/// [`shift_n`]: TinyArray::shift_n
+/// [`drop_n`]: TinyArray::drop_n
+/// [`pop`]: TinyArray::pop
+/// [`pop_n`]: TinyArray::pop_n
+/// [`first_n`]: TinyArray::first_n
+/// [`last_n`]: TinyArray::last_n
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(docsrs, doc(cfg(feature = "small-array")))]
-pub struct SmallArray<T>(SmallVec<[T; INLINE_CAPACITY]>);
+pub struct TinyArray<T>(TinyVec<[T; INLINE_CAPACITY]>);
 
-impl<T> Default for SmallArray<T> {
+impl<T> Default for TinyArray<T> {
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> SmallArray<T> {
-    /// Construct a new, empty `SmallArray<T>`.
+impl<T> TinyArray<T> {
+    /// Construct a new, empty `TinyArray<T>`.
     ///
     /// The vector will not allocate until more than [`INLINE_CAPACITY`]
     /// elements are pushed into it.
@@ -92,18 +92,18 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, SmallArray};
-    /// let ary: SmallArray<i32> = SmallArray::new();
+    /// use spinoso_array::{INLINE_CAPACITY, TinyArray};
+    /// let ary: TinyArray<i32> = TinyArray::new();
     /// assert!(ary.is_empty());
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
     /// ```
     #[inline]
     #[must_use]
     pub fn new() -> Self {
-        Self(SmallVec::new())
+        Self(TinyVec::new())
     }
 
-    /// Construct a new, empty `SmallArray<T>` with the specified capacity.
+    /// Construct a new, empty `TinyArray<T>` with the specified capacity.
     ///
     /// The vector will be able to hold `max(capacity, INLINE_CAPACITY)`
     /// elements without reallocating. If `capacity` is less than or equal to
@@ -115,8 +115,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary: SmallArray<i32> = SmallArray::with_capacity(10);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary: TinyArray<i32> = TinyArray::with_capacity(10);
     /// assert_eq!(ary.len(), 0);
     /// assert_eq!(ary.capacity(), 10);
     ///
@@ -131,18 +131,18 @@ impl<T> SmallArray<T> {
     #[inline]
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
-        Self(SmallVec::with_capacity(capacity))
+        Self(TinyVec::with_capacity(capacity))
     }
 
-    /// Constuct a new two-element `SmallArray` from the given arguments.
+    /// Constuct a new two-element `TinyArray` from the given arguments.
     ///
     /// The vector is constructed without a heap allocation.
     ///
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, SmallArray};
-    /// let ary = SmallArray::assoc(0, 100);
+    /// use spinoso_array::{INLINE_CAPACITY, TinyArray};
+    /// let ary = TinyArray::assoc(0, 100);
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
     /// assert_eq!(ary.len(), 2);
     /// assert_eq!(ary[0], 0);
@@ -160,8 +160,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4]);
     /// let mut iterator = ary.iter();
     ///
     /// assert_eq!(iterator.next(), Some(&1));
@@ -180,8 +180,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// for elem in ary.iter_mut() {
     ///     *elem += 2;
     /// }
@@ -201,8 +201,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4]);
     /// let four_index = ary.as_slice().binary_search(&4);
     /// assert_eq!(four_index, Ok(2));
     /// ```
@@ -219,8 +219,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[2, 1, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[2, 1, 4]);
     /// ary.as_mut_slice().sort();
     /// assert_eq!(ary, &[1, 2, 4]);
     /// ```
@@ -246,8 +246,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4]);
     /// let ary_ptr = ary.as_ptr();
     ///
     /// unsafe {
@@ -307,33 +307,33 @@ impl<T> SmallArray<T> {
     }
 
     /// Consume the array and return the inner
-    /// [`SmallVec<[T; INLINE_CAPACITY]>`](SmallVec).
+    /// [`TinyVec<[T; INLINE_CAPACITY]>`](TinyVec).
     ///
     /// # Examples
     ///
     /// ```
-    /// # use smallvec::SmallVec;
-    /// use spinoso_array::{INLINE_CAPACITY, SmallArray};
-    /// let ary = SmallArray::from(&[1, 2, 4]);
-    /// let vec: SmallVec<[i32; INLINE_CAPACITY]> = ary.into_inner();
+    /// # use tinyvec::TinyVec;
+    /// use spinoso_array::{INLINE_CAPACITY, TinyArray};
+    /// let ary = TinyArray::from(&[1, 2, 4]);
+    /// let vec: TinyVec<[i32; INLINE_CAPACITY]> = ary.into_inner();
     /// ```
     #[inline]
     #[must_use]
-    pub fn into_inner(self) -> SmallVec<[T; INLINE_CAPACITY]> {
+    pub fn into_inner(self) -> TinyVec<[T; INLINE_CAPACITY]> {
         self.0
     }
 
     /// Consume the array and return its elements as a [`Vec<T>`].
     ///
-    /// For `SmallArray`s with `len() > INLINE_CAPACITY`, this is a cheap
-    /// operation that unwraps the spilled `Vec` from the `SmallVec`. For
+    /// For `TinyArray`s with `len() > INLINE_CAPACITY`, this is a cheap
+    /// operation that unwraps the spilled `Vec` from the `TinyVec`. For
     /// shorter arrays, this method will allocate.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4]);
     /// let vec: Vec<i32> = ary.into_vec();
     /// ```
     ///
@@ -351,8 +351,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4]);
     /// let slice: Box<[i32]> = ary.into_boxed_slice();
     /// ```
     #[inline]
@@ -363,18 +363,18 @@ impl<T> SmallArray<T> {
 
     /// Returns the number of elements the vector can hold without reallocating.
     ///
-    /// The minimum capacity of a `SmallArray` is [`INLINE_CAPACITY`].
-    /// `SmallArray`s with capacity less than or equal to `INLINE_CAPACITY` are
+    /// The minimum capacity of a `TinyArray` is [`INLINE_CAPACITY`].
+    /// `TinyArray`s with capacity less than or equal to `INLINE_CAPACITY` are
     /// not allocated on the heap.
     ///
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, SmallArray};
-    /// let ary: SmallArray<i32> = SmallArray::with_capacity(1);
+    /// use spinoso_array::{INLINE_CAPACITY, TinyArray};
+    /// let ary: TinyArray<i32> = TinyArray::with_capacity(1);
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
     ///
-    /// let ary: SmallArray<i32> = SmallArray::with_capacity(10);
+    /// let ary: TinyArray<i32> = TinyArray::with_capacity(10);
     /// assert_eq!(ary.capacity(), 10);
     /// ```
     #[inline]
@@ -384,7 +384,7 @@ impl<T> SmallArray<T> {
     }
 
     /// Reserves capacity for at least `additional` more elements to be inserted
-    /// in the given `SmallArray<T>`. The collection may reserve more space to
+    /// in the given `TinyArray<T>`. The collection may reserve more space to
     /// avoid frequent reallocations. After calling reserve, capacity will be
     /// greater than or equal to `self.len() + additional`. Does nothing if
     /// capacity is already sufficient.
@@ -396,8 +396,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1]);
     /// ary.reserve(10);
     /// assert!(ary.capacity() >= 11);
     /// ```
@@ -414,8 +414,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::with_capacity(10);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::with_capacity(10);
     /// ary.extend([1, 2, 3].iter().copied());
     /// assert_eq!(ary.capacity(), 10);
     /// ary.shrink_to_fit();
@@ -434,8 +434,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// let capacity = ary.capacity();
     /// ary.clear();
     /// assert!(ary.is_empty());
@@ -452,8 +452,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4]);
     /// assert_eq!(ary.len(), 3);
     /// ```
     #[inline]
@@ -467,8 +467,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::new();
+    /// use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::new();
     /// assert!(ary.is_empty());
     /// ary.push(1);
     /// assert!(!ary.is_empty());
@@ -488,8 +488,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4]);
     /// assert_eq!(ary.get(1), Some(&2));
     /// assert_eq!(ary.get(3), None);
     /// ```
@@ -505,8 +505,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// assert_eq!(ary.delete_at(1), Some(2));
     /// assert_eq!(ary.delete_at(10), None);
     /// ```
@@ -529,8 +529,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::new();
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::new();
     /// assert_eq!(ary.first(), None);
     /// ary.push(1);
     /// assert_eq!(ary.first(), Some(&1));
@@ -552,8 +552,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::new();
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::new();
     /// assert_eq!(ary.first_n(0), &[]);
     /// assert_eq!(ary.first_n(4), &[]);
     ///
@@ -581,8 +581,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::new();
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::new();
     /// assert_eq!(ary.last(), None);
     /// ary.push(1);
     /// assert_eq!(ary.last(), Some(&1));
@@ -604,8 +604,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::new();
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::new();
     /// assert_eq!(ary.last_n(0), &[]);
     /// assert_eq!(ary.last_n(4), &[]);
     ///
@@ -636,8 +636,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4, 7, 8, 9]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4, 7, 8, 9]);
     /// assert_eq!(ary.take_n(0), &[]);
     /// assert_eq!(ary.take_n(2), &[1, 2]);
     /// assert_eq!(ary.take_n(10), &[1, 2, 4, 7, 8, 9]);
@@ -659,8 +659,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary = SmallArray::from(&[1, 2, 4, 7, 8, 9]);
+    /// # use spinoso_array::TinyArray;
+    /// let ary = TinyArray::from(&[1, 2, 4, 7, 8, 9]);
     /// assert_eq!(ary.drop_n(0), &[1, 2, 4, 7, 8, 9]);
     /// assert_eq!(ary.drop_n(4), &[8, 9]);
     /// assert_eq!(ary.drop_n(10), &[]);
@@ -680,8 +680,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// assert_eq!(ary.pop(), Some(4));
     /// assert_eq!(ary, &[1, 2]);
     /// ```
@@ -699,8 +699,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4, 7, 8, 9]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4, 7, 8, 9]);
     /// assert_eq!(ary.pop_n(0), &[]);
     /// assert_eq!(ary, &[1, 2, 4, 7, 8, 9]);
     ///
@@ -735,8 +735,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2]);
     /// ary.push(3);
     /// assert_eq!(ary, &[1, 2, 3]);
     /// ```
@@ -750,8 +750,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// ary.reverse();
     /// assert_eq!(ary, &[4, 2, 1]);
     /// ```
@@ -771,8 +771,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2]);
     /// assert_eq!(ary.shift(), Some(1));
     /// assert_eq!(ary.shift(), Some(2));
     /// assert_eq!(ary.shift(), None);
@@ -795,8 +795,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4, 7, 8, 9]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4, 7, 8, 9]);
     /// assert_eq!(ary.shift_n(0), &[]);
     /// assert_eq!(ary, &[1, 2, 4, 7, 8, 9]);
     ///
@@ -833,8 +833,8 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2]);
     /// ary.unshift(3);
     /// assert_eq!(ary, &[3, 1, 2]);
     /// ```
@@ -853,13 +853,13 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let empty: SmallArray<i32> = SmallArray::new();
+    /// # use spinoso_array::TinyArray;
+    /// let empty: TinyArray<i32> = TinyArray::new();
     /// assert_eq!(empty.slice(0, 0), &[]);
     /// assert_eq!(empty.slice(0, 4), &[]);
     /// assert_eq!(empty.slice(2, 4), &[]);
     ///
-    /// let ary = SmallArray::from(&[1, 2, 3]);
+    /// let ary = TinyArray::from(&[1, 2, 3]);
     /// assert_eq!(ary.slice(0, 0), &[]);
     /// assert_eq!(ary.slice(0, 4), &[1, 2, 3]);
     /// assert_eq!(ary.slice(2, 0), &[]);
@@ -879,18 +879,18 @@ impl<T> SmallArray<T> {
     }
 }
 
-impl<T> SmallArray<T>
+impl<T> TinyArray<T>
 where
     T: Copy,
 {
-    /// Construct a new `SmallArray<T>` with length `len` and all elements set
-    /// to `default`. The `SmallArray` will have capacity at least `len`.
+    /// Construct a new `TinyArray<T>` with length `len` and all elements set
+    /// to `default`. The `TinyArray` will have capacity at least `len`.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let ary: SmallArray<&str> = SmallArray::with_len_and_default(3, "spinoso");
+    /// # use spinoso_array::TinyArray;
+    /// let ary: TinyArray<&str> = TinyArray::with_len_and_default(3, "spinoso");
     /// assert_eq!(ary.len(), 3);
     /// assert!(ary.capacity() >= 3);
     /// assert_eq!(ary, &["spinoso", "spinoso", "spinoso"]);
@@ -898,7 +898,7 @@ where
     #[inline]
     #[must_use]
     pub fn with_len_and_default(len: usize, default: T) -> Self {
-        Self(SmallVec::from_elem(default, len))
+        Self(TinyVec::from_elem(default, len))
     }
 
     /// Appends the elements of `other` to self.
@@ -908,8 +908,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// ary.concat(&[7, 8, 9]);
     /// assert_eq!(ary.len(), 6);
     /// ```
@@ -928,9 +928,9 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
+    /// # use spinoso_array::TinyArray;
     /// # fn example() -> Option<()> {
-    /// let mut ary = SmallArray::from(&[1, 2]);
+    /// let mut ary = TinyArray::from(&[1, 2]);
     /// let repeated_ary = ary.repeat(3)?;
     /// assert_eq!(repeated_ary, &[1, 2, 1, 2, 1, 2]);
     /// # Some(())
@@ -941,8 +941,8 @@ where
     /// [`None`] should be returned on overflow:
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2]);
     /// let repeated_ary = ary.repeat(usize::MAX);
     /// assert_eq!(repeated_ary, None);
     /// ```
@@ -970,8 +970,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2]);
     /// ary.unshift_n(&[0, 5, 9]);
     /// assert_eq!(ary, &[0, 5, 9, 1, 2]);
     /// ```
@@ -982,7 +982,7 @@ where
     }
 }
 
-impl<T> SmallArray<T>
+impl<T> TinyArray<T>
 where
     T: Default,
 {
@@ -992,8 +992,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2 ,4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2 ,4]);
     /// ary.set(1, 11);
     /// assert_eq!(ary, &[1, 11, 4]);
     /// ary.set(5, 263);
@@ -1019,7 +1019,7 @@ where
     /// following `drain` elements. If `start` is out of bounds, the vector will
     /// be extended with `T::default()`.
     ///
-    /// This method sets a slice of the `SmallArray` to a single element,
+    /// This method sets a slice of the `TinyArray` to a single element,
     /// including the zero-length slice. It is similar in intent to calling
     /// [`Vec::splice`] with a one-element iterator.
     ///
@@ -1030,8 +1030,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// ary.set_with_drain(1, 0, 10);
     /// assert_eq!(ary, &[1, 10, 2, 4]);
     /// ary.set_with_drain(2, 5, 20);
@@ -1068,7 +1068,7 @@ where
     }
 }
 
-impl<T> SmallArray<T>
+impl<T> TinyArray<T>
 where
     T: Default + Copy,
 {
@@ -1081,8 +1081,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// ary.insert_slice(1, &[7, 8, 9]);
     /// assert_eq!(ary, &[1, 7, 8, 9, 2, 4]);
     /// ary.insert_slice(8, &[100, 200]);
@@ -1116,8 +1116,8 @@ where
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2, 4]);
+    /// # use spinoso_array::TinyArray;
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// ary.set_slice(1, 5, &[7, 8, 9]);
     /// assert_eq!(ary, &[1, 7, 8, 9]);
     /// ary.set_slice(6, 1, &[100, 200]);
@@ -1197,104 +1197,104 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::array::smallvec::SmallArray;
+    use crate::array::tinyvec::TinyArray;
 
     // `insert_slice`
 
     #[test]
     fn non_empty_array_insert_slice_end_empty() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         ary.insert_slice(5, &[]);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
     }
 
     #[test]
     fn non_empty_array_insert_slice_out_of_bounds_empty() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         ary.insert_slice(10, &[]);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0]);
     }
 
     #[test]
     fn non_empty_array_insert_slice_interior_empty() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         ary.insert_slice(2, &[]);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
     }
 
     #[test]
     fn non_empty_array_insert_slice_begin_empty() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         ary.insert_slice(0, &[]);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
     }
 
     #[test]
     fn empty_array_insert_slice_end_empty() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         ary.insert_slice(0, &[]);
         assert_eq!(ary, []);
     }
 
     #[test]
     fn empty_array_insert_slice_out_of_bounds_empty() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         ary.insert_slice(10, &[]);
         assert_eq!(ary, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     }
 
     #[test]
     fn empty_array_insert_slice_begin_empty() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         ary.insert_slice(0, &[]);
         assert_eq!(ary, []);
     }
 
     #[test]
     fn non_empty_array_insert_slice_end() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         ary.insert_slice(5, &[8, 9, 10]);
         assert_eq!(ary, [1, 2, 3, 4, 5, 8, 9, 10]);
     }
 
     #[test]
     fn non_empty_array_insert_slice_out_of_bounds() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         ary.insert_slice(10, &[8, 9, 10]);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 8, 9, 10]);
     }
 
     #[test]
     fn non_empty_array_insert_slice_interior() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         ary.insert_slice(2, &[8, 9, 10]);
         assert_eq!(ary, [1, 2, 8, 9, 10, 3, 4, 5]);
     }
 
     #[test]
     fn non_empty_array_insert_slice_begin() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         ary.insert_slice(0, &[8, 9, 10]);
         assert_eq!(ary, [8, 9, 10, 1, 2, 3, 4, 5]);
     }
 
     #[test]
     fn empty_array_insert_slice_end() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         ary.insert_slice(0, &[8, 9, 10]);
         assert_eq!(ary, [8, 9, 10]);
     }
 
     #[test]
     fn empty_array_insert_slice_out_of_bounds() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         ary.insert_slice(10, &[8, 9, 10]);
         assert_eq!(ary, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 9, 10]);
     }
 
     #[test]
     fn empty_array_insert_slice_begin() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         ary.insert_slice(0, &[8, 9, 10]);
         assert_eq!(ary, [8, 9, 10]);
     }
@@ -1303,7 +1303,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_end_empty_drain_0() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(5, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
@@ -1311,7 +1311,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_end_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(5, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
@@ -1319,7 +1319,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_end_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(5, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
@@ -1327,7 +1327,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_end_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(5, 5, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
@@ -1335,7 +1335,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_out_of_bounds_empty_drain_0() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(10, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0]);
@@ -1343,7 +1343,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_out_of_bounds_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(10, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0]);
@@ -1351,7 +1351,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_out_of_bounds_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(10, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0]);
@@ -1359,7 +1359,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_out_of_bounds_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(10, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0]);
@@ -1367,7 +1367,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_empty_drain_0() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
@@ -1375,7 +1375,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
@@ -1383,7 +1383,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5]);
@@ -1391,7 +1391,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 2, &[]);
         assert_eq!(drained, 2);
         assert_eq!(ary, [1, 4, 5]);
@@ -1399,7 +1399,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_empty_drain_greater_than_insert_length_to_end() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 4, &[]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [1]);
@@ -1407,7 +1407,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_empty_drain_greater_than_insert_length_overrun_end() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 10, &[]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [1]);
@@ -1415,7 +1415,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_end_non_empty_drain_0() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(5, 0, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 7, 8, 9]);
@@ -1423,7 +1423,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_end_non_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(5, 2, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 7, 8, 9]);
@@ -1431,7 +1431,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_end_non_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(5, 3, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 7, 8, 9]);
@@ -1439,7 +1439,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_end_non_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(5, 5, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 7, 8, 9]);
@@ -1447,7 +1447,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_out_of_bounds_non_empty_drain_0() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(10, 0, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 7, 8, 9]);
@@ -1455,7 +1455,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_out_of_bounds_non_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(10, 2, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 7, 8, 9]);
@@ -1463,7 +1463,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_out_of_bounds_non_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(10, 3, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 7, 8, 9]);
@@ -1471,7 +1471,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_out_of_bounds_non_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(10, 5, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 2, 3, 4, 5, 0, 0, 0, 0, 0, 7, 8, 9]);
@@ -1479,7 +1479,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_0() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 0, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [1, 7, 8, 9, 2, 3, 4, 5]);
@@ -1487,7 +1487,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 2, &[7, 8, 9]);
         assert_eq!(drained, 2);
         assert_eq!(ary, [1, 7, 8, 9, 4, 5]);
@@ -1495,7 +1495,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(1, 3, &[7, 8, 9]);
         assert_eq!(drained, 3);
         assert_eq!(ary, [1, 7, 8, 9, 5]);
@@ -1503,7 +1503,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5, 6]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5, 6]);
         let drained = ary.set_slice(1, 4, &[7, 8, 9]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [1, 7, 8, 9, 6]);
@@ -1512,7 +1512,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_equal_to_insert_length_to_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(1, 3, &[7, 8, 9]);
         assert_eq!(drained, 3);
         assert_eq!(ary, [1, 7, 8, 9]);
@@ -1520,7 +1520,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_greater_than_insert_length_to_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(1, 10, &[7, 8, 9]);
         assert_eq!(drained, 3);
         assert_eq!(ary, [1, 7, 8, 9]);
@@ -1528,7 +1528,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_less_than_insert_length_overrun_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(3, 2, &[7, 8, 9]);
         assert_eq!(drained, 1);
         assert_eq!(ary, [1, 2, 3, 7, 8, 9]);
@@ -1536,7 +1536,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_equal_to_insert_length_overrun_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(3, 3, &[7, 8, 9]);
         assert_eq!(drained, 1);
         assert_eq!(ary, [1, 2, 3, 7, 8, 9]);
@@ -1544,7 +1544,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_interior_non_empty_drain_greater_than_insert_length_overrun_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(3, 10, &[7, 8, 9]);
         assert_eq!(drained, 1);
         assert_eq!(ary, [1, 2, 3, 7, 8, 9]);
@@ -1552,7 +1552,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_0() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(0, 0, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [7, 8, 9, 1, 2, 3, 4, 5]);
@@ -1560,7 +1560,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(0, 2, &[7, 8, 9]);
         assert_eq!(drained, 2);
         assert_eq!(ary, [7, 8, 9, 3, 4, 5]);
@@ -1568,7 +1568,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5]);
         let drained = ary.set_slice(0, 3, &[7, 8, 9]);
         assert_eq!(drained, 3);
         assert_eq!(ary, [7, 8, 9, 4, 5]);
@@ -1576,7 +1576,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::from([1, 2, 3, 4, 5, 6]);
+        let mut ary = TinyArray::from([1, 2, 3, 4, 5, 6]);
         let drained = ary.set_slice(0, 4, &[7, 8, 9]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [7, 8, 9, 5, 6]);
@@ -1584,7 +1584,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_equal_to_insert_length_to_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(0, 4, &[7, 8, 9, 10]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [7, 8, 9, 10]);
@@ -1592,7 +1592,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_greater_than_insert_length_to_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(0, 10, &[7, 8, 9, 10]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [7, 8, 9, 10]);
@@ -1600,7 +1600,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_less_than_insert_length_overrun_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(0, 4, &[7, 8, 9, 10, 11]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [7, 8, 9, 10, 11]);
@@ -1608,7 +1608,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_equal_to_insert_length_overrun_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(0, 5, &[7, 8, 9, 10, 11]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [7, 8, 9, 10, 11]);
@@ -1616,7 +1616,7 @@ mod test {
 
     #[test]
     fn non_empty_array_set_slice_begin_non_empty_drain_greater_than_insert_length_overrun_tail() {
-        let mut ary = SmallArray::from([1, 2, 3, 4]);
+        let mut ary = TinyArray::from([1, 2, 3, 4]);
         let drained = ary.set_slice(0, 10, &[7, 8, 9, 10, 11]);
         assert_eq!(drained, 4);
         assert_eq!(ary, [7, 8, 9, 10, 11]);
@@ -1624,7 +1624,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_non_empty_drain_0() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(0, 0, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [7, 8, 9]);
@@ -1632,7 +1632,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_non_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(0, 1, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [7, 8, 9]);
@@ -1640,7 +1640,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_non_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(0, 3, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [7, 8, 9]);
@@ -1648,7 +1648,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_begin_non_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(0, 10, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [7, 8, 9]);
@@ -1656,7 +1656,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_out_of_bounds_non_empty_drain_0() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(5, 0, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [0, 0, 0, 0, 0, 7, 8, 9]);
@@ -1664,7 +1664,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_out_of_bounds_non_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(5, 1, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [0, 0, 0, 0, 0, 7, 8, 9]);
@@ -1672,7 +1672,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_out_of_bounds_non_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(5, 3, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [0, 0, 0, 0, 0, 7, 8, 9]);
@@ -1680,7 +1680,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_out_of_bounds_non_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(5, 10, &[7, 8, 9]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [0, 0, 0, 0, 0, 7, 8, 9]);
@@ -1688,7 +1688,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_empty_drain_0() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(0, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, []);
@@ -1696,7 +1696,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(0, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, []);
@@ -1704,7 +1704,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(0, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, []);
@@ -1712,7 +1712,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_begin_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(0, 10, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, []);
@@ -1720,7 +1720,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_out_of_bounds_empty_drain_0() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(5, 0, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [0, 0, 0, 0, 0]);
@@ -1728,7 +1728,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_out_of_bounds_empty_drain_less_than_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(5, 1, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [0, 0, 0, 0, 0]);
@@ -1736,7 +1736,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_out_of_bounds_empty_drain_equal_to_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(5, 3, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [0, 0, 0, 0, 0]);
@@ -1744,7 +1744,7 @@ mod test {
 
     #[test]
     fn empty_array_set_slice_out_of_bounds_empty_drain_greater_than_insert_length() {
-        let mut ary = SmallArray::<i32>::new();
+        let mut ary = TinyArray::<i32>::new();
         let drained = ary.set_slice(5, 10, &[]);
         assert_eq!(drained, 0);
         assert_eq!(ary, [0, 0, 0, 0, 0]);
