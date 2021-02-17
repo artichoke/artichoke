@@ -145,12 +145,12 @@ jobs:
         run: cargo fmt -- --check --color=auto
         working-directory: "spec-runner"
 
-      - name: Lint spec-runner with Clippy
-        run: cargo clippy --workspace --all-features --all-targets
-        working-directory: "spec-runner"
-
       - name: Check spec-runner with locked Cargo.lock
         run: cargo check --locked --all-targets --profile=test
+        working-directory: "spec-runner"
+
+      - name: Lint spec-runner with Clippy
+        run: cargo clippy --workspace --all-features --all-targets
         working-directory: "spec-runner"
 
   check-sub-crates:
