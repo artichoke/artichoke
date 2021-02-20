@@ -249,8 +249,8 @@ class Hash
       if ::Artichoke::Hash.trace(value, seen)
         value = '{...}'
       else
-        value = key.inspect
-        value = key.to_s unless key.is_a?(String)
+        value = value.inspect
+        value = value.to_s unless value.is_a?(String)
       end
 
       pairs << "#{key}=>#{value}"
