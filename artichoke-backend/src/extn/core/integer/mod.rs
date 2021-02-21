@@ -179,6 +179,18 @@ impl Integer {
         }
     }
 
+    pub fn is_allbits(self, mask: Int) -> Result<bool, Error> {
+        Ok(self.as_i64() & mask == mask)
+    }
+
+    pub fn is_anybits(self, mask: Int) -> Result<bool, Error> {
+        Ok(self.as_i64() & mask != 0)
+    }
+
+    pub fn is_nobits(self, mask: Int) -> Result<bool, Error> {
+        Ok(self.as_i64() & mask == 0)
+    }
+
     #[must_use]
     pub const fn size() -> usize {
         mem::size_of::<Int>()

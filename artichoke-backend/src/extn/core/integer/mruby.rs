@@ -15,6 +15,9 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("chr", artichoke_integer_chr, sys::mrb_args_opt(1))?
         .add_method("[]", artichoke_integer_element_reference, sys::mrb_args_req(1))?
         .add_method("/", artichoke_integer_div, sys::mrb_args_req(1))?
+        .add_method("allbits?", artichoke_integer_is_allbits, sys::mrb_args_req(1))?
+        .add_method("anybits?", artichoke_integer_is_anybits, sys::mrb_args_req(1))?
+        .add_method("nobits?", artichoke_integer_is_nobits, sys::mrb_args_req(1))?
         .add_method("size", artichoke_integer_size, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<Integer>(spec)?;
@@ -56,6 +59,42 @@ unsafe extern "C" fn artichoke_integer_div(mrb: *mut sys::mrb_state, slf: sys::m
     let value = Value::from(slf);
     let denominator = Value::from(denominator);
     let result = trampoline::div(&mut guard, value, denominator);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn artichoke_integer_is_allbits(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let mask = mrb_get_args!(mrb, required = 1);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let mask = Value::from(mask);
+    let result = trampoline::is_allbits(&mut guard, value, mask);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn artichoke_integer_is_anybits(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let mask = mrb_get_args!(mrb, required = 1);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let mask = Value::from(mask);
+    let result = trampoline::is_anybits(&mut guard, value, mask);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn artichoke_integer_is_nobits(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let mask = mrb_get_args!(mrb, required = 1);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let mask = Value::from(mask);
+    let result = trampoline::is_nobits(&mut guard, value, mask);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
