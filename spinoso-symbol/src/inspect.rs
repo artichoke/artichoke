@@ -1,7 +1,7 @@
 use core::convert::TryFrom;
 use core::fmt;
 use core::iter::FusedIterator;
-use scolapasta_string_escape::{is_ascii_char_with_escape, Literal};
+use scolapasta_string_escape::{is_ascii_char_with_escape, InvalidUtf8ByteSequence};
 
 use crate::ident::IdentifierType;
 
@@ -242,86 +242,13 @@ impl Flags {
     }
 }
 
-#[derive(Default, Debug, Clone)]
-struct ByteLiteral {
-    one: Option<Literal>,
-    two: Option<Literal>,
-    three: Option<Literal>,
-}
-
-impl ByteLiteral {
-    #[inline]
-    fn one(byte: u8) -> Self {
-        Self {
-            one: Some(Literal::from(byte)),
-            two: None,
-            three: None,
-        }
-    }
-
-    #[inline]
-    fn two(left: u8, right: u8) -> Self {
-        Self {
-            one: Some(Literal::from(left)),
-            two: Some(Literal::from(right)),
-            three: None,
-        }
-    }
-
-    #[inline]
-    fn three(left: u8, mid: u8, right: u8) -> Self {
-        Self {
-            one: Some(Literal::from(left)),
-            two: Some(Literal::from(mid)),
-            three: Some(Literal::from(right)),
-        }
-    }
-}
-
-impl<'a> From<&'a [u8]> for ByteLiteral {
-    #[inline]
-    fn from(bytes: &'a [u8]) -> Self {
-        match *bytes {
-            [] => Self::default(),
-            [byte] => Self::one(byte),
-            [left, right] => Self::two(left, right),
-            [left, mid, right] => Self::three(left, mid, right),
-            _ => panic!("Invalid UTF-8 byte literal sequences can be at most three bytes"),
-        }
-    }
-}
-
-impl Iterator for ByteLiteral {
-    type Item = char;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.one
-            .as_mut()
-            .and_then(Iterator::next)
-            .or_else(|| self.two.as_mut().and_then(Iterator::next))
-            .or_else(|| self.three.as_mut().and_then(Iterator::next))
-    }
-}
-
-impl DoubleEndedIterator for ByteLiteral {
-    #[inline]
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.three
-            .as_mut()
-            .and_then(DoubleEndedIterator::next_back)
-            .or_else(|| self.two.as_mut().and_then(DoubleEndedIterator::next_back))
-            .or_else(|| self.one.as_mut().and_then(DoubleEndedIterator::next_back))
-    }
-}
-
 #[derive(Debug, Clone)]
 #[must_use = "this `State` is an `Iterator`, which should be consumed if constructed"]
 struct State<'a> {
     flags: Flags,
-    forward_byte_literal: ByteLiteral,
+    forward_byte_literal: InvalidUtf8ByteSequence,
     bytes: &'a [u8],
-    reverse_byte_literal: ByteLiteral,
+    reverse_byte_literal: InvalidUtf8ByteSequence,
 }
 
 impl<'a> State<'a> {
@@ -333,9 +260,9 @@ impl<'a> State<'a> {
     fn ident(bytes: &'a [u8]) -> Self {
         Self {
             flags: Flags::IDENT,
-            forward_byte_literal: ByteLiteral::default(),
+            forward_byte_literal: InvalidUtf8ByteSequence::new(),
             bytes,
-            reverse_byte_literal: ByteLiteral::default(),
+            reverse_byte_literal: InvalidUtf8ByteSequence::new(),
         }
     }
 
@@ -346,9 +273,9 @@ impl<'a> State<'a> {
     fn quoted(bytes: &'a [u8]) -> Self {
         Self {
             flags: Flags::QUOTED,
-            forward_byte_literal: ByteLiteral::default(),
+            forward_byte_literal: InvalidUtf8ByteSequence::new(),
             bytes,
-            reverse_byte_literal: ByteLiteral::default(),
+            reverse_byte_literal: InvalidUtf8ByteSequence::new(),
         }
     }
 }
@@ -385,7 +312,14 @@ impl<'a> Iterator for State<'a> {
             }
             Some(ch) if is_ascii_char_with_escape(ch) => {
                 let (ascii_byte, remainder) = self.bytes.split_at(size);
-                self.forward_byte_literal = ByteLiteral::from(ascii_byte);
+                // This conversion is safe to unwrap due to the documented
+                // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
+                // which indicate that `size` is always in the range of 0..=3.
+                //
+                // While not an invalid byte, we rely on the documented
+                // behavior of `InvalidUtf8ByteSequence` to always escape
+                // any bytes given to it.
+                self.forward_byte_literal = InvalidUtf8ByteSequence::try_from(ascii_byte).unwrap();
                 self.bytes = remainder;
                 return self.forward_byte_literal.next();
             }
@@ -396,8 +330,10 @@ impl<'a> Iterator for State<'a> {
             None if size == 0 => {}
             None => {
                 let (invalid_utf8_bytes, remainder) = self.bytes.split_at(size);
-                // Invalid UTF-8 bytes are yielded as byte slices one byte at a time.
-                self.forward_byte_literal = ByteLiteral::from(invalid_utf8_bytes);
+                // This conversion is safe to unwrap due to the documented
+                // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
+                // which indicate that `size` is always in the range of 0..=3.
+                self.forward_byte_literal = InvalidUtf8ByteSequence::try_from(invalid_utf8_bytes).unwrap();
                 self.bytes = remainder;
                 return self.forward_byte_literal.next();
             }
@@ -428,7 +364,14 @@ impl<'a> DoubleEndedIterator for State<'a> {
             }
             Some(ch) if is_ascii_char_with_escape(ch) => {
                 let (remainder, ascii_byte) = self.bytes.split_at(self.bytes.len() - size);
-                self.reverse_byte_literal = ByteLiteral::from(ascii_byte);
+                // This conversion is safe to unwrap due to the documented
+                // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
+                // which indicate that `size` is always in the range of 0..=3.
+                //
+                // While not an invalid byte, we rely on the documented
+                // behavior of `InvalidUtf8ByteSequence` to always escape
+                // any bytes given to it.
+                self.reverse_byte_literal = InvalidUtf8ByteSequence::try_from(ascii_byte).unwrap();
                 self.bytes = remainder;
                 return self.reverse_byte_literal.next_back();
             }
@@ -439,8 +382,10 @@ impl<'a> DoubleEndedIterator for State<'a> {
             None if size == 0 => {}
             None => {
                 let (remainder, invalid_utf8_bytes) = self.bytes.split_at(self.bytes.len() - size);
-                // Invalid UTF-8 bytes are yielded as byte slices one byte at a time.
-                self.reverse_byte_literal = ByteLiteral::from(invalid_utf8_bytes);
+                // This conversion is safe to unwrap due to the documented
+                // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
+                // which indicate that `size` is always in the range of 0..=3.
+                self.reverse_byte_literal = InvalidUtf8ByteSequence::try_from(invalid_utf8_bytes).unwrap();
                 self.bytes = remainder;
                 return self.reverse_byte_literal.next_back();
             }

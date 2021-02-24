@@ -1,3 +1,5 @@
+use core::convert::TryFrom;
+use core::fmt;
 use core::iter::FusedIterator;
 use core::slice;
 use core::str;
@@ -573,6 +575,211 @@ impl DoubleEndedIterator for Literal {
 }
 
 impl FusedIterator for Literal {}
+
+/// Error that indicates a [`InvalidUtf8ByteSequence`] could not be constructed
+/// because the byte sequence contained more than three bytes.
+///
+/// This crate decodes conventionally UTF-8 binary strings with the
+/// "substitution of maximal subparts" strategy, which at most will return
+/// invalid byte sequences with length 3.
+///
+/// This error is fatal and indicates a bug in a library this crate depends on.
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ByteSequenceTooLongError {
+    _private: (),
+}
+
+impl ByteSequenceTooLongError {
+    /// Construct a new `ByteSequenceTooLongError`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::ByteSequenceTooLongError;
+    /// const ERR: ByteSequenceTooLongError = ByteSequenceTooLongError::new();
+    /// ```
+    #[inline]
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { _private: () }
+    }
+
+    /// Retrieve the error message associated with this byte sequence too long
+    /// error.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::ByteSequenceTooLongError;
+    /// let err = ByteSequenceTooLongError::new();
+    /// assert_eq!(err.message(), "Invalid UTF-8 byte literal sequences can be at most three bytes long");
+    /// ```
+    #[inline]
+    #[must_use]
+    #[allow(clippy::clippy::unused_self)]
+    pub const fn message(self) -> &'static str {
+        "Invalid UTF-8 byte literal sequences can be at most three bytes long"
+    }
+}
+
+impl fmt::Display for ByteSequenceTooLongError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        const MESSAGE: &str = ByteSequenceTooLongError::new().message();
+        f.write_str(MESSAGE)
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ByteSequenceTooLongError {}
+
+/// Iterator of Ruby debug escape sequences for a contiguous invalid UTF-8 byte
+/// sequence.
+///
+/// This iterator's item type is [`char`].
+///
+/// Non printable bytes like `0xFF` or `0x0C` are escaped to `\xFF` or `\f`.
+///
+/// # Usage notes
+///
+/// This iterator assumes it is constructed with invalid UTF-8 bytes and will
+/// always escape all bytes given to it.
+///
+/// # Examples
+///
+/// The bytes `\xF0\x9D\x9C` could lead to a valid UTF-8 sequence, but 3 of them
+/// on their own are invalid. All of these bytes should be hex escaped.
+///
+/// ```
+/// # use core::convert::TryFrom;
+/// # use scolapasta_string_escape::InvalidUtf8ByteSequence;
+/// let invalid_byte_sequence = &b"\xF0\x9D\x9C"[..];
+/// let iter = InvalidUtf8ByteSequence::try_from(invalid_byte_sequence).unwrap();
+/// assert_eq!(iter.collect::<String>(), r"\xF0\x9D\x9C");
+/// ```
+#[derive(Default, Debug, Clone)]
+#[must_use = "this `InvalidUtf8ByteSequence` is an `Iterator`, which should be consumed if constructed"]
+pub struct InvalidUtf8ByteSequence {
+    one: Option<Literal>,
+    two: Option<Literal>,
+    three: Option<Literal>,
+}
+
+impl InvalidUtf8ByteSequence {
+    /// Construct a new, empty invalid UTF-8 byte sequence iterator.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::InvalidUtf8ByteSequence;
+    /// let iter = InvalidUtf8ByteSequence::new();
+    /// assert_eq!(iter.count(), 0);
+    /// ```
+    #[inline]
+    pub const fn new() -> Self {
+        Self {
+            one: None,
+            two: None,
+            three: None,
+        }
+    }
+
+    /// Construct a new, invalid UTF-8 byte sequence iterator with a single
+    /// invalid byte.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::InvalidUtf8ByteSequence;
+    /// let iter = InvalidUtf8ByteSequence::with_byte(0xFF);
+    /// assert_eq!(iter.collect::<String>(), r"\xFF");
+    /// ```
+    #[inline]
+    pub fn with_byte(byte: u8) -> Self {
+        Self {
+            one: Some(Literal::from(byte)),
+            two: None,
+            three: None,
+        }
+    }
+
+    /// Construct a new, invalid UTF-8 byte sequence iterator with two
+    /// consecutive invalid bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::InvalidUtf8ByteSequence;
+    /// let iter = InvalidUtf8ByteSequence::with_two_bytes(0xE2, 0x98);
+    /// assert_eq!(iter.collect::<String>(), r"\xE2\x98");
+    /// ```
+    #[inline]
+    pub fn with_two_bytes(left: u8, right: u8) -> Self {
+        Self {
+            one: Some(Literal::from(left)),
+            two: Some(Literal::from(right)),
+            three: None,
+        }
+    }
+
+    /// Construct a new, invalid UTF-8 byte sequence iterator with three
+    /// consecutive invalid bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_string_escape::InvalidUtf8ByteSequence;
+    /// let iter = InvalidUtf8ByteSequence::with_three_bytes(0xF0, 0x9D, 0x9C);
+    /// assert_eq!(iter.collect::<String>(), r"\xF0\x9D\x9C");
+    /// ```
+    #[inline]
+    pub fn with_three_bytes(left: u8, mid: u8, right: u8) -> Self {
+        Self {
+            one: Some(Literal::from(left)),
+            two: Some(Literal::from(mid)),
+            three: Some(Literal::from(right)),
+        }
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for InvalidUtf8ByteSequence {
+    type Error = ByteSequenceTooLongError;
+
+    #[inline]
+    fn try_from(bytes: &'a [u8]) -> Result<Self, Self::Error> {
+        match *bytes {
+            [] => Ok(Self::new()),
+            [byte] => Ok(Self::with_byte(byte)),
+            [left, right] => Ok(Self::with_two_bytes(left, right)),
+            [left, mid, right] => Ok(Self::with_three_bytes(left, mid, right)),
+            _ => Err(ByteSequenceTooLongError::new()),
+        }
+    }
+}
+
+impl Iterator for InvalidUtf8ByteSequence {
+    type Item = char;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.one
+            .as_mut()
+            .and_then(Iterator::next)
+            .or_else(|| self.two.as_mut().and_then(Iterator::next))
+            .or_else(|| self.three.as_mut().and_then(Iterator::next))
+    }
+}
+
+impl DoubleEndedIterator for InvalidUtf8ByteSequence {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.three
+            .as_mut()
+            .and_then(DoubleEndedIterator::next_back)
+            .or_else(|| self.two.as_mut().and_then(DoubleEndedIterator::next_back))
+            .or_else(|| self.one.as_mut().and_then(DoubleEndedIterator::next_back))
+    }
+}
+
+impl FusedIterator for InvalidUtf8ByteSequence {}
 
 /// Generation:
 ///

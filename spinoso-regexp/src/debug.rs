@@ -1,6 +1,7 @@
+use core::convert::TryFrom;
 use core::fmt;
 use core::iter::FusedIterator;
-use scolapasta_string_escape::Literal;
+use scolapasta_string_escape::InvalidUtf8ByteSequence;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Debug<'a> {
@@ -23,7 +24,7 @@ impl<'a> Debug<'a> {
         Iter {
             prefix: Some('/'),
             source: self.source,
-            literal: ByteLiteral::empty(),
+            literal: InvalidUtf8ByteSequence::new(),
             suffix: Some('/'),
             options: self.options,
             encoding: self.encoding,
@@ -61,7 +62,7 @@ impl<'a> IntoIterator for &Debug<'a> {
 pub struct Iter<'a> {
     prefix: Option<char>,
     source: &'a [u8],
-    literal: ByteLiteral,
+    literal: InvalidUtf8ByteSequence,
     suffix: Option<char>,
     options: &'static str,
     encoding: &'static str,
@@ -82,14 +83,20 @@ impl<'a> Iterator for Iter<'a> {
             let next = match ch {
                 // '/' is the `Regexp` literal delimeter, so escape it.
                 Some('/') => {
-                    self.literal = ByteLiteral::one(b'/');
+                    // While not an invalid byte, we rely on the documented
+                    // behavior of `InvalidUtf8ByteSequence` to always escape
+                    // any bytes given to it.
+                    self.literal = InvalidUtf8ByteSequence::with_byte(b'/');
                     Some('\\')
                 }
                 Some(ch) => Some(ch),
                 // Otherwise, we've gotten invalid UTF-8, which means this is not an
                 // printable char.
                 None => {
-                    self.literal = ByteLiteral::from(&self.source[..size]);
+                    // This conversion is safe to unwrap due to the documented
+                    // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
+                    // which indicate that `size` is always in the range of 0..=3.
+                    self.literal = InvalidUtf8ByteSequence::try_from(&self.source[..size]).unwrap();
                     // `size` is non-zero because `pattern` is non-empty.
                     // `Literal`s created from > one byte are always non-empty.
                     self.literal.next()
@@ -114,77 +121,6 @@ impl<'a> Iterator for Iter<'a> {
 }
 
 impl<'a> FusedIterator for Iter<'a> {}
-
-#[derive(Default, Debug, Clone)]
-struct ByteLiteral {
-    one: Option<Literal>,
-    two: Option<Literal>,
-    three: Option<Literal>,
-}
-
-impl ByteLiteral {
-    #[inline]
-    const fn empty() -> Self {
-        Self {
-            one: None,
-            two: None,
-            three: None,
-        }
-    }
-
-    #[inline]
-    fn one(byte: u8) -> Self {
-        Self {
-            one: Some(Literal::from(byte)),
-            two: None,
-            three: None,
-        }
-    }
-
-    #[inline]
-    fn two(left: u8, right: u8) -> Self {
-        Self {
-            one: Some(Literal::from(left)),
-            two: Some(Literal::from(right)),
-            three: None,
-        }
-    }
-
-    #[inline]
-    fn three(left: u8, mid: u8, right: u8) -> Self {
-        Self {
-            one: Some(Literal::from(left)),
-            two: Some(Literal::from(mid)),
-            three: Some(Literal::from(right)),
-        }
-    }
-}
-
-impl<'a> From<&'a [u8]> for ByteLiteral {
-    #[inline]
-    fn from(bytes: &'a [u8]) -> Self {
-        match *bytes {
-            [] => Self::default(),
-            [byte] => Self::one(byte),
-            [left, right] => Self::two(left, right),
-            [left, mid, right] => Self::three(left, mid, right),
-            _ => panic!("Invalid UTF-8 byte literal sequences can be at most three bytes"),
-        }
-    }
-}
-
-impl Iterator for ByteLiteral {
-    type Item = char;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        self.one
-            .as_mut()
-            .and_then(Iterator::next)
-            .or_else(|| self.two.as_mut().and_then(Iterator::next))
-            .or_else(|| self.three.as_mut().and_then(Iterator::next))
-    }
-}
 
 #[cfg(test)]
 mod tests {
