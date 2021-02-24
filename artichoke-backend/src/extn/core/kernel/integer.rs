@@ -348,3 +348,99 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Error
         Err(ArgumentError::from(message).into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test::prelude::*;
+    use bstr::ByteSlice;
+
+    use super::{method as integer, Radix};
+
+    #[test]
+    fn no_digits_with_base_prefix() {
+        let result = integer("0x".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0x""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("0b".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0b""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("0o".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0o""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("o".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "o""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("0X".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0X""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("0B".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0B""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("0O".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0O""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("O".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message(),
+            r#"invalid value for Integer(): "O""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn no_digits_with_invalid_base_prefix() {
+        let result = integer("0z".into(), None);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0z""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("0z".into(), Radix::new(12));
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0z""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    #[should_panic] // not implemented
+    fn invalid_radix_has_precedence_over_parse_failure() {
+        let result = integer("0z".into(), Radix::new(12000));
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            // should be:
+            b"invalid radix 12000".as_bstr()
+        );
+    }
+}
