@@ -14,7 +14,7 @@ categories = ["os", "wasm"]
 
 [dependencies]
 bstr = { version = "0.2, >= 0.2.4", default-features = false }
-scolapasta-string-escape = { version = "0.1", path = "../scolapasta-string-escape" }
+scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", default-features = false }
 
 [features]
 default = ["system-env"]

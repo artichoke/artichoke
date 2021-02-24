@@ -1,6 +1,6 @@
 [package]
 name = "scolapasta-string-escape"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 description = """
@@ -14,6 +14,12 @@ categories = ["encoding", "no-std", "parser-implementations"]
 
 [dependencies]
 bstr = { version = "0.2, >= 0.2.4", default-features = false }
+
+[features]
+default = ["std"]
+# By default, `scolapasta-string-escape` is `no_std`. This feature enables
+# `std::error::Error` impls.
+std = []
 
 [package.metadata.docs.rs]
 all-features = true

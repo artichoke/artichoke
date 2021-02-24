@@ -93,6 +93,9 @@
 #[cfg(any(test, doctest))]
 extern crate alloc;
 
+#[cfg(feature = "std")]
+extern crate std;
+
 // Ensure code blocks in README.md compile
 #[cfg(doctest)]
 macro_rules! readme {
