@@ -6,13 +6,12 @@ use core::fmt;
 use core::num::NonZeroUsize;
 use std::borrow::Cow;
 
-pub mod debug;
+mod debug;
 mod encoding;
 mod error;
 mod options;
 mod regexp;
 
-#[doc(inline)]
 pub use debug::Debug;
 pub use encoding::{Encoding, InvalidEncodingError};
 pub use error::{ArgumentError, Error, RegexpError, SyntaxError};
