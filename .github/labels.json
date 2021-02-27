@@ -70,6 +70,11 @@
     "description": "Area: Optional Ruby Standard Library."
   },
   {
+    "name": "A-packaging",
+    "color": "f7e101",
+    "description": "Area: Packaging releases for distribution."
+  },
+  {
     "name": "A-parallelism",
     "color": "f7e101",
     "description": "Area: Multi-threading and true parallelism at an interpreter level."
