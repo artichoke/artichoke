@@ -24,21 +24,21 @@ pub fn div(interp: &mut Artichoke, value: Value, denominator: Value) -> Result<V
 pub fn is_allbits(interp: &mut Artichoke, value: Value, mask: Value) -> Result<Value, Error> {
     let value = value.try_into::<Integer>(interp)?;
     let mask = implicitly_convert_to_int(interp, mask)?;
-    let result = value.is_allbits(mask)?;
+    let result = value.is_allbits(mask);
     Ok(interp.convert(result))
 }
 
 pub fn is_anybits(interp: &mut Artichoke, value: Value, mask: Value) -> Result<Value, Error> {
     let value = value.try_into::<Integer>(interp)?;
     let mask = implicitly_convert_to_int(interp, mask)?;
-    let result = value.is_anybits(mask)?;
+    let result = value.is_anybits(mask);
     Ok(interp.convert(result))
 }
 
 pub fn is_nobits(interp: &mut Artichoke, value: Value, mask: Value) -> Result<Value, Error> {
     let value = value.try_into::<Integer>(interp)?;
     let mask = implicitly_convert_to_int(interp, mask)?;
-    let result = value.is_nobits(mask)?;
+    let result = value.is_nobits(mask);
     Ok(interp.convert(result))
 }
 
