@@ -1,24 +1,18 @@
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
-
-//! This integration test checks for memory leaks that stem from improper
-//! arena handling in `ValueLike::funcall`.
-//!
-//! Checks for memory leaks stemming from improperly grabage collecting Ruby
-//! objects created in C functions, like the call to `sys::mrb_funcall_argv`.
-//!
-//! This test creates a 1MB Ruby string and calls `dup` in a loop. The test
-//! reuses one artichoke interpreter for all `ITERATIONS`.
-//!
-//! If resident memory increases more than 10MB during the test, we likely are
-//! leaking memory.
+// These integration tests checks for memory leaks that stem from improper
+// arena handling in `Value::funcall`.
+//
+// Checks for memory leaks stemming from improperly grabage collecting Ruby
+// objects created in C functions, like the call to `sys::mrb_funcall_argv`.
+//
+// This test creates a 1MB Ruby string and calls `dup` in a loop. The test
+// reuses one artichoke interpreter for all `ITERATIONS`.
 
 use artichoke_backend::prelude::*;
 
 const ITERATIONS: usize = 100;
 
 #[test]
-fn funcall_arena_leak() {
+fn arena() {
     let mut interp = artichoke_backend::interpreter().unwrap();
     let s = interp.convert_mut("a".repeat(1024 * 1024));
 

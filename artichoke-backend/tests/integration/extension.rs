@@ -1,9 +1,3 @@
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
-
-#[macro_use]
-extern crate artichoke_backend;
-
 use artichoke_backend::extn::prelude::*;
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
