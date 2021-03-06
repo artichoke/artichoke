@@ -14,8 +14,7 @@ jobs:
     name: Build Rust API docs
     runs-on: ubuntu-latest
     env:
-      RUSTFLAGS: -D warnings
-      RUSTDOCFLAGS: -D warnings --cfg docsrs
+      RUSTDOCFLAGS: -D warnings -D rustdoc::broken_intra_doc_links --cfg docsrs
       RUST_BACKTRACE: 1
 
     steps:

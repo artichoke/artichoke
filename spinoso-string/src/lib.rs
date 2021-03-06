@@ -5,7 +5,6 @@
 #![allow(clippy::option_if_let_else)]
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
-#![warn(broken_intra_doc_links)]
 // TODO: warn on missing docs once crate is API-complete.
 // #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]

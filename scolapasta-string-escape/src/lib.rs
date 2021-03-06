@@ -7,7 +7,6 @@
 #![allow(clippy::option_if_let_else)]
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
-#![warn(broken_intra_doc_links)]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]

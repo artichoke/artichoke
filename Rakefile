@@ -108,15 +108,13 @@ end
 
 desc 'Generate Rust API documentation'
 task :doc do
-  ENV['RUSTFLAGS'] = '-D warnings'
-  ENV['RUSTDOCFLAGS'] = '-D warnings --cfg docsrs'
+  ENV['RUSTDOCFLAGS'] = '-D warnings -D rustdoc::broken_intra_doc_links --cfg docsrs'
   sh 'rustup run --install nightly cargo doc --workspace'
 end
 
 desc 'Generate Rust API documentation and open it in a web browser'
 task :'doc:open' do
-  ENV['RUSTFLAGS'] = '-D warnings'
-  ENV['RUSTDOCFLAGS'] = '-D warnings --cfg docsrs'
+  ENV['RUSTDOCFLAGS'] = '-D warnings -D rustdoc::broken_intra_doc_links --cfg docsrs'
   sh 'rustup run --install nightly cargo doc --workspace --open'
 end
 
@@ -130,6 +128,15 @@ end
 desc 'Run Artichoke unit tests'
 task :test do
   sh 'cargo test --workspace'
+end
+
+desc 'Run Artichoke with LeakSanitizer'
+task :'sanitizer:leak' do
+  ENV['RUSTFLAGS'] = '-Z sanitizer=leak'
+  ENV['RUST_BACKTRACE'] = '1'
+  host = `rustc -vV | grep host | cut -d' ' -f2`.chomp
+  command = ['rustup', 'run', '--install', 'nightly', 'cargo', 'test', '--workspace', '--all-features', '--target', host]
+  sh command.shelljoin
 end
 
 namespace :release do

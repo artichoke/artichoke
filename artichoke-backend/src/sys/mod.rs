@@ -1,5 +1,3 @@
-#![allow(unknown_lints)]
-#![warn(broken_intra_doc_links)]
 #![warn(missing_docs)]
 
 //! Rust bindings for mruby, customized for Artichoke.
