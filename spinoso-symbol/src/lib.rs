@@ -6,6 +6,7 @@
 #![allow(clippy::map_err_ignore)]
 #![allow(clippy::option_if_let_else)]
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
+#![allow(renamed_and_removed_lints)]
 #![allow(unknown_lints)]
 #![warn(broken_intra_doc_links)]
 #![warn(missing_docs)]

@@ -1,3 +1,4 @@
+#![allow(renamed_and_removed_lints)]
 #![allow(unknown_lints)]
 #![warn(broken_intra_doc_links)]
 #![warn(missing_docs)]

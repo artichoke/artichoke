@@ -4,6 +4,7 @@
 #![warn(clippy::needless_borrow)]
 // https://github.com/rust-lang/rust-clippy/pull/5998#issuecomment-731855891
 #![allow(clippy::map_err_ignore)]
+#![allow(renamed_and_removed_lints)]
 #![allow(unknown_lints)]
 #![warn(broken_intra_doc_links)]
 #![warn(missing_docs)]
