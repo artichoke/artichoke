@@ -134,7 +134,7 @@ desc 'Run Artichoke with LeakSanitizer'
 task :'sanitizer:leak' do
   ENV['RUSTFLAGS'] = '-Z sanitizer=leak'
   ENV['RUST_BACKTRACE'] = '1'
-  host = %x[rustc -vV | grep host | cut -d' ' -f2].chomp
+  host = `rustc -vV | grep host | cut -d' ' -f2`.chomp
   command = ['rustup', 'run', '--install', 'nightly', 'cargo', 'test', '--workspace', '--all-features', '--target', host]
   sh command.shelljoin
 end
