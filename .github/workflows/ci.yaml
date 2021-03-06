@@ -33,6 +33,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
         with:
@@ -67,6 +68,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
 
@@ -107,6 +109,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
         with:
@@ -136,6 +139,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
         with:
@@ -172,6 +176,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ".ruby-version"
+          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
 
