@@ -108,15 +108,13 @@ end
 
 desc 'Generate Rust API documentation'
 task :doc do
-  ENV['RUSTFLAGS'] = '-D warnings'
-  ENV['RUSTDOCFLAGS'] = '-D warnings --cfg docsrs'
+  ENV['RUSTDOCFLAGS'] = '-D warnings -D rustdoc::broken_intra_doc_links --cfg docsrs'
   sh 'rustup run --install nightly cargo doc --workspace'
 end
 
 desc 'Generate Rust API documentation and open it in a web browser'
 task :'doc:open' do
-  ENV['RUSTFLAGS'] = '-D warnings'
-  ENV['RUSTDOCFLAGS'] = '-D warnings --cfg docsrs'
+  ENV['RUSTDOCFLAGS'] = '-D warnings -D rustdoc::broken_intra_doc_links --cfg docsrs'
   sh 'rustup run --install nightly cargo doc --workspace --open'
 end
 
