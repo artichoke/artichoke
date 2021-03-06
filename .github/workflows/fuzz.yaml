@@ -43,7 +43,7 @@ jobs:
     name: Compile and test with LeakSanitizer
     runs-on: ubuntu-latest
     env:
-      RUSTFLAGS: -D warnings -Z sanitizer=leak
+      RUSTFLAGS: -Z sanitizer=leak
       RUST_BACKTRACE: 1
     steps:
       - name: Checkout repository

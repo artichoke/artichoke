@@ -132,6 +132,15 @@ task :test do
   sh 'cargo test --workspace'
 end
 
+desc 'Run Artichoke with LeakSanitizer'
+task :'sanitizer:leak' do
+  ENV['RUSTFLAGS'] = '-Z sanitizer=leak'
+  ENV['RUST_BACKTRACE'] = '1'
+  host = %x[rustc -vV | grep host | cut -d' ' -f2].chomp
+  command = ['rustup', 'run', '--install', 'nightly', 'cargo', 'test', '--workspace', '--all-features', '--target', host]
+  sh command.shelljoin
+end
+
 namespace :release do
   link_check_files = FileList.new('**/*.md') do |f|
     f.exclude('node_modules/**/*')
