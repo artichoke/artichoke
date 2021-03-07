@@ -54,7 +54,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     hash::init(interp)?;
     numeric::init(interp)?;
     integer::mruby::init(interp)?;
-    float::init(interp)?;
+    float::mruby::init(interp)?;
     kernel::mruby::init(interp)?;
     #[cfg(feature = "core-regexp")]
     matchdata::mruby::init(interp)?;
