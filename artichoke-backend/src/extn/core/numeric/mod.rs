@@ -3,6 +3,8 @@ use std::ffi::CStr;
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
+mod ffi;
+
 const NUMERIC_CSTR: &CStr = cstr::cstr!("Numeric");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

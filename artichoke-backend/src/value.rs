@@ -25,6 +25,13 @@ pub const MRB_FUNCALL_ARGC_MAX: usize = 16;
 #[derive(Default, Debug, Clone, Copy)]
 pub struct Value(sys::mrb_value);
 
+impl From<Value> for sys::mrb_value {
+    /// Extract the inner [`sys::mrb_value`] from this [`Value`].
+    fn from(value: Value) -> Self {
+        value.0
+    }
+}
+
 impl From<sys::mrb_value> for Value {
     /// Construct a new [`Value`] from a [`sys::mrb_value`].
     fn from(value: sys::mrb_value) -> Self {
