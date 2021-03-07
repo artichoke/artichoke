@@ -113,7 +113,7 @@ impl RegexpType for Lazy {
         self.regexp()?.inner().case_match(interp, haystack)
     }
 
-    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Error> {
+    fn is_match(&self, haystack: &[u8], pos: Option<i64>) -> Result<bool, Error> {
         self.regexp()?.inner().is_match(haystack, pos)
     }
 
@@ -121,7 +121,7 @@ impl RegexpType for Lazy {
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-        pos: Option<Int>,
+        pos: Option<i64>,
         block: Option<Block>,
     ) -> Result<Value, Error> {
         self.regexp()?.inner().match_(interp, haystack, pos, block)

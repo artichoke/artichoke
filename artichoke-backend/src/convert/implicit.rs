@@ -3,13 +3,13 @@ use artichoke_core::value::Value as _;
 use spinoso_exception::TypeError;
 
 use crate::error::Error;
-use crate::types::{Int, Ruby};
+use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
 
 /// Attempt to implicitly convert a [`Value`] to an integer.
 ///
-/// Attempt to extract an [`Int`] from the given `Value` by trying the following
+/// Attempt to extract an [`i64`] from the given `Value` by trying the following
 /// conversions:
 ///
 /// - If the given value is a Ruby integer, return the inner integer.
@@ -68,8 +68,8 @@ use crate::Artichoke;
 ///   `:to_int` method.
 /// - The given value is not an integer and raises an error in its `:to_int`
 ///   method.
-pub fn implicitly_convert_to_int(interp: &mut Artichoke, value: Value) -> Result<Int, Error> {
-    match value.try_into::<Option<Int>>(interp) {
+pub fn implicitly_convert_to_int(interp: &mut Artichoke, value: Value) -> Result<i64, Error> {
+    match value.try_into::<Option<i64>>(interp) {
         // successful conversion: the given value is an integer.
         Ok(Some(num)) => return Ok(num),
         // `nil` does not implicitly convert to integer:
@@ -106,7 +106,7 @@ pub fn implicitly_convert_to_int(interp: &mut Artichoke, value: Value) -> Result
         // ArgumentError (a message)
         // ```
         let maybe = value.funcall(interp, "to_int", &[], None)?;
-        if let Ok(num) = maybe.try_into::<Int>(interp) {
+        if let Ok(num) = maybe.try_into::<i64>(interp) {
             // successful conversion: `#to_int` returned an integer.
             Ok(num)
         } else {

@@ -37,7 +37,7 @@ use backend::lazy::Lazy;
 use backend::onig::Onig;
 use backend::regex::utf8::Utf8;
 
-pub type NameToCaptureLocations = Vec<(Vec<u8>, Vec<Int>)>;
+pub type NameToCaptureLocations = Vec<(Vec<u8>, Vec<i64>)>;
 
 pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Error> {
     let mut idx = interp.active_regexp_globals()?;
@@ -228,7 +228,7 @@ impl Regexp {
         }
     }
 
-    pub fn is_match(&self, pattern: Option<&[u8]>, pos: Option<Int>) -> Result<bool, Error> {
+    pub fn is_match(&self, pattern: Option<&[u8]>, pos: Option<i64>) -> Result<bool, Error> {
         if let Some(pattern) = pattern {
             self.0.is_match(pattern, pos)
         } else {
@@ -240,7 +240,7 @@ impl Regexp {
         &self,
         interp: &mut Artichoke,
         pattern: Option<&[u8]>,
-        pos: Option<Int>,
+        pos: Option<i64>,
         block: Option<Block>,
     ) -> Result<Value, Error> {
         if let Some(pattern) = pattern {
@@ -266,7 +266,7 @@ impl Regexp {
         for (name, indexes) in captures {
             let mut fixnums = Vec::with_capacity(indexes.len());
             for idx in indexes {
-                if let Ok(idx) = Int::try_from(idx) {
+                if let Ok(idx) = i64::try_from(idx) {
                     fixnums.push(idx);
                 } else {
                     return Err(ArgumentError::with_message("string too long").into());
@@ -285,10 +285,10 @@ impl Regexp {
 
     #[inline]
     #[must_use]
-    pub fn options(&self) -> Int {
+    pub fn options(&self) -> i64 {
         let options = self.0.source().options().flags();
         let encoding = self.0.encoding().flags();
-        Int::from((options | encoding).bits())
+        i64::from((options | encoding).bits())
     }
 
     #[inline]

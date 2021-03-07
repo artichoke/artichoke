@@ -5,14 +5,14 @@ use artichoke_core::eval::Eval;
 use artichoke_core::value::Value as _;
 use spinoso_exception::TypeError;
 
-use crate::types::{Fp, Ruby};
+use crate::types::Ruby;
 use crate::value::Value;
 use crate::{Artichoke, Error};
 
 impl CoerceToNumeric for Artichoke {
     type Value = Value;
 
-    type Float = Fp;
+    type Float = f64;
 
     type Error = Error;
 

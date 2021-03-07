@@ -4,7 +4,7 @@ use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
 use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut, Value as _};
 use crate::error::Error;
 use crate::extn::core::array::Array;
-use crate::types::{Int, Ruby, Rust};
+use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -126,10 +126,10 @@ impl TryConvertMut<&[&str], Value> for Artichoke {
     }
 }
 
-impl TryConvertMut<Vec<Int>, Value> for Artichoke {
+impl TryConvertMut<Vec<i64>, Value> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, value: Vec<Int>) -> Result<Value, Self::Error> {
+    fn try_convert_mut(&mut self, value: Vec<i64>) -> Result<Value, Self::Error> {
         let iter = value.into_iter().map(|item| self.convert(item));
         let ary = Array::from_iter(iter);
         let value = Array::alloc_value(ary, self)?;
@@ -137,10 +137,10 @@ impl TryConvertMut<Vec<Int>, Value> for Artichoke {
     }
 }
 
-impl TryConvertMut<&[Int], Value> for Artichoke {
+impl TryConvertMut<&[i64], Value> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, value: &[Int]) -> Result<Value, Self::Error> {
+    fn try_convert_mut(&mut self, value: &[i64]) -> Result<Value, Self::Error> {
         let iter = value.iter().copied().map(|item| self.convert(item));
         let ary = Array::from_iter(iter);
         let value = Array::alloc_value(ary, self)?;
@@ -370,10 +370,10 @@ impl<'a> TryConvertMut<Value, Vec<Option<&'a str>>> for Artichoke {
     }
 }
 
-impl TryConvertMut<Value, Vec<Int>> for Artichoke {
+impl TryConvertMut<Value, Vec<i64>> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<Int>, Self::Error> {
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<i64>, Self::Error> {
         if let Ruby::Array = value.ruby_type() {
             let array = unsafe { Array::unbox_from_value(&mut value, self)? };
             array.iter().map(|elem| self.try_convert(elem)).collect()
@@ -400,7 +400,7 @@ mod tests {
 
     quickcheck! {
         #[allow(clippy::needless_pass_by_value)]
-        fn arr_int_borrowed(arr: Vec<Int>) -> bool {
+        fn arr_int_borrowed(arr: Vec<i64>) -> bool {
             let mut interp = interpreter().unwrap();
             // Borrowed converter
             let value = interp.try_convert_mut(arr.as_slice()).unwrap();
@@ -414,7 +414,7 @@ mod tests {
             if empty != arr.is_empty() {
                 return false;
             }
-            let recovered: Vec<Int> = interp.try_convert_mut(value).unwrap();
+            let recovered: Vec<i64> = interp.try_convert_mut(value).unwrap();
             if recovered != arr {
                 return false;
             }
@@ -422,7 +422,7 @@ mod tests {
         }
 
         #[allow(clippy::needless_pass_by_value)]
-        fn arr_int_owned(arr: Vec<Int>) -> bool {
+        fn arr_int_owned(arr: Vec<i64>) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
             let value = interp.try_convert_mut(arr.to_vec()).unwrap();
@@ -436,7 +436,7 @@ mod tests {
             if empty != arr.is_empty() {
                 return false;
             }
-            let recovered: Vec<Int> = interp.try_convert_mut(value).unwrap();
+            let recovered: Vec<i64> = interp.try_convert_mut(value).unwrap();
             if recovered != arr {
                 return false;
             }

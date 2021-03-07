@@ -46,7 +46,7 @@ impl HeapAllocatedData for Rng {
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Seed {
-    New(Int),
+    New(i64),
     None,
 }
 
@@ -56,8 +56,8 @@ impl Default for Seed {
     }
 }
 
-impl From<Int> for Seed {
-    fn from(seed: Int) -> Seed {
+impl From<i64> for Seed {
+    fn from(seed: i64) -> Seed {
         Seed::New(seed)
     }
 }
@@ -108,15 +108,15 @@ impl TryConvertMut<Option<Value>, Seed> for Artichoke {
 
 #[allow(clippy::cast_sign_loss)]
 #[allow(clippy::cast_possible_wrap)]
-pub fn new_seed() -> Result<Int, Error> {
+pub fn new_seed() -> Result<i64, Error> {
     // TODO: return a bignum instead of truncating.
     let [a, b, _, _] = spinoso_random::new_seed()?;
     let seed = u64::from(a) << 32 | u64::from(b);
-    let seed = seed as Int;
+    let seed = seed as i64;
     Ok(seed)
 }
 
-pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Error> {
+pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<i64, Error> {
     let old_seed = interp.prng()?.seed();
     let new_random = Random::with_array_seed(seed.to_mt_seed())?;
     // "Reseed" by replacing the RNG with a newly seeded one.
@@ -125,7 +125,7 @@ pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<Int, Error> {
     Ok(old_seed)
 }
 
-pub fn urandom(size: Int) -> Result<Vec<u8>, Error> {
+pub fn urandom(size: i64) -> Result<Vec<u8>, Error> {
     match usize::try_from(size) {
         Ok(0) => Ok(Vec::new()),
         Ok(len) => {
@@ -196,7 +196,7 @@ impl Random {
         Ok(Self(random))
     }
 
-    pub fn bytes(&mut self, size: Int) -> Result<Vec<u8>, Error> {
+    pub fn bytes(&mut self, size: i64) -> Result<Vec<u8>, Error> {
         match usize::try_from(size) {
             Ok(0) => Ok(Vec::new()),
             Ok(len) => {
@@ -216,11 +216,11 @@ impl Random {
     #[must_use]
     #[allow(clippy::cast_sign_loss)]
     #[allow(clippy::cast_possible_wrap)]
-    pub fn seed(&self) -> Int {
+    pub fn seed(&self) -> i64 {
         // TODO: return a bignum instead of truncating.
         let [a, b, _, _] = self.as_ref().seed();
         let seed = u64::from(a) << 32 | u64::from(b);
-        seed as Int
+        seed as i64
     }
 }
 

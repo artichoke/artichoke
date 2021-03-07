@@ -102,7 +102,7 @@ pub fn match_operator(interp: &mut Artichoke, mut regexp: Value, mut pattern: Va
         unsafe { implicitly_convert_to_nilable_string(interp, &mut pattern)? }
     };
     let pos = regexp.match_operator(interp, pattern)?;
-    match pos.map(Int::try_from) {
+    match pos.map(i64::try_from) {
         Some(Ok(pos)) => Ok(interp.convert(pos)),
         Some(Err(_)) => Err(ArgumentError::with_message("string too long").into()),
         None => Ok(Value::nil()),
@@ -125,7 +125,7 @@ pub fn hash(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let hash = regexp.hash();
     #[allow(clippy::cast_possible_wrap)]
-    Ok(interp.convert(hash as Int))
+    Ok(interp.convert(hash as i64))
 }
 
 pub fn inspect(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {

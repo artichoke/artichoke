@@ -29,7 +29,7 @@ pub fn init(interp: &mut Artichoke, config: ReleaseMetadata<'_>) -> InitializeRe
 
     let patchlevel = config
         .ruby_patchlevel()
-        .parse::<Int>()
+        .parse::<i64>()
         .map_err(|_| NotDefinedError::global_constant("RUBY_PATCHLEVEL"))?;
     let patchlevel = interp.convert(patchlevel);
     interp.define_global_constant("RUBY_PATCHLEVEL", patchlevel)?;
@@ -44,7 +44,7 @@ pub fn init(interp: &mut Artichoke, config: ReleaseMetadata<'_>) -> InitializeRe
 
     let revision = config
         .ruby_revision()
-        .parse::<Int>()
+        .parse::<i64>()
         .map_err(|_| NotDefinedError::global_constant("RUBY_REVISION"))?;
     let revision = interp.convert(revision);
     interp.define_global_constant("RUBY_REVISION", revision)?;

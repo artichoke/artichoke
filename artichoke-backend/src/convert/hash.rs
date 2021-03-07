@@ -6,13 +6,13 @@ use crate::core::{ConvertMut, TryConvertMut, Value as _};
 use crate::error::Error;
 use crate::extn::core::array::Array;
 use crate::sys;
-use crate::types::{Int, Ruby, Rust};
+use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
 impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Vec<(Value, Value)>) -> Value {
-        let capa = Int::try_from(value.len()).unwrap_or_default();
+        let capa = sys::mrb_int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
         let hash = self.protect(Value::from(hash.unwrap()));
         for (key, val) in value {
@@ -24,11 +24,11 @@ impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
     }
 }
 
-impl TryConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
+impl TryConvertMut<Vec<(Vec<u8>, Vec<i64>)>, Value> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<Int>)>) -> Result<Value, Self::Error> {
-        let capa = Int::try_from(value.len()).unwrap_or_default();
+    fn try_convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<i64>)>) -> Result<Value, Self::Error> {
+        let capa = sys::mrb_int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
         let hash = self.protect(Value::from(hash.unwrap()));
         for (key, val) in value {
@@ -44,7 +44,7 @@ impl TryConvertMut<Vec<(Vec<u8>, Vec<Int>)>, Value> for Artichoke {
 
 impl ConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
     fn convert_mut(&mut self, value: HashMap<Vec<u8>, Vec<u8>>) -> Value {
-        let capa = Int::try_from(value.len()).unwrap_or_default();
+        let capa = sys::mrb_int::try_from(value.len()).unwrap_or_default();
         let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
         let hash = self.protect(Value::from(hash.unwrap()));
         for (key, val) in value {
@@ -61,7 +61,7 @@ impl ConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
 impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke {
     fn convert_mut(&mut self, value: Option<HashMap<Vec<u8>, Option<Vec<u8>>>>) -> Value {
         if let Some(value) = value {
-            let capa = Int::try_from(value.len()).unwrap_or_default();
+            let capa = sys::mrb_int::try_from(value.len()).unwrap_or_default();
             let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
             let hash = self.protect(Value::from(hash.unwrap()));
             for (key, val) in value {

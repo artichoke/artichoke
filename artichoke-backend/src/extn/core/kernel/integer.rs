@@ -294,7 +294,7 @@ impl<'a> ParseState<'a> {
     }
 }
 
-pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Error> {
+pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error> {
     let mut state = ParseState::new(arg);
     let mut chars = arg.inner().chars().skip_while(|c| c.is_whitespace()).peekable();
     let mut prev = None::<char>;
@@ -332,10 +332,10 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<Int, Error
     let (src, src_radix) = state.parse()?;
 
     let parsed_int = match (radix, src_radix) {
-        (Some(x), Some(y)) if x == y => Int::from_str_radix(src.as_str(), x.as_u32()).ok(),
-        (None, None) => Int::from_str(src.as_str()).ok(),
+        (Some(x), Some(y)) if x == y => i64::from_str_radix(src.as_str(), x.as_u32()).ok(),
+        (None, None) => i64::from_str(src.as_str()).ok(),
         (Some(x), None) | (None, Some(x)) if (2..=36).contains(&x.as_u32()) => {
-            Int::from_str_radix(src.as_str(), x.as_u32()).ok()
+            i64::from_str_radix(src.as_str(), x.as_u32()).ok()
         }
         _ => None,
     };

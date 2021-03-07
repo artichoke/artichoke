@@ -10,7 +10,7 @@ pub mod trampoline;
 
 #[repr(transparent)]
 #[derive(Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Integer(Int);
+pub struct Integer(i64);
 
 impl fmt::Debug for Integer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -41,9 +41,9 @@ impl TryConvert<Value, Integer> for Artichoke {
     }
 }
 
-impl From<Int> for Integer {
+impl From<i64> for Integer {
     #[inline]
-    fn from(int: Int) -> Self {
+    fn from(int: i64) -> Self {
         Self(int)
     }
 }
@@ -69,9 +69,9 @@ impl From<Integer> for Outcome {
     }
 }
 
-impl From<Int> for Outcome {
+impl From<i64> for Outcome {
     #[inline]
-    fn from(int: Int) -> Self {
+    fn from(int: i64) -> Self {
         Self::Integer(int)
     }
 }
@@ -150,7 +150,7 @@ impl Integer {
     }
 
     #[inline]
-    pub fn bit(self, bit: Int) -> Result<Self, Error> {
+    pub fn bit(self, bit: i64) -> Result<Self, Error> {
         if let Ok(bit) = u32::try_from(bit) {
             Ok(self.as_i64().checked_shr(bit).map_or(0, |v| v & 1).into())
         } else {
@@ -161,7 +161,7 @@ impl Integer {
     pub fn div(self, interp: &mut Artichoke, denominator: Value) -> Result<Outcome, Error> {
         match denominator.ruby_type() {
             Ruby::Fixnum => {
-                let denom = denominator.try_into::<Int>(interp)?;
+                let denom = denominator.try_into::<i64>(interp)?;
                 let value = self.as_i64();
                 if denom == 0 {
                     Err(ZeroDivisionError::with_message("divided by 0").into())
@@ -172,7 +172,7 @@ impl Integer {
                 }
             }
             Ruby::Float => {
-                let denom = denominator.try_into::<Fp>(interp)?;
+                let denom = denominator.try_into::<f64>(interp)?;
                 Ok((self.as_f64() / denom).into())
             }
             _ => {
@@ -194,23 +194,25 @@ impl Integer {
     }
 
     #[must_use]
-    pub fn is_allbits(self, mask: Int) -> bool {
+    pub const fn is_allbits(self, mask: i64) -> bool {
         self.as_i64() & mask == mask
     }
 
     #[must_use]
-    pub fn is_anybits(self, mask: Int) -> bool {
+    pub const fn is_anybits(self, mask: i64) -> bool {
         self.as_i64() & mask != 0
     }
 
     #[must_use]
-    pub fn is_nobits(self, mask: Int) -> bool {
+    pub const fn is_nobits(self, mask: i64) -> bool {
         self.as_i64() & mask == 0
     }
 
     #[must_use]
     pub const fn size() -> usize {
-        mem::size_of::<Int>()
+        const SIZE_OF_INT: usize = mem::size_of::<i64>();
+
+        SIZE_OF_INT
     }
 }
 
@@ -231,13 +233,13 @@ mod tests {
                         return false;
                     }
                     let expr = format!("0 / {}", x).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
                     quotient == 0
                 }
                 (x, y) => {
                     let expr = format!("{} / {}", x, y).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                    let expected = Int::from(x) / Int::from(y);
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let expected = i64::from(x) / i64::from(y);
                     quotient == expected
                 }
             }
@@ -253,13 +255,13 @@ mod tests {
                         return false;
                     }
                     let expr = format!("0.send('/', {})", x).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
                     quotient == 0
                 }
                 (x, y) => {
                     let expr = format!("{}.send('/', {})", x, y).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
-                    let expected = Int::from(x) / Int::from(y);
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let expected = i64::from(x) / i64::from(y);
                     quotient == expected
                 }
             }
@@ -275,18 +277,18 @@ mod tests {
                         return false;
                     }
                     let expr = format!("0 / -{}", x).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
                     quotient == 0
                 }
                 (x, y) => {
                     let expr = format!("-{} / {}", x, y).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
                     if x % y == 0 {
-                        let expected = -Int::from(x) / Int::from(y);
+                        let expected = -i64::from(x) / i64::from(y);
                         quotient == expected
                     } else {
                         // Round negative integer division toward negative infinity.
-                        let expected = (-Int::from(x) / Int::from(y)) - 1;
+                        let expected = (-i64::from(x) / i64::from(y)) - 1;
                         quotient == expected
                     }
                 }
@@ -303,18 +305,18 @@ mod tests {
                         return false;
                     }
                     let expr = format!("0.send('/', -{})", x).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
                     quotient == 0
                 }
                 (x, y) => {
                     let expr = format!("-{}.send('/', {})", x, y).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<Int>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
                     if x % y == 0 {
-                        let expected = -Int::from(x) / Int::from(y);
+                        let expected = -i64::from(x) / i64::from(y);
                         quotient == expected
                     } else {
                         // Round negative integer division toward negative infinity.
-                        let expected = (-Int::from(x) / Int::from(y)) - 1;
+                        let expected = (-i64::from(x) / i64::from(y)) - 1;
                         quotient == expected
                     }
                 }
