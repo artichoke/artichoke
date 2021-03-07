@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+use std::fmt;
 use std::mem;
 
 use crate::extn::core::numeric::{self, Coercion, Outcome};
@@ -7,8 +8,21 @@ use crate::extn::prelude::*;
 pub mod mruby;
 pub mod trampoline;
 
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(transparent)]
+#[derive(Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Integer(Int);
+
+impl fmt::Debug for Integer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl fmt::Display for Integer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 impl Convert<Integer, Value> for Artichoke {
     #[inline]
