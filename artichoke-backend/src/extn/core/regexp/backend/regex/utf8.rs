@@ -210,7 +210,7 @@ impl RegexpType for Utf8 {
         }
     }
 
-    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Error> {
+    fn is_match(&self, haystack: &[u8], pos: Option<i64>) -> Result<bool, Error> {
         let haystack = str::from_utf8(haystack).map_err(|_| {
             ArgumentError::with_message("regex crate utf8 backend for Regexp only supports UTF-8 haystack")
         })?;
@@ -241,7 +241,7 @@ impl RegexpType for Utf8 {
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-        pos: Option<Int>,
+        pos: Option<i64>,
         block: Option<Block>,
     ) -> Result<Value, Error> {
         let haystack = str::from_utf8(haystack).map_err(|_| {

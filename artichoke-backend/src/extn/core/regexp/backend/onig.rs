@@ -200,7 +200,7 @@ impl RegexpType for Onig {
         }
     }
 
-    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Error> {
+    fn is_match(&self, haystack: &[u8], pos: Option<i64>) -> Result<bool, Error> {
         let haystack = str::from_utf8(haystack)
             .map_err(|_| ArgumentError::with_message("Oniguruma backend for Regexp only supports UTF-8 haystacks"))?;
         let haystack_char_len = haystack.chars().count();
@@ -230,7 +230,7 @@ impl RegexpType for Onig {
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-        pos: Option<Int>,
+        pos: Option<i64>,
         block: Option<Block>,
     ) -> Result<Value, Error> {
         let haystack = str::from_utf8(haystack)

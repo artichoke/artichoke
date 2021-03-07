@@ -1,38 +1,5 @@
 use crate::sys;
 
-/// Artichoke native floating point type.
-///
-/// `Fp` is the backend to the [`Float`](crate::extn::core::float::Float) class.
-///
-/// The `Fp` type alias is for the `f64` floating point primitive.
-///
-/// ```
-/// # use std::any::TypeId;
-/// # use std::mem;
-/// # use artichoke_backend::types::Fp;
-/// assert_eq!(mem::size_of::<f64>(), mem::size_of::<Fp>());
-/// assert_eq!(TypeId::of::<f64>(), TypeId::of::<Fp>());
-/// ```
-pub type Fp = f64;
-
-/// Artichoke native integer type.
-///
-/// `Int` is the fixed size (`Fixnum`) backend to the
-/// [`Integer`](crate::extn::core::integer::Integer) class.
-///
-/// The `Int` type alias is for the `i64` integer primitive.
-///
-/// ```
-/// # use std::any::TypeId;
-/// # use std::mem;
-/// # use artichoke_backend::types::Int;
-/// assert_eq!(mem::size_of::<i64>(), mem::size_of::<Int>());
-/// assert_eq!(i64::MIN, Int::MIN);
-/// assert_eq!(i64::MAX, Int::MAX);
-/// assert_eq!(TypeId::of::<i64>(), TypeId::of::<Int>());
-/// ```
-pub type Int = i64;
-
 pub use crate::core::{Ruby, Rust};
 
 /// Parse a [`Ruby`] type classifier from a [`sys::mrb_value`].

@@ -4,28 +4,28 @@ use crate::convert::{BoxIntoRubyError, UnboxRubyError};
 use crate::core::{Convert, TryConvert, Value as _};
 use crate::error::Error;
 use crate::sys;
-use crate::types::{Int, Ruby, Rust};
+use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
 impl Convert<u8, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: u8) -> Value {
-        self.convert(Int::from(value))
+        self.convert(i64::from(value))
     }
 }
 
 impl Convert<u16, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: u16) -> Value {
-        self.convert(Int::from(value))
+        self.convert(i64::from(value))
     }
 }
 
 impl Convert<u32, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: u32) -> Value {
-        self.convert(Int::from(value))
+        self.convert(i64::from(value))
     }
 }
 
@@ -35,9 +35,9 @@ impl TryConvert<u64, Value> for Artichoke {
     fn try_convert(&self, value: u64) -> Result<Value, Self::Error> {
         // Safety
         //
-        // Integer Ruby Values do not need to be protected because they are
+        // i64eger Ruby Values do not need to be protected because they are
         // immediates and do not live on the mruby heap.
-        if let Ok(value) = Int::try_from(value) {
+        if let Ok(value) = i64::try_from(value) {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
         } else {
@@ -52,9 +52,9 @@ impl TryConvert<usize, Value> for Artichoke {
     fn try_convert(&self, value: usize) -> Result<Value, Self::Error> {
         // Safety
         //
-        // Integer Ruby Values do not need to be protected because they are
+        // i64eger Ruby Values do not need to be protected because they are
         // immediates and do not live on the mruby heap.
-        if let Ok(value) = Int::try_from(value) {
+        if let Ok(value) = i64::try_from(value) {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
         } else {
@@ -66,21 +66,21 @@ impl TryConvert<usize, Value> for Artichoke {
 impl Convert<i8, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: i8) -> Value {
-        self.convert(Int::from(value))
+        self.convert(i64::from(value))
     }
 }
 
 impl Convert<i16, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: i16) -> Value {
-        self.convert(Int::from(value))
+        self.convert(i64::from(value))
     }
 }
 
 impl Convert<i32, Value> for Artichoke {
     #[inline]
     fn convert(&self, value: i32) -> Value {
-        self.convert(Int::from(value))
+        self.convert(i64::from(value))
     }
 }
 
@@ -90,9 +90,9 @@ impl TryConvert<isize, Value> for Artichoke {
     fn try_convert(&self, value: isize) -> Result<Value, Self::Error> {
         // Safety
         //
-        // Integer Ruby Values do not need to be protected because they are
+        // i64eger Ruby Values do not need to be protected because they are
         // immediates and do not live on the mruby heap.
-        if let Ok(value) = Int::try_from(value) {
+        if let Ok(value) = i64::try_from(value) {
             let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
             Ok(Value::from(fixnum))
         } else {
@@ -101,35 +101,22 @@ impl TryConvert<isize, Value> for Artichoke {
     }
 }
 
-/// Converter for Artichoke native integer type.
-///
-/// The `Int` type alias must be `i64`.
-///
-/// ```
-/// # use std::any::TypeId;
-/// # use std::mem;
-/// # use artichoke_backend::types::Int;
-/// assert_eq!(mem::size_of::<i64>(), mem::size_of::<Int>());
-/// assert_eq!(i64::MIN, Int::MIN);
-/// assert_eq!(i64::MAX, Int::MAX);
-/// assert_eq!(TypeId::of::<i64>(), TypeId::of::<Int>());
-/// ```
-impl Convert<Int, Value> for Artichoke {
+impl Convert<i64, Value> for Artichoke {
     #[inline]
-    fn convert(&self, value: Int) -> Value {
+    fn convert(&self, value: i64) -> Value {
         // Safety
         //
-        // Integer Ruby Values do not need to be protected because they are
+        // i64eger Ruby Values do not need to be protected because they are
         // immediates and do not live on the mruby heap.
         let fixnum = unsafe { sys::mrb_sys_fixnum_value(value) };
         Value::from(fixnum)
     }
 }
 
-impl TryConvert<Value, Int> for Artichoke {
+impl TryConvert<Value, i64> for Artichoke {
     type Error = Error;
 
-    fn try_convert(&self, value: Value) -> Result<Int, Self::Error> {
+    fn try_convert(&self, value: Value) -> Result<i64, Self::Error> {
         if let Ruby::Fixnum = value.ruby_type() {
             let inner = value.inner();
             Ok(unsafe { sys::mrb_sys_fixnum_to_cint(inner) })
@@ -180,18 +167,18 @@ mod tests {
         let mut interp = interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<Int>(&interp);
+        let result = value.try_into::<i64>(&interp);
         assert!(result.is_err());
     }
 
     quickcheck! {
-        fn convert_to_fixnum(i: Int) -> bool {
+        fn convert_to_fixnum(i: i64) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(i);
             value.ruby_type() == Ruby::Fixnum
         }
 
-        fn fixnum_with_value(i: Int) -> bool {
+        fn fixnum_with_value(i: i64) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(i);
             let inner = value.inner();
@@ -199,17 +186,17 @@ mod tests {
             cint == i
         }
 
-        fn roundtrip(i: Int) -> bool {
+        fn roundtrip(i: i64) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(i);
-            let value = value.try_into::<Int>(&interp).unwrap();
+            let value = value.try_into::<i64>(&interp).unwrap();
             value == i
         }
 
         fn roundtrip_err(b: bool) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(b);
-            let value = value.try_into::<Int>(&interp);
+            let value = value.try_into::<i64>(&interp);
             value.is_err()
         }
     }

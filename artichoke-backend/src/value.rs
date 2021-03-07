@@ -15,7 +15,7 @@ use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::extn::core::symbol::Symbol;
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
-use crate::types::{self, Int, Ruby};
+use crate::types::{self, Ruby};
 use crate::Artichoke;
 
 /// Max argument count for function calls including initialize and yield.
@@ -112,7 +112,7 @@ impl Value {
         is_dead.unwrap_or_default()
     }
 
-    pub fn is_range(&self, interp: &mut Artichoke, len: Int) -> Result<Option<protect::Range>, Error> {
+    pub fn is_range(&self, interp: &mut Artichoke, len: i64) -> Result<Option<protect::Range>, Error> {
         let mut arena = interp.create_arena_savepoint()?;
         let result = unsafe {
             arena

@@ -7,8 +7,8 @@ use crate::sys::protect;
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ElementReference {
     Empty,
-    Index(Int),
-    StartLen(Int, usize),
+    Index(i64),
+    StartLen(i64, usize),
 }
 
 pub fn element_reference(
@@ -28,7 +28,7 @@ pub fn element_reference(
     } else if let Ok(index) = implicitly_convert_to_int(interp, elem) {
         Ok(ElementReference::Index(index))
     } else {
-        let rangelen = Int::try_from(ary_len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
+        let rangelen = i64::try_from(ary_len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
         if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
             if let Ok(len) = usize::try_from(len) {
                 Ok(ElementReference::StartLen(start, len))
@@ -95,7 +95,7 @@ pub fn element_assignment(
             }
         }
     } else {
-        let rangelen = Int::try_from(len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
+        let rangelen = i64::try_from(len).map_err(|_| Fatal::from("Range length exceeds Integer max"))?;
         if let Some(protect::Range { start, len }) = first.is_range(interp, rangelen)? {
             let start = usize::try_from(start)
                 .unwrap_or_else(|_| unimplemented!("should throw RangeError (-11..1 out of range)"));

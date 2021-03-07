@@ -78,13 +78,13 @@ impl RangeBounds<usize> for Region {
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Capture<'a> {
-    GroupIndex(Int),
+    GroupIndex(i64),
     GroupName(&'a [u8]),
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum CaptureExtract<'a> {
-    GroupIndex(Int),
+    GroupIndex(i64),
     GroupName(&'a [u8]),
     Symbol(Symbol),
 }
@@ -107,9 +107,9 @@ impl<'a> TryConvertMut<&'a mut Value, CaptureExtract<'a>> for Artichoke {
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CaptureAt<'a> {
-    GroupIndex(Int),
+    GroupIndex(i64),
     GroupName(&'a [u8]),
-    StartLen(Int, Int),
+    StartLen(i64, i64),
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]

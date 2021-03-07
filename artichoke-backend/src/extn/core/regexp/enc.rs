@@ -9,7 +9,7 @@ impl TryConvertMut<Value, Encoding> for Artichoke {
     type Error = InvalidEncodingError;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<Encoding, Self::Error> {
-        if let Ok(encoding) = value.try_into::<Int>(self) {
+        if let Ok(encoding) = value.try_into::<i64>(self) {
             Encoding::try_from(encoding)
         } else if let Ok(encoding) = value.try_into_mut::<&[u8]>(self) {
             Encoding::try_from(encoding)

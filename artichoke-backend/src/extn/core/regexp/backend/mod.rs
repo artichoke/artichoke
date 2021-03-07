@@ -63,13 +63,13 @@ pub trait RegexpType {
 
     fn case_match(&self, interp: &mut Artichoke, haystack: &[u8]) -> Result<bool, Error>;
 
-    fn is_match(&self, haystack: &[u8], pos: Option<Int>) -> Result<bool, Error>;
+    fn is_match(&self, haystack: &[u8], pos: Option<i64>) -> Result<bool, Error>;
 
     fn match_(
         &self,
         interp: &mut Artichoke,
         haystack: &[u8],
-        pos: Option<Int>,
+        pos: Option<i64>,
         block: Option<Block>,
     ) -> Result<Value, Error>;
 

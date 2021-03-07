@@ -4,7 +4,6 @@ use std::mem;
 use std::ptr::{self, NonNull};
 
 use crate::sys;
-use crate::types::Int;
 
 pub unsafe fn funcall(
     mrb: *mut sys::mrb_state,
@@ -80,7 +79,7 @@ impl<'a> Protect for Funcall<'a> {
         // This will always unwrap because we've already checked that we
         // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
         // i64 max value.
-        let argslen = if let Ok(argslen) = Int::try_from(args.len()) {
+        let argslen = if let Ok(argslen) = i64::try_from(args.len()) {
             argslen
         } else {
             return sys::mrb_sys_nil_value();

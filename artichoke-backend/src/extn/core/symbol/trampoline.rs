@@ -26,7 +26,7 @@ pub fn ascii_casecmp(interp: &mut Artichoke, mut value: Value, mut other: Value)
     let symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? };
     if let Ok(other) = unsafe { Symbol::unbox_from_value(&mut other, interp) } {
         let cmp = spinoso_symbol::ascii_casecmp(interp, symbol.id(), other.id())?;
-        Ok(interp.convert(cmp as Int))
+        Ok(interp.convert(cmp as i64))
     } else {
         Ok(Value::nil())
     }

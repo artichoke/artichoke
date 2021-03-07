@@ -16,7 +16,7 @@ pub fn begin(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<
         CaptureExtract::Symbol(symbol) => Capture::GroupName(symbol.bytes(interp)),
     };
     let begin = data.begin(capture)?;
-    match begin.map(Int::try_from) {
+    match begin.map(i64::try_from) {
         Some(Ok(begin)) => Ok(interp.convert(begin)),
         Some(Err(_)) => Err(ArgumentError::with_message("input string too long").into()),
         None => Ok(Value::nil()),
@@ -54,7 +54,7 @@ pub fn element_reference(
         // inner regexp.
         let captures_len = data.regexp.inner().captures_len(None)?;
         let rangelen =
-            Int::try_from(captures_len).map_err(|_| ArgumentError::with_message("input string too long"))?;
+            i64::try_from(captures_len).map_err(|_| ArgumentError::with_message("input string too long"))?;
         if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
             CaptureAt::StartLen(start, len)
         } else {
@@ -73,7 +73,7 @@ pub fn end(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Va
         CaptureExtract::Symbol(symbol) => Capture::GroupName(symbol.bytes(interp)),
     };
     let end = data.end(capture)?;
-    match end.map(Int::try_from) {
+    match end.map(i64::try_from) {
         Some(Ok(end)) => Ok(interp.convert(end)),
         Some(Err(_)) => Err(ArgumentError::with_message("input string too long").into()),
         None => Ok(Value::nil()),
@@ -83,7 +83,7 @@ pub fn end(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result<Va
 pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let len = data.len()?;
-    if let Ok(len) = Int::try_from(len) {
+    if let Ok(len) = i64::try_from(len) {
         Ok(interp.convert(len))
     } else {
         Err(ArgumentError::with_message("input string too long").into())
@@ -110,7 +110,7 @@ pub fn offset(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result
         CaptureExtract::Symbol(symbol) => Capture::GroupName(symbol.bytes(interp)),
     };
     if let Some([begin, end]) = data.offset(capture)? {
-        if let (Ok(begin), Ok(end)) = (Int::try_from(begin), Int::try_from(end)) {
+        if let (Ok(begin), Ok(end)) = (i64::try_from(begin), i64::try_from(end)) {
             let ary = Array::assoc(interp.convert(begin), interp.convert(end));
             Array::alloc_value(ary, interp)
         } else {

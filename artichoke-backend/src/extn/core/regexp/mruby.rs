@@ -73,7 +73,7 @@ unsafe extern "C" fn compile(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> s
     // Call `mrb_obj_new` instead of allocating an object of class `slf` and
     // delegating to `trampoline::initialize` to handle cases where subclasses
     // override initialize.
-    if let Ok(argslen) = Int::try_from(args.len()) {
+    if let Ok(argslen) = sys::mrb_int::try_from(args.len()) {
         sys::mrb_obj_new(mrb, sys::mrb_sys_class_ptr(slf), argslen, args.as_ptr())
     } else {
         sys::mrb_sys_nil_value()

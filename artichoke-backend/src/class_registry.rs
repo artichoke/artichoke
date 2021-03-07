@@ -5,7 +5,6 @@ use crate::class;
 use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::sys;
-use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -98,7 +97,7 @@ impl ClassRegistry for Artichoke {
             return Ok(None);
         };
         let args = args.iter().map(Value::inner).collect::<Vec<_>>();
-        let arglen = if let Ok(len) = Int::try_from(args.len()) {
+        let arglen = if let Ok(len) = sys::mrb_int::try_from(args.len()) {
             len
         } else {
             return Ok(None);

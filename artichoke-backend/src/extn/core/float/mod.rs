@@ -7,7 +7,7 @@ pub mod mruby;
 
 #[repr(transparent)]
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]
-pub struct Float(Fp);
+pub struct Float(f64);
 
 impl fmt::Debug for Float {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -38,14 +38,14 @@ impl TryConvert<Value, Float> for Artichoke {
     }
 }
 
-impl From<Fp> for Float {
+impl From<f64> for Float {
     #[inline]
-    fn from(flt: Fp) -> Self {
+    fn from(flt: f64) -> Self {
         Self(flt)
     }
 }
 
-impl From<Float> for Fp {
+impl From<Float> for f64 {
     #[inline]
     fn from(flt: Float) -> Self {
         flt.as_f64()
@@ -59,9 +59,9 @@ impl From<Float> for Outcome {
     }
 }
 
-impl From<Fp> for Outcome {
+impl From<f64> for Outcome {
     #[inline]
-    fn from(flt: Fp) -> Self {
+    fn from(flt: f64) -> Self {
         Self::Float(flt)
     }
 }
@@ -71,40 +71,40 @@ impl Float {
     /// floating point.
     ///
     /// Usually defaults to 15.
-    pub const DIG: Int = Fp::DIGITS as Int;
+    pub const DIG: i64 = f64::DIGITS as i64;
 
     /// The difference between 1 and the smallest double-precision floating
     /// point number greater than 1.
     ///
     /// Usually defaults to 2.2204460492503131e-16.
-    pub const EPSILON: Fp = Fp::EPSILON;
+    pub const EPSILON: f64 = f64::EPSILON;
 
     /// An expression representing positive infinity.
-    pub const INFINITY: Fp = Fp::INFINITY;
+    pub const INFINITY: f64 = f64::INFINITY;
 
     /// The minimum number of significant decimal digits in a double-precision
     /// floating point.
     ///
     /// Usually defaults to 15.
-    pub const MANT_DIG: Int = Fp::MANTISSA_DIGITS as Int;
+    pub const MANT_DIG: i64 = f64::MANTISSA_DIGITS as i64;
 
     /// The largest possible integer in a double-precision floating point
     /// number.
     ///
     /// Usually defaults to 1.7976931348623157e+308.
-    pub const MAX: Fp = Fp::MAX;
+    pub const MAX: f64 = f64::MAX;
 
     /// The largest positive exponent in a double-precision floating point where
     /// 10 raised to this power minus 1.
     ///
     /// Usually defaults to 308.
-    pub const MAX_10_EXP: Int = Fp::MAX_10_EXP as Int;
+    pub const MAX_10_EXP: i64 = f64::MAX_10_EXP as i64;
 
     /// The largest possible exponent value in a double-precision floating
     /// point.
     ///
     /// Usually defaults to 1024.
-    pub const MAX_EXP: Int = Fp::MAX_EXP as Int;
+    pub const MAX_EXP: i64 = f64::MAX_EXP as i64;
 
     /// The smallest positive normalized number in a double-precision floating
     /// point.
@@ -114,31 +114,31 @@ impl Float {
     /// If the platform supports denormalized numbers, there are numbers between
     /// zero and [`Float::MIN`]. `0.0.next_float` returns the smallest positive
     /// floating point number including denormalized numbers.
-    pub const MIN: Fp = Fp::MIN;
+    pub const MIN: f64 = f64::MIN;
 
     /// The smallest negative exponent in a double-precision floating point
     /// where 10 raised to this power minus 1.
     ///
     /// Usually defaults to -307.
-    pub const MIN_10_EXP: Int = Fp::MIN_10_EXP as Int;
+    pub const MIN_10_EXP: i64 = f64::MIN_10_EXP as i64;
 
     /// The smallest possible exponent value in a double-precision floating
     /// point.
     ///
     /// Usually defaults to -1021.
-    pub const MIN_EXP: Int = Fp::MIN_EXP as Int;
+    pub const MIN_EXP: i64 = f64::MIN_EXP as i64;
 
     /// An expression representing a value which is "not a number".
-    pub const NAN: Fp = Fp::NAN;
+    pub const NAN: f64 = f64::NAN;
 
-    pub const NEG_INFINITY: Fp = Fp::NEG_INFINITY;
+    pub const NEG_INFINITY: f64 = f64::NEG_INFINITY;
 
     /// The base of the floating point, or number of unique digits used to
     /// represent the number.
     ///
     /// Usually defaults to 2 on most systems, which would represent a base-10
     /// decimal.
-    pub const RADIX: Int = Fp::RADIX as Int;
+    pub const RADIX: i64 = f64::RADIX as i64;
 
     /// Represents the rounding mode for floating point addition.
     ///
@@ -167,7 +167,7 @@ impl Float {
     ///
     /// [stackoverflow]: https://stackoverflow.com/a/28122536
     /// [round]: https://doc.rust-lang.org/1.42.0/std/primitive.f64.html#method.round
-    pub const ROUNDS: Int = -1;
+    pub const ROUNDS: i64 = -1;
 
     /// Construct a new, zero, float.
     #[inline]

@@ -4,7 +4,6 @@
 
 use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut, Value as _};
 use crate::error::Error;
-use crate::types::Int;
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -14,8 +13,8 @@ impl Convert<Option<Value>, Value> for Artichoke {
     }
 }
 
-impl Convert<Option<Int>, Value> for Artichoke {
-    fn convert(&self, value: Option<Int>) -> Value {
+impl Convert<Option<i64>, Value> for Artichoke {
+    fn convert(&self, value: Option<i64>) -> Value {
         if let Some(value) = value {
             self.convert(value)
         } else {
@@ -114,10 +113,10 @@ impl<'a> TryConvertMut<Value, Option<&'a str>> for Artichoke {
     }
 }
 
-impl TryConvert<Value, Option<Int>> for Artichoke {
+impl TryConvert<Value, Option<i64>> for Artichoke {
     type Error = Error;
 
-    fn try_convert(&self, value: Value) -> Result<Option<Int>, Self::Error> {
+    fn try_convert(&self, value: Value) -> Result<Option<i64>, Self::Error> {
         if value.is_nil() {
             Ok(None)
         } else {
