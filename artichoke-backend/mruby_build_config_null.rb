@@ -57,6 +57,8 @@ MRuby::Build.new do |conf|
   conf.bins = []
   conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'bootstrap')
 
+  conf.disable_presym
+
   FileUtils.mkdir_p("#{build_dir}/bin")
   FileUtils.touch("#{build_dir}/bin/mrbc")
   FileUtils.touch("#{build_dir}/bin/mrbc.exe")
@@ -84,12 +86,14 @@ MRuby::CrossBuild.new('sys') do |conf|
 
   # C compiler settings
   # https://github.com/mruby/mruby/blob/master/doc/guides/mrbconf.md#other-configuration
-  conf.cc.defines += %w[MRB_DISABLE_STDIO MRB_UTF8_STRING MRB_ARY_NO_EMBED MRB_NO_BOXING]
+  conf.cc.defines += %w[MRB_NO_STDIO MRB_UTF8_STRING MRB_ARY_NO_EMBED MRB_NO_BOXING]
 
   conf.bins = []
 
   # gemset for mruby artichoke static lib
   conf.gembox File.join(File.dirname(File.absolute_path(__FILE__)), 'sys')
+
+  conf.disable_presym
 
   FileUtils.mkdir_p("#{build_dir}/bin")
   FileUtils.touch("#{build_dir}/bin/mrbc")
