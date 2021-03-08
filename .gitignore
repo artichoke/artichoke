@@ -1,6 +1,6 @@
 
-# Created by https://www.toptal.com/developers/gitignore/api/c,vim,node,rust,ruby,intellij,visualstudiocode,visualstudio
-# Edit at https://www.toptal.com/developers/gitignore?templates=c,vim,node,rust,ruby,intellij,visualstudiocode,visualstudio
+# Created by https://www.toptal.com/developers/gitignore/api/c,vim,ruby,rust,node,intellij,visualstudio,visualstudiocode
+# Edit at https://www.toptal.com/developers/gitignore?templates=c,vim,ruby,rust,node,intellij,visualstudio,visualstudiocode
 
 ### C ###
 # Prerequisites
@@ -215,6 +215,9 @@ typings/
 # Optional eslint cache
 .eslintcache
 
+# Optional stylelint cache
+.stylelintcache
+
 # Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
@@ -324,10 +327,6 @@ build-iPhoneSimulator/
 # unless supporting rvm < 1.11.0 or doing something fancy, ignore this:
 .rvmrc
 
-# Used by RuboCop. Remote config files pulled in from inherit_from directive.
-# .rubocop-https?--*
-
-### Ruby Patch ###
 # Used by RuboCop. Remote config files pulled in from inherit_from directive.
 # .rubocop-https?--*
 
@@ -720,7 +719,7 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-# End of https://www.toptal.com/developers/gitignore/api/c,vim,node,rust,ruby,intellij,visualstudiocode,visualstudio
+# End of https://www.toptal.com/developers/gitignore/api/c,vim,ruby,rust,node,intellij,visualstudio,visualstudiocode
 
 # Overrides
 
