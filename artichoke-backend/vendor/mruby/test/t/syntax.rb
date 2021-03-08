@@ -345,6 +345,11 @@ assert('splat object in assignment') do
   assert_equal [2], (a = *o)
 end
 
+assert('one-line pattern match') do
+  1 => a
+  assert_equal(1, a)
+end
+
 assert('splat object in case statement') do
   o = Object.new
   def o.to_a
@@ -680,4 +685,23 @@ end
 assert('_0 is not numbered parameter') do
   _0 = :l
   assert_equal(:l, ->{_0}.call)
+end
+
+assert('argument forwarding') do
+  c = Class.new {
+    def a0(*a,&b)
+      assert_equal([1,2,3], a)
+      assert_not_nil(b)
+    end
+    def a(...)
+      a0(...)
+    end
+    def b(a,...)
+      assert_equal(a,1)
+      a0(1,...)
+    end
+  }
+  o = c.new
+  o.a(1,2,3){}
+  o.b(1,2,3){}
 end

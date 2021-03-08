@@ -1,7 +1,7 @@
 mruby-method
 ===
 
-A implementetion of class **Method** and **UnboundMethod** for mruby
+A implementation of class **Method** and **UnboundMethod** for mruby
 
 ```ruby
 p Enumerable.instance_method(:find_all).source_location
@@ -10,11 +10,12 @@ p Enumerable.instance_method(:find_all).source_location
 
 # Note
 
-`source_location` method need this configuration in build_config.rb
+You need to enable debug option in your build configuration to use
+`source_location` method in this gem, for example:
 
 ```ruby
 MRuby::Build.new do |conf|
-  enable_debug
+  conf.enable_debug
 end
 ```
 

@@ -9,6 +9,7 @@
 #include <mruby/range.h>
 #include <mruby/string.h>
 #include <mruby/array.h>
+#include <mruby/presym.h>
 
 #define RANGE_INITIALIZED_MASK 1
 #define RANGE_INITIALIZED(p) ((p)->flags |= RANGE_INITIALIZED_MASK)
@@ -23,14 +24,16 @@ r_check(mrb_state *mrb, mrb_value a, mrb_value b)
 
   ta = mrb_type(a);
   tb = mrb_type(b);
-#ifdef MRB_WITHOUT_FLOAT
-  if (ta == MRB_TT_FIXNUM && tb == MRB_TT_FIXNUM ) {
+#ifdef MRB_NO_FLOAT
+  if (ta == MRB_TT_INTEGER && tb == MRB_TT_INTEGER ) {
 #else
-  if ((ta == MRB_TT_FIXNUM || ta == MRB_TT_FLOAT) &&
-      (tb == MRB_TT_FIXNUM || tb == MRB_TT_FLOAT)) {
+  if ((ta == MRB_TT_INTEGER || ta == MRB_TT_FLOAT) &&
+      (tb == MRB_TT_INTEGER || tb == MRB_TT_FLOAT)) {
 #endif
     return;
   }
+
+  if (mrb_nil_p(a) || mrb_nil_p(b)) return;
 
   n = mrb_cmp(mrb, a, b);
   if (n == -2) {                /* can not be compared */
@@ -78,7 +81,7 @@ range_ptr_init(mrb_state *mrb, struct RRange *r, mrb_value beg, mrb_value end, m
   if (r) {
     if (RANGE_INITIALIZED_P(r)) {
       /* Ranges are immutable, so that they should be initialized only once. */
-      mrb_name_error(mrb, mrb_intern_lit(mrb, "initialize"), "'initialize' called twice");
+      mrb_name_error(mrb, MRB_SYM(initialize), "'initialize' called twice");
     }
     else {
       range_ptr_alloc_edges(mrb, r);
@@ -161,6 +164,7 @@ range_initialize(mrb_state *mrb, mrb_value range)
 
   mrb_get_args(mrb, "oo|b", &beg, &end, &exclusive);
   range_ptr_replace(mrb, mrb_range_raw_ptr(range), beg, end, exclusive);
+  mrb_obj_freeze(mrb, range);
   return range;
 }
 
@@ -212,15 +216,25 @@ range_include(mrb_state *mrb, mrb_value range)
   mrb_value val = mrb_get_arg1(mrb);
   struct RRange *r = mrb_range_ptr(mrb, range);
   mrb_value beg, end;
-  mrb_bool include_p;
 
   beg = RANGE_BEG(r);
   end = RANGE_END(r);
-  include_p = r_le(mrb, beg, val) &&                 /* beg <= val */
-              (RANGE_EXCL(r) ? r_gt(mrb, end, val)   /* end >  val */
-                             : r_ge(mrb, end, val)); /* end >= val */
-
-  return mrb_bool_value(include_p);
+  if (mrb_nil_p(beg)) {
+    if (RANGE_EXCL(r) ? r_gt(mrb, end, val)    /* end >  val */
+                      : r_ge(mrb, end, val)) { /* end >= val */
+      return mrb_true_value();
+    }
+  }
+  else if (r_le(mrb, beg, val)) {              /* beg <= val */
+    if (mrb_nil_p(end)) {
+      return mrb_true_value();
+    }
+    if (RANGE_EXCL(r) ? r_gt(mrb, end, val)    /* end >  val */
+                      : r_ge(mrb, end, val)) { /* end >= val */
+      return mrb_true_value();
+    }
+  }
+  return mrb_false_value();
 }
 
 /* 15.2.14.4.12(x) */
@@ -257,14 +271,21 @@ range_to_s(mrb_state *mrb, mrb_value range)
 static mrb_value
 range_inspect(mrb_state *mrb, mrb_value range)
 {
-  mrb_value str, str2;
+  mrb_value str;
   struct RRange *r = mrb_range_ptr(mrb, range);
 
-  str  = mrb_inspect(mrb, RANGE_BEG(r));
-  str2 = mrb_inspect(mrb, RANGE_END(r));
-  str  = mrb_str_dup(mrb, str);
-  mrb_str_cat(mrb, str, "...", RANGE_EXCL(r) ? 3 : 2);
-  mrb_str_cat_str(mrb, str, str2);
+  if (!mrb_nil_p(RANGE_BEG(r))) {
+    str  = mrb_inspect(mrb, RANGE_BEG(r));
+    str  = mrb_str_dup(mrb, str);
+    mrb_str_cat(mrb, str, "...", RANGE_EXCL(r) ? 3 : 2);
+  }
+  else {
+    str = mrb_str_new(mrb, "...", RANGE_EXCL(r) ? 3 : 2);
+  }
+  if (!mrb_nil_p(RANGE_END(r))) {
+    mrb_value str2 = mrb_inspect(mrb, RANGE_END(r));
+    mrb_str_cat_str(mrb, str, str2);
+  }
 
   return str;
 }
@@ -316,6 +337,7 @@ range_initialize_copy(mrb_state *mrb, mrb_value copy)
 
   r = mrb_range_ptr(mrb, src);
   range_ptr_replace(mrb, mrb_range_raw_ptr(copy), RANGE_BEG(r), RANGE_END(r), RANGE_EXCL(r));
+  mrb_obj_freeze(mrb, copy);
 
   return copy;
 }
@@ -328,8 +350,8 @@ mrb_get_values_at(mrb_state *mrb, mrb_value obj, mrb_int olen, mrb_int argc, con
   result = mrb_ary_new(mrb);
 
   for (i = 0; i < argc; ++i) {
-    if (mrb_fixnum_p(argv[i])) {
-      mrb_ary_push(mrb, result, func(mrb, obj, mrb_fixnum(argv[i])));
+    if (mrb_integer_p(argv[i])) {
+      mrb_ary_push(mrb, result, func(mrb, obj, mrb_integer(argv[i])));
     }
     else if (mrb_range_beg_len(mrb, argv[i], &beg, &len, olen, FALSE) == MRB_RANGE_OK) {
       mrb_int const end = olen < beg + len ? olen : beg + len;
@@ -381,13 +403,15 @@ MRB_API enum mrb_range_beg_len
 mrb_range_beg_len(mrb_state *mrb, mrb_value range, mrb_int *begp, mrb_int *lenp, mrb_int len, mrb_bool trunc)
 {
   mrb_int beg, end;
+  mrb_bool excl;
   struct RRange *r;
 
   if (!mrb_range_p(range)) return MRB_RANGE_TYPE_MISMATCH;
   r = mrb_range_ptr(mrb, range);
 
   beg = mrb_int(mrb, RANGE_BEG(r));
-  end = mrb_int(mrb, RANGE_END(r));
+  end = mrb_nil_p(RANGE_END(r)) ? -1 : mrb_int(mrb, RANGE_END(r));
+  excl = mrb_nil_p(RANGE_END(r)) ? 0 : RANGE_EXCL(r);
 
   if (beg < 0) {
     beg += len;
@@ -400,7 +424,7 @@ mrb_range_beg_len(mrb_state *mrb, mrb_value range, mrb_int *begp, mrb_int *lenp,
   }
 
   if (end < 0) end += len;
-  if (!RANGE_EXCL(r) && (!trunc || end < len)) end++;  /* include end point */
+  if (!excl && (!trunc || end < len)) end++;  /* include end point */
   len = end - beg;
   if (len < 0) len = 0;
 

@@ -8,6 +8,7 @@
 #include "mruby/string.h"
 #include "mruby/ext/io.h"
 #include "mruby/error.h"
+#include "mruby/presym.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -66,12 +67,16 @@
 #define LOCK_UN 8
 #endif
 
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(MRB_MINGW32_LEGACY)
 typedef struct stat         mrb_stat;
 # define mrb_stat(path, sb) stat(path, sb)
 # define mrb_fstat(fd, sb)  fstat(fd, sb)
+#elif defined MRB_INT32
+typedef struct _stat32      mrb_stat;
+# define mrb_stat(path, sb) _stat32(path, sb)
+# define mrb_fstat(fd, sb)  _fstat32(fd, sb)
 #else
-typedef struct __stat64     mrb_stat;
+typedef struct _stat64      mrb_stat;
 # define mrb_stat(path, sb) _stat64(path, sb)
 # define mrb_fstat(fd, sb)  _fstat64(fd, sb)
 #endif
@@ -111,7 +116,7 @@ mrb_file_s_umask(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_file_s_unlink(mrb_state *mrb, mrb_value obj)
 {
-  mrb_value *argv;
+  const mrb_value *argv;
   mrb_value pathv;
   mrb_int argc, i;
   char *path;
@@ -254,7 +259,7 @@ mrb_file_realpath(mrb_state *mrb, mrb_value klass)
     pathname = s;
   }
   cpath = mrb_locale_from_utf8(RSTRING_CSTR(mrb, pathname), -1);
-  result = mrb_str_buf_new(mrb, PATH_MAX);
+  result = mrb_str_new_capa(mrb, PATH_MAX);
   if (realpath(cpath, RSTRING_PTR(result)) == NULL) {
     mrb_locale_free(cpath);
     mrb_sys_fail(mrb, cpath);
@@ -286,20 +291,20 @@ mrb_file__getwd(mrb_state *mrb, mrb_value klass)
 #define IS_DEVICEID(x) (x == '.' || x == '?')
 #define CHECK_UNCDEV_PATH (IS_FILESEP(path[0]) && IS_FILESEP(path[1]))
 
-static int 
+static int
 is_absolute_traditional_path(const char *path, size_t len)
 {
   if (len < 3) return 0;
   return (ISALPHA(path[0]) && IS_VOLSEP(path[1]) && IS_FILESEP(path[2]));
 }
 
-static int 
-is_aboslute_unc_path(const char *path, size_t len) {
+static int
+is_absolute_unc_path(const char *path, size_t len) {
   if (len < 2) return 0;
   return (CHECK_UNCDEV_PATH && !IS_DEVICEID(path[2]));
 }
 
-static int 
+static int
 is_absolute_device_path(const char *path, size_t len) {
   if (len < 4) return 0;
   return (CHECK_UNCDEV_PATH && IS_DEVICEID(path[2]) && IS_FILESEP(path[3]));
@@ -312,8 +317,8 @@ mrb_file_is_absolute_path(const char *path)
   if (IS_FILESEP(path[0])) return 1;
   if (len > 0)
     return (
-      is_absolute_traditional_path(path, len) || 
-      is_aboslute_unc_path(path, len) || 
+      is_absolute_traditional_path(path, len) ||
+      is_absolute_unc_path(path, len) ||
       is_absolute_device_path(path, len)
       );
   else
@@ -390,15 +395,12 @@ mrb_file__gethome(mrb_state *mrb, mrb_value klass)
 static mrb_value
 mrb_file_mtime(mrb_state *mrb, mrb_value self)
 {
-  mrb_value obj;
-  struct stat st;
-  int fd;
+  int fd = mrb_io_fileno(mrb, self);
+  mrb_stat st;
 
-  obj = mrb_obj_value(mrb_class_get(mrb, "Time"));
-  fd = mrb_io_fileno(mrb, self);
-  if (fstat(fd, &st) == -1)
+  if (mrb_fstat(fd, &st) == -1)
     return mrb_false_value();
-  return mrb_funcall(mrb, obj, "at", 1, mrb_fixnum_value(st.st_mtime));
+  return mrb_int_value(mrb, (mrb_int)st.st_mtime);
 }
 
 static mrb_value
@@ -447,14 +449,14 @@ mrb_file_size(mrb_state *mrb, mrb_value self)
   }
 
   if (st.st_size > MRB_INT_MAX) {
-#ifdef MRB_WITHOUT_FLOAT
-    mrb_raise(mrb, E_RUNTIME_ERROR, "File#size too large for MRB_WITHOUT_FLOAT");
+#ifdef MRB_NO_FLOAT
+    mrb_raise(mrb, E_RUNTIME_ERROR, "File#size too large for MRB_NO_FLOAT");
 #else
     return mrb_float_value(mrb, (mrb_float)st.st_size);
 #endif
   }
 
-  return mrb_fixnum_value((mrb_int)st.st_size);
+  return mrb_int_value(mrb, (mrb_int)st.st_size);
 }
 
 static int
@@ -532,7 +534,7 @@ static mrb_value
 mrb_file_s_chmod(mrb_state *mrb, mrb_value klass) {
   mrb_int mode;
   mrb_int argc, i;
-  mrb_value *filenames;
+  const mrb_value *filenames;
   int ai = mrb_gc_arena_save(mrb);
 
   mrb_get_args(mrb, "i*", &mode, &filenames, &argc);
@@ -556,7 +558,8 @@ mrb_file_s_readlink(mrb_state *mrb, mrb_value klass) {
   mrb_raise(mrb, E_NOTIMP_ERROR, "readlink is not supported on this platform");
   return mrb_nil_value(); // unreachable
 #else
-  char *path, *buf, *tmp;
+  const char *path;
+  char *buf, *tmp;
   size_t bufsize = 100;
   ssize_t rc;
   mrb_value ret;
@@ -608,40 +611,40 @@ mrb_init_file(mrb_state *mrb)
   mrb_define_class_method(mrb, file, "_gethome",  mrb_file__gethome,   MRB_ARGS_OPT(1));
 
   mrb_define_method(mrb, file, "flock", mrb_file_flock, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, file, "mtime", mrb_file_mtime, MRB_ARGS_NONE());
+  mrb_define_method(mrb, file, "_mtime", mrb_file_mtime, MRB_ARGS_NONE());
   mrb_define_method(mrb, file, "size", mrb_file_size, MRB_ARGS_NONE());
   mrb_define_method(mrb, file, "truncate", mrb_file_truncate, MRB_ARGS_REQ(1));
 
-  cnst = mrb_define_module_under(mrb, file, "Constants");
-  mrb_define_const(mrb, cnst, "LOCK_SH", mrb_fixnum_value(LOCK_SH));
-  mrb_define_const(mrb, cnst, "LOCK_EX", mrb_fixnum_value(LOCK_EX));
-  mrb_define_const(mrb, cnst, "LOCK_UN", mrb_fixnum_value(LOCK_UN));
-  mrb_define_const(mrb, cnst, "LOCK_NB", mrb_fixnum_value(LOCK_NB));
-  mrb_define_const(mrb, cnst, "SEPARATOR", mrb_str_new_cstr(mrb, FILE_SEPARATOR));
-  mrb_define_const(mrb, cnst, "PATH_SEPARATOR", mrb_str_new_cstr(mrb, PATH_SEPARATOR));
+  cnst = mrb_define_module_under_id(mrb, file, MRB_SYM(Constants));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(LOCK_SH), mrb_fixnum_value(LOCK_SH));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(LOCK_EX), mrb_fixnum_value(LOCK_EX));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(LOCK_UN), mrb_fixnum_value(LOCK_UN));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(LOCK_NB), mrb_fixnum_value(LOCK_NB));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(SEPARATOR), mrb_str_new_cstr(mrb, FILE_SEPARATOR));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(PATH_SEPARATOR), mrb_str_new_cstr(mrb, PATH_SEPARATOR));
 #if defined(_WIN32) || defined(_WIN64)
-  mrb_define_const(mrb, cnst, "ALT_SEPARATOR", mrb_str_new_cstr(mrb, FILE_ALT_SEPARATOR));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(ALT_SEPARATOR), mrb_str_new_cstr(mrb, FILE_ALT_SEPARATOR));
 #else
-  mrb_define_const(mrb, cnst, "ALT_SEPARATOR", mrb_nil_value());
+  mrb_define_const_id(mrb, cnst, MRB_SYM(ALT_SEPARATOR), mrb_nil_value());
 #endif
-  mrb_define_const(mrb, cnst, "NULL", mrb_str_new_cstr(mrb, NULL_FILE));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(NULL), mrb_str_new_cstr(mrb, NULL_FILE));
 
-  mrb_define_const(mrb, cnst, "RDONLY", mrb_fixnum_value(MRB_O_RDONLY));
-  mrb_define_const(mrb, cnst, "WRONLY", mrb_fixnum_value(MRB_O_WRONLY));
-  mrb_define_const(mrb, cnst, "RDWR", mrb_fixnum_value(MRB_O_RDWR));
-  mrb_define_const(mrb, cnst, "APPEND", mrb_fixnum_value(MRB_O_APPEND));
-  mrb_define_const(mrb, cnst, "CREAT", mrb_fixnum_value(MRB_O_CREAT));
-  mrb_define_const(mrb, cnst, "EXCL", mrb_fixnum_value(MRB_O_EXCL));
-  mrb_define_const(mrb, cnst, "TRUNC", mrb_fixnum_value(MRB_O_TRUNC));
-  mrb_define_const(mrb, cnst, "NONBLOCK", mrb_fixnum_value(MRB_O_NONBLOCK));
-  mrb_define_const(mrb, cnst, "NOCTTY", mrb_fixnum_value(MRB_O_NOCTTY));
-  mrb_define_const(mrb, cnst, "BINARY", mrb_fixnum_value(MRB_O_BINARY));
-  mrb_define_const(mrb, cnst, "SHARE_DELETE", mrb_fixnum_value(MRB_O_SHARE_DELETE));
-  mrb_define_const(mrb, cnst, "SYNC", mrb_fixnum_value(MRB_O_SYNC));
-  mrb_define_const(mrb, cnst, "DSYNC", mrb_fixnum_value(MRB_O_DSYNC));
-  mrb_define_const(mrb, cnst, "RSYNC", mrb_fixnum_value(MRB_O_RSYNC));
-  mrb_define_const(mrb, cnst, "NOFOLLOW", mrb_fixnum_value(MRB_O_NOFOLLOW));
-  mrb_define_const(mrb, cnst, "NOATIME", mrb_fixnum_value(MRB_O_NOATIME));
-  mrb_define_const(mrb, cnst, "DIRECT", mrb_fixnum_value(MRB_O_DIRECT));
-  mrb_define_const(mrb, cnst, "TMPFILE", mrb_fixnum_value(MRB_O_TMPFILE));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(RDONLY), mrb_fixnum_value(MRB_O_RDONLY));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(WRONLY), mrb_fixnum_value(MRB_O_WRONLY));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(RDWR), mrb_fixnum_value(MRB_O_RDWR));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(APPEND), mrb_fixnum_value(MRB_O_APPEND));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(CREAT), mrb_fixnum_value(MRB_O_CREAT));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(EXCL), mrb_fixnum_value(MRB_O_EXCL));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(TRUNC), mrb_fixnum_value(MRB_O_TRUNC));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(NONBLOCK), mrb_fixnum_value(MRB_O_NONBLOCK));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(NOCTTY), mrb_fixnum_value(MRB_O_NOCTTY));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(BINARY), mrb_fixnum_value(MRB_O_BINARY));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(SHARE_DELETE), mrb_fixnum_value(MRB_O_SHARE_DELETE));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(SYNC), mrb_fixnum_value(MRB_O_SYNC));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(DSYNC), mrb_fixnum_value(MRB_O_DSYNC));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(RSYNC), mrb_fixnum_value(MRB_O_RSYNC));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(NOFOLLOW), mrb_fixnum_value(MRB_O_NOFOLLOW));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(NOATIME), mrb_fixnum_value(MRB_O_NOATIME));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(DIRECT), mrb_fixnum_value(MRB_O_DIRECT));
+  mrb_define_const_id(mrb, cnst, MRB_SYM(TMPFILE), mrb_fixnum_value(MRB_O_TMPFILE));
 }

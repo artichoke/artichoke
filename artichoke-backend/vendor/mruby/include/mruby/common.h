@@ -14,7 +14,7 @@
 #endif
 
 #ifdef __cplusplus
-#ifdef MRB_ENABLE_CXX_ABI
+#ifdef MRB_USE_CXX_ABI
 #define MRB_BEGIN_DECL
 #define MRB_END_DECL
 #else
@@ -81,6 +81,9 @@ MRB_BEGIN_DECL
 #  define MRB_MINGW64_VERSION  (__MINGW64_VERSION_MAJOR * 1000 + __MINGW64_VERSION_MINOR)
 # elif defined(__MINGW32_MAJOR_VERSION)
 #  define MRB_MINGW32_VERSION  (__MINGW32_MAJOR_VERSION * 1000 + __MINGW32_MINOR_VERSION)
+# endif
+# if defined(__MINGW32__) && !defined(__MINGW64__)
+#   define MRB_MINGW32_LEGACY
 # endif
 #endif
 

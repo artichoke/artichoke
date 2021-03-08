@@ -5,14 +5,16 @@
 #include <mruby/proc.h>
 #include <mruby/opcode.h>
 #include <mruby/error.h>
+#include <mruby/presym.h>
 
+struct REnv *mrb_env_new(mrb_state *mrb, struct mrb_context *c, mrb_callinfo *ci, int nstacks, mrb_value *stack, struct RClass *tc);
 mrb_value mrb_exec_irep(mrb_state *mrb, mrb_value self, struct RProc *p);
 mrb_value mrb_obj_instance_eval(mrb_state *mrb, mrb_value self);
 
 void mrb_codedump_all(mrb_state*, struct RProc*);
 
 static struct RProc*
-create_proc_from_string(mrb_state *mrb, char *s, mrb_int len, mrb_value binding, const char *file, mrb_int line)
+create_proc_from_string(mrb_state *mrb, const char *s, mrb_int len, mrb_value binding, const char *file, mrb_int line)
 {
   mrbc_context *cxt;
   struct mrb_parser_state *p;
@@ -20,7 +22,6 @@ create_proc_from_string(mrb_state *mrb, char *s, mrb_int len, mrb_value binding,
   struct REnv *e;
   mrb_callinfo *ci; /* callinfo of eval caller */
   struct RClass *target_class = NULL;
-  int bidx;
 
   if (!mrb_nil_p(binding)) {
     mrb_raise(mrb, E_ARGUMENT_ERROR, "Binding of eval must be nil.");
@@ -39,7 +40,7 @@ create_proc_from_string(mrb_state *mrb, char *s, mrb_int len, mrb_value binding,
 
   /* only occur when memory ran out */
   if (!p) {
-    mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to create parser state.");
+    mrb_raise(mrb, E_RUNTIME_ERROR, "Failed to create parser state (out of memory)");
   }
 
   if (0 < p->nerr) {
@@ -79,28 +80,19 @@ create_proc_from_string(mrb_state *mrb, char *s, mrb_int len, mrb_value binding,
     target_class = MRB_PROC_TARGET_CLASS(ci->proc);
   }
   if (ci->proc && !MRB_PROC_CFUNC_P(ci->proc)) {
-    if (ci->env) {
-      e = ci->env;
+    if ((e = mrb_vm_ci_env(ci)) != NULL) {
+      /* do nothing, because e is assigned already */
     }
     else {
-      e = (struct REnv*)mrb_obj_alloc(mrb, MRB_TT_ENV,
-                                      (struct RClass*)target_class);
-      e->mid = ci->mid;
-      e->stack = ci[1].stackent;
-      e->cxt = mrb->c;
-      MRB_ENV_SET_LEN(e, ci->proc->body.irep->nlocals);
-      bidx = ci->argc;
-      if (ci->argc < 0) bidx = 2;
-      else bidx += 1;
-      MRB_ENV_SET_BIDX(e, bidx);
-      ci->env = e;
+      e = mrb_env_new(mrb, mrb->c, ci, ci->proc->body.irep->nlocals, ci->stack, target_class);
+      ci->u.env = e;
     }
     proc->e.env = e;
     proc->flags |= MRB_PROC_ENVSET;
     mrb_field_write_barrier(mrb, (struct RBasic*)proc, (struct RBasic*)e);
   }
   proc->upper = ci->proc;
-  mrb->c->ci->target_class = target_class;
+  mrb_vm_ci_target_class_set(mrb->c->ci, target_class);
   /* mrb_codedump_all(mrb, proc); */
 
   mrb_parser_free(p);
@@ -124,17 +116,17 @@ exec_irep(mrb_state *mrb, mrb_value self, struct RProc *proc)
     return ret;
   }
   /* clear block */
-  mrb->c->stack[1] = mrb_nil_value();
+  mrb->c->ci->stack[1] = mrb_nil_value();
   return mrb_exec_irep(mrb, self, proc);
 }
 
 static mrb_value
 f_eval(mrb_state *mrb, mrb_value self)
 {
-  char *s;
+  const char *s;
   mrb_int len;
   mrb_value binding = mrb_nil_value();
-  char *file = NULL;
+  const char *file = NULL;
   mrb_int line = 1;
   struct RProc *proc;
 
@@ -149,14 +141,14 @@ static mrb_value
 f_instance_eval(mrb_state *mrb, mrb_value self)
 {
   mrb_value b;
-  mrb_int argc; mrb_value *argv;
+  mrb_int argc; const mrb_value *argv;
 
   mrb_get_args(mrb, "*!&", &argv, &argc, &b);
 
   if (mrb_nil_p(b)) {
-    char *s;
+    const char *s;
     mrb_int len;
-    char *file = NULL;
+    const char *file = NULL;
     mrb_int line = 1;
     mrb_value cv;
     struct RProc *proc;
@@ -166,7 +158,7 @@ f_instance_eval(mrb_state *mrb, mrb_value self)
     proc = create_proc_from_string(mrb, s, len, mrb_nil_value(), file, line);
     MRB_PROC_SET_TARGET_CLASS(proc, mrb_class_ptr(cv));
     mrb_assert(!MRB_PROC_CFUNC_P(proc));
-    mrb->c->ci->target_class = mrb_class_ptr(cv);
+    mrb_vm_ci_target_class_set(mrb->c->ci, mrb_class_ptr(cv));
     return exec_irep(mrb, self, proc);
   }
   else {
@@ -179,7 +171,7 @@ void
 mrb_mruby_eval_gem_init(mrb_state* mrb)
 {
   mrb_define_module_function(mrb, mrb->kernel_module, "eval", f_eval, MRB_ARGS_ARG(1, 3));
-  mrb_define_method(mrb, mrb_class_get(mrb, "BasicObject"), "instance_eval", f_instance_eval, MRB_ARGS_OPT(3)|MRB_ARGS_BLOCK());
+  mrb_define_method(mrb, mrb_class_get_id(mrb, MRB_SYM(BasicObject)), "instance_eval", f_instance_eval, MRB_ARGS_OPT(3)|MRB_ARGS_BLOCK());
 }
 
 void

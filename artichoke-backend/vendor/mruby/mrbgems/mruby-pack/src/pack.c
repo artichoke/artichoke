@@ -9,11 +9,14 @@
 #include "mruby/numeric.h"
 #include "mruby/string.h"
 #include "mruby/variable.h"
+#include "mruby/endian.h"
 
 #include <ctype.h>
 #include <errno.h>
-#include <limits.h>
 #include <string.h>
+
+#define INT_OVERFLOW_P(n)  ((n) < MRB_INT_MIN || (n) > MRB_INT_MAX)
+#define UINT_OVERFLOW_P(n) ((n) > MRB_INT_MAX)
 
 struct tmpl {
   mrb_value str;
@@ -62,36 +65,6 @@ enum {
 const static unsigned char base64chars[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static unsigned char base64_dec_tab[128];
-
-#if !defined(BYTE_ORDER) && defined(__BYTE_ORDER__)
-# define BYTE_ORDER __BYTE_ORDER__
-#endif
-#if !defined(BIG_ENDIAN) && defined(__ORDER_BIG_ENDIAN__)
-# define BIG_ENDIAN __ORDER_BIG_ENDIAN__
-#endif
-#if !defined(LITTLE_ENDIAN) && defined(__ORDER_LITTLE_ENDIAN__)
-# define LITTLE_ENDIAN __ORDER_LITTLE_ENDIAN__
-#endif
-
-#ifdef BYTE_ORDER
-# if BYTE_ORDER == BIG_ENDIAN
-#  define littleendian 0
-#  define check_little_endian() (void)0
-# elif BYTE_ORDER == LITTLE_ENDIAN
-#  define littleendian 1
-#  define check_little_endian() (void)0
-# endif
-#endif
-#ifndef littleendian
-/* can't distinguish endian in compile time */
-static int littleendian = 0;
-static void
-check_little_endian(void)
-{
-  unsigned int n = 1;
-  littleendian = (*(unsigned char *)&n == 1);
-}
-#endif
 
 static unsigned int
 hex2int(unsigned char ch)
@@ -143,7 +116,7 @@ static int
 pack_c(mrb_state *mrb, mrb_value o, mrb_value str, mrb_int sidx, unsigned int flags)
 {
   str = str_len_ensure(mrb, str, sidx + 1);
-  RSTRING_PTR(str)[sidx] = (char)mrb_fixnum(o);
+  RSTRING_PTR(str)[sidx] = (char)mrb_integer(o);
   return 1;
 }
 
@@ -163,7 +136,7 @@ pack_s(mrb_state *mrb, mrb_value o, mrb_value str, mrb_int sidx, unsigned int fl
   uint16_t n;
 
   str = str_len_ensure(mrb, str, sidx + 2);
-  n = (uint16_t)mrb_fixnum(o);
+  n = (uint16_t)mrb_integer(o);
   if (flags & PACK_FLAG_LITTLEENDIAN) {
     RSTRING_PTR(str)[sidx+0] = n % 256;
     RSTRING_PTR(str)[sidx+1] = n / 256;
@@ -197,7 +170,7 @@ pack_l(mrb_state *mrb, mrb_value o, mrb_value str, mrb_int sidx, unsigned int fl
   uint32_t n;
 
   str = str_len_ensure(mrb, str, sidx + 4);
-  n = (uint32_t)mrb_fixnum(o);
+  n = (uint32_t)mrb_integer(o);
   if (flags & PACK_FLAG_LITTLEENDIAN) {
     RSTRING_PTR(str)[sidx+0] = (char)(n & 0xff);
     RSTRING_PTR(str)[sidx+1] = (char)(n >> 8);
@@ -216,7 +189,7 @@ pack_l(mrb_state *mrb, mrb_value o, mrb_value str, mrb_int sidx, unsigned int fl
 static void
 u32tostr(char *buf, size_t len, uint32_t n)
 {
-#ifdef MRB_DISABLE_STDIO
+#ifdef MRB_NO_STDIO
   char *bufend = buf + len;
   char *p = bufend - 1;
 
@@ -241,27 +214,7 @@ u32tostr(char *buf, size_t len, uint32_t n)
   memmove(buf, p, bufend - p);
 #else
   snprintf(buf, len, "%" PRIu32, n);
-#endif /* MRB_DISABLE_STDIO */
-}
-
-static void
-i32tostr(char *buf, size_t len, int32_t n)
-{
-#ifdef MRB_DISABLE_STDIO
-  if (len < 1) {
-    return;
-  }
-
-  if (n < 0) {
-    *buf ++ = '-';
-    len --;
-    n = -n;
-  }
-
-  u32tostr(buf, len, (uint32_t)n);
-#else
-  snprintf(buf, len, "%" PRId32, n);
-#endif /* MRB_DISABLE_STDIO */
+#endif /* MRB_NO_STDIO */
 }
 #endif /* MRB_INT64 */
 
@@ -286,24 +239,17 @@ unpack_l(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, un
     ul += (uint32_t)src[3];
   }
   if (flags & PACK_FLAG_SIGNED) {
-    int32_t sl = ul;
-#ifndef MRB_INT64
-    if (!FIXABLE(sl)) {
-      i32tostr(msg, sizeof(msg), sl);
-      mrb_raisef(mrb, E_RANGE_ERROR, "cannot unpack to Fixnum: %s", msg);
-    }
-#endif
-    n = sl;
+    n = (int32_t)ul;
   } else {
 #ifndef MRB_INT64
-    if (!POSFIXABLE(ul)) {
+    if (UINT_OVERFLOW_P(ul)) {
       u32tostr(msg, sizeof(msg), ul);
-      mrb_raisef(mrb, E_RANGE_ERROR, "cannot unpack to Fixnum: %s", msg);
+      mrb_raisef(mrb, E_RANGE_ERROR, "cannot unpack to Integer: %s", msg);
     }
 #endif
     n = ul;
   }
-  mrb_ary_push(mrb, ary, mrb_fixnum_value(n));
+  mrb_ary_push(mrb, ary, mrb_int_value(mrb, n));
   return 4;
 }
 
@@ -313,7 +259,7 @@ pack_q(mrb_state *mrb, mrb_value o, mrb_value str, mrb_int sidx, unsigned int fl
   uint64_t n;
 
   str = str_len_ensure(mrb, str, sidx + 8);
-  n = (uint64_t)mrb_fixnum(o);
+  n = (uint64_t)mrb_integer(o);
   if (flags & PACK_FLAG_LITTLEENDIAN) {
     RSTRING_PTR(str)[sidx+0] = (char)(n & 0xff);
     RSTRING_PTR(str)[sidx+1] = (char)(n >> 8);
@@ -339,7 +285,7 @@ pack_q(mrb_state *mrb, mrb_value o, mrb_value str, mrb_int sidx, unsigned int fl
 static void
 u64tostr(char *buf, size_t len, uint64_t n)
 {
-#ifdef MRB_DISABLE_STDIO
+#ifdef MRB_NO_STDIO
   char *bufend = buf + len;
   char *p = bufend - 1;
 
@@ -364,13 +310,14 @@ u64tostr(char *buf, size_t len, uint64_t n)
   memmove(buf, p, bufend - p);
 #else
   snprintf(buf, len, "%" PRIu64, n);
-#endif /* MRB_DISABLE_STDIO */
+#endif /* MRB_NO_STDIO */
 }
 
+#ifndef MRB_INT64
 static void
 i64tostr(char *buf, size_t len, int64_t n)
 {
-#ifdef MRB_DISABLE_STDIO
+#ifdef MRB_NO_STDIO
   if (len < 1) {
     return;
   }
@@ -384,8 +331,9 @@ i64tostr(char *buf, size_t len, int64_t n)
   u64tostr(buf, len, (uint64_t)n);
 #else
   snprintf(buf, len, "%" PRId64, n);
-#endif /* MRB_DISABLE_STDIO */
+#endif /* MRB_NO_STDIO */
 }
+#endif /* MRB_INT64 */
 
 static int
 unpack_q(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, unsigned int flags)
@@ -409,23 +357,25 @@ unpack_q(mrb_state *mrb, const unsigned char *src, int srclen, mrb_value ary, un
   }
   if (flags & PACK_FLAG_SIGNED) {
     int64_t sll = ull;
-    if (!FIXABLE(sll)) {
+#ifndef MRB_INT64
+    if (INT_OVERFLOW_P(sll)) {
       i64tostr(msg, sizeof(msg), sll);
-      mrb_raisef(mrb, E_RANGE_ERROR, "cannot unpack to Fixnum: %s", msg);
+      mrb_raisef(mrb, E_RANGE_ERROR, "cannot unpack to Integer: %s", msg);
     }
-    n = sll;
+#endif
+    n = (mrb_int)sll;
   } else {
-    if (!POSFIXABLE(ull)) {
+    if (UINT_OVERFLOW_P(ull)) {
       u64tostr(msg, sizeof(msg), ull);
-      mrb_raisef(mrb, E_RANGE_ERROR, "cannot unpack to Fixnum: %s", msg);
+      mrb_raisef(mrb, E_RANGE_ERROR, "cannot unpack to Integer: %s", msg);
     }
-    n = ull;
+    n = (mrb_int)ull;
   }
-  mrb_ary_push(mrb, ary, mrb_fixnum_value(n));
+  mrb_ary_push(mrb, ary, mrb_int_value(mrb, n));
   return 8;
 }
 
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
 static int
 pack_double(mrb_state *mrb, mrb_value o, mrb_value str, mrb_int sidx, unsigned int flags)
 {
@@ -560,7 +510,7 @@ pack_utf8(mrb_state *mrb, mrb_value o, mrb_value str, mrb_int sidx, long count, 
   int len = 0;
   uint32_t c = 0;
 
-  c = (uint32_t)mrb_fixnum(o);
+  c = (uint32_t)mrb_integer(o);
 
   /* Unicode character */
   /* from mruby-compiler gem */
@@ -828,7 +778,7 @@ unpack_h(mrb_state *mrb, const void *src, int slen, mrb_value ary, int count, un
     }
   }
 
-  dst = mrb_str_resize(mrb, dst, dptr - dptr0);
+  dst = mrb_str_resize(mrb, dst, (mrb_int)(dptr - dptr0));
   mrb_ary_push(mrb, ary, dst);
   return (int)(sptr - sptr0);
 }
@@ -951,7 +901,7 @@ unpack_m(mrb_state *mrb, const void *src, int slen, mrb_value ary, unsigned int 
   }
 
 done:
-  dst = mrb_str_resize(mrb, dst, dptr - dptr0);
+  dst = mrb_str_resize(mrb, dst, (mrb_int)(dptr - dptr0));
   mrb_ary_push(mrb, ary, dst);
   return (int)(sptr - sptr0);
 }
@@ -1248,7 +1198,7 @@ mrb_pack_pack(mrb_state *mrb, mrb_value ary)
       if (type == PACK_TYPE_INTEGER) {
         o = mrb_to_int(mrb, o);
       }
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
       else if (type == PACK_TYPE_FLOAT) {
         if (!mrb_float_p(o)) {
           mrb_float f = mrb_to_flo(mrb, o);
@@ -1284,7 +1234,7 @@ mrb_pack_pack(mrb_state *mrb, mrb_value ary)
       case PACK_DIR_STR:
         ridx += pack_a(mrb, o, result, ridx, count, flags);
         break;
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
       case PACK_DIR_DOUBLE:
         ridx += pack_double(mrb, o, result, ridx, flags);
         break;
@@ -1298,7 +1248,8 @@ mrb_pack_pack(mrb_state *mrb, mrb_value ary)
       default:
         break;
       }
-      if (dir == PACK_DIR_STR || dir == PACK_DIR_BASE64) { /* always consumes 1 entry */
+      if (dir == PACK_DIR_STR || dir == PACK_DIR_BASE64 || dir == PACK_DIR_HEX) {
+        /* always consumes 1 entry */
         aidx++;
         break;
       }
@@ -1380,7 +1331,7 @@ pack_unpack(mrb_state *mrb, mrb_value str, int single)
       case PACK_DIR_QUAD:
         srcidx += unpack_q(mrb, sptr, srclen - srcidx, result, flags);
         break;
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
       case PACK_DIR_FLOAT:
         srcidx += unpack_float(mrb, sptr, srclen - srcidx, result, flags);
         break;
@@ -1425,7 +1376,6 @@ mrb_pack_unpack1(mrb_state *mrb, mrb_value str)
 void
 mrb_mruby_pack_gem_init(mrb_state *mrb)
 {
-  check_little_endian();
   make_base64_dec_tab();
 
   mrb_define_method(mrb, mrb->array_class, "pack", mrb_pack_pack, MRB_ARGS_REQ(1));

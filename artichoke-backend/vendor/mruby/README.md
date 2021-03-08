@@ -17,7 +17,7 @@ of the Ministry of Economy, Trade and Industry of Japan.
 
 ## How to get mruby
 
-The stable version 2.1.2 of mruby can be downloaded via the following URL: [https://github.com/mruby/mruby/archive/2.1.2.zip](https://github.com/mruby/mruby/archive/2.1.2.zip)
+The stable version 3.0.0 of mruby can be downloaded via the following URL: [https://github.com/mruby/mruby/archive/3.0.0.zip](https://github.com/mruby/mruby/archive/3.0.0.zip)
 
 The latest development version of mruby can be downloaded via the following URL: [https://github.com/mruby/mruby/zipball/master](https://github.com/mruby/mruby/zipball/master)
 
@@ -36,19 +36,9 @@ The URL of the mruby home-page is: https://mruby.org.
 
 We don't have a mailing list, but you can use [GitHub issues](https://github.com/mruby/mruby/issues).
 
-## How to compile and install (mruby and gems)
+## How to compile, test, and install (mruby and gems)
 
 See the [compile.md](https://github.com/mruby/mruby/blob/master/doc/guides/compile.md) file.
-
-## Running Tests
-
-To run the tests, execute the following from the project's root directory.
-
-    $ rake test
-
-Note: `bison` bundled with MacOS is too old to compile `mruby`.
-Try `brew install bison` and follow the instuction shown to update
-the `$PATH` to compile `mruby`.
 
 ## Building documentation
 
@@ -94,12 +84,12 @@ Please ask us if you want to distribute your code under another license.
 ## How to Contribute
 
 See the [contribution guidelines][contribution-guidelines], and then send a pull
-request to <http://github.com/mruby/mruby>.  We consider you have granted
+request to <https://github.com/mruby/mruby>.  We consider you have granted
 non-exclusive right to your contributed code under MIT license.  If you want to
 be named as one of mruby developers, please include an update to the AUTHORS
 file in your pull request.
 
-[ISO-standard]: http://www.iso.org/iso/iso_catalogue/catalogue_tc/catalogue_detail.htm?csnumber=59579
+[ISO-standard]: https://www.iso.org/iso/iso_catalogue/catalogue_tc/catalogue_detail.htm?csnumber=59579
 [build-status-img]: https://travis-ci.org/mruby/mruby.svg?branch=master
 [contribution-guidelines]: https://github.com/mruby/mruby/blob/master/CONTRIBUTING.md
 [travis-ci]: https://travis-ci.org/mruby/mruby

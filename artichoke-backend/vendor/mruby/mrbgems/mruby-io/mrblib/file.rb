@@ -2,13 +2,18 @@ class File < IO
   attr_accessor :path
 
   def initialize(fd_or_path, mode = "r", perm = 0666)
-    if fd_or_path.kind_of? Fixnum
+    if fd_or_path.kind_of? Integer
       super(fd_or_path, mode)
     else
       @path = fd_or_path
       fd = IO.sysopen(@path, mode, perm)
       super(fd, mode)
     end
+  end
+
+  def mtime
+    t = self._mtime
+    t && Time.at(t)
   end
 
   def self.join(*names)
@@ -186,9 +191,9 @@ class File < IO
 
   def self.extname(filename)
     fname = self.basename(filename)
-    return '' if fname[0] == '.' || fname.index('.').nil?
-    ext = fname.split('.').last
-    ext.empty? ? '' : ".#{ext}"
+    epos = fname.rindex('.')
+    return '' if epos == 0 || epos.nil?
+    return fname[epos..-1]
   end
 
   def self.path(filename)

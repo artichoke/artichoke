@@ -77,11 +77,13 @@ mrb_open(void)
   return mrb;
 }
 
+#ifndef MRB_NO_GEMS
 static void
 init_mrbgems(mrb_state *mrb, void *opaque)
 {
   mrb_init_mrbgems(mrb);
 }
+#endif
 
 MRB_API mrb_state*
 mrb_open_allocf(mrb_allocf f, void *ud)
@@ -92,7 +94,7 @@ mrb_open_allocf(mrb_allocf f, void *ud)
     return NULL;
   }
 
-#ifndef DISABLE_GEMS
+#ifndef MRB_NO_GEMS
   if (mrb_core_init_protect(mrb, init_mrbgems, NULL)) {
     mrb_close(mrb);
     return NULL;
@@ -107,12 +109,14 @@ void mrb_free_symtbl(mrb_state *mrb);
 void
 mrb_irep_incref(mrb_state *mrb, mrb_irep *irep)
 {
+  if (irep->flags & MRB_IREP_NO_FREE) return;
   irep->refcnt++;
 }
 
 void
 mrb_irep_decref(mrb_state *mrb, mrb_irep *irep)
 {
+  if (irep->flags & MRB_IREP_NO_FREE) return;
   irep->refcnt--;
   if (irep->refcnt == 0) {
     mrb_irep_free(mrb, irep);
@@ -122,12 +126,14 @@ mrb_irep_decref(mrb_state *mrb, mrb_irep *irep)
 void
 mrb_irep_cutref(mrb_state *mrb, mrb_irep *irep)
 {
-  mrb_irep *tmp;
+  mrb_irep **reps;
   int i;
 
+  if (irep->flags & MRB_IREP_NO_FREE) return;
+  reps = (mrb_irep**)irep->reps;
   for (i=0; i<irep->rlen; i++) {
-    tmp = irep->reps[i];
-    irep->reps[i] = NULL;
+    mrb_irep *tmp = reps[i];
+    reps[i] = NULL;
     if (tmp) mrb_irep_decref(mrb, tmp);
   }
 }
@@ -137,34 +143,30 @@ mrb_irep_free(mrb_state *mrb, mrb_irep *irep)
 {
   int i;
 
+  if (irep->flags & MRB_IREP_NO_FREE) return;
   if (!(irep->flags & MRB_ISEQ_NO_FREE))
     mrb_free(mrb, (void*)irep->iseq);
-  if (irep->pool) for (i=0; i<irep->plen; i++) {
-    if (mrb_string_p(irep->pool[i])) {
-      mrb_gc_free_str(mrb, RSTRING(irep->pool[i]));
-      mrb_free(mrb, mrb_obj_ptr(irep->pool[i]));
+  if (irep->pool) {
+    for (i=0; i<irep->plen; i++) {
+      if ((irep->pool[i].tt & 3) == IREP_TT_STR ||
+          irep->pool[i].tt == IREP_TT_BIGINT) {
+        mrb_free(mrb, (void*)irep->pool[i].u.str);
+      }
     }
-#if defined(MRB_WORD_BOXING) && !defined(MRB_WITHOUT_FLOAT)
-    else if (mrb_float_p(irep->pool[i])) {
-      mrb_free(mrb, mrb_obj_ptr(irep->pool[i]));
-    }
-#endif
+    mrb_free(mrb, (void*)irep->pool);
   }
-  mrb_free(mrb, irep->pool);
-  mrb_free(mrb, irep->syms);
+  mrb_free(mrb, (void*)irep->syms);
   if (irep->reps) {
     for (i=0; i<irep->rlen; i++) {
       if (irep->reps[i])
-        mrb_irep_decref(mrb, irep->reps[i]);
+        mrb_irep_decref(mrb, (mrb_irep*)irep->reps[i]);
     }
+    mrb_free(mrb, (void*)irep->reps);
   }
-  mrb_free(mrb, irep->reps);
-  mrb_free(mrb, irep->lv);
+  mrb_free(mrb, (void*)irep->lv);
   mrb_debug_info_free(mrb, irep->debug_info);
   mrb_free(mrb, irep);
 }
-
-void mrb_free_backtrace(mrb_state *mrb);
 
 MRB_API void
 mrb_free_context(mrb_state *mrb, struct mrb_context *c)
@@ -172,24 +174,16 @@ mrb_free_context(mrb_state *mrb, struct mrb_context *c)
   if (!c) return;
   mrb_free(mrb, c->stbase);
   mrb_free(mrb, c->cibase);
-  mrb_free(mrb, c->rescue);
-  mrb_free(mrb, c->ensure);
   mrb_free(mrb, c);
 }
 
-MRB_API void
+int mrb_protect_atexit(mrb_state *mrb);
+
+  MRB_API void
 mrb_close(mrb_state *mrb)
 {
   if (!mrb) return;
-  if (mrb->atexit_stack_len > 0) {
-    mrb_int i;
-    for (i = mrb->atexit_stack_len; i > 0; --i) {
-      mrb->atexit_stack[i - 1](mrb);
-    }
-#ifndef MRB_FIXED_STATE_ATEXIT_STACK
-    mrb_free(mrb, mrb->atexit_stack);
-#endif
-  }
+  mrb_protect_atexit(mrb);
 
   /* free */
   mrb_gc_destroy(mrb, &mrb->gc);

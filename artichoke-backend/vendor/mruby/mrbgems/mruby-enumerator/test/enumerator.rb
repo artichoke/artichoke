@@ -445,7 +445,7 @@ assert 'modifying existing methods' do
   }
 end
 
-assert 'Integral#times' do
+assert 'Integer#times' do
   a = 3
   b = a.times
   c = []
@@ -567,7 +567,7 @@ assert 'Enumerator.produce' do
   # Without initial object
   passed_args = []
   enum = Enumerator.produce {|obj| passed_args << obj; (obj || 0).succ }
-  assert_equal Enumerator, enum.class 
+  assert_equal Enumerator, enum.class
   assert_take [1, 2, 3], enum
   assert_equal [nil, 1, 2], passed_args
 

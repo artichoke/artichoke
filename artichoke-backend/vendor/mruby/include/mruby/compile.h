@@ -33,7 +33,7 @@ typedef struct mrbc_context {
   mrb_bool no_exec:1;
   mrb_bool keep_lv:1;
   mrb_bool no_optimize:1;
-  struct RProc *upper;
+  const struct RProc *upper;
 
   size_t parser_nerr;
 } mrbc_context;
@@ -42,6 +42,7 @@ MRB_API mrbc_context* mrbc_context_new(mrb_state *mrb);
 MRB_API void mrbc_context_free(mrb_state *mrb, mrbc_context *cxt);
 MRB_API const char *mrbc_filename(mrb_state *mrb, mrbc_context *c, const char *s);
 MRB_API void mrbc_partial_hook(mrb_state *mrb, mrbc_context *c, int (*partial_hook)(struct mrb_parser_state*), void*data);
+MRB_API void mrbc_cleanup_local_variables(mrb_state *mrb, mrbc_context *c);
 
 /* AST node structure */
 typedef struct mrb_ast_node {
@@ -98,6 +99,9 @@ enum mrb_string_type {
 /* heredoc structure */
 struct mrb_parser_heredoc_info {
   mrb_bool allow_indent:1;
+  mrb_bool remove_indent:1;
+  size_t indent;
+  mrb_ast_node *indented;
   mrb_bool line_head:1;
   enum mrb_string_type type;
   const char *term;
@@ -114,7 +118,8 @@ struct mrb_parser_state {
   struct mrb_pool *pool;
   mrb_ast_node *cells;
   const char *s, *send;
-#ifndef MRB_DISABLE_STDIO
+#ifndef MRB_NO_STDIO
+  /* If both f and s are non-null, it will be taken preferentially from s until s < send. */
   FILE *f;
 #endif
   mrbc_context *cxt;
@@ -152,7 +157,7 @@ struct mrb_parser_state {
 
   mrb_bool no_optimize:1;
   mrb_bool capture_errors:1;
-  struct RProc *upper;
+  const struct RProc *upper;
   struct mrb_parser_message error_buffer[10];
   struct mrb_parser_message warn_buffer[10];
 
@@ -172,7 +177,7 @@ MRB_API void mrb_parser_set_filename(struct mrb_parser_state*, char const*);
 MRB_API mrb_sym mrb_parser_get_filename(struct mrb_parser_state*, uint16_t idx);
 
 /* utility functions */
-#ifndef MRB_DISABLE_STDIO
+#ifndef MRB_NO_STDIO
 MRB_API struct mrb_parser_state* mrb_parse_file(mrb_state*,FILE*,mrbc_context*);
 #endif
 MRB_API struct mrb_parser_state* mrb_parse_string(mrb_state*,const char*,mrbc_context*);
@@ -180,8 +185,8 @@ MRB_API struct mrb_parser_state* mrb_parse_nstring(mrb_state*,const char*,size_t
 MRB_API struct RProc* mrb_generate_code(mrb_state*, struct mrb_parser_state*);
 MRB_API mrb_value mrb_load_exec(mrb_state *mrb, struct mrb_parser_state *p, mrbc_context *c);
 
-/** program load functions 
-* Please note! Currently due to interactions with the GC calling these functions will 
+/** program load functions
+* Please note! Currently due to interactions with the GC calling these functions will
 * leak one RProc object per function call.
 * To prevent this save the current memory arena before calling and restore the arena
 * right after, like so
@@ -189,9 +194,10 @@ MRB_API mrb_value mrb_load_exec(mrb_state *mrb, struct mrb_parser_state *p, mrbc
 * mrb_value status = mrb_load_string(mrb, buffer);
 * mrb_gc_arena_restore(mrb, ai);
 */
-#ifndef MRB_DISABLE_STDIO
+#ifndef MRB_NO_STDIO
 MRB_API mrb_value mrb_load_file(mrb_state*,FILE*);
 MRB_API mrb_value mrb_load_file_cxt(mrb_state*,FILE*, mrbc_context *cxt);
+MRB_API mrb_value mrb_load_detect_file_cxt(mrb_state *mrb, FILE *fp, mrbc_context *c);
 #endif
 MRB_API mrb_value mrb_load_string(mrb_state *mrb, const char *s);
 MRB_API mrb_value mrb_load_nstring(mrb_state *mrb, const char *s, size_t len);

@@ -13,15 +13,6 @@ This document is collecting these limitations.
 This document does not contain a complete list of limitations.
 Please help to improve it by submitting your findings.
 
-
-## `1/2` gives `0.5`
-
-Since mruby does not have `Bignum`, bigger integers are represented
-by `Float` numbers. To enhance interoperability between `Fixnum`
-and `Float`, mruby provides `Float#upto` and other iterating
-methods for the `Float` class.  As a side effect, `1/2` gives `0.5`
-not `0`.
-
 ## `Array` passed to `puts`
 
 Passing an Array to `puts` results in different output.
@@ -38,7 +29,7 @@ puts [1,2,3]
 3
 ```
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
 ```
 [1, 2, 3]
@@ -61,9 +52,17 @@ end
 
 `ZeroDivisionError` is raised.
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
-No exception is raised.
+No exception is raised. Instead you have to do:
+
+```ruby
+begin
+  1 / 0
+rescue => e
+  raise e
+end
+```
 
 ## Fiber execution can't cross C function boundary
 
@@ -89,7 +88,7 @@ p Liste.new "foobar"
 
 ` [] `
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
 `ArgumentError` is raised.
 
@@ -119,7 +118,7 @@ false
 true
 ```
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
 ```
 true
@@ -156,7 +155,7 @@ p 'ok'
 ok
 ```
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
 ```
 test.rb:8: undefined method 'test_func' (NoMethodError)
@@ -178,7 +177,7 @@ defined?(Foo)
 nil
 ```
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
 `NameError` is raised.
 
@@ -195,7 +194,7 @@ alias $a $__a__
 
 ` nil `
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
 Syntax error
 
@@ -217,7 +216,7 @@ end
 `ArgumentError` is raised.
 The re-defined `+` operator does not accept any arguments.
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
 ` 'ab' `
 Behavior of the operator wasn't changed.
@@ -233,7 +232,7 @@ $ ruby -e 'puts Proc.new {}.binding'
 #<Binding:0x00000e9deabb9950>
 ```
 
-#### mruby [2.1.2 (2020-08-06)]
+#### mruby [3.0.0 (2021-03-05)]
 
 ```
 $ ./bin/mruby -e 'puts Proc.new {}.binding'
@@ -245,8 +244,7 @@ trace (most recent call last):
 ## Keyword arguments
 
 mruby keyword arguments behave slightly different from CRuby 2.5
-to make the behavior simpler and less confusing. Maybe in the
-future, the simpler behavior will be adopted to CRuby as well.
+to make the behavior simpler and less confusing.
 
 #### Ruby [ruby 2.5.1p57 (2018-03-29 revision 63029)]
 
@@ -255,7 +253,7 @@ $ ruby -e 'def m(*r,**k) p [r,k] end; m("a"=>1,:b=>2)'
 [[{"a"=>1}], {:b=>2}]
 ```
 
-#### mruby [mruby 2.1.2]
+#### mruby [3.0.0 (2021-03-05)]
 
 ```
 $ ./bin/mruby -e 'def m(*r,**k) p [r,k] end; m("a"=>1,:b=>2)'
@@ -263,26 +261,6 @@ trace (most recent call last):
 	[0] -e:1
 -e:1: keyword argument hash with non symbol keys (ArgumentError)
 ```
-
-## Argument Destructuring
-
-```ruby
-def m(a,(b,c),d); p [a,b,c,d]; end
-m(1,[2,3],4)  # => [1,2,3,4]
-```
-Destructured arguments (`b` and `c` in above example) cannot be accessed
-from the default expression of optional arguments and keyword arguments,
-since actual assignment is done after the evaluation of those default
-expressions. Thus:
-
-```ruby
-def f(a,(b,c),d=b)
-  p [a,b,c,d]
-end
-f(1,[2,3])
-```
-
-CRuby gives `[1,2,3,nil]`. mruby raises `NoMethodError` for `b`.
 
 ## `nil?` redefinition in conditional expressions
 
@@ -297,3 +275,24 @@ puts(a.nil? ? "truthy" : "falsy")
 ```
 
 Ruby outputs `falsy`. mruby outputs `truthy`.
+
+## Argument Destructuring
+
+```ruby
+def m(a,(b,c),d); p [a,b,c,d]; end
+m(1,[2,3],4)  # => [1,2,3,4]
+```
+
+Destructured arguments (`b` and `c` in above example) cannot be accessed
+from the default expression of optional arguments and keyword arguments,
+since actual assignment is done after the evaluation of those default
+expressions. Thus:
+
+```ruby
+def f(a,(b,c),d=b)
+  p [a,b,c,d]
+end
+f(1,[2,3])
+```
+
+CRuby gives `[1,2,3,nil]`. mruby raises `NoMethodError` for `b`.
