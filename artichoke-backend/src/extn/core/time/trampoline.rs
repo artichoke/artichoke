@@ -1,5 +1,6 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::time::Time;
 use crate::extn::prelude::*;
 
@@ -11,13 +12,17 @@ pub fn now(interp: &mut Artichoke) -> Result<Value, Error> {
     Ok(result)
 }
 
-pub fn at<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
-where
-    T: IntoIterator<Item = Value>,
-{
-    let _ = interp;
-    let _ = args;
-    Err(NotImplementedError::new().into())
+pub fn at(interp: &mut Artichoke, seconds: Value, microseconds: Value) -> Result<Value, Error> {
+    let seconds = implicitly_convert_to_int(interp, seconds)?;
+    let sub_second_nanos = if microseconds.is_nil() {
+        0
+    } else {
+        implicitly_convert_to_int(interp, microseconds)? * 1_000
+    };
+
+    let time = Time::at(seconds, sub_second_nanos);
+    let result = Time::alloc_value(time, interp)?;
+    Ok(result)
 }
 
 pub fn mkutc<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
