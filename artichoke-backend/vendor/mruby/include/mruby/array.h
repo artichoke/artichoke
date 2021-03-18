@@ -21,7 +21,14 @@ typedef struct mrb_shared_array {
   mrb_value *ptr;
 } mrb_shared_array;
 
-#define MRB_ARY_EMBED_LEN_MAX ((mrb_int)(sizeof(void*)*3/sizeof(mrb_value)))
+#if defined(MRB_32BIT) && defined(MRB_NO_BOXING)
+# define MRB_ARY_NO_EMBED
+# define MRB_ARY_EMBED_LEN_MAX 0
+#else
+# define MRB_ARY_EMBED_LEN_MAX ((mrb_int)(sizeof(void*)*3/sizeof(mrb_value)))
+mrb_static_assert(MRB_ARY_EMBED_LEN_MAX > 0, "MRB_ARY_EMBED_LEN_MAX > 0");
+#endif
+
 struct RArray {
   MRB_OBJECT_HEADER;
   union {
@@ -33,7 +40,9 @@ struct RArray {
       } aux;
       mrb_value *ptr;
     } heap;
-    void *ary[3];
+#ifndef MRB_ARY_NO_EMBED
+    mrb_value ary[MRB_ARY_EMBED_LEN_MAX];
+#endif
   } as;
 };
 
@@ -41,12 +50,20 @@ struct RArray {
 #define mrb_ary_value(p)  mrb_obj_value((void*)(p))
 #define RARRAY(v)  ((struct RArray*)(mrb_ptr(v)))
 
+#ifdef MRB_ARY_NO_EMBED
+#define ARY_EMBED_P(a) 0
+#define ARY_UNSET_EMBED_FLAG(a) (void)0
+#define ARY_EMBED_LEN(a) 0
+#define ARY_SET_EMBED_LEN(a,len) (void)0
+#define ARY_EMBED_PTR(a) 0
+#else
 #define MRB_ARY_EMBED_MASK  7
 #define ARY_EMBED_P(a) ((a)->flags & MRB_ARY_EMBED_MASK)
 #define ARY_UNSET_EMBED_FLAG(a) ((a)->flags &= ~(MRB_ARY_EMBED_MASK))
 #define ARY_EMBED_LEN(a) ((mrb_int)(((a)->flags & MRB_ARY_EMBED_MASK) - 1))
 #define ARY_SET_EMBED_LEN(a,len) ((a)->flags = ((a)->flags&~MRB_ARY_EMBED_MASK) | ((uint32_t)(len) + 1))
-#define ARY_EMBED_PTR(a) ((mrb_value*)(&(a)->as.ary))
+#define ARY_EMBED_PTR(a) ((a)->as.ary)
+#endif
 
 #define ARY_LEN(a) (ARY_EMBED_P(a)?ARY_EMBED_LEN(a):(a)->as.heap.len)
 #define ARY_PTR(a) (ARY_EMBED_P(a)?ARY_EMBED_PTR(a):(a)->as.heap.ptr)
@@ -232,10 +249,10 @@ MRB_API mrb_value mrb_ary_entry(mrb_value ary, mrb_int offset);
  *
  * Equivalent to:
  *
- *      ary.shift
+ *      ary[head, len] = rpl
  *
  * @param mrb The mruby state reference.
- * @param self The array from which the value will be shifted.
+ * @param self The array from which the value will be partiality replaced.
  * @param head Beginning position of a replacement subsequence.
  * @param len Length of a replacement subsequence.
  * @param rpl The array of replacement elements.
@@ -279,7 +296,7 @@ MRB_API mrb_value mrb_ary_clear(mrb_state *mrb, mrb_value self);
  *
  * @param mrb The mruby state reference.
  * @param ary The target array
- * @param sep The separater, can be NULL
+ * @param sep The separator, can be NULL
  */
 MRB_API mrb_value mrb_ary_join(mrb_state *mrb, mrb_value ary, mrb_value sep);
 

@@ -178,7 +178,7 @@ mod libmruby {
     }
 
     /// Build the mruby static library with its built in minirake build system.
-    fn staticlib(target: &Triple, mrb_int: &str) {
+    fn staticlib(target: &Triple) {
         // minirake dynamically generates some c source files so we can't build
         // directly with the `cc` crate. We must first hijack the mruby build
         // system to do the codegen for us.
@@ -247,11 +247,12 @@ mod libmruby {
             .files(sources.values())
             .include(mruby_include_dir())
             .include(buildpath::source::mruby_sys_ext_include_dir())
-            .define("MRB_DISABLE_STDIO", None)
-            .define("MRB_UTF8_STRING", None)
-            .define("MRB_ARY_NO_EMBED", None)
             .define("MRB_NO_BOXING", None)
-            .define(mrb_int, None)
+            .define("MRB_NO_PRESYM", None)
+            .define("MRB_NO_STDIO", None)
+            .define("MRB_ARY_NO_EMBED", None)
+            .define("MRB_INT64", None)
+            .define("MRB_UTF8_STRING", None)
             .define("DISABLE_GEMS", None)
             .define("ARTICHOKE", None);
 
@@ -267,14 +268,14 @@ mod libmruby {
                 build.define("MRB_API", Some(r#"__attribute__((used))"#));
             } else if let OperatingSystem::Unknown = target.operating_system {
                 build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
-                build.define("MRB_DISABLE_DIRECT_THREADING", None);
+                build.define("MRB_NO_DIRECT_THREADING", None);
             }
         }
 
         build.compile("libartichokemruby.a");
     }
 
-    fn bindgen(target: &Triple, mrb_int: &str) {
+    fn bindgen(target: &Triple) {
         let bindings_out_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("ffi.rs");
         let mut bindgen = bindgen::Builder::default()
             .header(bindgen_source_header().to_str().unwrap())
@@ -285,11 +286,12 @@ mod libmruby {
                     .to_str()
                     .unwrap()
             ))
-            .clang_arg("-DMRB_DISABLE_STDIO")
-            .clang_arg("-DMRB_UTF8_STRING")
-            .clang_arg("-DMRB_ARY_NO_EMBED")
             .clang_arg("-DMRB_NO_BOXING")
-            .clang_arg(format!("-D{}", mrb_int))
+            .clang_arg("-DMRB_NO_PRESYM")
+            .clang_arg("-DMRB_NO_STDIO")
+            .clang_arg("-DMRB_ARY_NO_EMBED")
+            .clang_arg("-DMRB_INT64")
+            .clang_arg("-DMRB_UTF8_STRING")
             .whitelist_function("^mrb.*")
             .whitelist_type("^mrb.*")
             .whitelist_var("^mrb.*")
@@ -319,9 +321,8 @@ mod libmruby {
 
     pub fn build(target: &Triple) {
         fs::create_dir_all(mruby_build_dir()).unwrap();
-        let mrb_int = "MRB_INT64";
-        staticlib(target, mrb_int);
-        bindgen(target, mrb_int);
+        staticlib(target);
+        bindgen(target);
     }
 }
 

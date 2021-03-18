@@ -14,6 +14,7 @@
 #include <mruby/error.h>
 #include <mruby/numeric.h>
 #include <mruby/data.h>
+#include <mruby/presym.h>
 
 struct backtrace_location {
   int32_t lineno;
@@ -29,7 +30,7 @@ mrb_value mrb_exc_inspect(mrb_state *mrb, mrb_value exc);
 mrb_value mrb_unpack_backtrace(mrb_state *mrb, mrb_value backtrace);
 
 static void
-each_backtrace(mrb_state *mrb, ptrdiff_t ciidx, const mrb_code *pc0, each_backtrace_func func, void *data)
+each_backtrace(mrb_state *mrb, ptrdiff_t ciidx, each_backtrace_func func, void *data)
 {
   ptrdiff_t i;
 
@@ -39,8 +40,9 @@ each_backtrace(mrb_state *mrb, ptrdiff_t ciidx, const mrb_code *pc0, each_backtr
   for (i=ciidx; i >= 0; i--) {
     struct backtrace_location loc;
     mrb_callinfo *ci;
-    mrb_irep *irep;
+    const mrb_irep *irep;
     const mrb_code *pc;
+    uint32_t idx;
 
     ci = &mrb->c->cibase[i];
 
@@ -50,21 +52,18 @@ each_backtrace(mrb_state *mrb, ptrdiff_t ciidx, const mrb_code *pc0, each_backtr
     irep = ci->proc->body.irep;
     if (!irep) continue;
 
-    if (mrb->c->cibase[i].err) {
-      pc = mrb->c->cibase[i].err;
-    }
-    else if (i+1 <= ciidx) {
-      if (!mrb->c->cibase[i + 1].pc) continue;
-      pc = &mrb->c->cibase[i+1].pc[-1];
+    if (mrb->c->cibase[i].pc) {
+      pc = &mrb->c->cibase[i].pc[-1];
     }
     else {
-      pc = pc0;
+      continue;
     }
 
-    loc.lineno = mrb_debug_get_line(mrb, irep, pc - irep->iseq);
+    idx = (uint32_t)(pc - irep->iseq);
+    loc.lineno = mrb_debug_get_line(mrb, irep, idx);
     if (loc.lineno == -1) continue;
 
-    loc.filename = mrb_debug_get_filename(mrb, irep, pc - irep->iseq);
+    loc.filename = mrb_debug_get_filename(mrb, irep, idx);
     if (!loc.filename) {
       loc.filename = "(unknown)";
     }
@@ -74,7 +73,7 @@ each_backtrace(mrb_state *mrb, ptrdiff_t ciidx, const mrb_code *pc0, each_backtr
   }
 }
 
-#ifndef MRB_DISABLE_STDIO
+#ifndef MRB_NO_STDIO
 
 static void
 print_backtrace(mrb_state *mrb, struct RObject *exc, mrb_value backtrace)
@@ -114,7 +113,7 @@ mrb_print_backtrace(mrb_state *mrb)
     return;
   }
 
-  backtrace = mrb_obj_iv_get(mrb, mrb->exc, mrb_intern_lit(mrb, "backtrace"));
+  backtrace = mrb_obj_iv_get(mrb, mrb->exc, MRB_SYM(backtrace));
   if (mrb_nil_p(backtrace)) return;
   if (!mrb_array_p(backtrace)) backtrace = mrb_unpack_backtrace(mrb, backtrace);
   print_backtrace(mrb, mrb->exc, backtrace);
@@ -159,19 +158,19 @@ packed_backtrace(mrb_state *mrb)
   int size;
   void *ptr;
 
-  each_backtrace(mrb, ciidx, mrb->c->ci->pc, count_backtrace_i, &len);
+  each_backtrace(mrb, ciidx, count_backtrace_i, &len);
   size = len * sizeof(struct backtrace_location);
   ptr = mrb_malloc(mrb, size);
   backtrace = mrb_data_object_alloc(mrb, NULL, ptr, &bt_type);
   backtrace->flags = (uint32_t)len;
-  each_backtrace(mrb, ciidx, mrb->c->ci->pc, pack_backtrace_i, &ptr);
+  each_backtrace(mrb, ciidx, pack_backtrace_i, &ptr);
   return mrb_obj_value(backtrace);
 }
 
 void
 mrb_keep_backtrace(mrb_state *mrb, mrb_value exc)
 {
-  mrb_sym sym = mrb_intern_lit(mrb, "backtrace");
+  mrb_sym sym = MRB_SYM(backtrace);
   mrb_value backtrace;
   int ai;
 
@@ -221,7 +220,7 @@ mrb_exc_backtrace(mrb_state *mrb, mrb_value exc)
   mrb_sym attr_name;
   mrb_value backtrace;
 
-  attr_name = mrb_intern_lit(mrb, "backtrace");
+  attr_name = MRB_SYM(backtrace);
   backtrace = mrb_iv_get(mrb, exc, attr_name);
   if (mrb_nil_p(backtrace) || mrb_array_p(backtrace)) {
     return backtrace;

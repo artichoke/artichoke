@@ -422,7 +422,6 @@ class String
     # both edges are all digits
     bi = self.to_i(10)
     ei = max.to_i(10)
-    len = self.length
     if (bi > 0 or bi == "0"*len) and (ei > 0 or ei == "0"*maxlen)
       while bi <= ei
         break if exclusive and bi == ei
@@ -440,6 +439,29 @@ class String
       break if exclusive and n == 0
       yield bs
       break if n == 0
+      bs = bs.succ
+    end
+    self
+  end
+
+  def __upto_endless(&block)
+    return to_enum(:__upto_endless) unless block
+
+    len = self.length
+    # both edges are all digits
+    bi = self.to_i(10)
+    if bi > 0 or bi == "0"*len
+      while true
+        s = bi.to_s
+        s = s.rjust(len, "0") if s.length < len
+        yield s
+        bi += 1
+      end
+      return self
+    end
+    bs = self
+    while true
+      yield bs
       bs = bs.succ
     end
     self

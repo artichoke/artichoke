@@ -593,7 +593,7 @@ end
   #        to_f / other
   #      end
   #    end
-  #    Fixnum.send(:prepend, M)
+  #    Integer.send(:prepend, M)
   #    assert_equal(0.5, 1 / 2, "#{bug7983}")
   #  }
   #  assert_equal(0, 1 / 2)
@@ -674,7 +674,7 @@ end
     c1 = labeled_class("C1")
     c2 = labeled_class("C2", c1) {prepend m}
     c1.class_eval {prepend m}
-    assert_equal([m, c2, m, c1], c2.ancestors[0, 4], "should accesisble prepended module in superclass")
+    assert_equal([m, c2, m, c1], c2.ancestors[0, 4], "should accessible prepended module in superclass")
   end
 
   # requires #assert_separately

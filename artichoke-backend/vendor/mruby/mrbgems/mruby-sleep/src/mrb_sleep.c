@@ -23,7 +23,7 @@
 ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 ** SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **
-** [ MIT license: http://www.opensource.org/licenses/mit-license.php ]
+** [ MIT license: https://www.opensource.org/licenses/mit-license.php ]
 */
 
 #include <time.h>
@@ -44,7 +44,7 @@ mrb_f_sleep(mrb_state *mrb, mrb_value self)
 {
     time_t beg = time(0);
     time_t end;
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
     mrb_float sec;
 
     mrb_get_args(mrb, "f", &sec);
@@ -66,7 +66,7 @@ mrb_f_sleep(mrb_state *mrb, mrb_value self)
 #endif
     end = time(0) - beg;
 
-    return mrb_fixnum_value(end);
+    return mrb_fixnum_value((mrb_int)end);
 }
 
 /* mruby special; needed for mruby without float numbers */
@@ -120,7 +120,7 @@ mrb_f_usleep(mrb_state *mrb, mrb_value self)
     }
 #endif
 
-    return mrb_fixnum_value(slp_tm);
+    return mrb_fixnum_value((mrb_int)slp_tm);
 }
 
 void

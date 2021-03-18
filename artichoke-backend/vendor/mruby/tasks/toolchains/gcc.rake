@@ -2,11 +2,12 @@ MRuby::Toolchain.new(:gcc) do |conf, params|
   default_command = params[:default_command] || 'gcc'
   compiler_flags = %w(-g -O3 -Wall -Wundef)
   c_mandatory_flags = %w(-std=gnu99)
-  cxx_invalid_flags = %w(-Wdeclaration-after-statement -Werror-implicit-function-declaration)
+  cxx_invalid_flags = %w(-Werror-implicit-function-declaration)
+  compile_opt = '%{flags} -o "%{outfile}" "%{infile}"'
 
   [conf.cc, conf.objc, conf.asm, conf.cxx].each do |compiler|
     if compiler == conf.cxx
-      compiler.command = ENV['CXX'] || default_command.sub(/cc|$/, '++')
+      compiler.command = ENV['CXX'] || conf.cc.command.sub(/g\Kcc|$/, '++')
       compiler.flags = [ENV['CXXFLAGS'] || ENV['CFLAGS'] || compiler_flags]
     else
       compiler.command = ENV['CC'] || default_command
@@ -14,7 +15,8 @@ MRuby::Toolchain.new(:gcc) do |conf, params|
     end
     compiler.option_include_path = %q[-I"%s"]
     compiler.option_define = '-D%s'
-    compiler.compile_options = %q[%{flags} -MMD -o "%{outfile}" -c "%{infile}"]
+    compiler.compile_options = "-MMD -c #{compile_opt}"
+    compiler.preprocess_options = "-E -P #{compile_opt}"
     compiler.cxx_compile_flag = '-x c++ -std=gnu++03'
     compiler.cxx_exception_flag = '-fexceptions'
     compiler.cxx_invalid_flags = c_mandatory_flags + cxx_invalid_flags
@@ -35,8 +37,7 @@ MRuby::Toolchain.new(:gcc) do |conf, params|
     def cc.header_search_paths
       if @header_search_command != command
         result = `echo | #{build.filename command} -x#{@header_search_language} -Wp,-v - -fsyntax-only 2>&1`
-        result = `echo | #{command} -x#{@header_search_language} -Wp,-v - -fsyntax-only 2>&1` if $?.exitstatus != 0
-        return include_paths if  $?.exitstatus != 0
+        return include_paths if $?.exitstatus != 0
 
         @frameworks = []
         @header_search_paths = result.lines.map { |v|

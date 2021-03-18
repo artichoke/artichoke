@@ -2,8 +2,6 @@
 
 class Integer
   include Comparable
-  # mruby hack to get Integer#<=>
-  include Integral
 
   def ceil
     self

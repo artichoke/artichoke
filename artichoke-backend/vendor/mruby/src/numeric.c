@@ -1,10 +1,10 @@
 /*
-** numeric.c - Numeric, Integer, Float, Fixnum class
+** numeric.c - Numeric, Integer, Float class
 **
 ** See Copyright Notice in mruby.h
 */
 
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
 #include <float.h>
 #include <math.h>
 #endif
@@ -17,13 +17,15 @@
 #include <mruby/numeric.h>
 #include <mruby/string.h>
 #include <mruby/class.h>
+#include <mruby/presym.h>
 
-#ifndef MRB_WITHOUT_FLOAT
-#ifdef MRB_USE_FLOAT
+#ifndef MRB_NO_FLOAT
+#ifdef MRB_USE_FLOAT32
 #define trunc(f) truncf(f)
 #define floor(f) floorf(f)
 #define ceil(f) ceilf(f)
 #define fmod(x,y) fmodf(x,y)
+#define copysign(x,y) copysignf(x,y)
 #define FLO_TO_STR_PREC 8
 #else
 #define FLO_TO_STR_PREC 16
@@ -31,31 +33,39 @@
 #endif
 
 #ifndef ARTICHOKE
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
 MRB_API mrb_float
 mrb_to_flo(mrb_state *mrb, mrb_value val)
 {
   switch (mrb_type(val)) {
-  case MRB_TT_FIXNUM:
-    return (mrb_float)mrb_fixnum(val);
+  case MRB_TT_INTEGER:
+    return (mrb_float)mrb_integer(val);
   case MRB_TT_FLOAT:
     break;
-  default:
+  case MRB_TT_STRING:
+  case MRB_TT_FALSE:
+  case MRB_TT_TRUE:
     mrb_raise(mrb, E_TYPE_ERROR, "non float value");
+  default:
+    val = mrb_type_convert(mrb, val, MRB_TT_FLOAT, MRB_SYM(to_f));
+    break;
   }
   return mrb_float(val);
 }
+#endif
+#endif
 
-MRB_API mrb_value
-mrb_int_value(mrb_state *mrb, mrb_float f)
+static void
+int_overflow(mrb_state *mrb, const char *reason)
 {
-  if (FIXABLE_FLOAT(f)) {
-    return mrb_fixnum_value((mrb_int)f);
-  }
-  return mrb_float_value(mrb, f);
+  mrb_raisef(mrb, E_RANGE_ERROR, "integer overflow in %s", reason);
 }
-#endif
-#endif
+
+static void
+int_zerodiv(mrb_state *mrb)
+{
+  mrb_raise(mrb, E_ZERODIV_ERROR, "divided by 0");
+}
 
 /*
  * call-seq:
@@ -67,80 +77,91 @@ mrb_int_value(mrb_state *mrb, mrb_float f)
  *    2.0**3      #=> 8.0
  */
 static mrb_value
-integral_pow(mrb_state *mrb, mrb_value x)
+int_pow(mrb_state *mrb, mrb_value x)
 {
+  mrb_int base = mrb_int(mrb, x);
+  mrb_int exp;
+#ifndef MRB_NO_FLOAT
   mrb_value y = mrb_get_arg1(mrb);
-#ifndef MRB_WITHOUT_FLOAT
-  mrb_float d;
-#endif
+  mrb_float z;
 
-  if (mrb_fixnum_p(x) && mrb_fixnum_p(y)) {
-    /* try ipow() */
-    mrb_int base = mrb_fixnum(x);
-    mrb_int exp = mrb_fixnum(y);
-    mrb_int result = 1;
-
-    if (exp < 0)
-#ifdef MRB_WITHOUT_FLOAT
-      return mrb_fixnum_value(0);
+  if (!mrb_integer_p(y)) {
+    mrb_get_args(mrb, "f", &z);
+    z = pow((mrb_float)base, z);
+    return mrb_float_value(mrb, z);
+  }
+  else {
+    mrb_get_args(mrb, "i", &exp);
+    z = pow((double)base, (double)exp);
+    if (exp < 0 || z < (mrb_float)MRB_INT_MIN || (mrb_float)MRB_INT_MAX < z) {
+      return mrb_float_value(mrb, z);
+    }
+  }
+  return mrb_int_value(mrb, (mrb_int)z);
 #else
-      goto float_pow;
-#endif
-    for (;;) {
-      if (exp & 1) {
-        if (mrb_int_mul_overflow(result, base, &result)) {
-#ifndef MRB_WITHOUT_FLOAT
-          goto float_pow;
-#endif
-        }
-      }
-      exp >>= 1;
-      if (exp == 0) break;
-      if (mrb_int_mul_overflow(base, base, &base)) {
-#ifndef MRB_WITHOUT_FLOAT
-        goto float_pow;
-#endif
+  mrb_int result = 1;
+
+  mrb_get_args(mrb, "i", &exp);
+  if (exp < 0) {
+    return mrb_fixnum_value(0);
+  }
+  for (;;) {
+    if (exp & 1) {
+      if (mrb_int_mul_overflow(result, base, &result)) {
+        int_overflow(mrb, "multiplication");
       }
     }
-    return mrb_fixnum_value(result);
+    exp >>= 1;
+    if (exp == 0) break;
+    if (mrb_int_mul_overflow(base, base, &base)) {
+      int_overflow(mrb, "multiplication");
+    }
   }
-#ifdef MRB_WITHOUT_FLOAT
-  mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
-#else
- float_pow:
-  d = pow(mrb_to_flo(mrb, x), mrb_to_flo(mrb, y));
-  return mrb_float_value(mrb, d);
+  return mrb_int_value(mrb, result);
 #endif
 }
 
-static mrb_value
-integral_idiv(mrb_state *mrb, mrb_value x)
+
+mrb_int
+mrb_num_div_int(mrb_state *mrb, mrb_int x, mrb_int y)
 {
-#ifdef MRB_WITHOUT_FLOAT
-  mrb_value y = mrb_get_arg1(mrb);
-
-  if (!mrb_fixnum_p(y)) {
-    mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
+  if (y == 0) {
+    int_zerodiv(mrb);
   }
-  return mrb_fixnum_value(mrb_fixnum(x) / mrb_fixnum(y));
-#else
-  mrb_float y;
+  else if(x == MRB_INT_MIN && y == -1) {
+    int_overflow(mrb, "division");
+  }
+  else {
+    mrb_int div = x / y;
 
-  mrb_get_args(mrb, "f", &y);
-  return mrb_int_value(mrb, mrb_to_flo(mrb, x) / y);
-#endif
+    if ((x ^ y) < 0 && x != div * y) {
+      div -= 1;
+    }
+    return div;
+  }
+  /* not reached */
+  return 0;
 }
 
 /* 15.2.8.3.4  */
 /* 15.2.9.3.4  */
 /*
  * call-seq:
- *   num / other  ->  num
+ *   int / other  ->  int
  *
  * Performs division: the class of the resulting object depends on
  * the class of <code>num</code> and on the magnitude of the
  * result.
  */
+static mrb_value
+int_div(mrb_state *mrb, mrb_value xv)
+{
+  mrb_int y, div;
+
+  mrb_get_args(mrb, "i", &y);
+  div = mrb_num_div_int(mrb, mrb_integer(xv), y);
+  return mrb_int_value(mrb, div);
+}
 
 /* 15.2.9.3.19(x) */
 /*
@@ -151,31 +172,35 @@ integral_idiv(mrb_state *mrb, mrb_value x)
  */
 
 static mrb_value
-integral_div(mrb_state *mrb, mrb_value x)
+int_quo(mrb_state *mrb, mrb_value xv)
 {
-#ifdef MRB_WITHOUT_FLOAT
-  mrb_value y = mrb_get_arg1(mrb);
+#ifdef MRB_NO_FLOAT
+  mrb_int y;
 
-  if (!mrb_fixnum_p(y)) {
-    mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
+  mrb_get_args(mrb, "i", &y);
+  if (y == 0) {
+    int_zerodiv(mrb);
   }
-  return mrb_fixnum_value(mrb_fixnum(x) / mrb_fixnum(y));
+  return mrb_fixnum_value(mrb_integer(xv) / y);
 #else
   mrb_float y;
 
   mrb_get_args(mrb, "f", &y);
-  return mrb_float_value(mrb, mrb_to_flo(mrb, x) / y);
+  if (y == 0) {
+    int_zerodiv(mrb);
+  }
+  return mrb_float_value(mrb, mrb_integer(xv) / y);
 #endif
 }
 
 static mrb_value
-integral_coerce_step_counter(mrb_state *mrb, mrb_value self)
+coerce_step_counter(mrb_state *mrb, mrb_value self)
 {
   mrb_value num, step;
 
   mrb_get_args(mrb, "oo", &num, &step);
 
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
   if (mrb_float_p(self) || mrb_float_p(num) || mrb_float_p(step)) {
     return mrb_Float(mrb, self);
   }
@@ -184,7 +209,7 @@ integral_coerce_step_counter(mrb_state *mrb, mrb_value self)
   return self;
 }
 
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
 /********************************************************************
  *
  * Document-class: Float
@@ -194,15 +219,64 @@ integral_coerce_step_counter(mrb_state *mrb, mrb_value self)
  *  representation.
  */
 
+static mrb_value
+flo_pow(mrb_state *mrb, mrb_value x)
+{
+  mrb_value y = mrb_get_arg1(mrb);
+  mrb_float d = pow(mrb_to_flo(mrb, x), mrb_to_flo(mrb, y));
+  return mrb_float_value(mrb, d);
+}
+
+static mrb_value
+flo_idiv(mrb_state *mrb, mrb_value xv)
+{
+  mrb_int y, div;
+
+  mrb_get_args(mrb, "i", &y);
+  div = mrb_num_div_int(mrb, (mrb_int)mrb_float(xv), y);
+  return mrb_int_value(mrb, (mrb_int)div);
+}
+
+mrb_float
+mrb_num_div_flo(mrb_state *mrb, mrb_float x, mrb_float y)
+{
+  if (y != 0.0) {
+    return x / y;
+  }
+  else if (x == 0.0) {
+    return NAN;
+  }
+  else {
+    mrb_float a = copysign(1.0, x);
+    mrb_float b = copysign(1.0, y);
+    return a * b * INFINITY;
+  }
+}
+
+static mrb_value
+flo_div(mrb_state *mrb, mrb_value xv)
+{
+  mrb_float x, y;
+
+  x = mrb_float(xv);
+  mrb_get_args(mrb, "f", &y);
+  x = mrb_num_div_flo(mrb, x, y);
+  return mrb_float_value(mrb, x);
+}
+
 /* 15.2.9.3.16(x) */
 /*
  *  call-seq:
  *     flt.to_s  ->  string
+ *     flt.inspect  ->  string
  *
  *  Returns a string containing a representation of self. As well as a
  *  fixed or exponential form of the number, the call may return
  *  "<code>NaN</code>", "<code>Infinity</code>", and
  *  "<code>-Infinity</code>".
+ *
+ *     3.0.to_s   #=> 3.0
+ *     3.25.to_s  #=> 3.25
  */
 
 static mrb_value
@@ -248,6 +322,9 @@ flo_to_s(mrb_state *mrb, mrb_value flt)
       --fmt[sizeof(fmt) - 3];  /* %.16g(%.8g) -> %.15g(%.7g) */
       str = mrb_float_to_str(mrb, flt, fmt);
       goto insert_dot_zero;
+    }
+    else {
+      mrb_str_cat(mrb, str, ".0", 2);
     }
 
     goto exit;
@@ -369,15 +446,15 @@ flo_mod(mrb_state *mrb, mrb_value x)
  *     (1.0).eql?(1.0)   #=> true
  */
 static mrb_value
-fix_eql(mrb_state *mrb, mrb_value x)
+int_eql(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
 
-  if (!mrb_fixnum_p(y)) return mrb_false_value();
-  return mrb_bool_value(mrb_fixnum(x) == mrb_fixnum(y));
+  if (!mrb_integer_p(y)) return mrb_false_value();
+  return mrb_bool_value(mrb_integer(x) == mrb_integer(y));
 }
 
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
 static mrb_value
 flo_eql(mrb_state *mrb, mrb_value x)
 {
@@ -406,8 +483,8 @@ flo_eq(mrb_state *mrb, mrb_value x)
   mrb_value y = mrb_get_arg1(mrb);
 
   switch (mrb_type(y)) {
-  case MRB_TT_FIXNUM:
-    return mrb_bool_value(mrb_float(x) == (mrb_float)mrb_fixnum(y));
+  case MRB_TT_INTEGER:
+    return mrb_bool_value(mrb_float(x) == (mrb_float)mrb_integer(y));
   case MRB_TT_FLOAT:
     return mrb_bool_value(mrb_float(x) == mrb_float(y));
   default:
@@ -419,10 +496,15 @@ static int64_t
 value_int64(mrb_state *mrb, mrb_value x)
 {
   switch (mrb_type(x)) {
-  case MRB_TT_FIXNUM:
-    return (int64_t)mrb_fixnum(x);
+  case MRB_TT_INTEGER:
+    return (int64_t)mrb_integer(x);
   case MRB_TT_FLOAT:
-    return (int64_t)mrb_float(x);
+    {
+      double f = mrb_float(x);
+
+      if ((mrb_float)INT64_MAX >= f && f >= (mrb_float)INT64_MIN)
+        return (int64_t)f;
+    }
   default:
     mrb_raise(mrb, E_TYPE_ERROR, "cannot convert to Integer");
     break;
@@ -434,17 +516,16 @@ value_int64(mrb_state *mrb, mrb_value x)
 static mrb_value
 int64_value(mrb_state *mrb, int64_t v)
 {
-  if (TYPED_FIXABLE(v,int64_t)) {
-    return mrb_fixnum_value((mrb_int)v);
+  if (!TYPED_FIXABLE(v,int64_t)) {
+    int_overflow(mrb, "bit operation");
   }
-  return mrb_float_value(mrb, (mrb_float)v);
+  return mrb_fixnum_value((mrb_int)v);
 }
 
 static mrb_value
 flo_rev(mrb_state *mrb, mrb_value x)
 {
-  int64_t v1;
-  v1 = (int64_t)mrb_float(x);
+  int64_t v1 = value_int64(mrb, x);
   return int64_value(mrb, ~v1);
 }
 
@@ -454,7 +535,7 @@ flo_and(mrb_state *mrb, mrb_value x)
   mrb_value y = mrb_get_arg1(mrb);
   int64_t v1, v2;
 
-  v1 = (int64_t)mrb_float(x);
+  v1 = value_int64(mrb, x);
   v2 = value_int64(mrb, y);
   return int64_value(mrb, v1 & v2);
 }
@@ -465,7 +546,7 @@ flo_or(mrb_state *mrb, mrb_value x)
   mrb_value y = mrb_get_arg1(mrb);
   int64_t v1, v2;
 
-  v1 = (int64_t)mrb_float(x);
+  v1 = value_int64(mrb, x);
   v2 = value_int64(mrb, y);
   return int64_value(mrb, v1 | v2);
 }
@@ -476,7 +557,7 @@ flo_xor(mrb_state *mrb, mrb_value x)
   mrb_value y = mrb_get_arg1(mrb);
   int64_t v1, v2;
 
-  v1 = (int64_t)mrb_float(x);
+  v1 = value_int64(mrb, x);
   v2 = value_int64(mrb, y);
   return int64_value(mrb, v1 ^ v2);
 }
@@ -490,6 +571,10 @@ flo_shift(mrb_state *mrb, mrb_value x, mrb_int width)
     return x;
   }
   val = mrb_float(x);
+  if (width < -MRB_INT_BIT/2) {
+    if (val < 0) return mrb_fixnum_value(-1);
+    return mrb_fixnum_value(0);
+  }
   if (width < 0) {
     while (width++) {
       val /= 2;
@@ -516,7 +601,9 @@ flo_shift(mrb_state *mrb, mrb_value x, mrb_int width)
       val *= 2;
     }
   }
-  return mrb_int_value(mrb, val);
+  if (FIXABLE_FLOAT(val))
+    return mrb_int_value(mrb, (mrb_int)val);
+  return mrb_float_value(mrb, val);
 }
 
 static mrb_value
@@ -525,6 +612,7 @@ flo_rshift(mrb_state *mrb, mrb_value x)
   mrb_int width;
 
   mrb_get_args(mrb, "i", &width);
+  if (width == MRB_INT_MIN) return flo_shift(mrb, x, -MRB_INT_BIT);
   return flo_shift(mrb, x, -width);
 }
 
@@ -622,7 +710,7 @@ flo_floor(mrb_state *mrb, mrb_value num)
   mrb_float f = floor(mrb_float(num));
 
   mrb_check_num_exact(mrb, f);
-  return mrb_int_value(mrb, f);
+  return mrb_int_value(mrb, (mrb_int)f);
 }
 
 /* 15.2.9.3.8  */
@@ -645,7 +733,7 @@ flo_ceil(mrb_state *mrb, mrb_value num)
   mrb_float f = ceil(mrb_float(num));
 
   mrb_check_num_exact(mrb, f);
-  return mrb_int_value(mrb, f);
+  return mrb_int_value(mrb, (mrb_int)f);
 }
 
 /* 15.2.9.3.12 */
@@ -727,7 +815,9 @@ flo_round(mrb_state *mrb, mrb_value num)
     if (!isfinite(number)) return num;
     return mrb_float_value(mrb, number);
   }
-  return mrb_int_value(mrb, number);
+  if (!FIXABLE_FLOAT(number))
+    return mrb_float_value(mrb, number);
+  return mrb_int_value(mrb, (mrb_int)number);
 }
 
 /* 15.2.9.3.14 */
@@ -749,7 +839,7 @@ flo_truncate(mrb_state *mrb, mrb_value num)
   if (f < 0.0) f = ceil(f);
 
   mrb_check_num_exact(mrb, f);
-  return mrb_int_value(mrb, f);
+  return mrb_int_value(mrb, (mrb_int)f);
 }
 
 static mrb_value
@@ -762,8 +852,7 @@ flo_nan_p(mrb_state *mrb, mrb_value num)
 /*
  * Document-class: Integer
  *
- *  <code>Integer</code> is the basis for the two concrete classes that
- *  hold whole numbers, <code>Bignum</code> and <code>Fixnum</code>.
+ *  <code>Integer</code> is hold whole numbers.
  *
  */
 
@@ -787,20 +876,18 @@ fixnum_mul(mrb_state *mrb, mrb_value x, mrb_value y)
 {
   mrb_int a;
 
-  a = mrb_fixnum(x);
-  if (mrb_fixnum_p(y)) {
+  a = mrb_integer(x);
+  if (mrb_integer_p(y)) {
     mrb_int b, c;
 
     if (a == 0) return x;
-    b = mrb_fixnum(y);
+    b = mrb_integer(y);
     if (mrb_int_mul_overflow(a, b, &c)) {
-#ifndef MRB_WITHOUT_FLOAT
-      return mrb_float_value(mrb, (mrb_float)a * (mrb_float)b);
-#endif
+      int_overflow(mrb, "multiplication");
     }
     return mrb_fixnum_value(c);
   }
-#ifdef MRB_WITHOUT_FLOAT
+#ifdef MRB_NO_FLOAT
   mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
 #else
   return mrb_float_value(mrb, (mrb_float)a * mrb_to_flo(mrb, y));
@@ -810,10 +897,10 @@ fixnum_mul(mrb_state *mrb, mrb_value x, mrb_value y)
 MRB_API mrb_value
 mrb_num_mul(mrb_state *mrb, mrb_value x, mrb_value y)
 {
-  if (mrb_fixnum_p(x)) {
+  if (mrb_integer_p(x)) {
     return fixnum_mul(mrb, x, y);
   }
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
   if (mrb_float_p(x)) {
     return mrb_float_value(mrb, mrb_float(x) * mrb_to_flo(mrb, y));
   }
@@ -833,7 +920,7 @@ mrb_num_mul(mrb_state *mrb, mrb_value x, mrb_value y)
  */
 
 static mrb_value
-fix_mul(mrb_state *mrb, mrb_value x)
+int_mul(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
 
@@ -843,29 +930,23 @@ fix_mul(mrb_state *mrb, mrb_value x)
 static void
 fixdivmod(mrb_state *mrb, mrb_int x, mrb_int y, mrb_int *divp, mrb_int *modp)
 {
-  mrb_int div, mod;
-
-  /* TODO: add mrb_assert(y != 0) to make sure */
-
-  if (y < 0) {
-    if (x < 0)
-      div = -x / -y;
-    else
-      div = - (x / -y);
+  if (y == 0) {
+    int_zerodiv(mrb);
+  }
+  else if(x == MRB_INT_MIN && y == -1) {
+    int_overflow(mrb, "division");
   }
   else {
-    if (x < 0)
-      div = - (-x / y);
-    else
-      div = x / y;
+    mrb_int div = x / y;
+    mrb_int mod = x - div * y;
+
+    if ((x ^ y) < 0 && x != div * y) {
+      mod += y;
+      div -= 1;
+    }
+    if (divp) *divp = div;
+    if (modp) *modp = mod;
   }
-  mod = x - div*y;
-  if ((mod < 0 && y > 0) || (mod > 0 && y < 0)) {
-    mod += y;
-    div -= 1;
-  }
-  if (divp) *divp = div;
-  if (modp) *modp = mod;
 }
 
 /* 15.2.8.3.5  */
@@ -879,29 +960,19 @@ fixdivmod(mrb_state *mrb, mrb_int x, mrb_int y, mrb_int *divp, mrb_int *modp)
  */
 
 static mrb_value
-fix_mod(mrb_state *mrb, mrb_value x)
+int_mod(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
   mrb_int a, b;
 
-  a = mrb_fixnum(x);
-   if (mrb_fixnum_p(y) && a != MRB_INT_MIN && (b=mrb_fixnum(y)) != MRB_INT_MIN) {
+  a = mrb_integer(x);
+  if (mrb_integer_p(y) && a != MRB_INT_MIN && (b=mrb_integer(y)) != MRB_INT_MIN) {
     mrb_int mod;
 
-    if (b == 0) {
-#ifdef MRB_WITHOUT_FLOAT
-      /* ZeroDivisionError */
-      return mrb_fixnum_value(0);
-#else
-      if (a > 0) return mrb_float_value(mrb, INFINITY);
-      if (a < 0) return mrb_float_value(mrb, INFINITY);
-      return mrb_float_value(mrb, NAN);
-#endif
-    }
     fixdivmod(mrb, a, b, NULL, &mod);
     return mrb_fixnum_value(mod);
   }
-#ifdef MRB_WITHOUT_FLOAT
+#ifdef MRB_NO_FLOAT
   mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
 #else
   else {
@@ -920,42 +991,32 @@ fix_mod(mrb_state *mrb, mrb_value x)
  *  See <code>Numeric#divmod</code>.
  */
 static mrb_value
-fix_divmod(mrb_state *mrb, mrb_value x)
+int_divmod(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
 
-  if (mrb_fixnum_p(y)) {
+  if (mrb_integer_p(y)) {
     mrb_int div, mod;
 
-    if (mrb_fixnum(y) == 0) {
-#ifdef MRB_WITHOUT_FLOAT
-      return mrb_assoc_new(mrb, mrb_fixnum_value(0), mrb_fixnum_value(0));
-#else
-      return mrb_assoc_new(mrb, ((mrb_fixnum(x) == 0) ?
-                                 mrb_float_value(mrb, NAN):
-                                 mrb_float_value(mrb, INFINITY)),
-                           mrb_float_value(mrb, NAN));
-#endif
-    }
-    fixdivmod(mrb, mrb_fixnum(x), mrb_fixnum(y), &div, &mod);
-    return mrb_assoc_new(mrb, mrb_fixnum_value(div), mrb_fixnum_value(mod));
+    fixdivmod(mrb, mrb_integer(x), mrb_integer(y), &div, &mod);
+    return mrb_assoc_new(mrb, mrb_int_value(mrb, div), mrb_int_value(mrb, mod));
   }
-#ifdef MRB_WITHOUT_FLOAT
+#ifdef MRB_NO_FLOAT
   mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
 #else
   else {
     mrb_float div, mod;
     mrb_value a, b;
 
-    flodivmod(mrb, (mrb_float)mrb_fixnum(x), mrb_to_flo(mrb, y), &div, &mod);
-    a = mrb_int_value(mrb, div);
+    flodivmod(mrb, (mrb_float)mrb_integer(x), mrb_to_flo(mrb, y), &div, &mod);
+    a = mrb_int_value(mrb, (mrb_int)div);
     b = mrb_float_value(mrb, mod);
     return mrb_assoc_new(mrb, a, b);
   }
 #endif
 }
 
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
 static mrb_value
 flo_divmod(mrb_state *mrb, mrb_value x)
 {
@@ -964,7 +1025,7 @@ flo_divmod(mrb_state *mrb, mrb_value x)
   mrb_value a, b;
 
   flodivmod(mrb, mrb_float(x), mrb_to_flo(mrb, y), &div, &mod);
-  a = mrb_int_value(mrb, div);
+  a = mrb_int_value(mrb, (mrb_int)div);
   b = mrb_float_value(mrb, mod);
   return mrb_assoc_new(mrb, a, b);
 }
@@ -983,16 +1044,16 @@ flo_divmod(mrb_state *mrb, mrb_value x)
  */
 
 static mrb_value
-fix_equal(mrb_state *mrb, mrb_value x)
+int_equal(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
 
   switch (mrb_type(y)) {
-  case MRB_TT_FIXNUM:
-    return mrb_bool_value(mrb_fixnum(x) == mrb_fixnum(y));
-#ifndef MRB_WITHOUT_FLOAT
+  case MRB_TT_INTEGER:
+    return mrb_bool_value(mrb_integer(x) == mrb_integer(y));
+#ifndef MRB_NO_FLOAT
   case MRB_TT_FLOAT:
-    return mrb_bool_value((mrb_float)mrb_fixnum(x) == mrb_float(y));
+    return mrb_bool_value((mrb_float)mrb_integer(x) == mrb_float(y));
 #endif
   default:
     return mrb_false_value();
@@ -1011,24 +1072,24 @@ fix_equal(mrb_state *mrb, mrb_value x)
  */
 
 static mrb_value
-fix_rev(mrb_state *mrb, mrb_value num)
+int_rev(mrb_state *mrb, mrb_value num)
 {
-  mrb_int val = mrb_fixnum(num);
+  mrb_int val = mrb_integer(num);
 
-  return mrb_fixnum_value(~val);
+  return mrb_int_value(mrb, ~val);
 }
 
-#ifdef MRB_WITHOUT_FLOAT
+#ifdef MRB_NO_FLOAT
 #define bit_op(x,y,op1,op2) do {\
-  return mrb_fixnum_value(mrb_fixnum(x) op2 mrb_fixnum(y));\
+  return mrb_int_value(mrb, (mrb_integer(x) op2 mrb_integer(y)));\
 } while(0)
 #else
 static mrb_value flo_and(mrb_state *mrb, mrb_value x);
 static mrb_value flo_or(mrb_state *mrb, mrb_value x);
 static mrb_value flo_xor(mrb_state *mrb, mrb_value x);
 #define bit_op(x,y,op1,op2) do {\
-  if (mrb_fixnum_p(y)) return mrb_fixnum_value(mrb_fixnum(x) op2 mrb_fixnum(y));\
-  return flo_ ## op1(mrb, mrb_float_value(mrb, (mrb_float)mrb_fixnum(x)));\
+  if (mrb_integer_p(y)) return mrb_int_value(mrb, (mrb_integer(x) op2 mrb_integer(y))); \
+  return flo_ ## op1(mrb, mrb_float_value(mrb, (mrb_float)mrb_integer(x)));\
 } while(0)
 #endif
 
@@ -1041,7 +1102,7 @@ static mrb_value flo_xor(mrb_state *mrb, mrb_value x);
  */
 
 static mrb_value
-fix_and(mrb_state *mrb, mrb_value x)
+int_and(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
 
@@ -1057,7 +1118,7 @@ fix_and(mrb_state *mrb, mrb_value x)
  */
 
 static mrb_value
-fix_or(mrb_state *mrb, mrb_value x)
+int_or(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
 
@@ -1073,7 +1134,7 @@ fix_or(mrb_state *mrb, mrb_value x)
  */
 
 static mrb_value
-fix_xor(mrb_state *mrb, mrb_value x)
+int_xor(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
 
@@ -1085,61 +1146,34 @@ fix_xor(mrb_state *mrb, mrb_value x)
 static mrb_value
 lshift(mrb_state *mrb, mrb_int val, mrb_int width)
 {
-  if (width < 0) {              /* mrb_int overflow */
-#ifdef MRB_WITHOUT_FLOAT
-    return mrb_fixnum_value(0);
-#else
-    return mrb_float_value(mrb, INFINITY);
-#endif
-  }
+  mrb_assert(width >= 0);
   if (val > 0) {
     if ((width > NUMERIC_SHIFT_WIDTH_MAX) ||
         (val   > (MRB_INT_MAX >> width))) {
-#ifdef MRB_WITHOUT_FLOAT
-      return mrb_fixnum_value(-1);
-#else
-      goto bit_overflow;
-#endif
+      int_overflow(mrb, "bit shift");
     }
-    return mrb_fixnum_value(val << width);
+    return mrb_int_value(mrb, val << width);
   }
   else {
     if ((width > NUMERIC_SHIFT_WIDTH_MAX) ||
         (val   <= (MRB_INT_MIN >> width))) {
-#ifdef MRB_WITHOUT_FLOAT
-      return mrb_fixnum_value(0);
-#else
-      goto bit_overflow;
-#endif
+      int_overflow(mrb, "bit shift");
     }
-    return mrb_fixnum_value(val * ((mrb_int)1 << width));
+    return mrb_int_value(mrb, (val * ((mrb_int)1 << width)));
   }
-
-#ifndef MRB_WITHOUT_FLOAT
-bit_overflow:
-  {
-    mrb_float f = (mrb_float)val;
-    while (width--) {
-      f *= 2;
-    }
-    return mrb_float_value(mrb, f);
-  }
-#endif
 }
 
 static mrb_value
-rshift(mrb_int val, mrb_int width)
+rshift(mrb_state *mrb, mrb_int val, mrb_int width)
 {
-  if (width < 0) {              /* mrb_int overflow */
-    return mrb_fixnum_value(0);
-  }
+  mrb_assert(width >= 0);
   if (width >= NUMERIC_SHIFT_WIDTH_MAX) {
     if (val < 0) {
       return mrb_fixnum_value(-1);
     }
     return mrb_fixnum_value(0);
   }
-  return mrb_fixnum_value(val >> width);
+  return mrb_int_value(mrb, val >> width);
 }
 
 /* 15.2.8.3.12 */
@@ -1151,7 +1185,7 @@ rshift(mrb_int val, mrb_int width)
  */
 
 static mrb_value
-fix_lshift(mrb_state *mrb, mrb_value x)
+int_lshift(mrb_state *mrb, mrb_value x)
 {
   mrb_int width, val;
 
@@ -1159,10 +1193,11 @@ fix_lshift(mrb_state *mrb, mrb_value x)
   if (width == 0) {
     return x;
   }
-  val = mrb_fixnum(x);
+  val = mrb_integer(x);
   if (val == 0) return x;
   if (width < 0) {
-    return rshift(val, -width);
+    if (width == MRB_INT_MIN) return rshift(mrb, val, MRB_INT_BIT);
+    return rshift(mrb, val, -width);
   }
   return lshift(mrb, val, width);
 }
@@ -1176,7 +1211,7 @@ fix_lshift(mrb_state *mrb, mrb_value x)
  */
 
 static mrb_value
-fix_rshift(mrb_state *mrb, mrb_value x)
+int_rshift(mrb_state *mrb, mrb_value x)
 {
   mrb_int width, val;
 
@@ -1184,12 +1219,13 @@ fix_rshift(mrb_state *mrb, mrb_value x)
   if (width == 0) {
     return x;
   }
-  val = mrb_fixnum(x);
+  val = mrb_integer(x);
   if (val == 0) return x;
   if (width < 0) {
+    if (width == MRB_INT_MIN) int_overflow(mrb, "bit shift");
     return lshift(mrb, val, -width);
   }
-  return rshift(val, width);
+  return rshift(mrb, val, width);
 }
 
 /* 15.2.8.3.23 */
@@ -1201,11 +1237,11 @@ fix_rshift(mrb_state *mrb, mrb_value x)
  *
  */
 
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
 static mrb_value
-fix_to_f(mrb_state *mrb, mrb_value num)
+int_to_f(mrb_state *mrb, mrb_value num)
 {
-  return mrb_float_value(mrb, (mrb_float)mrb_fixnum(num));
+  return mrb_float_value(mrb, (mrb_float)mrb_integer(num));
 }
 
 /*
@@ -1242,7 +1278,7 @@ mrb_flo_to_fixnum(mrb_state *mrb, mrb_value x)
       mrb_raisef(mrb, E_RANGE_ERROR, "number (%v) too big for integer", x);
     }
   }
-  return mrb_fixnum_value(z);
+  return mrb_int_value(mrb, z);
 }
 #endif
 
@@ -1251,20 +1287,18 @@ fixnum_plus(mrb_state *mrb, mrb_value x, mrb_value y)
 {
   mrb_int a;
 
-  a = mrb_fixnum(x);
-  if (mrb_fixnum_p(y)) {
+  a = mrb_integer(x);
+  if (mrb_integer_p(y)) {
     mrb_int b, c;
 
     if (a == 0) return y;
-    b = mrb_fixnum(y);
+    b = mrb_integer(y);
     if (mrb_int_add_overflow(a, b, &c)) {
-#ifndef MRB_WITHOUT_FLOAT
-      return mrb_float_value(mrb, (mrb_float)a + (mrb_float)b);
-#endif
+      int_overflow(mrb, "addition");
     }
-    return mrb_fixnum_value(c);
+    return mrb_int_value(mrb, c);
   }
-#ifdef MRB_WITHOUT_FLOAT
+#ifdef MRB_NO_FLOAT
   mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
 #else
   return mrb_float_value(mrb, (mrb_float)a + mrb_to_flo(mrb, y));
@@ -1274,10 +1308,10 @@ fixnum_plus(mrb_state *mrb, mrb_value x, mrb_value y)
 MRB_API mrb_value
 mrb_num_plus(mrb_state *mrb, mrb_value x, mrb_value y)
 {
-  if (mrb_fixnum_p(x)) {
+  if (mrb_integer_p(x)) {
     return fixnum_plus(mrb, x, y);
   }
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
   if (mrb_float_p(x)) {
     return mrb_float_value(mrb, mrb_float(x) + mrb_to_flo(mrb, y));
   }
@@ -1296,7 +1330,7 @@ mrb_num_plus(mrb_state *mrb, mrb_value x, mrb_value y)
  * result.
  */
 static mrb_value
-fix_plus(mrb_state *mrb, mrb_value self)
+int_plus(mrb_state *mrb, mrb_value self)
 {
   mrb_value other = mrb_get_arg1(mrb);
 
@@ -1308,19 +1342,17 @@ fixnum_minus(mrb_state *mrb, mrb_value x, mrb_value y)
 {
   mrb_int a;
 
-  a = mrb_fixnum(x);
-  if (mrb_fixnum_p(y)) {
+  a = mrb_integer(x);
+  if (mrb_integer_p(y)) {
     mrb_int b, c;
 
-    b = mrb_fixnum(y);
+    b = mrb_integer(y);
     if (mrb_int_sub_overflow(a, b, &c)) {
-#ifndef MRB_WITHOUT_FLOAT
-      return mrb_float_value(mrb, (mrb_float)a - (mrb_float)b);
-#endif
+      int_overflow(mrb, "subtraction");
     }
-    return mrb_fixnum_value(c);
+    return mrb_int_value(mrb, c);
   }
-#ifdef MRB_WITHOUT_FLOAT
+#ifdef MRB_NO_FLOAT
   mrb_raise(mrb, E_TYPE_ERROR, "non fixnum value");
 #else
   return mrb_float_value(mrb, (mrb_float)a - mrb_to_flo(mrb, y));
@@ -1330,10 +1362,10 @@ fixnum_minus(mrb_state *mrb, mrb_value x, mrb_value y)
 MRB_API mrb_value
 mrb_num_minus(mrb_state *mrb, mrb_value x, mrb_value y)
 {
-  if (mrb_fixnum_p(x)) {
+  if (mrb_integer_p(x)) {
     return fixnum_minus(mrb, x, y);
   }
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
   if (mrb_float_p(x)) {
     return mrb_float_value(mrb, mrb_float(x) - mrb_to_flo(mrb, y));
   }
@@ -1353,7 +1385,7 @@ mrb_num_minus(mrb_state *mrb, mrb_value x, mrb_value y)
  * result.
  */
 static mrb_value
-fix_minus(mrb_state *mrb, mrb_value self)
+int_minus(mrb_state *mrb, mrb_value self)
 {
   mrb_value other = mrb_get_arg1(mrb);
 
@@ -1366,7 +1398,7 @@ mrb_fixnum_to_str(mrb_state *mrb, mrb_value x, mrb_int base)
 {
   char buf[MRB_INT_BIT+1];
   char *b = buf + sizeof buf;
-  mrb_int val = mrb_fixnum(x);
+  mrb_int val = mrb_integer(x);
   mrb_value str;
 
   if (base < 2 || 36 < base) {
@@ -1410,7 +1442,7 @@ mrb_fixnum_to_str(mrb_state *mrb, mrb_value x, mrb_int base)
  *
  */
 static mrb_value
-fix_to_s(mrb_state *mrb, mrb_value self)
+int_to_s(mrb_state *mrb, mrb_value self)
 {
   mrb_int base = 10;
 
@@ -1422,26 +1454,26 @@ fix_to_s(mrb_state *mrb, mrb_value self)
 static mrb_int
 cmpnum(mrb_state *mrb, mrb_value v1, mrb_value v2)
 {
-#ifdef MRB_WITHOUT_FLOAT
+#ifdef MRB_NO_FLOAT
   mrb_int x, y;
 #else
   mrb_float x, y;
 #endif
 
-#ifdef MRB_WITHOUT_FLOAT
-  x = mrb_fixnum(v1);
+#ifdef MRB_NO_FLOAT
+  x = mrb_integer(v1);
 #else
   x = mrb_to_flo(mrb, v1);
 #endif
   switch (mrb_type(v2)) {
-  case MRB_TT_FIXNUM:
-#ifdef MRB_WITHOUT_FLOAT
-    y = mrb_fixnum(v2);
+  case MRB_TT_INTEGER:
+#ifdef MRB_NO_FLOAT
+    y = mrb_integer(v2);
 #else
-    y = (mrb_float)mrb_fixnum(v2);
+    y = (mrb_float)mrb_integer(v2);
 #endif
     break;
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
   case MRB_TT_FLOAT:
     y = mrb_float(v2);
     break;
@@ -1471,7 +1503,7 @@ cmpnum(mrb_state *mrb, mrb_value v1, mrb_value v2)
  *  not comparable, it returns nil instead of raising an exception.
  */
 static mrb_value
-integral_cmp(mrb_state *mrb, mrb_value self)
+num_cmp(mrb_state *mrb, mrb_value self)
 {
   mrb_value other = mrb_get_arg1(mrb);
   mrb_int n;
@@ -1488,7 +1520,7 @@ cmperr(mrb_state *mrb, mrb_value v1, mrb_value v2)
 }
 
 static mrb_value
-integral_lt(mrb_state *mrb, mrb_value self)
+num_lt(mrb_state *mrb, mrb_value self)
 {
   mrb_value other = mrb_get_arg1(mrb);
   mrb_int n;
@@ -1500,7 +1532,7 @@ integral_lt(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-integral_le(mrb_state *mrb, mrb_value self)
+num_le(mrb_state *mrb, mrb_value self)
 {
   mrb_value other = mrb_get_arg1(mrb);
   mrb_int n;
@@ -1512,7 +1544,7 @@ integral_le(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-integral_gt(mrb_state *mrb, mrb_value self)
+num_gt(mrb_state *mrb, mrb_value self)
 {
   mrb_value other = mrb_get_arg1(mrb);
   mrb_int n;
@@ -1524,7 +1556,7 @@ integral_gt(mrb_state *mrb, mrb_value self)
 }
 
 static mrb_value
-integral_ge(mrb_state *mrb, mrb_value self)
+num_ge(mrb_state *mrb, mrb_value self)
 {
   mrb_value other = mrb_get_arg1(mrb);
   mrb_int n;
@@ -1541,7 +1573,7 @@ mrb_cmp(mrb_state *mrb, mrb_value obj1, mrb_value obj2)
   mrb_value v;
 
   switch (mrb_type(obj1)) {
-  case MRB_TT_FIXNUM:
+  case MRB_TT_INTEGER:
   case MRB_TT_FLOAT:
     return cmpnum(mrb, obj1, obj2);
   case MRB_TT_STRING:
@@ -1549,10 +1581,10 @@ mrb_cmp(mrb_state *mrb, mrb_value obj1, mrb_value obj2)
       return -2;
     return mrb_str_cmp(mrb, obj1, obj2);
   default:
-    v = mrb_funcall(mrb, obj1, "<=>", 1, obj2);
-    if (mrb_nil_p(v) || !mrb_fixnum_p(v))
+    v = mrb_funcall_id(mrb, obj1, MRB_OPSYM(cmp), 1, obj2);
+    if (mrb_nil_p(v) || !mrb_integer_p(v))
       return -2;
-    return mrb_fixnum(v);
+    return mrb_integer(v);
   }
 }
 
@@ -1576,7 +1608,7 @@ num_infinite_p(mrb_state *mrb, mrb_value self)
  * Returns a new float which is the sum of <code>float</code>
  * and <code>other</code>.
  */
-#ifndef MRB_WITHOUT_FLOAT
+#ifndef MRB_NO_FLOAT
 static mrb_value
 flo_plus(mrb_state *mrb, mrb_value x)
 {
@@ -1590,22 +1622,10 @@ flo_plus(mrb_state *mrb, mrb_value x)
 void
 mrb_init_numeric(mrb_state *mrb)
 {
-  struct RClass *numeric, *integer, *fixnum, *integral;
-#ifndef MRB_WITHOUT_FLOAT
+  struct RClass *numeric, *integer;
+#ifndef MRB_NO_FLOAT
   struct RClass *fl;
 #endif
-
-  integral = mrb_define_module(mrb, "Integral");
-  mrb_define_method(mrb, integral,"**",       integral_pow,    MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, integral,"/",        integral_div,    MRB_ARGS_REQ(1)); /* 15.2.{8,9}.3.6  */
-  mrb_define_method(mrb, integral,"quo",      integral_div,    MRB_ARGS_REQ(1)); /* 15.2.7.4.5 (x) */
-  mrb_define_method(mrb, integral,"div",      integral_idiv,   MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, integral,"<=>",      integral_cmp,    MRB_ARGS_REQ(1)); /* 15.2.{8,9}.3.1  */
-  mrb_define_method(mrb, integral,"<",        integral_lt,     MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, integral,"<=",       integral_le,     MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, integral,">",        integral_gt,     MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, integral,">=",       integral_ge,     MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, integral,"__coerce_step_counter", integral_coerce_step_counter, MRB_ARGS_REQ(2));
 
   /* Numeric Class */
   numeric = mrb_define_class(mrb, "Numeric",  mrb->object_class);                /* 15.2.7 */
@@ -1613,49 +1633,70 @@ mrb_init_numeric(mrb_state *mrb)
   mrb_define_method(mrb, numeric, "infinite?",num_infinite_p,  MRB_ARGS_NONE());
 
   /* Integer Class */
-  integer = mrb_define_class(mrb, "Integer",  numeric);                          /* 15.2.8 */
-  MRB_SET_INSTANCE_TT(integer, MRB_TT_FIXNUM);
+  mrb->integer_class = integer = mrb_define_class(mrb, "Integer",  numeric);     /* 15.2.8 */
+  MRB_SET_INSTANCE_TT(integer, MRB_TT_INTEGER);
   mrb_undef_class_method(mrb, integer, "new");
+  mrb_define_method(mrb, integer, "**",       int_pow,         MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, integer, "/",        int_div,         MRB_ARGS_REQ(1)); /* 15.2.8.3.6  */
+  mrb_define_method(mrb, integer, "quo",      int_quo,         MRB_ARGS_REQ(1)); /* 15.2.7.4.5 (x) */
+  mrb_define_method(mrb, integer, "div",      int_div,        MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, integer, "<=>",      num_cmp,         MRB_ARGS_REQ(1)); /* 15.2.8.3.1  */
+  mrb_define_method(mrb, integer, "<",        num_lt,          MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, integer, "<=",       num_le,          MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, integer, ">",        num_gt,          MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, integer, ">=",       num_ge,          MRB_ARGS_REQ(1));
+
   mrb_define_method(mrb, integer, "to_i",     int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.24 */
   mrb_define_method(mrb, integer, "to_int",   int_to_i,        MRB_ARGS_NONE());
-#ifndef MRB_WITHOUT_FLOAT
-  mrb_define_method(mrb, integer, "ceil",     int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.8 (x) */
-  mrb_define_method(mrb, integer, "floor",    int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.10 (x) */
-  mrb_define_method(mrb, integer, "round",    int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.12 (x) */
-  mrb_define_method(mrb, integer, "truncate", int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.15 (x) */
+#ifndef MRB_NO_FLOAT
+  mrb_define_method(mrb, integer, "ceil",     int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.14 */
+  mrb_define_method(mrb, integer, "floor",    int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.17 */
+  mrb_define_method(mrb, integer, "round",    int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.20 */
+  mrb_define_method(mrb, integer, "truncate", int_to_i,        MRB_ARGS_NONE()); /* 15.2.8.3.26 */
 #endif
 
-  /* Fixnum Class */
-  mrb->fixnum_class = fixnum = mrb_define_class(mrb, "Fixnum", integer);
-  mrb_define_method(mrb, fixnum,  "+",        fix_plus,        MRB_ARGS_REQ(1)); /* 15.2.8.3.1  */
-  mrb_define_method(mrb, fixnum,  "-",        fix_minus,       MRB_ARGS_REQ(1)); /* 15.2.8.3.2  */
-  mrb_define_method(mrb, fixnum,  "*",        fix_mul,         MRB_ARGS_REQ(1)); /* 15.2.8.3.3  */
-  mrb_define_method(mrb, fixnum,  "%",        fix_mod,         MRB_ARGS_REQ(1)); /* 15.2.8.3.5  */
-  mrb_define_method(mrb, fixnum,  "==",       fix_equal,       MRB_ARGS_REQ(1)); /* 15.2.8.3.7  */
-  mrb_define_method(mrb, fixnum,  "~",        fix_rev,         MRB_ARGS_NONE()); /* 15.2.8.3.8  */
-  mrb_define_method(mrb, fixnum,  "&",        fix_and,         MRB_ARGS_REQ(1)); /* 15.2.8.3.9  */
-  mrb_define_method(mrb, fixnum,  "|",        fix_or,          MRB_ARGS_REQ(1)); /* 15.2.8.3.10 */
-  mrb_define_method(mrb, fixnum,  "^",        fix_xor,         MRB_ARGS_REQ(1)); /* 15.2.8.3.11 */
-  mrb_define_method(mrb, fixnum,  "<<",       fix_lshift,      MRB_ARGS_REQ(1)); /* 15.2.8.3.12 */
-  mrb_define_method(mrb, fixnum,  ">>",       fix_rshift,      MRB_ARGS_REQ(1)); /* 15.2.8.3.13 */
-  mrb_define_method(mrb, fixnum,  "eql?",     fix_eql,         MRB_ARGS_REQ(1)); /* 15.2.8.3.16 */
-#ifndef MRB_WITHOUT_FLOAT
-  mrb_define_method(mrb, fixnum,  "to_f",     fix_to_f,        MRB_ARGS_NONE()); /* 15.2.8.3.23 */
+  mrb_define_method(mrb, integer, "+",        int_plus,        MRB_ARGS_REQ(1)); /* 15.2.8.3.1 */
+  mrb_define_method(mrb, integer, "-",        int_minus,       MRB_ARGS_REQ(1)); /* 15.2.8.3.2 */
+  mrb_define_method(mrb, integer, "*",        int_mul,         MRB_ARGS_REQ(1)); /* 15.2.8.3.3 */
+  mrb_define_method(mrb, integer, "%",        int_mod,         MRB_ARGS_REQ(1)); /* 15.2.8.3.5 */
+  mrb_define_method(mrb, integer, "==",       int_equal,       MRB_ARGS_REQ(1)); /* 15.2.8.3.7 */
+  mrb_define_method(mrb, integer, "~",        int_rev,         MRB_ARGS_NONE()); /* 15.2.8.3.8 */
+  mrb_define_method(mrb, integer, "&",        int_and,         MRB_ARGS_REQ(1)); /* 15.2.8.3.9 */
+  mrb_define_method(mrb, integer, "|",        int_or,          MRB_ARGS_REQ(1)); /* 15.2.8.3.10 */
+  mrb_define_method(mrb, integer, "^",        int_xor,         MRB_ARGS_REQ(1)); /* 15.2.8.3.11 */
+  mrb_define_method(mrb, integer, "<<",       int_lshift,      MRB_ARGS_REQ(1)); /* 15.2.8.3.12 */
+  mrb_define_method(mrb, integer, ">>",       int_rshift,      MRB_ARGS_REQ(1)); /* 15.2.8.3.13 */
+  mrb_define_method(mrb, integer, "eql?",     int_eql,         MRB_ARGS_REQ(1)); /* 15.2.8.3.16 */
+#ifndef MRB_NO_FLOAT
+  mrb_define_method(mrb, integer, "to_f",     int_to_f,        MRB_ARGS_NONE()); /* 15.2.8.3.23 */
 #endif
-  mrb_define_method(mrb, fixnum,  "to_s",     fix_to_s,        MRB_ARGS_OPT(1)); /* 15.2.8.3.25 */
-  mrb_define_method(mrb, fixnum,  "inspect",  fix_to_s,        MRB_ARGS_OPT(1));
-  mrb_define_method(mrb, fixnum,  "divmod",   fix_divmod,      MRB_ARGS_REQ(1)); /* 15.2.8.3.30 (x) */
+  mrb_define_method(mrb, integer, "to_s",     int_to_s,        MRB_ARGS_OPT(1)); /* 15.2.8.3.25 */
+  mrb_define_method(mrb, integer, "inspect",  int_to_s,        MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, integer, "divmod",   int_divmod,      MRB_ARGS_REQ(1)); /* 15.2.8.3.30 (x) */
+  mrb_define_method(mrb, integer, "__coerce_step_counter", coerce_step_counter, MRB_ARGS_REQ(2));
 
-#ifndef MRB_WITHOUT_FLOAT
+  /* Fixnum Class for compatibility */
+  mrb_define_const(mrb, mrb->object_class, "Fixnum", mrb_obj_value(integer));
+
+#ifndef MRB_NO_FLOAT
   /* Float Class */
   mrb->float_class = fl = mrb_define_class(mrb, "Float", numeric);                 /* 15.2.9 */
   MRB_SET_INSTANCE_TT(fl, MRB_TT_FLOAT);
   mrb_undef_class_method(mrb,  fl, "new");
-  mrb_define_method(mrb, fl,      "+",         flo_plus,       MRB_ARGS_REQ(1)); /* 15.2.9.3.1  */
-  mrb_define_method(mrb, fl,      "-",         flo_minus,      MRB_ARGS_REQ(1)); /* 15.2.9.3.2  */
-  mrb_define_method(mrb, fl,      "*",         flo_mul,        MRB_ARGS_REQ(1)); /* 15.2.9.3.3  */
-  mrb_define_method(mrb, fl,      "%",         flo_mod,        MRB_ARGS_REQ(1)); /* 15.2.9.3.5  */
-  mrb_define_method(mrb, fl,      "==",        flo_eq,         MRB_ARGS_REQ(1)); /* 15.2.9.3.7  */
+  mrb_define_method(mrb, fl,      "**",        flo_pow,        MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, fl,      "/",         flo_div,        MRB_ARGS_REQ(1)); /* 15.2.9.3.6  */
+  mrb_define_method(mrb, fl,      "quo",       flo_div,        MRB_ARGS_REQ(1)); /* 15.2.7.4.5 (x) */
+  mrb_define_method(mrb, fl,      "div",       flo_idiv,       MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, fl,      "+",         flo_plus,       MRB_ARGS_REQ(1)); /* 15.2.9.3.3  */
+  mrb_define_method(mrb, fl,      "-",         flo_minus,      MRB_ARGS_REQ(1)); /* 15.2.9.3.4  */
+  mrb_define_method(mrb, fl,      "*",         flo_mul,        MRB_ARGS_REQ(1)); /* 15.2.9.3.5  */
+  mrb_define_method(mrb, fl,      "%",         flo_mod,        MRB_ARGS_REQ(1)); /* 15.2.9.3.7  */
+  mrb_define_method(mrb, fl,      "<=>",       num_cmp,        MRB_ARGS_REQ(1)); /* 15.2.9.3.1  */
+  mrb_define_method(mrb, fl,      "<",         num_lt,         MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, fl,      "<=",        num_le,         MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, fl,      ">",         num_gt,         MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, fl,      ">=",        num_ge,         MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, fl,      "==",        flo_eq,         MRB_ARGS_REQ(1)); /* 15.2.9.3.2  */
   mrb_define_method(mrb, fl,      "~",         flo_rev,        MRB_ARGS_NONE());
   mrb_define_method(mrb, fl,      "&",         flo_and,        MRB_ARGS_REQ(1));
   mrb_define_method(mrb, fl,      "|",         flo_or,         MRB_ARGS_REQ(1));
@@ -1679,12 +1720,10 @@ mrb_init_numeric(mrb_state *mrb)
   mrb_define_method(mrb, fl,      "nan?",      flo_nan_p,      MRB_ARGS_NONE());
 
 #ifdef INFINITY
-  mrb_define_const(mrb, fl, "INFINITY", mrb_float_value(mrb, INFINITY));
+  mrb_define_const_id(mrb, fl, MRB_SYM(INFINITY), mrb_float_value(mrb, INFINITY));
 #endif
 #ifdef NAN
-  mrb_define_const(mrb, fl, "NAN", mrb_float_value(mrb, NAN));
+  mrb_define_const_id(mrb, fl, MRB_SYM(NAN), mrb_float_value(mrb, NAN));
 #endif
-
-  mrb_include_module(mrb, fl, integral);
 #endif
 }

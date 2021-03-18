@@ -110,6 +110,8 @@ class SpecCollector
 
     skipped = true if state.describe == 'Regexp#initialize'
 
+    skipped = true if state.it =~ /Bignum/
+
     if skipped
       @skipped += 1
       @spec_state = "\b#{YELLOW}S#{PLAIN}"

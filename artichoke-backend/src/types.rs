@@ -26,7 +26,7 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         // garbage collector.
         MRB_TT_FREE => Ruby::Unreachable,
         MRB_TT_TRUE => Ruby::Bool,
-        MRB_TT_FIXNUM => Ruby::Fixnum,
+        MRB_TT_INTEGER => Ruby::Fixnum,
         MRB_TT_SYMBOL => Ruby::Symbol,
         // internal use: #undef; should not happen
         MRB_TT_UNDEF => Ruby::Unreachable,

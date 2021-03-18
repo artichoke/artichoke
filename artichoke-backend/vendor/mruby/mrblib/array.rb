@@ -10,16 +10,16 @@ class Array
   # and pass the respective element.
   #
   # ISO 15.2.12.5.10
-  # def each(&block)
-  #   return to_enum :each unless block
+  def each(&block)
+    return to_enum :each unless block
 
-  #   idx = 0
-  #   while idx < length
-  #     block.call(self[idx])
-  #     idx += 1
-  #   end
-  #   self
-  # end
+    idx = 0
+    while idx < length
+      block.call(self[idx])
+      idx += 1
+    end
+    self
+  end
 
   ##
   # Calls the given block for each element of +self+
@@ -66,6 +66,10 @@ class Array
   #
   # ISO 15.2.12.5.15
   def initialize(size=0, obj=nil, &block)
+    if size.is_a?(Array) && obj==nil && block == nil
+      self.replace(size)
+      return self
+    end
     size = size.__to_int
     raise ArgumentError, "negative array size" if size < 0
 
@@ -267,5 +271,9 @@ class Array
 
   def sort(&block)
     self.dup.sort!(&block)
+  end
+
+  def to_a
+    self
   end
 end

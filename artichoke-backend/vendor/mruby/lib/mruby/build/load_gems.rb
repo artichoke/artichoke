@@ -15,10 +15,13 @@ module MRuby
     def gem(gemdir, &block)
       if gemdir.is_a?(Hash)
         gemdir = load_special_path_gem(gemdir)
-      elsif GemBox.path && gemdir.is_a?(String)
+      elsif GemBox.path
         gemdir = File.expand_path(gemdir, File.dirname(GemBox.path))
       else
         caller_dir = File.expand_path(File.dirname(caller(1,1)[0][/^(.*?):\d/,1]))
+        if caller_dir == "#{MRUBY_ROOT}/build_config"
+          caller_dir = MRUBY_ROOT
+        end
         gemdir = File.expand_path(gemdir, caller_dir)
       end
 
@@ -28,18 +31,17 @@ module MRuby
       Gem.current = nil
       load gemrake
       return nil unless Gem.current
+      current = Gem.current
 
-      Gem.current.dir = gemdir
-      Gem.current.build = self.is_a?(MRuby::Build) ? self : MRuby::Build.current
-      Gem.current.build_config_initializer = block
-      gems << Gem.current
+      current.dir = gemdir
+      current.build = self.is_a?(MRuby::Build) ? self : MRuby::Build.current
+      current.build_config_initializer = block
+      gems << current
 
-      cxx_srcs = ['src', 'test', 'tools'].map do |subdir|
-        Dir.glob("#{Gem.current.dir}/#{subdir}/*.{cpp,cxx,cc}")
-      end.flatten
+      cxx_srcs = Dir.glob("#{current.dir}/{src,test,tools}/*.{cpp,cxx,cc}")
       enable_cxx_exception unless cxx_srcs.empty?
 
-      Gem.current
+      current
     end
 
     def load_special_path_gem(params)
@@ -98,7 +100,7 @@ module MRuby
           options = [params[:options]] || []
           options << "--recursive"
           options << "--branch \"#{branch}\""
-          options << "--depth 1" unless params[:checksum_hash]
+          options << "--depth 1" unless params[:checksum_hash] || lock
           mkdir_p "#{gem_clone_dir}"
           git.run_clone gemdir, url, options
 

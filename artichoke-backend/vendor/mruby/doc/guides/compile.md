@@ -6,45 +6,53 @@ binaries.
 ## Prerequisites
 
 To compile mruby out of the source code you need the following tools:
+
 * C Compiler (e.g. `gcc` or `clang`)
 * Linker (e.g. `gcc` or `clang`)
 * Archive utility (e.g. `ar`)
-* Parser generator (e.g. `bison`)
+* Parser generator (`bison`)
 * Ruby 2.0 or later (e.g. `ruby` or `jruby`)
 
 Note that `bison` bundled with MacOS is too old to compile `mruby`.
-Try `brew install bison` and follow the instuction shown to update
-the `$PATH` to compile `mruby`.
+Try `brew install bison` and follow the instruction shown to update
+the `$PATH` to compile `mruby`. We also encourage to upgrade `ruby`
+on MacOS in similar manner.
 
 Optional:
-* GIT (to update mruby source and integrate mrbgems easier)
+
+* git (to update mruby source and integrate mrbgems easier)
 * C++ compiler (to use GEMs which include \*.cpp, \*.cxx, \*.cc)
-* Assembler (to use GEMs which include \*.asm)
 
-## Usage
+## Build
 
-Inside of the root directory of the mruby source a file exists
-called *build_config.rb*. This file contains the build configuration
-of mruby and looks like this for example:
+To compile `mruby` with the default build configuration, just invoke `rake`
+inside of the mruby source root. To generate and execute the test tools call
+`rake test`. To clean all build files call `rake clean`. To see full command
+line on build, call `rake -v`.
+
+You can specify your own configuration file by the `MRUBY_CONFIG` environment
+variable (you can use `CONFIG` for shorthand for `MRUBY_CONFIG`). If the path
+doesn't exist, *build_config/${MRUBY_CONFIG}.rb* is used. The default
+configuration is defined in the `build_config/default.rb` file.
+
+Those build configuration files contain the build configuration of mruby, for
+example:
+
 ```ruby
 MRuby::Build.new do |conf|
-  toolchain :gcc
+  conf.toolchain :gcc
 end
 ```
 
-All tools necessary to compile mruby can be set or modified here. In case
-you want to maintain an additional *build_config.rb* you can define a
-customized path using the *$MRUBY_CONFIG* environment variable.
-
-To compile just call `rake` inside of the mruby source root. To
-generate and execute the test tools call `rake test`. To clean
-all build files call `rake clean`. To see full command line on
-build, call `rake -v`.
+All tools necessary to compile mruby can be set or modified here.
 
 ## Build Configuration
 
-Inside of the *build_config.rb* the following options can be configured
-based on your environment.
+We wish you submit a pull-request to *build_config/**PLATFORM**.rb*, once you
+created a new configuration for a new platform.
+
+Inside of the configuration file, the following options can be
+configured based on your environment.
 
 ### Toolchains
 
@@ -54,32 +62,36 @@ configure the build environment for specific compiler infrastructures.
 #### GCC
 
 Toolchain configuration for the GNU C Compiler.
+
 ```ruby
-toolchain :gcc
+conf.toolchain :gcc
 ```
 
 #### clang
 
 Toolchain configuration for the LLVM C Compiler clang. Mainly equal to the
 GCC toolchain.
+
 ```ruby
-toolchain :clang
+conf.toolchain :clang
 ```
 
 #### Visual Studio 2010, 2012 and 2013
 
 Toolchain configuration for Visual Studio on Windows. If you use the
-[Visual Studio Command Prompt](http://msdn.microsoft.com/en-us/library/ms229859\(v=vs.110\).aspx),
+[Visual Studio Command Prompt](https://msdn.microsoft.com/en-us/library/ms229859\(v=vs.110\).aspx),
 you normally do not have to specify this manually, since it gets automatically detected by our build process.
+
 ```ruby
-toolchain :visualcpp
+conf.toolchain :visualcpp
 ```
 
 #### Android
 
 Toolchain configuration for Android.
+
 ```ruby
-toolchain :android
+conf.toolchain :android
 ```
 
 Requires the custom standalone Android NDK and the toolchain path
@@ -88,20 +100,18 @@ in `ANDROID_STANDALONE_TOOLCHAIN`.
 ### Binaries
 
 It is possible to select which tools should be compiled during the compilation
-process. The following tools can be selected:
-* mruby (mruby interpreter)
-* mirb (mruby interactive shell)
+process. For example,
 
-To select them declare conf.gem as follows:
-```ruby
-conf.gem "#{root}/mrbgems/mruby-bin-mruby"
-conf.gem "#{root}/mrbgems/mruby-bin-mirb"
-```
+* `mruby`
+* `mirb`
+
+The configuration are done via `mrbgems`. See `Mrbgems` section.
 
 ### File Separator
 
 Some environments require a different file separator character. It is possible to
 set the character via `conf.file_separator`.
+
 ```ruby
 conf.file_separator = '/'
 ```
@@ -109,6 +119,7 @@ conf.file_separator = '/'
 ### C Compiler
 
 Configuration of the C compiler binary, flags and include paths.
+
 ```ruby
 conf.cc do |cc|
   cc.command = ...
@@ -124,6 +135,7 @@ end
 C Compiler has header searcher to detect installed library.
 
 If you need a include path of header file use `search_header_path`:
+
 ```ruby
 # Searches ```iconv.h```.
 # If found it will return include path of the header file.
@@ -132,6 +144,7 @@ fail 'iconv.h not found' unless conf.cc.search_header_path 'iconv.h'
 ```
 
 If you need a full file name of header file use `search_header`:
+
 ```ruby
 # Searches ```iconv.h```.
 # If found it will return full path of the header file.
@@ -145,6 +158,7 @@ When you are using GCC toolchain (including clang toolchain since its base is gc
 it will use compiler specific include paths too. (For example `/usr/local/include`, `/usr/include`)
 
 If you need a special header search paths define a singleton method `header_search_paths` to C compiler:
+
 ```ruby
 def conf.cc.header_search_paths
   ['/opt/local/include'] + include_paths
@@ -154,6 +168,7 @@ end
 ### Linker
 
 Configuration of the Linker binary, flags and library paths.
+
 ```ruby
 conf.linker do |linker|
   linker.command = ...
@@ -171,6 +186,7 @@ end
 ### Archiver
 
 Configuration of the Archiver binary and flags.
+
 ```ruby
 conf.archiver do |archiver|
   archiver.command = ...
@@ -181,6 +197,7 @@ end
 ### Parser Generator
 
 Configuration of the Parser Generator binary and flags.
+
 ```ruby
 conf.yacc do |yacc|
   yacc.command = ...
@@ -191,6 +208,7 @@ end
 ### GPerf
 
 Configuration of the GPerf binary and flags.
+
 ```ruby
 conf.gperf do |gperf|
   gperf.command = ...
@@ -199,6 +217,7 @@ end
 ```
 
 ### File Extensions
+
 ```ruby
 conf.exts do |exts|
   exts.object = ...
@@ -207,18 +226,43 @@ conf.exts do |exts|
 end
 ```
 
+### Preallocated Symbols
+
+By far, preallocate symbols are highly compatible with the previous versions, so
+we expect you won't see any problem with them. But just in case you face any
+issue, you can disable preallocated symbols by specifying `conf.disable_presym`.
+
+In the build process, `mrbc` under cross compiling environment will be compiled
+with this configuration.
+
 ### Mrbgems
 
-Integrate GEMs in the build process.
-```ruby
-# Integrate GEM with additional configuration
-conf.gem 'path/to/gem' do |g|
-  g.cc.flags << ...
-end
+`mruby` comes with the (sort of) packaging system named `mrbgems`. To
+specify `gem`, you can use `conf.gem` in the configuration file.
 
-# Integrate GEM without additional configuration
-conf.gem 'path/to/another/gem'
+```ruby
+# Integrate a bundled Gem you see in `mrbgems` directory
+conf.gem :core => 'mruby-something'
+
+# Integrate a Gem from GitHub
+conf.gem :github => 'someone/mruby-another'
+
+# Integrate a mruby binary Gem
+conf.gem :core => 'mruby-bin-mruby'
+
+# Integrate a interactive mruby binary Gem
+conf.gem :core => 'mruby-bin-mirb'
+
+# Integrate GemBox (set of Gems)
+conf.gembox "default"
 ```
+
+A GemBox is a set of Gems defined in `mrbgems/default.gembox` for example.
+It's just a set of `mrbgem` configurations.
+
+There is a `RubyGem` (gem for CRuby) named `mgem` that help you to
+manage `mrbgems`. Try `gem install mgem`. `mgem` can show you the list
+of registered `mrbgems`.
 
 See doc/mrbgems/README.md for more option about mrbgems.
 
@@ -227,6 +271,7 @@ See doc/mrbgems/README.md for more option about mrbgems.
 Configuration Mrbtest build process.
 
 If you want mrbtest.a only, You should set `conf.build_mrbtest_lib_only`
+
 ```ruby
 conf.build_mrbtest_lib_only
 ```
@@ -239,6 +284,7 @@ See `mruby-bin-*/bintest/*.rb` if you need examples.
 If you want a temporary files use `tempfile` module of CRuby instead of `/tmp/`.
 
 You can enable it with following:
+
 ```ruby
 conf.enable_bintest
 ```
@@ -257,6 +303,7 @@ files are compiled by C++ compiler.
 
 When you mix C++ code, C++ exception would be enabled automatically.
 If you need to enable C++ exception explicitly add the following:
+
 ```ruby
 conf.enable_cxx_exception
 ```
@@ -266,20 +313,24 @@ conf.enable_cxx_exception
 If your compiler does not support C++ and you want to ensure
 you don't use mrbgem written in C++, you can explicitly disable
 C++ exception, add following:
+
 ```ruby
 conf.disable_cxx_exception
 ```
+
 and you will get an error when you try to use C++ gem.
 Note that it must be called before `enable_cxx_exception` or `gem` method.
 
 ### Debugging mode
 
 To enable debugging mode add the following:
+
 ```ruby
 conf.enable_debug
 ```
 
 When debugging mode is enabled
+
 * Macro `MRB_DEBUG` would be defined.
 	* Which means `mrb_assert()` macro is enabled.
 * Debug information of irep would be generated by `mrbc`.
@@ -288,27 +339,29 @@ When debugging mode is enabled
 
 ## Cross-Compilation
 
-mruby can also be cross-compiled from one platform to another. To
-achieve this the *build_config.rb* needs to contain an instance of
-`MRuby::CrossBuild`. This instance defines the compilation
-tools and flags for the target platform. An example could look
-like this:
+mruby can also be cross-compiled from one platform to another. To achieve
+cross-compilation, the build configuration needs to contain an instance of
+`MRuby::CrossBuild`. This instance defines the compilation tools and flags
+for the target platform. An example could look like this:
+
 ```ruby
 MRuby::CrossBuild.new('32bit') do |conf|
-  toolchain :gcc
+  conf.toolchain :gcc
 
   conf.cc.flags << "-m32"
   conf.linker.flags << "-m32"
 end
 ```
 
-All configuration options of `MRuby::Build` can also be used
-in `MRuby::CrossBuild`.
+All configuration options of `MRuby::Build` can also be used in
+`MRuby::CrossBuild`. You can find examples under the *build_config*
+directory.
 
 ### Mrbtest in Cross-Compilation
 
 In cross compilation, you can run `mrbtest` on emulator if
 you have it by changing configuration of test runner.
+
 ```ruby
 conf.test_runner do |t|
   t.command = ... # set emulator. this value must be non nil or false
@@ -348,6 +401,7 @@ root directory. The structure of this directory will look like this:
 	          +- mruby
 
 The compilation workflow will look like this:
+
 * compile all files under *src* (object files will be stored
 in *build/host/src*)
 * generate parser grammar out of *src/parse.y* (generated
@@ -425,6 +479,7 @@ build directory.
 The cross compilation workflow starts in the same way as the normal
 compilation by compiling all *native* libraries and binaries.
 Afterwards the cross compilation process proceeds like this:
+
 * cross-compile all files under *src* (object files will be stored
 in *build/i386/src*)
 * generate parser grammar out of *src/parse.y* (generated
@@ -474,7 +529,7 @@ can't be disabled for the main build.
 MRuby::CrossBuild.new('Minimal') do |conf|
   toolchain :gcc
 
-  conf.cc.defines = %w(MRB_DISABLE_STDIO)
+  conf.cc.defines = %w(MRB_NO_STDIO)
   conf.bins = []
 end
 ```
@@ -490,3 +545,37 @@ of mruby, a native binary called `mrbtest` will be generated and executed.
 This binary contains all test cases which are defined under *test/t*. In case
 of a cross-compilation an additional cross-compiled *mrbtest* binary is
 generated. You can copy this binary and run on your target system.
+
+## Embedding `mruby` in Your Application
+
+After the build, you will get `libmruby.a`. You can link it to your application.
+
+For compiler options and library path, you can use `mruby-config` command for
+convenience. `mruby-config` command prints the configuration used for `libmruby.a`.
+
+```
+$ mruby-config --help
+Usage: mruby-config [switches]
+  switches:
+  --cflags                    print flags passed to compiler
+  --ldflags                   print flags passed to linker
+  --ldflags-before-libs       print flags passed to linker before linked libraries
+  --libs                      print linked libraries
+  --libmruby-path             print libmruby path
+```
+
+For example, when you have a C source file (`c.c`) and try to
+compile and link it with `libmruby.a`, you can run the following command,
+
+```
+gcc `mruby-config --cflags` c.c `mruby-config --ldflags` `mruby-config --libs`
+```
+
+When you use `make`, add following lines in `Makefile`
+
+```
+MRB_CONFIG = <path-to-mruby-config>
+CFLAGS = `$(MRB_CONFIG) --cflags`
+LDFLAGS = `$(MRB_CONFIG) --ldflags`
+LIBS = `$(MRB_CONFIG) --libs`
+```

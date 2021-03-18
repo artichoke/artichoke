@@ -12,7 +12,7 @@
 #define ENC_COMP_P(enc, enc_lit) \
   str_casecmp_p(RSTRING_PTR(enc), RSTRING_LEN(enc), enc_lit, sizeof(enc_lit"")-1)
 
-#ifdef MRB_WITHOUT_FLOAT
+#ifdef MRB_NO_FLOAT
 # define mrb_float_p(o) FALSE
 #endif
 
@@ -166,7 +166,7 @@ mrb_str_concat_m(mrb_state *mrb, mrb_value self)
 {
   mrb_value str = mrb_get_arg1(mrb);
 
-  if (mrb_fixnum_p(str) || mrb_float_p(str))
+  if (mrb_integer_p(str) || mrb_float_p(str))
 #ifdef MRB_UTF8_STRING
     str = int_chr_utf8(mrb, str);
 #else
@@ -194,7 +194,8 @@ mrb_str_concat_m(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_str_start_with(mrb_state *mrb, mrb_value self)
 {
-  mrb_value *argv, sub;
+  const mrb_value *argv;
+  mrb_value sub;
   mrb_int argc, i;
   mrb_get_args(mrb, "*", &argv, &argc);
 
@@ -223,7 +224,8 @@ mrb_str_start_with(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_str_end_with(mrb_state *mrb, mrb_value self)
 {
-  mrb_value *argv, sub;
+  const mrb_value *argv;
+  mrb_value sub;
   mrb_int argc, i;
   mrb_get_args(mrb, "*", &argv, &argc);
 
@@ -1072,7 +1074,8 @@ static mrb_value
 mrb_str_del_prefix_bang(mrb_state *mrb, mrb_value self)
 {
   mrb_int plen, slen;
-  char *ptr, *s;
+  const char *ptr;
+  char *s;
   struct RString *str = RSTRING(self);
 
   mrb_get_args(mrb, "s", &ptr, &plen);
@@ -1105,7 +1108,7 @@ static mrb_value
 mrb_str_del_prefix(mrb_state *mrb, mrb_value self)
 {
   mrb_int plen, slen;
-  char *ptr;
+  const char *ptr;
 
   mrb_get_args(mrb, "s", &ptr, &plen);
   slen = RSTRING_LEN(self);
@@ -1129,7 +1132,8 @@ static mrb_value
 mrb_str_del_suffix_bang(mrb_state *mrb, mrb_value self)
 {
   mrb_int plen, slen;
-  char *ptr, *s;
+  const char *ptr;
+  char *s;
   struct RString *str = RSTRING(self);
 
   mrb_get_args(mrb, "s", &ptr, &plen);
@@ -1160,7 +1164,7 @@ static mrb_value
 mrb_str_del_suffix(mrb_state *mrb, mrb_value self)
 {
   mrb_int plen, slen;
-  char *ptr;
+  const char *ptr;
 
   mrb_get_args(mrb, "s", &ptr, &plen);
   slen = RSTRING_LEN(self);
@@ -1229,7 +1233,7 @@ mrb_mruby_string_ext_gem_init(mrb_state* mrb)
 
   mrb_define_method(mrb, s, "__lines",         mrb_str_lines,           MRB_ARGS_NONE());
 
-  mrb_define_method(mrb, mrb_module_get(mrb, "Integral"), "chr", mrb_int_chr, MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, mrb_class_get(mrb, "Integer"), "chr", mrb_int_chr, MRB_ARGS_OPT(1));
 }
 
 void
