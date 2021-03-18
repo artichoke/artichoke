@@ -214,4 +214,10 @@ class Range
       raise NotImplementedError
     end
   end
+
+  def to_a
+    raise RangeError, 'cannot convert endless range to an array' if self.end.nil?
+
+    super
+  end
 end
