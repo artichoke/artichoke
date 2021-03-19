@@ -41,7 +41,7 @@ quickcheck = { version = "1.0", default-features = false }
 [build-dependencies]
 bindgen = { version = "0.57.0", default-features = false, features = ["runtime"] }
 cc = "1.0"
-target-lexicon = "0.11.2"
+target-lexicon = "0.11.3"
 
 [features]
 default = [
