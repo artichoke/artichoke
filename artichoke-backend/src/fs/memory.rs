@@ -266,6 +266,19 @@ impl Memory {
         }
     }
 
+    /// Check whether `path` points to a file in the virtual filesystem and
+    /// return the absolute path if it exists.
+    ///
+    /// This API is infallible and will return [`None`] for non-existent paths.
+    #[must_use]
+    pub fn resolve_file(&self, path: &Path) -> Option<Vec<u8>> {
+        let path = absolutize_relative_to(path, &self.cwd);
+        match normalize_slashes(path) {
+            Ok(path) if self.fs.contains_key(path.as_bstr()) => Some(path),
+            _ => None,
+        }
+    }
+
     /// Check whether `path` points to a file in the virtual filesystem.
     ///
     /// This API is infallible and will return `false` for non-existent paths.

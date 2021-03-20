@@ -20,13 +20,24 @@ impl Hybrid {
         Self::default()
     }
 
+    /// Check whether `path` points to a file in the virtual filesystem and
+    /// return the absolute path if it exists.
+    ///
+    /// This API is infallible and will return [`None`] for non-existent paths.
+    #[must_use]
+    pub fn resolve_file(&self, path: &Path) -> Option<Vec<u8>> {
+        self.memory
+            .resolve_file(path)
+            .or_else(|| self.native.resolve_file(path))
+    }
+
     /// Check whether `path` points to a file in the virtual filesystem.
     ///
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]
     pub fn is_file(&self, path: &Path) -> bool {
-        if path.strip_prefix(MEMORY_FILESYSTEM_MOUNT_POINT).is_ok() {
-            self.memory.is_file(path)
+        if self.memory.is_file(path) {
+            true
         } else {
             self.native.is_file(path)
         }
@@ -43,11 +54,7 @@ impl Hybrid {
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
     pub fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
-        if path.strip_prefix(MEMORY_FILESYSTEM_MOUNT_POINT).is_ok() {
-            self.memory.read_file(path)
-        } else {
-            self.native.read_file(path)
-        }
+        self.memory.read_file(path).or_else(|_| self.native.read_file(path))
     }
 
     /// Write file contents into the virtual file system at `path`.
@@ -60,11 +67,9 @@ impl Hybrid {
     /// If access to the [`Native`] filesystem returns an error, the error is
     /// returned. See [`Native::write_file`].
     pub fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {
-        if path.strip_prefix(MEMORY_FILESYSTEM_MOUNT_POINT).is_ok() {
-            self.memory.write_file(path, buf)
-        } else {
-            self.native.write_file(path, buf)
-        }
+        self.memory
+            .write_file(path, buf.clone())
+            .or_else(|_| self.native.write_file(path, buf))
     }
 
     /// Retrieve an extension hook for the file at `path`.
@@ -72,11 +77,7 @@ impl Hybrid {
     /// This API is infallible and will return `None` for non-existent paths.
     #[must_use]
     pub fn get_extension(&self, path: &Path) -> Option<ExtensionHook> {
-        if path.strip_prefix(MEMORY_FILESYSTEM_MOUNT_POINT).is_ok() {
-            self.memory.get_extension(path)
-        } else {
-            None
-        }
+        self.memory.get_extension(path)
     }
 
     /// Write extension hook into the virtual file system at `path`.
@@ -108,8 +109,8 @@ impl Hybrid {
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]
     pub fn is_required(&self, path: &Path) -> bool {
-        if path.strip_prefix(MEMORY_FILESYSTEM_MOUNT_POINT).is_ok() {
-            self.memory.is_required(path)
+        if self.memory.is_required(path) {
+            true
         } else {
             self.native.is_required(path)
         }
@@ -126,10 +127,8 @@ impl Hybrid {
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
     pub fn mark_required(&mut self, path: &Path) -> io::Result<()> {
-        if path.strip_prefix(MEMORY_FILESYSTEM_MOUNT_POINT).is_ok() {
-            self.memory.mark_required(path)
-        } else {
-            self.native.mark_required(path)
-        }
+        self.memory
+            .mark_required(path)
+            .or_else(|_| self.native.mark_required(path))
     }
 }

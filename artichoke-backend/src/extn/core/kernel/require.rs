@@ -1,16 +1,12 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
 use bstr::ByteSlice;
-use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::prelude::*;
 use crate::ffi;
-use crate::fs::{normalize_slashes, RUBY_LOAD_PATH};
 use crate::state::parser::Context;
-
-const RUBY_EXTENSION: &str = "rb";
 
 pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
@@ -18,26 +14,26 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }
     let file = ffi::bytes_to_os_str(filename)?;
-    let pathbuf;
-    let mut path = Path::new(file);
-    if path.is_relative() {
-        pathbuf = Path::new(RUBY_LOAD_PATH).join(file);
-        path = pathbuf.as_path();
+    let path = Path::new(file);
+    if let Some(mut context) = interp.resolve_source_path(&path)? {
+        for byte in &mut context {
+            if *byte == b'\\' {
+                *byte = b'/'
+            }
+        }
+        let context =
+            Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
+        interp.push_context(context)?;
+        let result = interp.load_source(&path);
+        let _ = interp.pop_context()?;
+        return result;
     }
-    if !interp.source_is_file(path)? {
-        let mut message = b"cannot load such file -- ".to_vec();
-        message.extend_from_slice(filename);
-        return Err(LoadError::from(message).into());
-    }
-    let context = normalize_slashes(path.to_owned())?;
-    let context = Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
-    interp.push_context(context)?;
-    let result = interp.load_source(path);
-    let _ = interp.pop_context()?;
-    result
+    let mut message = b"cannot load such file -- ".to_vec();
+    message.extend_from_slice(filename);
+    Err(LoadError::from(message).into())
 }
 
-pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<RelativePath>) -> Result<bool, Error> {
+pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());
@@ -45,28 +41,12 @@ pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<Relativ
     let file = ffi::bytes_to_os_str(filename)?;
     let path = Path::new(file);
 
-    let (path, alternate) = if path.is_relative() {
-        let mut path = if let Some(ref base) = base {
-            base.join(path)
-        } else {
-            Path::new(RUBY_LOAD_PATH).join(path)
-        };
-        let is_rb = matches!(
-            path.extension(),
-            Some(ext) if *ext == *OsStr::new(RUBY_EXTENSION)
-        );
-        if is_rb {
-            (path, None)
-        } else {
-            let alternate = path.clone();
-            path.set_extension(RUBY_EXTENSION);
-            (path, Some(alternate))
+    if let Some(mut context) = interp.resolve_source_path(&path)? {
+        for byte in &mut context {
+            if *byte == b'\\' {
+                *byte = b'/'
+            }
         }
-    } else {
-        (path.to_owned(), None)
-    };
-    if interp.source_is_file(&path)? {
-        let context = normalize_slashes(path.to_owned())?;
         let context =
             Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         interp.push_context(context)?;
@@ -74,16 +54,32 @@ pub fn require(interp: &mut Artichoke, mut filename: Value, base: Option<Relativ
         let _ = interp.pop_context()?;
         return result;
     }
-    if let Some(path) = alternate {
-        if interp.source_is_file(&path)? {
-            let context = normalize_slashes(path.to_owned())?;
-            let context =
-                Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
-            interp.push_context(context)?;
-            let result = interp.require_source(&path);
-            let _ = interp.pop_context()?;
-            return result;
+    let mut message = b"cannot load such file -- ".to_vec();
+    message.extend_from_slice(filename);
+    Err(LoadError::from(message).into())
+}
+
+#[allow(clippy::module_name_repetitions)]
+pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: RelativePath) -> Result<bool, Error> {
+    let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
+    if filename.find_byte(b'\0').is_some() {
+        return Err(ArgumentError::with_message("path name contains null byte").into());
+    }
+    let file = ffi::bytes_to_os_str(filename)?;
+    let path = base.join(Path::new(file));
+
+    if let Some(mut context) = interp.resolve_source_path(&path)? {
+        for byte in &mut context {
+            if *byte == b'\\' {
+                *byte = b'/'
+            }
         }
+        let context =
+            Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
+        interp.push_context(context)?;
+        let result = interp.require_source(&path);
+        let _ = interp.pop_context()?;
+        return result;
     }
     let mut message = b"cannot load such file -- ".to_vec();
     message.extend_from_slice(filename);
@@ -118,11 +114,6 @@ impl From<&str> for RelativePath {
 }
 
 impl RelativePath {
-    #[must_use]
-    pub fn new() -> Self {
-        Self::from(RUBY_LOAD_PATH)
-    }
-
     pub fn join<P: AsRef<Path>>(&self, path: P) -> PathBuf {
         self.0.join(path.as_ref())
     }
