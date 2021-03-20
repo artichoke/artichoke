@@ -82,7 +82,7 @@
 
 #![no_std]
 #![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_core")]
-#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
+#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
 // Ensure code blocks in README.md compile

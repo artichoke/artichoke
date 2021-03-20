@@ -99,7 +99,7 @@
 //! `HashMap<String, Option<Vec<u8>>>` using an `artichoke-backend` interpreter.
 
 #![doc(html_root_url = "https://artichoke.github.io/artichoke/artichoke_backend")]
-#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
+#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
 // Ensure code blocks in README.md compile
