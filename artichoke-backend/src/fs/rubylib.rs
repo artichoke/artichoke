@@ -101,9 +101,8 @@ impl Rubylib {
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned. See [`fs::write`] for further
     /// discussion of the error modes of this API.
-    #[allow(clippy::needless_pass_by_value)]
     #[allow(clippy::unused_self)]
-    pub fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {
+    pub fn write_file(&mut self, path: &Path, buf: &[u8]) -> io::Result<()> {
         let _ = path;
         let _ = buf;
 

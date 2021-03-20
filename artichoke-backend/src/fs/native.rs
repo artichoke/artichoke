@@ -77,7 +77,7 @@ impl Native {
     /// [`io::ErrorKind::NotFound`] is returned. See [`fs::write`] for further
     /// discussion of the error modes of this API.
     #[allow(clippy::unused_self)]
-    pub fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {
+    pub fn write_file(&mut self, path: &Path, buf: &[u8]) -> io::Result<()> {
         fs::write(path, buf)
     }
 
