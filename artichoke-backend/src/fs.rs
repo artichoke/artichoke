@@ -1,15 +1,16 @@
 //! Virtual filesystem.
 //!
 //! Artichoke proxies all filesystem access through a virtual filesystem. The
-//! filesystem can store Ruby sources and [extension hooks](ExtensionHook) in
-//! memory and will support proxying to the host filesystem for reads and
-//! writes.
+//! filesystem can store Ruby sources and [extension hooks] in memory and will
+//! support proxying to the host filesystem for reads and writes.
 //!
 //! Artichoke uses the virtual filesystem to track metadata about loaded
 //! features.
 //!
 //! Artichoke has several virtual filesystem implementations. Only some of them
 //! support reading from the system fs.
+//!
+//! [extension hooks]: ExtensionHook
 
 use bstr::ByteVec;
 use std::path::{Component, Path, PathBuf};
@@ -18,13 +19,21 @@ use crate::error::Error;
 use crate::ffi::ConvertBytesError;
 use crate::Artichoke;
 
+#[cfg(feature = "native-filesystem-access")]
 mod hybrid;
 mod memory;
+#[cfg(feature = "native-filesystem-access")]
 mod native;
+#[cfg(feature = "rubylib-source-loader")]
+mod rubylib;
 
+#[cfg(feature = "native-filesystem-access")]
 pub use hybrid::Hybrid;
 pub use memory::Memory;
+#[cfg(feature = "native-filesystem-access")]
 pub use native::Native;
+#[cfg(feature = "rubylib-source-loader")]
+pub use rubylib::Rubylib;
 
 /// Directory at which the [in-memory filesystem](Memory) is mounted.
 ///

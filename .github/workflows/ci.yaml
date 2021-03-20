@@ -90,6 +90,9 @@ jobs:
       - name: Check artichoke with all features
         run: cargo check --verbose --all-features --all-targets --profile=test
 
+      - name: Check artichoke with no default features and native fs access
+        run: cargo build --no-default-features --features native-filesystem-access
+
   check-fuzz:
     name: Check fuzz workspace
     runs-on: ubuntu-latest
