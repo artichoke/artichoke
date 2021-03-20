@@ -81,12 +81,12 @@ where
 }
 
 pub fn require(interp: &mut Artichoke, path: Value) -> Result<Value, Error> {
-    let success = kernel::require::require(interp, path, None)?;
+    let success = kernel::require::require(interp, path)?;
     Ok(interp.convert(success))
 }
 
 pub fn require_relative(interp: &mut Artichoke, path: Value) -> Result<Value, Error> {
     let relative_base = RelativePath::try_from_interp(interp)?;
-    let success = kernel::require::require(interp, path, Some(relative_base))?;
+    let success = kernel::require::require_relative(interp, path, relative_base)?;
     Ok(interp.convert(success))
 }

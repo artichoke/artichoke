@@ -1,6 +1,7 @@
 //! Load Ruby and Rust sources into the VM.
 
 use alloc::borrow::Cow;
+use alloc::vec::Vec;
 
 #[cfg(feature = "std")]
 type Path = std::path::Path;
@@ -56,6 +57,22 @@ pub trait LoadSources {
     where
         P: AsRef<Path>,
         T: Into<Cow<'static, [u8]>>;
+
+    /// Test for a source file at a path and return the absolute path of the
+    /// resolved file.
+    ///
+    /// Query the underlying virtual filesystem to check if `path` points to a
+    /// source file.
+    ///
+    /// This function returns [`None`] if `path` does not exist in the virtual
+    /// filesystem.
+    ///
+    /// # Errors
+    ///
+    /// If the underlying filesystem is inaccessible, an error is returned.
+    fn resolve_source_path<P>(&self, path: P) -> Result<Option<Vec<u8>>, Self::Error>
+    where
+        P: AsRef<Path>;
 
     /// Test for a source file at a path.
     ///

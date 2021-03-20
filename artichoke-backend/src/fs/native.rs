@@ -6,6 +6,7 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
+use crate::ffi::os_str_to_bytes;
 use crate::fs::{absolutize_relative_to, normalize_slashes, ExtensionHook};
 
 #[derive(Default, Debug, PartialEq, Eq)]
@@ -20,6 +21,21 @@ impl Native {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Check whether `path` points to a file in the virtual filesystem and
+    /// return the absolute path if it exists.
+    ///
+    /// This API is infallible and will return [`None`] for non-existent paths.
+    #[must_use]
+    #[allow(clippy::unused_self)]
+    pub fn resolve_file(&self, path: &Path) -> Option<Vec<u8>> {
+        if path.exists() {
+            let file = os_str_to_bytes(path.as_os_str()).ok()?;
+            Some(file.to_vec())
+        } else {
+            None
+        }
     }
 
     /// Check whether `path` points to a file in the virtual filesystem.
