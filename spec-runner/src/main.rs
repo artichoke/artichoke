@@ -64,7 +64,7 @@
 //!     <config>    Path to TOML config file
 //! ```
 
-#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon.ico")]
+#![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
 #[macro_use]
