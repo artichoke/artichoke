@@ -107,17 +107,18 @@ impl Hybrid {
     ///
     /// If access to the [`Native`] filesystem returns an error, the error is
     /// returned. See [`Native::write_file`].
+    #[allow(clippy::needless_pass_by_value)]
     pub fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {
         if let Some(ref mut rubylib) = self.rubylib {
-            rubylib.write_file(path, buf.clone()).or_else(|_| {
+            rubylib.write_file(path, &buf).or_else(|_| {
                 self.memory
                     .write_file(path, buf.clone())
-                    .or_else(|_| self.native.write_file(path, buf))
+                    .or_else(|_| self.native.write_file(path, &buf))
             })
         } else {
             self.memory
                 .write_file(path, buf.clone())
-                .or_else(|_| self.native.write_file(path, buf))
+                .or_else(|_| self.native.write_file(path, &buf))
         }
     }
 
