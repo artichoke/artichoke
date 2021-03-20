@@ -78,6 +78,7 @@ backtrace = ["termcolor"]
 kitchen-sink = [
   "core-full",
   "native-filesystem-access",
+  "rubylib-source-loader",
   "stdlib-full",
 ]
 
@@ -120,6 +121,9 @@ core-time = ["artichoke-backend/core-time"]
 # Extend the Artichoke virtual filesystem to have native/host access.
 # This feature enables requiring sources from local disk.
 native-filesystem-access = ["artichoke-backend/native-filesystem-access"]
+# Extend the Artichoke virtual filesystem to search a path separator-delimited
+# list of paths for Ruby sources by parsing the `RUBYLIB` environment variable.
+rubylib-source-loader = ["native-filesystem-access", "artichoke-backend/rubylib-source-loader"]
 # Override the `stdout` and `stdin` streams to write to an in-memory buffer.
 output-strategy-capture = ["artichoke-backend/output-strategy-capture"]
 # Override the `stdout` and `stdin` streams to write to be discarded.

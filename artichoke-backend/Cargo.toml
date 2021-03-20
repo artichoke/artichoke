@@ -68,6 +68,7 @@ core-regexp-oniguruma = ["spinoso-regexp/oniguruma", "onig"]
 core-time = ["spinoso-time"]
 
 native-filesystem-access = []
+rubylib-source-loader = ["native-filesystem-access"]
 output-strategy-capture = []
 output-strategy-null = ["output-strategy-capture"]
 

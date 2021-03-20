@@ -21,7 +21,7 @@ pub mod regexp;
 /// This struct stores all of these components and allows them to be passed
 /// around as one bundle. This is useful in FFI contexts because this `State`
 /// can be [`Box`]ed and stored in a user data pointer.
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct State {
     pub parser: Option<parser::State>,
     pub classes: class::Registry,
