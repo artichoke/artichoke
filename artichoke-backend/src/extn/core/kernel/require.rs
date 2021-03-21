@@ -9,12 +9,20 @@ use crate::ffi;
 use crate::state::parser::Context;
 
 pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
+    // Safety:
+    //
+    // Converting the extracted byte slice to an owned `Vec<u8>` is required to
+    // prevent a use after free. evaling code on the interpreter with `require`
+    // may cause a garbage collection which might free the `RString` backing
+    // `filename`.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }
-    let file = ffi::bytes_to_os_str(filename)?;
+    let filename = filename.to_vec();
+    let file = ffi::bytes_to_os_str(&filename)?;
     let path = Path::new(file);
+
     if let Some(mut context) = interp.resolve_source_path(&path)? {
         for byte in &mut context {
             if *byte == b'\\' {
@@ -29,16 +37,23 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
         return result;
     }
     let mut message = b"cannot load such file -- ".to_vec();
-    message.extend_from_slice(filename);
+    message.extend(filename);
     Err(LoadError::from(message).into())
 }
 
 pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
+    // Safety:
+    //
+    // Converting the extracted byte slice to an owned `Vec<u8>` is required to
+    // prevent a use after free. evaling code on the interpreter with `require`
+    // may cause a garbage collection which might free the `RString` backing
+    // `filename`.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }
-    let file = ffi::bytes_to_os_str(filename)?;
+    let filename = filename.to_vec();
+    let file = ffi::bytes_to_os_str(&filename)?;
     let path = Path::new(file);
 
     if let Some(mut context) = interp.resolve_source_path(&path)? {
@@ -55,17 +70,24 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Erro
         return result;
     }
     let mut message = b"cannot load such file -- ".to_vec();
-    message.extend_from_slice(filename);
+    message.extend(filename);
     Err(LoadError::from(message).into())
 }
 
 #[allow(clippy::module_name_repetitions)]
 pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: RelativePath) -> Result<bool, Error> {
+    // Safety:
+    //
+    // Converting the extracted byte slice to an owned `Vec<u8>` is required to
+    // prevent a use after free. evaling code on the interpreter with `require`
+    // may cause a garbage collection which might free the `RString` backing
+    // `filename`.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }
-    let file = ffi::bytes_to_os_str(filename)?;
+    let filename = filename.to_vec();
+    let file = ffi::bytes_to_os_str(&filename)?;
     let path = base.join(Path::new(file));
 
     if let Some(mut context) = interp.resolve_source_path(&path)? {
@@ -82,7 +104,7 @@ pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: Relat
         return result;
     }
     let mut message = b"cannot load such file -- ".to_vec();
-    message.extend_from_slice(filename);
+    message.extend(filename);
     Err(LoadError::from(message).into())
 }
 

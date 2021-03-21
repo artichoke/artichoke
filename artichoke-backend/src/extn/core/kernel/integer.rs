@@ -159,6 +159,10 @@ impl<'a> TryConvertMut<&'a mut Value, IntegerString<'a>> for Artichoke {
         message.push_str(self.inspect_type_name_for_value(*value));
         message.push_str(" into Integer");
 
+        // Safety:
+        //
+        // There is no use of an `Artichoke` in this module, which means a
+        // garbage collection of `value` cannot be triggered.
         if let Ok(arg) = unsafe { implicitly_convert_to_string(self, value) } {
             if let Some(converted) = IntegerString::from_slice(arg) {
                 Ok(converted)
