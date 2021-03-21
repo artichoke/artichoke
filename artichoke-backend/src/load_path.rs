@@ -19,20 +19,20 @@ use crate::error::Error;
 use crate::ffi::ConvertBytesError;
 use crate::Artichoke;
 
-#[cfg(feature = "native-filesystem-access")]
+#[cfg(feature = "load-path-native-filesystem-loader")]
 mod hybrid;
 mod memory;
-#[cfg(feature = "native-filesystem-access")]
+#[cfg(feature = "load-path-native-filesystem-loader")]
 mod native;
-#[cfg(feature = "rubylib-source-loader")]
+#[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
 mod rubylib;
 
-#[cfg(feature = "native-filesystem-access")]
+#[cfg(feature = "load-path-native-filesystem-loader")]
 pub use hybrid::Hybrid;
 pub use memory::Memory;
-#[cfg(feature = "native-filesystem-access")]
+#[cfg(feature = "load-path-native-filesystem-loader")]
 pub use native::Native;
-#[cfg(feature = "rubylib-source-loader")]
+#[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
 pub use rubylib::Rubylib;
 
 /// Directory at which the [in-memory filesystem](Memory) is mounted.
@@ -60,9 +60,9 @@ pub const RUBY_LOAD_PATH: &str = "/artichoke/virtual_root/src/lib";
 /// [`LoadSources`]: crate::core::LoadSources
 pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Error>;
 
-#[cfg(all(feature = "native-filesystem-access", not(any(test, doctest))))]
+#[cfg(all(feature = "load-path-native-filesystem-loader", not(any(test, doctest))))]
 pub type Adapter = Hybrid;
-#[cfg(any(not(feature = "native-filesystem-access"), test, doctest))]
+#[cfg(any(not(feature = "load-path-native-filesystem-loader"), test, doctest))]
 pub type Adapter = Memory;
 
 fn absolutize_relative_to<T, U>(path: T, cwd: U) -> PathBuf

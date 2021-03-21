@@ -2,6 +2,7 @@
 
 use std::path::Path;
 
+use artichoke::backend::load_path::RUBY_LOAD_PATH;
 use artichoke::prelude::*;
 
 /// Load `MSpec` sources into the Artichoke virtual filesystem.
@@ -32,10 +33,13 @@ pub fn run<'a, T>(interp: &mut Artichoke, specs: T) -> Result<bool, Error>
 where
     T: IntoIterator<Item = &'a str>,
 {
-    let virtual_root = Path::new(artichoke::backend::fs::RUBY_LOAD_PATH);
-    interp.def_rb_source_file(virtual_root.join("spec_helper.rb"), &b""[..])?;
-    interp.def_rb_source_file(virtual_root.join("spec_runner"), &include_bytes!("spec_runner.rb")[..])?;
+    let virtual_root = Path::new(RUBY_LOAD_PATH);
+
+    interp.def_rb_source_file("spec_helper.rb", &b""[..])?;
+    interp.def_rb_source_file("spec_runner.rb", &include_bytes!("spec_runner.rb")[..])?;
+
     interp.eval_file(&virtual_root.join("spec_runner"))?;
+
     let specs = interp.try_convert_mut(specs.into_iter().collect::<Vec<_>>())?;
     let result = interp.top_self().funcall(interp, "run_specs", &[specs], None)?;
     interp.try_convert(result)

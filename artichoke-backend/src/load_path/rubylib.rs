@@ -6,8 +6,8 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+use super::{absolutize_relative_to, normalize_slashes};
 use crate::ffi::os_string_to_bytes;
-use crate::fs::{absolutize_relative_to, normalize_slashes, ExtensionHook};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Rubylib {
@@ -89,56 +89,6 @@ impl Rubylib {
             io::ErrorKind::NotFound,
             "path not found in RUBYLIB load paths",
         ))
-    }
-
-    /// Write file contents into the virtual file system at `path`.
-    ///
-    /// Writes the full file contents. If any file contents already exist at
-    /// `path`, they are replaced. Extension hooks are preserved.
-    ///
-    /// # Errors
-    ///
-    /// If `path` does not exist, an [`io::Error`] with error kind
-    /// [`io::ErrorKind::NotFound`] is returned. See [`fs::write`] for further
-    /// discussion of the error modes of this API.
-    #[allow(clippy::unused_self)]
-    pub fn write_file(&mut self, path: &Path, buf: &[u8]) -> io::Result<()> {
-        let _ = path;
-        let _ = buf;
-
-        Err(io::Error::new(
-            io::ErrorKind::PermissionDenied,
-            "writes via the Rubylib filesystem adapter are not permitted",
-        ))
-    }
-
-    /// Retrieve an extension hook for the file at `path`.
-    ///
-    /// This API is infallible and will return `None` for non-existent paths.
-    ///
-    /// The native filesystem does not support extensions. This method always
-    /// returns [`None`].
-    #[must_use]
-    #[allow(clippy::unused_self)]
-    pub fn get_extension(&self, path: &Path) -> Option<ExtensionHook> {
-        let _ = path;
-        None
-    }
-
-    /// Write extension hook into the virtual file system at `path`.
-    ///
-    /// The native filesystem does not support extensions. All given extensions
-    /// result in an error.
-    ///
-    /// # Errors
-    ///
-    /// The native filesystem does not support extensions. All given extensions
-    /// result in an error with `ErrorKind::Other`.
-    #[allow(clippy::unused_self)]
-    pub fn register_extension(&mut self, path: &Path, extension: ExtensionHook) -> io::Result<()> {
-        let _ = path;
-        let _ = extension;
-        Err(io::Error::new(io::ErrorKind::Other, "extensions are unsupported"))
     }
 
     /// Check whether a file at `path` has been required already.

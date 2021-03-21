@@ -3,8 +3,8 @@ use intaglio::bytes::SymbolTable;
 use crate::class;
 #[cfg(feature = "core-random")]
 use crate::extn::core::random::Random;
-use crate::fs;
 use crate::interpreter::InterpreterAllocError;
+use crate::load_path;
 use crate::module;
 use crate::sys;
 
@@ -26,7 +26,7 @@ pub struct State {
     pub parser: Option<parser::State>,
     pub classes: class::Registry,
     pub modules: module::Registry,
-    pub vfs: fs::Adapter,
+    pub load_path_vfs: load_path::Adapter,
     pub regexp: regexp::State,
     pub symbols: SymbolTable,
     pub output: output::Strategy,
@@ -56,7 +56,7 @@ impl State {
     /// [`Class`]: crate::class_registry::ClassRegistry
     /// [`Module`]: crate::module_registry::ModuleRegistry
     /// [regexp-state]: regexp::State
-    /// [In-memory virtual filesystem]: fs
+    /// [In-memory virtual filesystem]: load_path
     /// [Ruby parser and file context]: parser::State
     /// [Intepreter-level PRNG]: Random
     /// [IO capturing]: output::Strategy
@@ -65,7 +65,7 @@ impl State {
             parser: None,
             classes: class::Registry::new(),
             modules: module::Registry::new(),
-            vfs: fs::Adapter::new(),
+            load_path_vfs: load_path::Adapter::new(),
             regexp: regexp::State::new(),
             symbols: SymbolTable::new(),
             output: output::Strategy::new(),

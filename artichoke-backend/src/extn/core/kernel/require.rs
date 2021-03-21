@@ -225,11 +225,18 @@ mod test {
     fn absolute_path() {
         let mut interp = interpreter().unwrap();
         interp
-            .def_rb_source_file("/foo/bar/source.rb", &b"# a source file"[..])
+            .def_rb_source_file(
+                "/artichoke/virtual_root/src/lib/foo/bar/source.rb",
+                &b"# a source file"[..],
+            )
             .unwrap();
-        let result = interp.eval(b"require '/foo/bar/source.rb'").unwrap();
+        let result = interp
+            .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
+            .unwrap();
         assert!(result.try_into::<bool>(&interp).unwrap());
-        let result = interp.eval(b"require '/foo/bar/source.rb'").unwrap();
+        let result = interp
+            .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
+            .unwrap();
         assert!(!result.try_into::<bool>(&interp).unwrap());
     }
 
@@ -237,14 +244,21 @@ mod test {
     fn relative_with_dotted_path() {
         let mut interp = interpreter().unwrap();
         interp
-            .def_rb_source_file("/foo/bar/source.rb", &b"require_relative '../bar.rb'"[..])
+            .def_rb_source_file(
+                "/artichoke/virtual_root/src/lib/foo/bar/source.rb",
+                &b"require_relative '../bar.rb'"[..],
+            )
             .unwrap();
         interp
-            .def_rb_source_file("/foo/bar.rb", &b"# a source file"[..])
+            .def_rb_source_file("/artichoke/virtual_root/src/lib/foo/bar.rb", &b"# a source file"[..])
             .unwrap();
-        let result = interp.eval(b"require '/foo/bar/source.rb'").unwrap();
+        let result = interp
+            .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
+            .unwrap();
         assert!(result.try_into::<bool>(&interp).unwrap());
-        let result = interp.eval(b"require '/foo/bar.rb'").unwrap();
+        let result = interp
+            .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar.rb'")
+            .unwrap();
         assert!(!result.try_into::<bool>(&interp).unwrap());
     }
 
