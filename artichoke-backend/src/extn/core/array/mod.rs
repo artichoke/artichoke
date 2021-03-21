@@ -316,6 +316,11 @@ impl Array {
                     out.push(formatted.into_bytes());
                 }
                 _ => {
+                    // Safety:
+                    //
+                    // `s` is converted to an owned byte vec immediately before
+                    // any intervening operaitons on the VM which may cause a
+                    // garbage collection of the `RString` that backs `value`.
                     if let Ok(s) = unsafe { implicitly_convert_to_string(interp, &mut value) } {
                         out.push(s.to_vec());
                     } else {

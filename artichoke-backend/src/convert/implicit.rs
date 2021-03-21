@@ -262,6 +262,10 @@ pub fn implicitly_convert_to_int(interp: &mut Artichoke, value: Value) -> Result
 ///
 /// Callers must ensure that `value` does not outlive the given interpreter.
 ///
+/// If a garbage collection can possibly run between calling this function and
+/// using the returned slice, callers should convert the slice to an owned byte
+/// vec.
+///
 /// [`Symbol`]: crate::extn::core::symbol::Symbol
 pub unsafe fn implicitly_convert_to_string<'a>(
     interp: &mut Artichoke,
