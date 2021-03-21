@@ -173,7 +173,7 @@ impl LoadSources for Artichoke {
         let contents = self.read_source_file_contents(path)?.into_owned();
         self.eval(contents.as_ref())?;
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
-        state.load_path_vfs.mark_required(path.as_ref())?;
+        state.load_path_vfs.mark_required(path)?;
         trace!("Successful require of {}", path.display());
         Ok(true)
     }

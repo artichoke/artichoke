@@ -35,11 +35,15 @@ pub use native::Native;
 #[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
 pub use rubylib::Rubylib;
 
-/// Directory at which the [in-memory filesystem](Memory) is mounted.
+/// Directory at which Ruby sources and extensions are stored in the virtual
+/// filesystem.
 ///
-/// [`Hybrid`] filesystems mount the `Memory` filesystem at this path.
-/// `RUBY_LOAD_PATH` is found within this path prefix.
-pub const MEMORY_FILESYSTEM_MOUNT_POINT: &str = "/artichoke/virtual_root";
+/// `RUBY_LOAD_PATH` is the default current working directory for
+/// [`Memory`] filesystems.
+///
+/// [`Hybrid`] filesystems locate the this path on a [`Memory`] filesystem.
+#[cfg(not(windows))]
+pub const RUBY_LOAD_PATH: &str = "/artichoke/virtual_root/src/lib";
 
 /// Directory at which Ruby sources and extensions are stored in the virtual
 /// filesystem.
@@ -47,9 +51,9 @@ pub const MEMORY_FILESYSTEM_MOUNT_POINT: &str = "/artichoke/virtual_root";
 /// `RUBY_LOAD_PATH` is the default current working directory for
 /// [`Memory`] filesystems.
 ///
-/// [`Hybrid`] filesystems locate the this path on a `Memory` filesystem below
-/// [`MEMORY_FILESYSTEM_MOUNT_POINT`].
-pub const RUBY_LOAD_PATH: &str = "/artichoke/virtual_root/src/lib";
+/// [`Hybrid`] filesystems locate the this path on a [`Memory`] filesystem.
+#[cfg(windows)]
+pub const RUBY_LOAD_PATH: &str = "c:/artichoke/virtual_root/src/lib";
 
 /// Function type for extension hooks stored in the virtual filesystem.
 ///
