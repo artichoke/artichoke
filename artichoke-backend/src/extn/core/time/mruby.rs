@@ -115,7 +115,7 @@ unsafe extern "C" fn time_self_at(mrb: *mut sys::mrb_state, _slf: sys::mrb_value
     let (seconds, microseconds) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let seconds = Value::from(seconds);
-    let microseconds = Value::from(microseconds);
+    let microseconds = microseconds.map(Value::from);
     let result = trampoline::at(&mut guard, seconds, microseconds);
     match result {
         Ok(value) => value.inner(),

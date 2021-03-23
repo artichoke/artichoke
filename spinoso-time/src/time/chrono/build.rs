@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use chrono::prelude::*;
 
 use crate::time::chrono::{Offset, Time};
@@ -64,30 +66,43 @@ impl Time {
     /// ```
     #[inline]
     #[must_use]
-    pub fn at(seconds: i64, sub_second_nanos: i64) -> Self {
+    pub fn at(seconds: i64, sub_second_nanos: i64) -> Option<Self> {
         let offset = Offset::Local;
 
-        let timestamp = seconds + (sub_second_nanos / i64::from(NANOS_IN_SECOND));
+        let overflow = sub_second_nanos / i64::from(NANOS_IN_SECOND);
+        let timestamp = seconds.checked_add(overflow)?;
         let sub_second_nanos = sub_second_nanos % i64::from(NANOS_IN_SECOND);
 
-        // Handle negative sub_seconds_nanos
+        // Sub-seconds are stored as a non-negative. So negative sub-seconds are
+        // handled by subtracting one full second and calculating a new sub-second value:
+        //
+        // ```console
+        // [2.6.3] > Time.at(0, -1).to_i
+        // => -1
+        // [2.6.3] > Time.at(0, -1).nsec
+        // => 999999000
+        // ```
         let (timestamp, sub_second_nanos) = if sub_second_nanos > 0 {
             (timestamp, sub_second_nanos)
         } else {
-            (timestamp - 1, (i64::from(NANOS_IN_SECOND) - sub_second_nanos.abs()))
+            (
+                timestamp.checked_sub(1)?,
+                i64::from(NANOS_IN_SECOND).checked_sub(sub_second_nanos.abs())?,
+            )
         };
 
-        Self {
+        Some(Self {
             timestamp,
-            sub_second_nanos: sub_second_nanos as u32,
+            sub_second_nanos: u32::try_from(sub_second_nanos).ok()?,
             offset,
-        }
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::time::chrono::{Offset, Time};
+    use crate::NANOS_IN_SECOND;
 
     #[test]
     fn time_new_is_local_offset() {
@@ -109,22 +124,34 @@ mod tests {
 
     #[test]
     fn time_at_with_seconds_and_sub_second_nanos() {
-        let time = Time::at(100, 100);
+        let time = Time::at(100, 100).unwrap();
         assert_eq!(time.timestamp, 100);
         assert_eq!(time.sub_second_nanos, 100);
     }
 
     #[test]
     fn time_at_with_overflowing_sub_second_nanos() {
-        let time = Time::at(100, 1_000_000_001);
+        let time = Time::at(100, i64::from(NANOS_IN_SECOND) + 1).unwrap();
         assert_eq!(time.timestamp, 101);
         assert_eq!(time.sub_second_nanos, 1);
     }
 
     #[test]
     fn time_at_with_negative_sub_second_nanos() {
-        let time = Time::at(100, -1);
+        let time = Time::at(100, -1).unwrap();
         assert_eq!(time.timestamp, 99);
-        assert_eq!(time.sub_second_nanos, 999_999_999);
+        assert_eq!(time.sub_second_nanos, NANOS_IN_SECOND - 1);
+    }
+
+    #[test]
+    fn time_at_with_max_i64_overflow() {
+        let time = Time::at(i64::MAX, i64::from(NANOS_IN_SECOND));
+        assert_eq!(time, None);
+    }
+
+    #[test]
+    fn time_at_with_min_i64_overflow() {
+        let time = Time::at(i64::MIN, -1);
+        assert_eq!(time, None);
     }
 }
