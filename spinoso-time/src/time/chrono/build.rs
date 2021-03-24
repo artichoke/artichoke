@@ -54,7 +54,7 @@ impl Time {
         }
     }
 
-    /// Creates a new `Time` object from the `seconds` and `sub_seconds_nanos`
+    /// Creates a new `Time` object from the `seconds` and `sub_second_nanos`
     /// since the Unix EPOCH with a local offset.
     ///
     /// # Examples
