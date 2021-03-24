@@ -18,8 +18,10 @@ use crate::Artichoke;
 /// Create and initialize an [`Artichoke`] interpreter.
 ///
 /// This function creates a new [`State`], embeds it in the [`sys::mrb_state`],
-/// initializes an [in memory virtual filesystem](crate::fs), and loads the
-/// [`extn`] extensions to Ruby Core and Stdlib.
+/// initializes an [in memory virtual filesystem], and loads the [`extn`]
+/// extensions to Ruby Core and Stdlib.
+///
+/// [in memory virtual filesystem]: crate::load_path
 pub fn interpreter() -> Result<Artichoke, Error> {
     let release_meta = ReleaseMetadata::new();
     interpreter_with_config(release_meta)

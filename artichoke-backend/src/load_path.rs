@@ -19,27 +19,21 @@ use crate::error::Error;
 use crate::ffi::ConvertBytesError;
 use crate::Artichoke;
 
-#[cfg(feature = "native-filesystem-access")]
+#[cfg(feature = "load-path-native-filesystem-loader")]
 mod hybrid;
 mod memory;
-#[cfg(feature = "native-filesystem-access")]
+#[cfg(feature = "load-path-native-filesystem-loader")]
 mod native;
-#[cfg(feature = "rubylib-source-loader")]
+#[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
 mod rubylib;
 
-#[cfg(feature = "native-filesystem-access")]
+#[cfg(feature = "load-path-native-filesystem-loader")]
 pub use hybrid::Hybrid;
 pub use memory::Memory;
-#[cfg(feature = "native-filesystem-access")]
+#[cfg(feature = "load-path-native-filesystem-loader")]
 pub use native::Native;
-#[cfg(feature = "rubylib-source-loader")]
+#[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
 pub use rubylib::Rubylib;
-
-/// Directory at which the [in-memory filesystem](Memory) is mounted.
-///
-/// [`Hybrid`] filesystems mount the `Memory` filesystem at this path.
-/// `RUBY_LOAD_PATH` is found within this path prefix.
-pub const MEMORY_FILESYSTEM_MOUNT_POINT: &str = "/artichoke/virtual_root";
 
 /// Directory at which Ruby sources and extensions are stored in the virtual
 /// filesystem.
@@ -47,9 +41,19 @@ pub const MEMORY_FILESYSTEM_MOUNT_POINT: &str = "/artichoke/virtual_root";
 /// `RUBY_LOAD_PATH` is the default current working directory for
 /// [`Memory`] filesystems.
 ///
-/// [`Hybrid`] filesystems locate the this path on a `Memory` filesystem below
-/// [`MEMORY_FILESYSTEM_MOUNT_POINT`].
+/// [`Hybrid`] filesystems locate the this path on a [`Memory`] filesystem.
+#[cfg(not(windows))]
 pub const RUBY_LOAD_PATH: &str = "/artichoke/virtual_root/src/lib";
+
+/// Directory at which Ruby sources and extensions are stored in the virtual
+/// filesystem.
+///
+/// `RUBY_LOAD_PATH` is the default current working directory for
+/// [`Memory`] filesystems.
+///
+/// [`Hybrid`] filesystems locate the this path on a [`Memory`] filesystem.
+#[cfg(windows)]
+pub const RUBY_LOAD_PATH: &str = "c:/artichoke/virtual_root/src/lib";
 
 /// Function type for extension hooks stored in the virtual filesystem.
 ///
@@ -60,9 +64,9 @@ pub const RUBY_LOAD_PATH: &str = "/artichoke/virtual_root/src/lib";
 /// [`LoadSources`]: crate::core::LoadSources
 pub type ExtensionHook = fn(&mut Artichoke) -> Result<(), Error>;
 
-#[cfg(all(feature = "native-filesystem-access", not(any(test, doctest))))]
+#[cfg(all(feature = "load-path-native-filesystem-loader", not(any(test, doctest))))]
 pub type Adapter = Hybrid;
-#[cfg(any(not(feature = "native-filesystem-access"), test, doctest))]
+#[cfg(any(not(feature = "load-path-native-filesystem-loader"), test, doctest))]
 pub type Adapter = Memory;
 
 fn absolutize_relative_to<T, U>(path: T, cwd: U) -> PathBuf

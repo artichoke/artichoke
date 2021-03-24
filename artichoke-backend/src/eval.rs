@@ -190,13 +190,18 @@ mod tests {
 
     #[test]
     fn file_magic_constant() {
+        let file = if cfg!(windows) {
+            "c:/artichoke/virtual_root/src/lib/source.rb"
+        } else {
+            "/artichoke/virtual_root/src/lib/source.rb"
+        };
         let mut interp = interpreter().unwrap();
         interp
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
         let result = interp.eval(b"require 'source'; file").unwrap();
         let result = result.try_into_mut::<&str>(&mut interp).unwrap();
-        assert_eq!(result, "/artichoke/virtual_root/src/lib/source.rb");
+        assert_eq!(result, file);
     }
 
     #[test]

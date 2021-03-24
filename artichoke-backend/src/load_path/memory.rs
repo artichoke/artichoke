@@ -6,7 +6,7 @@ use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::fs::{absolutize_relative_to, normalize_slashes, ExtensionHook, RUBY_LOAD_PATH};
+use super::{absolutize_relative_to, normalize_slashes, ExtensionHook, RUBY_LOAD_PATH};
 
 const CODE_DEFAULT_CONTENTS: &[u8] = b"# virtual source file";
 
@@ -273,6 +273,9 @@ impl Memory {
     #[must_use]
     pub fn resolve_file(&self, path: &Path) -> Option<Vec<u8>> {
         let path = absolutize_relative_to(path, &self.cwd);
+        if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
+            return None;
+        }
         match normalize_slashes(path) {
             Ok(path) if self.fs.contains_key(path.as_bstr()) => Some(path),
             _ => None,
@@ -285,6 +288,9 @@ impl Memory {
     #[must_use]
     pub fn is_file(&self, path: &Path) -> bool {
         let path = absolutize_relative_to(path, &self.cwd);
+        if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
+            return false;
+        }
         if let Ok(path) = normalize_slashes(path) {
             self.fs.contains_key(path.as_bstr())
         } else {
@@ -304,6 +310,12 @@ impl Memory {
     /// [`io::ErrorKind::NotFound`] is returned.
     pub fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
         let path = absolutize_relative_to(path, &self.cwd);
+        if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
+            let mut message = String::from("Only paths beginning with ");
+            message.push_str(RUBY_LOAD_PATH);
+            message.push_str(" are readable");
+            return Err(io::Error::new(io::ErrorKind::NotFound, message));
+        }
         let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
         if let Some(entry) = self.fs.get(path.as_bstr()) {
             if let Some(ref code) = entry.code {
@@ -333,6 +345,12 @@ impl Memory {
     /// the ability to return errors in the future.
     pub fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {
         let path = absolutize_relative_to(path, &self.cwd);
+        if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
+            let mut message = String::from("Only paths beginning with ");
+            message.push_str(RUBY_LOAD_PATH);
+            message.push_str(" are writable");
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, message));
+        }
         let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
         match self.fs.entry(path.into()) {
             HashEntry::Occupied(mut entry) => {
@@ -351,6 +369,9 @@ impl Memory {
     #[must_use]
     pub fn get_extension(&self, path: &Path) -> Option<ExtensionHook> {
         let path = absolutize_relative_to(path, &self.cwd);
+        if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
+            return None;
+        }
         let path = normalize_slashes(path).ok()?;
         if let Some(entry) = self.fs.get(path.as_bstr()) {
             entry.extension()
@@ -370,6 +391,12 @@ impl Memory {
     /// the ability to return errors in the future.
     pub fn register_extension(&mut self, path: &Path, extension: ExtensionHook) -> io::Result<()> {
         let path = absolutize_relative_to(path, &self.cwd);
+        if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
+            let mut message = String::from("Only paths beginning with ");
+            message.push_str(RUBY_LOAD_PATH);
+            message.push_str(" are writable");
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, message));
+        }
         let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
         match self.fs.entry(path.into()) {
             HashEntry::Occupied(mut entry) => {
@@ -388,6 +415,9 @@ impl Memory {
     #[must_use]
     pub fn is_required(&self, path: &Path) -> bool {
         let path = absolutize_relative_to(path, &self.cwd);
+        if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
+            return false;
+        }
         if let Ok(path) = normalize_slashes(path) {
             self.loaded_features.contains(path.as_bstr())
         } else {
@@ -407,6 +437,12 @@ impl Memory {
     /// [`io::ErrorKind::NotFound`] is returned.
     pub fn mark_required(&mut self, path: &Path) -> io::Result<()> {
         let path = absolutize_relative_to(path, &self.cwd);
+        if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
+            let mut message = String::from("Only paths beginning with ");
+            message.push_str(RUBY_LOAD_PATH);
+            message.push_str(" are writable");
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, message));
+        }
         match normalize_slashes(path) {
             Ok(path) => {
                 self.loaded_features.insert(path.into());

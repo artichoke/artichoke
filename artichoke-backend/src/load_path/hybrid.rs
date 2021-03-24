@@ -2,15 +2,15 @@ use std::borrow::Cow;
 use std::io;
 use std::path::Path;
 
-#[cfg(feature = "rubylib-source-loader")]
-use crate::fs::Rubylib;
-use crate::fs::{ExtensionHook, Memory, Native, MEMORY_FILESYSTEM_MOUNT_POINT};
+#[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
+use super::Rubylib;
+use super::{ExtensionHook, Memory, Native};
 
 #[derive(Debug)]
 pub struct Hybrid {
-    #[cfg(feature = "rubylib-source-loader")]
+    #[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
     rubylib: Option<Rubylib>,
-    #[cfg(not(feature = "rubylib-source-loader"))]
+    #[cfg(not(feature = "load-path-rubylib-native-filesystem-loader"))]
     rubylib: Option<Native>, // hardcoded to `None`
     memory: Memory,
     native: Native,
@@ -26,12 +26,14 @@ impl Hybrid {
     /// Create a new hybrid virtual filesystem.
     ///
     /// This filesystem allows access to the host filesystem with an in-memory
-    /// filesystem mounted at [`MEMORY_FILESYSTEM_MOUNT_POINT`].
+    /// filesystem mounted at [`RUBY_LOAD_PATH`].
+    ///
+    /// [`RUBY_LOAD_PATH`]: super::RUBY_LOAD_PATH
     #[must_use]
     pub fn new() -> Self {
-        #[cfg(feature = "rubylib-source-loader")]
+        #[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
         let rubylib = Rubylib::new();
-        #[cfg(not(feature = "rubylib-source-loader"))]
+        #[cfg(not(feature = "load-path-rubylib-native-filesystem-loader"))]
         let rubylib = None;
         let memory = Memory::new();
         let native = Native::new();
@@ -103,23 +105,16 @@ impl Hybrid {
     /// Writes the full file contents. If any file contents already exist at
     /// `path`, they are replaced. Extension hooks are preserved.
     ///
+    /// Only the [`Memory`] filesystem at [`RUBY_LOAD_PATH`] is writeable.
+    ///
     /// # Errors
     ///
-    /// If access to the [`Native`] filesystem returns an error, the error is
-    /// returned. See [`Native::write_file`].
-    #[allow(clippy::needless_pass_by_value)]
+    /// If access to the [`Memory`] filesystem returns an error, the error is
+    /// returned. See [`Memory::write_file`].
+    ///
+    /// [`RUBY_LOAD_PATH`]: super::RUBY_LOAD_PATH
     pub fn write_file(&mut self, path: &Path, buf: Cow<'static, [u8]>) -> io::Result<()> {
-        if let Some(ref mut rubylib) = self.rubylib {
-            rubylib.write_file(path, &buf).or_else(|_| {
-                self.memory
-                    .write_file(path, buf.clone())
-                    .or_else(|_| self.native.write_file(path, &buf))
-            })
-        } else {
-            self.memory
-                .write_file(path, buf.clone())
-                .or_else(|_| self.native.write_file(path, &buf))
-        }
+        self.memory.write_file(path, buf)
     }
 
     /// Retrieve an extension hook for the file at `path`.
@@ -144,14 +139,7 @@ impl Hybrid {
     /// If the given path does not resolve to the virtual filesystem, an error
     /// is returned.
     pub fn register_extension(&mut self, path: &Path, extension: ExtensionHook) -> io::Result<()> {
-        if path.strip_prefix(MEMORY_FILESYSTEM_MOUNT_POINT).is_ok() {
-            self.memory.register_extension(path, extension)
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Native filesystem does not support extensions",
-            ))
-        }
+        self.memory.register_extension(path, extension)
     }
 
     /// Check whether a file at `path` has been required already.
