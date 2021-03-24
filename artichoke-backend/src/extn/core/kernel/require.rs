@@ -224,42 +224,65 @@ mod test {
     #[test]
     fn absolute_path() {
         let mut interp = interpreter().unwrap();
-        interp
-            .def_rb_source_file(
-                "/artichoke/virtual_root/src/lib/foo/bar/source.rb",
-                &b"# a source file"[..],
+        let (path, require_code) = if cfg!(windows) {
+            (
+                "c:/artichoke/virtual_root/src/lib/foo/bar/source.rb",
+                &b"require 'c:/artichoke/virtual_root/src/lib/foo/bar/source.rb'"[..],
             )
-            .unwrap();
-        let result = interp
-            .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
-            .unwrap();
+        } else {
+            (
+                "/artichoke/virtual_root/src/lib/foo/bar/source.rb",
+                &b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'"[..],
+            )
+        };
+
+        interp.def_rb_source_file(path, &b"# a source file"[..]).unwrap();
+        let result = interp.eval(require_code).unwrap();
         assert!(result.try_into::<bool>(&interp).unwrap());
-        let result = interp
-            .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
-            .unwrap();
+        let result = interp.eval(require_code).unwrap();
         assert!(!result.try_into::<bool>(&interp).unwrap());
     }
 
     #[test]
     fn relative_with_dotted_path() {
         let mut interp = interpreter().unwrap();
-        interp
-            .def_rb_source_file(
-                "/artichoke/virtual_root/src/lib/foo/bar/source.rb",
-                &b"require_relative '../bar.rb'"[..],
-            )
-            .unwrap();
-        interp
-            .def_rb_source_file("/artichoke/virtual_root/src/lib/foo/bar.rb", &b"# a source file"[..])
-            .unwrap();
-        let result = interp
-            .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
-            .unwrap();
-        assert!(result.try_into::<bool>(&interp).unwrap());
-        let result = interp
-            .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar.rb'")
-            .unwrap();
-        assert!(!result.try_into::<bool>(&interp).unwrap());
+        if cfg!(windows) {
+            interp
+                .def_rb_source_file(
+                    "c:/artichoke/virtual_root/src/lib/foo/bar/source.rb",
+                    &b"require_relative '../bar.rb'"[..],
+                )
+                .unwrap();
+            interp
+                .def_rb_source_file("c:/artichoke/virtual_root/src/lib/foo/bar.rb", &b"# a source file"[..])
+                .unwrap();
+            let result = interp
+                .eval(b"require 'c:/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
+                .unwrap();
+            assert!(result.try_into::<bool>(&interp).unwrap());
+            let result = interp
+                .eval(b"require 'c:/artichoke/virtual_root/src/lib/foo/bar.rb'")
+                .unwrap();
+            assert!(!result.try_into::<bool>(&interp).unwrap());
+        } else {
+            interp
+                .def_rb_source_file(
+                    "/artichoke/virtual_root/src/lib/foo/bar/source.rb",
+                    &b"require_relative '../bar.rb'"[..],
+                )
+                .unwrap();
+            interp
+                .def_rb_source_file("/artichoke/virtual_root/src/lib/foo/bar.rb", &b"# a source file"[..])
+                .unwrap();
+            let result = interp
+                .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
+                .unwrap();
+            assert!(result.try_into::<bool>(&interp).unwrap());
+            let result = interp
+                .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar.rb'")
+                .unwrap();
+            assert!(!result.try_into::<bool>(&interp).unwrap());
+        };
     }
 
     #[test]
