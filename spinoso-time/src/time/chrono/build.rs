@@ -144,6 +144,13 @@ mod tests {
     }
 
     #[test]
+    fn time_at_with_overflowing_negative_sub_second_nanos() {
+        let time = Time::at(100, -i64::from(NANOS_IN_SECOND) - 1).unwrap();
+        assert_eq!(time.timestamp, 98);
+        assert_eq!(time.sub_second_nanos, NANOS_IN_SECOND - 1);
+    }
+
+    #[test]
     fn time_at_with_max_i64_overflow() {
         let time = Time::at(i64::MAX, i64::from(NANOS_IN_SECOND));
         assert_eq!(time, None);
