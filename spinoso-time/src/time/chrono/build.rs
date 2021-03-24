@@ -69,31 +69,64 @@ impl Time {
     pub fn at(seconds: i64, sub_second_nanos: i64) -> Option<Self> {
         let offset = Offset::Local;
 
-        let overflow = sub_second_nanos / i64::from(NANOS_IN_SECOND);
-        let timestamp = seconds.checked_add(overflow)?;
-        let sub_second_nanos = sub_second_nanos % i64::from(NANOS_IN_SECOND);
-
-        // Sub-seconds are stored as a non-negative. So negative sub-seconds are
-        // handled by subtracting one full second and calculating a new sub-second value:
+        // MRI applies overflow from the `micros` parameter to the given seconds
+        // parameter.
         //
-        // ```console
-        // [2.6.3] > Time.at(0, -1).to_i
-        // => -1
-        // [2.6.3] > Time.at(0, -1).nsec
-        // => 999999000
+        // ```
+        // [2.6.3] > t = Time.at(0, -1); [t.to_i, t.nsec]
+        // => [-1, 999999000]
+        // [2.6.3] > t = Time.at(10, 1e6); [t.to_i, t.nsec]
+        // => [11, 0]
+        // [2.6.3] > t = Time.at(10, 1e6 + 1); [t.to_i, t.nsec]
+        // => [11, 1000]
+        // [2.6.3] > t = Time.at(10, -1e6); [t.to_i, t.nsec]
+        // => [9, 0]
+        // [2.6.3] > t = Time.at(10, -1e6 - 1); [t.to_i, t.nsec]
+        // => [8, 999999000]
+        // [2.6.3] > t = Time.at(10, -10e6); [t.to_i, t.nsec]
+        // => [0, 0]
         // ```
         let (timestamp, sub_second_nanos) = if sub_second_nanos > 0 {
+            // full seconds given via `sub_second_nanos` are carried over into
+            // `seconds`.
+            let overflow = sub_second_nanos / i64::from(NANOS_IN_SECOND);
+            let timestamp = seconds.checked_add(overflow)?;
+
+            // Only the `sub_second_nanos` that fit within the range bounded by
+            // `0..nanos_in_second` are storeed in the `sub_second_nanos` field
+            // on the `Time` struct.
+            let sub_second_nanos = sub_second_nanos % i64::from(NANOS_IN_SECOND);
+            let sub_second_nanos = u32::try_from(sub_second_nanos).ok()?;
+
             (timestamp, sub_second_nanos)
         } else {
-            (
-                timestamp.checked_sub(1)?,
-                i64::from(NANOS_IN_SECOND).checked_sub(sub_second_nanos.abs())?,
-            )
+            // full seconds given via `sub_second_nanos` are carried over into
+            // `seconds`.
+            let overflow = sub_second_nanos / i64::from(NANOS_IN_SECOND);
+            let timestamp = seconds.checked_add(overflow)?;
+
+            // Only the `sub_second_nanos` that fit within the range bounded by
+            // `0..nanos_in_second` are storeed in the `sub_second_nanos` field
+            // on the `Time` struct.
+            //
+            // `sub_second_nanos` will be in the range of (-nanos in second, 0].
+            let sub_second_nanos = sub_second_nanos % i64::from(NANOS_IN_SECOND);
+            // Unchecked addition is OK here because the modulus operation above
+            // ensures that the magnitude of `sub_second_nanos` is less than
+            // `NANOS_IN_SECOND`.
+            let sub_second_nanos = i64::from(NANOS_IN_SECOND) + sub_second_nanos;
+            let sub_second_nanos = u32::try_from(sub_second_nanos).ok()?;
+
+            // subtract one from the timestamp since the negative remainder of
+            // `sub_second_nanos` eats into the previous full second.
+            let timestamp = timestamp.checked_sub(1)?;
+
+            (timestamp, sub_second_nanos)
         };
 
         Some(Self {
             timestamp,
-            sub_second_nanos: u32::try_from(sub_second_nanos).ok()?,
+            sub_second_nanos,
             offset,
         })
     }
