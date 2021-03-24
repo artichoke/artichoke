@@ -1,7 +1,9 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::time::Time;
 use crate::extn::prelude::*;
+use spinoso_time::MICROS_IN_NANO;
 
 // Constructor
 
@@ -11,13 +13,22 @@ pub fn now(interp: &mut Artichoke) -> Result<Value, Error> {
     Ok(result)
 }
 
-pub fn at<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
-where
-    T: IntoIterator<Item = Value>,
-{
-    let _ = interp;
-    let _ = args;
-    Err(NotImplementedError::new().into())
+pub fn at(interp: &mut Artichoke, seconds: Value, microseconds: Option<Value>) -> Result<Value, Error> {
+    let seconds = implicitly_convert_to_int(interp, seconds)?;
+    let sub_second_nanos = if let Some(microseconds) = microseconds {
+        implicitly_convert_to_int(interp, microseconds)?
+            .checked_mul(i64::from(MICROS_IN_NANO))
+            .ok_or_else(|| ArgumentError::with_message("Time too large"))?
+    } else {
+        0_i64
+    };
+
+    if let Some(time) = Time::at(seconds, sub_second_nanos) {
+        let result = Time::alloc_value(time, interp)?;
+        Ok(result)
+    } else {
+        Err(ArgumentError::with_message("Time too large").into())
+    }
 }
 
 pub fn mkutc<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>

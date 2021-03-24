@@ -18,7 +18,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .value_is_rust_object()
         // Constructor
         .add_self_method("now", time_self_now, sys::mrb_args_none())?
-        .add_self_method("at", time_self_at, sys::mrb_args_any())?
+        .add_self_method("at", time_self_at, sys::mrb_args_req(1))?
         .add_self_method("utc", time_self_mkutc, sys::mrb_args_any())?
         .add_self_method("gm", time_self_mkutc, sys::mrb_args_any())?
         .add_self_method("local", time_self_mktime, sys::mrb_args_any())?
@@ -112,10 +112,11 @@ unsafe extern "C" fn time_self_now(mrb: *mut sys::mrb_state, _slf: sys::mrb_valu
 }
 
 unsafe extern "C" fn time_self_at(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
-    let args = mrb_get_args!(mrb, *args);
+    let (seconds, microseconds) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
-    let args = args.iter().copied().map(Value::from);
-    let result = trampoline::at(&mut guard, args);
+    let seconds = Value::from(seconds);
+    let microseconds = microseconds.map(Value::from);
+    let result = trampoline::at(&mut guard, seconds, microseconds);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
