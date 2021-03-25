@@ -11,8 +11,6 @@ use scolapasta_string_escape::format_debug_escape_into;
 
 use crate::RubyException;
 
-const DEFAULT_MESSAGE: &[u8] = b"LocalJumpError";
-
 /// Ruby `LocalJumpError` error type.
 ///
 /// Descendants of class [`Exception`] are used to communicate between
@@ -45,6 +43,8 @@ impl LocalJumpError {
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
+        const DEFAULT_MESSAGE: &[u8] = b"LocalJumpError";
+
         // `Exception` objects initialized via (for example)
         // `raise RuntimeError` or `RuntimeError.new` have `message`
         // equal to the exception's class name.

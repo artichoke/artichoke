@@ -225,7 +225,7 @@ where
         }
 
         // Move the data pointer into a `Box`.
-        let value = Box::from_raw(embedded_data_ptr as *mut Self);
+        let value = Box::from_raw(embedded_data_ptr.cast::<Self>());
         // `UnboxedValueGuard` ensures the `Box` wrapper will be forgotten. The
         // mruby GC is responsible for freeing the value.
         Ok(UnboxedValueGuard::new(HeapAllocated::new(value)))
@@ -256,8 +256,8 @@ where
         let data_type = spec.data_type();
         let obj = unsafe {
             interp.with_ffi_boundary(|mrb| {
-                let alloc = sys::mrb_data_object_alloc(mrb, rclass.as_mut(), ptr as *mut c_void, data_type);
-                sys::mrb_sys_obj_value(alloc as *mut c_void)
+                let alloc = sys::mrb_data_object_alloc(mrb, rclass.as_mut(), ptr.cast::<c_void>(), data_type);
+                sys::mrb_sys_obj_value(alloc.cast::<c_void>())
             })?
         };
 
@@ -278,7 +278,7 @@ where
         // Inject the raw data pointer into the given `mrb_value`.
         let mut obj = into.inner();
         unsafe {
-            sys::mrb_sys_data_init(&mut obj, ptr as *mut c_void, spec.data_type());
+            sys::mrb_sys_data_init(&mut obj, ptr.cast::<c_void>(), spec.data_type());
         }
         Ok(Value::from(obj))
     }

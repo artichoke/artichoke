@@ -45,9 +45,10 @@ impl Io for Artichoke {
 }
 
 #[derive(Debug)]
-pub struct IOError(io::Error);
+#[allow(clippy::clippy::module_name_repetitions)]
+pub struct IoError(io::Error);
 
-impl From<io::Error> for IOError {
+impl From<io::Error> for IoError {
     fn from(err: io::Error) -> Self {
         Self(err)
     }
@@ -55,23 +56,23 @@ impl From<io::Error> for IOError {
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
-        Self::from(IOError::from(err))
+        Self::from(IoError::from(err))
     }
 }
 
-impl fmt::Display for IOError {
+impl fmt::Display for IoError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "IOError: {}", self.0)
     }
 }
 
-impl error::Error for IOError {
+impl error::Error for IoError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         Some(&self.0)
     }
 }
 
-impl RubyException for IOError {
+impl RubyException for IoError {
     fn message(&self) -> Cow<'_, [u8]> {
         self.0.to_string().into_bytes().into()
     }
@@ -92,26 +93,26 @@ impl RubyException for IOError {
     }
 }
 
-impl From<IOError> for Error {
-    fn from(exception: IOError) -> Self {
+impl From<IoError> for Error {
+    fn from(exception: IoError) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<Box<IOError>> for Error {
-    fn from(exception: Box<IOError>) -> Self {
+impl From<Box<IoError>> for Error {
+    fn from(exception: Box<IoError>) -> Self {
         Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
-impl From<IOError> for Box<dyn RubyException> {
-    fn from(exception: IOError) -> Box<dyn RubyException> {
+impl From<IoError> for Box<dyn RubyException> {
+    fn from(exception: IoError) -> Box<dyn RubyException> {
         Box::new(exception)
     }
 }
 
-impl From<Box<IOError>> for Box<dyn RubyException> {
-    fn from(exception: Box<IOError>) -> Box<dyn RubyException> {
+impl From<Box<IoError>> for Box<dyn RubyException> {
+    fn from(exception: Box<IoError>) -> Box<dyn RubyException> {
         exception
     }
 }

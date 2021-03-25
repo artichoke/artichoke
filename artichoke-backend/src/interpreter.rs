@@ -36,7 +36,7 @@ pub fn interpreter() -> Result<Artichoke, Error> {
 pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke, Error> {
     let state = State::new()?;
     let state = Box::new(state);
-    let alloc_ud = Box::into_raw(state) as *mut c_void;
+    let alloc_ud = Box::into_raw(state).cast::<c_void>();
     let raw = unsafe { sys::mrb_open_allocf(Some(sys::mrb_default_allocf), alloc_ud) };
     debug!("Try initializing mrb interpreter");
 

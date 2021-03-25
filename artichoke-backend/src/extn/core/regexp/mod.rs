@@ -152,9 +152,10 @@ impl Regexp {
         let mut iter = patterns.into_iter();
         let pattern = if let Some(mut first) = iter.next() {
             if let Some(mut second) = iter.next() {
-                let mut patterns = vec![];
-                patterns.push(extract_pattern(interp, &mut first)?);
-                patterns.push(extract_pattern(interp, &mut second)?);
+                let mut patterns = vec![
+                    extract_pattern(interp, &mut first)?,
+                    extract_pattern(interp, &mut second)?,
+                ];
                 for mut value in iter {
                     patterns.push(extract_pattern(interp, &mut value)?);
                 }
