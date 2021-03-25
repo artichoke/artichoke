@@ -11,8 +11,6 @@ use scolapasta_string_escape::format_debug_escape_into;
 
 use crate::RubyException;
 
-const DEFAULT_MESSAGE: &[u8] = b"IOError";
-
 /// Ruby `IOError` error type.
 ///
 /// Descendants of class [`Exception`] are used to communicate between
@@ -26,6 +24,7 @@ const DEFAULT_MESSAGE: &[u8] = b"IOError";
 /// [`Kernel#raise`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-raise
 /// [`NameError#name`]: https://ruby-doc.org/core-2.6.3/NameError.html#method-i-name
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct IOError {
     message: Cow<'static, [u8]>,
 }
@@ -45,6 +44,8 @@ impl IOError {
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
+        const DEFAULT_MESSAGE: &[u8] = b"IOError";
+
         // `Exception` objects initialized via (for example)
         // `raise RuntimeError` or `RuntimeError.new` have `message`
         // equal to the exception's class name.
