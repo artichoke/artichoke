@@ -293,6 +293,7 @@ class String
     "#{left_pad}#{self}#{right_pad}"
   end
 
+  # rubocop:disable Style/StringChars
   def chars(&blk)
     if block_given?
       split('').each(&blk)
@@ -301,6 +302,7 @@ class String
       split('')
     end
   end
+  # rubocop:enable Style/StringChars
 
   def chr
     dup[0]
@@ -376,7 +378,7 @@ class String
   def each_codepoint
     return to_enum(:each_codepoint) unless block_given?
 
-    split('').each do |c|
+    chars do |c|
       yield c.ord
     end
   end
