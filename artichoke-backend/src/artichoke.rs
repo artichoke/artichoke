@@ -93,7 +93,7 @@ impl Artichoke {
             let mrb = self.mrb.as_ptr();
 
             // Step 4
-            (*mrb).ud = Box::into_raw(state) as *mut c_void;
+            (*mrb).ud = Box::into_raw(state).cast::<c_void>();
 
             // Steps 5-7
             let result = func(mrb);
@@ -254,7 +254,7 @@ impl<'a> Drop for Guard<'a> {
         unsafe {
             trace!("Serializing Artichoke State into mrb to prepare for FFI boundary");
             let mrb = self.0.mrb.as_ptr();
-            (*mrb).ud = Box::into_raw(state) as *mut c_void;
+            (*mrb).ud = Box::into_raw(state).cast::<c_void>();
         }
     }
 }

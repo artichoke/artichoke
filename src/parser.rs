@@ -123,7 +123,7 @@ impl Parser {
         let parser = unsafe { self.parser.as_mut() };
         let context = unsafe { self.context.as_mut() };
 
-        let ptr = code.as_ptr() as *const i8;
+        let ptr = code.as_ptr().cast::<i8>();
         parser.s = ptr;
         parser.send = unsafe { ptr.offset(len) };
         parser.lineno = context.lineno;

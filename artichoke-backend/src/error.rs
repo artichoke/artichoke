@@ -74,8 +74,8 @@ where
         // `mrb_sys_raise` will call longjmp which will unwind the stack.
         sys::mrb_sys_raise(
             mrb,
-            "RuntimeError\0".as_ptr() as *const i8,
-            "Unable to raise exception".as_ptr() as *const i8,
+            "RuntimeError\0".as_ptr().cast::<i8>(),
+            "Unable to raise exception".as_ptr().cast::<i8>(),
         );
     }
     // unreachable: `raise` will unwind the stack with longjmp.

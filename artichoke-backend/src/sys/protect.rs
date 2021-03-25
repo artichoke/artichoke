@@ -40,7 +40,7 @@ where
 {
     let data = Box::new(data);
     let data = Box::into_raw(data);
-    let data = sys::mrb_sys_cptr_value(mrb, data as *mut c_void);
+    let data = sys::mrb_sys_cptr_value(mrb, data.cast::<c_void>());
     let mut state = 0;
 
     let value = sys::mrb_protect(mrb, Some(T::run), data, &mut state);
@@ -74,7 +74,7 @@ impl<'a> Protect for Funcall<'a> {
         // `protect` must be `Copy` because the call to a function in the
         // `mrb_funcall...` family can unwind with `longjmp` which does not
         // allow Rust to run destructors.
-        let Self { slf, func, args, block } = *Box::from_raw(ptr as *mut Self);
+        let Self { slf, func, args, block } = *Box::from_raw(ptr.cast::<Self>());
 
         // This will always unwrap because we've already checked that we
         // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
@@ -104,7 +104,7 @@ struct Eval<'a> {
 impl<'a> Protect for Eval<'a> {
     unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
         let ptr = sys::mrb_sys_cptr_ptr(data);
-        let Self { context, code } = *Box::from_raw(ptr as *mut Self);
+        let Self { context, code } = *Box::from_raw(ptr.cast::<Self>());
 
         // Execute arbitrary ruby code, which may generate objects with C APIs
         // if backed by Rust functions.
@@ -112,7 +112,7 @@ impl<'a> Protect for Eval<'a> {
         // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
         // which means the most recent value returned by eval will always be
         // considered live by the GC.
-        sys::mrb_load_nstring_cxt(mrb, code.as_ptr() as *const i8, code.len(), context)
+        sys::mrb_load_nstring_cxt(mrb, code.as_ptr().cast::<i8>(), code.len(), context)
     }
 }
 
@@ -127,7 +127,7 @@ struct BlockYield {
 impl Protect for BlockYield {
     unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
         let ptr = sys::mrb_sys_cptr_ptr(data);
-        let Self { block, arg } = *Box::from_raw(ptr as *mut Self);
+        let Self { block, arg } = *Box::from_raw(ptr.cast::<Self>());
         sys::mrb_yield(mrb, block, arg)
     }
 }
@@ -143,7 +143,7 @@ pub unsafe fn is_range(
         Ok(None)
     } else {
         let ptr = sys::mrb_sys_cptr_ptr(is_range);
-        let out = *Box::from_raw(ptr as *mut Range);
+        let out = *Box::from_raw(ptr.cast::<Range>());
         Ok(Some(out))
     }
 }
@@ -165,7 +165,7 @@ struct IsRange {
 impl Protect for IsRange {
     unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
         let ptr = sys::mrb_sys_cptr_ptr(data);
-        let Self { value, len } = *Box::from_raw(ptr as *mut Self);
+        let Self { value, len } = *Box::from_raw(ptr.cast::<Self>());
         let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let mut range_len = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let check_range = sys::mrb_range_beg_len(mrb, value, start.as_mut_ptr(), range_len.as_mut_ptr(), len, 0_u8);
@@ -175,7 +175,7 @@ impl Protect for IsRange {
             let out = Range { start, len: range_len };
             let out = Box::new(out);
             let out = Box::into_raw(out);
-            sys::mrb_sys_cptr_value(mrb, out as *mut c_void)
+            sys::mrb_sys_cptr_value(mrb, out.cast::<c_void>())
         } else {
             sys::mrb_sys_nil_value()
         }

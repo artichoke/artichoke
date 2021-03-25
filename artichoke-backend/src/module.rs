@@ -149,7 +149,7 @@ impl Rclass {
         } else {
             let is_defined = sys::mrb_const_defined_at(
                 mrb,
-                sys::mrb_sys_obj_value((*mrb).object_class as *mut c_void),
+                sys::mrb_sys_obj_value((*mrb).object_class.cast::<c_void>()),
                 self.sym,
             );
             if is_defined == 0 {

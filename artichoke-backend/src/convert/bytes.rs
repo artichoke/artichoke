@@ -22,7 +22,7 @@ impl ConvertMut<&[u8], Value> for Artichoke {
     fn convert_mut(&mut self, value: &[u8]) -> Value {
         // Ruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
-        let raw = value.as_ptr() as *const i8;
+        let raw = value.as_ptr().cast::<i8>();
         let len = value.len();
         // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
         // to worry about the lifetime of the slice passed into this converter.
@@ -91,7 +91,7 @@ impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
             let bytes = value.inner();
             unsafe {
                 self.with_ffi_boundary(|mrb| {
-                    let raw = sys::mrb_string_value_ptr(mrb, bytes) as *const u8;
+                    let raw = sys::mrb_string_value_ptr(mrb, bytes).cast::<u8>();
                     let len = sys::mrb_string_value_len(mrb, bytes);
                     if let Ok(len) = usize::try_from(len) {
                         // We can return a borrowed slice because the memory is

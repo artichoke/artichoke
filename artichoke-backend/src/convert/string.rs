@@ -81,7 +81,7 @@ mod tests {
                         let ptr = sys::mrb_string_value_ptr(mrb, value.inner());
                         let len = sys::mrb_string_value_len(mrb, value.inner());
                         let len = usize::try_from(len).unwrap();
-                        slice::from_raw_parts(ptr as *const u8, len)
+                        slice::from_raw_parts(ptr.cast::<u8>(), len)
                     })
                     .unwrap()
             };
