@@ -10,7 +10,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use termcolor::WriteColor;
 
-use crate::backend::ffi;
+use crate::backend::platform_string::os_str_to_bytes;
 use crate::backend::state::parser::Context;
 use crate::backend::string::format_unicode_debug_into;
 use crate::backtrace;
@@ -121,7 +121,7 @@ where
     // Inject ARGV global.
     let mut ruby_program_argv = Vec::new();
     for argument in &args.argv {
-        let argument = ffi::os_str_to_bytes(argument)?;
+        let argument = os_str_to_bytes(argument)?;
         let mut argument = interp.try_convert_mut(argument)?;
         argument.freeze(interp)?;
         ruby_program_argv.push(argument);
@@ -206,7 +206,7 @@ where
 fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Error> {
     let mut buf = String::from(message);
     buf.push_str(" -- ");
-    let path = ffi::os_str_to_bytes(file.as_ref())?;
+    let path = os_str_to_bytes(file.as_ref())?;
     format_unicode_debug_into(&mut buf, path)?;
     Ok(buf)
 }

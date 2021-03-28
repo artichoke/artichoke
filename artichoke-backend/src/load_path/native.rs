@@ -7,7 +7,7 @@ use std::io;
 use std::path::Path;
 
 use super::{absolutize_relative_to, normalize_slashes};
-use crate::ffi::os_str_to_bytes;
+use crate::platform_string::os_str_to_bytes;
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Native {

@@ -16,7 +16,7 @@ use bstr::ByteVec;
 use std::path::{Component, Path, PathBuf};
 
 use crate::error::Error;
-use crate::ffi::ConvertBytesError;
+use crate::platform_string::ConvertBytesError;
 use crate::Artichoke;
 
 #[cfg(feature = "load-path-native-filesystem-loader")]

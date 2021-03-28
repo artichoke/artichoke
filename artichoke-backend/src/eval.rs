@@ -6,7 +6,8 @@ use crate::core::{Eval, LoadSources, Parser, Value as _};
 use crate::error::Error;
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal};
-use crate::ffi::{self, InterpreterExtractError};
+use crate::ffi::InterpreterExtractError;
+use crate::platform_string::os_str_to_bytes;
 use crate::state::parser::Context;
 use crate::sys;
 use crate::sys::protect;
@@ -52,12 +53,12 @@ impl Eval for Artichoke {
     }
 
     fn eval_os_str(&mut self, code: &OsStr) -> Result<Self::Value, Self::Error> {
-        let code = ffi::os_str_to_bytes(code)?;
+        let code = os_str_to_bytes(code)?;
         self.eval(code)
     }
 
     fn eval_file(&mut self, file: &Path) -> Result<Self::Value, Self::Error> {
-        let context = Context::new(ffi::os_str_to_bytes(file.as_os_str())?.to_vec())
+        let context = Context::new(os_str_to_bytes(file.as_os_str())?.to_vec())
             .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         self.push_context(context)?;
         let code = self.read_source_file_contents(file)?.into_owned();
