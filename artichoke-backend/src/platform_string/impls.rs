@@ -33,7 +33,7 @@ impl RubyException for ConvertBytesError {
 
 impl From<ConvertBytesError> for Error {
     fn from(exception: ConvertBytesError) -> Self {
-        Self::from(Box::new(exception))
+        Self::from(Box::<dyn RubyException>::from(exception))
     }
 }
 
@@ -52,5 +52,18 @@ impl From<ConvertBytesError> for Box<dyn RubyException> {
 impl From<Box<ConvertBytesError>> for Box<dyn RubyException> {
     fn from(exception: Box<ConvertBytesError>) -> Box<dyn RubyException> {
         exception
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ConvertBytesError;
+    use crate::error::{Error, RubyException};
+
+    #[test]
+    fn box_convert() {
+        // Prevents regressing on a stack overflow caused by a mutual recursion.
+        let err = Error::from(ConvertBytesError::new());
+        assert_eq!(err.name(), "ArgumentError");
     }
 }
