@@ -6,7 +6,7 @@ use std::slice;
 use crate::convert::UnboxRubyError;
 use crate::core::{ConvertMut, TryConvertMut, Value as _};
 use crate::error::Error;
-use crate::ffi;
+use crate::platform_string::{os_str_to_bytes, os_string_to_bytes};
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;
@@ -44,7 +44,7 @@ impl TryConvertMut<OsString, Value> for Artichoke {
     type Error = Error;
 
     fn try_convert_mut(&mut self, value: OsString) -> Result<Value, Self::Error> {
-        let bytes = ffi::os_str_to_bytes(&*value)?;
+        let bytes = os_string_to_bytes(value)?;
         Ok(self.convert_mut(bytes))
     }
 }
@@ -53,7 +53,7 @@ impl TryConvertMut<&OsStr, Value> for Artichoke {
     type Error = Error;
 
     fn try_convert_mut(&mut self, value: &OsStr) -> Result<Value, Self::Error> {
-        let bytes = ffi::os_str_to_bytes(value)?;
+        let bytes = os_str_to_bytes(value)?;
         Ok(self.convert_mut(bytes))
     }
 }
@@ -64,11 +64,11 @@ impl<'a> TryConvertMut<Cow<'a, OsStr>, Value> for Artichoke {
     fn try_convert_mut(&mut self, value: Cow<'a, OsStr>) -> Result<Value, Self::Error> {
         match value {
             Cow::Borrowed(value) => {
-                let bytes = ffi::os_str_to_bytes(value)?;
+                let bytes = os_str_to_bytes(value)?;
                 Ok(self.convert_mut(bytes))
             }
             Cow::Owned(value) => {
-                let bytes = ffi::os_string_to_bytes(value)?;
+                let bytes = os_string_to_bytes(value)?;
                 Ok(self.convert_mut(bytes))
             }
         }

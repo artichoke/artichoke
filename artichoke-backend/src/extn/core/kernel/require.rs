@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::prelude::*;
-use crate::ffi;
+use crate::platform_string::bytes_to_os_str;
 use crate::state::parser::Context;
 
 pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
@@ -20,7 +20,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }
     let filename = filename.to_vec();
-    let file = ffi::bytes_to_os_str(&filename)?;
+    let file = bytes_to_os_str(&filename)?;
     let path = Path::new(file);
 
     if let Some(mut context) = interp.resolve_source_path(&path)? {
@@ -53,7 +53,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Erro
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }
     let filename = filename.to_vec();
-    let file = ffi::bytes_to_os_str(&filename)?;
+    let file = bytes_to_os_str(&filename)?;
     let path = Path::new(file);
 
     if let Some(mut context) = interp.resolve_source_path(&path)? {
@@ -87,7 +87,7 @@ pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: Relat
         return Err(ArgumentError::with_message("path name contains null byte").into());
     }
     let filename = filename.to_vec();
-    let file = ffi::bytes_to_os_str(&filename)?;
+    let file = bytes_to_os_str(&filename)?;
     let path = base.join(Path::new(file));
 
     if let Some(mut context) = interp.resolve_source_path(&path)? {
@@ -144,7 +144,7 @@ impl RelativePath {
         let context = interp
             .peek_context()?
             .ok_or_else(|| Fatal::from("relative require with no context stack"))?;
-        let path = ffi::bytes_to_os_str(context.filename())?;
+        let path = bytes_to_os_str(context.filename())?;
         let path = Path::new(path);
         if let Some(base) = path.parent() {
             Ok(Self::from(base))

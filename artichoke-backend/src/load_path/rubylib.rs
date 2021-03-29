@@ -7,7 +7,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use super::{absolutize_relative_to, normalize_slashes};
-use crate::ffi::os_string_to_bytes;
+use crate::platform_string::os_string_to_bytes;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Rubylib {
