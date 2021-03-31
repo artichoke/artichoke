@@ -1105,19 +1105,19 @@ class Array
     replace(result)
   end
 
-  def shuffle(_rng = (not_set = true))
-    rng = _rng.nil? ? Random.new : _rng
-    shuffled_orders = (0..self.size - 1).map.with_index {|_n, i| [rng.rand, i]}.sort {|a,b| a.first <=> b.first}
-    shuffled_orders.map {|_n, i| i}.map do |index|
+  def shuffle(rng = nil)
+    rng_instance = rng.nil? ? Random.new : rng
+    shuffled_orders = (0..size - 1).map.with_index { |_n, i| [rng_instance.rand, i] }.sort { |a, b| a.first <=> b.first }
+    shuffled_orders.map { |_n, i| i }.map do |index|
       self[index]
     end
   end
 
-  def shuffle!(_rng = (not_set = true))
+  def shuffle!(rng = nil)
     raise FrozenError, "can't modify frozen Array" if frozen?
     return self if length <= 1
 
-    self[0, length] = shuffle(_rng)
+    self[0, length] = shuffle(rng)
     self
   end
 
