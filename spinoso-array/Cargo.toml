@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-array"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 description = """
@@ -18,7 +18,7 @@ categories = ["data-structures", "no-std"]
 # 1.6.1 fixed a buffer overflow when calling `SmallVec::insert_many`.
 # https://github.com/servo/rust-smallvec/issues/252
 smallvec = { version = "1, >= 1.6.1", optional = true }
-tinyvec = { version = "1.1", optional = true, default-features = false, features = ["alloc"] }
+tinyvec = { version = "1.2", optional = true, default-features = false, features = ["alloc"] }
 
 [features]
 default = ["small-array", "tiny-array"]
