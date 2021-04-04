@@ -15,7 +15,7 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > artichoke - Copyright (c) 2019-2020 Ryan Lopopolo <rjl@hyperbo.la>
+    /// > artichoke - Copyright (c) 2019-2020 Ryan Lopopolo \<rjl@hyperbo.la\>
     fn ruby_copyright(&self) -> &str;
 
     /// A description of the current build.
