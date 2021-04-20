@@ -1,0 +1,44 @@
+---
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    assignees:
+      - lopopolo
+    labels:
+      - A-deps
+    ignore:
+      - dependency-name: ansi_term
+        versions:
+          - ">= 0.12.a"
+          - "< 0.13"
+  - package-ecosystem: bundler
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    assignees:
+      - lopopolo
+    labels:
+      - A-deps
+  - package-ecosystem: cargo
+    directory: "/fuzz"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    assignees:
+      - lopopolo
+    labels:
+      - A-deps
+  - package-ecosystem: cargo
+    directory: "/spec-runner"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    assignees:
+      - lopopolo
+    labels:
+      - A-deps
