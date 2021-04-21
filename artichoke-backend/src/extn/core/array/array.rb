@@ -1106,7 +1106,7 @@ class Array
   end
 
   def shuffle(random: (not_set = true))
-    random = Random::DEFAULT if not_set
+    random = Random::DEFAULT if not_set # rubocop:disable Lint/DeprecatedConstants
     shuffled_orders = (0...size).map { |idx| [random.rand, idx] }.sort { |a, b| a[0] <=> b[0] }
     shuffled_orders.map { |_n, idx| idx }.map do |idx|
       self[idx]
