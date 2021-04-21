@@ -5,6 +5,8 @@ updates:
     directory: "/"
     schedule:
       interval: daily
+    allow:
+      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
@@ -19,6 +21,8 @@ updates:
     directory: "/"
     schedule:
       interval: daily
+    allow:
+      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
@@ -28,6 +32,8 @@ updates:
     directory: "/fuzz"
     schedule:
       interval: daily
+    allow:
+      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
@@ -37,6 +43,8 @@ updates:
     directory: "/spec-runner"
     schedule:
       interval: daily
+    allow:
+      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
