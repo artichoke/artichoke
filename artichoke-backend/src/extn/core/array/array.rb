@@ -1105,12 +1105,25 @@ class Array
     replace(result)
   end
 
-  def shuffle(_rng = (not_set = true)) # rubocop:disable Lint/UselessAssignment
-    raise NotImplementedError, 'TODO implement in Rust'
+  def shuffle(random: (not_set = true))
+    random = Random::DEFAULT if not_set # rubocop:disable Lint/DeprecatedConstants
+    shuffled_orders = (0...size).map { |idx| [random.rand, idx] }.sort { |a, b| a[0] <=> b[0] }
+    shuffled_orders.map { |_n, idx| idx }.map do |idx|
+      self[idx]
+    end
   end
 
-  def shuffle!(_rng = (not_set = true)) # rubocop:disable Lint/UselessAssignment
-    raise NotImplementedError, 'TODO implement in Rust'
+  def shuffle!(random: (not_set = true))
+    raise FrozenError, "can't modify frozen Array" if frozen?
+    return self if length <= 1
+
+    self[0, length] =
+      if not_set
+        shuffle
+      else
+        shuffle(random: random)
+      end
+    self
   end
 
   def slice!(*args)
