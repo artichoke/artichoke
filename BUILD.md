@@ -46,6 +46,12 @@ brew install rustup-init
 rustup-init
 ```
 
+On Windows, you can install rustup from the official site and follow the
+prompts: <https://rustup.rs/>. This requires a download of Visual Studio (the
+[Community Edition][vs-community] is sufficient) and several C++ packages
+selected through the VS component installer. (I'm not sure which packages are
+required; I selected them all.)
+
 Once you have rustup, you can install the Rust toolchain needed to compile
 Artichoke.
 
@@ -73,6 +79,9 @@ compiler.
 
 Artichoke specifically requires clang. WebAssembly targets require clang-8 or
 newer.
+
+On Windows, install the latest LLVM distribution from GitHub and add LLVM to
+your PATH: <https://github.com/llvm/llvm-project/releases>.
 
 #### `cc` Crate
 
@@ -122,6 +131,7 @@ bundle install
 [artichoke/playground]: https://github.com/artichoke/playground
 [rustup]: https://rustup.rs/
 [homebrew]: https://docs.brew.sh/Installation
+[vs-community]: https://visualstudio.microsoft.com/vs/community/
 [`onig`]: https://crates.io/crates/onig
 [`cc` crate]: https://crates.io/crates/cc
 [platform-dependent c compiler]:
