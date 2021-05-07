@@ -425,7 +425,7 @@ mod tests {
         fn arr_int_owned(arr: Vec<i64>) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
-            let value = interp.try_convert_mut(arr.to_vec()).unwrap();
+            let value = interp.try_convert_mut(arr.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != arr.len() {
@@ -469,7 +469,7 @@ mod tests {
         fn arr_utf8_owned(arr: Vec<String>) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
-            let value = interp.try_convert_mut(arr.to_vec()).unwrap();
+            let value = interp.try_convert_mut(arr.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != arr.len() {
@@ -513,7 +513,7 @@ mod tests {
         fn arr_nilable_bstr_owned(arr: Vec<Option<Vec<u8>>>) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
-            let value = interp.try_convert_mut(arr.to_vec()).unwrap();
+            let value = interp.try_convert_mut(arr.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != arr.len() {

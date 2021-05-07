@@ -1,5 +1,6 @@
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![allow(clippy::let_underscore_drop)]
 #![allow(clippy::restriction)]
 
 use std::env;
@@ -221,7 +222,7 @@ mod libmruby {
                     continue;
                 }
                 if source.extension().and_then(OsStr::to_str) == Some("c") {
-                    sources.insert(relative_source.to_owned(), source.to_owned());
+                    sources.insert(relative_source.to_owned(), source.clone());
                 }
             }
         }
@@ -237,7 +238,7 @@ mod libmruby {
                 continue;
             }
             if source.extension().and_then(OsStr::to_str) == Some("c") {
-                sources.insert(relative_source.to_owned(), source.to_owned());
+                sources.insert(relative_source.to_owned(), source.clone());
             }
         }
         // Build the extension library

@@ -206,7 +206,7 @@ mod tests {
         fn bytestring_owned(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
-            let value = interp.convert_mut(bytes.to_vec());
+            let value = interp.convert_mut(bytes.clone());
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != bytes.len() {

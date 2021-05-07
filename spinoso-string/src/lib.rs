@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![warn(clippy::needless_borrow)]
+#![allow(clippy::let_underscore_drop)]
 #![allow(clippy::option_if_let_else)]
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]

@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![warn(clippy::needless_borrow)]
+#![allow(clippy::let_underscore_drop)]
 // https://github.com/rust-lang/rust-clippy/pull/5998#issuecomment-731855891
 #![allow(clippy::map_err_ignore)]
 #![allow(clippy::option_if_let_else)]
@@ -263,6 +264,7 @@ impl Symbol {
     #[must_use]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
+    #[allow(clippy::len_without_is_empty)]
     pub fn len<T, U>(self, interner: &T) -> usize
     where
         T: Intern<Symbol = U>,

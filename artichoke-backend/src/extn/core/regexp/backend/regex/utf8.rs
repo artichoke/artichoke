@@ -1,6 +1,6 @@
 use regex::{Match, Regex, RegexBuilder};
 use std::collections::HashMap;
-use std::convert::{self, TryFrom};
+use std::convert::TryFrom;
 use std::fmt;
 use std::num::NonZeroUsize;
 use std::str;
@@ -364,7 +364,7 @@ impl RegexpType for Utf8 {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
-        for group in self.regex.capture_names().filter_map(convert::identity) {
+        for group in self.regex.capture_names().flatten() {
             if let Some(indexes) = self.capture_indexes_for_name(group.as_bytes())? {
                 map.push((group.into(), indexes));
             }
