@@ -56,6 +56,7 @@ dependencies = [
  "spinoso-random",
  "spinoso-regexp",
  "spinoso-securerandom",
+ "spinoso-string",
  "spinoso-symbol",
  "spinoso-time",
  "target-lexicon",

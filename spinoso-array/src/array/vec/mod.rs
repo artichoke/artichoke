@@ -285,7 +285,7 @@ impl<T> Array<T> {
         self.0.set_len(new_len);
     }
 
-    /// Creates a `Array<T>` directly from the raw components of another array.
+    /// Creates an `Array<T>` directly from the raw components of another array.
     ///
     /// # Safety
     ///
@@ -333,6 +333,8 @@ impl<T> Array<T> {
     pub fn into_raw_parts(self) -> (*mut T, usize, usize) {
         // TODO: convert to `Vec::into_raw_parts` once it is stabilized.
         // See: https://doc.rust-lang.org/1.48.0/src/alloc/vec.rs.html#399-402
+        //
+        // https://github.com/rust-lang/rust/issues/65816
         let mut me = ManuallyDrop::new(self.0);
         (me.as_mut_ptr(), me.len(), me.capacity())
     }

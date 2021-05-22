@@ -873,7 +873,11 @@ obj_free(mrb_state *mrb, struct RBasic *obj, int end)
     break;
 
   case MRB_TT_STRING:
+#ifdef ARTICHOKE
+    mrb_str_artichoke_free(mrb, (struct RString*)obj);
+#else
     mrb_gc_free_str(mrb, (struct RString*)obj);
+#endif
     break;
 
   case MRB_TT_PROC:

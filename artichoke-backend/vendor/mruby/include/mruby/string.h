@@ -464,6 +464,12 @@ mrb_int mrb_utf8len(const char *str, const char *end);
 mrb_int mrb_utf8_strlen(const char *str, mrb_int byte_len);
 #endif
 
+#ifdef ARTICHOKE
+
+MRB_API void mrb_str_artichoke_free(mrb_state *mrb, struct RString *str);
+
+#endif
+
 MRB_END_DECL
 
 #endif  /* MRUBY_STRING_H */
