@@ -327,7 +327,7 @@ mrb_sys_alloc_rstring(struct mrb_state *mrb, char *ptr, mrb_int len, mrb_int cap
   return mrb_obj_value(s);
 }
 
-MRB_API struct RString*
+MRB_API struct RString *
 mrb_sys_repack_into_rstring(char *ptr, mrb_int len, mrb_int capa, mrb_value into)
 {
   struct RString *s = RSTRING(into);
