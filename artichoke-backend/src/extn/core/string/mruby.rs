@@ -15,7 +15,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("scan", string_scan, sys::mrb_args_req(1))?
         .define()?;
     interp.def_class::<string::String>(spec)?;
-    interp.eval(&include_bytes!("string.rb")[..])?;
+    // interp.eval(&include_bytes!("string.rb")[..])?;
     trace!("Patched String onto interpreter");
     Ok(())
 }
