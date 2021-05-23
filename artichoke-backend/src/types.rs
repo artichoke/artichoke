@@ -204,11 +204,11 @@ mod tests {
     #[test]
     fn parse_string_ruby_type() {
         let mut interp = interpreter().unwrap();
-        let empty = interp.convert_mut("");
+        let empty = interp.try_convert_mut("").unwrap();
         assert_eq!(Ruby::String, types::ruby_from_mrb_value(empty.inner()));
-        let utf8 = interp.convert_mut("Artichoke");
+        let utf8 = interp.try_convert_mut("Artichoke").unwrap();
         assert_eq!(Ruby::String, types::ruby_from_mrb_value(utf8.inner()));
-        let binary = interp.convert_mut(vec![0xFF_u8, 0x00, 0xFE]);
+        let binary = interp.try_convert_mut(vec![0xFF_u8, 0x00, 0xFE]).unwrap();
         assert_eq!(Ruby::String, types::ruby_from_mrb_value(binary.inner()));
     }
 

@@ -62,8 +62,6 @@ impl<'a> TryConvertMut<Value, &'a str> for Artichoke {
 #[cfg(test)]
 mod tests {
     use quickcheck::quickcheck;
-    use std::convert::TryFrom;
-    use std::slice;
 
     use crate::test::prelude::*;
 
@@ -161,7 +159,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         fn roundtrip(s: String) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(s.clone());
+            let value = interp.try_convert_mut(s.clone()).unwrap();
             let value = value.try_into_mut::<String>(&mut interp).unwrap();
             value == s
         }
