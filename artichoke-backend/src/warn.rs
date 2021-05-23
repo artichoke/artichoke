@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use crate::core::{ConvertMut, Value as _, Warn};
+use crate::core::{TryConvertMut, Value as _, Warn};
 use crate::def::NotDefinedError;
 use crate::error::Error;
 use crate::extn::core::exception::IOError;
@@ -34,7 +34,7 @@ impl Warn for Artichoke {
         let warning = self
             .module_of::<Warning>()?
             .ok_or_else(|| NotDefinedError::module("Warning"))?;
-        let message = self.convert_mut(message);
+        let message = self.try_convert_mut(message)?;
         warning.funcall(self, "warn", &[message], None)?;
         Ok(())
     }

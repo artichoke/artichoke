@@ -5,7 +5,7 @@ use crate::extn::prelude::*;
 pub fn chr(interp: &mut Artichoke, value: Value, encoding: Option<Value>) -> Result<Value, Error> {
     let value = value.try_into::<Integer>(interp)?;
     let s = value.chr(interp, encoding)?;
-    Ok(interp.convert_mut(s))
+    interp.try_convert_mut(s)
 }
 
 pub fn element_reference(interp: &mut Artichoke, value: Value, bit: Value) -> Result<Value, Error> {

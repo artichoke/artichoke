@@ -1,16 +1,13 @@
+use core::mem;
 use std::borrow::Cow;
-use std::convert::TryFrom;
 use std::ffi::{OsStr, OsString};
-use std::slice;
 
 use spinoso_string::String;
 
-use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
-use crate::core::{TryConvertMut, Value as _};
+use crate::convert::BoxUnboxVmValue;
+use crate::core::TryConvertMut;
 use crate::error::Error;
 use crate::platform_string::{os_str_to_bytes, os_string_to_bytes};
-use crate::sys;
-use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -81,34 +78,26 @@ impl<'a> TryConvertMut<Cow<'a, OsStr>, Value> for Artichoke {
 impl TryConvertMut<Value, Vec<u8>> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<u8>, Self::Error> {
-        TryConvertMut::<_, &[u8]>::try_convert_mut(self, value).map(<[_]>::to_vec)
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<u8>, Self::Error> {
+        let s = unsafe { String::unbox_from_value(&mut value, self)? };
+        Ok(s.clone().into_vec())
     }
 }
 
 impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<&'a [u8], Self::Error> {
-        if let Ruby::String = value.ruby_type() {
-            let bytes = value.inner();
-            unsafe {
-                self.with_ffi_boundary(|mrb| {
-                    let raw = sys::mrb_string_value_ptr(mrb, bytes).cast::<u8>();
-                    let len = sys::mrb_string_value_len(mrb, bytes);
-                    if let Ok(len) = usize::try_from(len) {
-                        // We can return a borrowed slice because the memory is
-                        // stored on the mruby heap. As long as `value` is
-                        // reachable, this slice points to valid memory.
-                        Ok(slice::from_raw_parts(raw, len))
-                    } else {
-                        Err(UnboxRubyError::new(&value, Rust::Bytes).into())
-                    }
-                })?
-            }
-        } else {
-            Err(UnboxRubyError::new(&value, Rust::Bytes).into())
-        }
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<&'a [u8], Self::Error> {
+        self.protect(value);
+        let s = unsafe { String::unbox_from_value(&mut value, self)? };
+        // Safety
+        //
+        // This transmute modifies the lifetime of the byte slice pulled out of
+        // the boxed `String`. This is only safe if there are no garbage
+        // collections that reclaim `value`, which is enforced for at least this
+        // entry from an mruby trampoline by the call to `protect` above.
+        let slice = unsafe { mem::transmute(s.as_slice()) };
+        Ok(slice)
     }
 }
 
@@ -132,7 +121,7 @@ mod tests {
     fn convert_with_trailing_nul() {
         let mut interp = interpreter().unwrap();
         let bytes: &[u8] = &[0];
-        let value = interp.convert_mut(bytes);
+        let value = interp.try_convert_mut(bytes).unwrap();
         let retrieved_bytes = value.try_into_mut::<&[u8]>(&mut interp).unwrap();
         assert_eq!(bytes.as_bstr(), retrieved_bytes.as_bstr());
 
@@ -161,7 +150,7 @@ mod tests {
     quickcheck! {
         fn convert_to_vec(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(bytes);
+            let value = interp.try_convert_mut(bytes).unwrap();
             value.ruby_type() == Ruby::String
         }
 
@@ -169,7 +158,7 @@ mod tests {
         fn bytestring_borrowed(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
             // Borrowed converter
-            let value = interp.convert_mut(bytes.as_slice());
+            let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != bytes.len() {
@@ -209,7 +198,7 @@ mod tests {
         fn bytestring_owned(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
-            let value = interp.convert_mut(bytes.clone());
+            let value = interp.try_convert_mut(bytes.clone()).unwrap();
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != bytes.len() {
@@ -248,7 +237,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         fn roundtrip(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(bytes.as_slice());
+            let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
             let value = value.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
             value == bytes
         }

@@ -102,7 +102,7 @@ impl RubyException for UnboxRubyError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.to_string());
+        let message = interp.try_convert_mut(self.to_string()).ok()?;
         let value = interp.new_instance::<TypeError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
@@ -170,7 +170,7 @@ impl RubyException for BoxIntoRubyError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.to_string());
+        let message = interp.try_convert_mut(self.to_string()).ok()?;
         let value = interp.new_instance::<TypeError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }

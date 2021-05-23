@@ -32,7 +32,11 @@ typedef struct mrb_shared_string {
   char *ptr;
 } mrb_shared_string;
 
+#endif
+
 const char mrb_digitmap[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+#ifndef ARTICHOKE
 
 #define mrb_obj_alloc_string(mrb) ((struct RString*)mrb_obj_alloc((mrb), MRB_TT_STRING, (mrb)->string_class))
 

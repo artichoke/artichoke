@@ -11,7 +11,7 @@ use std::ptr::{self, NonNull};
 use spinoso_exception::Fatal;
 
 use crate::class_registry::ClassRegistry;
-use crate::core::ConvertMut;
+use crate::core::TryConvertMut;
 use crate::error::{Error, RubyException};
 use crate::state::State;
 use crate::sys;
@@ -96,7 +96,7 @@ impl RubyException for InterpreterExtractError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.message());
+        let message = interp.try_convert_mut(self.message()).ok()?;
         let value = interp.new_instance::<Fatal>(&[message]).ok().flatten()?;
         Some(value.inner())
     }

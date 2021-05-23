@@ -4,7 +4,7 @@ use core::ptr;
 use core::slice;
 use core::str;
 use std::ffi::{c_void, CStr};
-use std::os::raw::c_int;
+use std::os::raw::{c_double, c_int};
 
 use artichoke_core::convert::Convert;
 use bstr::ByteSlice;
@@ -401,11 +401,60 @@ unsafe extern "C" fn mrb_str_to_inum(
 
 // MRB_API double mrb_cstr_to_dbl(mrb_state *mrb, const char *s, mrb_bool badcheck)
 //
-// MRB_API double mrb_str_to_dbl(mrb_state *mrb, mrb_value str, mrb_bool badcheck)
-//
 // NOTE: not implemented
 
+// MRB_API double mrb_str_to_dbl(mrb_state *mrb, mrb_value str, mrb_bool badcheck)
+#[no_mangle]
+unsafe extern "C" fn mrb_str_to_dbl(mrb: *mut sys::mrb_state, s: sys::mrb_value, badcheck: sys::mrb_bool) -> c_double {
+    unwrap_interpreter!(mrb, to => guard, or_else = 0.0);
+    let badcheck = badcheck != 0;
+
+    let mut s = Value::from(s);
+    let s = if let Ok(s) = String::unbox_from_value(&mut s, &mut guard) {
+        s
+    } else if badcheck {
+        let err = ArgumentError::with_message("not a string");
+        error::raise(guard, err);
+    } else {
+        return 0.0;
+    };
+    if let Ok(s) = str::from_utf8(s.as_slice()) {
+        if let Ok(num) = s.parse::<c_double>() {
+            num
+        } else if badcheck {
+            let err = ArgumentError::with_message("invalid number");
+            error::raise(guard, err);
+        } else {
+            0.0
+        }
+    } else if badcheck {
+        let err = ArgumentError::with_message("invalid number");
+        error::raise(guard, err);
+    } else {
+        0.0
+    }
+}
+
 // MRB_API mrb_value mrb_str_cat(mrb_state *mrb, mrb_value str, const char *ptr, size_t len)
+#[no_mangle]
+unsafe extern "C" fn mrb_str_cat(
+    mrb: *mut sys::mrb_state,
+    s: sys::mrb_value,
+    ptr: *const i8,
+    len: usize,
+) -> sys::mrb_value {
+    unwrap_interpreter!(mrb, to => guard, or_else = s);
+    let mut s = Value::from(s);
+    if let Ok(mut string) = String::unbox_from_value(&mut s, &mut guard) {
+        let slice = slice::from_raw_parts(ptr.cast::<u8>(), len);
+        string.extend_from_slice(slice);
+        let inner = string.take();
+        let value = String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
+        value.inner()
+    } else {
+        s.inner()
+    }
+}
 
 // MRB_API mrb_value mrb_str_cat_cstr(mrb_state *mrb, mrb_value str, const char *ptr)
 //
@@ -418,6 +467,29 @@ unsafe extern "C" fn mrb_str_to_inum(
 // MRB_API double mrb_float_read(const char *string, char **endPtr)
 //
 // NOTE: impl kept in C.
+
+// uint32_t mrb_str_hash(mrb_state *mrb, mrb_value str);
+#[no_mangle]
+unsafe extern "C" fn mrb_str_hash(mrb: *mut sys::mrb_state, s: sys::mrb_value) -> u32 {
+    unwrap_interpreter!(mrb, to => guard, or_else = 0);
+    let mut s = Value::from(s);
+    let s = if let Ok(s) = String::unbox_from_value(&mut s, &mut guard) {
+        s
+    } else {
+        return 0;
+    };
+    let mut hash = 0_u32;
+    for b in s.bytes() {
+        hash += u32::from(b);
+        hash += hash << 10;
+        hash ^= hash >> 6;
+    }
+    hash += hash << 3;
+    hash ^= hash >> 11;
+    hash += hash << 15;
+
+    hash
+}
 
 #[no_mangle]
 #[allow(clippy::cast_possible_truncation)]

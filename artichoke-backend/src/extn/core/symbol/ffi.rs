@@ -212,9 +212,10 @@ unsafe extern "C" fn mrb_sym_dump(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -
         let bytes = bytes.to_vec();
         // Allocate a buffer with the lifetime of the interpreter and return
         // a pointer to it.
-        let string = guard.convert_mut(bytes);
-        if let Ok(bytes) = string.try_into_mut::<&[u8]>(&mut guard) {
-            bytes.as_ptr().cast::<i8>()
+        let string = spinoso_string::String::utf8(bytes);
+        let ptr = string.as_ptr();
+        if spinoso_string::String::alloc_value(string, &mut guard).is_ok() {
+            ptr.cast::<i8>()
         } else {
             ptr::null()
         }
@@ -232,11 +233,11 @@ unsafe extern "C" fn mrb_sym_str(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) ->
 
     let value = if let Ok(Some(bytes)) = guard.lookup_symbol(sym) {
         let bytes = bytes.to_vec();
-        guard.convert_mut(bytes)
+        guard.try_convert_mut(bytes)
     } else {
-        guard.convert_mut("")
+        guard.try_convert_mut("")
     };
-    value.inner()
+    value.unwrap_or_default().inner()
 }
 
 // ```c

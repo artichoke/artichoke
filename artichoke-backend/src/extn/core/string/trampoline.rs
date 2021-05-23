@@ -55,7 +55,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
                 let data = MatchData::alloc_value(data, interp)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
-                let block_arg = interp.convert_mut(pattern_bytes.as_slice());
+                let block_arg = interp.try_convert_mut(pattern_bytes.as_slice())?;
                 block.yield_arg(interp, &block_arg)?;
 
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
@@ -68,7 +68,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
                     let data = MatchData::alloc_value(data, interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
-                    let block_arg = interp.convert_mut(pattern_bytes.as_slice());
+                    let block_arg = interp.try_convert_mut(pattern_bytes.as_slice())?;
                     block.yield_arg(interp, &block_arg)?;
 
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
@@ -86,7 +86,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
             .unwrap_or_default();
         let mut result = Vec::with_capacity(matches);
         for _ in 0..matches {
-            result.push(interp.convert_mut(pattern_bytes.as_slice()));
+            result.push(interp.try_convert_mut(pattern_bytes.as_slice())?);
         }
         if matches > 0 {
             let regex = Regexp::lazy(pattern_bytes.clone());
@@ -110,13 +110,13 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
         if let Some(ref block) = block {
             let patlen = pattern_bytes.len();
             if let Some(pos) = string.find(&pattern_bytes) {
-                let block_arg = interp.convert_mut(pattern_bytes.as_slice());
+                let block_arg = interp.try_convert_mut(pattern_bytes.as_slice())?;
                 block.yield_arg(interp, &block_arg)?;
 
                 let offset = pos + patlen;
                 let string = string.get(offset..).unwrap_or_default();
                 for _ in string.find_iter(&pattern_bytes) {
-                    let block_arg = interp.convert_mut(pattern_bytes.as_slice());
+                    let block_arg = interp.try_convert_mut(pattern_bytes.as_slice())?;
                     block.yield_arg(interp, &block_arg)?;
                 }
             }
@@ -130,7 +130,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
             .unwrap_or_default();
         let mut result = Vec::with_capacity(matches);
         for _ in 0..matches {
-            result.push(interp.convert_mut(pattern_bytes.as_slice()));
+            result.push(interp.try_convert_mut(pattern_bytes.as_slice())?);
         }
         return interp.try_convert_mut(result);
     }

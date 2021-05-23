@@ -142,7 +142,7 @@ pub fn hash(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {
 pub fn inspect(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let inspect = regexp.inspect();
-    Ok(interp.convert_mut(inspect))
+    interp.try_convert_mut(inspect)
 }
 
 pub fn named_captures(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {
@@ -166,11 +166,11 @@ pub fn options(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error
 pub fn source(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let source = regexp.source();
-    Ok(interp.convert_mut(source))
+    interp.try_convert_mut(source)
 }
 
 pub fn to_s(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let s = regexp.string();
-    Ok(interp.convert_mut(s))
+    interp.try_convert_mut(s)
 }

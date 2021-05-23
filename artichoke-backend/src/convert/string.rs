@@ -2,33 +2,39 @@ use std::borrow::Cow;
 use std::str;
 
 use crate::convert::UnboxRubyError;
-use crate::core::{ConvertMut, TryConvertMut};
+use crate::core::TryConvertMut;
 use crate::error::Error;
 use crate::types::Rust;
 use crate::value::Value;
 use crate::Artichoke;
 
-impl ConvertMut<String, Value> for Artichoke {
-    fn convert_mut(&mut self, value: String) -> Value {
+impl TryConvertMut<String, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: String) -> Result<Value, Self::Error> {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        self.convert_mut(value.as_bytes())
+        self.try_convert_mut(value.into_bytes())
     }
 }
 
-impl ConvertMut<&str, Value> for Artichoke {
-    fn convert_mut(&mut self, value: &str) -> Value {
+impl TryConvertMut<&str, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: &str) -> Result<Value, Self::Error> {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        self.convert_mut(value.as_bytes())
+        self.try_convert_mut(value.as_bytes())
     }
 }
 
-impl<'a> ConvertMut<Cow<'a, str>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Cow<'a, str>) -> Value {
+impl<'a> TryConvertMut<Cow<'a, str>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Cow<'a, str>) -> Result<Value, Self::Error> {
         match value {
-            Cow::Borrowed(string) => self.convert_mut(string),
-            Cow::Owned(string) => self.convert_mut(string),
+            Cow::Borrowed(string) => self.try_convert_mut(string),
+            Cow::Owned(string) => self.try_convert_mut(string),
         }
     }
 }
@@ -74,24 +80,15 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         fn convert_to_string(s: String) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(s.clone());
-            let string = unsafe {
-                interp
-                    .with_ffi_boundary(|mrb| {
-                        let ptr = sys::mrb_string_value_ptr(mrb, value.inner());
-                        let len = sys::mrb_string_value_len(mrb, value.inner());
-                        let len = usize::try_from(len).unwrap();
-                        slice::from_raw_parts(ptr.cast::<u8>(), len)
-                    })
-                    .unwrap()
-            };
+            let value = interp.try_convert_mut(s.clone()).unwrap();
+            let string: Vec<u8> = interp.try_convert_mut(value).unwrap();
             s.as_bytes() == string
         }
 
         #[allow(clippy::needless_pass_by_value)]
         fn string_with_value(s: String) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(s.clone());
+            let value = interp.try_convert_mut(s.clone()).unwrap();
             value.to_s(&mut interp) == s.as_bytes()
         }
 
@@ -100,7 +97,7 @@ mod tests {
         fn utf8string_borrowed(string: String) -> bool {
             let mut interp = interpreter().unwrap();
             // Borrowed converter
-            let value = interp.convert_mut(string.as_str());
+            let value = interp.try_convert_mut(string.as_str()).unwrap();
             let len = value
                 .funcall(&mut interp, "length", &[], None)
                 .and_then(|value| value.try_into::<usize>(&interp))
@@ -133,7 +130,7 @@ mod tests {
         fn utf8string_owned(string: String) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
-            let value = interp.convert_mut(string.clone());
+            let value = interp.try_convert_mut(string.clone()).unwrap();
             let len = value
                 .funcall(&mut interp, "length", &[], None)
                 .and_then(|value| value.try_into::<usize>(&interp))
