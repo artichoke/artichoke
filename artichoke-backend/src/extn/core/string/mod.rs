@@ -16,7 +16,7 @@ mod ffi;
 pub mod mruby;
 pub mod trampoline;
 
-const ENCODING_FLAG_BITPOS: usize = 2;
+const ENCODING_FLAG_BITPOS: usize = 4;
 
 impl BoxUnboxVmValue for String {
     type Unboxed = Self;
