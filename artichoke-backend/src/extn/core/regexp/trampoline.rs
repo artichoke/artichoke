@@ -38,7 +38,7 @@ pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error
         pattern_vec = unsafe { implicitly_convert_to_string(interp, &mut pattern)?.to_vec() };
     }
     let pattern = Regexp::escape(&pattern_vec)?;
-    Ok(interp.convert_mut(pattern))
+    interp.try_convert_mut(pattern)
 }
 
 pub fn union<T>(interp: &mut Artichoke, patterns: T) -> Result<Value, Error>
