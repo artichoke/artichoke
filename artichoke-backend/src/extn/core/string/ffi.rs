@@ -129,9 +129,12 @@ unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value,
         if additional > 0 {
             string.reserve(additional);
         }
+        let inner = string.take();
+        let value = String::box_into_value(inner, value, &mut guard).expect("String reboxing should not fail");
+        value.inner()
+    } else {
+        s
     }
-
-    return s;
 }
 
 // MRB_API char* mrb_str_to_cstr(mrb_state *mrb, mrb_value str0)
@@ -320,16 +323,22 @@ unsafe extern "C" fn mrb_ptr_to_str(mrb: *mut sys::mrb_state, p: *mut c_void) ->
 unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: sys::mrb_value) -> *const i8 {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
     let mut s = Value::from(ptr);
-    if let Ok(mut s) = String::unbox_from_value(&mut s, &mut guard) {
-        if let Some(b'\0') = s.last() {
-            s.as_ptr().cast::<i8>()
+    let mut string = if let Ok(string) = String::unbox_from_value(&mut s, &mut guard) {
+        if let Some(b'\0') = string.last() {
+            return string.as_ptr().cast::<i8>();
         } else {
-            s.push_byte(b'\0');
-            s.as_ptr().cast::<i8>()
+            string
         }
     } else {
-        ptr::null()
-    }
+        return ptr::null();
+    };
+    string.push_byte(b'\0');
+    let ptr = string.as_ptr().cast::<i8>();
+
+    let inner = string.take();
+    String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
+
+    ptr
 }
 
 // MRB_API const char* mrb_string_cstr(mrb_state *mrb, mrb_value str)
