@@ -1,5 +1,6 @@
 use core::char;
 use core::convert::TryFrom;
+use core::num::Wrapping;
 use core::ptr;
 use core::slice;
 use core::str;
@@ -505,9 +506,9 @@ unsafe extern "C" fn mrb_str_hash(mrb: *mut sys::mrb_state, s: sys::mrb_value) -
     } else {
         return 0;
     };
-    let mut hash = 0_u32;
+    let mut hash = Wrapping(0_u32);
     for b in s.bytes() {
-        hash += u32::from(b);
+        hash += Wrapping(u32::from(b));
         hash += hash << 10;
         hash ^= hash >> 6;
     }
@@ -515,7 +516,7 @@ unsafe extern "C" fn mrb_str_hash(mrb: *mut sys::mrb_state, s: sys::mrb_value) -
     hash ^= hash >> 11;
     hash += hash << 15;
 
-    hash
+    hash.0
 }
 
 #[no_mangle]
