@@ -5,6 +5,7 @@ use core::ptr;
 use core::slice;
 use core::str;
 use std::ffi::{c_void, CStr};
+use std::io::Write as _;
 use std::os::raw::{c_double, c_int};
 
 use artichoke_core::convert::Convert;
@@ -316,7 +317,8 @@ unsafe extern "C" fn mrb_str_substr(
 #[no_mangle]
 unsafe extern "C" fn mrb_ptr_to_str(mrb: *mut sys::mrb_state, p: *mut c_void) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
-    let s = String::from(format!("{:p}", p));
+    let mut s = String::with_capacity(16 + 2);
+    let _ignore = write!(s, "{:p}", p);
     String::alloc_value(s, &mut guard).unwrap_or_default().into()
 }
 
