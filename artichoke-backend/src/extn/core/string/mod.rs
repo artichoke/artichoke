@@ -3,6 +3,7 @@ use std::ffi::c_void;
 
 use artichoke_core::value::Value as _;
 use spinoso_exception::TypeError;
+#[doc(inline)]
 use spinoso_string::{Encoding, String};
 
 use crate::convert::{BoxUnboxVmValue, UnboxedValueGuard};
@@ -50,14 +51,17 @@ impl BoxUnboxVmValue for String {
         let ptr = (*string).as_.heap.ptr;
         let len = (*string).as_.heap.len as usize;
         let capacity = (*string).as_.heap.aux.capa as usize;
-        let mut s = String::from_raw_parts(ptr.cast::<u8>(), len, capacity);
 
         let flags = string.as_ref().unwrap().flags();
-        let encoding = (flags >> ENCODING_FLAG_BITPOS) as u8;
+        let encoding_flag = flags & (1 << ENCODING_FLAG_BITPOS);
+        let encoding = (encoding_flag >> ENCODING_FLAG_BITPOS) as u8;
         let encoding = Encoding::try_from_flag(encoding).map_err(|_| TypeError::with_message("Unknown encoding"))?;
-        s.set_encoding(encoding);
 
-        Ok(UnboxedValueGuard::new(s))
+        let mut s = String::from_raw_parts(ptr.cast::<u8>(), len, capacity);
+        s.set_encoding(encoding);
+        let s = UnboxedValueGuard::new(s);
+
+        Ok(s)
     }
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
