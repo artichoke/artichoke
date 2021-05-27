@@ -582,10 +582,11 @@ dependencies = [
 
 [[package]]
 name = "spinoso-string"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bstr",
  "focaccia",
+ "scolapasta-string-escape",
 ]
 
 [[package]]
