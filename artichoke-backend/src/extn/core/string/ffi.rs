@@ -22,8 +22,7 @@ use crate::value::Value;
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
-    let capacity = usize::try_from(capa).unwrap_or_default();
-    let result = String::with_capacity(capacity);
+    let result = String::with_capacity(capa);
     let result = String::alloc_value(result, &mut guard);
     match result {
         Ok(value) => value.inner(),
@@ -105,7 +104,7 @@ unsafe extern "C" fn mrb_str_index(
     if needle.is_empty() {
         return offset as sys::mrb_int;
     }
-    haystack.find(needle).map(|pos| pos as sys::mrb_int).unwrap_or(-1)
+    haystack.find(needle).map_or(-1, |pos| pos as sys::mrb_int)
 }
 
 // MRB_API mrb_int mrb_str_strlen(mrb_state *mrb, struct RString *s)
@@ -258,8 +257,8 @@ unsafe extern "C" fn mrb_str_dup(mrb: *mut sys::mrb_state, s: sys::mrb_value) ->
             let value = value.inner();
 
             // dup'd strings keep the class of the source `String`.
-            let basic = sys::mrb_sys_basic_ptr(value).cast::<sys::RString>();
-            (*basic).c = class;
+            let dup_basic = sys::mrb_sys_basic_ptr(value).cast::<sys::RString>();
+            (*dup_basic).c = class;
 
             value
         } else {
@@ -336,9 +335,8 @@ unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: sys::m
     let mut string = if let Ok(string) = String::unbox_from_value(&mut s, &mut guard) {
         if let Some(b'\0') = string.last() {
             return string.as_ptr().cast::<i8>();
-        } else {
-            string
         }
+        string
     } else {
         return ptr::null();
     };
@@ -348,11 +346,11 @@ unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: sys::m
     // The string is repacked before any intervening mruby heap allocations.
     let string_mut = string.as_inner_mut();
     string_mut.push_byte(b'\0');
-    let ptr = string.as_ptr().cast::<i8>();
+    let cstr = string.as_ptr().cast::<i8>();
     let inner = string.take();
     String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
 
-    ptr
+    cstr
 }
 
 // MRB_API const char* mrb_string_cstr(mrb_state *mrb, mrb_value str)
@@ -365,6 +363,8 @@ unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value
 //
 // This function converts a numeric string to numeric mrb_value with the given base.
 #[no_mangle]
+#[allow(clippy::cast_sign_loss)]
+#[allow(clippy::cast_possible_truncation)]
 unsafe extern "C" fn mrb_str_to_inum(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
@@ -410,7 +410,7 @@ unsafe extern "C" fn mrb_str_to_inum(
 
     loop {
         let m = x % base;
-        x = x / base;
+        x /= base;
 
         // will panic if you use a bad radix (< 2 or > 36).
         result.push(char::from_digit(m as u32, radix).unwrap());
@@ -418,8 +418,8 @@ unsafe extern "C" fn mrb_str_to_inum(
             break;
         }
     }
-    let inum = result.into_iter().rev().collect::<String>();
-    String::alloc_value(inum, &mut guard).unwrap_or_default().into()
+    let int = result.into_iter().rev().collect::<String>();
+    String::alloc_value(int, &mut guard).unwrap_or_default().into()
 }
 
 // MRB_API double mrb_cstr_to_dbl(mrb_state *mrb, const char *s, mrb_bool badcheck)
