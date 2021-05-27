@@ -11,6 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("String", STRING_CSTR, None, None)?;
     class::Builder::for_spec(interp, &spec)
+        .add_method("inspect", string_inspect, sys::mrb_args_none())?
         .add_method("ord", string_ord, sys::mrb_args_none())?
         .add_method("scan", string_scan, sys::mrb_args_req(1))?
         .add_method("to_s", string_to_s, sys::mrb_args_none())?
@@ -19,6 +20,16 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // interp.eval(&include_bytes!("string.rb")[..])?;
     trace!("Patched String onto interpreter");
     Ok(())
+}
+
+unsafe extern "C" fn string_inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::inspect(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
 }
 
 unsafe extern "C" fn string_ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {

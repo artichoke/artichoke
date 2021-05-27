@@ -7,6 +7,12 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::prelude::*;
 
+pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let inspect = s.inspect().collect::<super::String>();
+    super::String::alloc_value(inspect, interp)
+}
+
 pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
     let string = value.try_convert_into_mut::<&[u8]>(interp)?;
     // NOTE: This implementation assumes all `String`s have encoding =
