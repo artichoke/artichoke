@@ -273,57 +273,38 @@ impl FromIterator<u8> for String {
 impl<'a> FromIterator<&'a u8> for String {
     #[inline]
     fn from_iter<I: IntoIterator<Item = &'a u8>>(iter: I) -> Self {
-        let mut s = String::new();
-        s.extend(iter.into_iter());
-        s
+        let buf = iter.into_iter().copied().collect::<Vec<_>>();
+        String::utf8(buf)
     }
 }
 
 impl<'a> FromIterator<&'a mut u8> for String {
     #[inline]
     fn from_iter<I: IntoIterator<Item = &'a mut u8>>(iter: I) -> Self {
-        let mut s = String::new();
-        s.extend(iter.into_iter());
-        s
+        let buf = iter.into_iter().map(|&mut b| b).collect::<Vec<_>>();
+        String::utf8(buf)
     }
 }
 
 impl FromIterator<char> for String {
     #[inline]
     fn from_iter<I: IntoIterator<Item = char>>(iter: I) -> Self {
-        let mut s = String::new();
-        let mut buf = [0; 4];
-        for ch in iter {
-            let encoded = ch.encode_utf8(&mut buf);
-            s.buf.extend_from_slice(encoded.as_bytes());
-        }
-        s
+        let s = iter.into_iter().collect::<alloc::string::String>();
+        String::from(s)
     }
 }
 
 impl<'a> FromIterator<&'a char> for String {
     #[inline]
     fn from_iter<I: IntoIterator<Item = &'a char>>(iter: I) -> Self {
-        let mut s = String::new();
-        let mut buf = [0; 4];
-        for ch in iter {
-            let encoded = ch.encode_utf8(&mut buf);
-            s.buf.extend_from_slice(encoded.as_bytes());
-        }
-        s
+        iter.into_iter().copied().collect::<String>()
     }
 }
 
 impl<'a> FromIterator<&'a mut char> for String {
     #[inline]
     fn from_iter<I: IntoIterator<Item = &'a mut char>>(iter: I) -> Self {
-        let mut s = String::new();
-        let mut buf = [0; 4];
-        for ch in iter {
-            let encoded = ch.encode_utf8(&mut buf);
-            s.buf.extend_from_slice(encoded.as_bytes());
-        }
-        s
+        iter.into_iter().map(|&mut ch| ch).collect::<String>()
     }
 }
 

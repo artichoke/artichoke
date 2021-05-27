@@ -55,9 +55,11 @@ mod chars;
 mod encoding;
 mod eq;
 mod impls;
+mod inspect;
 
 pub use chars::Chars;
 pub use encoding::{Encoding, InvalidEncodingError};
+pub use inspect::Inspect;
 
 /// Immutable [`String`] byte slice iterator.
 ///
@@ -1770,6 +1772,20 @@ impl String {
         } else {
             self.buf.rfind(needle.as_ref())
         }
+    }
+
+    /// Returns an iterator that yields a debug representation of the `String`.
+    ///
+    /// This iterator produces [`char`] sequences like `"spinoso"` and
+    /// `"invalid-\xFF-utf8"`.
+    ///
+    /// This function can be used to implement the Ruby method
+    /// [`String#inspect`].
+    ///
+    /// [`String#inspect`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-inspect:
+    #[inline]
+    pub fn inspect(&self) -> Inspect<'_> {
+        Inspect::from(self.as_slice())
     }
 
     /// Returns the Integer ordinal of a one-character string.

@@ -296,9 +296,14 @@ impl Symbol {
     /// This iterator produces [`char`] sequences like `:spinoso` and
     /// `:"invalid-\xFF-utf8"`.
     ///
-    /// If there symbol does not exist in the underlying interner or there is an
+    /// This function can be used to implement the Ruby method
+    /// [`Symbol#inspect`].
+    ///
+    /// If the symbol does not exist in the underlying interner or there is an
     /// error looking up the symbol in the underlying interner, a default
     /// iterator is returned.
+    ///
+    /// [`Symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
     #[inline]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
