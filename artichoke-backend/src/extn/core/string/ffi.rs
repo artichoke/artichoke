@@ -329,9 +329,9 @@ unsafe extern "C" fn mrb_ptr_to_str(mrb: *mut sys::mrb_state, p: *mut c_void) ->
 //
 // obsolete: use RSTRING_CSTR() or mrb_string_cstr()
 #[no_mangle]
-unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: sys::mrb_value) -> *const i8 {
+unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: *mut sys::mrb_value) -> *const i8 {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
-    let mut s = Value::from(ptr);
+    let mut s = Value::from(*ptr);
     let mut string = if let Ok(string) = String::unbox_from_value(&mut s, &mut guard) {
         if let Some(b'\0') = string.last() {
             return string.as_ptr().cast::<i8>();
@@ -356,7 +356,23 @@ unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: sys::m
 // MRB_API const char* mrb_string_cstr(mrb_state *mrb, mrb_value str)
 #[no_mangle]
 unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value) -> *const i8 {
-    mrb_string_value_cstr(mrb, s)
+    unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
+    let mut s = Value::from(s);
+    let mut string = if let Ok(string) = String::unbox_from_value(&mut s, &mut guard) {
+        if let Some(b'\0') = string.last() {
+            return string.as_ptr().cast::<i8>();
+        }
+        string
+    } else {
+        return ptr::null();
+    };
+    string.push_byte(b'\0');
+    let cstr = string.as_ptr().cast::<i8>();
+
+    let inner = string.take();
+    String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
+
+    cstr
 }
 
 // MRB_API mrb_value mrb_str_to_inum(mrb_state *mrb, mrb_value str, mrb_int base, mrb_bool badcheck)
