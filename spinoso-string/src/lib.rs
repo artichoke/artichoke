@@ -1545,6 +1545,11 @@ impl String {
     /// `separator` is an empty string, it will remove all trailing newlines
     /// from the string.
     ///
+    /// A [`None`] separator does not mean that `chomp` is passed a `nil`
+    /// separator. For `str.chomp nil`, MRI returns `str.dup`. For
+    /// `str.chomp! nil`, MRI makes no changes to the receiver and returns
+    /// `nil`.
+    ///
     /// # Examples
     ///
     /// ```
@@ -1553,12 +1558,22 @@ impl String {
     /// let mut s = String::utf8(b"This is a paragraph.\r\n\n\n".to_vec());
     /// let modified = s.chomp(None::<&[u8]>);
     /// assert!(modified);
-    /// assert_eq!(s, "This is a paragraph.");
+    /// assert_eq!(s, "This is a paragraph.\r\n\n");
     ///
     /// let mut s = String::utf8(b"This is a paragraph.\r\n\n\n".to_vec());
     /// let modified = s.chomp(Some(""));
     /// assert!(modified);
-    /// assert_eq!(s, "This is a paragraph.\r");
+    /// assert_eq!(s, "This is a paragraph.");
+    ///
+    /// let mut s = String::utf8(b"hello\r\n\r\r\n".to_vec());
+    /// let modified = s.chomp(None::<&[u8]>);
+    /// assert!(modified);
+    /// assert_eq!(s, "hello\r\n\r");
+    ///
+    /// let mut s = String::utf8(b"hello\r\n\r\r\n".to_vec());
+    /// let modified = s.chomp(Some(""));
+    /// assert!(modified);
+    /// assert_eq!(s, "hello\r\n\r");
     ///
     /// let mut s = String::utf8(b"This is a paragraph.".to_vec());
     /// let modified = s.chomp(Some("."));
@@ -1580,10 +1595,16 @@ impl String {
         match separator.as_ref().map(AsRef::as_ref) {
             Some(separator) if separator.is_empty() => {
                 let original_len = self.len();
-                let substr = self.buf.trim_end_with(|ch| matches!(ch, '\n'));
-                let truncate_to_len = substr.len();
-                self.buf.truncate(truncate_to_len);
-                truncate_to_len != original_len
+                let mut iter = self.bytes().rev().peekable();
+                while let Some(&b'\n') = iter.peek() {
+                    iter.next();
+                    if let Some(&b'\r') = iter.peek() {
+                        iter.next();
+                    }
+                }
+                let truncate_to = iter.count();
+                self.buf.truncate(truncate_to);
+                truncate_to != original_len
             }
             Some(separator) if self.buf.ends_with(separator) => {
                 let original_len = self.len();
@@ -1598,8 +1619,20 @@ impl String {
             Some(_) => false,
             None => {
                 let original_len = self.len();
-                let substr = self.buf.trim_end_with(|ch| matches!(ch, '\r' | '\n'));
-                let truncate_to_len = substr.len();
+                let mut iter = self.bytes().rev().peekable();
+                match iter.peek() {
+                    Some(&b'\n') => {
+                        iter.next();
+                        if let Some(&b'\r') = iter.peek() {
+                            iter.next();
+                        }
+                    }
+                    Some(b'\r') => {
+                        iter.next();
+                    }
+                    Some(_) | None => {}
+                };
+                let truncate_to_len = iter.count();
                 self.buf.truncate(truncate_to_len);
                 truncate_to_len != original_len
             }
