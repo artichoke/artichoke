@@ -72,7 +72,7 @@ pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Val
 
 pub fn bytesize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let bytesize = s.len();
+    let bytesize = s.bytesize();
     interp.try_convert(bytesize)
 }
 
