@@ -674,6 +674,12 @@ impl String {
 
     #[inline]
     #[must_use]
+    pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
+        Self { buf, encoding }
+    }
+
+    #[inline]
+    #[must_use]
     pub fn utf8(buf: Vec<u8>) -> Self {
         let encoding = Encoding::Utf8;
         Self { buf, encoding }
