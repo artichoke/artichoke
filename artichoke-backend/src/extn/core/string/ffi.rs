@@ -305,8 +305,7 @@ unsafe extern "C" fn mrb_str_substr(
     };
 
     if let Some(slice) = string.get(offset..) {
-        let mut substr = String::with_capacity_and_encoding(slice.len(), string.encoding());
-        substr.extend_from_slice(slice);
+        let substr = String::with_bytes_and_encoding(slice.to_vec(), string.encoding());
         String::alloc_value(substr, &mut guard).unwrap_or_default().into()
     } else {
         Value::nil().into()
