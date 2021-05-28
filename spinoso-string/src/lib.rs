@@ -1938,7 +1938,7 @@ impl String {
     /// from the end of str (if given).
     ///
     /// If `separator` is [`None`] (i.e. `separator` has not been changed from
-    /// the default Ruby record separator, then `chomp` also removes carriage
+    /// the default Ruby record separator), then `chomp` also removes carriage
     /// return characters (that is it will remove `\n`, `\r`, and `\r\n`). If
     /// `separator` is an empty string, it will remove all trailing newlines
     /// from the string.
@@ -1947,6 +1947,8 @@ impl String {
     /// separator. For `str.chomp nil`, MRI returns `str.dup`. For
     /// `str.chomp! nil`, MRI makes no changes to the receiver and returns
     /// `nil`.
+    ///
+    /// This function returns `true` if self is modified, `false` otherwise.
     ///
     /// # Examples
     ///
