@@ -4,7 +4,7 @@ updates:
   - package-ecosystem: cargo
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
     allow:
       - dependency-type: "all"
     open-pull-requests-limit: 10
@@ -20,7 +20,7 @@ updates:
   - package-ecosystem: bundler
     directory: "/"
     schedule:
-      interval: weekly
+      interval: monthly
     allow:
       - dependency-type: "all"
     open-pull-requests-limit: 10
@@ -31,7 +31,7 @@ updates:
   - package-ecosystem: cargo
     directory: "/fuzz"
     schedule:
-      interval: weekly
+      interval: monthly
     allow:
       - dependency-type: "all"
     open-pull-requests-limit: 10
@@ -42,7 +42,7 @@ updates:
   - package-ecosystem: cargo
     directory: "/spec-runner"
     schedule:
-      interval: weekly
+      interval: monthly
     allow:
       - dependency-type: "all"
     open-pull-requests-limit: 10
