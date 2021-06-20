@@ -1858,7 +1858,7 @@ fn conventionally_utf8_bytestring_len<T: AsRef<[u8]>>(bytes: T) -> usize {
 }
 
 #[cfg(test)]
-#[allow(clippy::clippy::shadow_unrelated)]
+#[allow(clippy::shadow_unrelated)]
 #[allow(clippy::invisible_characters)]
 mod tests {
     use alloc::string::ToString;
@@ -2033,28 +2033,28 @@ mod tests {
     }
 
     quickcheck! {
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_utf8_contents_utf8_string(contents: alloc::string::String) -> bool {
             let expected = contents.chars().count();
             let s = String::utf8(contents.into_bytes());
             s.char_len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_utf8_contents_utf8_string(contents: alloc::string::String) -> bool {
             let expected = contents.len();
             let s = String::utf8(contents.into_bytes());
             s.len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_bytesize_utf8_contents_utf8_string(contents: alloc::string::String) -> bool {
             let expected = contents.len();
             let s = String::utf8(contents.into_bytes());
             s.bytesize() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_binary_contents_utf8_string(contents: Vec<u8>) -> bool {
             if let Ok(utf8_contents) = str::from_utf8(&contents) {
                 let expected = utf8_contents.chars().count();
@@ -2067,98 +2067,98 @@ mod tests {
             }
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_binary_contents_utf8_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = String::utf8(contents);
             s.len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_bytesize_binary_contents_utf8_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = String::utf8(contents);
             s.bytesize() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_utf8_contents_ascii_string(contents: alloc::string::String) -> bool {
             let expected = contents.len();
             let s = String::ascii(contents.into_bytes());
             s.char_len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_utf8_contents_ascii_string(contents: alloc::string::String) -> bool {
             let expected = contents.len();
             let s = String::ascii(contents.into_bytes());
             s.len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_bytesize_utf8_contents_ascii_string(contents: alloc::string::String) -> bool {
             let expected = contents.len();
             let s = String::ascii(contents.into_bytes());
             s.bytesize() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_binary_contents_ascii_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = String::ascii(contents);
             s.char_len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_binary_contents_ascii_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = String::ascii(contents);
             s.len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_bytesize_binary_contents_ascii_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = String::ascii(contents);
             s.bytesize() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_utf8_contents_binary_string(contents: alloc::string::String) -> bool {
             let expected = contents.len();
             let s = String::binary(contents.into_bytes());
             s.char_len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_utf8_contents_binary_string(contents: alloc::string::String) -> bool {
             let expected = contents.len();
             let s = String::binary(contents.into_bytes());
             s.len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_bytesize_utf8_contents_binary_string(contents: alloc::string::String) -> bool {
             let expected = contents.len();
             let s = String::binary(contents.into_bytes());
             s.bytesize() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_binary_contents_binary_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = String::binary(contents);
             s.char_len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_binary_contents_binary_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = String::binary(contents);
             s.len() == expected
         }
 
-        #[allow(clippy::clippy::needless_pass_by_value)]
+        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_bytesize_binary_contents_binary_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = String::binary(contents);
