@@ -111,10 +111,8 @@ pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, ConvertBytesError> {
                 *byte = b'/';
             }
         }
-        Ok(path)
-    } else {
-        Ok(path)
     }
+    Ok(path)
 }
 
 #[cfg(test)]
