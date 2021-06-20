@@ -306,7 +306,7 @@ impl<'a> Iterator for State<'a> {
         }
         let (ch, size) = bstr::decode_utf8(self.bytes);
         match ch {
-            Some('"') | Some('\\') if self.flags.is_ident() => {
+            Some('"' | '\\') if self.flags.is_ident() => {
                 self.bytes = &self.bytes[size..];
                 return ch;
             }
@@ -358,7 +358,7 @@ impl<'a> DoubleEndedIterator for State<'a> {
         }
         let (ch, size) = bstr::decode_last_utf8(self.bytes);
         match ch {
-            Some('"') | Some('\\') if self.flags.is_ident() => {
+            Some('"' | '\\') if self.flags.is_ident() => {
                 self.bytes = &self.bytes[..self.bytes.len() - size];
                 return ch;
             }

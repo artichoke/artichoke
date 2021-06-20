@@ -259,19 +259,19 @@ impl<'a> ParseState<'a> {
             }
         };
         let radix = match digits.as_bytes() {
-            [b'0', b'b', ..] | [b'0', b'B', ..] => {
+            [b'0', b'b' | b'B', ..] => {
                 digits.drain(..2);
                 Radix::new(2)
             }
-            [b'0', b'o', ..] | [b'0', b'O', ..] => {
+            [b'0', b'o' | b'O', ..] => {
                 digits.drain(..2);
                 Radix::new(8)
             }
-            [b'0', b'd', ..] | [b'0', b'D', ..] => {
+            [b'0', b'd' | b'D', ..] => {
                 digits.drain(..2);
                 Radix::new(10)
             }
-            [b'0', b'x', ..] | [b'0', b'X', ..] => {
+            [b'0', b'x' | b'X', ..] => {
                 digits.drain(..2);
                 Radix::new(16)
             }
@@ -315,7 +315,7 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
             }
         }
         if current.is_whitespace() {
-            if let Some('+') | Some('-') = prev {
+            if let Some('+' | '-') = prev {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
