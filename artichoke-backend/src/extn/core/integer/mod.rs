@@ -131,6 +131,7 @@ impl Integer {
             //         1: from (irb):9:in `chr'
             // RangeError (256 out of char range)
             // ```
+            #[allow(clippy::unnested_or_patterns)]
             match u8::try_from(self.as_i64()) {
                 // ASCII encoding | Binary/ASCII-8BIT encoding
                 // Without `Encoding` support, these two arms are the same

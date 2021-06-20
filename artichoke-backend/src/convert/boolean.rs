@@ -106,9 +106,6 @@ mod tests {
                 if !unsafe { sys::mrb_sys_value_is_true(value) } {
                     return false;
                 }
-                if unsafe { sys::mrb_sys_value_is_nil(value) } {
-                    return false;
-                }
             } else {
                 if !unsafe { sys::mrb_sys_value_is_false(value) } {
                     return false;
@@ -116,9 +113,9 @@ mod tests {
                 if unsafe { sys::mrb_sys_value_is_true(value) } {
                     return false;
                 }
-                if unsafe { sys::mrb_sys_value_is_nil(value) } {
-                    return false;
-                }
+            }
+            if unsafe { sys::mrb_sys_value_is_nil(value) } {
+                return false;
             }
             true
         }

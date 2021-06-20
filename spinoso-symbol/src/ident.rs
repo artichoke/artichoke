@@ -375,7 +375,7 @@ fn parse(name: &[u8]) -> Option<IdentifierType> {
         [b'@', name @ ..] => parse_ident(name, IdentifierType::Instance),
         // Symbolic method names
         name if is_symbolic_method_name(name) => Some(IdentifierType::Junk),
-        [b'=', ..] | [b'!', ..] | [b'[', ..] => None,
+        [b'=' | b'!' | b'[', ..] => None,
         [first, ..] if *first != b'_' && first.is_ascii() && !first.is_ascii_alphabetic() => None,
         // Constant name
         name if is_const_name(name) => parse_ident(name, IdentifierType::Constant),
@@ -397,7 +397,7 @@ fn parse_ident(name: &[u8], id_type: IdentifierType) -> Option<IdentifierType> {
         }
         [first, ..] if *first != b'_' && first.is_ascii() && !first.is_ascii_alphabetic() => None,
         name if is_ident_until(name).is_none() => Some(id_type),
-        [name @ .., b'!'] | [name @ .., b'?'] if is_ident_until(name).is_none() => {
+        [name @ .., b'!' | b'?'] if is_ident_until(name).is_none() => {
             if matches!(
                 id_type,
                 IdentifierType::Global | IdentifierType::Class | IdentifierType::Instance
