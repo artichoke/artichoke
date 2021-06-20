@@ -126,7 +126,7 @@ impl Time {
     #[must_use]
     #[allow(clippy::cast_lossless)]
     #[allow(clippy::cast_precision_loss)]
-    pub fn to_float(&self) -> f64 {
+    pub fn to_float(self) -> f64 {
         // For most practical uses of time, this lossy cast does not lose any
         // precision. The 52-bit mantissa in an `f64` allows storing over 142
         // million years of timestamps.
