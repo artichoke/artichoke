@@ -342,7 +342,7 @@ mod tests {
         assert_eq!(time.nanosecond(), 0);
         assert_eq!(time.weekday(), 0);
         assert_eq!(time.year_day(), 97);
-        assert_eq!(time.is_dst(), false);
+        assert!(!time.is_dst());
         assert_eq!(time.timezone(), Some("UTC"));
     }
 
@@ -361,7 +361,7 @@ mod tests {
         assert_eq!(time.year_day(), 96);
         // TODO: Implement DST and timezone detection. This requires a new release of
         // `chrono-tz`.
-        // assert_eq!(time.is_dst(), true);
+        // assert!(time.is_dst());
         // assert_eq!(time.timezone(), Some("PDT"));
     }
 
@@ -381,7 +381,7 @@ mod tests {
         assert_eq!(time.year_day(), 96);
         // TODO: Implement DST and timezone detection. This requires a new release of
         // `chrono-tz`.
-        // assert_eq!(time.is_dst(), true);
+        // assert!(time.is_dst());
         assert_eq!(time.timezone(), None);
     }
 
