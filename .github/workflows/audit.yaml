@@ -21,7 +21,7 @@ jobs:
       - name: Setup cargo-deny
         run: |
           release_base="https://github.com/EmbarkStudios/cargo-deny/releases/download"
-          version="0.8.9"
+          version="0.9.1"
           cargo_deny_tarball="$release_base/$version/cargo-deny-$version-x86_64-unknown-linux-musl.tar.gz"
           echo "Downloading cargo-deny $version from $cargo_deny_tarball."
           curl -sL "$cargo_deny_tarball" | sudo tar xvz -C /usr/local/bin/ --strip-components=1
