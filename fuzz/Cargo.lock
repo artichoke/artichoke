@@ -455,7 +455,7 @@ checksum = "42a568c8f2cd051a4d283bd6eb0343ac214c1b0f1ac19f93e1175b2dee38c73d"
 
 [[package]]
 name = "spinoso-array"
-version = "0.5.1"
+version = "0.5.2"
 
 [[package]]
 name = "spinoso-env"

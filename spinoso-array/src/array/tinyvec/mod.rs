@@ -868,10 +868,14 @@ where
         if self.0.is_empty() || len == 0 {
             return &[];
         }
-        self.0
-            .get(start..start + len)
-            .or_else(|| self.0.get(start..))
-            .unwrap_or_default()
+        if let Some(end) = start.checked_add(len) {
+            self.0
+                .get(start..end)
+                .or_else(|| self.0.get(start..))
+                .unwrap_or_default()
+        } else {
+            self.0.get(start..).unwrap_or_default()
+        }
     }
 }
 
@@ -1001,6 +1005,10 @@ where
     /// assert_eq!(ary, &[1, 11, 4]);
     /// ary.set(5, 263);
     /// assert_eq!(ary, &[1, 11, 4, 0, 0, 263]);
+    ///
+    /// let mut ary: TinyArray<i32> = TinyArray::from(&[]);
+    /// ary.set(5, 11);
+    /// assert_eq!(ary, &[0, 0, 0, 0, 0, 11]);
     /// ```
     #[inline]
     pub fn set(&mut self, index: usize, elem: T) {
@@ -1010,10 +1018,9 @@ where
             let buflen = self.len();
             // index is *at least* buflen, so this calculation never underflows
             // and ensures we allocate an additional slot.
-            self.0.reserve(index + 1 - buflen);
-            for _ in buflen..index {
-                self.0.push(T::default());
-            }
+            let additional = (index - buflen).checked_add(1).expect("capacity overflow");
+            self.0.reserve(additional);
+            self.0.resize_with(index, T::default);
             self.0.push(elem);
         }
     }
@@ -1053,17 +1060,16 @@ where
                 1 => *cell = elem,
                 _ => {
                     *cell = elem;
-                    let drain_end_idx = cmp::min(start + drain, buflen);
-                    self.0.drain(start + 1..drain_end_idx);
+                    let drain_end_idx = cmp::min(start.saturating_add(drain), buflen);
+                    self.0.drain(start.saturating_add(1)..drain_end_idx);
                 }
             }
         } else {
             // start is *at least* buflen, so this calculation never underflows
             // and ensures we allocate an additional slot.
-            self.0.reserve(start + 1 - buflen);
-            for _ in buflen..start {
-                self.0.push(T::default());
-            }
+            let additional = (start - buflen).checked_add(1).expect("capacity overflow");
+            self.0.reserve(additional);
+            self.0.resize_with(start, T::default);
             self.0.push(elem);
         }
 
@@ -1093,11 +1099,12 @@ where
     /// ```
     #[inline]
     pub fn insert_slice(&mut self, index: usize, values: &[T]) {
-        let additional = index.checked_sub(self.0.len()).unwrap_or_default() + values.len();
-        self.0.reserve(additional);
-
-        for _ in self.0.len()..index {
-            self.0.push(T::default());
+        if let Some(overflow) = index.checked_sub(self.0.len()) {
+            let additional = overflow.checked_add(values.len()).expect("capacity overflow");
+            self.0.reserve(additional);
+            self.0.resize(index, T::default());
+        } else {
+            self.0.reserve(values.len());
         }
         if index == self.0.len() {
             self.0.extend_from_slice(values);
@@ -1141,16 +1148,16 @@ where
         let buflen = self.0.len();
         let drained = cmp::min(buflen.checked_sub(index).unwrap_or_default(), drain);
 
-        let additional = index.checked_sub(self.0.len()).unwrap_or_default() + values.len();
-        self.0.reserve(additional);
-
-        for _ in self.0.len()..index {
-            self.0.push(T::default());
+        if let Some(overflow) = index.checked_sub(self.0.len()) {
+            let additional = overflow.checked_add(values.len()).expect("capacity overflow");
+            self.0.reserve(additional);
+            self.0.resize(index, T::default());
         }
         if index == self.0.len() {
             self.0.extend_from_slice(values);
         } else {
-            self.0.splice(index..index + drained, values.iter().cloned());
+            self.0
+                .splice(index..index.saturating_add(drained), values.iter().cloned());
         }
 
         drained
