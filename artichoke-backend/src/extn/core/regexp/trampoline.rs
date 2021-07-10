@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_nilable_string, implicitly_convert_to_string};
-use crate::extn::core::regexp::Regexp;
+use crate::extn::core::regexp::{Options, Regexp};
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
@@ -10,8 +10,16 @@ pub fn initialize(
     pattern: Value,
     options: Option<Value>,
     encoding: Option<Value>,
-    into: Value,
+    mut into: Value,
 ) -> Result<Value, Error> {
+    if let Ok(existing) = unsafe { Regexp::unbox_from_value(&mut into, interp) } {
+        let options = Options::from(existing.options());
+        if options.is_literal() {
+            // NOTE: In Ruby 3.0.0+, this branch should return a `FrozenError`.
+            return Err(SecurityError::with_message("can't modify literal regexp").into());
+        }
+        return Err(TypeError::with_message("already initialized regexp").into());
+    }
     let (options, encoding) = interp.try_convert_mut((options, encoding))?;
     let regexp = Regexp::initialize(interp, pattern, options, encoding)?;
     Regexp::box_into_value(regexp, into, interp)
