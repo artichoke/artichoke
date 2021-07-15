@@ -11,6 +11,14 @@ class Integer
     self
   end
 
+  def dup
+    self
+  end
+
+  def to_int
+    self
+  end
+
   alias round floor
   alias truncate floor
 end
