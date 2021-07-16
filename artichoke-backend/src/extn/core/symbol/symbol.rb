@@ -100,7 +100,7 @@ class Symbol
 
     to_s.upcase(options).intern
   end
-  
+
   def dup
     self
   end
