@@ -4,12 +4,14 @@ use crate::extn::prelude::*;
 
 pub mod array;
 pub mod artichoke;
+pub mod basicobject;
 pub mod comparable;
 pub mod enumerable;
 pub mod enumerator;
 #[cfg(feature = "core-env")]
 pub mod env;
 pub mod exception;
+pub mod falseclass;
 pub mod float;
 pub mod hash;
 pub mod integer;
@@ -20,6 +22,7 @@ pub mod matchdata;
 pub mod math;
 pub mod method;
 pub mod module;
+pub mod nilclass;
 pub mod numeric;
 pub mod object;
 pub mod proc;
@@ -33,12 +36,12 @@ pub mod symbol;
 pub mod thread;
 #[cfg(feature = "core-time")]
 pub mod time;
+pub mod trueclass;
 pub mod warning;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // These core classes are ordered according to the dependency DAG between
     // them.
-    let _ = interp.eval(&include_bytes!("object.rb")[..])?;
     enumerable::init(interp)?;
     // `Array` depends on: `Enumerable`
     array::mruby::init(interp)?;
@@ -64,6 +67,10 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     module::init(interp)?;
     object::init(interp)?;
     proc::init(interp)?;
+    trueclass::init(interp)?;
+    falseclass::init(interp)?;
+    nilclass::init(interp)?;
+    basicobject::init(interp)?;
     #[cfg(feature = "core-random")]
     random::mruby::init(interp)?;
     range::init(interp)?;

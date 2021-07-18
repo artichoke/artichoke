@@ -101,6 +101,10 @@ class Symbol
     to_s.upcase(options).intern
   end
 
+  def dup
+    self
+  end
+
   alias id2name to_s
   alias intern to_sym
   alias next succ
