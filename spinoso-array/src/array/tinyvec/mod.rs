@@ -1102,7 +1102,7 @@ where
         if let Some(overflow) = index.checked_sub(self.0.len()) {
             let additional = overflow.checked_add(values.len()).expect("capacity overflow");
             self.0.reserve(additional);
-            self.0.resize(index, T::default());
+            self.0.resize_with(index, T::default);
         } else {
             self.0.reserve(values.len());
         }
@@ -1151,7 +1151,7 @@ where
         if let Some(overflow) = index.checked_sub(self.0.len()) {
             let additional = overflow.checked_add(values.len()).expect("capacity overflow");
             self.0.reserve(additional);
-            self.0.resize(index, T::default());
+            self.0.resize_with(index, T::default);
         }
         if index == self.0.len() {
             self.0.extend_from_slice(values);
