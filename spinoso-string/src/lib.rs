@@ -274,6 +274,71 @@ impl<'a> Bytes<'a> {
     }
 }
 
+/// Error returned when failing to construct a [`Center`] iterator.
+///
+/// This error is returned from [`String::center`]. See its documentation for
+/// more detail.
+///
+/// This error corresponds to the [Ruby `ArgumentError` Exception class].
+///
+/// When the **std** feature of `spinoso-string` is enabled, this struct
+/// implements [`std::error::Error`].
+///
+/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
+/// [`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum CenterError {
+    /// Error returned when calling [`String::center`] with an empty padding
+    /// bytestring.
+    ZeroWidthPadding,
+}
+
+impl CenterError {
+    pub const EXCEPTION_TYPE: &'static str = "ArgumentError";
+
+    /// Create a new zero width padding `CenterError`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::CenterError;
+    ///
+    /// const ERR: CenterError = CenterError::zero_width_padding();
+    /// assert_eq!(ERR.message(), "zero width padding");
+    /// ```
+    #[inline]
+    #[must_use]
+    pub const fn zero_width_padding() -> Self {
+        Self::ZeroWidthPadding
+    }
+
+    /// Retrieve the exception message associated with this center error.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_string::CenterError;
+    /// let err = CenterError::zero_width_padding();
+    /// assert_eq!(err.message(), "zero width padding");
+    /// ```
+    #[inline]
+    #[must_use]
+    #[allow(clippy::unused_self)]
+    pub const fn message(self) -> &'static str {
+        "zero width padding"
+    }
+}
+
+impl fmt::Display for CenterError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let CenterError::ZeroWidthPadding = self;
+        f.write_str(self.message())
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for CenterError {}
+
 /// An iterator that yields a byte string centered within a padding byte string.
 ///
 /// This struct is created by the [`center`] method on a Spinoso [`String`]. See
@@ -283,12 +348,15 @@ impl<'a> Bytes<'a> {
 ///
 /// ```
 /// use spinoso_string::String;
-///
+/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let s = String::from("hello");
 ///
-/// assert_eq!(s.center(4, None).collect::<Vec<_>>(), b"hello");
-/// assert_eq!(s.center(20, None).collect::<Vec<_>>(), b"       hello        ");
-/// assert_eq!(s.center(20, Some(&b"123"[..])).collect::<Vec<_>>(), b"1231231hello12312312");
+/// assert_eq!(s.center(4, None)?.collect::<Vec<_>>(), b"hello");
+/// assert_eq!(s.center(20, None)?.collect::<Vec<_>>(), b"       hello        ");
+/// assert_eq!(s.center(20, Some(&b"123"[..]))?.collect::<Vec<_>>(), b"1231231hello12312312");
+/// # Ok(())
+/// # }
+/// # example().unwrap();
 /// ```
 ///
 /// This iterator is [encoding-aware]. [Conventionally UTF-8] strings are
@@ -296,10 +364,13 @@ impl<'a> Bytes<'a> {
 ///
 /// ```
 /// use spinoso_string::String;
-///
+/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// let s = String::from("💎");
 ///
-/// assert_eq!(s.center(3, None).collect::<Vec<_>>(), " 💎 ".as_bytes());
+/// assert_eq!(s.center(3, None)?.collect::<Vec<_>>(), " 💎 ".as_bytes());
+/// # Ok(())
+/// # }
+/// # example().unwrap();
 /// ```
 ///
 /// [`center`]: crate::String::center
@@ -1407,16 +1478,25 @@ impl String {
     /// If the given padding is [`None`], the `String` is padded with an ASCII
     /// space.
     ///
+    /// # Errors
+    ///
+    /// If given an empty padding bytestring, this function returns an error.
+    /// This error is returned regardless of whether the `String` would be
+    /// centered with the given
+    ///
     /// # Examples
     ///
     /// ```
     /// use spinoso_string::String;
-    ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let s = String::from("hello");
     ///
-    /// assert_eq!(s.center(4, None).collect::<Vec<_>>(), b"hello");
-    /// assert_eq!(s.center(20, None).collect::<Vec<_>>(), b"       hello        ");
-    /// assert_eq!(s.center(20, Some(&b"123"[..])).collect::<Vec<_>>(), b"1231231hello12312312");
+    /// assert_eq!(s.center(4, None)?.collect::<Vec<_>>(), b"hello");
+    /// assert_eq!(s.center(20, None)?.collect::<Vec<_>>(), b"       hello        ");
+    /// assert_eq!(s.center(20, Some(&b"123"[..]))?.collect::<Vec<_>>(), b"1231231hello12312312");
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// This iterator is [encoding-aware]. [Conventionally UTF-8] strings are
@@ -1424,20 +1504,31 @@ impl String {
     ///
     /// ```
     /// use spinoso_string::String;
-    ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let s = String::from("💎");
     ///
-    /// assert_eq!(s.center(3, None).collect::<Vec<_>>(), " 💎 ".as_bytes());
+    /// assert_eq!(s.center(3, None)?.collect::<Vec<_>>(), " 💎 ".as_bytes());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// [`center`]: crate::String::center
     /// [encoding-aware]: crate::Encoding
     /// [Conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
-    #[must_use]
-    pub fn center<'a, 'b>(&'a self, width: usize, padding: Option<&'b [u8]>) -> Center<'a, 'b> {
+    pub fn center<'a, 'b>(&'a self, width: usize, padding: Option<&'b [u8]>) -> Result<Center<'a, 'b>, CenterError> {
+        let padding = match padding {
+            None => b" ",
+            Some(p) if p.is_empty() => return Err(CenterError::ZeroWidthPadding),
+            Some(p) => p,
+        };
         let padding_width = width.saturating_sub(self.char_len());
-        Center::with_chars_width_and_padding(self.chars(), padding_width, padding.unwrap_or(b" "))
+        Ok(Center::with_chars_width_and_padding(
+            self.chars(),
+            padding_width,
+            padding,
+        ))
     }
 
     /// Modifies this `String` in-place with the given record separator removed
@@ -1866,7 +1957,7 @@ mod tests {
     use core::str;
     use quickcheck::quickcheck;
 
-    use crate::{conventionally_utf8_bytestring_len, String};
+    use crate::{conventionally_utf8_bytestring_len, CenterError, String};
 
     const REPLACEMENT_CHARACTER_BYTES: [u8; 3] = [239, 191, 189];
 
@@ -2383,5 +2474,21 @@ mod tests {
         let mut s = String::binary("�".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "�");
+    }
+
+    #[test]
+    fn center_returns_error_with_empty_padding() {
+        let s = String::utf8(b"jumbo".to_vec());
+        let center = s.center(10, Some(b""));
+        assert!(matches!(center, Err(CenterError::ZeroWidthPadding)));
+
+        let center = s.center(9, Some(b""));
+        assert!(matches!(center, Err(CenterError::ZeroWidthPadding)));
+
+        let center = s.center(1, Some(b""));
+        assert!(matches!(center, Err(CenterError::ZeroWidthPadding)));
+
+        let center = s.center(5, Some(b""));
+        assert!(matches!(center, Err(CenterError::ZeroWidthPadding)));
     }
 }
