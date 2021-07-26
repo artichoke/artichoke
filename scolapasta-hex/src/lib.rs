@@ -76,10 +76,10 @@
 
 #![no_std]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
 // Having access to `String` in tests is convenient to collect `Inspect`
 // iterators for whole content comparisons.
-#[cfg(any(feature = "alloc"))]
-extern crate alloc;
 #[cfg(any(feature = "std", test, doctest))]
 extern crate std;
 
