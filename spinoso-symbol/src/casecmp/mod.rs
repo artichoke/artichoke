@@ -1,5 +1,7 @@
 //! Case folding comparisons for byte content resolved from `Symbol`s.
 
+#![allow(clippy::module_name_repetitions)]
+
 mod ascii;
 mod unicode;
 
