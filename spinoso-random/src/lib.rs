@@ -93,6 +93,11 @@
 
 #![no_std]
 
+// Ensure code blocks in README.md compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 #[cfg(any(feature = "std", test, doctest))]
 extern crate std;
 
@@ -110,20 +115,6 @@ pub use self::rand::{rand, Max, Rand};
 pub use random::ruby::Mt;
 pub use random::{new_seed, seed_to_key, Random};
 pub use urandom::urandom;
-
-// Ensure code blocks in README.md compile
-#[cfg(doctest)]
-macro_rules! readme {
-    ($x:expr) => {
-        #[doc = $x]
-        mod readme {}
-    };
-    () => {
-        readme!(include_str!("../README.md"));
-    };
-}
-#[cfg(all(feature = "rand", doctest))]
-readme!();
 
 /// Sum type of all errors possibly returned from `Random` functions.
 ///

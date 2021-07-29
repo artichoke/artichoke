@@ -1,3 +1,8 @@
+// Ensure code blocks in README.md compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 #[macro_use]
 extern crate bitflags;
 
