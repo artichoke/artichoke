@@ -243,21 +243,21 @@ impl IntoIterator for String {
 impl Extend<u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
-        self.buf.extend(iter.into_iter())
+        self.buf.extend(iter.into_iter());
     }
 }
 
 impl<'a> Extend<&'a u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a u8>>(&mut self, iter: I) {
-        self.buf.extend(iter.into_iter().copied())
+        self.buf.extend(iter.into_iter().copied());
     }
 }
 
 impl<'a> Extend<&'a mut u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a mut u8>>(&mut self, iter: I) {
-        self.buf.extend(iter.into_iter().map(|byte| *byte))
+        self.buf.extend(iter.into_iter().map(|byte| *byte));
     }
 }
 

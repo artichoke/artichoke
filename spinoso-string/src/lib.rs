@@ -934,7 +934,7 @@ impl String {
     /// ```
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        self.buf.reserve(additional)
+        self.buf.reserve(additional);
     }
 
     /// Reserves the minimum capacity for exactly `additional` more bytes to be
@@ -961,7 +961,7 @@ impl String {
     /// ```
     #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
-        self.buf.reserve_exact(additional)
+        self.buf.reserve_exact(additional);
     }
 
     /// Shrinks the capacity of the vector as much as possible.
@@ -982,7 +982,7 @@ impl String {
     /// ```
     #[inline]
     pub fn shrink_to_fit(&mut self) {
-        self.buf.shrink_to_fit()
+        self.buf.shrink_to_fit();
     }
 }
 
@@ -1302,7 +1302,7 @@ impl String {
     /// [ruby-string]: https://ruby-doc.org/core-2.6.3/String.html
     #[inline]
     pub fn concat<T: AsRef<[u8]>>(&mut self, other: T) {
-        self.buf.extend_from_slice(other.as_ref())
+        self.buf.extend_from_slice(other.as_ref());
     }
 
     /// Returns true for a string which has only ASCII characters.
@@ -1401,7 +1401,7 @@ impl String {
                         // Converting a UTF-8 character to uppercase may yield
                         // multiple codepoints.
                         for ch in ch.to_uppercase() {
-                            replacement.push_char(ch)
+                            replacement.push_char(ch);
                         }
                         bytes = &bytes[size..];
                     }
