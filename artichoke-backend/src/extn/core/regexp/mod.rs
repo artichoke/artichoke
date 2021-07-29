@@ -4,6 +4,8 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
+#![allow(clippy::module_name_repetitions)]
+
 use std::collections::hash_map::DefaultHasher;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
