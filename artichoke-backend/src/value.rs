@@ -555,7 +555,7 @@ mod tests {
             let delim = interp.convert_mut("");
             let split = s.funcall(&mut interp, "split", &[delim], None).unwrap();
             let split = split.try_into_mut::<Vec<&str>>(&mut interp).unwrap();
-            assert_eq!(split, vec!["f", "o", "o"])
+            assert_eq!(split, vec!["f", "o", "o"]);
         }
     }
 

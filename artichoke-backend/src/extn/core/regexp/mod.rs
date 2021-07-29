@@ -43,7 +43,7 @@ pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Error> {
     let mut idx = interp.active_regexp_globals()?;
     while let Some(group) = NonZeroUsize::new(idx) {
         interp.unset_global_variable(nth_match_group(group))?;
-        idx -= 1
+        idx -= 1;
     }
     interp.clear_regexp()?;
     Ok(())

@@ -76,7 +76,7 @@ where
         for value in args {
             let display = value.inspect(interp);
             interp.puts(display)?;
-            result.push(value)
+            result.push(value);
         }
         interp.try_convert_mut(result)
     } else {

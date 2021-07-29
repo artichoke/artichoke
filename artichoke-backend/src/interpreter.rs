@@ -44,7 +44,7 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
 
     if let Some(ref mut state) = interp.state {
         if let Some(mrb) = unsafe { raw.as_mut() } {
-            state.try_init_parser(mrb)
+            state.try_init_parser(mrb);
         }
     }
 

@@ -92,7 +92,7 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
             let mut pairs = Vec::with_capacity(array.len());
             for key in &*array {
                 let value = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_get(mrb, hash, key.inner()))? };
-                pairs.push((key, self.protect(Value::from(value))))
+                pairs.push((key, self.protect(Value::from(value))));
             }
             Ok(pairs)
         } else {
