@@ -82,7 +82,6 @@ pub mod argspec {
 macro_rules! mrb_get_args {
     ($mrb:expr, none) => {{
         $crate::sys::mrb_get_args($mrb, $crate::macros::argspec::NONE.as_ptr() as *const i8);
-        ()
     }};
     ($mrb:expr, required = 1) => {{
         let mut req1 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();

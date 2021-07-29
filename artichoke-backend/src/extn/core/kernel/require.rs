@@ -26,7 +26,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
     if let Some(mut context) = interp.resolve_source_path(&path)? {
         for byte in &mut context {
             if *byte == b'\\' {
-                *byte = b'/'
+                *byte = b'/';
             }
         }
         let context =
@@ -59,7 +59,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Erro
     if let Some(mut context) = interp.resolve_source_path(&path)? {
         for byte in &mut context {
             if *byte == b'\\' {
-                *byte = b'/'
+                *byte = b'/';
             }
         }
         let context =
@@ -93,7 +93,7 @@ pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: Relat
     if let Some(mut context) = interp.resolve_source_path(&path)? {
         for byte in &mut context {
             if *byte == b'\\' {
-                *byte = b'/'
+                *byte = b'/';
             }
         }
         let context =

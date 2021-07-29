@@ -426,7 +426,7 @@ impl Array {
     }
 
     pub fn push(&mut self, elem: Value) {
-        self.0.push(elem.inner())
+        self.0.push(elem.inner());
     }
 
     pub fn reverse(&mut self) {

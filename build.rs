@@ -137,5 +137,5 @@ fn main() {
     let target = env::var_os("TARGET").expect("TARGET not set in build.rs");
     let target = target.to_str().expect("TARGET was not a valid UTF-8 String");
     let target = Triple::from_str(target).unwrap_or_else(|_| panic!("Invalid TARGET triple: {}", target));
-    build_release_metadata(&target)
+    build_release_metadata(&target);
 }

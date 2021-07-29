@@ -78,22 +78,13 @@
 
 #![no_std]
 
-#[cfg(any(feature = "std", test, doctest))]
-extern crate std;
-
 // Ensure code blocks in README.md compile
 #[cfg(doctest)]
-macro_rules! readme {
-    ($x:expr) => {
-        #[doc = $x]
-        mod readme {}
-    };
-    () => {
-        readme!(include_str!("../README.md"));
-    };
-}
-#[cfg(all(feature = "inspect", doctest))]
-readme!();
+#[doc = include_str!("../README.md")]
+mod readme {}
+
+#[cfg(any(feature = "std", test, doctest))]
+extern crate std;
 
 #[cfg(feature = "artichoke")]
 use artichoke_core::intern::Intern;

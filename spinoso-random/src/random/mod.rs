@@ -262,7 +262,7 @@ impl Random {
     /// ```
     #[inline]
     pub fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.mt.fill_bytes(dest)
+        self.mt.fill_bytes(dest);
     }
 
     /// Returns the seed value used to initialize the generator.

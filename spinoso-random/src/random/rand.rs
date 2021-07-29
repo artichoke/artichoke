@@ -88,7 +88,7 @@ impl RngCore for Random {
     /// ```
     #[inline]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.mt.fill_bytes(dest)
+        self.mt.fill_bytes(dest);
     }
 
     /// Fill a buffer with bytes generated from the RNG.

@@ -88,6 +88,11 @@
 
 #![no_std]
 
+// Ensure code blocks in README.md compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 // Having access to `String` in tests is convenient to collect `Inspect`
 // iterators for whole content comparisons.
 #[cfg(any(test, doctest))]
@@ -95,20 +100,6 @@ extern crate alloc;
 
 #[cfg(feature = "std")]
 extern crate std;
-
-// Ensure code blocks in README.md compile
-#[cfg(doctest)]
-macro_rules! readme {
-    ($x:expr) => {
-        #[doc = $x]
-        mod readme {}
-    };
-    () => {
-        readme!(include_str!("../README.md"));
-    };
-}
-#[cfg(doctest)]
-readme!();
 
 mod literal;
 mod string;

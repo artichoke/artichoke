@@ -82,7 +82,7 @@ pub fn parse<T: AsRef<[u8]>>(pattern: T, options: Options) -> Pattern {
     let mut options = options;
     let mut enable_literal_option = RegexpOption::Enabled;
 
-    while let Some((_, token)) = chars.next() {
+    for (_, token) in &mut chars {
         match token {
             b'-' => enable_literal_option = RegexpOption::Disabled,
             b'i' => {

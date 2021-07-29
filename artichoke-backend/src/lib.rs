@@ -105,17 +105,8 @@
 
 // Ensure code blocks in README.md compile
 #[cfg(doctest)]
-macro_rules! readme {
-    ($x:expr) => {
-        #[doc = $x]
-        mod readme {}
-    };
-    () => {
-        readme!(include_str!("../README.md"));
-    };
-}
-#[cfg(doctest)]
-readme!();
+#[doc = include_str!("../README.md")]
+mod readme {}
 
 #[macro_use]
 extern crate log;

@@ -78,6 +78,11 @@
 //! [`NaN`]: f64::NAN
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 
+// Ensure code blocks in README.md compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 use core::fmt;
 #[cfg(feature = "std")]
 use std::error;

@@ -4,6 +4,8 @@
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.
 
+#![allow(clippy::module_name_repetitions)]
+
 use std::collections::hash_map::DefaultHasher;
 use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
@@ -43,7 +45,7 @@ pub fn clear_capture_globals(interp: &mut Artichoke) -> Result<(), Error> {
     let mut idx = interp.active_regexp_globals()?;
     while let Some(group) = NonZeroUsize::new(idx) {
         interp.unset_global_variable(nth_match_group(group))?;
-        idx -= 1
+        idx -= 1;
     }
     interp.clear_regexp()?;
     Ok(())

@@ -103,7 +103,7 @@ impl fmt::Debug for Box<dyn RegexpType> {
 impl Hash for Box<dyn RegexpType> {
     #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
-        Hash::hash(&self.as_ref(), state)
+        Hash::hash(&self.as_ref(), state);
     }
 }
 

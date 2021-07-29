@@ -92,17 +92,8 @@
 
 // Ensure code blocks in README.md compile
 #[cfg(doctest)]
-macro_rules! readme {
-    ($x:expr) => {
-        #[doc = $x]
-        mod readme {}
-    };
-    () => {
-        readme!(include_str!("../README.md"));
-    };
-}
-#[cfg(doctest)]
-readme!();
+#[doc = include_str!("../README.md")]
+mod readme {}
 
 use core::convert::TryFrom;
 use core::fmt;
@@ -734,7 +725,7 @@ mod tests {
 
     #[test]
     fn rand_thread_rng_must_be_cryptographically_secure() {
-        rng_must_be_cryptographically_secure(rand::thread_rng())
+        rng_must_be_cryptographically_secure(rand::thread_rng());
     }
 
     #[test]

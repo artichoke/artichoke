@@ -172,7 +172,7 @@ where
             continue;
         }
         if is_require_path(&config, &name) {
-            specs.push(name.into_owned())
+            specs.push(name.into_owned());
         }
     }
     mspec::init(&mut interp)?;

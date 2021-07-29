@@ -121,6 +121,11 @@
 
 #![no_std]
 
+// Ensure code blocks in README.md compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
@@ -131,20 +136,6 @@ pub mod core;
 
 #[doc(inline)]
 pub use self::core::*;
-
-// Ensure code blocks in README.md compile
-#[cfg(doctest)]
-macro_rules! readme {
-    ($x:expr) => {
-        #[doc = $x]
-        mod readme {}
-    };
-    () => {
-        readme!(include_str!("../README.md"));
-    };
-}
-#[cfg(doctest)]
-readme!();
 
 /// Polymorphic exception type that corresponds to Ruby's `Exception`.
 ///

@@ -94,7 +94,7 @@ where
 {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        self.0.extend(iter.into_iter())
+        self.0.extend(iter.into_iter());
     }
 }
 
@@ -104,7 +104,7 @@ where
 {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
-        self.0.extend(iter.into_iter().cloned())
+        self.0.extend(iter.into_iter().cloned());
     }
 }
 
