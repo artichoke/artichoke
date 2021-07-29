@@ -734,7 +734,7 @@ mod tests {
 
     #[test]
     fn rand_thread_rng_must_be_cryptographically_secure() {
-        rng_must_be_cryptographically_secure(rand::thread_rng())
+        rng_must_be_cryptographically_secure(rand::thread_rng());
     }
 
     #[test]
