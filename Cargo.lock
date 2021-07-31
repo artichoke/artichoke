@@ -606,6 +606,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "spinoso-strscan"
+version = "0.1.0"
+dependencies = [
+ "bstr",
+]
+
+[[package]]
 name = "spinoso-symbol"
 version = "0.1.0"
 dependencies = [

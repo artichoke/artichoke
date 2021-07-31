@@ -57,6 +57,7 @@ members = [
   "spinoso-regexp",
   "spinoso-securerandom",
   "spinoso-string",
+  "spinoso-strscan",
   "spinoso-symbol",
   "spinoso-time",
 ]
