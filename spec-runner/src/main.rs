@@ -156,7 +156,7 @@ where
     rubyspec::init(&mut interp)?;
     let mut specs = vec![];
     for name in rubyspec::Specs::iter() {
-        let path = Path::new(name.as_ref());
+        let path = Path::new(&*name);
         let is_fixture = path
             .components()
             .map(Component::as_os_str)
@@ -167,7 +167,7 @@ where
             .any(|component| component == OsStr::new("shared"));
         if is_fixture || is_shared {
             if let Some(contents) = mspec::Sources::get(&name) {
-                interp.def_rb_source_file(path, contents)?;
+                interp.def_rb_source_file(path, contents.data)?;
             }
             continue;
         }

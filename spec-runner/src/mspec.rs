@@ -13,7 +13,7 @@ use artichoke::prelude::*;
 pub fn init(interp: &mut Artichoke) -> Result<(), Error> {
     for source in Sources::iter() {
         if let Some(content) = Sources::get(&source) {
-            interp.def_rb_source_file(source.as_ref(), content)?;
+            interp.def_rb_source_file(&*source, content.data)?;
         }
     }
     Ok(())
