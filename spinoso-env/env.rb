@@ -276,6 +276,7 @@ class << ENV
         unless pair.is_a?(Array)
           raise TypeError, "can't convert #{tx.class} to Array (#{tx.class}#to_ary gives #{pair.class})"
         end
+        raise ArgumentError, "element has wrong array length (expected 2, was #{pair.length})" if pair.length != 2
 
         pair
       else

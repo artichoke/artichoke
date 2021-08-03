@@ -118,6 +118,12 @@ pub use env::system::System;
 /// This constant contains Ruby source code that implements the remainder of
 /// these APIs on top of the core accessors and mutators in this crate.
 ///
+/// # Ruby Source
+///
+/// ```ruby
+#[doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/env.rb"))]
+/// ```
+///
 /// [`ENV`]: https://ruby-doc.org/core-2.6.3/ENV.html
 /// [`Hash`]: https://ruby-doc.org/core-2.6.3/Hash.html
 pub const RUBY_API_POLYFILLS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/env.rb"));
