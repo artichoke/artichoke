@@ -195,6 +195,6 @@ impl LoadSources for Artichoke {
         let state = self.state.as_deref().ok_or_else(InterpreterExtractError::new)?;
         let path = path.as_ref();
         let contents = state.load_path_vfs.read_file(path)?;
-        Ok(contents.to_vec().into())
+        Ok(contents.into())
     }
 }

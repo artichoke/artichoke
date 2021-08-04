@@ -321,7 +321,7 @@ impl Memory {
             if let Some(ref code) = entry.code {
                 match code.content {
                     Cow::Borrowed(content) => Ok(content.into()),
-                    Cow::Owned(ref content) => Ok(content.clone().into()),
+                    Cow::Owned(ref content) => Ok(content.clone()),
                 }
             } else {
                 Ok(Code::new().content.into())
