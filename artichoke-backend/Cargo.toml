@@ -12,6 +12,7 @@ categories = ["api-bindings"]
 
 [dependencies]
 artichoke-core = { version = "0.8", path = "../artichoke-core" }
+artichoke-load-path = { version = "0.1", path = "../artichoke-load-path", default-features = false }
 bstr = { version = "0.2, >= 0.2.2", default-features = false, features = ["std"] }
 cstr = "0.2.8"
 intaglio = "1.2"
@@ -67,8 +68,8 @@ core-regexp = ["spinoso-regexp"]
 core-regexp-oniguruma = ["spinoso-regexp/oniguruma", "onig"]
 core-time = ["spinoso-time"]
 
-load-path-native-filesystem-loader = []
-load-path-rubylib-native-filesystem-loader = ["load-path-native-filesystem-loader"]
+load-path-native-filesystem-loader = ["artichoke-load-path/native-filesystem-loader"]
+load-path-rubylib-native-filesystem-loader = ["load-path-native-filesystem-loader", "artichoke-load-path/rubylib-native-filesystem-loader"]
 
 output-strategy-capture = []
 output-strategy-null = ["output-strategy-capture"]

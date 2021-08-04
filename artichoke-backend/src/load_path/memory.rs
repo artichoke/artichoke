@@ -308,7 +308,7 @@ impl Memory {
     ///
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
-    pub fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
+    pub fn read_file(&self, path: &Path) -> io::Result<Vec<u8>> {
         let path = absolutize_relative_to(path, &self.cwd);
         if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
             let mut message = String::from("Only paths beginning with ");
@@ -321,10 +321,10 @@ impl Memory {
             if let Some(ref code) = entry.code {
                 match code.content {
                     Cow::Borrowed(content) => Ok(content.into()),
-                    Cow::Owned(ref content) => Ok(content.clone().into()),
+                    Cow::Owned(ref content) => Ok(content.clone()),
                 }
             } else {
-                Ok(Code::new().into())
+                Ok(Code::new().content.into())
             }
         } else {
             Err(io::Error::new(
@@ -413,15 +413,15 @@ impl Memory {
     ///
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]
-    pub fn is_required(&self, path: &Path) -> bool {
+    pub fn is_required(&self, path: &Path) -> Option<bool> {
         let path = absolutize_relative_to(path, &self.cwd);
         if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
-            return false;
+            return None;
         }
         if let Ok(path) = normalize_slashes(path) {
-            self.loaded_features.contains(path.as_bstr())
+            Some(self.loaded_features.contains(path.as_bstr()))
         } else {
-            false
+            None
         }
     }
 

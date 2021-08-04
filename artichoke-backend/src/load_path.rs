@@ -24,16 +24,12 @@ mod hybrid;
 mod memory;
 #[cfg(feature = "load-path-native-filesystem-loader")]
 mod native;
-#[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
-mod rubylib;
 
 #[cfg(feature = "load-path-native-filesystem-loader")]
 pub use hybrid::Hybrid;
 pub use memory::Memory;
 #[cfg(feature = "load-path-native-filesystem-loader")]
 pub use native::Native;
-#[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
-pub use rubylib::Rubylib;
 
 /// Directory at which Ruby sources and extensions are stored in the virtual
 /// filesystem.

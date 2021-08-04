@@ -2,8 +2,13 @@ use std::borrow::Cow;
 use std::io;
 use std::path::Path;
 
+use bstr::ByteSlice;
+
 #[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
-use super::Rubylib;
+use artichoke_load_path::Rubylib;
+
+use crate::platform_string::os_string_to_bytes;
+
 use super::{ExtensionHook, Memory, Native};
 
 #[derive(Debug)]
@@ -50,16 +55,30 @@ impl Hybrid {
     /// This API is infallible and will return [`None`] for non-existent paths.
     #[must_use]
     pub fn resolve_file(&self, path: &Path) -> Option<Vec<u8>> {
-        if let Some(ref rubylib) = self.rubylib {
-            rubylib.resolve_file(path).or_else(|| {
-                self.memory
+        if is_explicit_relative(path) {
+            return self.memory.resolve_file(path).or_else(|| {
+                self.native
                     .resolve_file(path)
-                    .or_else(|| self.native.resolve_file(path))
-            })
-        } else {
-            self.memory
+                    .and_then(|path| os_string_to_bytes(path.into()).ok())
+            });
+        }
+        if let Some(ref rubylib) = self.rubylib {
+            rubylib
                 .resolve_file(path)
-                .or_else(|| self.native.resolve_file(path))
+                .and_then(|path| os_string_to_bytes(path.into()).ok())
+                .or_else(|| {
+                    self.memory.resolve_file(path).or_else(|| {
+                        self.native
+                            .resolve_file(path)
+                            .and_then(|path| os_string_to_bytes(path.into()).ok())
+                    })
+                })
+        } else {
+            self.memory.resolve_file(path).or_else(|| {
+                self.native
+                    .resolve_file(path)
+                    .and_then(|path| os_string_to_bytes(path.into()).ok())
+            })
         }
     }
 
@@ -68,16 +87,15 @@ impl Hybrid {
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]
     pub fn is_file(&self, path: &Path) -> bool {
+        if is_explicit_relative(path) {
+            return self.memory.is_file(path) || self.native.is_file(path);
+        }
         if let Some(ref rubylib) = self.rubylib {
             if rubylib.is_file(path) {
                 return true;
             }
         }
-        if self.memory.is_file(path) {
-            true
-        } else {
-            self.native.is_file(path)
-        }
+        self.memory.is_file(path) || self.native.is_file(path)
     }
 
     /// Read file contents for the file at `path`.
@@ -90,7 +108,10 @@ impl Hybrid {
     ///
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
-    pub fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
+    pub fn read_file(&self, path: &Path) -> io::Result<Vec<u8>> {
+        if is_explicit_relative(path) {
+            return self.memory.read_file(path).or_else(|_| self.native.read_file(path));
+        }
         if let Some(ref rubylib) = self.rubylib {
             rubylib
                 .read_file(path)
@@ -146,14 +167,20 @@ impl Hybrid {
     ///
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]
-    pub fn is_required(&self, path: &Path) -> bool {
+    pub fn is_required(&self, path: &Path) -> Option<bool> {
+        if is_explicit_relative(path) {
+            if let Some(required) = self.memory.is_required(path) {
+                return Some(required);
+            }
+            return self.native.is_required(path);
+        }
         if let Some(ref rubylib) = self.rubylib {
-            if rubylib.is_required(path) {
-                return true;
+            if let Some(required) = rubylib.is_required(path) {
+                return Some(required);
             }
         }
-        if self.memory.is_required(path) {
-            true
+        if let Some(required) = self.memory.is_required(path) {
+            Some(required)
         } else {
             self.native.is_required(path)
         }
@@ -170,6 +197,12 @@ impl Hybrid {
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
     pub fn mark_required(&mut self, path: &Path) -> io::Result<()> {
+        if is_explicit_relative(path) {
+            return self
+                .memory
+                .mark_required(path)
+                .or_else(|_| self.native.mark_required(path));
+        }
         if let Some(ref mut rubylib) = self.rubylib {
             rubylib.mark_required(path).or_else(|_| {
                 self.memory
@@ -180,6 +213,106 @@ impl Hybrid {
             self.memory
                 .mark_required(path)
                 .or_else(|_| self.native.mark_required(path))
+        }
+    }
+}
+
+/// Test for relative paths that start with `.` or `..`.
+fn is_explicit_relative(path: &Path) -> bool {
+    if path.is_absolute() {
+        return false;
+    }
+    let bytes = <[_]>::from_path(path);
+    if cfg!(windows) {
+        matches!(bytes, Some([b'.', b'.', b'/' | b'\\', ..] | [b'.', b'/' | b'\\', ..]))
+    } else {
+        matches!(bytes, Some([b'.', b'.', b'/', ..] | [b'.', b'/', ..]))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::is_explicit_relative;
+
+    #[test]
+    #[cfg(windows)]
+    fn windows_explicit_relative() {
+        let absolute: &[&Path] = &[
+            Path::new(r"c:\windows"),
+            Path::new(r"c:/windows"),
+            Path::new(r"\\.\COM1"),
+            Path::new(r"\\?\C:\windows"),
+        ];
+        for &path in absolute {
+            assert!(!is_explicit_relative(path));
+        }
+        let relative: &[&Path] = &[
+            Path::new(r"c:temp"),
+            Path::new(r"temp"),
+            Path::new(r"\temp"),
+            Path::new(r"/temp"),
+        ];
+        for &path in relative {
+            assert!(!is_explicit_relative(path));
+        }
+        let explicit_relative: &[&Path] = &[
+            Path::new(r".\windows"),
+            Path::new(r"./windows"),
+            Path::new(r"..\windows"),
+            Path::new(r"../windows"),
+            Path::new(r".\.git"),
+            Path::new(r"./.git"),
+            Path::new(r"..\.git"),
+            Path::new(r"../.git"),
+        ];
+        for &path in explicit_relative {
+            assert!(is_explicit_relative(path));
+        }
+        let not_explicit_relative: &[&Path] = &[
+            Path::new(r"...\windows"),
+            Path::new(r".../windows"),
+            Path::new(r"\windows"),
+            Path::new(r"/windows"),
+        ];
+        for &path in not_explicit_relative {
+            assert!(!is_explicit_relative(path));
+        }
+    }
+
+    #[test]
+    #[cfg(not(windows))]
+    fn not_windows_explicit_relative() {
+        let absolute: &[&Path] = &[Path::new(r"/bin"), Path::new(r"/home/artichoke")];
+        for &path in absolute {
+            assert!(!is_explicit_relative(path));
+        }
+        let relative: &[&Path] = &[Path::new(r"temp"), Path::new(r"temp/../var")];
+        for &path in relative {
+            assert!(!is_explicit_relative(path));
+        }
+        let explicit_relative: &[&Path] = &[
+            Path::new(r"./cache"),
+            Path::new(r"../cache"),
+            Path::new(r"./.git"),
+            Path::new(r"../.git"),
+        ];
+        for &path in explicit_relative {
+            assert!(is_explicit_relative(path));
+        }
+        let not_explicit_relative: &[&Path] = &[
+            Path::new(r".\cache"),
+            Path::new(r"..\cache"),
+            Path::new(r".\.git"),
+            Path::new(r"..\.git"),
+            Path::new(r"...\var"),
+            Path::new(r".../var"),
+            Path::new(r"\var"),
+            Path::new(r"/var"),
+        ];
+        for &path in not_explicit_relative {
+            assert!(!is_explicit_relative(path));
         }
     }
 }
