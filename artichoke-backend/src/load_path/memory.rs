@@ -308,7 +308,7 @@ impl Memory {
     ///
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
-    pub fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
+    pub fn read_file(&self, path: &Path) -> io::Result<Vec<u8>> {
         let path = absolutize_relative_to(path, &self.cwd);
         if path.strip_prefix(RUBY_LOAD_PATH).is_err() {
             let mut message = String::from("Only paths beginning with ");
@@ -324,7 +324,7 @@ impl Memory {
                     Cow::Owned(ref content) => Ok(content.clone().into()),
                 }
             } else {
-                Ok(Code::new().into())
+                Ok(Code::new().content.into())
             }
         } else {
             Err(io::Error::new(

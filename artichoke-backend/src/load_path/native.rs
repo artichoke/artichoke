@@ -1,13 +1,11 @@
 use bstr::{BString, ByteSlice};
-use std::borrow::Cow;
 use std::collections::HashSet;
 use std::env;
-use std::fs;
+use std::fs::{self, File};
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::{absolutize_relative_to, normalize_slashes};
-use crate::platform_string::os_str_to_bytes;
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Native {
@@ -29,10 +27,9 @@ impl Native {
     /// This API is infallible and will return [`None`] for non-existent paths.
     #[must_use]
     #[allow(clippy::unused_self)]
-    pub fn resolve_file(&self, path: &Path) -> Option<Vec<u8>> {
-        if path.exists() {
-            let file = os_str_to_bytes(path.as_os_str()).ok()?;
-            Some(file.to_vec())
+    pub fn resolve_file(&self, path: &Path) -> Option<PathBuf> {
+        if File::open(path).is_ok() {
+            Some(path.to_owned())
         } else {
             None
         }
@@ -62,8 +59,8 @@ impl Native {
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
     #[allow(clippy::unused_self)]
-    pub fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
-        Ok(fs::read(path)?.into())
+    pub fn read_file(&self, path: &Path) -> io::Result<Vec<u8>> {
+        fs::read(path)
     }
 
     /// Check whether a file at `path` has been required already.

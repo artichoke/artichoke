@@ -56,24 +56,29 @@ impl Hybrid {
     #[must_use]
     pub fn resolve_file(&self, path: &Path) -> Option<Vec<u8>> {
         if is_explicit_relative(path) {
-            return self
-                .memory
-                .resolve_file(path)
-                .or_else(|| self.native.resolve_file(path));
+            return self.memory.resolve_file(path).or_else(|| {
+                self.native
+                    .resolve_file(path)
+                    .and_then(|path| os_string_to_bytes(path.into()).ok())
+            });
         }
         if let Some(ref rubylib) = self.rubylib {
             rubylib
                 .resolve_file(path)
                 .and_then(|path| os_string_to_bytes(path.into()).ok())
                 .or_else(|| {
-                    self.memory
-                        .resolve_file(path)
-                        .or_else(|| self.native.resolve_file(path))
+                    self.memory.resolve_file(path).or_else(|| {
+                        self.native
+                            .resolve_file(path)
+                            .and_then(|path| os_string_to_bytes(path.into()).ok())
+                    })
                 })
         } else {
-            self.memory
-                .resolve_file(path)
-                .or_else(|| self.native.resolve_file(path))
+            self.memory.resolve_file(path).or_else(|| {
+                self.native
+                    .resolve_file(path)
+                    .and_then(|path| os_string_to_bytes(path.into()).ok())
+            })
         }
     }
 
@@ -103,14 +108,13 @@ impl Hybrid {
     ///
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
-    pub fn read_file(&self, path: &Path) -> io::Result<Cow<'_, [u8]>> {
+    pub fn read_file(&self, path: &Path) -> io::Result<Vec<u8>> {
         if is_explicit_relative(path) {
             return self.memory.read_file(path).or_else(|_| self.native.read_file(path));
         }
         if let Some(ref rubylib) = self.rubylib {
             rubylib
                 .read_file(path)
-                .map(Cow::Owned)
                 .or_else(|_| self.memory.read_file(path).or_else(|_| self.native.read_file(path)))
         } else {
             self.memory.read_file(path).or_else(|_| self.native.read_file(path))
