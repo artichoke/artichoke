@@ -35,9 +35,17 @@ impl fmt::Debug for Extension {
     }
 }
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Code {
     content: Cow<'static, [u8]>,
+}
+
+impl fmt::Debug for Code {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Code")
+            .field("content", &self.content.as_bstr())
+            .finish()
+    }
 }
 
 impl Default for Code {

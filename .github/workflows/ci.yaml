@@ -156,6 +156,10 @@ jobs:
         run: cargo check --locked --all-targets --profile=test
         working-directory: "spec-runner"
 
+      - name: Test spec-runner
+        run: cargo test
+        working-directory: "spec-runner"
+
       - name: Lint spec-runner with Clippy
         run: cargo clippy --workspace --all-features --all-targets
         working-directory: "spec-runner"
