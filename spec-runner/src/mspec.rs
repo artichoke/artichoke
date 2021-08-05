@@ -38,7 +38,7 @@ where
     interp.def_rb_source_file("spec_helper.rb", &b""[..])?;
     interp.def_rb_source_file("spec_runner.rb", &include_bytes!("spec_runner.rb")[..])?;
 
-    interp.eval_file(&virtual_root.join("spec_runner"))?;
+    interp.eval_file(&virtual_root.join("spec_runner.rb"))?;
 
     let specs = interp.try_convert_mut(specs.into_iter().collect::<Vec<_>>())?;
     let result = interp.top_self().funcall(interp, "run_specs", &[specs], None)?;
