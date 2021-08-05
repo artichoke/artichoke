@@ -96,7 +96,7 @@ mod libmruby {
     use std::ffi::OsStr;
     use std::fs;
     use std::path::PathBuf;
-    use std::process::Command;
+    use std::process::{Command, ExitStatus, Stdio};
     use std::str;
     use target_lexicon::{Architecture, OperatingSystem, Triple};
 
@@ -185,6 +185,9 @@ mod libmruby {
         // system to do the codegen for us.
         generate_mrbgem_config();
         let status = Command::new("ruby")
+            .stdin(Stdio::null())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
             .arg(mruby_minirake())
             .arg("--verbose")
             .env("MRUBY_BUILD_DIR", mruby_build_dir())
@@ -276,54 +279,98 @@ mod libmruby {
         build.compile("libartichokemruby.a");
     }
 
-    fn bindgen(target: &Triple) {
-        let bindings_out_path = PathBuf::from(env::var("OUT_DIR").unwrap()).join("ffi.rs");
-        let mut bindgen = bindgen::Builder::default()
-            .header(bindgen_source_header().to_str().unwrap())
-            .clang_arg(format!("-I{}", mruby_include_dir().to_str().unwrap()))
-            .clang_arg(format!(
-                "-I{}",
-                buildpath::source::mruby_sys_ext_include_dir()
-                    .to_str()
-                    .unwrap()
-            ))
-            .clang_arg("-DMRB_NO_BOXING")
-            .clang_arg("-DMRB_NO_PRESYM")
-            .clang_arg("-DMRB_NO_STDIO")
-            .clang_arg("-DMRB_ARY_NO_EMBED")
-            .clang_arg("-DMRB_INT64")
-            .clang_arg("-DMRB_UTF8_STRING")
-            .allowlist_function("^mrb.*")
-            .allowlist_type("^mrb.*")
-            .allowlist_var("^mrb.*")
-            .allowlist_var("^MRB.*")
-            .allowlist_var("^MRUBY.*")
-            .allowlist_var("REGEXP_CLASS")
-            .rustified_enum("mrb_vtype")
-            .rustified_enum("mrb_lex_state_enum")
-            .rustified_enum("mrb_range_beg_len")
-            .rustfmt_bindings(true)
-            // work around warnings caused by cargo doc interpreting Ruby doc blocks
-            // as Rust code.
-            // See: https://github.com/rust-lang/rust-bindgen/issues/426
-            .generate_comments(false)
-            .size_t_is_usize(true);
-        if let Architecture::Wasm32 = target.architecture {
-            bindgen = bindgen
-                .clang_arg(format!("-I{}", wasm_include_dir().to_str().unwrap()))
-                .clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
+    fn bindgen(target: &Triple, out_dir: &OsStr) {
+        // Try to use an existing global install of bindgen
+        let status = invoke_bindgen(target, out_dir, OsStr::new("bindgen"));
+        if status.success() {
+            return;
         }
-        if env::var("CARGO_FEATURE_ARTICHOKE_ARRAY").is_ok() {
-            bindgen = bindgen.clang_arg("-DARTICHOKE");
+        // Install bindgen
+        // cargo install --root target/bindgen --version 0.59.1 bindgen
+        let bindgen_install_dir = PathBuf::from(out_dir).join("bindgen");
+        let status = Command::new(env::var_os("CARGO").unwrap())
+            .stdin(Stdio::null())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .arg("install")
+            .arg("--root")
+            .arg(&bindgen_install_dir)
+            .arg("--version")
+            .arg("0.59.1")
+            .arg("bindgen")
+            .status()
+            .unwrap();
+        if !status.success() {
+            panic!("cargo install bindgen failed");
         }
-
-        bindgen.generate().unwrap().write_to_file(bindings_out_path).unwrap();
+        let status = invoke_bindgen(
+            target,
+            out_dir,
+            bindgen_install_dir.join("bin").join("bindgen").as_os_str(),
+        );
+        if !status.success() {
+            panic!("bindgen failed");
+        }
     }
 
-    pub fn build(target: &Triple) {
+    pub fn invoke_bindgen(target: &Triple, out_dir: &OsStr, bindgen_executable: &OsStr) -> ExitStatus {
+        let bindings_out_path = PathBuf::from(out_dir).join("ffi.rs");
+        let mut command = Command::new(bindgen_executable);
+        command
+            .stdin(Stdio::null())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit());
+
+        command
+            .arg("--allowlist-function")
+            .arg("^mrb.*")
+            .arg("--allowlist-type")
+            .arg("^mrb.*")
+            .arg("--allowlist-var")
+            .arg("^mrb.*")
+            .arg("--allowlist-var")
+            .arg("^MRB.*")
+            .arg("--allowlist-var")
+            .arg("^MRUBY.*")
+            .arg("--allowlist-var")
+            .arg("REGEXP_CLASS")
+            .arg("--rustified-enum")
+            .arg("mrb_vtype")
+            .arg("--rustified-enum")
+            .arg("mrb_lex_state_enum")
+            .arg("--rustified-enum")
+            .arg("mrb_range_beg_len")
+            .arg("--no-doc-comments")
+            .arg("--size_t-is-usize")
+            .arg("--output")
+            .arg(bindings_out_path)
+            .arg(bindgen_source_header())
+            .arg("--")
+            .arg("-I")
+            .arg(mruby_include_dir())
+            .arg("-I")
+            .arg(buildpath::source::mruby_sys_ext_include_dir())
+            .arg("-DARTICHOKE")
+            .arg("-DMRB_NO_BOXING")
+            .arg("-DMRB_NO_PRESYM")
+            .arg("-DMRB_NO_STDIO")
+            .arg("-DMRB_ARY_NO_EMBED")
+            .arg("-DMRB_INT64")
+            .arg("-DMRB_UTF8_STRING");
+        if let Architecture::Wasm32 = target.architecture {
+            command
+                .arg("-I")
+                .arg(wasm_include_dir())
+                .arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
+        }
+
+        command.status().unwrap()
+    }
+
+    pub fn build(target: &Triple, out_dir: &OsStr) {
         fs::create_dir_all(mruby_build_dir()).unwrap();
         staticlib(target);
-        bindgen(target);
+        bindgen(target, out_dir);
     }
 }
 
@@ -403,8 +450,9 @@ mod build {
 fn main() {
     let target = env::var_os("TARGET").unwrap();
     let target = Triple::from_str(target.to_str().unwrap()).unwrap();
+    let out_dir = env::var_os("OUT_DIR").unwrap();
     build::clean();
     build::rerun_if_changed();
     build::setup_build_root();
-    libmruby::build(&target);
+    libmruby::build(&target, &out_dir);
 }

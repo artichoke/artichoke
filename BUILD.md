@@ -61,6 +61,18 @@ rustup component add rustfmt
 rustup component add clippy
 ```
 
+### Bindgen
+
+Artichoke generates Rust declarations for C code at build time using
+[`bindgen`]. Although not required to build Artichoke, installing `bindgen`
+globally will speed up the compilation cycle.
+
+To install bindgen using `cargo`:
+
+```sh
+cargo install --version 0.59.1 bindgen
+```
+
 ### Rust Crates
 
 Artichoke depends on several Rust libraries, or crates. Once you have the Rust
@@ -132,6 +144,7 @@ bundle install
 [rustup]: https://rustup.rs/
 [homebrew]: https://docs.brew.sh/Installation
 [vs-community]: https://visualstudio.microsoft.com/vs/community/
+[`bindgen`]: https://github.com/rust-lang/rust-bindgen
 [`onig`]: https://crates.io/crates/onig
 [`cc` crate]: https://crates.io/crates/cc
 [platform-dependent c compiler]:
