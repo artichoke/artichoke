@@ -80,7 +80,7 @@
   description: "Area: Security vulnerabilities and unsoundness issues."
 - name: "A-single-binary"
   color: "f7e101"
-  description: "Area: Single binary distribution.."
+  description: "Area: Single binary distribution."
 - name: "A-spec"
   color: "f7e101"
   description: "Area: ruby/spec infrastructure and completeness."
