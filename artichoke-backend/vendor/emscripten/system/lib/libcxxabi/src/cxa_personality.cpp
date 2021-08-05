@@ -1,15 +1,14 @@
 //===------------------------- cxa_exception.cpp --------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
 //
-//  
 //  This file implements the "Exception Handling APIs"
-//  http://mentorembedded.github.io/cxx-abi/abi-eh.html
+//  https://itanium-cxx-abi.github.io/cxx-abi/abi-eh.html
 //  http://www.intel.com/design/itanium/downloads/245358.htm
-//  
+//
 //===----------------------------------------------------------------------===//
 
 #include <assert.h>
@@ -18,10 +17,12 @@
 #include <typeinfo>
 
 #include "__cxxabi_config.h"
-#include "cxa_exception.hpp"
-#include "cxa_handlers.hpp"
+#include "cxa_exception.h"
+#include "cxa_handlers.h"
 #include "private_typeinfo.h"
 #include "unwind.h"
+
+#define __USING_SJLJ_OR_WASM_EXCEPTIONS__ (__USING_SJLJ_EXCEPTIONS__ || __USING_WASM_EXCEPTIONS__)
 
 #if defined(__SEH__) && !defined(__USING_SJLJ_EXCEPTIONS__)
 #include <windows.h>
@@ -62,7 +63,7 @@ extern "C" EXCEPTION_DISPOSITION _GCC_specific_handler(PEXCEPTION_RECORD,
 +------------------+--+-----+-----+------------------------+--------------------------+
 | callSiteTableLength | (ULEB128) | Call Site Table length, used to find Action table |
 +---------------------+-----------+---------------------------------------------------+
-#ifndef __USING_SJLJ_EXCEPTIONS__
+#ifndef __USING_SJLJ_OR_WASM_EXCEPTIONS__
 +---------------------+-----------+------------------------------------------------+
 | Beginning of Call Site Table            The current ip lies within the           |
 | ...                                     (start, length) range of one of these    |
@@ -76,7 +77,7 @@ extern "C" EXCEPTION_DISPOSITION _GCC_specific_handler(PEXCEPTION_RECORD,
 | +-------------+---------------------------------+------------------------------+ |
 | ...                                                                              |
 +----------------------------------------------------------------------------------+
-#else  // __USING_SJLJ_EXCEPTIONS__
+#else  // !__USING_SJLJ_OR_WASM_EXCEPTIONS__
 +---------------------+-----------+------------------------------------------------+
 | Beginning of Call Site Table            The current ip is a 1-based index into   |
 | ...                                     this table.  Or it is -1 meaning no      |
@@ -89,7 +90,7 @@ extern "C" EXCEPTION_DISPOSITION _GCC_specific_handler(PEXCEPTION_RECORD,
 | +-------------+---------------------------------+------------------------------+ |
 | ...                                                                              |
 +----------------------------------------------------------------------------------+
-#endif  // __USING_SJLJ_EXCEPTIONS__
+#endif  // __USING_SJLJ_OR_WASM_EXCEPTIONS__
 +---------------------------------------------------------------------+
 | Beginning of Action Table       ttypeIndex == 0 : cleanup           |
 | ...                             ttypeIndex  > 0 : catch             |
@@ -189,8 +190,8 @@ enum
     DW_EH_PE_omit     = 0xFF
 };
 
-/// Read a uleb128 encoded value and advance pointer 
-/// See Variable Length Data Appendix C in: 
+/// Read a uleb128 encoded value and advance pointer
+/// See Variable Length Data Appendix C in:
 /// @link http://dwarfstd.org/Dwarf4.pdf @unlink
 /// @param data reference variable holding memory pointer to decode from
 /// @returns decoded value
@@ -212,8 +213,8 @@ readULEB128(const uint8_t** data)
     return result;
 }
 
-/// Read a sleb128 encoded value and advance pointer 
-/// See Variable Length Data Appendix C in: 
+/// Read a sleb128 encoded value and advance pointer
+/// See Variable Length Data Appendix C in:
 /// @link http://dwarfstd.org/Dwarf4.pdf @unlink
 /// @param data reference variable holding memory pointer to decode from
 /// @returns decoded value
@@ -237,8 +238,8 @@ readSLEB128(const uint8_t** data)
     return static_cast<intptr_t>(result);
 }
 
-/// Read a pointer encoded value and advance pointer 
-/// See Variable Length Data in: 
+/// Read a pointer encoded value and advance pointer
+/// See Variable Length Data in:
 /// @link http://dwarfstd.org/Dwarf3.pdf @unlink
 /// @param data reference variable holding memory pointer to decode from
 /// @param encoding dwarf encoding type
@@ -248,10 +249,10 @@ uintptr_t
 readEncodedPointer(const uint8_t** data, uint8_t encoding)
 {
     uintptr_t result = 0;
-    if (encoding == DW_EH_PE_omit) 
+    if (encoding == DW_EH_PE_omit)
         return result;
     const uint8_t* p = *data;
-    // first get value 
+    // first get value
     switch (encoding & 0x0F)
     {
     case DW_EH_PE_absptr:
@@ -282,15 +283,15 @@ readEncodedPointer(const uint8_t** data, uint8_t encoding)
         result = readPointerHelper<int64_t>(p);
         break;
     default:
-        // not supported 
+        // not supported
         abort();
         break;
     }
-    // then add relative offset 
+    // then add relative offset
     switch (encoding & 0x70)
     {
     case DW_EH_PE_absptr:
-        // do nothing 
+        // do nothing
         break;
     case DW_EH_PE_pcrel:
         if (result)
@@ -301,11 +302,11 @@ readEncodedPointer(const uint8_t** data, uint8_t encoding)
     case DW_EH_PE_funcrel:
     case DW_EH_PE_aligned:
     default:
-        // not supported 
+        // not supported
         abort();
         break;
     }
-    // then apply indirection 
+    // then apply indirection
     if (result && (encoding & DW_EH_PE_indirect))
         result = *((uintptr_t*)result);
     *data = p;
@@ -530,7 +531,7 @@ void
 set_registers(_Unwind_Exception* unwind_exception, _Unwind_Context* context,
               const scan_results& results)
 {
-#if defined(__USING_SJLJ_EXCEPTIONS__)
+#ifdef __USING_SJLJ_OR_WASM_EXCEPTIONS__
 #define __builtin_eh_return_data_regno(regno) regno
 #endif
   _Unwind_SetGR(context, __builtin_eh_return_data_regno(0),
@@ -614,10 +615,10 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
     // Get the current instruction pointer and offset it before next
     // instruction in the current frame which threw the exception.
     uintptr_t ip = _Unwind_GetIP(context) - 1;
-    // Get beginning current frame's code (as defined by the 
+    // Get beginning current frame's code (as defined by the
     // emitted dwarf code)
     uintptr_t funcStart = _Unwind_GetRegionStart(context);
-#ifdef __USING_SJLJ_EXCEPTIONS__
+#ifdef __USING_SJLJ_OR_WASM_EXCEPTIONS__
     if (ip == uintptr_t(-1))
     {
         // no action
@@ -627,9 +628,9 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
     else if (ip == 0)
         call_terminate(native_exception, unwind_exception);
     // ip is 1-based index into call site table
-#else  // !__USING_SJLJ_EXCEPTIONS__
+#else  // !__USING_SJLJ_OR_WASM_EXCEPTIONS__
     uintptr_t ipOffset = ip - funcStart;
-#endif  // !defined(_USING_SLJL_EXCEPTIONS__)
+#endif  // __USING_SJLJ_OR_WASM_EXCEPTIONS__
     const uint8_t* classInfo = NULL;
     // Note: See JITDwarfEmitter::EmitExceptionTable(...) for corresponding
     //       dwarf emission
@@ -647,11 +648,11 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
         uintptr_t classInfoOffset = readULEB128(&lsda);
         classInfo = lsda + classInfoOffset;
     }
-    // Walk call-site table looking for range that 
-    // includes current PC. 
+    // Walk call-site table looking for range that
+    // includes current PC.
     uint8_t callSiteEncoding = *lsda++;
-#ifdef __USING_SJLJ_EXCEPTIONS__
-    (void)callSiteEncoding;  // When using SjLj exceptions, callSiteEncoding is never used
+#ifdef __USING_SJLJ_OR_WASM_EXCEPTIONS__
+    (void)callSiteEncoding;  // When using SjLj/Wasm exceptions, callSiteEncoding is never used
 #endif
     uint32_t callSiteTableLength = static_cast<uint32_t>(readULEB128(&lsda));
     const uint8_t* callSiteTableStart = lsda;
@@ -661,7 +662,7 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
     while (callSitePtr < callSiteTableEnd)
     {
         // There is one entry per call site.
-#ifndef __USING_SJLJ_EXCEPTIONS__
+#ifndef __USING_SJLJ_OR_WASM_EXCEPTIONS__
         // The call sites are non-overlapping in [start, start+length)
         // The call sites are ordered in increasing value of start
         uintptr_t start = readEncodedPointer(&callSitePtr, callSiteEncoding);
@@ -669,15 +670,15 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
         uintptr_t landingPad = readEncodedPointer(&callSitePtr, callSiteEncoding);
         uintptr_t actionEntry = readULEB128(&callSitePtr);
         if ((start <= ipOffset) && (ipOffset < (start + length)))
-#else  // __USING_SJLJ_EXCEPTIONS__
+#else  // __USING_SJLJ_OR_WASM_EXCEPTIONS__
         // ip is 1-based index into this table
         uintptr_t landingPad = readULEB128(&callSitePtr);
         uintptr_t actionEntry = readULEB128(&callSitePtr);
         if (--ip == 0)
-#endif  // __USING_SJLJ_EXCEPTIONS__
+#endif  // !__USING_SJLJ_OR_WASM_EXCEPTIONS__
         {
             // Found the call site containing ip.
-#ifndef __USING_SJLJ_EXCEPTIONS__
+#ifndef __USING_SJLJ_OR_WASM_EXCEPTIONS__
             if (landingPad == 0)
             {
                 // No handler here
@@ -685,9 +686,9 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
                 return;
             }
             landingPad = (uintptr_t)lpStart + landingPad;
-#else  // __USING_SJLJ_EXCEPTIONS__
+#else  // __USING_SJLJ_OR_WASM_EXCEPTIONS__
             ++landingPad;
-#endif  // __USING_SJLJ_EXCEPTIONS__
+#endif  // !__USING_SJLJ_OR_WASM_EXCEPTIONS__
             if (actionEntry == 0)
             {
                 // Found a cleanup
@@ -726,7 +727,12 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
                         // If this is a type 2 search save state and return _URC_HANDLER_FOUND
                         // If this is a type 3 search !_UA_FORCE_UNWIND, we should have found this in phase 1!
                         // If this is a type 3 search _UA_FORCE_UNWIND, ignore handler and continue scan
+#ifdef __USING_WASM_EXCEPTIONS__
+                        // Wasm does not do two-phase unwinding and only uses cleanup phase
+                        if (actions & _UA_CLEANUP_PHASE)
+#else
                         if ((actions & _UA_SEARCH_PHASE) || (actions & _UA_HANDLER_FRAME))
+#endif
                         {
                             // Save state and return _URC_HANDLER_FOUND
                             results.ttypeIndex = ttypeIndex;
@@ -762,7 +768,12 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
                             // If this is a type 1 search save state and return _URC_HANDLER_FOUND
                             // If this is a type 3 search and !_UA_FORCE_UNWIND, we should have found this in phase 1!
                             // If this is a type 3 search and _UA_FORCE_UNWIND, ignore handler and continue scan
+#ifdef __USING_WASM_EXCEPTIONS__
+                            // Wasm does not do two-phase unwinding and only uses cleanup phase
+                            if (actions & _UA_CLEANUP_PHASE)
+#else
                             if (actions & _UA_SEARCH_PHASE)
+#endif
                             {
                                 // Save state and return _URC_HANDLER_FOUND
                                 results.ttypeIndex = ttypeIndex;
@@ -806,7 +817,12 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
                             // If this is a type 1 search, save state and return _URC_HANDLER_FOUND
                             // If this is a type 3 search !_UA_FORCE_UNWIND, we should have found this in phase 1!
                             // If this is a type 3 search _UA_FORCE_UNWIND, ignore handler and continue scan
+#ifdef __USING_WASM_EXCEPTIONS__
+                            // Wasm does not do two-phase unwinding and only uses cleanup phase
+                            if (actions & _UA_CLEANUP_PHASE)
+#else
                             if (actions & _UA_SEARCH_PHASE)
+#endif
                             {
                                 // Save state and return _URC_HANDLER_FOUND
                                 results.ttypeIndex = ttypeIndex;
@@ -831,7 +847,12 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
                         // If this is a type 2 search, save state and return _URC_HANDLER_FOUND
                         // If this is a type 3 search !_UA_FORCE_UNWIND, we should have found this in phase 1!
                         // If this is a type 3 search _UA_FORCE_UNWIND, ignore handler and continue scan
+#ifdef __USING_WASM_EXCEPTIONS__
+                        // Wasm does not do two-phase unwinding and only uses cleanup phase
+                        if (actions & _UA_CLEANUP_PHASE)
+#else
                         if ((actions & _UA_SEARCH_PHASE) || (actions & _UA_HANDLER_FRAME))
+#endif
                         {
                             // Save state and return _URC_HANDLER_FOUND
                             results.ttypeIndex = ttypeIndex;
@@ -879,7 +900,7 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
                 action += actionOffset;
             }  // there is no break out of this loop, only return
         }
-#ifndef __USING_SJLJ_EXCEPTIONS__
+#ifndef __USING_SJLJ_OR_WASM_EXCEPTIONS__
         else if (ipOffset < start)
         {
             // There is no call site for this ip
@@ -887,7 +908,7 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
             // Possible stack corruption.
             call_terminate(native_exception, unwind_exception);
         }
-#endif  // !__USING_SJLJ_EXCEPTIONS__
+#endif  // !__USING_SJLJ_OR_WASM_EXCEPTIONS__
     }  // there might be some tricky cases which break out of this loop
 
     // It is possible that no eh table entry specify how to handle
@@ -929,13 +950,13 @@ _UA_CLEANUP_PHASE
         else
             Recover state from header
         Transfer control to landing pad.  return _URC_INSTALL_CONTEXT
-    
+
     Else
 
         This branch handles both normal C++ non-catching handlers (cleanups)
-          and forced unwinding.    
+          and forced unwinding.
         Scan for anything that can not stop unwinding:
-    
+
             1.  A cleanup.
 
         If a cleanup is found
@@ -944,7 +965,9 @@ _UA_CLEANUP_PHASE
 */
 
 #if !defined(_LIBCXXABI_ARM_EHABI)
-#if defined(__SEH__) && !defined(__USING_SJLJ_EXCEPTIONS__)
+#ifdef __USING_WASM_EXCEPTIONS__
+_Unwind_Reason_Code __gxx_personality_wasm0
+#elif defined(__SEH__) && !defined(__USING_SJLJ_EXCEPTIONS__)
 static _Unwind_Reason_Code __gxx_personality_imp
 #else
 _LIBCXXABI_FUNC_VIS _Unwind_Reason_Code
@@ -1026,6 +1049,16 @@ __gxx_personality_v0
         {
             // Found a non-catching handler.  Jump to it:
             set_registers(unwind_exception, context, results);
+#ifdef __USING_WASM_EXCEPTIONS__
+            // Wasm uses only one phase in _UA_CLEANUP_PHASE, so we should set
+            // these here.
+            __cxa_exception* exception_header = (__cxa_exception*)(unwind_exception+1) - 1;
+            exception_header->handlerSwitchValue = static_cast<int>(results.ttypeIndex);
+            exception_header->actionRecord = results.actionRecord;
+            exception_header->languageSpecificData = results.languageSpecificData;
+            exception_header->catchTemp = reinterpret_cast<void*>(results.landingPad);
+            exception_header->adjustedPtr = results.adjustedPtr;
+#endif
             return _URC_INSTALL_CONTEXT;
         }
         // Did not find a cleanup.  Return the results of the scan

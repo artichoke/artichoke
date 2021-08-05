@@ -1,9 +1,8 @@
 /*===-- int128_builtins.cpp - Implement __muloti4 --------------------------===
  *
- *                     The LLVM Compiler Infrastructure
- *
- * This file is dual licensed under the MIT and the University of Illinois Open
- * Source Licenses. See LICENSE.TXT for details.
+ * Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+ * See https://llvm.org/LICENSE.txt for license information.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  * ===----------------------------------------------------------------------===
  *
@@ -19,7 +18,7 @@
 
 #if !defined(_LIBCPP_HAS_NO_INT128)
 
-extern "C" __attribute__((no_sanitize("undefined")))
+extern "C" __attribute__((no_sanitize("undefined"))) _LIBCPP_FUNC_VIS
 __int128_t __muloti4(__int128_t a, __int128_t b, int* overflow) {
   const int N = (int)(sizeof(__int128_t) * CHAR_BIT);
   const __int128_t MIN = (__int128_t)1 << (N - 1);

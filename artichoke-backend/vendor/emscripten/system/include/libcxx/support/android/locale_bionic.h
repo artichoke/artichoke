@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===------------------- support/android/locale_bionic.h ------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -28,7 +27,9 @@ extern "C" {
 
 #include <android/api-level.h>
 #include <android/ndk-version.h>
+#if __ANDROID_API__ < 21
 #include <support/xlocale/__posix_l_fallback.h>
+#endif
 // In NDK versions later than 16, locale-aware functions are provided by
 // legacy_stdlib_inlines.h
 #if __NDK_MAJOR__ <= 16

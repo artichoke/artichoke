@@ -1,9 +1,8 @@
 //===------------------------- cxa_handlers.cpp ---------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //
 // This file implements the functionality associated with the terminate_handler,
@@ -15,17 +14,18 @@
 #include <exception>
 #include "abort_message.h"
 #include "cxxabi.h"
-#include "cxa_handlers.hpp"
-#include "cxa_exception.hpp"
+#include "cxa_handlers.h"
+#include "cxa_exception.h"
 #include "private_typeinfo.h"
 #include "include/atomic_support.h"
 
 namespace __cxxabiv1 {
 
-// XXX EMSCRIPTEN: Copied from cxa_exception.cpp since we don't compile that file.
-//                 Note that in no-exceptions builds we include cxa_noexception
-//                 which provides stubs of those anyhow.
-#if defined(__EMSCRIPTEN__) && !defined(_LIBCXXABI_NO_EXCEPTIONS)
+#ifdef __USING_EMSCRIPTEN_EXCEPTIONS__
+// XXX EMSCRIPTEN: Copied from cxa_exception.cpp since we don't compile that
+// file in Emscripten EH mode. Note that in no-exceptions builds we include
+// cxa_noexception.cpp which provides stubs of those anyhow.
+
 //  Is it one of ours?
 uint64_t __getExceptionClass(const _Unwind_Exception* unwind_exception) {
 //	On x86 and some ARM unwinders, unwind_exception->exception_class is
@@ -99,6 +99,7 @@ __attribute__((noreturn))
 void
 terminate() _NOEXCEPT
 {
+#ifndef _LIBCXXABI_NO_EXCEPTIONS
     // If there might be an uncaught exception
     using namespace __cxxabiv1;
     __cxa_eh_globals* globals = __cxa_get_globals_fast();
@@ -113,6 +114,7 @@ terminate() _NOEXCEPT
                 __terminate(exception_header->terminateHandler);
         }
     }
+#endif
     __terminate(get_terminate());
 }
 

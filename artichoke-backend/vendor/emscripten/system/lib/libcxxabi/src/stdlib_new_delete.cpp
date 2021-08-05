@@ -1,9 +1,8 @@
 //===--------------------- stdlib_new_delete.cpp --------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //
 // This file implements the new and delete operators.
@@ -40,7 +39,16 @@ operator new(std::size_t size) _THROW_BAD_ALLOC
 #ifndef _LIBCXXABI_NO_EXCEPTIONS
             throw std::bad_alloc();
 #else
+#ifdef __EMSCRIPTEN__
+            // Abort here so that when exceptions are disabled, we do not just
+            // return 0 when malloc returns 0.
+            // We could also do this with set_new_handler, but that adds a
+            // global constructor and a table entry, overhead that we can avoid
+            // by doing it this way.
+            abort();
+#else
             break;
+#endif
 #endif
     }
     return p;
