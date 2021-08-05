@@ -4,10 +4,11 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <emscripten/emscripten.h>
 
 // An external JS implementation that is efficient for very large copies, using
 // HEAPU8.set()
-extern void *emscripten_memcpy_big(void *restrict dest, const void *restrict src, size_t n);
+void* emscripten_memcpy_big(void *restrict dest, const void *restrict src, size_t n) EM_IMPORT(emscripten_memcpy_big);
 
 // XXX EMSCRIPTEN ASAN: build an uninstrumented version of memcpy
 #if defined(__EMSCRIPTEN__) && defined(__has_feature)
@@ -25,7 +26,7 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n)
   unsigned char *block_aligned_d_end;
   unsigned char *d_end;
 
-  if (n >= 8192) {
+  if (n >= 512) {
     emscripten_memcpy_big(dest, src, n);
     return dest;
   }
@@ -85,9 +86,5 @@ void *memcpy(void *restrict dest, const void *restrict src, size_t n)
   while (d < d_end) {
     *d++ = *s++;
   }
-  return dest;
-
-
-  for (; n; n--) *d++ = *s++;
   return dest;
 }

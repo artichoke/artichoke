@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -123,7 +122,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 size_t
 __next_hash_pow2(size_t __n)
 {
-    return __n < 2 ? __n : (size_t(1) << (std::numeric_limits<size_t>::digits - __clz(__n-1)));
+    return __n < 2 ? __n : (size_t(1) << (std::numeric_limits<size_t>::digits - __libcpp_clz(__n-1)));
 }
 
 
@@ -777,7 +776,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     __bucket_list_deallocator()
         _NOEXCEPT_(is_nothrow_default_constructible<allocator_type>::value)
-        : __data_(0) {}
+        : __data_(0, __default_init_tag()) {}
 
     _LIBCPP_INLINE_VISIBILITY
     __bucket_list_deallocator(const allocator_type& __a, size_type __size)
@@ -826,10 +825,12 @@ private:
 
     allocator_type& __na_;
 
-    __hash_node_destructor& operator=(const __hash_node_destructor&);
-
 public:
     bool __value_constructed;
+
+    __hash_node_destructor(__hash_node_destructor const&) = default;
+    __hash_node_destructor& operator=(const __hash_node_destructor&) = delete;
+
 
     _LIBCPP_INLINE_VISIBILITY
     explicit __hash_node_destructor(allocator_type& __na,
@@ -876,9 +877,9 @@ struct __enforce_unordered_container_requirements {
 template <class _Key, class _Hash, class _Equal>
 #ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_DIAGNOSE_WARNING(!__invokable<_Equal const&, _Key const&, _Key const&>::value,
-    "the specified comparator type does not provide a const call operator")
+    "the specified comparator type does not provide a viable const call operator")
     _LIBCPP_DIAGNOSE_WARNING(!__invokable<_Hash const&, _Key const&>::value,
-    "the specified hash functor does not provide a const call operator")
+    "the specified hash functor does not provide a viable const call operator")
 #endif
 typename __enforce_unordered_container_requirements<_Key, _Hash, _Equal>::type
 __diagnose_unordered_container_requirements(int);
@@ -1261,7 +1262,7 @@ public:
 
     void swap(__hash_table& __u)
 #if _LIBCPP_STD_VER <= 11
-        _NOEXCEPT_DEBUG_(
+        _NOEXCEPT_(
             __is_nothrow_swappable<hasher>::value && __is_nothrow_swappable<key_equal>::value
             && (!allocator_traits<__pointer_allocator>::propagate_on_container_swap::value
                   || __is_nothrow_swappable<__pointer_allocator>::value)
@@ -1269,7 +1270,7 @@ public:
                   || __is_nothrow_swappable<__node_allocator>::value)
             );
 #else
-     _NOEXCEPT_DEBUG_(__is_nothrow_swappable<hasher>::value && __is_nothrow_swappable<key_equal>::value);
+     _NOEXCEPT_(__is_nothrow_swappable<hasher>::value && __is_nothrow_swappable<key_equal>::value);
 #endif
 
     _LIBCPP_INLINE_VISIBILITY
@@ -1417,8 +1418,8 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__hash_table()
         is_nothrow_default_constructible<__node_allocator>::value &&
         is_nothrow_default_constructible<hasher>::value &&
         is_nothrow_default_constructible<key_equal>::value)
-    : __p2_(0),
-      __p3_(1.0f)
+    : __p2_(0, __default_init_tag()),
+      __p3_(1.0f, __default_init_tag())
 {
 }
 
@@ -1438,7 +1439,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__hash_table(const hasher& __hf,
                                                        const key_equal& __eql,
                                                        const allocator_type& __a)
     : __bucket_list_(nullptr, __bucket_list_deleter(__pointer_allocator(__a), 0)),
-      __p1_(__second_tag(), __node_allocator(__a)),
+      __p1_(__default_init_tag(), __node_allocator(__a)),
       __p2_(0, __hf),
       __p3_(1.0f, __eql)
 {
@@ -1447,9 +1448,9 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__hash_table(const hasher& __hf,
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__hash_table(const allocator_type& __a)
     : __bucket_list_(nullptr, __bucket_list_deleter(__pointer_allocator(__a), 0)),
-      __p1_(__second_tag(), __node_allocator(__a)),
-      __p2_(0),
-      __p3_(1.0f)
+      __p1_(__default_init_tag(), __node_allocator(__a)),
+      __p2_(0, __default_init_tag()),
+      __p3_(1.0f, __default_init_tag())
 {
 }
 
@@ -1459,7 +1460,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__hash_table(const __hash_table& __u)
           __bucket_list_deleter(allocator_traits<__pointer_allocator>::
               select_on_container_copy_construction(
                   __u.__bucket_list_.get_deleter().__alloc()), 0)),
-      __p1_(__second_tag(), allocator_traits<__node_allocator>::
+      __p1_(__default_init_tag(), allocator_traits<__node_allocator>::
           select_on_container_copy_construction(__u.__node_alloc())),
       __p2_(0, __u.hash_function()),
       __p3_(__u.__p3_)
@@ -1470,7 +1471,7 @@ template <class _Tp, class _Hash, class _Equal, class _Alloc>
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__hash_table(const __hash_table& __u,
                                                        const allocator_type& __a)
     : __bucket_list_(nullptr, __bucket_list_deleter(__pointer_allocator(__a), 0)),
-      __p1_(__second_tag(), __node_allocator(__a)),
+      __p1_(__default_init_tag(), __node_allocator(__a)),
       __p2_(0, __u.hash_function()),
       __p3_(__u.__p3_)
 {
@@ -1504,7 +1505,7 @@ template <class _Tp, class _Hash, class _Equal, class _Alloc>
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__hash_table(__hash_table&& __u,
                                                        const allocator_type& __a)
     : __bucket_list_(nullptr, __bucket_list_deleter(__pointer_allocator(__a), 0)),
-      __p1_(__second_tag(), __node_allocator(__a)),
+      __p1_(__default_init_tag(), __node_allocator(__a)),
       __p2_(0, _VSTD::move(__u.hash_function())),
       __p3_(_VSTD::move(__u.__p3_))
 {
@@ -2249,7 +2250,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_handle_insert_unique(
         return _InsertReturnType{end(), false, _NodeHandle()};
     pair<iterator, bool> __result = __node_insert_unique(__nh.__ptr_);
     if (__result.second)
-        __nh.__release();
+        __nh.__release_ptr();
     return _InsertReturnType{__result.first, __result.second, _VSTD::move(__nh)};
 }
 
@@ -2264,7 +2265,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_handle_insert_unique(
         return end();
     pair<iterator, bool> __result = __node_insert_unique(__nh.__ptr_);
     if (__result.second)
-        __nh.__release();
+        __nh.__release_ptr();
     return __result.first;
 }
 
@@ -2328,7 +2329,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_handle_insert_multi(
     if (__nh.empty())
         return end();
     iterator __result = __node_insert_multi(__nh.__ptr_);
-    __nh.__release();
+    __nh.__release_ptr();
     return __result;
 }
 
@@ -2342,7 +2343,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_handle_insert_multi(
     if (__nh.empty())
         return end();
     iterator __result = __node_insert_multi(__hint, __nh.__ptr_);
-    __nh.__release();
+    __nh.__release_ptr();
     return __result;
 }
 
@@ -2372,6 +2373,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_handle_merge_multi(
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 void
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::rehash(size_type __n)
+_LIBCPP_DISABLE_UBSAN_UNSIGNED_INTEGER_CHECK
 {
     if (__n == 1)
         __n = 2;
@@ -2807,7 +2809,7 @@ template <class _Tp, class _Hash, class _Equal, class _Alloc>
 void
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::swap(__hash_table& __u)
 #if _LIBCPP_STD_VER <= 11
-    _NOEXCEPT_DEBUG_(
+    _NOEXCEPT_(
         __is_nothrow_swappable<hasher>::value && __is_nothrow_swappable<key_equal>::value
         && (!allocator_traits<__pointer_allocator>::propagate_on_container_swap::value
               || __is_nothrow_swappable<__pointer_allocator>::value)
@@ -2815,7 +2817,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::swap(__hash_table& __u)
               || __is_nothrow_swappable<__node_allocator>::value)
             )
 #else
-  _NOEXCEPT_DEBUG_(__is_nothrow_swappable<hasher>::value && __is_nothrow_swappable<key_equal>::value)
+  _NOEXCEPT_(__is_nothrow_swappable<hasher>::value && __is_nothrow_swappable<key_equal>::value)
 #endif
 {
     _LIBCPP_ASSERT(__node_traits::propagate_on_container_swap::value ||

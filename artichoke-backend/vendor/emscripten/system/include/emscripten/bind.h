@@ -21,6 +21,10 @@
 #include <emscripten/val.h>
 #include <emscripten/wire.h>
 
+#if __has_feature(leak_sanitizer) || __has_feature(address_sanitizer)
+#include <sanitizer/lsan_interface.h>
+#endif
+
 namespace emscripten {
     enum class sharing_policy {
         NONE = 0,
@@ -262,7 +266,7 @@ namespace emscripten {
     };
     */
 
-    // whitelist all raw pointers
+    // allow all raw pointers
     struct allow_raw_pointers {
         template<typename InputType, int Index>
         struct Transform {
@@ -587,8 +591,15 @@ namespace emscripten {
         template<typename T>
         inline T* getContext(const T& t) {
             // not a leak because this is called once per binding
-            return new T(t);
+            auto* ret = new T(t);
+#if __has_feature(leak_sanitizer) || __has_feature(address_sanitizer)
+            __lsan_ignore_object(ret);
+#endif
+            return ret;
         }
+
+        template<typename Accessor, typename ValueType>
+        struct PropertyTag {};
 
         template<typename T>
         struct GetterPolicy;
@@ -629,13 +640,49 @@ namespace emscripten {
             }
         };
 
+        template<typename GetterReturnType, typename GetterThisType>
+        struct GetterPolicy<std::function<GetterReturnType(const GetterThisType&)>> {
+            typedef GetterReturnType ReturnType;
+            typedef std::function<GetterReturnType(const GetterThisType&)> Context;
+
+            typedef internal::BindingType<ReturnType> Binding;
+            typedef typename Binding::WireType WireType;
+
+            template<typename ClassType>
+            static WireType get(const Context& context, const ClassType& ptr) {
+                return Binding::toWireType(context(ptr));
+            }
+
+            static void* getContext(const Context& context) {
+                return internal::getContext(context);
+            }
+        };
+
+        template<typename Getter, typename GetterReturnType>
+        struct GetterPolicy<PropertyTag<Getter, GetterReturnType>> {
+            typedef GetterReturnType ReturnType;
+            typedef Getter Context;
+
+            typedef internal::BindingType<ReturnType> Binding;
+            typedef typename Binding::WireType WireType;
+
+            template<typename ClassType>
+            static WireType get(const Context& context, const ClassType& ptr) {
+                return Binding::toWireType(context(ptr));
+            }
+
+            static void* getContext(const Context& context) {
+                return internal::getContext(context);
+            }
+        };
+
         template<typename T>
         struct SetterPolicy;
 
-        template<typename SetterThisType, typename SetterArgumentType>
-        struct SetterPolicy<void (SetterThisType::*)(SetterArgumentType)> {
+        template<typename SetterReturnType, typename SetterThisType, typename SetterArgumentType>
+        struct SetterPolicy<SetterReturnType (SetterThisType::*)(SetterArgumentType)> {
             typedef SetterArgumentType ArgumentType;
-            typedef void (SetterThisType::*Context)(SetterArgumentType);
+            typedef SetterReturnType (SetterThisType::*Context)(SetterArgumentType);
 
             typedef internal::BindingType<SetterArgumentType> Binding;
             typedef typename Binding::WireType WireType;
@@ -650,10 +697,10 @@ namespace emscripten {
             }
         };
 
-        template<typename SetterThisType, typename SetterArgumentType>
-        struct SetterPolicy<void (*)(SetterThisType&, SetterArgumentType)> {
+        template<typename SetterReturnType, typename SetterThisType, typename SetterArgumentType>
+        struct SetterPolicy<SetterReturnType (*)(SetterThisType&, SetterArgumentType)> {
             typedef SetterArgumentType ArgumentType;
-            typedef void (*Context)(SetterThisType&, SetterArgumentType);
+            typedef SetterReturnType (*Context)(SetterThisType&, SetterArgumentType);
 
             typedef internal::BindingType<SetterArgumentType> Binding;
             typedef typename Binding::WireType WireType;
@@ -664,6 +711,42 @@ namespace emscripten {
             }
 
             static void* getContext(Context context) {
+                return internal::getContext(context);
+            }
+        };
+
+        template<typename SetterReturnType, typename SetterThisType, typename SetterArgumentType>
+        struct SetterPolicy<std::function<SetterReturnType(SetterThisType&, SetterArgumentType)>> {
+            typedef SetterArgumentType ArgumentType;
+            typedef std::function<SetterReturnType(SetterThisType&, SetterArgumentType)> Context;
+
+            typedef internal::BindingType<SetterArgumentType> Binding;
+            typedef typename Binding::WireType WireType;
+
+            template<typename ClassType>
+            static void set(const Context& context, ClassType& ptr, WireType wt) {
+                context(ptr, Binding::fromWireType(wt));
+            }
+
+            static void* getContext(const Context& context) {
+                return internal::getContext(context);
+            }
+        };
+
+        template<typename Setter, typename SetterArgumentType>
+        struct SetterPolicy<PropertyTag<Setter, SetterArgumentType>> {
+            typedef SetterArgumentType ArgumentType;
+            typedef Setter Context;
+
+            typedef internal::BindingType<SetterArgumentType> Binding;
+            typedef typename Binding::WireType WireType;
+
+            template<typename ClassType>
+            static void set(const Context& context, ClassType& ptr, WireType wt) {
+                context(ptr, Binding::fromWireType(wt));
+            }
+
+            static void* getContext(const Context& context) {
                 return internal::getContext(context);
             }
         };
@@ -1510,10 +1593,15 @@ namespace emscripten {
             return *this;
         }
 
-        template<typename Getter>
+        template<typename PropertyType = internal::DeduceArgumentsTag, typename Getter>
         EMSCRIPTEN_ALWAYS_INLINE const class_& property(const char* fieldName, Getter getter) const {
             using namespace internal;
-            typedef GetterPolicy<Getter> GP;
+
+            typedef GetterPolicy<
+                typename std::conditional<std::is_same<PropertyType, internal::DeduceArgumentsTag>::value,
+                                                       Getter,
+                                                       PropertyTag<Getter, PropertyType>>::type> GP;
+
             auto gter = &GP::template get<ClassType>;
             _embind_register_class_property(
                 TypeID<ClassType>::get(),
@@ -1529,11 +1617,19 @@ namespace emscripten {
             return *this;
         }
 
-        template<typename Getter, typename Setter>
+        template<typename PropertyType = internal::DeduceArgumentsTag, typename Getter, typename Setter>
         EMSCRIPTEN_ALWAYS_INLINE const class_& property(const char* fieldName, Getter getter, Setter setter) const {
             using namespace internal;
-            typedef GetterPolicy<Getter> GP;
-            typedef SetterPolicy<Setter> SP;
+
+            typedef GetterPolicy<
+                typename std::conditional<std::is_same<PropertyType, internal::DeduceArgumentsTag>::value,
+                                                       Getter,
+                                                       PropertyTag<Getter, PropertyType>>::type> GP;
+            typedef SetterPolicy<
+                typename std::conditional<std::is_same<PropertyType, internal::DeduceArgumentsTag>::value,
+                                                       Setter,
+                                                       PropertyTag<Setter, PropertyType>>::type> SP;
+
 
             auto gter = &GP::template get<ClassType>;
             auto ster = &SP::template set<ClassType>;
@@ -1695,9 +1791,10 @@ namespace emscripten {
     class_<std::map<K, V>> register_map(const char* name) {
         typedef std::map<K,V> MapType;
 
+        size_t (MapType::*size)() const = &MapType::size;
         return class_<MapType>(name)
             .template constructor<>()
-            .function("size", &MapType::size)
+            .function("size", size)
             .function("get", internal::MapAccess<MapType>::get)
             .function("set", internal::MapAccess<MapType>::set)
             .function("keys", internal::MapAccess<MapType>::keys)

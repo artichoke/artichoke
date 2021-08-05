@@ -1,9 +1,8 @@
 //===--------------------------- cxxabi.h ---------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -12,7 +11,7 @@
 
 /*
  * This header provides the interface to the C++ ABI as defined at:
- *       http://www.codesourcery.com/cxx-abi/
+ *       https://itanium-cxx-abi.github.io/cxx-abi/
  */
 
 #include <stddef.h>
@@ -40,20 +39,24 @@ extern "C"  {
 
 // 2.4.2 Allocating the Exception Object
 extern _LIBCXXABI_FUNC_VIS void *
-__cxa_allocate_exception(size_t thrown_size) throw();
+__cxa_allocate_exception(size_t thrown_size) _NOEXCEPT;
 extern _LIBCXXABI_FUNC_VIS void
-__cxa_free_exception(void *thrown_exception) throw();
+__cxa_free_exception(void *thrown_exception) _NOEXCEPT;
 
 // 2.4.3 Throwing the Exception Object
 extern _LIBCXXABI_FUNC_VIS _LIBCXXABI_NORETURN void
 __cxa_throw(void *thrown_exception, std::type_info *tinfo,
+#ifdef __USING_WASM_EXCEPTIONS__
+            void *(*dest)(void *));
+#else
             void (*dest)(void *));
+#endif
 
 // 2.5.3 Exception Handlers
 extern _LIBCXXABI_FUNC_VIS void *
-__cxa_get_exception_ptr(void *exceptionObject) throw();
+__cxa_get_exception_ptr(void *exceptionObject) _NOEXCEPT;
 extern _LIBCXXABI_FUNC_VIS void *
-__cxa_begin_catch(void *exceptionObject) throw();
+__cxa_begin_catch(void *exceptionObject) _NOEXCEPT;
 extern _LIBCXXABI_FUNC_VIS void __cxa_end_catch();
 #if defined(_LIBCXXABI_ARM_EHABI)
 extern _LIBCXXABI_FUNC_VIS bool
@@ -78,7 +81,7 @@ extern _LIBCXXABI_FUNC_VIS _LIBCXXABI_NORETURN void __cxa_pure_virtual(void);
 extern _LIBCXXABI_FUNC_VIS _LIBCXXABI_NORETURN void __cxa_deleted_virtual(void);
 
 // 3.3.2 One-time Construction API
-#if defined(__arm__) || defined (__EMSCRIPTEN__)
+#if defined(_LIBCXXABI_GUARD_ABI_ARM)
 extern _LIBCXXABI_FUNC_VIS int __cxa_guard_acquire(uint32_t *);
 extern _LIBCXXABI_FUNC_VIS void __cxa_guard_release(uint32_t *);
 extern _LIBCXXABI_FUNC_VIS void __cxa_guard_abort(uint32_t *);
@@ -148,17 +151,17 @@ extern _LIBCXXABI_FUNC_VIS char *__cxa_demangle(const char *mangled_name,
 
 // Apple additions to support C++ 0x exception_ptr class
 // These are primitives to wrap a smart pointer around an exception object
-extern _LIBCXXABI_FUNC_VIS void *__cxa_current_primary_exception() throw();
+extern _LIBCXXABI_FUNC_VIS void *__cxa_current_primary_exception() _NOEXCEPT;
 extern _LIBCXXABI_FUNC_VIS void
 __cxa_rethrow_primary_exception(void *primary_exception);
 extern _LIBCXXABI_FUNC_VIS void
-__cxa_increment_exception_refcount(void *primary_exception) throw();
+__cxa_increment_exception_refcount(void *primary_exception) _NOEXCEPT;
 extern _LIBCXXABI_FUNC_VIS void
-__cxa_decrement_exception_refcount(void *primary_exception) throw();
+__cxa_decrement_exception_refcount(void *primary_exception) _NOEXCEPT;
 
 // Apple extension to support std::uncaught_exception()
-extern _LIBCXXABI_FUNC_VIS bool __cxa_uncaught_exception() throw();
-extern _LIBCXXABI_FUNC_VIS unsigned int __cxa_uncaught_exceptions() throw();
+extern _LIBCXXABI_FUNC_VIS bool __cxa_uncaught_exception() _NOEXCEPT;
+extern _LIBCXXABI_FUNC_VIS unsigned int __cxa_uncaught_exceptions() _NOEXCEPT;
 
 #if defined(__linux__) || defined(__Fuchsia__)
 // Linux and Fuchsia TLS support. Not yet an official part of the Itanium ABI.
