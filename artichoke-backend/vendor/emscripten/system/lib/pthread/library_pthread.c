@@ -10,8 +10,6 @@
 #include "../internal/pthread_impl.h"
 #include <assert.h>
 #include <dirent.h>
-#include <emscripten.h>
-#include <emscripten/threading.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
@@ -29,6 +27,10 @@
 #include <termios.h>
 #include <unistd.h>
 #include <utime.h>
+
+#include <emscripten.h>
+#include <emscripten/threading.h>
+#include <emscripten/stack.h>
 
 // With LLVM 3.6, C11 is the default compilation mode.
 // gets() is deprecated under that standard, but emcc
@@ -706,7 +708,7 @@ void EMSCRIPTEN_KEEPALIVE emscripten_current_thread_process_queued_calls() {
 }
 
 void EMSCRIPTEN_KEEPALIVE emscripten_main_thread_process_queued_calls() {
-  if (!emscripten_is_main_browser_thread())
+  if (!emscripten_is_main_runtime_thread())
     return;
 
   emscripten_current_thread_process_queued_calls();
@@ -913,6 +915,11 @@ int llvm_atomic_load_add_i32_p0i32(int* ptr, int delta) {
   return emscripten_atomic_add_u32(ptr, delta);
 }
 
+// Stores the memory address that the main thread is waiting on, if any. If
+// the main thread is waiting, we wake it up before waking up any workers.
+EMSCRIPTEN_KEEPALIVE
+void* main_thread_futex;
+
 typedef struct main_args {
   int argc;
   char** argv;
@@ -933,10 +940,9 @@ int proxy_main(int argc, char** argv) {
   if (emscripten_has_threading_support()) {
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-    // Use TOTAL_STACK for the stack size, which is the normal size of the stack
+    // Use the size of the current stack, which is the normal size of the stack
     // that main() would have without PROXY_TO_PTHREAD.
-    pthread_attr_setstacksize(&attr, EM_ASM_INT({ return TOTAL_STACK }));
+    pthread_attr_setstacksize(&attr, emscripten_stack_get_base() - emscripten_stack_get_end());
     // Pass special ID -1 to the list of transferred canvases to denote that the thread creation
     // should instead take a list of canvases that are specified from the command line with
     // -s OFFSCREENCANVASES_TO_PTHREAD linker flag.
