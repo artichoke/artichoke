@@ -19,7 +19,7 @@ rand = { version = "0.8", optional = true, default-features = false }
 # 0.6.1 is vulnerable to underfilling a buffer.
 #
 # https://rustsec.org/advisories/RUSTSEC-2021-0023
-rand_core = { version = "0.6, >= 0.6.2", default-features = false, optional = true }
+rand_core = { version = "0.6, >= 0.6.2", optional = true, default-features = false }
 
 [features]
 default = ["random-rand", "rand-traits", "std"]

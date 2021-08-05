@@ -19,6 +19,7 @@ intaglio = "1.2"
 itoa = "0.4"
 log = "0.4, >= 0.4.5"
 once_cell = "1"
+onig = { version = "6.2", optional = true, default-features = false }
 regex = "1"
 scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", default-features = false }
 spinoso-array = { version = "0.5", path = "../spinoso-array", default-features = false }
@@ -26,15 +27,10 @@ spinoso-env = { version = "0.1", path = "../spinoso-env", optional = true, defau
 spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
 spinoso-math = { version = "0.1", path = "../spinoso-math", optional = true, default-features = false, features = ["std"] }
 spinoso-random = { version = "0.1", path = "../spinoso-random", optional = true }
-spinoso-regexp = { version = "0.1", path = "../spinoso-regexp", default-features = false, optional = true }
+spinoso-regexp = { version = "0.1", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.1", path = "../spinoso-time", optional = true }
-
-[dependencies.onig]
-version = "6.2"
-default-features = false
-optional = true
 
 [dev-dependencies]
 quickcheck = { version = "1.0", default-features = false }
