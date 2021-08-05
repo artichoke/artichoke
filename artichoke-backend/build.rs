@@ -130,13 +130,38 @@ mod libmruby {
         mruby_source_dir().join("noop.rb")
     }
 
-    fn wasm_include_dir() -> PathBuf {
-        buildpath::crate_root()
-            .join("vendor")
-            .join("emscripten")
-            .join("system")
-            .join("include")
-            .join("libc")
+    // From `emsdk/upstream/emscripten/tools/shared.py:emsdk_cflags`:
+    //
+    // ``python
+    // path_from_root('system', 'include', 'compat'),
+    // path_from_root('system', 'include'),
+    // path_from_root('system', 'include', 'libc'),
+    // path_from_root('system', 'lib', 'libc', 'musl', 'arch', 'emscripten'),
+    // path_from_root('system', 'local', 'include'),
+    // path_from_root('system', 'include', 'SSE'),
+    // path_from_root('system', 'include', 'neon'),
+    // path_from_root('system', 'lib', 'compiler-rt', 'include'),
+    // path_from_root('system', 'lib', 'libunwind', 'include'),
+    // ```
+    fn wasm_include_dirs() -> impl Iterator<Item = PathBuf> {
+        let system = buildpath::crate_root().join("vendor").join("emscripten").join("system");
+        vec![
+            system.join("include").join("compat"),
+            system.join("include"),
+            system.join("include").join("libc"),
+            system
+                .join("lib")
+                .join("libc")
+                .join("musl")
+                .join("arch")
+                .join("emscripten"),
+            system.join("local").join("include"),
+            system.join("include").join("SSE"),
+            system.join("include").join("neon"),
+            system.join("lib").join("compiler-rt").join("include"),
+            system.join("lib").join("libunwind").join("include"),
+        ]
+        .into_iter()
     }
 
     pub fn mruby_source_dir() -> PathBuf {
@@ -267,7 +292,9 @@ mod libmruby {
         }
 
         if let Architecture::Wasm32 = target.architecture {
-            build.include(wasm_include_dir());
+            for include_dir in wasm_include_dirs() {
+                build.include(include_dir);
+            }
             if let OperatingSystem::Emscripten = target.operating_system {
                 build.define("MRB_API", Some(r#"__attribute__((used))"#));
             } else if let OperatingSystem::Unknown = target.operating_system {
@@ -358,10 +385,10 @@ mod libmruby {
             .arg("-DMRB_INT64")
             .arg("-DMRB_UTF8_STRING");
         if let Architecture::Wasm32 = target.architecture {
-            command
-                .arg("-I")
-                .arg(wasm_include_dir())
-                .arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
+            for include_dir in wasm_include_dirs() {
+                command.arg("-I").arg(include_dir);
+            }
+            command.arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
         }
 
         command.status().unwrap()
