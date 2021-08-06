@@ -309,7 +309,7 @@ mod libmruby {
     fn bindgen(target: &Triple, out_dir: &OsStr) {
         // Try to use an existing global install of bindgen
         let status = invoke_bindgen(target, out_dir, OsStr::new("bindgen"));
-        if status.success() {
+        if matches!(status, Some(status) if status.success()) {
             return;
         }
         // Install bindgen
@@ -335,12 +335,12 @@ mod libmruby {
             out_dir,
             bindgen_install_dir.join("bin").join("bindgen").as_os_str(),
         );
-        if !status.success() {
+        if !status.unwrap().success() {
             panic!("bindgen failed");
         }
     }
 
-    pub fn invoke_bindgen(target: &Triple, out_dir: &OsStr, bindgen_executable: &OsStr) -> ExitStatus {
+    pub fn invoke_bindgen(target: &Triple, out_dir: &OsStr, bindgen_executable: &OsStr) -> Option<ExitStatus> {
         let bindings_out_path = PathBuf::from(out_dir).join("ffi.rs");
         let mut command = Command::new(bindgen_executable);
         command
@@ -391,7 +391,7 @@ mod libmruby {
             command.arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
         }
 
-        command.status().unwrap()
+        command.status().ok()
     }
 
     pub fn build(target: &Triple, out_dir: &OsStr) {
