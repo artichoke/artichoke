@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-math = "0.1"
+spinoso-math = "0.2"
 ```
 
 Compute the hypotenuse:
@@ -55,11 +55,6 @@ assert!(math::log10(-0.1).is_err());
 assert!(matches!(math::log10(f64::NAN), Ok(result) if result.is_nan()));
 ```
 
-## `no_std`
-
-This crate is `no_std` compatible when built without the `std` feature. This
-crate does not depend on [`alloc`].
-
 ## Crate features
 
 All features are enabled by default.
@@ -67,8 +62,6 @@ All features are enabled by default.
 - **full** - Enables implementations of math functions that do not have
   implementations in Rust [`core`]. Dropping this feature removes the [`libm`]
   dependency.
-- **std** - Enables a dependency on the Rust Standard Library. Activating this
-  feature enables [`std::error::Error`] impls on error types in this crate.
 
 ## License
 
@@ -78,6 +71,3 @@ All features are enabled by default.
 [`core`]: https://doc.rust-lang.org/core/
 [`nan`]: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.NAN
 [`f64`]: https://doc.rust-lang.org/std/primitive.f64.html
-[`alloc`]: https://doc.rust-lang.org/alloc/
-[`alloc`]: https://doc.rust-lang.org/alloc/
-[`std::error::error`]: https://doc.rust-lang.org/std/error/trait.Error.html

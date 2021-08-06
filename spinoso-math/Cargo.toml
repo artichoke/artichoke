@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-math"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 description = """
@@ -16,13 +16,10 @@ categories = ["algorithms", "no-std"]
 libm = { version = "0.2", optional = true }
 
 [features]
-default = ["full", "std"]
+default = ["full"]
 # Implement the full Ruby `Math` API by including external crates for missing
-# `core` APIs.
+# `std` APIs.
 full = ["libm"]
-# By default, `spinoso-math` is `no_std`. This feature enables
-# `std::error::Error` impls.
-std = []
 
 [package.metadata.docs.rs]
 all-features = true
