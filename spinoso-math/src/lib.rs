@@ -58,11 +58,6 @@
 //! assert!(matches!(math::log10(f64::NAN), Ok(result) if result.is_nan()));
 //! ```
 //!
-//! # `no_std`
-//!
-//! This crate is `no_std` compatible when built without the `std` feature. This
-//! crate does not depend on [`alloc`].
-//!
 //! # Crate features
 //!
 //! All features are enabled by default.
@@ -70,9 +65,6 @@
 //! - **full** - Enables implementations of math functions that do not have
 //!   implementations in Rust [`core`]. Dropping this feature removes the
 //!   [`libm`] dependency.
-//! - **std** - Enables a dependency on the Rust Standard Library. Activating
-//!   this feature enables [`std::error::Error`] impls on error types in this
-//!   crate.
 //!
 //! [`Float`]: https://ruby-doc.org/core-2.6.3/Float.html
 //! [`NaN`]: f64::NAN
@@ -84,7 +76,6 @@
 mod readme {}
 
 use core::fmt;
-#[cfg(feature = "std")]
 use std::error;
 
 #[doc(inline)]
@@ -197,7 +188,6 @@ impl fmt::Display for Error {
     }
 }
 
-#[cfg(feature = "std")]
 impl error::Error for Error {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
@@ -302,7 +292,6 @@ impl fmt::Display for DomainError {
     }
 }
 
-#[cfg(feature = "std")]
 impl error::Error for DomainError {}
 
 /// Error that indicates a `Math` module function is not implemented.
@@ -403,5 +392,4 @@ impl fmt::Display for NotImplementedError {
     }
 }
 
-#[cfg(feature = "std")]
 impl error::Error for NotImplementedError {}
