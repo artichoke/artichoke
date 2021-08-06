@@ -8,6 +8,6 @@ overrides:
   - files: "*.{yaml,yml}"
     options:
       proseWrap: preserve
-  - files: ".github/labels.yml"
+  - files: ".github/labels.{yaml,yml}"
     options:
       proseWrap: always
