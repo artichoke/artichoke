@@ -57,7 +57,9 @@ fn main() {
     let args = match parse_args() {
         Ok(args) => args,
         Err(err) => {
-            eprintln!("{}", err);
+            // Suppress all errors at this point (e.g. from a broken pipe) since
+            // we're exiting with an error code anyway.
+            let _ = writeln!(io::stderr(), "{}", err);
             process::exit(2);
         }
     };
