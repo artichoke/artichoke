@@ -10,8 +10,42 @@ name: Audit
   schedule:
     - cron: "0 0 * * TUE"
 jobs:
+  js:
+    name: Audit JS Dependencies
+    if: false
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Nodejs toolchain
+        run: npm ci
+
+      - name: npm audit
+        run: npm audit
+
+  ruby:
+    name: Audit Ruby Dependencies
+    if: true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
+          bundler-cache: true
+
+      - name: bundler-audit
+        run: bundle exec bundle-audit check --update
+
   rust:
     name: Audit Rust Dependencies
+    if: true
     runs-on: ubuntu-latest
 
     steps:
