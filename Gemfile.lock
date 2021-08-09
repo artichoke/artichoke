@@ -2,6 +2,9 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.2)
+    bundler-audit (0.8.0)
+      bundler (>= 1.2.0, < 3)
+      thor (~> 1.0)
     parallel (1.20.1)
     parser (3.0.2.0)
       ast (~> 2.4.1)
@@ -23,15 +26,17 @@ GEM
     rubocop-rake (0.6.0)
       rubocop (~> 1.0)
     ruby-progressbar (1.11.0)
+    thor (1.1.0)
     unicode-display_width (2.0.0)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  bundler-audit (~> 0.8)
   rake (>= 12.3.3)
   rubocop (~> 1.18)
   rubocop-rake (~> 0.6)
 
 BUNDLED WITH
-   2.0.2
+   2.2.15
