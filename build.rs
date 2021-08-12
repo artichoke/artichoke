@@ -1,6 +1,10 @@
-#![deny(clippy::all)]
-#![deny(clippy::pedantic)]
-#![allow(clippy::restriction)]
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
+#![warn(clippy::needless_borrow)]
+#![allow(clippy::let_underscore_drop)]
+// https://github.com/rust-lang/rust-clippy/pull/5998#issuecomment-731855891
+#![allow(clippy::map_err_ignore)]
+#![allow(clippy::option_if_let_else)]
 
 use chrono::prelude::*;
 use std::env;
@@ -39,7 +43,7 @@ pub fn build_release_metadata(target: &Triple) {
         .to_str()
         .expect("CARGO_PKG_VERSION was not a valid UTF-8 String");
     let birth_date = birthdate();
-    let build_date = Date::from(Utc::now());
+    let build_date = build_date();
     let release_date = build_date;
     let revision_count = revision_count();
     let platform = platform(target);
@@ -79,6 +83,24 @@ fn birthdate() -> Date {
     // ```
     let time = 1_554_600_621;
     Utc.timestamp(time, 0).into()
+}
+
+fn build_date() -> Date {
+    // Enable reproducibility for `RUBY_RELEASE_DATE` and friends by respecting
+    // the `SOURCE_DATE_EPOCH` env variable.
+    //
+    // https://reproducible-builds.org/docs/source-date-epoch/
+    println!("cargo:rerun-if-env-changed=SOURCE_DATE_EPOCH");
+    if let Some(timestamp) = env::var_os("SOURCE_DATE_EPOCH") {
+        let epoch = timestamp
+            .into_string()
+            .expect("SOURCE_DATE_EPOCH was not valid UTF-8")
+            .parse::<i64>()
+            .expect("SOURCE_DATE_EPOCH was not a valid integer");
+        Date::from(Utc.timestamp(epoch, 0))
+    } else {
+        Date::from(Utc::now())
+    }
 }
 
 fn revision_count() -> Option<usize> {
