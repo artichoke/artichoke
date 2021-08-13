@@ -51,7 +51,7 @@
 //!
 //! ```console
 //! $ cargo run -q -p spec-runner -- --help
-//! spec-runner 0.4.0
+//! spec-runner 0.5.0
 //! ruby/spec runner for Artichoke.
 //!
 //! USAGE:
@@ -63,7 +63,7 @@
 //!
 //! OPTIONS:
 //!     -f, --format <formatter>    Output spec results in YAML [default: artichoke]  [possible values: artichoke, summary,
-//!                                 yaml]
+//!                                 tagger, yaml]
 //!
 //! ARGS:
 //!     <config>    Path to TOML config file
@@ -117,7 +117,7 @@ pub fn main() {
             .long("format")
             .short("f")
             .default_value("artichoke")
-            .possible_values(&["artichoke", "summary", "yaml"])
+            .possible_values(&["artichoke", "summary", "tagger", "yaml"])
             .required(false)
             .help("Output spec results in YAML"),
     );

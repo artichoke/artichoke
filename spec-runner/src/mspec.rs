@@ -32,6 +32,8 @@ pub enum Formatter {
     Artichoke,
     /// Output exceptions and summary information in plaintext readable format.
     Summary,
+    /// `MSpec` tagging mode.
+    Tagger,
     /// Output exceptions and spec summary information in YAML format.
     Yaml,
 }
@@ -49,6 +51,7 @@ impl FromStr for Formatter {
         match s {
             _ if s.eq_ignore_ascii_case("Artichoke") => Ok(Self::Artichoke),
             _ if s.eq_ignore_ascii_case("Summary") => Ok(Self::Summary),
+            _ if s.eq_ignore_ascii_case("Tagger") => Ok(Self::Tagger),
             _ if s.eq_ignore_ascii_case("Yaml") => Ok(Self::Yaml),
             _ => Err("invalid formatter"),
         }
@@ -60,6 +63,7 @@ impl Formatter {
         match self {
             Self::Artichoke => "Artichoke::Spec::Formatter::Artichoke",
             Self::Summary => "Artichoke::Spec::Formatter::Summary",
+            Self::Tagger => "Artichoke::Spec::Formatter::Tagger",
             Self::Yaml => "Artichoke::Spec::Formatter::Yaml",
         }
     }
@@ -117,6 +121,15 @@ mod tests {
         init(&mut interp).unwrap();
         // should not panic
         assert!(run(&mut interp, Formatter::Summary, vec![]).unwrap());
+        interp.close();
+    }
+
+    #[test]
+    fn tagger_formatter_succeeds() {
+        let mut interp = artichoke::interpreter().unwrap();
+        init(&mut interp).unwrap();
+        // should not panic
+        assert!(run(&mut interp, Formatter::Tagger, vec![]).unwrap());
         interp.close();
     }
 

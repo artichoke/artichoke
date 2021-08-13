@@ -46,6 +46,7 @@ $stderr ||= STDERR # rubocop:disable Style/GlobalStdStream
 RUBY_EXE = '/usr/bin/true'
 
 require 'mspec'
+require 'mspec/runner/actions'
 require 'mspec/utils/script'
 
 module Artichoke
@@ -256,6 +257,98 @@ module Artichoke
           return false unless formatter.tally.counter.errors.zero?
 
           true
+        end
+      end
+
+      class Tagger
+        def self.run_specs(*specs)
+          specs = specs.flatten
+          MSpec.register_files(specs)
+
+          MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
+
+          tagger = :add
+          tag = 'spec-runner-tagger:'
+
+          case tagger
+          when :add, :del
+            tag = SpecTag.new(tag)
+            tag_action = new(
+              tag.tag,
+              tag.comment
+            )
+          else
+            raise ArgumentError, 'No recognized tagger action given'
+          end
+          tag_action.register
+
+          # HACK: tickle the GC so a full spec run passes without segfaulting.
+          200.times do
+            'a' * 200
+          end
+
+          MSpec.process
+
+          true
+        end
+
+        def initialize(tag, comment, _tags = nil, _descs = nil)
+          @tag = tag
+          @comment = comment
+          @report = []
+          @exception = false
+          @spec_group = nil
+        end
+
+        def enter(_description)
+          state = MSpec.current
+          parent = state.parent
+          until parent.nil?
+            state = parent
+            parent = state.parent
+          end
+          @spec = state.to_s
+          @spec = @spec[1..-1] if @spec.start_with?('#')
+          @spec = 'Enumerable#slice_after' if @spec == 'when an iterator method yields more than one value'
+          @spec = @spec.split[0]
+          @spec_group = @spec.split(/[.#]/)[0]
+        end
+
+        def before(_state)
+          @exception = false
+        end
+
+        def exception(_state)
+          @exception = true
+        end
+
+        def after(state)
+          tag = SpecTag.new
+          tag.tag = @tag
+          tag.comment = @comment
+          tag.description = state.description
+
+          outcome = :pass
+          outcome = :fail if @exception
+          @report << { outcome: outcome, tag: tag, spec: @spec, group: @spec_group }
+        end
+
+        def finish
+          puts '---'
+          @report.sort_by { |item| [item[:group], item[:spec], item[:tag].to_s] }.each do |item|
+            puts "- tag: #{item[:tag].to_s.inspect}"
+            puts "  group: #{item[:group].to_s.inspect}"
+            puts "  spec: #{item[:spec].to_s.inspect}"
+            puts "  outcome: #{item[:outcome]}"
+          end
+        end
+
+        def register
+          MSpec.register :enter,     self
+          MSpec.register :before,    self
+          MSpec.register :exception, self
+          MSpec.register :after,     self
+          MSpec.register :finish,    self
         end
       end
     end
