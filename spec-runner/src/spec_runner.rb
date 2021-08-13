@@ -7,6 +7,26 @@ if $PROGRAM_NAME == __FILE__
 end
 
 class StubIO
+  def initialize(is_stderr: false)
+    @is_stderr = is_stderr
+  end
+
+  def puts(*args)
+    if @is_stderr
+      Kernel.warn(*args)
+      return
+    end
+    Kernel.puts(*args)
+  end
+
+  def print(*args)
+    Kernel.print(*args)
+  end
+
+  def flush
+    Kernel.puts ''
+  end
+
   def method_missing(method, *args, &block)
     super
   rescue NoMethodError
@@ -19,175 +39,222 @@ class StubIO
 end
 
 STDOUT = StubIO.new unless Object.const_defined?(:STDOUT)
-STDERR = StubIO.new unless Object.const_defined?(:STDERR)
+STDERR = StubIO.new(is_stderr: true) unless Object.const_defined?(:STDERR)
+$stdout ||= STDOUT # rubocop:disable Style/GlobalStdStream
+$stderr ||= STDERR # rubocop:disable Style/GlobalStdStream
+
 RUBY_EXE = '/usr/bin/true'
 
 require 'mspec'
 require 'mspec/utils/script'
 
-class SpecCollector
-  RED = "\e[31m"
-  GREEN = "\e[32m"
-  YELLOW = "\e[33m"
-  PLAIN = "\e[0m"
+module Artichoke
+  module Spec
+    module Formatter
+      class Artichoke
+        RED = "\e[31m"
+        GREEN = "\e[32m"
+        YELLOW = "\e[33m"
+        PLAIN = "\e[0m"
 
-  def initialize
-    @errors = []
-    @total = 0
-    @successes = 0
-    @failures = 0
-    @skipped = 0
-    @not_implemented = 0
-    @current_description = nil
-    @spec_state = nil
-  end
+        def self.run_specs(*specs)
+          specs = specs.flatten
+          MSpec.register_files(specs)
 
-  def success?
-    @errors.empty?
-  end
+          collector = new
 
-  def start
-    MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
-  end
+          MSpec.register(:start, collector)
+          MSpec.register(:enter, collector)
+          MSpec.register(:before, collector)
+          MSpec.register(:after, collector)
+          MSpec.register(:exception, collector)
+          MSpec.register(:finish, collector)
 
-  def enter(description)
-    print "\n", description, ': '
-    @description = description
-  end
+          MSpec.process
 
-  def before(_state)
-    @total += 1
-    @spec_state = nil
-    print '.'
-  end
+          collector.success?
+        end
 
-  def after(_state)
-    print @spec_state if @spec_state
-  end
+        def initialize
+          @errors = []
+          @total = 0
+          @successes = 0
+          @failures = 0
+          @skipped = 0
+          @not_implemented = 0
+          @current_description = nil
+          @spec_state = nil
+        end
 
-  def exception(state)
-    skipped = false
-    case state.exception
-    when ArgumentError
-      skipped = true if state.message =~ /Oniguruma.*UTF-8/
-    when NoMethodError
-      skipped = true if state.message =~ /'allocate'/
-      skipped = true if state.message =~ /'encoding'/
-      skipped = true if state.message =~ /'private_instance_methods'/
-      if state.message =~ /'size'/
-        # Enumerable#size is not implemented on mruby
-        skipped = true
+        def success?
+          @errors.empty?
+        end
+
+        def start
+          MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
+        end
+
+        def enter(description)
+          print "\n", description, ': '
+          @description = description
+        end
+
+        def before(_state)
+          @total += 1
+          @spec_state = nil
+          print '.'
+        end
+
+        def after(_state)
+          print @spec_state if @spec_state
+        end
+
+        def exception(state)
+          skipped = false
+          case state.exception
+          when ArgumentError
+            skipped = true if state.message =~ /Oniguruma.*UTF-8/
+          when NoMethodError
+            skipped = true if state.message =~ /'allocate'/
+            skipped = true if state.message =~ /'encoding'/
+            skipped = true if state.message =~ /'private_instance_methods'/
+            if state.message =~ /'size'/
+              # Enumerable#size is not implemented on mruby
+              skipped = true
+            end
+            skipped = true if state.message =~ /'taint'/
+            skipped = true if state.message =~ /'tainted\?'/
+            skipped = true if state.message =~ /'untrust'/
+            skipped = true if state.message =~ /'untrusted\?'/
+            skipped = true if state.message =~ /undefined method 'Rational'/
+          when NameError
+            skipped = true if state.message =~ /uninitialized constant Bignum/
+          when SpecExpectationNotMetError
+            skipped = true if state.it =~ /encoding/
+            skipped = true if state.it =~ /ASCII/
+            skipped = true if state.it =~ /is too big/ # mruby does not have Bignum
+            skipped = true if state.it =~ /hexadecimal digits/
+          when SyntaxError
+            skipped = true if state.it =~ /ASCII/
+            skipped = true if state.it =~ /hexadecimal digits/
+            skipped = true if state.message =~ /Regexp pattern/
+          when TypeError
+            skipped = true if state.it =~ /encoding/
+          when NotImplementedError
+            @not_implemented += 1
+            @spec_state = "\b#{YELLOW}N#{PLAIN}"
+            return
+          when RuntimeError
+            skipped = true if state.message =~ /invalid UTF-8/
+          end
+          skipped = true if state.it == 'does not add a URI method to Object instances'
+          skipped = true if state.it == 'is multi-byte character sensitive'
+          skipped = true if state.it =~ /UTF-8/
+          skipped = true if state.it =~ /\\u/
+
+          skipped = true if state.describe == 'Regexp#initialize'
+
+          skipped = true if state.it =~ /Bignum/
+
+          if skipped
+            @skipped += 1
+            @spec_state = "\b#{YELLOW}S#{PLAIN}"
+          else
+            @errors << state
+            @spec_state = "\b#{RED}X#{PLAIN}"
+          end
+          nil
+        end
+
+        def finish
+          failures = @errors.length
+          successes = @total - @skipped - @not_implemented - failures
+          successes = 0 if successes.negative?
+          puts "\n"
+
+          if failures.zero?
+            report(
+              color: GREEN,
+              successes: successes,
+              skipped: @skipped,
+              not_implemented: @not_implemented,
+              failed: failures
+            )
+            return
+          end
+
+          report(
+            color: RED,
+            successes: successes,
+            skipped: @skipped,
+            not_implemented: @not_implemented,
+            failed: failures
+          )
+          @errors.each do |state|
+            puts '',
+                 "#{RED}#{state.description}#{PLAIN}",
+                 "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}"
+            puts '', state.backtrace unless state.exception.is_a?(SystemStackError)
+          end
+          puts ''
+          report(
+            color: RED,
+            successes: successes,
+            skipped: @skipped,
+            not_implemented: @not_implemented,
+            failed: failures
+          )
+        end
+
+        def report(color:, successes:, skipped:, not_implemented:, failed:)
+          print color
+          print "Passed #{successes}, "
+          print "skipped #{skipped}, "
+          print "not implemented #{not_implemented}, "
+          print "failed #{failed} specs."
+          print PLAIN, "\n"
+        end
       end
-      skipped = true if state.message =~ /'taint'/
-      skipped = true if state.message =~ /'tainted\?'/
-      skipped = true if state.message =~ /'untrust'/
-      skipped = true if state.message =~ /'untrusted\?'/
-      skipped = true if state.message =~ /undefined method 'Rational'/
-    when NameError
-      skipped = true if state.message =~ /uninitialized constant Bignum/
-    when SpecExpectationNotMetError
-      skipped = true if state.it =~ /encoding/
-      skipped = true if state.it =~ /ASCII/
-      skipped = true if state.it =~ /is too big/ # mruby does not have Bignum
-      skipped = true if state.it =~ /hexadecimal digits/
-    when SyntaxError
-      skipped = true if state.it =~ /ASCII/
-      skipped = true if state.it =~ /hexadecimal digits/
-      skipped = true if state.message =~ /Regexp pattern/
-    when TypeError
-      skipped = true if state.it =~ /encoding/
-    when NotImplementedError
-      @not_implemented += 1
-      @spec_state = "\b#{YELLOW}N#{PLAIN}"
-      return
-    when RuntimeError
-      skipped = true if state.message =~ /invalid UTF-8/
+
+      class Summary
+        def self.run_specs(*specs)
+          specs = specs.flatten
+          MSpec.register_files(specs)
+
+          MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
+
+          formatter = SummaryFormatter.new
+          formatter.register
+
+          MSpec.process
+
+          return false unless formatter.tally.counter.failures.zero?
+          return false unless formatter.tally.counter.errors.zero?
+
+          true
+        end
+      end
+
+      class Yaml
+        def self.run_specs(*specs)
+          specs = specs.flatten
+          MSpec.register_files(specs)
+
+          MSpecScript.set(:backtrace_filter, %r{/lib/mspec/})
+
+          formatter = YamlFormatter.new
+          formatter.register
+
+          MSpec.process
+
+          return false unless formatter.tally.counter.failures.zero?
+          return false unless formatter.tally.counter.errors.zero?
+
+          true
+        end
+      end
     end
-    skipped = true if state.it == 'does not add a URI method to Object instances'
-    skipped = true if state.it == 'is multi-byte character sensitive'
-    skipped = true if state.it =~ /UTF-8/
-    skipped = true if state.it =~ /\\u/
-
-    skipped = true if state.describe == 'Regexp#initialize'
-
-    skipped = true if state.it =~ /Bignum/
-
-    if skipped
-      @skipped += 1
-      @spec_state = "\b#{YELLOW}S#{PLAIN}"
-    else
-      @errors << state
-      @spec_state = "\b#{RED}X#{PLAIN}"
-    end
-    nil
   end
-
-  def finish
-    failures = @errors.length
-    successes = @total - @skipped - @not_implemented - failures
-    successes = 0 if successes.negative?
-    puts "\n"
-
-    if failures.zero?
-      report(
-        color: GREEN,
-        successes: successes,
-        skipped: @skipped,
-        not_implemented: @not_implemented,
-        failed: failures
-      )
-      return
-    end
-
-    report(
-      color: RED,
-      successes: successes,
-      skipped: @skipped,
-      not_implemented: @not_implemented,
-      failed: failures
-    )
-    @errors.each do |state|
-      puts '',
-           "#{RED}#{state.description}#{PLAIN}",
-           "#{RED}#{state.exception.class}: #{state.exception}#{PLAIN}"
-      puts '', state.backtrace unless state.exception.is_a?(SystemStackError)
-    end
-    puts ''
-    report(
-      color: RED,
-      successes: successes,
-      skipped: @skipped,
-      not_implemented: @not_implemented,
-      failed: failures
-    )
-  end
-
-  def report(color:, successes:, skipped:, not_implemented:, failed:)
-    print color
-    print "Passed #{successes}, "
-    print "skipped #{skipped}, "
-    print "not implemented #{not_implemented}, "
-    print "failed #{failed} specs."
-    print PLAIN, "\n"
-  end
-end
-
-def run_specs(*specs)
-  specs = specs.flatten
-  MSpec.register_files(specs)
-
-  collector = SpecCollector.new
-
-  MSpec.register(:start, collector)
-  MSpec.register(:enter, collector)
-  MSpec.register(:before, collector)
-  MSpec.register(:after, collector)
-  MSpec.register(:exception, collector)
-  MSpec.register(:finish, collector)
-
-  MSpec.process
-
-  collector.success?
 end
 
 if $PROGRAM_NAME == __FILE__
@@ -198,5 +265,5 @@ if $PROGRAM_NAME == __FILE__
 
     false
   end
-  run_specs(*specs)
+  Artichoke::Spec::Formatter::Artichoke.run_specs(*specs)
 end
