@@ -245,6 +245,11 @@ module Artichoke
           formatter = YamlFormatter.new
           formatter.register
 
+          # HACK: tickle the GC so a full spec run passes without segfaulting.
+          200.times do
+            'a' * 200
+          end
+
           MSpec.process
 
           return false unless formatter.tally.counter.failures.zero?
