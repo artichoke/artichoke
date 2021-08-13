@@ -630,9 +630,11 @@ class String
     self[0..-1] = slice.pack('c*')
   end
 
-  def split(pattern, limit = nil, &blk)
+  def split(pattern = nil, limit = nil, &blk)
     parts = []
     return parts if self == ''
+
+    pattern = ' ' if pattern.nil?
 
     pattern = Regexp.compile(Regexp.escape(pattern)) if pattern.is_a?(String)
     if pattern.source == ''

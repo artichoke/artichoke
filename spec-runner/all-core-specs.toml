@@ -117,6 +117,10 @@ include = "all"
 
 [specs.core.hash]
 include = "all"
+skip = [
+  "eql",
+  "equal_value",
+]
 
 [specs.core.integer]
 include = "all"
