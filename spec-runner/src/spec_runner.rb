@@ -7,7 +7,15 @@ if $PROGRAM_NAME == __FILE__
 end
 
 class StubIO
+  def initialize(is_stderr: false)
+    @is_stderr = is_stderr
+  end
+
   def puts(*args)
+    if @is_stderr
+      Kernel.warn(*args)
+      return
+    end
     Kernel.puts(*args)
   end
 
@@ -31,7 +39,7 @@ class StubIO
 end
 
 STDOUT = StubIO.new unless Object.const_defined?(:STDOUT)
-STDERR = StubIO.new unless Object.const_defined?(:STDERR)
+STDERR = StubIO.new(is_stderr: true) unless Object.const_defined?(:STDERR)
 $stdout ||= STDOUT # rubocop:disable Style/GlobalStdStream
 $stderr ||= STDERR # rubocop:disable Style/GlobalStdStream
 
