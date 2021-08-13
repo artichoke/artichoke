@@ -335,6 +335,7 @@ module Artichoke
 
         def finish
           puts '---'
+          puts 'tags:'
           @report.sort_by { |item| [item[:group], item[:spec], item[:tag].to_s] }.each do |item|
             puts "- tag: #{item[:tag].to_s.inspect}"
             puts "  group: #{item[:group].to_s.inspect}"
