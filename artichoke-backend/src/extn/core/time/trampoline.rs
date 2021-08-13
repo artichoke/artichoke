@@ -186,11 +186,21 @@ pub fn plus(interp: &mut Artichoke, time: Value, other: Value) -> Result<Value, 
     Err(NotImplementedError::new().into())
 }
 
-pub fn minus(interp: &mut Artichoke, time: Value, other: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    let _ = other;
-    Err(NotImplementedError::new().into())
+pub fn minus(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let other = if let Ok(other) = unsafe { Time::unbox_from_value(&mut other, interp) } {
+        other
+    } else if let Ok(other) = implicitly_convert_to_int(interp, other) {
+        let _ = other;
+        return Err(NotImplementedError::with_message("Time#- with Integer argument is not implemented").into());
+    } else if let Ok(other) = other.try_into::<f64>(interp) {
+        let _ = other;
+        return Err(NotImplementedError::with_message("Time#- with Float argument is not implemented").into());
+    } else {
+        return Err(TypeError::with_message("can't convert into an exact number").into());
+    };
+    let difference = time.difference(*other);
+    interp.try_convert_mut(difference)
 }
 
 // Coarse math
