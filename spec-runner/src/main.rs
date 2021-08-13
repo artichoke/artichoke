@@ -51,15 +51,19 @@
 //!
 //! ```console
 //! $ cargo run -q -p spec-runner -- --help
-//! spec-runner 0.3.0
+//! spec-runner 0.4.0
 //! ruby/spec runner for Artichoke.
 //!
 //! USAGE:
-//!     spec-runner <config>
+//!     spec-runner [OPTIONS] <config>
 //!
 //! FLAGS:
 //!     -h, --help       Prints help information
 //!     -V, --version    Prints version information
+//!
+//! OPTIONS:
+//!     -f, --format <formatter>    Output spec results in YAML [default: artichoke]  [possible values: artichoke, summary,
+//!                                 yaml]
 //!
 //! ARGS:
 //!     <config>    Path to TOML config file
@@ -71,9 +75,6 @@
 #[macro_use]
 extern crate rust_embed;
 
-use artichoke::backtrace;
-use artichoke::prelude::*;
-use clap::{App, Arg};
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
@@ -81,6 +82,10 @@ use std::io::Write;
 use std::path::{Component, Path, PathBuf};
 use std::process;
 use std::str;
+
+use artichoke::backtrace;
+use artichoke::prelude::*;
+use clap::{App, Arg};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 mod model;
@@ -88,12 +93,15 @@ mod mspec;
 mod rubyspec;
 
 use model::{Config, Suite};
+use mspec::Formatter;
 
 /// CLI specification for `spec-runner`.
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Args {
     /// Path to TOML config file.
     config: PathBuf,
+    /// `MSpec` formatter.
+    formatter: Formatter,
 }
 
 /// Main entry point.
@@ -105,6 +113,15 @@ pub fn main() {
         .about("CLI specification for `spec-runner`")
         .about("ruby/spec runner for Artichoke.");
     let app = app.arg(
+        Arg::with_name("formatter")
+            .long("format")
+            .short("f")
+            .default_value("artichoke")
+            .possible_values(&["artichoke", "summary", "yaml"])
+            .required(false)
+            .help("Output spec results in YAML"),
+    );
+    let app = app.arg(
         Arg::with_name("config")
             .takes_value(true)
             .multiple(false)
@@ -114,14 +131,33 @@ pub fn main() {
     let app = app.version(env!("CARGO_PKG_VERSION"));
 
     let matches = app.get_matches();
+
+    let formatter = matches
+        .value_of_os("formatter")
+        .expect("formatter has a default value, clap should ensure");
+    let formatter = formatter
+        .to_str()
+        .expect("formatter has possible values, clap should ensure");
+    let formatter = formatter.parse::<Formatter>();
+    let formatter = match formatter {
+        Ok(f) => f,
+        Err(err) => {
+            let _ = writeln!(&mut stderr, "{}", err);
+            process::exit(1);
+        }
+    };
+
     let args = if let Some(config) = matches.value_of_os("config") {
-        Args { config: config.into() }
+        Args {
+            config: config.into(),
+            formatter,
+        }
     } else {
         let _ = writeln!(&mut stderr, "Missing required spec configuration");
         process::exit(1);
     };
 
-    match try_main(&mut stderr, &args.config) {
+    match try_main(&mut stderr, &args) {
         Ok(true) => process::exit(0),
         Ok(false) => process::exit(1),
         Err(err) => {
@@ -143,11 +179,11 @@ pub fn main() {
 /// If an Artichoke interpreter cannot be initialized, an error is returned.
 ///
 /// If the `MSpec` runner returns an error, an error is returned.
-pub fn try_main<W>(stderr: W, config: &Path) -> Result<bool, Box<dyn Error>>
+fn try_main<W>(stderr: W, args: &Args) -> Result<bool, Box<dyn Error>>
 where
     W: Write + WriteColor,
 {
-    let config = fs::read(config)?;
+    let config = fs::read(&args.config)?;
     let config = str::from_utf8(config.as_slice())?;
     let config = toml::from_str::<Config>(config)?;
 
@@ -176,7 +212,7 @@ where
         }
     }
     mspec::init(&mut interp)?;
-    let result = match mspec::run(&mut interp, specs.iter().map(String::as_str)) {
+    let result = match mspec::run(&mut interp, args.formatter, specs.iter().map(String::as_str)) {
         Ok(result) => Ok(result),
         Err(exc) => {
             backtrace::format_cli_trace_into(stderr, &mut interp, &exc)?;
