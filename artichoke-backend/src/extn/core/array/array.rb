@@ -3,33 +3,29 @@
 module Artichoke
   class Array
     # rubocop:disable Lint/HashCompareByIdentity
-    def self.reachable?(src, dest, reachable_objects = nil)
-      raise ArgumentError, 'reachable requires an Array src' unless src.is_a?(::Array)
+    def self.inspect(ary, recur_list)
+      size = ary.size
+      return '[]' if size.zero?
+      return '[...]' if recur_list[ary.object_id]
 
-      reachable_objects ||= ::Hash.new { |h, k| h[k] = [] }
-      reachable_objects[src.object_id] << src.class unless reachable_objects.key?(src.object_id)
-      return true if reachable_objects[dest.object_id].include?(dest.class)
+      recur_list[ary.object_id] = true
+      out = []
+      i = 0
+      while i < size
+        elem = ary[i]
+        out <<
+          case elem
+          when ::Array
+            ::Artichoke::Array.inspect(elem, recur_list)
+          when ::Hash
+            ::Artichoke::Hash.inspect(elem, recur_list)
+          else
+            elem.inspect
+          end
 
-      if dest.equal?(nil) || dest.equal?(true) || dest.equal?(false) || dest.is_a?(::Integer) || dest.is_a?(::Float)
-        return false
+        i += 1
       end
-
-      reachable_objects[dest.object_id] << dest.class
-      case dest
-      when ::Array
-        dest.each do |item|
-          return true if reachable?(src, item, reachable_objects)
-        end
-      when ::Hash
-        dest.each_pair do |key, value|
-          return true if reachable?(src, key, reachable_objects)
-          return true if reachable?(src, value, reachable_objects)
-        end
-      end
-      dest.instance_variables.each do |iv|
-        return true if reachable?(src, dest.instance_variable_get(iv), reachable_objects)
-      end
-      false
+      "[#{out.join(', ')}]"
     end
     # rubocop:enable Lint/HashCompareByIdentity
   end
@@ -623,11 +619,6 @@ class Array
       s = self[i]
       o = other[i]
       i += 1
-      if Artichoke::Array.reachable?(self, o)
-        return false unless s.equal?(o)
-
-        next
-      end
       return false unless s.eql?(o)
     end
     true
@@ -828,22 +819,7 @@ class Array
   end
 
   def inspect
-    s = +'['
-    sep = ', '
-    idx = 0
-    len = length
-    while idx < len
-      s <<
-        if Artichoke::Array.reachable?(self, self[idx])
-          # TODO: properly handle nested structures
-          '[...]'
-        else
-          self[idx].inspect
-        end
-      s << sep if idx < len - 1
-      idx += 1
-    end
-    s << ']'
+    ::Artichoke::Array.inspect(self, {})
   end
 
   def join(separator = $,) # rubocop:disable Style/SpecialGlobalVars

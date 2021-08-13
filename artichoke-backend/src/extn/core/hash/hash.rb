@@ -3,38 +3,44 @@
 module Artichoke
   class Hash
     # rubocop:disable Lint/HashCompareByIdentity
-    def self.trace(obj, seen)
-      id = obj.object_id
-      return true if seen[id]
+    def self.inspect(hash, recur_list)
+      keys = hash.keys
+      size = keys.size
+      return '{}' if size.zero?
+      return '{...}' if recur_list[hash.object_id]
 
-      seen[obj.object_id] = true
+      recur_list[hash.object_id] = true
+      out = []
+      i = 0
+      while i < size
+        pair = []
 
-      case obj
-      when Hash
-        obj.each do |key, value|
-          return true if trace(key, seen)
-          return true if trace(value, seen)
-        end
-        obj.instance_variables.each do |iv|
-          iv = obj.instance_variable_get(iv)
-          return true if trace(iv, seen)
-        end
-      when Array
-        obj.each do |elem|
-          return true if trace(elem, seen)
-        end
-        obj.instance_variables.each do |iv|
-          iv = obj.instance_variable_get(iv)
-          return true if trace(iv, seen)
-        end
-      when Object
-        obj.instance_variables.each do |iv|
-          iv = obj.instance_variable_get(iv)
-          return true if trace(iv, seen)
-        end
+        key = keys[i]
+        pair <<
+          case key
+          when ::Array
+            ::Artichoke::Array.inspect(key, recur_list)
+          when ::Hash
+            ::Artichoke::Hash.inspect(key, recur_list)
+          else
+            key.inspect
+          end
+
+        value = hash[key]
+        pair <<
+          case value
+          when ::Array
+            ::Artichoke::Array.inspect(value, recur_list)
+          when ::Hash
+            ::Artichoke::Hash.inspect(value, recur_list)
+          else
+            value.inspect
+          end
+
+        out << pair.join('=>')
+        i += 1
       end
-
-      false
+      "{#{out.join(', ')}}"
     end
     # rubocop:enable Lint/HashCompareByIdentity
   end
@@ -233,30 +239,7 @@ class Hash
   end
 
   def inspect
-    return '{}' if empty?
-
-    id = object_id
-    pairs = []
-    seen = { id => true }
-
-    each do |key, value|
-      if ::Artichoke::Hash.trace(key, seen)
-        key = '{...}'
-      else
-        key = key.inspect
-        key = key.to_s unless key.is_a?(String)
-      end
-      if ::Artichoke::Hash.trace(value, seen)
-        value = '{...}'
-      else
-        value = value.inspect
-        value = value.to_s unless value.is_a?(String)
-      end
-
-      pairs << "#{key}=>#{value}"
-    end
-
-    "{#{pairs.join(', ')}}"
+    ::Artichoke::Hash.inspect(self, {})
   end
 
   def invert
