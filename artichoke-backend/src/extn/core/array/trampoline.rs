@@ -303,22 +303,36 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    let result = if let Some(count) = count {
+    if let Some(count) = count {
         let count = implicitly_convert_to_int(interp, count)?;
         let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative array size"))?;
         let shifted = array.shift_n(count);
+
+        // Safety:
+        //
+        // The call to `Array::shift_n` above has potentially invalidated the
+        // raw parts of `array` stored in `ary`'s `RArray *`.
+        //
+        // The below call to `Array::alloc_value` will trigger an mruby heap
+        // allocation which may trigger a garbage collection.
+        //
+        // The raw parts in `ary`'s `RArray *` must be fixed up before a
+        // potential garbage collection, otherwise marking the children in `ary`
+        // will have undefined behavior.
+        unsafe {
+            let inner = array.take();
+            Array::box_into_value(inner, ary, interp)?;
+        }
 
         Array::alloc_value(shifted, interp)
     } else {
         let shifted = array.shift();
 
+        unsafe {
+            let inner = array.take();
+            Array::box_into_value(inner, ary, interp)?;
+        }
+
         Ok(interp.convert(shifted))
-    };
-
-    unsafe {
-        let inner = array.take();
-        Array::box_into_value(inner, ary, interp)?;
     }
-
-    result
 }

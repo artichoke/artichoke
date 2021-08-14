@@ -84,7 +84,11 @@ unsafe extern "C" fn mrb_ary_splat(mrb: *mut sys::mrb_state, value: sys::mrb_val
         Array::alloc_value(result, &mut guard)
     };
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let basic = sys::mrb_sys_basic_ptr(value.inner());
+            sys::mrb_write_barrier(mrb, basic);
+            value.inner()
+        }
         Err(exception) => error::raise(guard, exception),
     }
 }
@@ -109,6 +113,9 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
 
         let inner = array.take();
         Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
+
+        let basic = sys::mrb_sys_basic_ptr(ary);
+        sys::mrb_write_barrier(mrb, basic);
     }
 }
 
