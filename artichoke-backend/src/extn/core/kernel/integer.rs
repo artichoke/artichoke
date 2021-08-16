@@ -361,6 +361,26 @@ mod tests {
     use super::{method as integer, Radix};
 
     #[test]
+    fn radix_new_validates_radix_is_nonzero() {
+        let radix = Radix::new(0);
+        assert!(radix.is_none());
+    }
+
+    #[test]
+    fn radix_new_parses_valid_radixes() {
+        for r in 2..=36 {
+            let radix = Radix::new(r);
+            assert!(radix.is_some());
+        }
+    }
+
+    #[test]
+    fn radix_new_rejects_too_large_radixes() {
+        let radix = Radix::new(12000);
+        assert!(radix.is_none());
+    }
+
+    #[test]
     fn no_digits_with_base_prefix() {
         let result = integer("0x".into(), None);
         assert!(result.is_err());
