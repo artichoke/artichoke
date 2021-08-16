@@ -73,10 +73,8 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
                     .checked_neg()
                     .ok_or_else(|| ArgumentError::with_message("invalid radix"))?;
                 match u32::try_from(num) {
-                    // Safety `10` is a valid radix since it is between 2 and 36.
-                    //
                     // See https://github.com/ruby/ruby/blob/v2_6_3/bignum.c#L4106-L4110
-                    Ok(1) => return unsafe { Ok(Some(Radix::new_unchecked(10))) },
+                    Ok(1) => return Ok(Some(Radix::default())),
                     Ok(radix) => radix,
                     Err(_) => {
                         let mut message = String::from("invalid radix ");
