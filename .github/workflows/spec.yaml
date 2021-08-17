@@ -1,0 +1,44 @@
+---
+name: CI
+"on":
+  push:
+    branches:
+      - trunk
+  pull_request:
+    branches:
+      - trunk
+  schedule:
+    - cron: "0 0 * * TUE"
+jobs:
+  build:
+    name: Spec
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
+          bundler-cache: true
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: v3
+
+      - name: Compile
+        run: cargo build --verbose --bin spec-runner --release
+        working-directory: "spec-runner"
+
+      - name: Run specs
+        run: ./target/release/spec-runner --format yaml all-core-specs.toml
+        working-directory: "spec-runner"
