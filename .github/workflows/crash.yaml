@@ -1,0 +1,72 @@
+---
+name: Crash
+"on":
+  pull_request:
+    branches:
+      - trunk
+jobs:
+  crash:
+    name: Crash
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
+          bundler-cache: true
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: v3
+          working-directory: "spec-runner"
+
+      - name: Compile debug
+        run: cargo build --verbose --bin spec-runner
+        working-directory: "spec-runner"
+
+      - name: Compile release
+        run: cargo build --verbose --bin spec-runner --release
+        working-directory: "spec-runner"
+
+      - name: Run specs
+        run: |
+          ./target/debug/spec-runner --quiet --format artichoke all-core-specs.toml > /dev/null
+          ./target/debug/spec-runner --quiet --format summary all-core-specs.toml > /dev/null
+          ./target/debug/spec-runner --quiet --format tagger all-core-specs.toml > /dev/null
+          ./target/debug/spec-runner --quiet --format yaml all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+
+      - name: Run specs
+        run: |
+          ./target/debug/spec-runner --quiet --format artichoke spec-state.toml > /dev/null
+          ./target/debug/spec-runner --quiet --format summary spec-state.toml > /dev/null
+          ./target/debug/spec-runner --quiet --format tagger spec-state.toml > /dev/null
+          ./target/debug/spec-runner --quiet --format yaml spec-state.toml > /dev/null
+        working-directory: "spec-runner"
+
+      - name: Run specs
+        run: |
+          ./target/release/spec-runner --quiet --format artichoke all-core-specs.toml > /dev/null
+          ./target/release/spec-runner --quiet --format summary all-core-specs.toml > /dev/null
+          ./target/release/spec-runner --quiet --format tagger all-core-specs.toml > /dev/null
+          ./target/release/spec-runner --quiet --format yaml all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+
+      - name: Run specs
+        run: |
+          ./target/release/spec-runner --quiet --format artichoke spec-state.toml > /dev/null
+          ./target/release/spec-runner --quiet --format summary spec-state.toml > /dev/null
+          ./target/release/spec-runner --quiet --format tagger spec-state.toml > /dev/null
+          ./target/release/spec-runner --quiet --format yaml spec-state.toml > /dev/null
+        working-directory: "spec-runner"
