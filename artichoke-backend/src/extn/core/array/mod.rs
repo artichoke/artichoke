@@ -2,7 +2,7 @@ use spinoso_array::Array as SpinosoArray;
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::iter::FromIterator;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 use std::slice;
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string, UnboxedValueGuard};
@@ -575,23 +575,11 @@ impl<'a> AsRef<Array> for UnboxedValueGuard<'a, Array> {
     }
 }
 
-impl<'a> AsMut<Array> for UnboxedValueGuard<'a, Array> {
-    fn as_mut(&mut self) -> &mut Array {
-        self.as_inner_mut()
-    }
-}
-
 impl<'a> Deref for UnboxedValueGuard<'a, Array> {
     type Target = Array;
 
     fn deref(&self) -> &Self::Target {
         self.as_inner_ref()
-    }
-}
-
-impl<'a> DerefMut for UnboxedValueGuard<'a, Array> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.as_inner_mut()
     }
 }
 

@@ -103,16 +103,20 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
     let mut other = Value::from(other);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         if let Ok(other) = Array::unbox_from_value(&mut other, &mut guard) {
-            array.extend(other.iter());
+            // Safety:
+            //
+            // The array is repacked before any intervening uses of `interp`.
+            let array_mut = array.as_inner_mut();
+            array_mut.extend(other.iter());
+
+            let inner = array.take();
+            Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
         } else {
             warn!(
                 "Attempted to call mrb_ary_concat with a {:?} argument",
                 other.ruby_type()
             );
         }
-
-        let inner = array.take();
-        Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
 
         let basic = sys::mrb_sys_basic_ptr(ary);
         sys::mrb_write_barrier(mrb, basic);
@@ -125,12 +129,16 @@ unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        let result = guard.convert(array.pop());
+        // Safety:
+        //
+        // The array is repacked before any intervening uses of `interp`.
+        let array_mut = array.as_inner_mut();
+        let popped = array_mut.pop();
 
         let inner = array.take();
         Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
 
-        result
+        guard.convert(popped)
     } else {
         Value::nil()
     };
@@ -146,7 +154,11 @@ unsafe extern "C" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value,
     let mut array = Value::from(ary);
     let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        array.push(value);
+        // Safety:
+        //
+        // The array is repacked before any intervening uses of `interp`.
+        let array_mut = array.as_inner_mut();
+        array_mut.push(value);
 
         let inner = array.take();
         Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
@@ -201,7 +213,11 @@ unsafe extern "C" fn mrb_ary_set(
         };
         // TODO: properly handle self-referential sets.
         if Value::from(ary) != value {
-            array.set(offset, value);
+            // Safety:
+            //
+            // The array is repacked before any intervening uses of `interp`.
+            let array_mut = array.as_inner_mut();
+            array_mut.set(offset, value);
         }
 
         let inner = array.take();
@@ -217,7 +233,11 @@ unsafe extern "C" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        let result = array.shift();
+        // Safety:
+        //
+        // The array is repacked before any intervening uses of `interp`.
+        let array_mut = array.as_inner_mut();
+        let result = array_mut.shift();
 
         let inner = array.take();
         Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
@@ -241,7 +261,11 @@ unsafe extern "C" fn mrb_ary_unshift(
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        array.0.unshift(value);
+        // Safety:
+        //
+        // The array is repacked before any intervening uses of `interp`.
+        let array_mut = array.as_inner_mut();
+        array_mut.0.unshift(value);
 
         let inner = array.take();
         Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
