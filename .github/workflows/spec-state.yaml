@@ -97,7 +97,7 @@ jobs:
 
       - name: Generate spec tags
         run: |
-          ./artichoke/spec-runner/target/debug/spec-runner --format tagger artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.tagged.yaml }}"
+          ( ./artichoke/spec-runner/target/debug/spec-runner --format tagger artichoke/spec-runner/all-core-specs.toml || : ) | tee "${{ steps.tagged.yaml }}"
           ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.tagged.yaml }}" > "${{ steps.tagged.json }}"
           mkdir -p "spec-state/reports/tagged/${{ steps.commit.year }}/${{ steps.commit.month }}"
           cp "${{ steps.tagged.json }}" "spec-state/reports/tagged/${{ steps.commit.year }}/${{ steps.commit.month }}/${{ steps.tagged.json }}"
@@ -107,7 +107,7 @@ jobs:
 
       - name: Generate spec exceptions
         run: |
-          ./artichoke/spec-runner/target/debug/spec-runner --format yaml artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.exceptions.yaml }}"
+          ( ./artichoke/spec-runner/target/debug/spec-runner --format yaml artichoke/spec-runner/all-core-specs.toml || : ) | tee "${{ steps.exceptions.yaml }}"
           ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.exceptions.yaml }}" > "${{ steps.exceptions.json }}"
           mkdir -p "spec-state/reports/exceptions/${{ steps.commit.year }}/${{ steps.commit.month }}"
           cp "${{ steps.exceptions.json }}" "spec-state/reports/exceptions/${{ steps.commit.year }}/${{ steps.commit.month }}/${{ steps.exceptions.json }}"
