@@ -31,16 +31,42 @@ jobs:
           key: v3
           working-directory: "spec-runner"
 
-      - name: Compile
+      - name: Compile debug
+        run: cargo build --verbose --bin spec-runner
+        working-directory: "spec-runner"
+
+      - name: Compile release
         run: cargo build --verbose --bin spec-runner --release
         working-directory: "spec-runner"
 
       - name: Run specs
         run: |
+          ./target/debug/spec-runner --format artichoke all-core-specs.toml || :
+          ./target/debug/spec-runner --format summary all-core-specs.toml || :
+          ./target/debug/spec-runner --format tagger all-core-specs.toml || :
+          ./target/debug/spec-runner --format yaml all-core-specs.toml || :
+        working-directory: "spec-runner"
+
+      - name: Run specs
+        run: |
+          ./target/debug/spec-runner --format artichoke spec-state.toml || :
+          ./target/debug/spec-runner --format summary spec-state.toml || :
+          ./target/debug/spec-runner --format tagger spec-state.toml || :
+          ./target/debug/spec-runner --format yaml spec-state.toml || :
+        working-directory: "spec-runner"
+
+      - name: Run specs
+        run: |
+          ./target/release/spec-runner --format artichoke all-core-specs.toml || :
+          ./target/release/spec-runner --format summary all-core-specs.toml || :
+          ./target/release/spec-runner --format tagger all-core-specs.toml || :
           ./target/release/spec-runner --format yaml all-core-specs.toml || :
         working-directory: "spec-runner"
 
       - name: Run specs
         run: |
+          ./target/release/spec-runner --format artichoke spec-state.toml || :
+          ./target/release/spec-runner --format summary spec-state.toml || :
+          ./target/release/spec-runner --format tagger spec-state.toml || :
           ./target/release/spec-runner --format yaml spec-state.toml || :
         working-directory: "spec-runner"
