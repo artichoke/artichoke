@@ -51,14 +51,15 @@
 //!
 //! ```console
 //! $ cargo run -q -p spec-runner -- --help
-//! spec-runner 0.5.0
+//! spec-runner 0.6.0
 //! ruby/spec runner for Artichoke.
 //!
 //! USAGE:
-//!     spec-runner [OPTIONS] <config>
+//!     spec-runner [FLAGS] [OPTIONS] <config>
 //!
 //! FLAGS:
 //!     -h, --help       Prints help information
+//!     -q, --quiet      Suppress spec failures when exiting
 //!     -V, --version    Prints version information
 //!
 //! OPTIONS:
@@ -122,6 +123,13 @@ pub fn main() {
             .help("Output spec results in YAML"),
     );
     let app = app.arg(
+        Arg::with_name("quiet")
+            .long("quiet")
+            .short("q")
+            .required(false)
+            .help("Suppress spec failures when exiting"),
+    );
+    let app = app.arg(
         Arg::with_name("config")
             .takes_value(true)
             .multiple(false)
@@ -146,6 +154,7 @@ pub fn main() {
             process::exit(1);
         }
     };
+    let quiet = matches.is_present("quiet");
 
     let args = if let Some(config) = matches.value_of_os("config") {
         Args {
@@ -159,7 +168,7 @@ pub fn main() {
 
     match try_main(&mut stderr, &args) {
         Ok(true) => process::exit(0),
-        Ok(false) => process::exit(1),
+        Ok(false) => process::exit(if quiet { 0 } else { 1 }),
         Err(err) => {
             let _ = writeln!(&mut stderr, "{}", err);
             process::exit(1);
