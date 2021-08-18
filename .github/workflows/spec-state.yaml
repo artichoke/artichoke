@@ -47,9 +47,9 @@ jobs:
         id: commit
         run: |
           commit_date="$(git show --no-patch --format="%cs")"
-          commit_year="(git show --no-patch --date="format:%Y" --format="%cd")"
-          commit_month="(git show --no-patch --date="format:%m" --format="%cd")"
-          commit_hash="(git show --no-patch --format="%H")"
+          commit_year="$(git show --no-patch --date="format:%Y" --format="%cd")"
+          commit_month="$(git show --no-patch --date="format:%m" --format="%cd")"
+          commit_hash="$(git show --no-patch --format="%H")"
 
           echo "Commit date: ${commit_date}"
           echo "Commit year: ${commit_year}"
