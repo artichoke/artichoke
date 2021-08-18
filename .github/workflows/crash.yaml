@@ -41,32 +41,32 @@ jobs:
 
       - name: Run specs
         run: |
-          ./target/debug/spec-runner --format artichoke all-core-specs.toml || :
-          ./target/debug/spec-runner --format summary all-core-specs.toml || :
-          ./target/debug/spec-runner --format tagger all-core-specs.toml || :
-          ./target/debug/spec-runner --format yaml all-core-specs.toml || :
+          ./target/debug/spec-runner --format artichoke all-core-specs.toml > /dev/null || :
+          ./target/debug/spec-runner --format summary all-core-specs.toml > /dev/null || :
+          ./target/debug/spec-runner --format tagger all-core-specs.toml > /dev/null || :
+          ./target/debug/spec-runner --format yaml all-core-specs.toml > /dev/null || :
         working-directory: "spec-runner"
 
       - name: Run specs
         run: |
-          ./target/debug/spec-runner --format artichoke spec-state.toml || :
-          ./target/debug/spec-runner --format summary spec-state.toml || :
-          ./target/debug/spec-runner --format tagger spec-state.toml || :
-          ./target/debug/spec-runner --format yaml spec-state.toml || :
+          ./target/debug/spec-runner --format artichoke spec-state.toml > /dev/null || :
+          ./target/debug/spec-runner --format summary spec-state.toml > /dev/null || :
+          ./target/debug/spec-runner --format tagger spec-state.toml > /dev/null || :
+          ./target/debug/spec-runner --format yaml spec-state.toml > /dev/null || :
         working-directory: "spec-runner"
 
       - name: Run specs
         run: |
-          ./target/release/spec-runner --format artichoke all-core-specs.toml || :
-          ./target/release/spec-runner --format summary all-core-specs.toml || :
-          ./target/release/spec-runner --format tagger all-core-specs.toml || :
-          ./target/release/spec-runner --format yaml all-core-specs.toml || :
+          ./target/release/spec-runner --format artichoke all-core-specs.toml > /dev/null || :
+          ./target/release/spec-runner --format summary all-core-specs.toml > /dev/null || :
+          ./target/release/spec-runner --format tagger all-core-specs.toml > /dev/null || :
+          ./target/release/spec-runner --format yaml all-core-specs.toml > /dev/null || :
         working-directory: "spec-runner"
 
       - name: Run specs
         run: |
-          ./target/release/spec-runner --format artichoke spec-state.toml || :
-          ./target/release/spec-runner --format summary spec-state.toml || :
-          ./target/release/spec-runner --format tagger spec-state.toml || :
-          ./target/release/spec-runner --format yaml spec-state.toml || :
+          ./target/release/spec-runner --format artichoke spec-state.toml > /dev/null || :
+          ./target/release/spec-runner --format summary spec-state.toml > /dev/null || :
+          ./target/release/spec-runner --format tagger spec-state.toml > /dev/null || :
+          ./target/release/spec-runner --format yaml spec-state.toml > /dev/null || :
         working-directory: "spec-runner"
