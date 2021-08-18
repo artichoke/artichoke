@@ -125,6 +125,6 @@ jobs:
           Generated with the spec-state.yaml GitHub Actions workflow.
           EOF
           git add reports
-          git commit --author="artichoke-ci <ci@artichokeruby.org>" --file=message.txt --allow-empty
-          git push
+          git commit -c user.name=artichoke-ci -c user.email=ci@artichokeruby.org --file=message.txt --allow-empty
+          git push origin trunk
         working-directory: "spec-state"
