@@ -41,7 +41,7 @@ jobs:
 
       - name: Compile spec-runner
         run: cargo build --verbose --bin spec-runner
-        working-directory: "artichoke/artichoke/spec-runner"
+        working-directory: "artichoke/spec-runner"
 
       - name: Set commit metadata
         id: commit
