@@ -1,0 +1,130 @@
+---
+name: Spec
+"on":
+  push:
+    branches:
+      - trunk
+jobs:
+  spec-state:
+    name: spec-state
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+      RUST_BACKTRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          path: artichoke
+
+      - name: Setup rust-toolchain override
+        run: cp artichoke/rust-toolchain rust-toolchain
+
+      - name: Setup .ruby-version override
+        run: cp artichoke/.ruby-version .ruby-version
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ".ruby-version"
+          bundler-cache: true
+
+      - uses: Swatinem/rust-cache@v1
+        with:
+          key: v3
+          working-directory: "artichoke/spec-runner"
+
+      - name: Compile spec-runner
+        run: cargo build --verbose --bin spec-runner
+        working-directory: "artichoke/artichoke/spec-runner"
+
+      - name: Set commit metadata
+        id: commit
+        run: |
+          commit_date="$(git show --no-patch --format="%cs")"
+          commit_year="(git show --no-patch --date="format:%Y" --format="%cd")"
+          commit_month="(git show --no-patch --date="format:%m" --format="%cd")"
+          commit_hash="(git show --no-patch --format="%H")"
+
+          echo "Commit date: ${commit_date}"
+          echo "Commit year: ${commit_year}"
+          echo "Commit month: ${commit_month}"
+          echo "Commit hash: ${commit_hash}"
+
+          echo "::set-output name=date::${commit_date}"
+          echo "::set-output name=year::${commit_year}"
+          echo "::set-output name=month::${commit_month}"
+          echo "::set-output name=hash::${commit_hash}"
+        working-directory: "artichoke"
+
+      - name: Set spec tags artifact paths
+        id: tagged
+        run: |
+          yaml="$(git show --no-patch --format="spec-tagged-%cs-rev-%H.yaml")"
+          json="$(git show --no-patch --format="spec-tagged-%cs-rev-%H.json")"
+
+          echo "Spec tags YAML: ${yaml}"
+          echo "Spec tags JSON: ${json}"
+
+          echo "::set-output name=yaml::${yaml}"
+          echo "::set-output name=json::${json}"
+        working-directory: "artichoke"
+
+      - name: Set spec exceptions artifact paths
+        id: exceptions
+        run: |
+          yaml="$(git show --no-patch --format="spec-exceptions-%cs-rev-%H.yaml")"
+          json="$(git show --no-patch --format="spec-exceptions-%cs-rev-%H.json")"
+
+          echo "Spec exceptions YAML: ${yaml}"
+          echo "Spec exceptions JSON: ${json}"
+
+          echo "::set-output name=yaml::${yaml}"
+          echo "::set-output name=json::${json}"
+        working-directory: "artichoke"
+
+      - name: Checkout spec state repository
+        uses: actions/checkout@v2
+        with:
+          repository: artichoke/spec-state
+          path: spec-state
+          ssh-key: ${{ secrets.SPEC_STATE_SSH_DEPLOY_PRIVATE_KEY }}
+
+      - name: Generate spec tags
+        run: |
+          ./artichoke/spec-runner/target/debug/spec-runner --format tagger artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.tagged.yaml }}"
+          ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.tagged.yaml }}" > "${{ steps.tagged.json }}"
+          mkdir -p "spec-state/reports/tagged/${{ steps.commit.year }}/${{ steps.commit.month }}"
+          cp "${{ steps.tagged.json }}" "spec-state/reports/tagged/${{ steps.commit.year }}/${{ steps.commit.month }}/${{ steps.tagged.json }}"
+          cp "${{ steps.tagged.json }}" "spec-state/reports/tagged/${{ steps.commit.year }}/${{ steps.commit.month }}/latest.json"
+          cp "${{ steps.tagged.json }}" "spec-state/reports/tagged/${{ steps.commit.year }}/latest.json"
+          cp "${{ steps.tagged.json }}" "spec-state/reports/tagged/latest.json"
+
+      - name: Generate spec exceptions
+        run: |
+          ./artichoke/spec-runner/target/debug/spec-runner --format yaml artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.exceptions.yaml }}"
+          ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.exceptions.yaml }}" > "${{ steps.exceptions.json }}"
+          mkdir -p "spec-state/reports/exceptions/${{ steps.commit.year }}/${{ steps.commit.month }}"
+          cp "${{ steps.exceptions.json }}" "spec-state/reports/exceptions/${{ steps.commit.year }}/${{ steps.commit.month }}/${{ steps.exceptions.json }}"
+          cp "${{ steps.exceptions.json }}" "spec-state/reports/exceptions/${{ steps.commit.year }}/${{ steps.commit.month }}/latest.json"
+          cp "${{ steps.exceptions.json }}" "spec-state/reports/exceptions/${{ steps.commit.year }}/latest.json"
+          cp "${{ steps.exceptions.json }}" "spec-state/reports/exceptions/latest.json"
+
+      - name: Push spec-state
+        run: |
+          cat <<EOF > message.txt
+          spec-state 💎📈
+
+          As of artichoke/artichoke@${{ steps.commit.hash }}.
+
+          Generated with the spec-state.yaml GitHub Actions workflow.
+          EOF
+          git add reports
+          git commit --author="artichoke-ci <ci@artichokeruby.org>" --file=message.txt --allow-empty
+          git push
+        working-directory: "spec-state"
