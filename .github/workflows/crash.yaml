@@ -1,17 +1,12 @@
 ---
-name: CI
+name: Crash
 "on":
-  push:
-    branches:
-      - trunk
   pull_request:
     branches:
       - trunk
-  schedule:
-    - cron: "0 0 * * TUE"
 jobs:
-  build:
-    name: Spec
+  crash:
+    name: Crash
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -D warnings
@@ -41,4 +36,8 @@ jobs:
 
       - name: Run specs
         run: ./target/release/spec-runner --format yaml all-core-specs.toml
+        working-directory: "spec-runner"
+
+      - name: Run specs
+        run: ./target/release/spec-runner --format yaml spec-state.toml
         working-directory: "spec-runner"
