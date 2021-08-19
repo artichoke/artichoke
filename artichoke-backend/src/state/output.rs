@@ -9,9 +9,7 @@ pub type Strategy = Captured;
 #[cfg(all(feature = "output-strategy-capture", feature = "output-strategy-null"))]
 pub type Strategy = Null;
 
-pub trait Output: Send + Sync {
-    fn as_debug(&self) -> &dyn fmt::Debug;
-
+pub trait Output: Send + Sync + fmt::Debug {
     fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()>;
 
     fn write_stderr<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()>;
@@ -42,10 +40,6 @@ impl Process {
 }
 
 impl Output for Process {
-    fn as_debug(&self) -> &dyn fmt::Debug {
-        self
-    }
-
     fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
         io::stdout().write_all(bytes.as_ref())
     }
@@ -87,10 +81,6 @@ impl Captured {
 }
 
 impl Output for Captured {
-    fn as_debug(&self) -> &dyn fmt::Debug {
-        self
-    }
-
     fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
         self.stdout.extend_from_slice(bytes.as_ref());
         Ok(())
@@ -103,10 +93,6 @@ impl Output for Captured {
 }
 
 impl<'a> Output for &'a mut Captured {
-    fn as_debug(&self) -> &dyn fmt::Debug {
-        self
-    }
-
     fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
         self.stdout.extend_from_slice(bytes.as_ref());
         Ok(())
@@ -132,10 +118,6 @@ impl Null {
 }
 
 impl Output for Null {
-    fn as_debug(&self) -> &dyn fmt::Debug {
-        self
-    }
-
     fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
         let _ = bytes;
         Ok(())
