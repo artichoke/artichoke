@@ -1,12 +1,15 @@
-use spinoso_array::Array as SpinosoArray;
 use std::convert::TryFrom;
 use std::ffi::c_void;
+use std::fmt::Write;
 use std::iter::FromIterator;
 use std::ops::{Deref, DerefMut};
 use std::slice;
 
+use spinoso_array::Array as SpinosoArray;
+
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string, UnboxedValueGuard};
 use crate::extn::prelude::*;
+use crate::io::IoError;
 
 pub mod args;
 mod ffi;
@@ -307,13 +310,14 @@ impl Array {
                 Ruby::Fixnum => {
                     let mut buf = Vec::new();
                     let int = unsafe { sys::mrb_sys_fixnum_to_cint(value.inner()) };
-                    let _ = itoa::write(&mut buf, int);
+                    itoa::write(&mut buf, int).map_err(IoError::from)?;
                     out.push(buf);
                 }
                 Ruby::Float => {
                     let float = unsafe { sys::mrb_sys_float_to_cdouble(value.inner()) };
-                    let formatted = format!("{}", float);
-                    out.push(formatted.into_bytes());
+                    let mut buf = String::new();
+                    write!(&mut buf, "{}", float).map_err(WriteError::from)?;
+                    out.push(buf.into_bytes());
                 }
                 _ => {
                     // Safety:

@@ -16,14 +16,15 @@ pub trait Output: Send + Sync {
 
     fn write_stderr<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()>;
 
-    fn print<T: AsRef<[u8]>>(&mut self, bytes: T) {
-        let _ = self.write_stdout(bytes);
+    fn print<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
+        self.write_stdout(bytes)?;
+        Ok(())
     }
 
-    fn puts<T: AsRef<[u8]>>(&mut self, bytes: T) {
-        if self.write_stdout(bytes).is_ok() {
-            let _ = self.write_stdout(b"\n");
-        }
+    fn puts<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
+        self.write_stdout(bytes)?;
+        self.write_stdout(b"\n")?;
+        Ok(())
     }
 }
 
