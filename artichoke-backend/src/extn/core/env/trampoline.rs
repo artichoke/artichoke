@@ -38,5 +38,5 @@ pub fn element_assignment(
 pub fn to_h(interp: &mut Artichoke, mut environ: Value) -> Result<Value, Error> {
     let environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
     let result = environ.to_map()?;
-    Ok(interp.convert_mut(result))
+    interp.try_convert_mut(result)
 }

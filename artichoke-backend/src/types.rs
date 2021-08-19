@@ -240,7 +240,7 @@ mod tests {
         let mut map = HashMap::default();
         map.insert(b"a".to_vec(), vec![0_u8]);
         map.insert(b"b".to_vec(), b"binary".to_vec());
-        let converted = interp.convert_mut(map);
+        let converted = interp.try_convert_mut(map).unwrap();
         assert_eq!(Ruby::Hash, types::ruby_from_mrb_value(converted.inner()));
     }
 

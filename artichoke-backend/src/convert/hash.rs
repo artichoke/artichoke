@@ -10,17 +10,23 @@ use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
-impl ConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<(Value, Value)>) -> Value {
+impl TryConvertMut<Vec<(Value, Value)>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Vec<(Value, Value)>) -> Result<Value, Self::Error> {
         let capa = sys::mrb_int::try_from(value.len()).unwrap_or_default();
-        let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
-        let hash = self.protect(Value::from(hash.unwrap()));
+
+        let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa))? };
+        let hash = self.protect(Value::from(hash));
+
         for (key, val) in value {
             let key = key.inner();
             let val = val.inner();
-            let _ = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key, val)) };
+            unsafe {
+                self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key, val))?;
+            }
         }
-        hash
+        Ok(hash)
     }
 }
 
@@ -29,51 +35,61 @@ impl TryConvertMut<Vec<(Vec<u8>, Vec<i64>)>, Value> for Artichoke {
 
     fn try_convert_mut(&mut self, value: Vec<(Vec<u8>, Vec<i64>)>) -> Result<Value, Self::Error> {
         let capa = sys::mrb_int::try_from(value.len()).unwrap_or_default();
-        let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
-        let hash = self.protect(Value::from(hash.unwrap()));
+
+        let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa))? };
+        let hash = self.protect(Value::from(hash));
+
         for (key, val) in value {
             let key = self.try_convert_mut(key)?;
             let val = self.try_convert_mut(val)?;
-            let _ = unsafe {
-                self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))
-            };
+            unsafe {
+                self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))?;
+            }
         }
         Ok(hash)
     }
 }
 
-impl ConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: HashMap<Vec<u8>, Vec<u8>>) -> Value {
+impl TryConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: HashMap<Vec<u8>, Vec<u8>>) -> Result<Value, Self::Error> {
         let capa = sys::mrb_int::try_from(value.len()).unwrap_or_default();
-        let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
-        let hash = self.protect(Value::from(hash.unwrap()));
+
+        let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa))? };
+        let hash = self.protect(Value::from(hash));
+
         for (key, val) in value {
             let key = self.convert_mut(key);
             let val = self.convert_mut(val);
-            let _ = unsafe {
-                self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))
-            };
+            unsafe {
+                self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))?;
+            }
         }
-        hash
+        Ok(hash)
     }
 }
 
-impl ConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Option<HashMap<Vec<u8>, Option<Vec<u8>>>>) -> Value {
+impl TryConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Option<HashMap<Vec<u8>, Option<Vec<u8>>>>) -> Result<Value, Self::Error> {
         if let Some(value) = value {
             let capa = sys::mrb_int::try_from(value.len()).unwrap_or_default();
-            let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa)) };
-            let hash = self.protect(Value::from(hash.unwrap()));
+
+            let hash = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_hash_new_capa(mrb, capa))? };
+            let hash = self.protect(Value::from(hash));
+
             for (key, val) in value {
                 let key = self.convert_mut(key);
                 let val = self.convert_mut(val);
-                let _ = unsafe {
-                    self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))
-                };
+                unsafe {
+                    self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))?;
+                }
             }
-            hash
+            Ok(hash)
         } else {
-            Value::nil()
+            Ok(Value::nil())
         }
     }
 }
@@ -112,7 +128,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         fn roundtrip_kv(hash: HashMap<Vec<u8>, Vec<u8>>) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(hash.clone());
+            let value = interp.try_convert_mut(hash.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != hash.len() {
