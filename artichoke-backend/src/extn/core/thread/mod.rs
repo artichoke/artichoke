@@ -16,6 +16,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.def_class::<Thread>(spec)?;
     let spec = class::Spec::new("Mutex", MUTEX_CSTR, None, None)?;
     interp.def_class::<Mutex>(spec)?;
+    // TODO: Don't add a source file and don't add an explicit require below.
+    // Instead, have thread be a default loaded feature in `mezzaluna-feature-loader`.
     interp.def_rb_source_file("thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement
