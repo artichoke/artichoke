@@ -21,7 +21,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("to_s", symbol_to_s, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<symbol::Symbol>(spec)?;
-    let _ = interp.eval(&include_bytes!("symbol.rb")[..])?;
+    interp.eval(&include_bytes!("symbol.rb")[..])?;
     trace!("Patched Symbol onto interpreter");
     Ok(())
 }

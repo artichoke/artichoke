@@ -169,7 +169,7 @@ mod test {
         type Error = Error;
 
         fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
-            let _ = interp.eval(b"@i = 255").unwrap();
+            interp.eval(b"@i = 255").unwrap();
             Ok(())
         }
     }
@@ -183,7 +183,7 @@ mod test {
         type Error = Error;
 
         fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
-            let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();
+            interp.eval(b"module Foo; RUST = 7; end").unwrap();
             Ok(())
         }
     }

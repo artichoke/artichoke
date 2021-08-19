@@ -36,7 +36,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .define()?;
     interp.def_class::<Regexp>(spec)?;
 
-    let _ = interp.eval(&include_bytes!("regexp.rb")[..])?;
+    interp.eval(&include_bytes!("regexp.rb")[..])?;
 
     // Declare class constants
     let ignorecase = interp.convert(Flags::IGNORECASE.bits());

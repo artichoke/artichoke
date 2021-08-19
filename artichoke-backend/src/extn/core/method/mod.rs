@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Method", METHOD_CSTR, None, None)?;
     interp.def_class::<Method>(spec)?;
-    let _ = interp.eval(&include_bytes!("method.rb")[..])?;
+    interp.eval(&include_bytes!("method.rb")[..])?;
     trace!("Patched Method onto interpreter");
     Ok(())
 }

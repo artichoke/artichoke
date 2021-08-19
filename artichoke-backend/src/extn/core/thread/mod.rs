@@ -19,7 +19,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.def_rb_source_file("thread.rb", &include_bytes!("thread.rb")[..])?;
     // Thread is loaded by default, so eval it on interpreter initialization
     // https://www.rubydoc.info/gems/rubocop/RuboCop/Cop/Lint/UnneededRequireStatement
-    let _ = interp.eval(&b"require 'thread'"[..])?;
+    interp.eval(&b"require 'thread'"[..])?;
     trace!("Patched Thread onto interpreter");
     trace!("Patched Mutex onto interpreter");
     Ok(())
@@ -42,7 +42,7 @@ mod tests {
     #[test]
     fn functional() {
         let mut interp = interpreter().unwrap();
-        let _ = interp.eval(FUNCTIONAL_TEST).unwrap();
+        interp.eval(FUNCTIONAL_TEST).unwrap();
         let result = interp.eval(b"spec");
         if let Err(exc) = result {
             let backtrace = exc.vm_backtrace(&mut interp);

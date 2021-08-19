@@ -35,7 +35,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("size", ary_len, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<Array>(spec)?;
-    let _ = interp.eval(&include_bytes!("array.rb")[..])?;
+    interp.eval(&include_bytes!("array.rb")[..])?;
     trace!("Patched Array onto interpreter");
     Ok(())
 }

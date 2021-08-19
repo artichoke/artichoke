@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Proc", PROC_CSTR, None, None)?;
     interp.def_class::<Proc>(spec)?;
-    let _ = interp.eval(&include_bytes!("proc.rb")[..])?;
+    interp.eval(&include_bytes!("proc.rb")[..])?;
     trace!("Patched Proc onto interpreter");
     Ok(())
 }

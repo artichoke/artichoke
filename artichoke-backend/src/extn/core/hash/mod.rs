@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Hash", HASH_CSTR, None, None)?;
     interp.def_class::<Hash>(spec)?;
-    let _ = interp.eval(&include_bytes!("hash.rb")[..])?;
+    interp.eval(&include_bytes!("hash.rb")[..])?;
     trace!("Patched Hash onto interpreter");
     Ok(())
 }

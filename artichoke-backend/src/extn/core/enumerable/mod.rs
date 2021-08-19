@@ -11,7 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = module::Spec::new(interp, "Enumerable", ENUMERABLE_CSTR, None)?;
     module::Builder::for_spec(interp, &spec).define()?;
     interp.def_module::<Enumerable>(spec)?;
-    let _ = interp.eval(&include_bytes!("enumerable.rb")[..])?;
+    interp.eval(&include_bytes!("enumerable.rb")[..])?;
     trace!("Patched Enumerable onto interpreter");
     Ok(())
 }

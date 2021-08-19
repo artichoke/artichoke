@@ -11,7 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = module::Spec::new(interp, "Warning", WARNING_CSTR, None)?;
     module::Builder::for_spec(interp, &spec).define()?;
     interp.def_module::<Warning>(spec)?;
-    let _ = interp.eval(&include_bytes!("warning.rb")[..])?;
+    interp.eval(&include_bytes!("warning.rb")[..])?;
     trace!("Patched Warning onto interpreter");
     Ok(())
 }

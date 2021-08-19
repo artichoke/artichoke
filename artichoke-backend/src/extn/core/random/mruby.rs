@@ -28,7 +28,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let default = Rng::Global;
     let default = Rng::alloc_value(default, interp).map_err(|_| NotDefinedError::class_constant("Random::DEFAULT"))?;
     interp.define_class_constant::<Rng>("DEFAULT", default)?;
-    let _ = interp.eval(&include_bytes!("random.rb")[..])?;
+    interp.eval(&include_bytes!("random.rb")[..])?;
     trace!("Patched Random onto interpreter");
     Ok(())
 }
