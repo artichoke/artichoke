@@ -32,7 +32,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("to_h", env_to_h, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<env::Environ>(spec)?;
-    let _ = interp.eval(RUBY_API_POLYFILLS.as_bytes())?;
+    interp.eval(RUBY_API_POLYFILLS.as_bytes())?;
     trace!("Patched ENV onto interpreter");
     trace!("Patched Artichoke::Environ onto interpreter");
     Ok(())

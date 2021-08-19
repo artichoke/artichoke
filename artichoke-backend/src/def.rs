@@ -594,10 +594,10 @@ mod tests {
                 .unwrap();
             interp.def_module::<Module>(module).unwrap();
 
-            let _ = interp
+            interp
                 .eval(b"class DynamicTestClass; include DefineMethodTestModule; extend DefineMethodTestModule; end")
                 .unwrap();
-            let _ = interp
+            interp
                 .eval(b"module DynamicTestModule; extend DefineMethodTestModule; end")
                 .unwrap();
 

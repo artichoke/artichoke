@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Module", MODULE_CSTR, None, None)?;
     interp.def_class::<Module>(spec)?;
-    let _ = interp.eval(&include_bytes!("module.rb")[..])?;
+    interp.eval(&include_bytes!("module.rb")[..])?;
     trace!("Patched Module onto interpreter");
     Ok(())
 }

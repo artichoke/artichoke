@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("FalseClass", FALSE_CLASS_CSTR, None, None)?;
     interp.def_class::<FalseClass>(spec)?;
-    let _ = interp.eval(&include_bytes!("falseclass.rb")[..])?;
+    interp.eval(&include_bytes!("falseclass.rb")[..])?;
     trace!("Patched FalseClass onto interpreter");
     Ok(())
 }

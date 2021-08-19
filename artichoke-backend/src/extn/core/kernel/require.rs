@@ -33,7 +33,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
             Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         interp.push_context(context)?;
         let result = interp.load_source(&path);
-        let _ = interp.pop_context()?;
+        interp.pop_context()?;
         return result;
     }
     let mut message = b"cannot load such file -- ".to_vec();
@@ -66,7 +66,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Erro
             Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         interp.push_context(context)?;
         let result = interp.require_source(&path);
-        let _ = interp.pop_context()?;
+        interp.pop_context()?;
         return result;
     }
     let mut message = b"cannot load such file -- ".to_vec();
@@ -100,7 +100,7 @@ pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: Relat
             Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         interp.push_context(context)?;
         let result = interp.require_source(&path);
-        let _ = interp.pop_context()?;
+        interp.pop_context()?;
         return result;
     }
     let mut message = b"cannot load such file -- ".to_vec();
@@ -169,7 +169,7 @@ mod test {
         type Error = Error;
 
         fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
-            let _ = interp.eval(b"@i = 255").unwrap();
+            interp.eval(b"@i = 255").unwrap();
             Ok(())
         }
     }
@@ -183,7 +183,7 @@ mod test {
         type Error = Error;
 
         fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
-            let _ = interp.eval(b"module Foo; RUST = 7; end").unwrap();
+            interp.eval(b"module Foo; RUST = 7; end").unwrap();
             Ok(())
         }
     }

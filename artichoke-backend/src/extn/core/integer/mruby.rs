@@ -21,7 +21,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("size", integer_size, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<Integer>(spec)?;
-    let _ = interp.eval(&include_bytes!("integer.rb")[..])?;
+    interp.eval(&include_bytes!("integer.rb")[..])?;
     trace!("Patched Integer onto interpreter");
     Ok(())
 }

@@ -13,7 +13,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Numeric", NUMERIC_CSTR, None, None)?;
     interp.def_class::<Numeric>(spec)?;
-    let _ = interp.eval(&include_bytes!("numeric.rb")[..])?;
+    interp.eval(&include_bytes!("numeric.rb")[..])?;
     trace!("Patched Numeric onto interpreter");
     Ok(())
 }

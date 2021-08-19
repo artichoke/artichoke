@@ -24,7 +24,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("puts", artichoke_kernel_puts, sys::mrb_args_rest())?
         .define()?;
     interp.def_module::<kernel::Kernel>(spec)?;
-    let _ = interp.eval(&include_bytes!("kernel.rb")[..])?;
+    interp.eval(&include_bytes!("kernel.rb")[..])?;
     trace!("Patched Kernel onto interpreter");
 
     // Some `Kernel` functions are implemented with methods in the

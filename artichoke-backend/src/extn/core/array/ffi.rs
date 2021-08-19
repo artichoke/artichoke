@@ -263,7 +263,7 @@ unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut 
 
     // Zero capacity `Vec`s are created with a dangling `ptr`.
     if len == 0 && capacity == 0 {
-        let _ = Array::from_raw_parts(ptr, len, capacity);
+        drop(Array::from_raw_parts(ptr, len, capacity));
         return;
     }
 
@@ -296,7 +296,7 @@ unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut 
     // ptr = 0x7ffa2344b2d0, len = 1, capa = 1
     // ```
     if ptr.align_offset(0x10) == 0x00 {
-        let _ = Array::from_raw_parts(ptr, len, capacity);
+        drop(Array::from_raw_parts(ptr, len, capacity));
         return;
     }
 

@@ -42,7 +42,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("end", artichoke_matchdata_end, sys::mrb_args_req(1))?
         .define()?;
     interp.def_class::<matchdata::MatchData>(spec)?;
-    let _ = interp.eval(&include_bytes!("matchdata.rb")[..])?;
+    interp.eval(&include_bytes!("matchdata.rb")[..])?;
     trace!("Patched MatchData onto interpreter");
     Ok(())
 }

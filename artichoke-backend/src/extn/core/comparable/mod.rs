@@ -11,7 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = module::Spec::new(interp, "Comparable", COMPARABLE_CSTR, None)?;
     module::Builder::for_spec(interp, &spec).define()?;
     interp.def_module::<Comparable>(spec)?;
-    let _ = interp.eval(&include_bytes!("comparable.rb")[..])?;
+    interp.eval(&include_bytes!("comparable.rb")[..])?;
     trace!("Patched Comparable onto interpreter");
     Ok(())
 }

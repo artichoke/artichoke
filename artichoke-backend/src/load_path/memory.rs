@@ -481,6 +481,6 @@ mod tests {
     #[test]
     fn extension_hook_prototype() {
         // must compile
-        let _ = Extension::new(TestFile::require);
+        let _extension = Extension::new(TestFile::require);
     }
 }

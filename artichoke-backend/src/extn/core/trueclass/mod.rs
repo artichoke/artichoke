@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("TrueClass", TRUE_CLASS_CSTR, None, None)?;
     interp.def_class::<TrueClass>(spec)?;
-    let _ = interp.eval(&include_bytes!("trueclass.rb")[..])?;
+    interp.eval(&include_bytes!("trueclass.rb")[..])?;
     trace!("Patched TrueClass onto interpreter");
     Ok(())
 }

@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("BasicObject", BASIC_OBJECT_CSTR, None, None)?;
     interp.def_class::<BasicObject>(spec)?;
-    let _ = interp.eval(&include_bytes!("basicobject.rb")[..])?;
+    interp.eval(&include_bytes!("basicobject.rb")[..])?;
     trace!("Patched BasicObject onto interpreter");
     Ok(())
 }

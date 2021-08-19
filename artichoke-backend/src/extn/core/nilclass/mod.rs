@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("NilClass", NIL_CLASS_CSTR, None, None)?;
     interp.def_class::<NilClass>(spec)?;
-    let _ = interp.eval(&include_bytes!("nilclass.rb")[..])?;
+    interp.eval(&include_bytes!("nilclass.rb")[..])?;
     trace!("Patched NilClass onto interpreter");
     Ok(())
 }

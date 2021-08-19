@@ -244,7 +244,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .define()?;
     interp.def_class::<Fatal>(fatal_spec)?;
 
-    let _ = interp.eval(&include_bytes!("exception.rb")[..])?;
+    interp.eval(&include_bytes!("exception.rb")[..])?;
     trace!("Patched Exception onto interpreter");
     trace!("Patched core exception hierarchy onto interpreter");
     Ok(())

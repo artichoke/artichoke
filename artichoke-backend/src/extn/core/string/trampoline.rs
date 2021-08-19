@@ -56,7 +56,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
                 let block_arg = interp.convert_mut(pattern_bytes.as_slice());
-                let _ = block.yield_arg(interp, &block_arg)?;
+                block.yield_arg(interp, &block_arg)?;
 
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
@@ -69,7 +69,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
                     let block_arg = interp.convert_mut(pattern_bytes.as_slice());
-                    let _ = block.yield_arg(interp, &block_arg)?;
+                    block.yield_arg(interp, &block_arg)?;
 
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
@@ -111,13 +111,13 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
             let patlen = pattern_bytes.len();
             if let Some(pos) = string.find(&pattern_bytes) {
                 let block_arg = interp.convert_mut(pattern_bytes.as_slice());
-                let _ = block.yield_arg(interp, &block_arg)?;
+                block.yield_arg(interp, &block_arg)?;
 
                 let offset = pos + patlen;
                 let string = string.get(offset..).unwrap_or_default();
                 for _ in string.find_iter(&pattern_bytes) {
                     let block_arg = interp.convert_mut(pattern_bytes.as_slice());
-                    let _ = block.yield_arg(interp, &block_arg)?;
+                    block.yield_arg(interp, &block_arg)?;
                 }
             }
             return Ok(value);

@@ -25,7 +25,7 @@ mod tests {
     #[test]
     fn functional() {
         let mut interp = interpreter().unwrap();
-        let _ = interp.eval(FUNCTIONAL_TEST).unwrap();
+        interp.eval(FUNCTIONAL_TEST).unwrap();
         let result = interp.eval(b"spec");
         if let Err(exc) = result {
             let backtrace = exc.vm_backtrace(&mut interp);

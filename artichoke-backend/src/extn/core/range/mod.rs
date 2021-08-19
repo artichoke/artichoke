@@ -10,7 +10,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Range", RANGE_CSTR, None, None)?;
     interp.def_class::<Range>(spec)?;
-    let _ = interp.eval(&include_bytes!("range.rb")[..])?;
+    interp.eval(&include_bytes!("range.rb")[..])?;
     trace!("Patched Range onto interpreter");
     Ok(())
 }

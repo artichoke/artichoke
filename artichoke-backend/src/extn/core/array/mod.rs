@@ -533,8 +533,6 @@ impl BoxUnboxVmValue for Array {
     }
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
-        let _ = interp;
-
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
@@ -545,8 +543,6 @@ impl BoxUnboxVmValue for Array {
     }
 
     fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
-        let _ = interp;
-
         // Make sure we have an Array otherwise boxing will produce undefined
         // behavior.
         //
@@ -610,7 +606,7 @@ mod tests {
     #[test]
     fn functional() {
         let mut interp = interpreter().unwrap();
-        let _ = interp.eval(FUNCTIONAL_TEST).unwrap();
+        interp.eval(FUNCTIONAL_TEST).unwrap();
         let result = interp.eval(b"spec");
         if let Err(exc) = result {
             let backtrace = exc.vm_backtrace(&mut interp);

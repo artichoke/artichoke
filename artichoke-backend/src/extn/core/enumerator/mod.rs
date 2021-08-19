@@ -10,8 +10,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Enumerator", ENUMERATOR_CSTR, None, None)?;
     interp.def_class::<Enumerator>(spec)?;
-    let _ = interp.eval(&include_bytes!("enumerator.rb")[..])?;
-    let _ = interp.eval(&include_bytes!("lazy.rb")[..])?;
+    interp.eval(&include_bytes!("enumerator.rb")[..])?;
+    interp.eval(&include_bytes!("lazy.rb")[..])?;
     trace!("Patched Enumerator onto interpreter");
     trace!("Patched Enumerator::Lazy onto interpreter");
     Ok(())

@@ -462,7 +462,7 @@ impl RegexpType for Utf8 {
                     }
                     let data = MatchData::alloc_value(matchdata.clone(), interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                    let _ = block.yield_arg(interp, &matched)?;
+                    block.yield_arg(interp, &matched)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             } else {
@@ -477,7 +477,7 @@ impl RegexpType for Utf8 {
                     matchdata.set_region(pos.start()..pos.end());
                     let data = MatchData::alloc_value(matchdata.clone(), interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                    let _ = block.yield_arg(interp, &matched)?;
+                    block.yield_arg(interp, &matched)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             }

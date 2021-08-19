@@ -346,7 +346,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_class() {
         let mut interp = interpreter().unwrap();
-        let _ = interp.eval(b"module Foo; class Bar; end; end").unwrap();
+        interp.eval(b"module Foo; class Bar; end; end").unwrap();
         let spec = module::Spec::new(&mut interp, "Foo", cstr::cstr!("Foo"), None).unwrap();
         let spec = class::Spec::new("Bar", cstr::cstr!("Bar"), Some(EnclosingRubyScope::module(&spec)), None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
@@ -356,7 +356,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_class_under_class() {
         let mut interp = interpreter().unwrap();
-        let _ = interp.eval(b"class Foo; class Bar; end; end").unwrap();
+        interp.eval(b"class Foo; class Bar; end; end").unwrap();
         let spec = class::Spec::new("Foo", cstr::cstr!("Foo"), None, None).unwrap();
         let spec = class::Spec::new("Bar", cstr::cstr!("Bar"), Some(EnclosingRubyScope::class(&spec)), None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();

@@ -56,7 +56,7 @@ fn define_rust_backed_ruby_class() {
     let mut interp = artichoke_backend::interpreter().unwrap();
     interp.def_file_for_type::<_, Container>("container.rb").unwrap();
 
-    let _ = interp.eval(b"require 'container'").unwrap();
+    interp.eval(b"require 'container'").unwrap();
     let result = interp.eval(b"Container.new(15).value").unwrap();
     let result = result.try_into::<i64>(&interp).unwrap();
     assert_eq!(result, 15);

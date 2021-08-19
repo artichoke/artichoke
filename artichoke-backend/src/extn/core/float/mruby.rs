@@ -11,7 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = class::Spec::new("Float", FLOAT_CSTR, None, None)?;
     interp.def_class::<Float>(spec)?;
-    let _ = interp.eval(&include_bytes!("float.rb")[..])?;
+    interp.eval(&include_bytes!("float.rb")[..])?;
 
     let dig = interp.convert(Float::DIG);
     interp.define_class_constant::<Float>("DIG", dig)?;
