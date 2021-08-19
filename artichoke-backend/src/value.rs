@@ -189,7 +189,7 @@ impl ValueCore for Value {
     }
 
     fn freeze(&mut self, interp: &mut Self::Artichoke) -> Result<(), Self::Error> {
-        let _ = self.funcall(interp, "freeze", &[], None)?;
+        self.funcall(interp, "freeze", &[], None)?;
         Ok(())
     }
 

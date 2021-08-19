@@ -430,7 +430,7 @@ impl RegexpType for Onig {
                     }
                     let data = MatchData::alloc_value(matchdata.clone(), interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                    let _ = block.yield_arg(interp, &matched)?;
+                    block.yield_arg(interp, &matched)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             } else {
@@ -445,7 +445,7 @@ impl RegexpType for Onig {
                     matchdata.set_region(pos.0..pos.1);
                     let data = MatchData::alloc_value(matchdata.clone(), interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
-                    let _ = block.yield_arg(interp, &matched)?;
+                    block.yield_arg(interp, &matched)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 }
             }
