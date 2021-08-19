@@ -51,7 +51,7 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
     // mruby garbage collection relies on a fully initialized Array, which we
     // won't have until after `extn::core` is initialized. Disable GC before
     // init and clean up afterward.
-    let prior_gc_state = interp.disable_gc();
+    let prior_gc_state = interp.disable_gc()?;
 
     // Initialize Artichoke Core and Standard Library runtime
     debug!("Begin initializing Artichoke Core and Standard Library");
@@ -77,8 +77,8 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
     interp.create_arena_savepoint()?.interp().eval(&[])?;
 
     if let GcState::Enabled = prior_gc_state {
-        interp.enable_gc();
-        interp.full_gc();
+        interp.enable_gc()?;
+        interp.full_gc()?;
     }
 
     Ok(interp)

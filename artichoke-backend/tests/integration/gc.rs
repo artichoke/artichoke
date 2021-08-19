@@ -17,7 +17,7 @@ const ITERATIONS: usize = 10_000;
 fn full_gc_repeatedly() {
     let mut interp = artichoke_backend::interpreter().unwrap();
     for _ in 0..ITERATIONS {
-        interp.full_gc();
+        interp.full_gc().unwrap();
     }
     interp.close();
 }
@@ -26,8 +26,8 @@ fn full_gc_repeatedly() {
 fn incremental_gc_repeatedly() {
     let mut interp = artichoke_backend::interpreter().unwrap();
     for _ in 0..ITERATIONS {
-        interp.incremental_gc();
+        interp.incremental_gc().unwrap();
     }
-    interp.full_gc();
+    interp.full_gc().unwrap();
     interp.close();
 }

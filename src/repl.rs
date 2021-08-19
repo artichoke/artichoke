@@ -264,7 +264,7 @@ where
                 }
                 // Eval successful, so reset the REPL state for the next
                 // expression.
-                interp.incremental_gc();
+                interp.incremental_gc()?;
                 buf.clear();
             }
             // Reset the buf and present the user with a fresh prompt

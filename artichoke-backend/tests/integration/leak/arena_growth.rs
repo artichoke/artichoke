@@ -33,7 +33,7 @@ fn unbounded_arena_growth_leak_current_exception() {
         assert_eq!(expected, backtrace);
         drop(result);
         arena.restore();
-        interp.incremental_gc();
+        interp.incremental_gc().unwrap();
     }
     interp.close();
 }
@@ -47,11 +47,10 @@ fn unbounded_arena_growth_leak_to_s() {
         let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
         let display = result.to_s(&mut arena);
         assert_eq!(display, expected.as_bytes());
-        let _ = result;
         arena.restore();
-        interp.incremental_gc();
+        interp.incremental_gc().unwrap();
     }
-    interp.full_gc();
+    interp.full_gc().unwrap();
     interp.close();
 }
 
@@ -69,10 +68,9 @@ fn unbounded_arena_growth_leak_inspect() {
         let result = arena.eval(b"'a' * 1024 * 1024").unwrap();
         let debug = result.inspect(&mut arena);
         assert_eq!(debug, expected);
-        let _ = result;
         arena.restore();
-        interp.incremental_gc();
+        interp.incremental_gc().unwrap();
     }
-    interp.full_gc();
+    interp.full_gc().unwrap();
     interp.close();
 }
