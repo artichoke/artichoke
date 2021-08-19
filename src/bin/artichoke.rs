@@ -41,14 +41,15 @@
 //!     <programfile>...
 //! ```
 
-use artichoke::ruby::{self, Args};
-use clap::{App, AppSettings, Arg, ArgMatches};
 use std::env;
 use std::error;
 use std::ffi::OsString;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process;
+
+use artichoke::ruby::{self, Args};
+use clap::{App, AppSettings, Arg, ArgMatches};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 type Result<T> = ::std::result::Result<T, Box<dyn error::Error>>;

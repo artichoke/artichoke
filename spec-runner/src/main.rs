@@ -142,6 +142,8 @@ pub fn main() {
     let formatter = match formatter {
         Ok(f) => f,
         Err(err) => {
+            // Suppress all errors at this point (e.g. from a broken pipe) since
+            // we're exiting with an error code anyway.
             let _ = writeln!(&mut stderr, "{}", err);
             process::exit(1);
         }
@@ -153,6 +155,8 @@ pub fn main() {
             formatter,
         }
     } else {
+        // Suppress all errors at this point (e.g. from a broken pipe) since
+        // we're exiting with an error code anyway.
         let _ = writeln!(&mut stderr, "Missing required spec configuration");
         process::exit(1);
     };
@@ -161,6 +165,8 @@ pub fn main() {
         Ok(true) => process::exit(0),
         Ok(false) => process::exit(1),
         Err(err) => {
+            // Suppress all errors at this point (e.g. from a broken pipe) since
+            // we're exiting with an error code anyway.
             let _ = writeln!(&mut stderr, "{}", err);
             process::exit(1);
         }

@@ -27,15 +27,19 @@
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
-use artichoke::repl;
 use std::io::{self, Write};
 use std::process;
+
+use artichoke::repl;
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 fn main() {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
     if let Err(err) = repl::run(io::stdout(), &mut stderr, None) {
-        // reset colors
+        // Reset colors and write the error message to stderr.
+        //
+        // Suppress all errors at this point (e.g. from a broken pipe) since
+        // we're exiting with an error code anyway.
         let _ = stderr.reset();
         let _ = writeln!(stderr, "{}", err);
         process::exit(1);
