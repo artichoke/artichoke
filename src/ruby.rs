@@ -114,7 +114,7 @@ where
     W: io::Write + WriteColor,
 {
     if args.copyright {
-        let _ = interp.eval(b"puts RUBY_COPYRIGHT")?;
+        interp.eval(b"puts RUBY_COPYRIGHT")?;
         return Ok(Ok(()));
     }
 

@@ -285,7 +285,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_module() {
         let mut interp = interpreter().unwrap();
-        let _ = interp.eval(b"module Foo; module Bar; end; end").unwrap();
+        interp.eval(b"module Foo; module Bar; end; end").unwrap();
         let scope = Spec::new(&mut interp, "Foo", cstr::cstr!("Foo"), None).unwrap();
         let scope = EnclosingRubyScope::module(&scope);
         let spec = Spec::new(&mut interp, "Bar", cstr::cstr!("Bar"), Some(scope)).unwrap();
@@ -296,7 +296,7 @@ mod tests {
     #[test]
     fn rclass_for_nested_module_under_class() {
         let mut interp = interpreter().unwrap();
-        let _ = interp.eval(b"class Foo; module Bar; end; end").unwrap();
+        interp.eval(b"class Foo; module Bar; end; end").unwrap();
         let scope = class::Spec::new("Foo", cstr::cstr!("Foo"), None, None).unwrap();
         let scope = EnclosingRubyScope::class(&scope);
         let spec = Spec::new(&mut interp, "Bar", cstr::cstr!("Bar"), Some(scope)).unwrap();

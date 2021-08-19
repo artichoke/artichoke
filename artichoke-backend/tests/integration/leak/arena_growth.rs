@@ -21,7 +21,7 @@ const ITERATIONS: usize = 100;
 fn unbounded_arena_growth_leak_current_exception() {
     let mut interp = artichoke_backend::interpreter().unwrap();
     let code = r#"def bad_code; raise ArgumentError.new("n" * 1024 * 1024); end"#;
-    let _ = interp.eval(code.trim().as_bytes()).unwrap();
+    interp.eval(code.trim().as_bytes()).unwrap();
 
     let expected = Some(vec![b"(eval):1:in bad_code".to_vec(), b"(eval):1".to_vec()]);
 

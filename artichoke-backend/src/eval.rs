@@ -87,7 +87,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let context = Context::new(&b"context.rb"[..]).unwrap();
         interp.push_context(context).unwrap();
-        let _ = interp.eval(b"15").unwrap();
+        interp.eval(b"15").unwrap();
         let context = interp.peek_context().unwrap();
         let filename = context.unwrap().filename();
         assert_eq!(filename.as_bstr(), b"context.rb".as_bstr());
@@ -96,7 +96,7 @@ mod tests {
     #[test]
     fn root_context_is_not_pushed_after_eval() {
         let mut interp = interpreter().unwrap();
-        let _ = interp.eval(b"15").unwrap();
+        interp.eval(b"15").unwrap();
         let context = interp.peek_context().unwrap();
         assert!(context.is_none());
     }
