@@ -5,6 +5,6 @@ use artichoke::prelude::*;
 
 fuzz_target!(|data: &[u8]| {
     let mut interp = artichoke::interpreter().unwrap();
-    let _ = interp.eval(data);
+    let _ignore_errors_from_evaling_arbitrary_bytes = interp.eval(data);
     interp.close();
 });

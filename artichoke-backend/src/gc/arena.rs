@@ -165,7 +165,9 @@ impl<'a> DerefMut for ArenaIndex<'a> {
 impl<'a> Drop for ArenaIndex<'a> {
     fn drop(&mut self) {
         let idx = self.index;
-        let _ = unsafe {
+        // We can't panic in a drop impl, so ignore errors when crossing the
+        // FFI boundary.
+        let _ignored = unsafe {
             self.interp
                 .with_ffi_boundary(|mrb| sys::mrb_sys_gc_arena_restore(mrb, idx))
         };

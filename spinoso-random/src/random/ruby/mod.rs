@@ -313,6 +313,6 @@ mod tests {
 
     #[test]
     fn seed_with_empty_iter_returns() {
-        let _ = Mt::new_with_key(iter::empty());
+        let _mt = Mt::new_with_key(iter::empty());
     }
 }
