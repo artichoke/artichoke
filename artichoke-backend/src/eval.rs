@@ -63,7 +63,7 @@ impl Eval for Artichoke {
         self.push_context(context)?;
         let code = self.read_source_file_contents(file)?.into_owned();
         let result = self.eval(code.as_slice());
-        let _ = self.pop_context()?;
+        self.pop_context()?;
         result
     }
 }
