@@ -1,6 +1,6 @@
 use crate::sys;
 use crate::value::Value;
-use crate::Artichoke;
+use crate::{Artichoke, Error};
 
 pub mod arena;
 
@@ -27,7 +27,7 @@ pub trait MrbGarbageCollection {
     fn live_object_count(&mut self) -> i32;
 
     /// Mark a [`Value`] as reachable in the mruby garbage collector.
-    fn mark_value(&mut self, value: &Value);
+    fn mark_value(&mut self, value: &Value) -> Result<(), Error>;
 
     /// Perform an incremental garbage collection.
     ///
@@ -35,7 +35,7 @@ pub trait MrbGarbageCollection {
     /// [full GC](MrbGarbageCollection::full_gc), but does not guarantee that
     /// all dead objects will be reaped. You may wish to use an incremental GC
     /// if you are operating with an interpreter in a loop.
-    fn incremental_gc(&mut self);
+    fn incremental_gc(&mut self) -> Result<(), Error>;
 
     /// Perform a full garbage collection.
     ///
@@ -43,17 +43,17 @@ pub trait MrbGarbageCollection {
     /// expensive than an
     /// [incremental GC](MrbGarbageCollection::incremental_gc). You may wish to
     /// use a full GC if you are memory constrained.
-    fn full_gc(&mut self);
+    fn full_gc(&mut self) -> Result<(), Error>;
 
     /// Enable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn enable_gc(&mut self) -> State;
+    fn enable_gc(&mut self) -> Result<State, Error>;
 
     /// Disable garbage collection.
     ///
     /// Returns the prior GC enabled state.
-    fn disable_gc(&mut self) -> State;
+    fn disable_gc(&mut self) -> Result<State, Error>;
 }
 
 impl MrbGarbageCollection for Artichoke {
@@ -68,47 +68,51 @@ impl MrbGarbageCollection for Artichoke {
         }
     }
 
-    fn mark_value(&mut self, value: &Value) {
+    fn mark_value(&mut self, value: &Value) -> Result<(), Error> {
         unsafe {
-            let _ = self.with_ffi_boundary(|mrb| sys::mrb_sys_safe_gc_mark(mrb, value.inner()));
+            self.with_ffi_boundary(|mrb| sys::mrb_sys_safe_gc_mark(mrb, value.inner()))?;
         }
+        Ok(())
     }
 
-    fn incremental_gc(&mut self) {
+    fn incremental_gc(&mut self) -> Result<(), Error> {
         unsafe {
-            let _ = self.with_ffi_boundary(|mrb| sys::mrb_incremental_gc(mrb));
+            self.with_ffi_boundary(|mrb| sys::mrb_incremental_gc(mrb))?;
         }
+        Ok(())
     }
 
-    fn full_gc(&mut self) {
+    // TODO: propagate errors.
+    fn full_gc(&mut self) -> Result<(), Error> {
         unsafe {
-            let _ = self.with_ffi_boundary(|mrb| sys::mrb_full_gc(mrb));
+            self.with_ffi_boundary(|mrb| sys::mrb_full_gc(mrb))?;
         }
+        Ok(())
     }
 
-    fn enable_gc(&mut self) -> State {
+    fn enable_gc(&mut self) -> Result<State, Error> {
         unsafe {
-            self.with_ffi_boundary(|mrb| {
+            let state = self.with_ffi_boundary(|mrb| {
                 if sys::mrb_sys_gc_enable(mrb) {
                     State::Enabled
                 } else {
                     State::Disabled
                 }
-            })
-            .unwrap_or(State::Disabled)
+            })?;
+            Ok(state)
         }
     }
 
-    fn disable_gc(&mut self) -> State {
+    fn disable_gc(&mut self) -> Result<State, Error> {
         unsafe {
-            self.with_ffi_boundary(|mrb| {
+            let state = self.with_ffi_boundary(|mrb| {
                 if sys::mrb_sys_gc_disable(mrb) {
                     State::Enabled
                 } else {
                     State::Disabled
                 }
-            })
-            .unwrap_or(State::Disabled)
+            })?;
+            Ok(state)
         }
     }
 }
@@ -133,7 +137,7 @@ mod tests {
             let _display = value.to_s(&mut arena);
         }
         arena.restore();
-        interp.full_gc();
+        interp.full_gc().unwrap();
         assert_eq!(
             interp.live_object_count(),
             // plus 1 because stack keep is enabled in eval which marks the last
@@ -154,7 +158,7 @@ mod tests {
                 let _display = value.to_s(&mut arena);
             }
         }
-        interp.full_gc();
+        interp.full_gc().unwrap();
         assert_eq!(
             interp.live_object_count(),
             // plus 1 because stack keep is enabled in eval which marks the last
@@ -167,7 +171,7 @@ mod tests {
     #[test]
     fn enable_disable_gc() {
         let mut interp = interpreter().unwrap();
-        interp.disable_gc();
+        interp.disable_gc().unwrap();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let _ = arena
             .interp()
@@ -189,15 +193,15 @@ mod tests {
             )
             .unwrap();
         let live = arena.live_object_count();
-        arena.full_gc();
+        arena.full_gc().unwrap();
         assert_eq!(
             arena.live_object_count(),
             live,
             "GC is disabled. No objects should be collected"
         );
         arena.restore();
-        interp.enable_gc();
-        interp.full_gc();
+        interp.enable_gc().unwrap();
+        interp.full_gc().unwrap();
         assert_eq!(
             interp.live_object_count(),
             live - 2,
@@ -212,7 +216,7 @@ mod tests {
         let baseline_object_count = arena.live_object_count();
         let _ = arena.eval(b"").unwrap();
         arena.restore();
-        interp.full_gc();
+        interp.full_gc().unwrap();
         assert_eq!(interp.live_object_count(), baseline_object_count);
     }
 
@@ -227,10 +231,10 @@ mod tests {
             let value = result.unwrap();
             assert!(!value.is_dead(&mut arena));
             arena.restore();
-            initial_arena.incremental_gc();
+            initial_arena.incremental_gc().unwrap();
         }
         initial_arena.restore();
-        interp.full_gc();
+        interp.full_gc().unwrap();
         assert_eq!(
             interp.live_object_count(),
             // plus 1 because stack keep is enabled in eval which marks the

@@ -27,7 +27,7 @@ fn arena() {
         let inspect = s.funcall(&mut interp, "inspect", &[], None).unwrap();
         let inspect = inspect.try_into_mut::<String>(&mut interp).unwrap();
         assert_eq!(inspect, expected);
-        interp.incremental_gc();
+        interp.incremental_gc().unwrap();
     }
     interp.close();
 }

@@ -506,7 +506,7 @@ mod tests {
         let dead = live;
         let live = arena.eval(b"'live'").unwrap();
         arena.restore();
-        interp.full_gc();
+        interp.full_gc().unwrap();
         // unreachable objects are dead after a full garbage collection
         assert!(dead.is_dead(&mut interp));
         // the result of the most recent eval is always live even after a full
@@ -523,7 +523,7 @@ mod tests {
         let immediate = live;
         let live = arena.eval(b"64").unwrap();
         arena.restore();
-        interp.full_gc();
+        interp.full_gc().unwrap();
         // immediate objects are never dead
         assert!(!immediate.is_dead(&mut interp));
         // the result of the most recent eval is always live even after a full

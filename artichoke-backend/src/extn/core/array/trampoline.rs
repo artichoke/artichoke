@@ -94,7 +94,7 @@ pub fn element_assignment(
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
-    let prior_gc_state = interp.disable_gc();
+    let prior_gc_state = interp.disable_gc()?;
 
     let result = array.element_assignment(interp, first, second, third);
 
@@ -104,7 +104,7 @@ pub fn element_assignment(
     }
 
     if let GcState::Enabled = prior_gc_state {
-        interp.enable_gc();
+        interp.enable_gc()?;
     }
     result
 }
