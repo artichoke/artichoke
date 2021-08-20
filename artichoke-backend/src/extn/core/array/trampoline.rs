@@ -214,11 +214,13 @@ pub fn initialize(
     block: Option<Block>,
 ) -> Result<Value, Error> {
     // XXX
+    Array::box_into_value(Array::new(), into, interp)?;
     let array = Array::initialize(interp, first, second, block)?;
     Array::box_into_value(array, into, interp)
 }
 
 pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> Result<Value, Error> {
+    Array::box_into_value(Array::new(), ary, interp)?;
     let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
     let result = from.clone();
     Array::box_into_value(result, ary, interp)
