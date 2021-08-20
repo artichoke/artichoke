@@ -276,15 +276,14 @@ mod libmruby {
             .files(sources.values())
             .include(mruby_include_dir())
             .include(buildpath::source::mruby_sys_ext_include_dir())
+            .define("ARTICHOKE", None)
+            .define("MRB_ARY_NO_EMBED", None)
+            .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
+            .define("MRB_INT64", None)
             .define("MRB_NO_BOXING", None)
             .define("MRB_NO_PRESYM", None)
             .define("MRB_NO_STDIO", None)
-            .define("MRB_ARY_NO_EMBED", None)
-            .define("MRB_INT64", None)
-            .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
-            .define("MRB_UTF8_STRING", None)
-            .define("DISABLE_GEMS", None)
-            .define("ARTICHOKE", None);
+            .define("MRB_UTF8_STRING", None);
 
         for gem in gems() {
             let dir = if gem == "mruby-compiler" { "core" } else { "include" };
@@ -379,12 +378,12 @@ mod libmruby {
             .arg("-I")
             .arg(buildpath::source::mruby_sys_ext_include_dir())
             .arg("-DARTICHOKE")
+            .arg("-DMRB_ARY_NO_EMBED")
+            .arg("-DMRB_GC_TURN_OFF_GENERATIONAL")
+            .arg("-DMRB_INT64")
             .arg("-DMRB_NO_BOXING")
             .arg("-DMRB_NO_PRESYM")
             .arg("-DMRB_NO_STDIO")
-            .arg("-DMRB_ARY_NO_EMBED")
-            .arg("-DMRB_INT64")
-            .arg("-DMRB_GC_TURN_OFF_GENERATIONAL")
             .arg("-DMRB_UTF8_STRING");
         if let Architecture::Wasm32 = target.architecture {
             for include_dir in wasm_include_dirs() {
