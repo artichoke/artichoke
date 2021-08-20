@@ -214,12 +214,27 @@ pub fn initialize(
     second: Option<Value>,
     block: Option<Block>,
 ) -> Result<Value, Error> {
-    // XXX
+    // Pack an empty `Array` into the given uninitialized `RArray *` so it can
+    // be safely marked if an mruby allocation occurs and a GC is triggered in
+    // `Array::initialize`.
+    //
+    // Allocations are likely in the case where a block is passed to
+    // `Array#initialize` or when the first and second args must be coerced with
+    // the `#to_*` family of methods.
+    Array::box_into_value(Array::new(), into, interp)?;
     let array = Array::initialize(interp, first, second, block)?;
     Array::box_into_value(array, into, interp)
 }
 
 pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> Result<Value, Error> {
+    // Pack an empty `Array` into the given uninitialized `RArray *` so it can
+    // be safely marked if an mruby allocation occurs and a GC is triggered in
+    // `Array::initialize`.
+    //
+    // This ensures the given `RArry *` is initalized even if a non-`Array`
+    // object is called with `Array#initialize_copy` and the
+    // `Array::unbox_from_value` call below short circuits with an error.
+    Array::box_into_value(Array::new(), ary, interp)?;
     let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
     let result = from.clone();
     Array::box_into_value(result, ary, interp)
