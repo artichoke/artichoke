@@ -2207,7 +2207,6 @@ mrb_alias_method(mrb_state *mrb, struct RClass *c, mrb_sym a, mrb_sym b)
       if (tc) {
         e->c = tc;
         mrb_field_write_barrier(mrb, (struct RBasic*)e, (struct RBasic*)tc);
-        mrb_gc_mark(mrb, (struct RBasic*)tc);
       }
       p->e.env = e;
       p->flags |= MRB_PROC_ENVSET;
