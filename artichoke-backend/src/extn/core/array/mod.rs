@@ -536,7 +536,12 @@ impl BoxUnboxVmValue for Array {
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
-                sys::mrb_sys_alloc_rarray(mrb, ptr, len as sys::mrb_int, capacity as sys::mrb_int)
+                sys::mrb_sys_alloc_rarray(
+                    mrb,
+                    ptr,
+                    sys::mrb_int::try_from(len).unwrap(),
+                    sys::mrb_int::try_from(capacity).unwrap(),
+                )
             })?
         };
         Ok(interp.protect(value.into()))
