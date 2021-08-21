@@ -536,7 +536,22 @@ impl BoxUnboxVmValue for Array {
         let (ptr, len, capacity) = Array::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
-                sys::mrb_sys_alloc_rarray(mrb, ptr, len as sys::mrb_int, capacity as sys::mrb_int)
+                // Overflow Safety:
+                //
+                // `Array` is backed by a `Vec` which can at most allocate
+                // `isize::MAX` bytes.
+                //
+                // `mrb_value` is not a ZST, so in practice, `len` and
+                // `capacity` will never overflow `mrb_int`, which is an `i64`
+                // on 64-bit targets.
+                //
+                // On 32-bit targets, `usize` is `u32` which will never overflow
+                // `i64`. Artichoke unconditionally compiles mruby with `-DMRB_INT64`.
+                let len = sys::mrb_int::try_from(len)
+                    .expect("Length of an `Array` cannot exceed isize::MAX == i64::MAX == mrb_int::MAX");
+                let capa = sys::mrb_int::try_from(capacity)
+                    .expect("Capacity of an `Array` cannot exceed isize::MAX == i64::MAX == mrb_int::MAX");
+                sys::mrb_sys_alloc_rarray(mrb, ptr, len, capa)
             })?
         };
         Ok(interp.protect(value.into()))
