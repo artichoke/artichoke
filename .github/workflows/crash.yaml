@@ -46,6 +46,8 @@ jobs:
           ./target/debug/spec-runner --quiet --format tagger all-core-specs.toml > /dev/null
           ./target/debug/spec-runner --quiet --format yaml all-core-specs.toml > /dev/null
         working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
 
       - name: Run specs
         run: |
@@ -54,6 +56,8 @@ jobs:
           ./target/debug/spec-runner --quiet --format tagger spec-state.toml > /dev/null
           ./target/debug/spec-runner --quiet --format yaml spec-state.toml > /dev/null
         working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
 
       - name: Run specs
         run: |
@@ -62,6 +66,8 @@ jobs:
           ./target/release/spec-runner --quiet --format tagger all-core-specs.toml > /dev/null
           ./target/release/spec-runner --quiet --format yaml all-core-specs.toml > /dev/null
         working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
 
       - name: Run specs
         run: |
@@ -70,3 +76,5 @@ jobs:
           ./target/release/spec-runner --quiet --format tagger spec-state.toml > /dev/null
           ./target/release/spec-runner --quiet --format yaml spec-state.toml > /dev/null
         working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
