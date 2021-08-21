@@ -280,7 +280,6 @@ mod libmruby {
             .define("MRB_NO_STDIO", None)
             .define("MRB_ARY_NO_EMBED", None)
             .define("MRB_INT64", None)
-            .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
             .define("MRB_UTF8_STRING", None)
             .define("DISABLE_GEMS", None)
             .define("ARTICHOKE", None);
@@ -383,7 +382,6 @@ mod libmruby {
             .arg("-DMRB_NO_STDIO")
             .arg("-DMRB_ARY_NO_EMBED")
             .arg("-DMRB_INT64")
-            .arg("-DMRB_GC_TURN_OFF_GENERATIONAL")
             .arg("-DMRB_UTF8_STRING");
         if let Architecture::Wasm32 = target.architecture {
             for include_dir in wasm_include_dirs() {
