@@ -35,38 +35,118 @@ jobs:
         run: cargo build --verbose --bin spec-runner
         working-directory: "spec-runner"
 
+      - name: Run specs - debug - artichoke formatter - all-core-specs
+        run: |
+          ./target/debug/spec-runner --quiet --format artichoke all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - debug - summary formatter - all-core-specs
+        run: |
+          ./target/debug/spec-runner --quiet --format summary all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - debug - tagger formatter - all-core-specs
+        run: |
+          ./target/debug/spec-runner --quiet --format tagger all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - debug - yaml formatter - all-core-specs
+        run: |
+          ./target/debug/spec-runner --quiet --format yaml all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - debug - artichoke formatter - spec-state
+        run: |
+          ./target/debug/spec-runner --quiet --format artichoke spec-state.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - debug - summary formatter - spec-state
+        run: |
+          ./target/debug/spec-runner --quiet --format summary spec-state.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - debug - tagger formatter - spec-state
+        run: |
+          ./target/debug/spec-runner --quiet --format tagger spec-state.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - debug - yaml formatter - spec-state
+        run: |
+          ./target/debug/spec-runner --quiet --format yaml spec-state.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
       - name: Compile release
         run: cargo build --verbose --bin spec-runner --release
         working-directory: "spec-runner"
 
-      - name: Run specs
-        run: |
-          ./target/debug/spec-runner --quiet --format artichoke all-core-specs.toml > /dev/null
-          ./target/debug/spec-runner --quiet --format summary all-core-specs.toml > /dev/null
-          ./target/debug/spec-runner --quiet --format tagger all-core-specs.toml > /dev/null
-          ./target/debug/spec-runner --quiet --format yaml all-core-specs.toml > /dev/null
-        working-directory: "spec-runner"
-
-      - name: Run specs
-        run: |
-          ./target/debug/spec-runner --quiet --format artichoke spec-state.toml > /dev/null
-          ./target/debug/spec-runner --quiet --format summary spec-state.toml > /dev/null
-          ./target/debug/spec-runner --quiet --format tagger spec-state.toml > /dev/null
-          ./target/debug/spec-runner --quiet --format yaml spec-state.toml > /dev/null
-        working-directory: "spec-runner"
-
-      - name: Run specs
+      - name: Run specs - release - artichoke formatter - all-core-specs
         run: |
           ./target/release/spec-runner --quiet --format artichoke all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - release - summary formatter - all-core-specs
+        run: |
           ./target/release/spec-runner --quiet --format summary all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - release - tagger formatter - all-core-specs
+        run: |
           ./target/release/spec-runner --quiet --format tagger all-core-specs.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - release - yaml formatter - all-core-specs
+        run: |
           ./target/release/spec-runner --quiet --format yaml all-core-specs.toml > /dev/null
         working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
 
-      - name: Run specs
+      - name: Run specs - release - artichoke formatter - spec-state
         run: |
           ./target/release/spec-runner --quiet --format artichoke spec-state.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - release - summary formatter - spec-state
+        run: |
           ./target/release/spec-runner --quiet --format summary spec-state.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - release - tagger formatter - spec-state
+        run: |
           ./target/release/spec-runner --quiet --format tagger spec-state.toml > /dev/null
+        working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
+
+      - name: Run specs - release - yaml formatter - spec-state
+        run: |
           ./target/release/spec-runner --quiet --format yaml spec-state.toml > /dev/null
         working-directory: "spec-runner"
+        env:
+          PERNOSCO_ENABLE: 1
