@@ -54,9 +54,15 @@ impl<'a, T> UnboxedValueGuard<'a, T> {
     }
 
     /// Get a unique reference to the inner `T`.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure the raw parts stored in the source `mrb_value` are
+    /// not invalidated OR that the raw parts are repacked before an mruby
+    /// allocation occurs.
     #[inline]
     #[must_use]
-    pub fn as_inner_mut(&mut self) -> &mut T {
+    pub unsafe fn as_inner_mut(&mut self) -> &mut T {
         &mut *self.guarded
     }
 
@@ -110,7 +116,16 @@ impl<'a, T> Deref for UnboxedValueGuard<'a, HeapAllocated<T>> {
 
 impl<'a, T> DerefMut for UnboxedValueGuard<'a, HeapAllocated<T>> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.guarded.deref_mut().0.as_mut()
+        // Safety:
+        //
+        // `HeapAllocated` data objects are boxed and the raw box pointer is
+        // stored in the `mrb_value`.
+        //
+        // `Deref::Target` is `T`, not `Box<T>`.
+        //
+        // Giving out a `&mut T` means the box pointer cannot be invalidated.
+        let inner = unsafe { self.as_inner_mut() };
+        inner.0.as_mut()
     }
 }
 

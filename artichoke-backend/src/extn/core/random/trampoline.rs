@@ -22,7 +22,7 @@ pub fn equal(interp: &mut Artichoke, mut rand: Value, mut other: Value) -> Resul
 pub fn bytes(interp: &mut Artichoke, mut rand: Value, size: Value) -> Result<Value, Error> {
     let mut random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
     let size = implicitly_convert_to_int(interp, size)?;
-    let buf = match random.as_mut() {
+    let buf = match &mut *random {
         Rng::Global => interp.prng_mut()?.bytes(size)?,
         Rng::Value(random) => random.bytes(size)?,
     };
@@ -32,7 +32,7 @@ pub fn bytes(interp: &mut Artichoke, mut rand: Value, size: Value) -> Result<Val
 pub fn rand(interp: &mut Artichoke, mut rand: Value, max: Option<Value>) -> Result<Value, Error> {
     let mut random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
     let max = interp.try_convert_mut(max)?;
-    let num = match random.as_mut() {
+    let num = match &mut *random {
         Rng::Global => interp.prng_mut()?.rand(max)?,
         Rng::Value(random) => random.rand(max)?,
     };

@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::array::Array;
 use crate::extn::prelude::*;
-use crate::gc::{MrbGarbageCollection, State as GcState};
 
 pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<Value, Error> {
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
@@ -94,18 +93,16 @@ pub fn element_assignment(
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
-    let prior_gc_state = interp.disable_gc()?;
-
-    let result = array.element_assignment(interp, first, second, third);
+    // XXX: Ensure that `array_mut` does not allocate in between mruby
+    // allocations.
+    let array_mut = unsafe { array.as_inner_mut() };
+    let result = array_mut.element_assignment(interp, first, second, third);
 
     unsafe {
         let inner = array.take();
         Array::box_into_value(inner, ary, interp)?;
     }
 
-    if let GcState::Enabled = prior_gc_state {
-        interp.enable_gc()?;
-    }
     result
 }
 
@@ -114,9 +111,16 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    array.clear();
 
+    // Safety:
+    //
+    // Clearing a `Vec` does not reallocate it, but it does change it's length.
+    // The array is repacked before any intervening interpreter heap allocations
+    // occur.
     unsafe {
+        let array_mut = array.as_inner_mut();
+        array_mut.clear();
+
         let inner = array.take();
         Array::box_into_value(inner, ary, interp)?;
     }
@@ -210,11 +214,27 @@ pub fn initialize(
     second: Option<Value>,
     block: Option<Block>,
 ) -> Result<Value, Error> {
+    // Pack an empty `Array` into the given uninitialized `RArray *` so it can
+    // be safely marked if an mruby allocation occurs and a GC is triggered in
+    // `Array::initialize`.
+    //
+    // Allocations are likely in the case where a block is passed to
+    // `Array#initialize` or when the first and second args must be coerced with
+    // the `#to_*` family of methods.
+    Array::box_into_value(Array::new(), into, interp)?;
     let array = Array::initialize(interp, first, second, block)?;
     Array::box_into_value(array, into, interp)
 }
 
 pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> Result<Value, Error> {
+    // Pack an empty `Array` into the given uninitialized `RArray *` so it can
+    // be safely marked if an mruby allocation occurs and a GC is triggered in
+    // `Array::initialize`.
+    //
+    // This ensures the given `RArry *` is initalized even if a non-`Array`
+    // object is called with `Array#initialize_copy` and the
+    // `Array::unbox_from_value` call below short circuits with an error.
+    Array::box_into_value(Array::new(), ary, interp)?;
     let from = unsafe { Array::unbox_from_value(&mut from, interp)? };
     let result = from.clone();
     Array::box_into_value(result, ary, interp)
@@ -251,12 +271,20 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    let result = array.pop();
 
-    unsafe {
+    // Safety:
+    //
+    // The array is repacked before any intervening interpreter heap allocations
+    // occur.
+    let result = unsafe {
+        let array_mut = array.as_inner_mut();
+        let result = array_mut.pop();
+
         let inner = array.take();
         Array::box_into_value(inner, ary, interp)?;
-    }
+
+        result
+    };
 
     Ok(interp.convert(result))
 }
@@ -266,7 +294,13 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    array.push(value);
+
+    // Safety:
+    //
+    // The array is repacked without any intervening interpreter heap
+    // allocations.
+    let array_mut = unsafe { array.as_inner_mut() };
+    array_mut.push(value);
 
     unsafe {
         let inner = array.take();
@@ -288,9 +322,17 @@ pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Err
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    array.reverse();
 
+    // Safety:
+    //
+    // Reversing an `Array` in place does not reallocate it.
+    //
+    // The array is repacked before any intervening interpreter heap allocations
+    // occur.
     unsafe {
+        let array_mut = array.as_inner_mut();
+        array_mut.reverse();
+
         let inner = array.take();
         Array::box_into_value(inner, ary, interp)?;
     }
@@ -306,32 +348,53 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
     if let Some(count) = count {
         let count = implicitly_convert_to_int(interp, count)?;
         let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative array size"))?;
-        let shifted = array.shift_n(count);
 
         // Safety:
         //
-        // The call to `Array::shift_n` above has potentially invalidated the
-        // raw parts of `array` stored in `ary`'s `RArray *`.
+        // The call to `Array::shift_n` has potentially invalidated the raw
+        // parts of `array` stored in `ary`'s `RArray *`.
         //
         // The below call to `Array::alloc_value` will trigger an mruby heap
         // allocation which may trigger a garbage collection.
         //
-        // The raw parts in `ary`'s `RArray *` must be fixed up before a
+        // The raw parts in `ary`'s `RArray *` must be repacked before a
         // potential garbage collection, otherwise marking the children in `ary`
         // will have undefined behavior.
-        unsafe {
+        //
+        // The call to `Array::alloc_value` happens outside of this block after
+        // the `Array` has been repacked.
+        let shifted = unsafe {
+            let array_mut = array.as_inner_mut();
+            let shifted = array_mut.shift_n(count);
+
             let inner = array.take();
             Array::box_into_value(inner, ary, interp)?;
-        }
+
+            shifted
+        };
 
         Array::alloc_value(shifted, interp)
     } else {
-        let shifted = array.shift();
+        // Safety:
+        //
+        // The call to `Array::shift` above has potentially invalidated the raw
+        // parts of `array` stored in `ary`'s `RArray *`.
+        //
+        // The raw parts in `ary`'s `RArray *` must be repacked before a
+        // potential garbage collection, otherwise marking the children in `ary`
+        // will have undefined behavior.
+        //
+        // The call to `interp.convert` happens outside of this block after the
+        // `Array` has been repacked.
+        let shifted = unsafe {
+            let array_mut = array.as_inner_mut();
+            let shifted = array_mut.shift();
 
-        unsafe {
             let inner = array.take();
             Array::box_into_value(inner, ary, interp)?;
-        }
+
+            shifted
+        };
 
         Ok(interp.convert(shifted))
     }
