@@ -4,7 +4,7 @@ use std::ffi::{OsStr, OsString};
 use std::slice;
 
 use crate::convert::UnboxRubyError;
-use crate::core::{ConvertMut, TryConvertMut, Value as _};
+use crate::core::{TryConvertMut, Value as _};
 use crate::error::Error;
 use crate::platform_string::{os_str_to_bytes, os_string_to_bytes};
 use crate::sys;
@@ -12,30 +12,36 @@ use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
-impl ConvertMut<Vec<u8>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Vec<u8>) -> Value {
-        self.convert_mut(value.as_slice())
+impl TryConvertMut<Vec<u8>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Vec<u8>) -> Result<Value, Self::Error> {
+        self.try_convert_mut(value.as_slice())
     }
 }
 
-impl ConvertMut<&[u8], Value> for Artichoke {
-    fn convert_mut(&mut self, value: &[u8]) -> Value {
+impl TryConvertMut<&[u8], Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: &[u8]) -> Result<Value, Self::Error> {
         // Ruby strings contain raw bytes, so we can convert from a &[u8] to a
         // `char *` and `size_t`.
         let raw = value.as_ptr().cast::<i8>();
         let len = value.len();
         // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
         // to worry about the lifetime of the slice passed into this converter.
-        let string = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_str_new(mrb, raw, len)) };
-        self.protect(Value::from(string.unwrap()))
+        let string = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_str_new(mrb, raw, len))? };
+        Ok(string.into())
     }
 }
 
-impl<'a> ConvertMut<Cow<'a, [u8]>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Cow<'a, [u8]>) -> Value {
+impl<'a> TryConvertMut<Cow<'a, [u8]>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Cow<'a, [u8]>) -> Result<Value, Self::Error> {
         match value {
-            Cow::Borrowed(bytes) => self.convert_mut(bytes),
-            Cow::Owned(bytes) => self.convert_mut(bytes),
+            Cow::Borrowed(bytes) => self.try_convert_mut(bytes),
+            Cow::Owned(bytes) => self.try_convert_mut(bytes),
         }
     }
 }
@@ -45,7 +51,7 @@ impl TryConvertMut<OsString, Value> for Artichoke {
 
     fn try_convert_mut(&mut self, value: OsString) -> Result<Value, Self::Error> {
         let bytes = os_string_to_bytes(value)?;
-        Ok(self.convert_mut(bytes))
+        self.try_convert_mut(bytes)
     }
 }
 
@@ -54,7 +60,7 @@ impl TryConvertMut<&OsStr, Value> for Artichoke {
 
     fn try_convert_mut(&mut self, value: &OsStr) -> Result<Value, Self::Error> {
         let bytes = os_str_to_bytes(value)?;
-        Ok(self.convert_mut(bytes))
+        self.try_convert_mut(bytes)
     }
 }
 
@@ -65,11 +71,11 @@ impl<'a> TryConvertMut<Cow<'a, OsStr>, Value> for Artichoke {
         match value {
             Cow::Borrowed(value) => {
                 let bytes = os_str_to_bytes(value)?;
-                Ok(self.convert_mut(bytes))
+                self.try_convert_mut(bytes)
             }
             Cow::Owned(value) => {
                 let bytes = os_string_to_bytes(value)?;
-                Ok(self.convert_mut(bytes))
+                self.try_convert_mut(bytes)
             }
         }
     }

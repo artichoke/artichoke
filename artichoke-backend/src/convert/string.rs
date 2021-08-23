@@ -2,33 +2,39 @@ use std::borrow::Cow;
 use std::str;
 
 use crate::convert::UnboxRubyError;
-use crate::core::{ConvertMut, TryConvertMut};
+use crate::core::TryConvertMut;
 use crate::error::Error;
 use crate::types::Rust;
 use crate::value::Value;
 use crate::Artichoke;
 
-impl ConvertMut<String, Value> for Artichoke {
-    fn convert_mut(&mut self, value: String) -> Value {
+impl TryConvertMut<String, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: String) -> Result<Value, Self::Error> {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        self.convert_mut(value.as_bytes())
+        self.try_convert_mut(value.into_bytes())
     }
 }
 
-impl ConvertMut<&str, Value> for Artichoke {
-    fn convert_mut(&mut self, value: &str) -> Value {
+impl TryConvertMut<&str, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: &str) -> Result<Value, Self::Error> {
         // Ruby `String`s are just bytes, so get a pointer to the underlying
         // `&[u8]` infallibly and convert that to a `Value`.
-        self.convert_mut(value.as_bytes())
+        self.try_convert_mut(value.as_bytes())
     }
 }
 
-impl<'a> ConvertMut<Cow<'a, str>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Cow<'a, str>) -> Value {
+impl<'a> TryConvertMut<Cow<'a, str>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Cow<'a, str>) -> Result<Value, Self::Error> {
         match value {
-            Cow::Borrowed(string) => self.convert_mut(string),
-            Cow::Owned(string) => self.convert_mut(string),
+            Cow::Borrowed(string) => self.try_convert_mut(string),
+            Cow::Owned(string) => self.try_convert_mut(string),
         }
     }
 }
