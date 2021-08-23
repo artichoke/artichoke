@@ -126,11 +126,18 @@ unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value,
             .ok()
             .and_then(|len| len.checked_sub(string.len()))
             .unwrap_or(0);
+
+        // Safety:
+        //
+        // The string is repacked before any intervening use of the interpreter.
+        // The string is repacked before any intervening mruby heap allocations.
+        let string_mut = string.as_inner_mut();
         if additional > 0 {
-            string.reserve(additional);
+            string_mut.reserve(additional);
         }
         let inner = string.take();
         let value = String::box_into_value(inner, value, &mut guard).expect("String reboxing should not fail");
+
         value.inner()
     } else {
         s
@@ -332,9 +339,13 @@ unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: sys::m
     } else {
         return ptr::null();
     };
-    string.push_byte(b'\0');
+    // Safety:
+    //
+    // The string is repacked before any intervening use of the interpreter.
+    // The string is repacked before any intervening mruby heap allocations.
+    let string_mut = string.as_inner_mut();
+    string_mut.push_byte(b'\0');
     let ptr = string.as_ptr().cast::<i8>();
-
     let inner = string.take();
     String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
 
@@ -456,9 +467,16 @@ unsafe extern "C" fn mrb_str_cat(
     let mut s = Value::from(s);
     if let Ok(mut string) = String::unbox_from_value(&mut s, &mut guard) {
         let slice = slice::from_raw_parts(ptr.cast::<u8>(), len);
-        string.extend_from_slice(slice);
+
+        // Safety:
+        //
+        // The string is repacked before any intervening use of the interpreter.
+        // The string is repacked before any intervening mruby heap allocations.
+        let string_mut = string.as_inner_mut();
+        string_mut.extend_from_slice(slice);
         let inner = string.take();
         let value = String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
+
         value.inner()
     } else {
         s.inner()
