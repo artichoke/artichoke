@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-string"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 description = """
@@ -15,6 +15,7 @@ categories = ["data-structures", "encoding", "no-std"]
 [dependencies]
 bstr = { version = "0.2", default-features = false, features = ["std"] }
 focaccia = { version = "1.0", optional = true, default-features = false }
+scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", default-features = false }
 
 [dev-dependencies]
 quickcheck = { version = "1.0", default-features = false }
