@@ -349,7 +349,7 @@ mrb_str_strlen(mrb_state *mrb, struct RString *s)
   char *p = RSTR_PTR(s);
 
   if (!p) return 0;
-  for (i=0; i<max; i++) {
+  for (i = 0; i < max; i++) {
     if (p[i] == '\0') {
       mrb_raise(mrb, E_ARGUMENT_ERROR, "string contains null byte");
     }
@@ -386,18 +386,18 @@ MRB_API mrb_value
 mrb_obj_as_string(mrb_state *mrb, mrb_value obj)
 {
   switch (mrb_type(obj)) {
-  case MRB_TT_STRING:
-    return obj;
-  case MRB_TT_SYMBOL:
-    return mrb_sym_str(mrb, mrb_symbol(obj));
-  case MRB_TT_INTEGER:
-    return mrb_fixnum_to_str(mrb, obj, 10);
-  case MRB_TT_SCLASS:
-  case MRB_TT_CLASS:
-  case MRB_TT_MODULE:
-    return mrb_mod_to_s(mrb, obj);
-  default:
-    return mrb_type_convert(mrb, obj, MRB_TT_STRING, MRB_SYM(to_s));
+    case MRB_TT_STRING:
+      return obj;
+    case MRB_TT_SYMBOL:
+      return mrb_sym_str(mrb, mrb_symbol(obj));
+    case MRB_TT_INTEGER:
+      return mrb_fixnum_to_str(mrb, obj, 10);
+    case MRB_TT_SCLASS:
+    case MRB_TT_CLASS:
+    case MRB_TT_MODULE:
+      return mrb_mod_to_s(mrb, obj);
+    default:
+      return mrb_type_convert(mrb, obj, MRB_TT_STRING, MRB_SYM(to_s));
   }
 }
 
