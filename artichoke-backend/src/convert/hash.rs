@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
-use crate::core::{ConvertMut, TryConvertMut, Value as _};
+use crate::core::{TryConvertMut, Value as _};
 use crate::error::Error;
 use crate::extn::core::array::Array;
 use crate::sys;
@@ -60,8 +60,8 @@ impl TryConvertMut<HashMap<Vec<u8>, Vec<u8>>, Value> for Artichoke {
         let hash = self.protect(Value::from(hash));
 
         for (key, val) in value {
-            let key = self.convert_mut(key);
-            let val = self.convert_mut(val);
+            let key = self.try_convert_mut(key)?;
+            let val = self.try_convert_mut(val)?;
             unsafe {
                 self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))?;
             }
@@ -81,8 +81,8 @@ impl TryConvertMut<Option<HashMap<Vec<u8>, Option<Vec<u8>>>>, Value> for Articho
             let hash = self.protect(Value::from(hash));
 
             for (key, val) in value {
-                let key = self.convert_mut(key);
-                let val = self.convert_mut(val);
+                let key = self.try_convert_mut(key)?;
+                let val = self.try_convert_mut(val)?;
                 unsafe {
                     self.with_ffi_boundary(|mrb| sys::mrb_hash_set(mrb, hash.inner(), key.inner(), val.inner()))?;
                 }

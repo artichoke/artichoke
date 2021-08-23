@@ -16,7 +16,7 @@ pub fn element_reference(interp: &mut Artichoke, mut environ: Value, mut name: V
     let environ = unsafe { Environ::unbox_from_value(&mut environ, interp) }?;
     let name = unsafe { implicitly_convert_to_string(interp, &mut name)? };
     let result = environ.get(name)?;
-    let mut result = interp.convert_mut(result.as_ref().map(Cow::as_ref));
+    let mut result = interp.try_convert_mut(result.as_ref().map(Cow::as_ref))?;
     result.freeze(interp)?;
     Ok(result)
 }

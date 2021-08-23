@@ -1,4 +1,4 @@
-use artichoke_core::convert::{Convert, ConvertMut, TryConvert};
+use artichoke_core::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
 use artichoke_core::intern::Intern;
 use artichoke_core::value::Value as ValueCore;
 use std::borrow::Cow;
@@ -355,7 +355,7 @@ impl RubyException for ArgCountError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.to_string());
+        let message = interp.try_convert_mut(self.to_string()).ok()?;
         let value = interp.new_instance::<ArgumentError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
@@ -468,7 +468,7 @@ mod tests {
     fn to_s_string() {
         let mut interp = interpreter().unwrap();
 
-        let value = interp.convert_mut("interstate");
+        let value = interp.try_convert_mut("interstate").unwrap();
         let string = value.to_s(&mut interp);
         assert_eq!(string.as_bstr(), b"interstate".as_bstr());
     }
@@ -477,7 +477,7 @@ mod tests {
     fn inspect_string() {
         let mut interp = interpreter().unwrap();
 
-        let value = interp.convert_mut("interstate");
+        let value = interp.try_convert_mut("interstate").unwrap();
         let debug = value.inspect(&mut interp);
         assert_eq!(debug.as_bstr(), br#""interstate""#.as_bstr());
     }
@@ -486,7 +486,7 @@ mod tests {
     fn to_s_empty_string() {
         let mut interp = interpreter().unwrap();
 
-        let value = interp.convert_mut("");
+        let value = interp.try_convert_mut("").unwrap();
         let string = value.to_s(&mut interp);
         assert_eq!(string.as_bstr(), b"".as_bstr());
     }
@@ -495,7 +495,7 @@ mod tests {
     fn inspect_empty_string() {
         let mut interp = interpreter().unwrap();
 
-        let value = interp.convert_mut("");
+        let value = interp.try_convert_mut("").unwrap();
         let debug = value.inspect(&mut interp);
         assert_eq!(debug.as_bstr(), br#""""#.as_bstr());
     }
@@ -563,7 +563,7 @@ mod tests {
             .and_then(|value| value.try_into::<bool>(&interp))
             .unwrap();
         assert!(nil_is_nil);
-        let s = interp.convert_mut("foo");
+        let s = interp.try_convert_mut("foo").unwrap();
         let string_is_nil = s
             .funcall(&mut interp, "nil?", &[], None)
             .and_then(|value| value.try_into::<bool>(&interp))
@@ -571,7 +571,7 @@ mod tests {
         assert!(!string_is_nil);
         #[cfg(feature = "core-regexp")]
         {
-            let delim = interp.convert_mut("");
+            let delim = interp.try_convert_mut("").unwrap();
             let split = s.funcall(&mut interp, "split", &[delim], None).unwrap();
             let split = split.try_into_mut::<Vec<&str>>(&mut interp).unwrap();
             assert_eq!(split, vec!["f", "o", "o"]);
@@ -582,7 +582,7 @@ mod tests {
     fn funcall_different_types() {
         let mut interp = interpreter().unwrap();
         let nil = Value::nil();
-        let s = interp.convert_mut("foo");
+        let s = interp.try_convert_mut("foo").unwrap();
         let eql = nil
             .funcall(&mut interp, "==", &[s], None)
             .and_then(|value| value.try_into::<bool>(&interp))
@@ -594,7 +594,7 @@ mod tests {
     fn funcall_type_error() {
         let mut interp = interpreter().unwrap();
         let nil = Value::nil();
-        let s = interp.convert_mut("foo");
+        let s = interp.try_convert_mut("foo").unwrap();
         let err = s
             .funcall(&mut interp, "+", &[nil], None)
             .and_then(|value| value.try_into_mut::<String>(&mut interp))
@@ -610,7 +610,7 @@ mod tests {
     fn funcall_method_not_exists() {
         let mut interp = interpreter().unwrap();
         let nil = Value::nil();
-        let s = interp.convert_mut("foo");
+        let s = interp.try_convert_mut("foo").unwrap();
         let err = nil.funcall(&mut interp, "garbage_method_name", &[s], None).unwrap_err();
         assert_eq!("NoMethodError", err.name().as_ref());
         assert_eq!(

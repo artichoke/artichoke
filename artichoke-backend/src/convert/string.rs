@@ -74,7 +74,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         fn convert_to_string(s: String) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(s.clone());
+            let value = interp.try_convert_mut(s.clone()).unwrap();
             let string = unsafe {
                 interp
                     .with_ffi_boundary(|mrb| {
@@ -91,7 +91,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         fn string_with_value(s: String) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(s.clone());
+            let value = interp.try_convert_mut(s.clone()).unwrap();
             value.to_s(&mut interp) == s.as_bytes()
         }
 
@@ -100,7 +100,7 @@ mod tests {
         fn utf8string_borrowed(string: String) -> bool {
             let mut interp = interpreter().unwrap();
             // Borrowed converter
-            let value = interp.convert_mut(string.as_str());
+            let value = interp.try_convert_mut(string.as_str()).unwrap();
             let len = value
                 .funcall(&mut interp, "length", &[], None)
                 .and_then(|value| value.try_into::<usize>(&interp))
@@ -133,7 +133,7 @@ mod tests {
         fn utf8string_owned(string: String) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
-            let value = interp.convert_mut(string.clone());
+            let value = interp.try_convert_mut(string.clone()).unwrap();
             let len = value
                 .funcall(&mut interp, "length", &[], None)
                 .and_then(|value| value.try_into::<usize>(&interp))
@@ -164,7 +164,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         fn roundtrip(s: String) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(s.clone());
+            let value = interp.try_convert_mut(s.clone()).unwrap();
             let value = value.try_into_mut::<String>(&mut interp).unwrap();
             value == s
         }

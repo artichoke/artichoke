@@ -224,7 +224,7 @@ fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Res
     } else {
         return Err(LoadError::from(load_error(fixture.as_ref(), "No such file or directory")?).into());
     };
-    let value = interp.convert_mut(data);
+    let value = interp.try_convert_mut(data)?;
     interp.set_global_variable(&b"$fixture"[..], &value)?;
     Ok(())
 }

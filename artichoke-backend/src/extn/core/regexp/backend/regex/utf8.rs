@@ -184,18 +184,18 @@ impl RegexpType for Utf8 {
             interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default())?;
 
             let fullmatch = captures.get(0).as_ref().map(Match::as_str).map(str::as_bytes);
-            let value = interp.convert_mut(fullmatch);
+            let value = interp.try_convert_mut(fullmatch)?;
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 1..captures.len() {
                 let capture = captures.get(group).as_ref().map(Match::as_str).map(str::as_bytes);
-                let value = interp.convert_mut(capture);
+                let value = interp.try_convert_mut(capture)?;
                 let group = unsafe { NonZeroUsize::new_unchecked(group) };
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
             if let Some(match_pos) = captures.get(0) {
-                let pre_match = interp.convert_mut(&haystack[..match_pos.start()]);
-                let post_match = interp.convert_mut(&haystack[match_pos.end()..]);
+                let pre_match = interp.try_convert_mut(&haystack[..match_pos.start()])?;
+                let post_match = interp.try_convert_mut(&haystack[match_pos.end()..])?;
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
             }
@@ -282,19 +282,19 @@ impl RegexpType for Utf8 {
             interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default())?;
 
             let fullmatch = captures.get(0).as_ref().map(Match::as_str).map(str::as_bytes);
-            let value = interp.convert_mut(fullmatch);
+            let value = interp.try_convert_mut(fullmatch)?;
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 1..captures.len() {
                 let capture = captures.get(group).as_ref().map(Match::as_str).map(str::as_bytes);
-                let value = interp.convert_mut(capture);
+                let value = interp.try_convert_mut(capture)?;
                 let group = unsafe { NonZeroUsize::new_unchecked(group) };
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
             let mut matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
             if let Some(match_pos) = captures.get(0) {
-                let pre_match = interp.convert_mut(&target[..match_pos.start()]);
-                let post_match = interp.convert_mut(&target[match_pos.end()..]);
+                let pre_match = interp.try_convert_mut(&target[..match_pos.start()])?;
+                let post_match = interp.try_convert_mut(&target[match_pos.end()..])?;
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
                 matchdata.set_region(offset + match_pos.start()..offset + match_pos.end());
@@ -330,11 +330,11 @@ impl RegexpType for Utf8 {
             interp.set_active_regexp_globals(captures.len().checked_sub(1).unwrap_or_default())?;
 
             let fullmatch = captures.get(0).as_ref().map(Match::as_str).map(str::as_bytes);
-            let value = interp.convert_mut(fullmatch);
+            let value = interp.try_convert_mut(fullmatch)?;
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 1..captures.len() {
                 let capture = captures.get(group).as_ref().map(Match::as_str).map(str::as_bytes);
-                let value = interp.convert_mut(capture);
+                let value = interp.try_convert_mut(capture)?;
                 let group = unsafe { NonZeroUsize::new_unchecked(group) };
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
@@ -343,8 +343,8 @@ impl RegexpType for Utf8 {
             let data = MatchData::alloc_value(matchdata, interp)?;
             interp.set_global_variable(regexp::LAST_MATCH, &data)?;
             if let Some(match_pos) = captures.get(0) {
-                let pre_match = interp.convert_mut(&haystack[..match_pos.start()]);
-                let post_match = interp.convert_mut(&haystack[match_pos.end()..]);
+                let pre_match = interp.try_convert_mut(&haystack[..match_pos.start()])?;
+                let post_match = interp.try_convert_mut(&haystack[match_pos.end()..])?;
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
                 let pos = match_pos.start();
@@ -444,13 +444,13 @@ impl RegexpType for Utf8 {
                 }
                 for captures in iter {
                     let matched = captures.get(0).as_ref().map(Match::as_str).map(str::as_bytes);
-                    let capture = interp.convert_mut(matched);
+                    let capture = interp.try_convert_mut(matched)?;
                     interp.set_global_variable(regexp::LAST_MATCHED_STRING, &capture)?;
 
                     let mut groups = Vec::with_capacity(len.get() - 1);
                     for group in 1..=len.get() {
                         let matched = captures.get(group).as_ref().map(Match::as_str).map(str::as_bytes);
-                        let capture = interp.convert_mut(matched);
+                        let capture = interp.try_convert_mut(matched)?;
                         let group = unsafe { NonZeroUsize::new_unchecked(group) };
                         interp.set_global_variable(regexp::nth_match_group(group), &capture)?;
                         groups.push(matched);
@@ -473,7 +473,7 @@ impl RegexpType for Utf8 {
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.start()..pos.end()];
-                    let matched = interp.convert_mut(scanned);
+                    let matched = interp.try_convert_mut(scanned)?;
                     matchdata.set_region(pos.start()..pos.end());
                     let data = MatchData::alloc_value(matchdata.clone(), interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
@@ -538,7 +538,7 @@ impl RegexpType for Utf8 {
                 let data = MatchData::alloc_value(matchdata, interp)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
                 let last_matched = collected.last().map(Vec::as_slice);
-                let last_matched = interp.convert_mut(last_matched);
+                let last_matched = interp.try_convert_mut(last_matched)?;
                 interp.set_global_variable(regexp::LAST_MATCHED_STRING, &last_matched)?;
                 Ok(Scan::Patterns(collected))
             }

@@ -26,7 +26,7 @@ pub fn bytes(interp: &mut Artichoke, mut rand: Value, size: Value) -> Result<Val
         Rng::Global => interp.prng_mut()?.bytes(size)?,
         Rng::Value(random) => random.bytes(size)?,
     };
-    Ok(interp.convert_mut(buf))
+    interp.try_convert_mut(buf)
 }
 
 pub fn rand(interp: &mut Artichoke, mut rand: Value, max: Option<Value>) -> Result<Value, Error> {
@@ -62,5 +62,5 @@ pub fn srand(interp: &mut Artichoke, seed: Option<Value>) -> Result<Value, Error
 pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Error> {
     let size = implicitly_convert_to_int(interp, size)?;
     let buf = super::urandom(size)?;
-    Ok(interp.convert_mut(buf))
+    interp.try_convert_mut(buf)
 }

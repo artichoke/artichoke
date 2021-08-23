@@ -12,7 +12,7 @@ pub fn alphanumeric(interp: &mut Artichoke, len: Option<Value>) -> Result<Value,
     } else {
         securerandom::alphanumeric(None)?
     };
-    Ok(interp.convert_mut(alpha))
+    interp.try_convert_mut(alpha)
 }
 
 #[inline]
@@ -23,7 +23,7 @@ pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error
     } else {
         securerandom::base64(None)?
     };
-    Ok(interp.convert_mut(base64))
+    interp.try_convert_mut(base64)
 }
 
 #[inline]
@@ -44,7 +44,7 @@ pub fn urlsafe_base64(interp: &mut Artichoke, len: Option<Value>, padding: Optio
     } else {
         securerandom::urlsafe_base64(None, padding)?
     };
-    Ok(interp.convert_mut(base64))
+    interp.try_convert_mut(base64)
 }
 
 #[inline]
@@ -55,7 +55,7 @@ pub fn hex(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error> {
     } else {
         securerandom::hex(None)?
     };
-    Ok(interp.convert_mut(hex))
+    interp.try_convert_mut(hex)
 }
 
 #[inline]
@@ -70,7 +70,7 @@ pub fn random_bytes(interp: &mut Artichoke, len: Option<Value>) -> Result<Value,
     } else {
         securerandom::random_bytes(None)?
     };
-    Ok(interp.convert_mut(bytes))
+    interp.try_convert_mut(bytes)
 }
 
 #[inline]
@@ -83,5 +83,5 @@ pub fn random_number(interp: &mut Artichoke, max: Option<Value>) -> Result<Value
 #[inline]
 pub fn uuid(interp: &mut Artichoke) -> Result<Value, Error> {
     let uuid = securerandom::uuid()?;
-    Ok(interp.convert_mut(uuid))
+    interp.try_convert_mut(uuid)
 }

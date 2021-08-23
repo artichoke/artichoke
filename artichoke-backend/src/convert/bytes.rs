@@ -129,7 +129,7 @@ mod tests {
     fn convert_with_trailing_nul() {
         let mut interp = interpreter().unwrap();
         let bytes: &[u8] = &[0];
-        let value = interp.convert_mut(bytes);
+        let value = interp.try_convert_mut(bytes).unwrap();
         let retrieved_bytes = value.try_into_mut::<&[u8]>(&mut interp).unwrap();
         assert_eq!(bytes.as_bstr(), retrieved_bytes.as_bstr());
 
@@ -158,7 +158,7 @@ mod tests {
     quickcheck! {
         fn convert_to_vec(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(bytes);
+            let value = interp.try_convert_mut(bytes).unwrap();
             value.ruby_type() == Ruby::String
         }
 
@@ -166,7 +166,7 @@ mod tests {
         fn bytestring_borrowed(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
             // Borrowed converter
-            let value = interp.convert_mut(bytes.as_slice());
+            let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != bytes.len() {
@@ -206,7 +206,7 @@ mod tests {
         fn bytestring_owned(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
-            let value = interp.convert_mut(bytes.clone());
+            let value = interp.try_convert_mut(bytes.clone()).unwrap();
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
             let len = len.try_into::<usize>(&interp).unwrap();
             if len != bytes.len() {
@@ -245,7 +245,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         fn roundtrip(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
-            let value = interp.convert_mut(bytes.as_slice());
+            let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
             let value = value.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
             value == bytes
         }
