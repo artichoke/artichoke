@@ -143,6 +143,9 @@ impl ValueCore for Value {
         args: &[Self::Arg],
         block: Option<Self::Block>,
     ) -> Result<Self::Value, Self::Error> {
+        if self.is_dead(interp) {
+            return Err(Fatal::from("Value is dead").into());
+        }
         if let Ok(arg_count_error) = ArgCountError::try_from(args) {
             warn!("{}", arg_count_error);
             return Err(arg_count_error.into());

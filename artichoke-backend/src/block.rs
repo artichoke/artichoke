@@ -162,6 +162,9 @@ impl Block {
     }
 
     pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Error> {
+        if arg.is_dead(interp) {
+            return Err(Fatal::from("Arg is dead").into());
+        }
         let result = unsafe { interp.with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))? };
         match result {
             Ok(value) => {
