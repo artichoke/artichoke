@@ -5,6 +5,7 @@ require 'strscan'
 def spec
   test_strscan
   test_shift
+  test_shift_frozen
   test_index
   test_beginning_of_line?
   test_captures
@@ -64,6 +65,15 @@ def test_shift
   s << ' +1000 GMT'
   raise unless s.string == 'Fri Dec 12 1975 14:39 +1000 GMT'
   raise unless s.scan(/Dec/) == 'Dec'
+end
+
+def test_shift_frozen
+  s = "abc"
+  s.freeze
+  scanner = StringScanner.new(s)
+  s << 'abc'
+rescue FrozenError
+  nil
 end
 
 def test_index
