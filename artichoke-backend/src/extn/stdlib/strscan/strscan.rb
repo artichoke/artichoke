@@ -23,7 +23,7 @@ class StringScanner
 
   def <<(str)
     raise TypeError if (str = String.try_convert(str)).nil?
-    raise FrozenError, "can't modify frozen String" if @string.frozen?
+    raise FrozenError, 'can\'t modify frozen String' if @string.frozen?
 
     @string << str
     self
