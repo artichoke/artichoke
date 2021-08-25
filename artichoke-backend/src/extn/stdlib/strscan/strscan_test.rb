@@ -72,7 +72,7 @@ def test_shift_frozen
   s.freeze
   scanner = StringScanner.new(s)
   s << 'abc'
-  raise "should not be reached"
+  raise 'should not be reached'
 rescue FrozenError
   nil
 end
