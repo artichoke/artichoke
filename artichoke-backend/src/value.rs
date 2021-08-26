@@ -144,7 +144,7 @@ impl ValueCore for Value {
         block: Option<Self::Block>,
     ) -> Result<Self::Value, Self::Error> {
         if self.is_dead(interp) {
-            return Err(Fatal::from("Value is dead").into());
+            return Err(Fatal::from("Value receiver for function call is dead. This indicates a bug in the mruby garbage collector. Please leave a comment at https://github.com/artichoke/artichoke/issues/1336.").into());
         }
         if let Ok(arg_count_error) = ArgCountError::try_from(args) {
             warn!("{}", arg_count_error);
@@ -515,6 +515,22 @@ mod tests {
         // the result of the most recent eval is always live even after a full
         // garbage collection
         assert!(!live.is_dead(&mut interp));
+    }
+
+    #[test]
+    fn funcall_is_dead() {
+        let mut interp = interpreter().unwrap();
+        let mut arena = interp.create_arena_savepoint().unwrap();
+
+        let dead = arena.eval(b"'dead'").unwrap();
+        arena.eval(b"'live'").unwrap();
+        arena.restore();
+        interp.full_gc().unwrap();
+
+        assert!(dead.is_dead(&mut interp));
+
+        let error = dead.funcall(&mut interp, "nil?", &[], None).unwrap_err();
+        assert_eq!(error.name().as_ref(), "fatal")
     }
 
     #[test]
