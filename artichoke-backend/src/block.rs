@@ -162,6 +162,9 @@ impl Block {
     }
 
     pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Error> {
+        if arg.is_dead(interp) {
+            return Err(Fatal::from("Value yielded to block is dead. This indicates a bug in the mruby garbage collector. Please leave a comment at https://github.com/artichoke/artichoke/issues/1336.").into());
+        }
         let result = unsafe { interp.with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))? };
         match result {
             Ok(value) => {
@@ -182,5 +185,30 @@ impl Block {
                 Err(exception_handler::last_error(interp, exception)?)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test::prelude::*;
+
+    #[test]
+    fn yield_arg_is_dead() {
+        // construct a dead value
+        let mut interp = interpreter().unwrap();
+        let mut arena = interp.create_arena_savepoint().unwrap();
+
+        let dead = arena.eval(b"'dead'").unwrap();
+        arena.eval(b"'live'").unwrap();
+        arena.restore();
+        interp.full_gc().unwrap();
+
+        assert!(dead.is_dead(&mut interp));
+
+        // now ensure that it produces a fatal error when passed to yield_arg
+        let block = Block::default();
+
+        let error = block.yield_arg(&mut interp, &dead).unwrap_err();
+        assert_eq!(error.name().as_ref(), "fatal");
     }
 }
