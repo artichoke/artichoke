@@ -530,7 +530,7 @@ mod tests {
         assert!(dead.is_dead(&mut interp));
 
         let error = dead.funcall(&mut interp, "nil?", &[], None).unwrap_err();
-        assert_eq!(error.name().as_ref(), "fatal")
+        assert_eq!(error.name().as_ref(), "fatal");
     }
 
     #[test]

@@ -209,6 +209,6 @@ mod tests {
         let block = Block::default();
 
         let error = block.yield_arg(&mut interp, &dead).unwrap_err();
-        assert_eq!(error.name().as_ref(), "fatal")
+        assert_eq!(error.name().as_ref(), "fatal");
     }
 }
