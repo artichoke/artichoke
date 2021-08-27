@@ -323,7 +323,7 @@ mod tests {
 
         let mut value = Value::from(slf);
         let result = if let Ok(container) = Container::unbox_from_value(&mut value, &mut guard) {
-            guard.convert_mut(container.0.as_bytes())
+            guard.try_convert_mut(container.0.as_bytes()).unwrap_or_default()
         } else {
             Value::nil()
         };
@@ -409,7 +409,7 @@ mod tests {
             .unwrap();
         interp.def_class::<Box<Flag>>(spec).unwrap();
 
-        let mut value = interp.convert_mut("string");
+        let mut value = interp.try_convert_mut("string").unwrap();
         let class = value.funcall(&mut interp, "class", &[], None).unwrap();
         let class_display = class.to_s(&mut interp);
         assert_eq!(class_display.as_bstr(), b"String".as_bstr());

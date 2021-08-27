@@ -167,7 +167,7 @@ pub fn to_string(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
     // ```rust
     // Err(NotImplementedError::new().into())
     // ```
-    Ok(interp.convert_mut("Time<Time#inspect is not implemented>"))
+    interp.try_convert_mut("Time<Time#inspect is not implemented>")
 }
 
 pub fn to_array(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {

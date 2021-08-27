@@ -220,7 +220,7 @@ pub fn implicitly_convert_to_int(interp: &mut Artichoke, value: Value) -> Result
 /// # fn example() -> Result<(), Error> {
 /// let mut interp = artichoke_backend::interpreter()?;
 /// // successful conversions
-/// let mut string = interp.convert_mut("artichoke");
+/// let mut string = interp.try_convert_mut("artichoke")?;
 /// let mut a = interp.eval(b"class A; def to_str; 'spinoso'; end; end; A.new")?;
 ///
 /// # unsafe {
@@ -427,7 +427,7 @@ pub unsafe fn implicitly_convert_to_string<'a>(
 /// # fn example() -> Result<(), Error> {
 /// let mut interp = artichoke_backend::interpreter()?;
 /// // successful conversions
-/// let mut string = interp.convert_mut("artichoke");
+/// let mut string = interp.try_convert_mut("artichoke")?;
 /// let mut nil = Value::nil();
 /// let mut a = interp.eval(b"class A; def to_str; 'spinoso'; end; end; A.new")?;
 ///

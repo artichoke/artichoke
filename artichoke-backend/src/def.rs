@@ -7,7 +7,7 @@ use std::ptr::NonNull;
 use crate::class;
 use crate::class_registry::ClassRegistry;
 use crate::convert::BoxUnboxVmValue;
-use crate::core::ConvertMut;
+use crate::core::TryConvertMut;
 use crate::error::{Error, RubyException};
 use crate::extn::core::exception::{NameError, ScriptError};
 use crate::module;
@@ -257,7 +257,7 @@ impl RubyException for ConstantNameError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.message());
+        let message = interp.try_convert_mut(self.message()).ok()?;
         let value = interp.new_instance::<NameError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }
@@ -416,7 +416,7 @@ impl RubyException for NotDefinedError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.message());
+        let message = interp.try_convert_mut(self.message()).ok()?;
         let value = interp.new_instance::<ScriptError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }

@@ -174,18 +174,18 @@ impl RegexpType for Onig {
         regexp::clear_capture_globals(interp)?;
         if let Some(captures) = self.regex.captures(haystack) {
             interp.set_active_regexp_globals(captures.len())?;
-            let value = interp.convert_mut(captures.at(0));
+            let value = interp.try_convert_mut(captures.at(0))?;
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
 
             for group in 0..captures.len() {
-                let value = interp.convert_mut(captures.at(group));
+                let value = interp.try_convert_mut(captures.at(group))?;
                 let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
             if let Some(match_pos) = captures.pos(0) {
-                let pre_match = interp.convert_mut(&haystack[..match_pos.0]);
-                let post_match = interp.convert_mut(&haystack[match_pos.1..]);
+                let pre_match = interp.try_convert_mut(&haystack[..match_pos.0])?;
+                let post_match = interp.try_convert_mut(&haystack[match_pos.1..])?;
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
             }
@@ -264,18 +264,18 @@ impl RegexpType for Onig {
         if let Some(captures) = self.regex.captures(target) {
             interp.set_active_regexp_globals(captures.len())?;
 
-            let value = interp.convert_mut(captures.at(0));
+            let value = interp.try_convert_mut(captures.at(0))?;
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 0..captures.len() {
-                let value = interp.convert_mut(captures.at(group));
+                let value = interp.try_convert_mut(captures.at(group))?;
                 let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
             let mut matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
             if let Some(match_pos) = captures.pos(0) {
-                let pre_match = interp.convert_mut(&target[..match_pos.0]);
-                let post_match = interp.convert_mut(&target[match_pos.1..]);
+                let pre_match = interp.try_convert_mut(&target[..match_pos.0])?;
+                let post_match = interp.try_convert_mut(&target[match_pos.1..])?;
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
                 matchdata.set_region(offset + match_pos.0..offset + match_pos.1);
@@ -303,10 +303,10 @@ impl RegexpType for Onig {
         if let Some(captures) = self.regex.captures(haystack) {
             interp.set_active_regexp_globals(captures.len())?;
 
-            let value = interp.convert_mut(captures.at(0));
+            let value = interp.try_convert_mut(captures.at(0))?;
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 0..captures.len() {
-                let value = interp.convert_mut(captures.at(group));
+                let value = interp.try_convert_mut(captures.at(group))?;
                 let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
@@ -315,8 +315,8 @@ impl RegexpType for Onig {
             let data = MatchData::alloc_value(matchdata, interp)?;
             interp.set_global_variable(regexp::LAST_MATCH, &data)?;
             if let Some(match_pos) = captures.pos(0) {
-                let pre_match = interp.convert_mut(&haystack[..match_pos.0]);
-                let post_match = interp.convert_mut(&haystack[match_pos.1..]);
+                let pre_match = interp.try_convert_mut(&haystack[..match_pos.0])?;
+                let post_match = interp.try_convert_mut(&haystack[match_pos.1..])?;
                 interp.set_global_variable(regexp::STRING_LEFT_OF_MATCH, &pre_match)?;
                 interp.set_global_variable(regexp::STRING_RIGHT_OF_MATCH, &post_match)?;
                 let pos = match_pos.0;
@@ -412,14 +412,14 @@ impl RegexpType for Onig {
                     return Ok(Scan::Haystack);
                 }
                 for captures in iter {
-                    let fullcapture = interp.convert_mut(captures.at(0));
+                    let fullcapture = interp.try_convert_mut(captures.at(0))?;
                     interp.set_global_variable(regexp::LAST_MATCHED_STRING, &fullcapture)?;
 
                     let mut groups = Vec::with_capacity(len.get());
                     for group in 1..=len.get() {
                         let capture = captures.at(group);
                         groups.push(capture);
-                        let capture = interp.convert_mut(capture);
+                        let capture = interp.try_convert_mut(capture)?;
                         let group = unsafe { NonZeroUsize::new_unchecked(group) };
                         interp.set_global_variable(regexp::nth_match_group(group), &capture)?;
                     }
@@ -441,7 +441,7 @@ impl RegexpType for Onig {
                 }
                 for pos in iter {
                     let scanned = &haystack[pos.0..pos.1];
-                    let matched = interp.convert_mut(scanned);
+                    let matched = interp.try_convert_mut(scanned)?;
                     matchdata.set_region(pos.0..pos.1);
                     let data = MatchData::alloc_value(matchdata.clone(), interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
@@ -504,7 +504,7 @@ impl RegexpType for Onig {
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
                 let last_matched = collected.last().map(Vec::as_slice);
-                let last_matched = interp.convert_mut(last_matched);
+                let last_matched = interp.try_convert_mut(last_matched)?;
                 interp.set_global_variable(regexp::LAST_MATCHED_STRING, &last_matched)?;
                 Ok(Scan::Patterns(collected))
             }

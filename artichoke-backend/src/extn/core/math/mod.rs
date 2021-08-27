@@ -45,7 +45,7 @@ impl RubyException for DomainError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.message());
+        let message = interp.try_convert_mut(self.message()).ok()?;
         let value = interp.new_instance::<Self>(&[message]).ok().flatten()?;
         Some(value.inner())
     }

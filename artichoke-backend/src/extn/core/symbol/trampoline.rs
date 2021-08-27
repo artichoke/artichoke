@@ -58,12 +58,12 @@ pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? };
     // These bytes must be cloned because they are owned by the interpreter.
     let bytes = symbol.bytes(interp).to_vec();
-    Ok(interp.convert_mut(bytes))
+    interp.try_convert_mut(bytes)
 }
 
 pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? };
     let inspect = symbol.inspect(interp);
     let debug = inspect.collect::<String>();
-    Ok(interp.convert_mut(debug))
+    interp.try_convert_mut(debug)
 }

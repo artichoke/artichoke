@@ -14,7 +14,7 @@ const ITERATIONS: usize = 100;
 #[test]
 fn arena() {
     let mut interp = artichoke_backend::interpreter().unwrap();
-    let s = interp.convert_mut("a".repeat(1024 * 1024));
+    let s = interp.try_convert_mut("a".repeat(1024 * 1024)).unwrap();
 
     let mut expected = String::from('"');
     expected.push_str(&"a".repeat(1024 * 1024));

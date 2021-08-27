@@ -125,13 +125,13 @@ pub fn offset(interp: &mut Artichoke, mut value: Value, mut at: Value) -> Result
 pub fn post_match(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let post = data.post();
-    Ok(interp.convert_mut(post))
+    interp.try_convert_mut(post)
 }
 
 pub fn pre_match(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let pre = data.pre();
-    Ok(interp.convert_mut(pre))
+    interp.try_convert_mut(pre)
 }
 
 pub fn regexp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
@@ -150,7 +150,7 @@ pub fn regexp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> 
 
 pub fn string(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
-    let mut string = interp.convert_mut(data.string());
+    let mut string = interp.try_convert_mut(data.string())?;
     string.freeze(interp)?;
     Ok(string)
 }
@@ -167,5 +167,5 @@ pub fn to_a(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 pub fn to_s(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let display = data.to_s()?;
-    Ok(interp.convert_mut(display))
+    interp.try_convert_mut(display)
 }
