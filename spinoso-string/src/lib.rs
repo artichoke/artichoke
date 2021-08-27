@@ -41,7 +41,7 @@ use core::cmp::Ordering;
 use core::convert::TryFrom;
 use core::fmt::{self, Write};
 use core::iter::{Cycle, Take};
-use core::mem;
+use core::mem::{self, ManuallyDrop};
 use core::slice::{self, SliceIndex};
 use core::str;
 
@@ -621,7 +621,7 @@ impl String {
     /// The `String` is [conventionally UTF-8].
     ///
     /// The string will be able to hold exactly `capacity` bytes without
-    /// reallocating. If `capacity` is 0, the vector will not allocate.
+    /// reallocating. If `capacity` is 0, the string will not allocate.
     ///
     /// It is important to note that although the returned string has the
     /// capacity specified, the string will have a zero length. For an
@@ -656,6 +656,7 @@ impl String {
     /// assert_eq!(s.len(), 10);
     /// ```
     ///
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
     /// [Capacity and reallocation]: https://doc.rust-lang.org/std/vec/struct.Vec.html#capacity-and-reallocation
     #[inline]
     #[must_use]
@@ -669,6 +670,12 @@ impl String {
     #[must_use]
     pub fn with_capacity_and_encoding(capacity: usize, encoding: Encoding) -> Self {
         let buf = Vec::with_capacity(capacity);
+        Self { buf, encoding }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
         Self { buf, encoding }
     }
 
@@ -712,6 +719,23 @@ impl String {
         self.encoding
     }
 
+    /// Set the [`Encoding`] of this `String`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// let mut s = String::utf8(b"xyz".to_vec());
+    /// assert_eq!(s.encoding(), Encoding::Utf8);
+    /// s.set_encoding(Encoding::Binary);
+    /// assert_eq!(s.encoding(), Encoding::Binary);
+    /// ```
+    #[inline]
+    pub fn set_encoding(&mut self, encoding: Encoding) {
+        self.encoding = encoding;
+    }
+
     /// Extracts a slice containing the entire byte string.
     ///
     /// Equivalent to `&s[..]`.
@@ -740,6 +764,55 @@ impl String {
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.buf.as_mut_ptr()
+    }
+
+    /// Creates a `String` directly from the raw components of another string.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't
+    /// checked:
+    ///
+    /// - `ptr` needs to have been previously allocated via `String` (at least,
+    ///   it's highly likely to be incorrect if it wasn't).
+    /// - `length` needs to be less than or equal to `capacity`.
+    /// - `capacity` needs to be the `capacity` that the pointer was allocated
+    ///   with.
+    ///
+    /// Violating these may cause problems like corrupting the allocator's
+    /// internal data structures.
+    ///
+    /// The ownership of `ptr` is effectively transferred to the `String` which
+    /// may then deallocate, reallocate or change the contents of memory pointed
+    /// to by the pointer at will. Ensure that nothing else uses the pointer
+    /// after calling this function.
+    #[must_use]
+    pub unsafe fn from_raw_parts(ptr: *mut u8, length: usize, capacity: usize) -> Self {
+        Self::utf8(Vec::from_raw_parts(ptr, length, capacity))
+    }
+
+    /// Decomposes a `String` into its raw components.
+    ///
+    /// Returns the raw pointer to the underlying data, the length of the string
+    /// (in bytes), and the allocated capacity of the data (in bytes).  These
+    /// are the same arguments in the same order as the arguments to
+    /// [`from_raw_parts`].
+    ///
+    /// After calling this function, the caller is responsible for the memory
+    /// previously managed by the `String`. The only way to do this is to
+    /// convert the raw pointer, length, and capacity back into a `String` with
+    /// the [`from_raw_parts`] function, allowing the destructor to perform the
+    /// cleanup.
+    ///
+    /// [`from_raw_parts`]: String::from_raw_parts
+    #[must_use]
+    pub fn into_raw_parts(self) -> (*mut u8, usize, usize) {
+        // TODO: convert to `Vec::into_raw_parts` once it is stabilized.
+        // See: https://doc.rust-lang.org/1.48.0/src/alloc/vec.rs.html#399-402
+        //
+        // https://github.com/rust-lang/rust/issues/65816
+        let mut me = ManuallyDrop::new(self.buf);
+        (me.as_mut_ptr(), me.len(), me.capacity())
     }
 
     /// Converts self into a vector without clones or allocation.
@@ -1542,7 +1615,7 @@ impl String {
     /// from the end of str (if given).
     ///
     /// If `separator` is [`None`] (i.e. `separator` has not been changed from
-    /// the default Ruby record separator, then `chomp` also removes carriage
+    /// the default Ruby record separator), then `chomp` also removes carriage
     /// return characters (that is it will remove `\n`, `\r`, and `\r\n`). If
     /// `separator` is an empty string, it will remove all trailing newlines
     /// from the string.
@@ -1551,6 +1624,8 @@ impl String {
     /// separator. For `str.chomp nil`, MRI returns `str.dup`. For
     /// `str.chomp! nil`, MRI makes no changes to the receiver and returns
     /// `nil`.
+    ///
+    /// This function returns `true` if self is modified, `false` otherwise.
     ///
     /// # Examples
     ///

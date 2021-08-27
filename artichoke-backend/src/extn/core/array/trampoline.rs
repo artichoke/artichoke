@@ -46,7 +46,7 @@ pub fn mul(interp: &mut Artichoke, mut ary: Value, mut joiner: Value) -> Result<
     if let Ok(separator) = unsafe { implicitly_convert_to_string(interp, &mut joiner) } {
         let separator = separator.to_vec();
         let s = array.join(interp, &separator)?;
-        Ok(interp.convert_mut(s))
+        interp.try_convert_mut(s)
     } else {
         let n = implicitly_convert_to_int(interp, joiner)?;
         if let Ok(n) = usize::try_from(n) {

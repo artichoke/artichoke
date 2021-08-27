@@ -4,7 +4,7 @@ use std::ffi::c_void;
 use std::fmt;
 
 use crate::class_registry::ClassRegistry;
-use crate::core::{ConvertMut, Eval};
+use crate::core::{Eval, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
@@ -121,7 +121,7 @@ impl RubyException for InterpreterAllocError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.message());
+        let message = interp.try_convert_mut(self.message()).ok()?;
         let value = interp.new_instance::<Fatal>(&[message]).ok().flatten()?;
         Some(value.inner())
     }

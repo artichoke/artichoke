@@ -16,6 +16,9 @@
 
 #include <mruby.h>
 #include <mruby/array.h>
+#include <mruby/class.h>
+#include <mruby/numeric.h>
+#include <mruby/presym.h>
 #include <mruby/range.h>
 #include <mruby/string.h>
 #include <mruby/value.h>
@@ -309,6 +312,115 @@ mrb_ary_subseq(mrb_state *mrb, mrb_value ary, mrb_int beg, mrb_int len)
 {
   struct RArray *a = mrb_ary_ptr(ary);
   return mrb_ary_new_from_values(mrb, len, ARY_PTR(a) + beg);
+}
+
+// Manipulate String `mrb_value`s
+
+MRB_API mrb_value
+mrb_sys_alloc_rstring(struct mrb_state *mrb, char *ptr, mrb_int len, mrb_int capa)
+{
+  struct RString *s;
+
+  s = (struct RString *)mrb_obj_alloc(mrb, MRB_TT_STRING, mrb->string_class);
+
+  s->as.heap.ptr = ptr;
+  s->as.heap.len = len;
+  s->as.heap.aux.capa = capa;
+
+  return mrb_obj_value(s);
+}
+
+MRB_API struct RString *
+mrb_sys_repack_into_rstring(char *ptr, mrb_int len, mrb_int capa, mrb_value into)
+{
+  struct RString *s = RSTRING(into);
+
+  s->as.heap.ptr = ptr;
+  s->as.heap.len = len;
+  s->as.heap.aux.capa = capa;
+
+  return s;
+}
+
+MRB_API mrb_int
+mrb_str_strlen(mrb_state *mrb, struct RString *s)
+{
+  mrb_int i, max = RSTR_LEN(s);
+  char *p = RSTR_PTR(s);
+
+  if (!p) return 0;
+  for (i = 0; i < max; i++) {
+    if (p[i] == '\0') {
+      mrb_raise(mrb, E_ARGUMENT_ERROR, "string contains null byte");
+    }
+  }
+  return max;
+}
+
+MRB_API void
+mrb_str_modify_keep_ascii(mrb_state *mrb, struct RString *s)
+{
+  mrb_check_frozen(mrb, s);
+}
+
+MRB_API void
+mrb_str_modify(mrb_state *mrb, struct RString *s)
+{
+  mrb_str_modify_keep_ascii(mrb, s);
+}
+
+MRB_API void
+mrb_str_concat(mrb_state *mrb, mrb_value self, mrb_value other)
+{
+  other = mrb_obj_as_string(mrb, other);
+  mrb_str_cat_str(mrb, self, other);
+}
+
+MRB_API mrb_value
+mrb_str_intern(mrb_state *mrb, mrb_value self)
+{
+  return mrb_symbol_value(mrb_intern_str(mrb, self));
+}
+
+MRB_API mrb_value
+mrb_obj_as_string(mrb_state *mrb, mrb_value obj)
+{
+  switch (mrb_type(obj)) {
+    case MRB_TT_STRING:
+      return obj;
+    case MRB_TT_SYMBOL:
+      return mrb_sym_str(mrb, mrb_symbol(obj));
+    case MRB_TT_INTEGER:
+      return mrb_fixnum_to_str(mrb, obj, 10);
+    case MRB_TT_SCLASS:
+    case MRB_TT_CLASS:
+    case MRB_TT_MODULE:
+      return mrb_mod_to_s(mrb, obj);
+    default:
+      return mrb_type_convert(mrb, obj, MRB_TT_STRING, MRB_SYM(to_s));
+  }
+}
+
+MRB_API mrb_value
+mrb_str_cat_cstr(mrb_state *mrb, mrb_value str, const char *ptr)
+{
+  return mrb_str_cat(mrb, str, ptr, ptr ? strlen(ptr) : 0);
+}
+
+MRB_API mrb_value
+mrb_str_cat_str(mrb_state *mrb, mrb_value str, mrb_value str2)
+{
+  if (mrb_str_ptr(str) == mrb_str_ptr(str2)) {
+    mrb_str_modify(mrb, mrb_str_ptr(str));
+  }
+  return mrb_str_cat(mrb, str, RSTRING_PTR(str2), RSTRING_LEN(str2));
+}
+
+MRB_API mrb_value
+mrb_str_append(mrb_state *mrb, mrb_value str1, mrb_value str2)
+{
+  mrb_to_str(mrb, str2);
+  return mrb_str_cat_str(mrb, str1, str2);
 }
 
 // Manage the mruby garbage collector (GC)

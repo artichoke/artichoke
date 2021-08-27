@@ -109,6 +109,14 @@ MRB_API mrb_value mrb_sys_alloc_rarray(struct mrb_state *mrb, mrb_value *ptr, mr
 
 MRB_API void mrb_sys_repack_into_rarray(mrb_value *ptr, mrb_int len, mrb_int capa, mrb_value into);
 
+// Manipulate String `mrb_value`s
+
+MRB_API mrb_value mrb_sys_alloc_rstring(struct mrb_state *mrb, char *ptr, mrb_int len,
+                                        mrb_int capa);
+
+MRB_API struct RString *mrb_sys_repack_into_rstring(char *ptr, mrb_int len, mrb_int capa,
+                                                    mrb_value into);
+
 // Manage the mruby garbage collector (GC)
 
 /**

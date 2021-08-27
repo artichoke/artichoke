@@ -1,11 +1,113 @@
+use core::convert::TryFrom;
+use core::iter;
+
 use bstr::ByteSlice;
 
+use crate::convert::implicitly_convert_to_int;
 use crate::convert::implicitly_convert_to_string;
+use crate::extn::core::array::Array;
 #[cfg(feature = "core-regexp")]
 use crate::extn::core::matchdata::MatchData;
 #[cfg(feature = "core-regexp")]
 use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::prelude::*;
+
+pub fn cmp_rocket(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    if let Ok(other) = unsafe { super::String::unbox_from_value(&mut other, interp) } {
+        let cmp = s.cmp(&*other);
+        Ok(interp.convert(cmp as i64))
+    } else {
+        Ok(Value::nil())
+    }
+}
+
+pub fn equals_equals(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    if let Ok(other) = unsafe { super::String::unbox_from_value(&mut other, interp) } {
+        let equals = *s == *other;
+        return Ok(interp.convert(equals));
+    }
+    // Safety:
+    //
+    // The byteslice is immediately discarded after extraction. There are no
+    // intervening interpreter accesses.
+    if value.respond_to(interp, "to_str")? {
+        let result = other.funcall(interp, "==", &[value], None)?;
+        // any falsy returned value yields `false`, otherwise `true`.
+        if let Ok(result) = TryConvert::<_, Option<bool>>::try_convert(interp, result) {
+            let result = result.unwrap_or_default();
+            Ok(interp.convert(result))
+        } else {
+            Ok(interp.convert(true))
+        }
+    } else {
+        Ok(interp.convert(false))
+    }
+}
+
+pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let inner = unsafe {
+        let mut s = super::String::unbox_from_value(&mut value, interp)?;
+        // Safety:
+        //
+        // The borrowed byte slice is immediately memcpy'd into the `s` byte
+        // buffer. There are no intervening interpreter accesses.
+        let to_append = implicitly_convert_to_string(interp, &mut other)?;
+        s.extend_from_slice(to_append);
+
+        s.take()
+    };
+    super::String::box_into_value(inner, value, interp)
+}
+
+pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Value, Error> {
+    let count = implicitly_convert_to_int(interp, count)?;
+    let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative argument"))?;
+
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let repeated_s = iter::repeat(s.bytes()).take(count).flatten().collect::<super::String>();
+    super::String::alloc_value(repeated_s, interp)
+}
+
+pub fn bytesize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let bytesize = s.bytesize();
+    interp.try_convert(bytesize)
+}
+
+pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let bytes = s
+        .clone()
+        .bytes()
+        .map(i64::from)
+        .map(|byte| interp.convert(byte))
+        .collect::<Array>();
+    Array::alloc_value(bytes, interp)
+}
+
+pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    if let Ok(other) = unsafe { super::String::unbox_from_value(&mut other, interp) } {
+        let eql = *s == *other;
+        Ok(interp.convert(eql))
+    } else {
+        Ok(interp.convert(false))
+    }
+}
+
+pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let inspect = s.inspect().collect::<super::String>();
+    super::String::alloc_value(inspect, interp)
+}
+
+pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let length = s.char_len();
+    interp.try_convert(length)
+}
 
 pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
     let string = value.try_into_mut::<&[u8]>(interp)?;
@@ -55,7 +157,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
                 let data = MatchData::alloc_value(data, interp)?;
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
-                let block_arg = interp.convert_mut(pattern_bytes.as_slice());
+                let block_arg = interp.try_convert_mut(pattern_bytes.as_slice())?;
                 block.yield_arg(interp, &block_arg)?;
 
                 interp.set_global_variable(regexp::LAST_MATCH, &data)?;
@@ -68,7 +170,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
                     let data = MatchData::alloc_value(data, interp)?;
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
 
-                    let block_arg = interp.convert_mut(pattern_bytes.as_slice());
+                    let block_arg = interp.try_convert_mut(pattern_bytes.as_slice())?;
                     block.yield_arg(interp, &block_arg)?;
 
                     interp.set_global_variable(regexp::LAST_MATCH, &data)?;
@@ -86,7 +188,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
             .unwrap_or_default();
         let mut result = Vec::with_capacity(matches);
         for _ in 0..matches {
-            result.push(interp.convert_mut(pattern_bytes.as_slice()));
+            result.push(interp.try_convert_mut(pattern_bytes.as_slice())?);
         }
         if matches > 0 {
             let regex = Regexp::lazy(pattern_bytes.clone());
@@ -110,13 +212,13 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
         if let Some(ref block) = block {
             let patlen = pattern_bytes.len();
             if let Some(pos) = string.find(&pattern_bytes) {
-                let block_arg = interp.convert_mut(pattern_bytes.as_slice());
+                let block_arg = interp.try_convert_mut(pattern_bytes.as_slice())?;
                 block.yield_arg(interp, &block_arg)?;
 
                 let offset = pos + patlen;
                 let string = string.get(offset..).unwrap_or_default();
                 for _ in string.find_iter(&pattern_bytes) {
-                    let block_arg = interp.convert_mut(pattern_bytes.as_slice());
+                    let block_arg = interp.try_convert_mut(pattern_bytes.as_slice())?;
                     block.yield_arg(interp, &block_arg)?;
                 }
             }
@@ -130,7 +232,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
             .unwrap_or_default();
         let mut result = Vec::with_capacity(matches);
         for _ in 0..matches {
-            result.push(interp.convert_mut(pattern_bytes.as_slice()));
+            result.push(interp.try_convert_mut(pattern_bytes.as_slice())?);
         }
         return interp.try_convert_mut(result);
     }

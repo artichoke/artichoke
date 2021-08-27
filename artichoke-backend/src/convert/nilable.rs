@@ -2,7 +2,7 @@
 //!
 //! Excludes collection types Array and Hash.
 
-use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut, Value as _};
+use crate::core::{Convert, TryConvert, TryConvertMut, Value as _};
 use crate::error::Error;
 use crate::value::Value;
 use crate::Artichoke;
@@ -23,34 +23,42 @@ impl Convert<Option<i64>, Value> for Artichoke {
     }
 }
 
-impl ConvertMut<Option<Vec<u8>>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Option<Vec<u8>>) -> Value {
-        self.convert_mut(value.as_deref())
+impl TryConvertMut<Option<Vec<u8>>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Option<Vec<u8>>) -> Result<Value, Self::Error> {
+        self.try_convert_mut(value.as_deref())
     }
 }
 
-impl ConvertMut<Option<&[u8]>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Option<&[u8]>) -> Value {
+impl TryConvertMut<Option<&[u8]>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Option<&[u8]>) -> Result<Value, Self::Error> {
         if let Some(value) = value {
-            self.convert_mut(value)
+            self.try_convert_mut(value)
         } else {
-            Value::nil()
+            Ok(Value::nil())
         }
     }
 }
 
-impl ConvertMut<Option<String>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Option<String>) -> Value {
-        self.convert_mut(value.as_deref())
+impl TryConvertMut<Option<String>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Option<String>) -> Result<Value, Self::Error> {
+        self.try_convert_mut(value.as_deref())
     }
 }
 
-impl ConvertMut<Option<&str>, Value> for Artichoke {
-    fn convert_mut(&mut self, value: Option<&str>) -> Value {
+impl TryConvertMut<Option<&str>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: Option<&str>) -> Result<Value, Self::Error> {
         if let Some(value) = value {
-            self.convert_mut(value)
+            self.try_convert_mut(value)
         } else {
-            Value::nil()
+            Ok(Value::nil())
         }
     }
 }

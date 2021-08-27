@@ -1,15 +1,68 @@
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use core::borrow::{Borrow, BorrowMut};
+use core::fmt;
 use core::iter::{FromIterator, FusedIterator};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 use core::slice::SliceIndex;
+#[cfg(feature = "std")]
+use std::io;
 
 use crate::{Bytes, Center, IntoIter, Iter, IterMut, String};
 
 impl<'a> AsRef<[u8]> for Iter<'a> {
     fn as_ref(&self) -> &[u8] {
         self.0.as_slice()
+    }
+}
+
+impl fmt::Write for String {
+    #[inline]
+    fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> fmt::Result {
+        let mut buf = alloc::string::String::new();
+        buf.write_fmt(args)?;
+        self.push_str(buf.as_str());
+        Ok(())
+    }
+
+    #[inline]
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.push_str(s);
+        Ok(())
+    }
+
+    #[inline]
+    fn write_char(&mut self, c: char) -> fmt::Result {
+        self.push_char(c);
+        Ok(())
+    }
+}
+
+#[cfg(feature = "std")]
+impl io::Write for String {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.buf.write(buf)
+    }
+
+    #[inline]
+    fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
+        self.buf.write_all(buf)
+    }
+
+    #[inline]
+    fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> io::Result<()> {
+        self.buf.write_fmt(fmt)
+    }
+
+    #[inline]
+    fn write_vectored(&mut self, bufs: &[io::IoSlice<'_>]) -> io::Result<usize> {
+        self.buf.write_vectored(bufs)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        self.buf.flush()
     }
 }
 

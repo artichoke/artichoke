@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use artichoke_core::convert::ConvertMut;
+use artichoke_core::convert::TryConvertMut;
 use spinoso_exception::ArgumentError;
 
 use crate::class_registry::ClassRegistry;
@@ -25,7 +25,7 @@ impl RubyException for ConvertBytesError {
     }
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
-        let message = interp.convert_mut(self.message());
+        let message = interp.try_convert_mut(self.message()).ok()?;
         let value = interp.new_instance::<ArgumentError>(&[message]).ok().flatten()?;
         Some(value.inner())
     }

@@ -53,6 +53,7 @@ dependencies = [
  "spinoso-random",
  "spinoso-regexp",
  "spinoso-securerandom",
+ "spinoso-string",
  "spinoso-symbol",
  "spinoso-time",
  "target-lexicon",
@@ -577,6 +578,15 @@ dependencies = [
  "base64",
  "rand",
  "scolapasta-hex",
+]
+
+[[package]]
+name = "spinoso-string"
+version = "0.1.1"
+dependencies = [
+ "bstr",
+ "focaccia",
+ "scolapasta-string-escape",
 ]
 
 [[package]]
