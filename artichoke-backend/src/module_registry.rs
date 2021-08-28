@@ -1,7 +1,6 @@
 use std::any::Any;
 
-use artichoke_core::prelude::ModuleRegistry;
-
+use crate::core::ModuleRegistry;
 use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::module;

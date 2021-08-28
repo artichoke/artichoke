@@ -1,9 +1,8 @@
 use std::any::Any;
 use std::convert::TryFrom;
 
-use artichoke_core::class_registry::ClassRegistry;
-
 use crate::class;
+use crate::core::ClassRegistry;
 use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::sys;
