@@ -105,6 +105,7 @@ pub mod globals;
 pub mod intern;
 pub mod io;
 pub mod load;
+pub mod module_registry;
 pub mod parser;
 pub mod prng;
 pub mod regexp;
@@ -136,6 +137,7 @@ pub mod prelude {
     pub use crate::intern::Intern;
     pub use crate::io::Io;
     pub use crate::load::LoadSources;
+    pub use crate::module_registry::ModuleRegistry;
     pub use crate::parser::{IncrementLinenoError, Parser};
     pub use crate::prng::Prng;
     pub use crate::regexp::Regexp;

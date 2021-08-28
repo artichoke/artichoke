@@ -22,7 +22,6 @@ pub use crate::core::{Regexp as _, Value as _, *};
 pub use crate::def::{self, EnclosingRubyScope, NotDefinedError};
 pub use crate::ffi::InterpreterExtractError;
 pub use crate::module;
-pub use crate::module_registry::ModuleRegistry;
 pub use crate::prelude::*;
 pub use crate::string::{format_unicode_debug_into, WriteError};
 pub use crate::sys;
