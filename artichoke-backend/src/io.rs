@@ -3,8 +3,7 @@ use std::error;
 use std::fmt;
 use std::io;
 
-use crate::class_registry::ClassRegistry;
-use crate::core::{Io, TryConvertMut};
+use crate::core::{ClassRegistry, Io, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::extn::core::exception;
 use crate::ffi::InterpreterExtractError;

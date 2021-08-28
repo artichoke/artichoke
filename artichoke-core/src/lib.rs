@@ -95,6 +95,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+pub mod class_registry;
 pub mod coerce_to_numeric;
 pub mod constant;
 pub mod convert;
@@ -105,6 +106,7 @@ pub mod globals;
 pub mod intern;
 pub mod io;
 pub mod load;
+pub mod module_registry;
 pub mod parser;
 pub mod prng;
 pub mod regexp;
@@ -126,6 +128,7 @@ pub mod warn;
 ///
 /// The prelude may grow over time as additional items see ubiquitous use.
 pub mod prelude {
+    pub use crate::class_registry::ClassRegistry;
     pub use crate::coerce_to_numeric::CoerceToNumeric;
     pub use crate::constant::DefineConstant;
     pub use crate::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
@@ -136,6 +139,7 @@ pub mod prelude {
     pub use crate::intern::Intern;
     pub use crate::io::Io;
     pub use crate::load::LoadSources;
+    pub use crate::module_registry::ModuleRegistry;
     pub use crate::parser::{IncrementLinenoError, Parser};
     pub use crate::prng::Prng;
     pub use crate::regexp::Regexp;

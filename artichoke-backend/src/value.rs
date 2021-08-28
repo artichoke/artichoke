@@ -7,8 +7,8 @@ use std::error;
 use std::fmt;
 use std::ptr;
 
-use crate::class_registry::ClassRegistry;
 use crate::convert::BoxUnboxVmValue;
+use crate::core::ClassRegistry;
 use crate::error::{Error, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal};

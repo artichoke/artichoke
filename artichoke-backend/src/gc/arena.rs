@@ -5,8 +5,7 @@ use std::error;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-use crate::class_registry::ClassRegistry;
-use crate::core::TryConvertMut;
+use crate::core::{ClassRegistry, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::sys;

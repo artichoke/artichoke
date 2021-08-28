@@ -2,44 +2,19 @@ use std::any::Any;
 use std::convert::TryFrom;
 
 use crate::class;
+use crate::core::ClassRegistry;
 use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
 
-pub trait ClassRegistry {
-    fn def_class<T>(&mut self, spec: class::Spec) -> Result<(), Error>
-    where
-        T: Any;
-
-    fn class_spec<T>(&self) -> Result<Option<&class::Spec>, Error>
-    where
-        T: Any;
-
-    fn is_class_defined<T>(&self) -> bool
-    where
-        T: Any,
-    {
-        matches!(self.class_spec::<T>(), Ok(Some(_)))
-    }
-
-    fn class_of<T>(&mut self) -> Result<Option<Value>, Error>
-    where
-        T: Any;
-
-    fn new_instance<T>(&mut self, args: &[Value]) -> Result<Option<Value>, Error>
-    where
-        T: Any;
-}
-
 impl ClassRegistry for Artichoke {
-    /// Create a class definition bound to a Rust type `T`.
-    ///
-    /// Class definitions have the same lifetime as the
-    /// [`State`](crate::state::State) because the class def owns the
-    /// `mrb_data_type` for the type, which must be long-lived.
-    fn def_class<T>(&mut self, spec: class::Spec) -> Result<(), Error>
+    type Value = Value;
+    type Error = Error;
+    type Spec = class::Spec;
+
+    fn def_class<T>(&mut self, spec: Self::Spec) -> Result<(), Self::Error>
     where
         T: Any,
     {
@@ -48,11 +23,7 @@ impl ClassRegistry for Artichoke {
         Ok(())
     }
 
-    /// Retrieve a class definition from the state bound to Rust type `T`.
-    ///
-    /// This function returns `None` if type `T` has not had a class spec
-    /// registered for it using [`ClassRegistry::def_class`].
-    fn class_spec<T>(&self) -> Result<Option<&class::Spec>, Error>
+    fn class_spec<T>(&self) -> Result<Option<&Self::Spec>, Self::Error>
     where
         T: Any,
     {
@@ -61,7 +32,7 @@ impl ClassRegistry for Artichoke {
         Ok(spec)
     }
 
-    fn class_of<T>(&mut self) -> Result<Option<Value>, Error>
+    fn class_of<T>(&mut self) -> Result<Option<Self::Value>, Self::Error>
     where
         T: Any,
     {
@@ -76,7 +47,7 @@ impl ClassRegistry for Artichoke {
             self.with_ffi_boundary(|mrb| {
                 if let Some(mut rclass) = rclass.resolve(mrb) {
                     let value_class = sys::mrb_sys_class_value(rclass.as_mut());
-                    Some(Value::from(value_class))
+                    Some(Self::Value::from(value_class))
                 } else {
                     None
                 }
@@ -85,7 +56,7 @@ impl ClassRegistry for Artichoke {
         Ok(value_class)
     }
 
-    fn new_instance<T>(&mut self, args: &[Value]) -> Result<Option<Value>, Error>
+    fn new_instance<T>(&mut self, args: &[Self::Value]) -> Result<Option<Self::Value>, Self::Error>
     where
         T: Any,
     {
@@ -96,7 +67,7 @@ impl ClassRegistry for Artichoke {
         } else {
             return Ok(None);
         };
-        let args = args.iter().map(Value::inner).collect::<Vec<_>>();
+        let args = args.iter().map(Self::Value::inner).collect::<Vec<_>>();
         let arglen = if let Ok(len) = sys::mrb_int::try_from(args.len()) {
             len
         } else {
@@ -106,7 +77,7 @@ impl ClassRegistry for Artichoke {
             self.with_ffi_boundary(|mrb| {
                 if let Some(mut rclass) = rclass.resolve(mrb) {
                     let value = sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr());
-                    Some(Value::from(value))
+                    Some(Self::Value::from(value))
                 } else {
                     None
                 }

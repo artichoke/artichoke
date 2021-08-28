@@ -1,12 +1,11 @@
 use std::fmt::Write;
 
-use crate::core::{TryConvertMut, Value as _, Warn};
+use crate::core::{ModuleRegistry, TryConvertMut, Value as _, Warn};
 use crate::def::NotDefinedError;
 use crate::error::Error;
 use crate::extn::core::exception::IOError;
 use crate::extn::core::warning::Warning;
 use crate::ffi::InterpreterExtractError;
-use crate::module_registry::ModuleRegistry;
 use crate::state::output::Output;
 use crate::string::WriteError;
 use crate::Artichoke;
