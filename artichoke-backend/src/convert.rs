@@ -2,8 +2,7 @@ use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
-use crate::class_registry::ClassRegistry;
-use crate::core::{Convert, ConvertMut, TryConvert, TryConvertMut, Value as _};
+use crate::core::{ClassRegistry, Convert, ConvertMut, TryConvert, TryConvertMut, Value as _};
 use crate::error::{Error, RubyException};
 use crate::extn::core::exception::TypeError;
 use crate::sys;

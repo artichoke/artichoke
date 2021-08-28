@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use artichoke_core::convert::TryConvertMut;
 use spinoso_exception::ArgumentError;
 
-use crate::class_registry::ClassRegistry;
+use crate::core::ClassRegistry;
 use crate::error::{Error, RubyException};
 use crate::sys;
 use crate::Artichoke;

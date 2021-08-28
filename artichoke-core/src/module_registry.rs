@@ -3,14 +3,14 @@ use std::any::Any;
 pub trait ModuleRegistry {
     type Error;
     type Value;
-    type ModuleSpec;
+    type Spec;
 
     /// Create a module definition bound to a Rust type `T`.
     ///
     /// Module definitions have the same lifetime as the interpreter because the
     /// module def owns the `mrb_data_type` for the type, which must be
     /// long-lived.
-    fn def_module<T>(&mut self, spec: Self::ModuleSpec) -> Result<(), Self::Error>
+    fn def_module<T>(&mut self, spec: Self::Spec) -> Result<(), Self::Error>
     where
         T: Any;
 
@@ -18,7 +18,7 @@ pub trait ModuleRegistry {
     ///
     /// This function returns `None` if type `T` has not had a module spec
     /// registered for it using [`ModuleRegistry::def_module`].
-    fn module_spec<T>(&self) -> Result<Option<&Self::ModuleSpec>, Self::Error>
+    fn module_spec<T>(&self) -> Result<Option<&Self::Spec>, Self::Error>
     where
         T: Any;
 

@@ -12,9 +12,9 @@ use crate::Artichoke;
 impl ModuleRegistry for Artichoke {
     type Value = Value;
     type Error = Error;
-    type ModuleSpec = module::Spec;
+    type Spec = module::Spec;
 
-    fn def_module<T>(&mut self, spec: Self::ModuleSpec) -> Result<(), Self::Error>
+    fn def_module<T>(&mut self, spec: Self::Spec) -> Result<(), Self::Error>
     where
         T: Any,
     {
@@ -23,7 +23,7 @@ impl ModuleRegistry for Artichoke {
         Ok(())
     }
 
-    fn module_spec<T>(&self) -> Result<Option<&Self::ModuleSpec>, Self::Error>
+    fn module_spec<T>(&self) -> Result<Option<&Self::Spec>, Self::Error>
     where
         T: Any,
     {
