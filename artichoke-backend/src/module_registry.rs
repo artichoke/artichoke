@@ -47,7 +47,7 @@ impl ModuleRegistry for Artichoke {
         let rclass = unsafe { self.with_ffi_boundary(|mrb| rclass.resolve(mrb))? };
         if let Some(mut rclass) = rclass {
             let module = unsafe { sys::mrb_sys_module_value(rclass.as_mut()) };
-            let module = Value::from(module);
+            let module = Self::Value::from(module);
             Ok(Some(module))
         } else {
             Ok(None)

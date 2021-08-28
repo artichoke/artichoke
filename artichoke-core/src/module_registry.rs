@@ -1,8 +1,13 @@
 use std::any::Any;
 
 pub trait ModuleRegistry {
-    type Error;
+    /// Module value type
     type Value;
+
+    /// Module error type
+    type Error;
+
+    /// Module specification type
     type Spec;
 
     /// Create a module definition bound to a Rust type `T`.
@@ -22,6 +27,7 @@ pub trait ModuleRegistry {
     where
         T: Any;
 
+    /// Retrieve whether a module definition exists from the interpreter bound to Rust type `T`
     fn is_module_defined<T>(&self) -> bool
     where
         T: Any,

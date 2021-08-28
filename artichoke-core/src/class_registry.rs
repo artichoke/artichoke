@@ -1,8 +1,8 @@
 use std::any::Any;
 
 pub trait ClassRegistry {
-    type Error;
     type Value;
+    type Error;
     type Spec;
 
     /// Create a class definition bound to a Rust type `T`.
@@ -22,6 +22,7 @@ pub trait ClassRegistry {
     where
         T: Any;
 
+    /// Retrieve whether a class definition exists from the state bound to Rust type `T`.
     fn is_class_defined<T>(&self) -> bool
     where
         T: Any,
