@@ -114,8 +114,9 @@ environment variables.
 
 ### Ruby Toolchain
 
-Artichoke requires a recent Ruby 2.x and [bundler] 2.x. The
-[`.ruby-version`](.ruby-version) file in this repository specifies Ruby 2.6.3.
+Artichoke requires a recent Ruby and [bundler]. The
+[`.ruby-version`](.ruby-version) file in this repository specifies the preferred
+Ruby toolchain.
 
 If you use [RVM], you can install Ruby dependencies by running:
 
