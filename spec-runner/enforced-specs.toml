@@ -132,8 +132,6 @@ include = "all"
 [specs.library.securerandom]
 include = "all"
 skip = [
-  # specs require ASCII-8BIT / BINARY encoding for `String`s
-  "random_bytes",
   # missing support for Bignum and Range arguments
   "random_number",
 ]
