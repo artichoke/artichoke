@@ -13,6 +13,7 @@ use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
 
+mod ffi;
 pub mod mruby;
 pub mod trampoline;
 
