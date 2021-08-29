@@ -61,8 +61,6 @@ impl<'a> TryConvertMut<Value, &'a str> for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use std::slice;
-
     use quickcheck::quickcheck;
 
     use crate::test::prelude::*;
@@ -81,16 +79,7 @@ mod tests {
         fn convert_to_string(s: String) -> bool {
             let mut interp = interpreter().unwrap();
             let value = interp.try_convert_mut(s.clone()).unwrap();
-            let string = unsafe {
-                interp
-                    .with_ffi_boundary(|mrb| {
-                        let ptr = sys::mrb_string_value_ptr(mrb, value.inner());
-                        let len = sys::mrb_string_value_len(mrb, value.inner());
-                        let len = usize::try_from(len).unwrap();
-                        slice::from_raw_parts(ptr.cast::<u8>(), len)
-                    })
-                    .unwrap()
-            };
+            let string: Vec<u8> = interp.try_convert_mut(value).unwrap();
             s.as_bytes() == string
         }
 
