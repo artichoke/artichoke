@@ -234,37 +234,35 @@ where
 
         let readline = rl.readline(prompt);
         match readline {
+            Ok(line) if line.is_empty() => (),
             Ok(line) => {
-                if !line.is_empty() {
-                    buf.push_str(line.as_str());
-                    parser_state = parser.parse(buf.as_bytes());
-                    if parser_state.is_fatal() {
-                        return Err(Box::new(ParserInternalError::new()));
-                    }
-                    if parser_state.is_code_block_open() {
-                        buf.push('\n');
-                        continue;
-                    }
-                    if parser_state.is_recoverable_error() {
-                        writeln!(error, "Could not parse input")?;
-                        buf.clear();
-                        continue;
-                    }
-                    match interp.eval(buf.as_bytes()) {
-                        Ok(value) => {
-                            let result = value.inspect(interp);
-                            output.write_all(config.result_prefix.as_bytes())?;
-                            output.write_all(result.as_slice())?;
-                            output.write_all(b"\n")?;
-                        }
-                        Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
-                    }
-                    for line in buf.lines() {
-                        rl.add_history_entry(line);
-                        interp.add_fetch_lineno(1).map_err(|_| ParserLineCountError::new())?;
-                    }
+                buf.push_str(line.as_str());
+                parser_state = parser.parse(buf.as_bytes());
+                if parser_state.is_fatal() {
+                    return Err(Box::new(ParserInternalError::new()));
                 }
-
+                if parser_state.is_code_block_open() {
+                    buf.push('\n');
+                    continue;
+                }
+                if parser_state.is_recoverable_error() {
+                    writeln!(error, "Could not parse input")?;
+                    buf.clear();
+                    continue;
+                }
+                match interp.eval(buf.as_bytes()) {
+                    Ok(value) => {
+                        let result = value.inspect(interp);
+                        output.write_all(config.result_prefix.as_bytes())?;
+                        output.write_all(result.as_slice())?;
+                        output.write_all(b"\n")?;
+                    }
+                    Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
+                }
+                for line in buf.lines() {
+                    rl.add_history_entry(line);
+                    interp.add_fetch_lineno(1).map_err(|_| ParserLineCountError::new())?;
+                }
                 // Eval successful, so reset the REPL state for the next
                 // expression.
                 interp.incremental_gc()?;
