@@ -712,6 +712,23 @@ impl String {
         self.encoding
     }
 
+    /// Set the [`Encoding`] of this `String`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// let mut s = String::utf8(b"xyz".to_vec());
+    /// assert_eq!(s.encoding(), Encoding::Utf8);
+    /// s.set_encoding(Encoding::Binary);
+    /// assert_eq!(s.encoding(), Encoding::Binary);
+    /// ```
+    #[inline]
+    pub fn set_encoding(&mut self, encoding: Encoding) {
+        self.encoding = encoding;
+    }
+
     /// Extracts a slice containing the entire byte string.
     ///
     /// Equivalent to `&s[..]`.
