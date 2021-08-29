@@ -311,6 +311,34 @@ mrb_ary_subseq(mrb_state *mrb, mrb_value ary, mrb_int beg, mrb_int len)
   return mrb_ary_new_from_values(mrb, len, ARY_PTR(a) + beg);
 }
 
+// Manipulate String `mrb_value`s
+
+MRB_API mrb_value
+mrb_sys_alloc_rstring(struct mrb_state *mrb, char *ptr, mrb_int len, mrb_int capa)
+{
+  struct RString *s;
+
+  s = (struct RString *)mrb_obj_alloc(mrb, MRB_TT_STRING, mrb->string_class);
+
+  s->as.heap.ptr = ptr;
+  s->as.heap.len = len;
+  s->as.heap.aux.capa = capa;
+
+  return mrb_obj_value(s);
+}
+
+MRB_API struct RString *
+mrb_sys_repack_into_rstring(char *ptr, mrb_int len, mrb_int capa, mrb_value into)
+{
+  struct RString *s = RSTRING(into);
+
+  s->as.heap.ptr = ptr;
+  s->as.heap.len = len;
+  s->as.heap.aux.capa = capa;
+
+  return s;
+}
+
 // Manage the mruby garbage collector (GC)
 
 MRB_API int
