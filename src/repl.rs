@@ -234,7 +234,7 @@ where
 
         let readline = rl.readline(prompt);
         match readline {
-            Ok(line) if line.is_empty() => (),
+            Ok(line) if line.is_empty() && buf.is_empty() => (),
             Ok(line) => {
                 buf.push_str(line.as_str());
                 parser_state = parser.parse(buf.as_bytes());
