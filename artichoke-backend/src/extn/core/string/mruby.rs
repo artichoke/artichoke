@@ -13,6 +13,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     class::Builder::for_spec(interp, &spec)
         .add_method("ord", string_ord, sys::mrb_args_none())?
         .add_method("scan", string_scan, sys::mrb_args_req(1))?
+        .add_method("to_s", string_to_s, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<string::String>(spec)?;
     // interp.eval(&include_bytes!("string.rb")[..])?;
@@ -40,4 +41,9 @@ unsafe extern "C" fn string_scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
         Ok(result) => result.inner(),
         Err(exception) => error::raise(guard, exception),
     }
+}
+
+unsafe extern "C" fn string_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let _ = mrb;
+    slf
 }
