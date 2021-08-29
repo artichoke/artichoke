@@ -41,7 +41,7 @@ use core::cmp::Ordering;
 use core::convert::TryFrom;
 use core::fmt::{self, Write};
 use core::iter::{Cycle, Take};
-use core::mem;
+use core::mem::{self, ManuallyDrop};
 use core::slice::{self, SliceIndex};
 use core::str;
 
@@ -740,6 +740,55 @@ impl String {
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.buf.as_mut_ptr()
+    }
+
+    /// Creates a `String` directly from the raw components of another string.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't
+    /// checked:
+    ///
+    /// - `ptr` needs to have been previously allocated via `String` (at least,
+    ///   it's highly likely to be incorrect if it wasn't).
+    /// - `length` needs to be less than or equal to `capacity`.
+    /// - `capacity` needs to be the `capacity` that the pointer was allocated
+    ///   with.
+    ///
+    /// Violating these may cause problems like corrupting the allocator's
+    /// internal data structures.
+    ///
+    /// The ownership of `ptr` is effectively transferred to the `String` which
+    /// may then deallocate, reallocate or change the contents of memory pointed
+    /// to by the pointer at will. Ensure that nothing else uses the pointer
+    /// after calling this function.
+    #[must_use]
+    pub unsafe fn from_raw_parts(ptr: *mut u8, length: usize, capacity: usize) -> Self {
+        Self::utf8(Vec::from_raw_parts(ptr, length, capacity))
+    }
+
+    /// Decomposes a `String` into its raw components.
+    ///
+    /// Returns the raw pointer to the underlying data, the length of the string
+    /// (in bytes), and the allocated capacity of the data (in bytes).  These
+    /// are the same arguments in the same order as the arguments to
+    /// [`from_raw_parts`].
+    ///
+    /// After calling this function, the caller is responsible for the memory
+    /// previously managed by the `String`. The only way to do this is to
+    /// convert the raw pointer, length, and capacity back into a `String` with
+    /// the [`from_raw_parts`] function, allowing the destructor to perform the
+    /// cleanup.
+    ///
+    /// [`from_raw_parts`]: String::from_raw_parts
+    #[must_use]
+    pub fn into_raw_parts(self) -> (*mut u8, usize, usize) {
+        // TODO: convert to `Vec::into_raw_parts` once it is stabilized.
+        // See: https://doc.rust-lang.org/1.48.0/src/alloc/vec.rs.html#399-402
+        //
+        // https://github.com/rust-lang/rust/issues/65816
+        let mut me = ManuallyDrop::new(self.buf);
+        (me.as_mut_ptr(), me.len(), me.capacity())
     }
 
     /// Converts self into a vector without clones or allocation.
