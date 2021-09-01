@@ -148,13 +148,7 @@ impl Rubylib {
     {
         let cwd = Path::new(&cwd);
         let load_paths = env::split_paths(&rubylib)
-            .map(|load_path| {
-                if load_path.is_absolute() {
-                    load_path
-                } else {
-                    cwd.join(&load_path)
-                }
-            })
+            .map(|load_path| cwd.join(&load_path))
             .collect::<Vec<_>>();
 
         // If the `RUBYLIB` env variable is empty or otherwise results in no
