@@ -2,7 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.2)
-    bundler-audit (0.8.0)
+    bundler-audit (0.9.0.1)
       bundler (>= 1.2.0, < 3)
       thor (~> 1.0)
     parallel (1.20.1)
@@ -34,7 +34,7 @@ PLATFORMS
   x64-mingw32
 
 DEPENDENCIES
-  bundler-audit (~> 0.8)
+  bundler-audit (~> 0.9)
   rake (>= 12.3.3)
   rubocop (~> 1.20)
   rubocop-rake (~> 0.6)
