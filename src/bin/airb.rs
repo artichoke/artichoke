@@ -1,6 +1,5 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::let_underscore_drop)]
 #![warn(clippy::cargo)]
 #![allow(unknown_lints)]
 #![warn(missing_docs)]
@@ -40,8 +39,8 @@ fn main() {
         //
         // Suppress all errors at this point (e.g. from a broken pipe) since
         // we're exiting with an error code anyway.
-        let _ = stderr.reset();
-        let _ = writeln!(stderr, "{}", err);
+        let _ignored = stderr.reset();
+        let _ignored = writeln!(stderr, "{}", err);
         process::exit(1);
     }
 }

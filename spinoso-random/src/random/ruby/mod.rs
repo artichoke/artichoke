@@ -122,6 +122,9 @@ impl Mt {
     #[inline]
     #[must_use]
     pub fn next_int32(&mut self) -> u32 {
+        // Failing this check indicates that, somehow, the structure
+        // was not initialized.
+        debug_assert!(self.idx != 0);
         if self.idx >= N {
             next_state(self);
         }

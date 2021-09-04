@@ -1,10 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-// #![warn(clippy::cargo)]
-#![warn(clippy::needless_borrow)]
-#![allow(clippy::let_underscore_drop)]
-// https://github.com/rust-lang/rust-clippy/pull/5998#issuecomment-731855891
-#![allow(clippy::map_err_ignore)]
+#![warn(clippy::cargo)]
 #![allow(unknown_lints)]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]

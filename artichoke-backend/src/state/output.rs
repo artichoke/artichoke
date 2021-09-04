@@ -119,12 +119,12 @@ impl Null {
 
 impl Output for Null {
     fn write_stdout<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
-        let _ = bytes;
+        drop(bytes);
         Ok(())
     }
 
     fn write_stderr<T: AsRef<[u8]>>(&mut self, bytes: T) -> io::Result<()> {
-        let _ = bytes;
+        drop(bytes);
         Ok(())
     }
 }
