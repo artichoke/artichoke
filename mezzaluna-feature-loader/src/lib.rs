@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
-#![warn(clippy::needless_borrow)]
 #![allow(clippy::option_if_let_else)]
 #![allow(unknown_lints)]
 // #![warn(missing_docs)]

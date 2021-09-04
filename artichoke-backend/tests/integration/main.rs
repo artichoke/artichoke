@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
-#![warn(clippy::needless_borrow)]
 #![allow(clippy::let_underscore_drop)]
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::non_ascii_literal)]
