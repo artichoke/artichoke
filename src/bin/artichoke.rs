@@ -1,6 +1,5 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::let_underscore_drop)]
 #![warn(clippy::cargo)]
 #![allow(unknown_lints)]
 #![warn(missing_docs)]
@@ -60,7 +59,7 @@ fn main() {
         Err(err) => {
             // Suppress all errors at this point (e.g. from a broken pipe) since
             // we're exiting with an error code anyway.
-            let _ = writeln!(io::stderr(), "{}", err);
+            let _ignored = writeln!(io::stderr(), "{}", err);
             process::exit(2);
         }
     };
@@ -74,8 +73,8 @@ fn main() {
             //
             // Suppress all errors at this point (e.g. from a broken pipe) since
             // we're exiting with an error code anyway.
-            let _ = stderr.reset();
-            let _ = writeln!(stderr, "{}", err);
+            let _ignored = stderr.reset();
+            let _ignored = writeln!(stderr, "{}", err);
             process::exit(1);
         }
     }
@@ -168,6 +167,6 @@ where
     //
     // (This is the point of this helper function. clap's functionality for
     // doing this will panic on a broken pipe error.)
-    let _ = write!(io::stdout(), "{}", err);
+    let _ignored = write!(io::stdout(), "{}", err);
     process::exit(0);
 }

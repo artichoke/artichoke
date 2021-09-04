@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
-#![allow(clippy::let_underscore_drop)]
 #![allow(clippy::option_if_let_else)]
 #![allow(unknown_lints)]
 #![warn(missing_docs)]
@@ -151,7 +150,7 @@ pub fn main() {
         Err(err) => {
             // Suppress all errors at this point (e.g. from a broken pipe) since
             // we're exiting with an error code anyway.
-            let _ = writeln!(&mut stderr, "{}", err);
+            let _ignored = writeln!(&mut stderr, "{}", err);
             process::exit(1);
         }
     };
@@ -165,7 +164,7 @@ pub fn main() {
     } else {
         // Suppress all errors at this point (e.g. from a broken pipe) since
         // we're exiting with an error code anyway.
-        let _ = writeln!(&mut stderr, "Missing required spec configuration");
+        let _ignored = writeln!(&mut stderr, "Missing required spec configuration");
         process::exit(1);
     };
 
@@ -175,7 +174,7 @@ pub fn main() {
         Err(err) => {
             // Suppress all errors at this point (e.g. from a broken pipe) since
             // we're exiting with an error code anyway.
-            let _ = writeln!(&mut stderr, "{}", err);
+            let _ignored = writeln!(&mut stderr, "{}", err);
             process::exit(1);
         }
     }

@@ -1,6 +1,5 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::let_underscore_drop)]
 #![allow(clippy::restriction)]
 
 use std::env;
@@ -411,7 +410,7 @@ mod build {
     use super::{buildpath, libmruby};
 
     pub fn clean() {
-        let _ = fs::remove_dir_all(buildpath::build_root());
+        let _ignored = fs::remove_dir_all(buildpath::build_root());
     }
 
     pub fn setup_build_root() {
@@ -423,7 +422,7 @@ mod build {
         )
         .unwrap();
 
-        let _ = fs::remove_file(libmruby::mruby_build_config());
+        let _ignored = fs::remove_file(libmruby::mruby_build_config());
         fs::create_dir_all(libmruby::mruby_build_dir()).unwrap();
         fs::copy(buildpath::source::mruby_build_config(), libmruby::mruby_build_config()).unwrap();
         fs::copy(
@@ -456,7 +455,7 @@ mod build {
         while let Some(from) = stack.pop() {
             let dest = from.components().skip(input_root_depth);
             let dest = dest_root.join(dest.collect::<PathBuf>());
-            let _ = fs::create_dir_all(&dest);
+            let _ignored = fs::create_dir_all(&dest);
 
             for entry in fs::read_dir(from)? {
                 let entry = entry?;

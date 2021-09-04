@@ -223,7 +223,7 @@ mod tests {
         where
             T: Into<Cow<'static, [u8]>>,
         {
-            let _ = symbol;
+            drop(symbol.into());
             Err("not implemented")
         }
 
@@ -254,7 +254,7 @@ mod tests {
         where
             T: Into<Cow<'static, [u8]>>,
         {
-            let _ = symbol;
+            drop(symbol.into());
             Err("not implemented")
         }
 
@@ -285,7 +285,7 @@ mod tests {
         where
             T: Into<Cow<'static, [u8]>>,
         {
-            let _ = symbol;
+            drop(symbol.into());
             Err("not implemented")
         }
 

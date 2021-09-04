@@ -152,7 +152,7 @@ impl From<Utf8Error> for ConvertBytesError {
 impl From<OsString> for ConvertBytesError {
     #[inline]
     fn from(err: OsString) -> Self {
-        let _ = err;
+        drop(err);
         Self { _private: () }
     }
 }

@@ -1,6 +1,5 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![allow(clippy::let_underscore_drop)]
 #![allow(clippy::option_if_let_else)]
 
 use chrono::prelude::*;
