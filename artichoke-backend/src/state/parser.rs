@@ -1,4 +1,9 @@
-// https://github.com/rust-lang/rust-clippy/issues/6137
+// This `allow` pragma suppresses false positives.
+//
+// See:
+//
+// - https://github.com/rust-lang/rust-clippy/issues/6141
+// - https://github.com/rust-lang/rust-clippy/issues/6563
 #![allow(clippy::shadow_unrelated)]
 
 use std::borrow::Cow;
