@@ -238,12 +238,13 @@ where
             Ok(line) => {
                 buf.push_str(line.as_str());
                 parser_state = parser.parse(buf.as_bytes());
-                if parser_state.is_fatal() {
-                    return Err(Box::new(ParserInternalError::new()));
-                }
+
                 if parser_state.is_code_block_open() {
                     buf.push('\n');
                     continue;
+                }
+                if parser_state.is_fatal() {
+                    return Err(Box::new(ParserInternalError::new()));
                 }
                 if parser_state.is_recoverable_error() {
                     writeln!(error, "Could not parse input")?;
