@@ -62,7 +62,8 @@ tasks by running:
 $ bundle exec rake --tasks
 rake build                        # Build Rust workspace
 rake build:all                    # Build Rust workspace and sub-workspaces
-rake bundle:audit                 # Checks the Gemfile.lock for insecure dependencies
+rake bundle:audit:check           # Checks the Gemfile.lock for insecure dependencies
+rake bundle:audit:update          # Updates the bundler-audit vulnerability database
 rake doc                          # Generate Rust API documentation
 rake doc:open                     # Generate Rust API documentation and open it in a web browser
 rake fmt                          # Format sources
