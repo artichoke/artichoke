@@ -85,7 +85,6 @@ pub fn bytesize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error
 pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let bytes = s
-        .clone()
         .bytes()
         .map(i64::from)
         .map(|byte| interp.convert(byte))
