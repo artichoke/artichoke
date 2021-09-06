@@ -30,6 +30,8 @@ use same_file::Handle;
 /// have higher priority.
 ///
 /// ```no_run
+/// # use std::ffi::OsStr;
+/// # use std::path::Path;
 /// # use mezzaluna_feature_loader::Rubylib;
 /// # fn example() -> Option<()> {
 /// // Grab the load paths from the `RUBYLIB` environment variable. If the
@@ -45,8 +47,8 @@ use same_file::Handle;
 /// // The relative path `./_lib` is resolved relative to the given working
 /// // directory.
 /// let fixed_loader = Rubylib::with_rubylib_and_cwd(
-///     "/home/artichoke/src:/usr/share/artichoke:./_lib",
-///     "/home/artichoke"
+///     OsStr::new("/home/artichoke/src:/usr/share/artichoke:./_lib"),
+///     Path::new("/home/artichoke")
 /// )?;
 /// # Some(())
 /// # }
@@ -88,7 +90,7 @@ impl Rubylib {
     pub fn new() -> Option<Self> {
         let rubylib = env::var_os("RUBYLIB")?;
         let cwd = env::current_dir().ok()?;
-        Self::with_rubylib_and_cwd(rubylib, cwd)
+        Self::with_rubylib_and_cwd(&rubylib, &cwd)
     }
 
     /// Create a new native filesystem loader that searches the filesystem for
@@ -111,12 +113,9 @@ impl Rubylib {
     /// [current working directory]: env::current_dir
     #[inline]
     #[must_use]
-    pub fn with_rubylib<T>(rubylib: T) -> Option<Self>
-    where
-        T: AsRef<OsStr>,
-    {
+    pub fn with_rubylib(rubylib: &OsStr) -> Option<Self> {
         let cwd = env::current_dir().ok()?;
-        Self::with_rubylib_and_cwd(rubylib, cwd)
+        Self::with_rubylib_and_cwd(rubylib, &cwd)
     }
 
     /// Create a new native filesystem loader that searches the filesystem for
@@ -137,12 +136,7 @@ impl Rubylib {
     /// paths.
     #[inline]
     #[must_use]
-    pub fn with_rubylib_and_cwd<T, U>(rubylib: T, cwd: U) -> Option<Self>
-    where
-        T: AsRef<OsStr>,
-        U: AsRef<OsStr>,
-    {
-        let cwd = Path::new(&cwd);
+    pub fn with_rubylib_and_cwd(rubylib: &OsStr, cwd: &Path) -> Option<Self> {
         let load_paths = env::split_paths(&rubylib)
             .map(|load_path| cwd.join(&load_path))
             .collect::<Vec<_>>();

@@ -1,5 +1,6 @@
 use std::ffi::OsStr;
 use std::io;
+use std::path::Path;
 
 #[cfg(feature = "rubylib")]
 mod rubylib;
@@ -31,10 +32,7 @@ impl Loader {
 
     #[must_use]
     #[cfg(feature = "rubylib")]
-    pub fn with_rubylib<T>(rubylib: T) -> Option<Self>
-    where
-        T: AsRef<OsStr>,
-    {
+    pub fn with_rubylib(rubylib: &OsStr) -> Option<Self> {
         let rubylib = Rubylib::with_rubylib(rubylib)?;
         let loaded_features = LoadedFeatures::new();
         Some(Self {
@@ -45,11 +43,7 @@ impl Loader {
 
     #[must_use]
     #[cfg(feature = "rubylib")]
-    pub fn with_rubylib_and_cwd<T, U>(rubylib: T, cwd: U) -> Option<Self>
-    where
-        T: AsRef<OsStr>,
-        U: AsRef<OsStr>,
-    {
+    pub fn with_rubylib_and_cwd(rubylib: &OsStr, cwd: &Path) -> Option<Self> {
         #[cfg(feature = "rubylib")]
         let rubylib = Rubylib::with_rubylib_and_cwd(rubylib, cwd)?;
         let loaded_features = LoadedFeatures::new();
@@ -61,16 +55,12 @@ impl Loader {
 
     #[allow(clippy::missing_errors_doc)]
     #[allow(clippy::missing_panics_doc)]
-    pub fn read<T>(&self, path: T) -> io::Result<Vec<u8>>
-    where
-        T: AsRef<OsStr>,
-    {
+    pub fn read<T>(&self, path: &Path) -> io::Result<Vec<u8>> {
         #[cfg(feature = "rubylib")]
         {
             use std::io::Read;
-            use std::path::Path;
 
-            if let Some(handle) = self.rubylib.resolve_file(Path::new(&path)) {
+            if let Some(handle) = self.rubylib.resolve_file(path) {
                 let file = handle.as_file();
                 // Allocate one extra byte so the buffer doesn't need to grow before the
                 // final `read` call at the end of the file.  Don't worry about `usize`
