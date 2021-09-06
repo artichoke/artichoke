@@ -1374,7 +1374,8 @@ impl String {
     /// [ruby-string]: https://ruby-doc.org/core-2.6.3/String.html
     #[inline]
     pub fn concat<T: AsRef<[u8]>>(&mut self, other: T) {
-        self.buf.extend_from_slice(other.as_ref());
+        let other = other.as_ref();
+        self.buf.extend_from_slice(other);
     }
 
     /// Returns true for a string which has only ASCII characters.
