@@ -88,6 +88,16 @@ jobs:
           echo "::set-output name=json::${json}"
         working-directory: "artichoke"
 
+      - name: Generate spec tags
+        run: |
+          ./artichoke/spec-runner/target/release/spec-runner --quiet --format tagger artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.tagged.outputs.yaml }}"
+          ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.tagged.outputs.yaml }}" > "${{ steps.tagged.outputs.json }}"
+
+      - name: Generate spec exceptions
+        run: |
+          ./artichoke/spec-runner/target/release/spec-runner --quiet --format yaml artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.exceptions.outputs.yaml }}"
+          ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.exceptions.outputs.yaml }}" > "${{ steps.exceptions.outputs.json }}"
+
       - name: Checkout spec state repository
         uses: actions/checkout@v2
         with:
@@ -95,20 +105,15 @@ jobs:
           path: spec-state
           ssh-key: ${{ secrets.SPEC_STATE_SSH_DEPLOY_PRIVATE_KEY }}
 
-      - name: Generate spec tags
+      - name: Copy spec-state reports
         run: |
-          ./artichoke/spec-runner/target/release/spec-runner --quiet --format tagger artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.tagged.outputs.yaml }}"
-          ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.tagged.outputs.yaml }}" > "${{ steps.tagged.outputs.json }}"
+          # tags
           mkdir -p "spec-state/reports/tagged/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}"
           cp "${{ steps.tagged.outputs.json }}" "spec-state/reports/tagged/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}/${{ steps.tagged.outputs.json }}"
           cp "${{ steps.tagged.outputs.json }}" "spec-state/reports/tagged/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}/latest.json"
           cp "${{ steps.tagged.outputs.json }}" "spec-state/reports/tagged/${{ steps.commit.outputs.year }}/latest.json"
           cp "${{ steps.tagged.outputs.json }}" "spec-state/reports/tagged/latest.json"
-
-      - name: Generate spec exceptions
-        run: |
-          ./artichoke/spec-runner/target/release/spec-runner --quiet --format yaml artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.exceptions.outputs.yaml }}"
-          ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.exceptions.outputs.yaml }}" > "${{ steps.exceptions.outputs.json }}"
+          # exceptions
           mkdir -p "spec-state/reports/exceptions/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}"
           cp "${{ steps.exceptions.outputs.json }}" "spec-state/reports/exceptions/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}/${{ steps.exceptions.outputs.json }}"
           cp "${{ steps.exceptions.outputs.json }}" "spec-state/reports/exceptions/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}/latest.json"
