@@ -40,7 +40,7 @@ jobs:
           working-directory: "artichoke/spec-runner"
 
       - name: Compile spec-runner
-        run: cargo build --verbose --bin spec-runner
+        run: cargo build --release --verbose --bin spec-runner
         working-directory: "artichoke/spec-runner"
 
       - name: Set commit metadata
@@ -97,7 +97,7 @@ jobs:
 
       - name: Generate spec tags
         run: |
-          ./artichoke/spec-runner/target/debug/spec-runner --quiet --format tagger artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.tagged.outputs.yaml }}"
+          ./artichoke/spec-runner/target/release/spec-runner --quiet --format tagger artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.tagged.outputs.yaml }}"
           ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.tagged.outputs.yaml }}" > "${{ steps.tagged.outputs.json }}"
           mkdir -p "spec-state/reports/tagged/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}"
           cp "${{ steps.tagged.outputs.json }}" "spec-state/reports/tagged/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}/${{ steps.tagged.outputs.json }}"
@@ -107,7 +107,7 @@ jobs:
 
       - name: Generate spec exceptions
         run: |
-          ./artichoke/spec-runner/target/debug/spec-runner --quiet --format yaml artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.exceptions.outputs.yaml }}"
+          ./artichoke/spec-runner/target/release/spec-runner --quiet --format yaml artichoke/spec-runner/all-core-specs.toml | tee "${{ steps.exceptions.outputs.yaml }}"
           ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.exceptions.outputs.yaml }}" > "${{ steps.exceptions.outputs.json }}"
           mkdir -p "spec-state/reports/exceptions/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}"
           cp "${{ steps.exceptions.outputs.json }}" "spec-state/reports/exceptions/${{ steps.commit.outputs.year }}/${{ steps.commit.outputs.month }}/${{ steps.exceptions.outputs.json }}"
