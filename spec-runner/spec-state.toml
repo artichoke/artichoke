@@ -1,0 +1,263 @@
+# This config file lists the ruby/specs that should pass for Artichoke Ruby.
+#
+# Valid values for `include` are:
+#
+# - all - run all specs. When `include` is set to `all`, the optional `skip`
+#   field may list specs to skip.
+# - none - run no specs, equivalent to the section not being present in this
+#   config file.
+# - `set` - run an enumerated set of specs. When `include` is set to `set`, the
+#   set of specs must be listed in the required `specs` field, which is a list
+#   of strings.
+
+## Ruby Core
+
+[specs.core.argf]
+include = "all"
+
+[specs.core.array]
+include = "set"
+specs = [
+  "any",
+  "append",
+  "array",
+  "assoc",
+  "at",
+  "clear",
+  "collect",
+  "combination",
+  "compact",
+  "concat",
+  "constructor",
+  "count",
+  "cycle",
+  "delete",
+  "delete_at",
+  "delete_if",
+  "drop",
+  "drop_while",
+  "each",
+  "each_index",
+  "empty",
+  "first",
+  "frozen",
+  "include",
+  "last",
+  "length",
+  "map",
+  "multiply",
+  "plus",
+  "prepend",
+  "push",
+  "rassoc",
+  "replace",
+  "reverse",
+  "reverse_each",
+  "shift",
+  "size",
+  "sort_by",
+  "to_ary",
+  "try_convert",
+  "unshift",
+]
+
+[specs.core.basicobject]
+include = "all"
+
+[specs.core.binding]
+include = "all"
+
+[specs.core.builtin_constants]
+include = "all"
+
+[specs.core.class]
+include = "all"
+
+[specs.core.comparable]
+include = "all"
+
+[specs.core.complex]
+include = "all"
+
+[specs.core.dir]
+include = "all"
+
+[specs.core.encoding]
+include = "all"
+
+[specs.core.enumerable]
+include = "all"
+
+[specs.core.enumerator]
+include = "all"
+
+[specs.core.env]
+include = "all"
+
+[specs.core.exception]
+include = "all"
+
+[specs.core.false]
+include = "all"
+
+[specs.core.fiber]
+include = "all"
+
+[specs.core.file]
+include = "all"
+
+[specs.core.filetest]
+include = "all"
+
+[specs.core.float]
+include = "all"
+
+[specs.core.gc]
+include = "all"
+
+[specs.core.hash]
+include = "all"
+skip = [
+  "eql",
+  "equal_value",
+]
+
+[specs.core.integer]
+include = "all"
+
+[specs.core.io]
+include = "none"
+
+[specs.core.kernel]
+include = "none"
+
+[specs.core.main]
+include = "all"
+
+[specs.core.marshal]
+include = "all"
+
+[specs.core.matchdata]
+include = "all"
+
+[specs.core.math]
+include = "all"
+
+[specs.core.method]
+include = "all"
+
+[specs.core.module]
+include = "all"
+
+[specs.core.mutex]
+include = "none"
+
+[specs.core.nil]
+include = "all"
+
+[specs.core.numeric]
+include = "all"
+
+[specs.core.objectspace]
+include = "none"
+
+[specs.core.proc]
+include = "all"
+
+[specs.core.process]
+include = "none"
+
+[specs.core.queue]
+include = "all"
+
+[specs.core.random]
+include = "all"
+
+[specs.core.range]
+include = "all"
+
+[specs.core.rational]
+include = "all"
+
+[specs.core.regexp]
+include = "all"
+
+[specs.core.signal]
+include = "all"
+
+[specs.core.sizedqueue]
+include = "all"
+
+[specs.core.string]
+include = "all"
+
+[specs.core.struct]
+include = "all"
+
+[specs.core.symbol]
+include = "all"
+
+[specs.core.systemexit]
+include = "all"
+
+[specs.core.thread]
+include = "none"
+
+[specs.core.threadgroup]
+include = "none"
+
+[specs.core.time]
+include = "all"
+
+[specs.core.tracepoint]
+include = "none"
+
+[specs.core.true]
+include = "all"
+
+[specs.core.unboundmethod]
+include = "all"
+
+[specs.core.warning]
+include = "all"
+
+## Ruby Standard Library
+
+[specs.library.abbrev]
+include = "all"
+
+[specs.library.base64]
+include = "all"
+
+[specs.library.delegate]
+include = "none"
+
+[specs.library.monitor]
+include = "all"
+
+[specs.library.securerandom]
+include = "all"
+skip = [
+  # specs require ASCII-8BIT / BINARY encoding for `String`s
+  "random_bytes",
+  # missing support for Bignum and Range arguments
+  "random_number",
+]
+
+[specs.library.shellwords]
+include = "all"
+skip = [
+  # missing `String#gsub` support for back references
+  "shellwords",
+]
+
+[specs.library.stringscanner]
+include = "all"
+
+[specs.library.time]
+# missing `date` package
+include = "none"
+
+[specs.library.uri]
+include = "all"
+skip = ["parse"]
