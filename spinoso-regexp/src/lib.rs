@@ -1,3 +1,5 @@
+#![warn(rust_2021_compatibility)]
+
 // Ensure code blocks in README.md compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]

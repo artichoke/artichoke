@@ -3,10 +3,12 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::option_if_let_else)]
 #![allow(unknown_lints)]
+// TODO: warn on missing docs once crate is API-complete.
 // #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
+#![warn(rust_2021_compatibility)]
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_qualifications)]
 #![warn(variant_size_differences)]
