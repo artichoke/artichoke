@@ -61,10 +61,8 @@ impl Hash for Encoding {
 impl PartialEq for Encoding {
     fn eq(&self, other: &Self) -> bool {
         use Encoding::{Fixed, No, None};
-        matches!(
-            (self, other),
-            (No, No) | (No, None) | (None, No) | (None, None) | (Fixed, Fixed)
-        )
+
+        matches!((self, other), (No | None, No | None) | (Fixed, Fixed))
     }
 }
 

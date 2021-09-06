@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![allow(clippy::option_if_let_else)]
+#![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
 // TODO: warn on missing docs once crate is API-complete.
 // #![warn(missing_docs)]
@@ -47,15 +48,15 @@ pub use options::{Options, RegexpOption};
 bitflags! {
     #[derive(Default)]
     pub struct Flags: u8 {
-        const IGNORECASE      = 0b00000001;
-        const EXTENDED        = 0b00000010;
-        const MULTILINE       = 0b00000100;
+        const IGNORECASE      = 0b0000_0001;
+        const EXTENDED        = 0b0000_0010;
+        const MULTILINE       = 0b0000_0100;
         const ALL_REGEXP_OPTS = Self::IGNORECASE.bits | Self::EXTENDED.bits | Self::MULTILINE.bits;
 
-        const FIXEDENCODING   = 0b00010000;
-        const NOENCODING      = 0b00100000;
+        const FIXEDENCODING   = 0b0001_0000;
+        const NOENCODING      = 0b0010_0000;
 
-        const LITERAL         = 0b10000000;
+        const LITERAL         = 0b1000_0000;
     }
 }
 
@@ -104,6 +105,7 @@ impl From<&Config> for Source {
 
 impl Source {
     /// Construct a new, empty `Source`.
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             pattern: Vec::new(),
@@ -112,11 +114,13 @@ impl Source {
     }
 
     /// Construct a new `Source` with the given pattern and [`Options`].
+    #[must_use]
     pub const fn with_pattern_and_options(pattern: Vec<u8>, options: Options) -> Self {
         Self { pattern, options }
     }
 
     /// Whether this source was parsed with ignore case enabled.
+    #[must_use]
     pub const fn is_casefold(&self) -> bool {
         self.options.ignore_case().is_enabled()
     }
@@ -126,16 +130,19 @@ impl Source {
     /// This enables Ruby parsers to inject whether a Regexp is a literal to the
     /// core library. Literal Regexps have some special behavior regrding
     /// capturing groups and report parse failures differently.
+    #[must_use]
     pub const fn is_literal(&self) -> bool {
         self.options.is_literal()
     }
 
     /// Extracts a slice containing the entire pattern.
+    #[must_use]
     pub fn pattern(&self) -> &[u8] {
         self.pattern.as_slice()
     }
 
     /// Return a copy of the underlying [`Options`].
+    #[must_use]
     pub const fn options(&self) -> Options {
         self.options
     }
@@ -170,6 +177,7 @@ impl From<&Source> for Config {
 
 impl Config {
     /// Construct a new, empty `Config`.
+    #[must_use]
     pub const fn new() -> Self {
         Self {
             pattern: Vec::new(),
@@ -178,16 +186,19 @@ impl Config {
     }
 
     /// Construct a new `Config` with the given pattern and [`Options`].
+    #[must_use]
     pub const fn with_pattern_and_options(pattern: Vec<u8>, options: Options) -> Self {
         Self { pattern, options }
     }
 
     /// Extracts a slice containing the entire pattern.
+    #[must_use]
     pub fn pattern(&self) -> &[u8] {
         self.pattern.as_slice()
     }
 
     /// Return a copy of the underlying [`Options`].
+    #[must_use]
     pub const fn options(&self) -> Options {
         self.options
     }

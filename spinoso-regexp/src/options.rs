@@ -43,7 +43,7 @@ impl Default for RegexpOption {
 impl From<bool> for RegexpOption {
     /// Convert from `bool` to its `RegexpOption` representation.
     ///
-    /// `true` creates a [RegexpOption::Enabled`]. `false` creates a
+    /// `true` creates a [`RegexpOption::Enabled`]. `false` creates a
     /// [`RegexpOption::Disabled`].
     fn from(value: bool) -> Self {
         if value {
@@ -214,6 +214,7 @@ impl Options {
     }
 
     /// Whether these `Options` are configured for multiline mode.
+    #[must_use]
     pub const fn multiline(self) -> RegexpOption {
         if self.flags.intersects(Flags::MULTILINE) {
             RegexpOption::Enabled
@@ -223,6 +224,7 @@ impl Options {
     }
 
     /// Whether these `Options` are configured for case-insensitive mode.
+    #[must_use]
     pub const fn ignore_case(self) -> RegexpOption {
         if self.flags.intersects(Flags::IGNORECASE) {
             RegexpOption::Enabled
@@ -233,6 +235,7 @@ impl Options {
 
     /// Whether these `Options` are configured for extended mode with
     /// insignificant whitespace.
+    #[must_use]
     pub const fn extended(self) -> RegexpOption {
         if self.flags.intersects(Flags::EXTENDED) {
             RegexpOption::Enabled
@@ -246,6 +249,7 @@ impl Options {
     /// This enables Ruby parsers to inject whether a Regexp is a literal to the
     /// core library. Literal Regexps have some special behavior regrding
     /// capturing groups and report parse failures differently.
+    #[must_use]
     pub const fn is_literal(self) -> bool {
         self.flags.intersects(Flags::LITERAL)
     }
@@ -292,7 +296,7 @@ impl Options {
 
     /// Inserts or removes the specified flags depending on the passed value.
     pub fn set(&mut self, other: Flags, value: bool) {
-        self.flags.set(other, value)
+        self.flags.set(other, value);
     }
 }
 
@@ -316,6 +320,7 @@ mod tests {
     // together. Otherwise, if options is not `nil` or `false`, the regexp will
     // be case insensitive.
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn parse_options() {
         assert_eq!(Options::from(None), Options::new());
         assert_eq!(Options::from(Some(false)), Options::new());
