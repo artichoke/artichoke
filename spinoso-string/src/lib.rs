@@ -1803,30 +1803,42 @@ impl String {
     #[inline]
     #[must_use]
     pub fn index<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
-        if let Some(offset) = offset {
-            let buf = self.buf.get(offset..)?;
-            let index = buf.find(needle.as_ref())?;
-            // This addition is guaranteed not to overflow because the result is
-            // a valid index of the underlying `Vec`.
-            //
-            // `self.buf.len() < isize::MAX` because `self.buf` is a `Vec` and
-            // `Vec` documents `isize::MAX` as its maximum allocation size.
-            Some(index + offset)
-        } else {
-            self.buf.find(needle.as_ref())
+        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
+            if let Some(offset) = offset {
+                let buf = buf.get(offset..)?;
+                let index = buf.find(needle)?;
+                // This addition is guaranteed not to overflow because the result is
+                // a valid index of the underlying `Vec`.
+                //
+                // `self.buf.len() < isize::MAX` because `self.buf` is a `Vec` and
+                // `Vec` documents `isize::MAX` as its maximum allocation size.
+                Some(index + offset)
+            } else {
+                buf.find(needle)
+            }
         }
+        // convert to a concrete type and delegate to a single `index` impl
+        // to minimize code duplication when monomorphizing.
+        let needle = needle.as_ref();
+        inner(&self.buf, needle, offset)
     }
 
     #[inline]
     #[must_use]
     pub fn rindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
-        if let Some(offset) = offset {
-            let end = self.buf.len().checked_sub(offset).unwrap_or_default();
-            let buf = self.buf.get(..end)?;
-            buf.rfind(needle.as_ref())
-        } else {
-            self.buf.rfind(needle.as_ref())
+        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
+            if let Some(offset) = offset {
+                let end = buf.len().checked_sub(offset).unwrap_or_default();
+                let buf = buf.get(..end)?;
+                buf.rfind(needle)
+            } else {
+                buf.rfind(needle)
+            }
         }
+        // convert to a concrete type and delegate to a single `rindex` impl
+        // to minimize code duplication when monomorphizing.
+        let needle = needle.as_ref();
+        inner(&self.buf, needle, offset)
     }
 
     /// Returns an iterator that yields a debug representation of the `String`.
