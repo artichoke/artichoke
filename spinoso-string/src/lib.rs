@@ -1772,8 +1772,11 @@ impl String {
     #[must_use]
     pub fn chr(&self) -> &[u8] {
         if let Encoding::Utf8 = self.encoding {
-            let (_, size) = bstr::decode_utf8(self.buf.as_slice());
-            &self.buf[..size]
+            match bstr::decode_utf8(self.buf.as_slice()) {
+                (Some(_), size) => &self.buf[..size],
+                (None, 0) => &[],
+                (None, _) => &self.buf[..1],
+            }
         } else {
             self.buf.get(0..1).unwrap_or_default()
         }
@@ -2629,5 +2632,21 @@ mod tests {
 
         let center = s.center(5, Some(b""));
         assert!(matches!(center, Err(CenterError::ZeroWidthPadding)));
+    }
+
+    #[test]
+    fn chr_does_not_return_more_than_one_byte_for_invalid_utf8() {
+        // ```ruby
+        // [3.0.1] > "\xF0\x9F\x87".chr
+        // => "\xF0"
+        // ```
+        //
+        // Per `bstr`:
+        //
+        // The bytes \xF0\x9F\x87 could lead to a valid UTF-8 sequence, but 3 of them
+        // on their own are invalid. Only one replacement codepoint is substituted,
+        // which demonstrates the "substitution of maximal subparts" strategy.
+        let s = String::utf8(b"\xF0\x9F\x87".to_vec());
+        assert_eq!(s.chr(), b"\xF0");
     }
 }
