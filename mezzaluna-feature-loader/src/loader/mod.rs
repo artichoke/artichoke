@@ -1,3 +1,4 @@
+#[cfg(feature = "rubylib")]
 use std::ffi::OsStr;
 use std::io;
 use std::path::Path;
