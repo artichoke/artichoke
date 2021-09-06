@@ -1657,54 +1657,10 @@ impl String {
     #[must_use]
     #[allow(clippy::needless_pass_by_value)]
     pub fn chomp<T: AsRef<[u8]>>(&mut self, separator: Option<T>) -> bool {
-        if self.is_empty() {
-            return false;
-        }
-        match separator.as_ref().map(AsRef::as_ref) {
-            Some(separator) if separator.is_empty() => {
-                let original_len = self.len();
-                let mut iter = self.bytes().rev().peekable();
-                while let Some(&b'\n') = iter.peek() {
-                    iter.next();
-                    if let Some(&b'\r') = iter.peek() {
-                        iter.next();
-                    }
-                }
-                let truncate_to = iter.count();
-                self.buf.truncate(truncate_to);
-                truncate_to != original_len
-            }
-            Some(separator) if self.buf.ends_with(separator) => {
-                let original_len = self.len();
-                // This subtraction is guaranteed not to panic because
-                // `separator` is a substring of `buf`.
-                let truncate_to_len = original_len - separator.len();
-                self.buf.truncate(truncate_to_len);
-                // Separator is non-empty and we are always truncating, so this
-                // branch always modifies the buffer.
-                true
-            }
-            Some(_) => false,
-            None => {
-                let original_len = self.len();
-                let mut iter = self.bytes().rev().peekable();
-                match iter.peek() {
-                    Some(&b'\n') => {
-                        iter.next();
-                        if let Some(&b'\r') = iter.peek() {
-                            iter.next();
-                        }
-                    }
-                    Some(b'\r') => {
-                        iter.next();
-                    }
-                    Some(_) | None => {}
-                };
-                let truncate_to_len = iter.count();
-                self.buf.truncate(truncate_to_len);
-                truncate_to_len != original_len
-            }
-        }
+        // convert to a concrete type and delegate to a single `chomp` impl
+        // to minimize code duplication when monomorphizing.
+        let separator = separator.as_ref().map(AsRef::as_ref);
+        chomp(self, separator)
     }
 
     /// Modifies this `String` in-place and removes the last character.
@@ -2066,6 +2022,58 @@ fn conventionally_utf8_bytestring_len<T: AsRef<[u8]>>(bytes: T) -> usize {
         bytes = &bytes[size..];
     }
     char_len
+}
+
+#[must_use]
+fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
+    if string.is_empty() {
+        return false;
+    }
+    match separator {
+        Some(separator) if separator.is_empty() => {
+            let original_len = string.len();
+            let mut iter = string.bytes().rev().peekable();
+            while let Some(&b'\n') = iter.peek() {
+                iter.next();
+                if let Some(&b'\r') = iter.peek() {
+                    iter.next();
+                }
+            }
+            let truncate_to = iter.count();
+            string.buf.truncate(truncate_to);
+            truncate_to != original_len
+        }
+        Some(separator) if string.buf.ends_with(separator) => {
+            let original_len = string.len();
+            // This subtraction is guaranteed not to panic because
+            // `separator` is a substring of `buf`.
+            let truncate_to_len = original_len - separator.len();
+            string.buf.truncate(truncate_to_len);
+            // Separator is non-empty and we are always truncating, so this
+            // branch always modifies the buffer.
+            true
+        }
+        Some(_) => false,
+        None => {
+            let original_len = string.len();
+            let mut iter = string.bytes().rev().peekable();
+            match iter.peek() {
+                Some(&b'\n') => {
+                    iter.next();
+                    if let Some(&b'\r') = iter.peek() {
+                        iter.next();
+                    }
+                }
+                Some(b'\r') => {
+                    iter.next();
+                }
+                Some(_) | None => {}
+            };
+            let truncate_to_len = iter.count();
+            string.buf.truncate(truncate_to_len);
+            truncate_to_len != original_len
+        }
+    }
 }
 
 #[cfg(test)]
