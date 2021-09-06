@@ -1,4 +1,5 @@
-# This config file lists the ruby/specs that should pass for Artichoke Ruby.
+# This config file lists the largest set of ruby/specs from the `core` group
+# that will let Artichoke Ruby run the spec-runner harness to completion.
 #
 # Valid values for `include` are:
 #

@@ -1,4 +1,8 @@
-# This config file lists the ruby/specs that should pass for Artichoke Ruby.
+# This config file lists all ruby/specs that are run as part of the `spec-state`
+# GitHub Actions workflow. Historical results for these specs are published to
+# the artichoke/spec-state repository:
+#
+# https://github.com/artichoke/spec-state
 #
 # Valid values for `include` are:
 #
