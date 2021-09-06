@@ -118,7 +118,11 @@ include = "all"
 [specs.core.hash]
 include = "all"
 skip = [
+  # This generates a `SystemStackError` on recursive hashes that takes an
+  # eternity to print out when running with the `artichok` or `yaml` formatter.
   "eql",
+  # This generates a `SystemStackError` on recursive hashes that takes an
+  # eternity to print out when running with the `artichok` or `yaml` formatter.
   "equal_value",
 ]
 
