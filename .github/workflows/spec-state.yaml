@@ -4,6 +4,8 @@ name: Spec
   push:
     branches:
       - trunk
+concurrency:
+  group: spec-state-${{ github.head_ref }}
 jobs:
   spec-state:
     name: spec-state
