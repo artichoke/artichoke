@@ -9,6 +9,8 @@ name: Documentation
       - trunk
   schedule:
     - cron: "0 0 * * TUE"
+concurrency:
+  group: docs-${{ github.head_ref }}
 jobs:
   rustdoc:
     name: Build Rust API docs
