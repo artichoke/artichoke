@@ -106,7 +106,7 @@ pub fn hypot(interp: &mut Artichoke, value: Value, other: Value) -> Result<f64, 
 #[allow(clippy::cast_possible_truncation)]
 pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result<f64, Error> {
     let fraction = interp.coerce_to_float(fraction)?;
-    let exponent = implicitly_convert_to_int(interp, exponent).map_err(|_| exponent.try_into::<f64>(interp));
+    let exponent = implicitly_convert_to_int(interp, exponent).map_err(|_| exponent.try_convert_into::<f64>(interp));
     let exponent = match exponent {
         Ok(exp) => exp,
         Err(Ok(exp)) if exp.is_nan() => {

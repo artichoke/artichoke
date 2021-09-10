@@ -19,8 +19,8 @@ impl CoerceToNumeric for Artichoke {
     #[allow(clippy::cast_precision_loss)]
     fn coerce_to_float(&mut self, value: Self::Value) -> Result<Self::Float, Self::Error> {
         match value.ruby_type() {
-            Ruby::Float => return value.try_into(self),
-            Ruby::Fixnum => return value.try_into::<i64>(self).map(|int| int as f64),
+            Ruby::Float => return value.try_convert_into(self),
+            Ruby::Fixnum => return value.try_convert_into::<i64>(self).map(|int| int as f64),
             Ruby::Nil => return Err(TypeError::with_message("can't convert nil into Float").into()),
             _ => {}
         }
@@ -37,7 +37,7 @@ impl CoerceToNumeric for Artichoke {
             }
             let coerced = value.funcall(self, "to_f", &[], None)?;
             if let Ruby::Float = coerced.ruby_type() {
-                coerced.try_into::<f64>(self)
+                coerced.try_convert_into::<f64>(self)
             } else {
                 let mut message = String::from("can't convert ");
                 let name = self.inspect_type_name_for_value(value);

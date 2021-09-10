@@ -11,7 +11,7 @@ keywords = ["artichoke", "artichoke-ruby", "mruby", "ruby"]
 categories = ["api-bindings"]
 
 [dependencies]
-artichoke-core = { version = "0.8", path = "../artichoke-core" }
+artichoke-core = { version = "0.9", path = "../artichoke-core" }
 artichoke-load-path = { version = "0.1", path = "../artichoke-load-path", default-features = false }
 bstr = { version = "0.2, >= 0.2.2", default-features = false, features = ["std"] }
 cstr = "0.2.8"

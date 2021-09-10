@@ -12,7 +12,7 @@ unsafe extern "C" fn container_initialize(mrb: *mut sys::mrb_state, slf: sys::mr
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
     let inner = Value::from(inner);
-    let inner = inner.try_into::<i64>(&guard).unwrap_or_default();
+    let inner = inner.try_convert_into::<i64>(&guard).unwrap_or_default();
     let container = Box::new(Container(inner));
     let result = Box::<Container>::box_into_value(container, slf, &mut guard).unwrap_or_default();
     result.inner()
@@ -58,11 +58,11 @@ fn define_rust_backed_ruby_class() {
 
     interp.eval(b"require 'container'").unwrap();
     let result = interp.eval(b"Container.new(15).value").unwrap();
-    let result = result.try_into::<i64>(&interp).unwrap();
+    let result = result.try_convert_into::<i64>(&interp).unwrap();
     assert_eq!(result, 15);
     // Ensure Rc is cloned correctly and still points to valid memory.
     let result = interp.eval(b"Container.new(105).value").unwrap();
-    let result = result.try_into::<i64>(&interp).unwrap();
+    let result = result.try_convert_into::<i64>(&interp).unwrap();
     assert_eq!(result, 105);
 
     interp.close();

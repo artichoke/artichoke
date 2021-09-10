@@ -26,7 +26,7 @@ mod tests {
     fn regression_github_1099() {
         let mut interp = interpreter().unwrap();
         let inspect = interp.eval(b"{ a: 'GH-1099' }.inspect").unwrap();
-        let inspect = inspect.try_into_mut::<&str>(&mut interp).unwrap();
+        let inspect = inspect.try_convert_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(inspect, r#"{:a=>"GH-1099"}"#);
     }
 }

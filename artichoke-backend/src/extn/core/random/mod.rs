@@ -240,11 +240,11 @@ impl TryConvertMut<Option<Value>, Max> for Artichoke {
         if let Some(max) = max {
             match max.ruby_type() {
                 Ruby::Fixnum => {
-                    let max = max.try_into(self)?;
+                    let max = max.try_convert_into(self)?;
                     Ok(Max::Integer(max))
                 }
                 Ruby::Float => {
-                    let max = max.try_into(self)?;
+                    let max = max.try_convert_into(self)?;
                     Ok(Max::Float(max))
                 }
                 _ => {

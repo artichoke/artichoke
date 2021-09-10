@@ -69,7 +69,7 @@ use crate::Artichoke;
 /// - The given value is not an integer and raises an error in its `:to_int`
 ///   method.
 pub fn implicitly_convert_to_int(interp: &mut Artichoke, value: Value) -> Result<i64, Error> {
-    match value.try_into::<Option<i64>>(interp) {
+    match value.try_convert_into::<Option<i64>>(interp) {
         // successful conversion: the given value is an integer.
         Ok(Some(num)) => return Ok(num),
         // `nil` does not implicitly convert to integer:
@@ -106,7 +106,7 @@ pub fn implicitly_convert_to_int(interp: &mut Artichoke, value: Value) -> Result
         // ArgumentError (a message)
         // ```
         let maybe = value.funcall(interp, "to_int", &[], None)?;
-        if let Ok(num) = maybe.try_into::<i64>(interp) {
+        if let Ok(num) = maybe.try_convert_into::<i64>(interp) {
             // successful conversion: `#to_int` returned an integer.
             Ok(num)
         } else {
@@ -271,7 +271,7 @@ pub unsafe fn implicitly_convert_to_string<'a>(
     interp: &mut Artichoke,
     value: &'a mut Value,
 ) -> Result<&'a [u8], Error> {
-    match value.try_into_mut::<Option<&'a [u8]>>(interp) {
+    match value.try_convert_into_mut::<Option<&'a [u8]>>(interp) {
         // successful conversion: the given value is an string.
         Ok(Some(s)) => return Ok(s),
         // `nil` does not implicitly convert to string:
@@ -310,7 +310,7 @@ pub unsafe fn implicitly_convert_to_string<'a>(
         // ArgumentError (a message)
         // ```
         let maybe = value.funcall(interp, "to_str", &[], None)?;
-        if let Ok(s) = maybe.try_into_mut::<&[u8]>(interp) {
+        if let Ok(s) = maybe.try_convert_into_mut::<&[u8]>(interp) {
             // successful conversion: `#to_str` returned a string.
             Ok(s)
         } else {

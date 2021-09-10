@@ -159,7 +159,7 @@ impl EnclosingRubyScope {
     ///
     /// This function must be called within an [`Artichoke::with_ffi_boundary`]
     /// closure because the FFI APIs called in this function may require access
-    /// to the Artichoke [`State](crate::state::State).
+    /// to the Artichoke [`State`](crate::state::State).
     pub unsafe fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         match self {
             Self::Class(scope) => {
@@ -602,22 +602,22 @@ mod tests {
                 .unwrap();
 
             let result = interp.eval(b"DefineMethodTestClass.new.value").unwrap();
-            let result = result.try_into::<i64>(&interp).unwrap();
+            let result = result.try_convert_into::<i64>(&interp).unwrap();
             assert_eq!(result, 64);
             let result = interp.eval(b"DefineMethodTestClass.value").unwrap();
-            let result = result.try_into::<i64>(&interp).unwrap();
+            let result = result.try_convert_into::<i64>(&interp).unwrap();
             assert_eq!(result, 8);
             let result = interp.eval(b"DefineMethodTestModule.value").unwrap();
-            let result = result.try_into::<i64>(&interp).unwrap();
+            let result = result.try_convert_into::<i64>(&interp).unwrap();
             assert_eq!(result, 27);
             let result = interp.eval(b"DynamicTestClass.new.value").unwrap();
-            let result = result.try_into::<i64>(&interp).unwrap();
+            let result = result.try_convert_into::<i64>(&interp).unwrap();
             assert_eq!(result, 64);
             let result = interp.eval(b"DynamicTestClass.value").unwrap();
-            let result = result.try_into::<i64>(&interp).unwrap();
+            let result = result.try_convert_into::<i64>(&interp).unwrap();
             assert_eq!(result, 8);
             let result = interp.eval(b"DynamicTestModule.value").unwrap();
-            let result = result.try_into::<i64>(&interp).unwrap();
+            let result = result.try_convert_into::<i64>(&interp).unwrap();
             assert_eq!(result, 27);
         }
     }

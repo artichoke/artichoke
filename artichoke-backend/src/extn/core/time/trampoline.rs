@@ -193,7 +193,7 @@ pub fn minus(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Resul
     } else if let Ok(other) = implicitly_convert_to_int(interp, other) {
         let _ = other;
         return Err(NotImplementedError::with_message("Time#- with Integer argument is not implemented").into());
-    } else if let Ok(other) = other.try_into::<f64>(interp) {
+    } else if let Ok(other) = other.try_convert_into::<f64>(interp) {
         let _ = other;
         return Err(NotImplementedError::with_message("Time#- with Float argument is not implemented").into());
     } else {

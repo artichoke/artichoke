@@ -25,6 +25,6 @@ fn division_by_signed_zero_gives_negative_infinity() {
     const CODE: &[u8] = b"(1.0/-0.0).infinite? == -1";
 
     let mut interp = artichoke_backend::interpreter().unwrap();
-    assert!(interp.eval(CODE).unwrap().try_into::<bool>(&interp).unwrap());
+    assert!(interp.eval(CODE).unwrap().try_convert_into::<bool>(&interp).unwrap());
     interp.close();
 }

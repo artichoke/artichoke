@@ -155,10 +155,10 @@ impl<'a, 'b, 'c> PromptConfig<'a, 'b, 'c> {
 }
 
 fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
-    let description = interp.eval(b"RUBY_DESCRIPTION")?.try_into_mut::<&str>(interp)?;
+    let description = interp.eval(b"RUBY_DESCRIPTION")?.try_convert_into_mut::<&str>(interp)?;
     let compiler = interp
         .eval(b"ARTICHOKE_COMPILER_VERSION")?
-        .try_into_mut::<&str>(interp)?;
+        .try_convert_into_mut::<&str>(interp)?;
     let mut buf = String::with_capacity(description.len() + 2 + compiler.len() + 1);
     buf.push_str(description);
     buf.push_str("\n[");

@@ -72,7 +72,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into_mut::<String>(&mut interp);
+        let result = value.try_convert_into_mut::<String>(&mut interp);
         assert!(result.is_err());
     }
 
@@ -109,7 +109,7 @@ mod tests {
             let value = interp.try_convert_mut(string.as_str()).unwrap();
             let len = value
                 .funcall(&mut interp, "length", &[], None)
-                .and_then(|value| value.try_into::<usize>(&interp))
+                .and_then(|value| value.try_convert_into::<usize>(&interp))
                 .unwrap();
             if len != string.chars().count() {
                 return false;
@@ -117,7 +117,7 @@ mod tests {
             let zero = interp.convert(0);
             let first = value
                 .funcall(&mut interp, "[]", &[zero], None)
-                .and_then(|value| value.try_into_mut::<Option<String>>(&mut interp))
+                .and_then(|value| value.try_convert_into_mut::<Option<String>>(&mut interp))
                 .unwrap();
             let mut iter = string.chars();
             if let Some(ch) = iter.next() {
@@ -142,7 +142,7 @@ mod tests {
             let value = interp.try_convert_mut(string.clone()).unwrap();
             let len = value
                 .funcall(&mut interp, "length", &[], None)
-                .and_then(|value| value.try_into::<usize>(&interp))
+                .and_then(|value| value.try_convert_into::<usize>(&interp))
                 .unwrap();
             if len != string.chars().count() {
                 return false;
@@ -150,7 +150,7 @@ mod tests {
             let zero = interp.convert(0);
             let first = value
                 .funcall(&mut interp, "[]", &[zero], None)
-                .and_then(|value| value.try_into_mut::<Option<String>>(&mut interp))
+                .and_then(|value| value.try_convert_into_mut::<Option<String>>(&mut interp))
                 .unwrap();
             let mut iter = string.chars();
             if let Some(ch) = iter.next() {
@@ -171,14 +171,14 @@ mod tests {
         fn roundtrip(s: String) -> bool {
             let mut interp = interpreter().unwrap();
             let value = interp.try_convert_mut(s.clone()).unwrap();
-            let value = value.try_into_mut::<String>(&mut interp).unwrap();
+            let value = value.try_convert_into_mut::<String>(&mut interp).unwrap();
             value == s
         }
 
         fn roundtrip_err(b: bool) -> bool {
             let mut interp = interpreter().unwrap();
             let value = interp.convert(b);
-            let result = value.try_into_mut::<String>(&mut interp);
+            let result = value.try_convert_into_mut::<String>(&mut interp);
             result.is_err()
         }
     }

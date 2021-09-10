@@ -373,7 +373,7 @@ mod tests {
         drop(data);
 
         let inner = value.funcall(&mut interp, "value", &[], None).unwrap();
-        let inner = inner.try_into_mut::<&str>(&mut interp).unwrap();
+        let inner = inner.try_convert_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(inner, "contained string contents");
     }
 

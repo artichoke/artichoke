@@ -169,7 +169,7 @@ impl Rclass {
     ///
     /// This function must be called within an [`Artichoke::with_ffi_boundary`]
     /// closure because the FFI APIs called in this function may require access
-    /// to the Artichoke [`State](crate::state::State).
+    /// to the Artichoke [`State`](crate::state::State).
     pub unsafe fn resolve(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         let class_name = self.name.as_ptr();
         if let Some(ref scope) = self.enclosing_scope {
@@ -318,11 +318,11 @@ mod tests {
         interp.def_class::<RustError>(spec).unwrap();
 
         let result = interp.eval(b"RustError.new.is_a?(StandardError)").unwrap();
-        let result = result.try_into::<bool>(&interp).unwrap();
+        let result = result.try_convert_into::<bool>(&interp).unwrap();
         assert!(result, "RustError instances are instance of StandardError");
 
         let result = interp.eval(b"RustError < StandardError").unwrap();
-        let result = result.try_into::<bool>(&interp).unwrap();
+        let result = result.try_convert_into::<bool>(&interp).unwrap();
         assert!(result, "RustError inherits from StandardError");
     }
 

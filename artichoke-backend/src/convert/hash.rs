@@ -130,17 +130,17 @@ mod tests {
             let mut interp = interpreter().unwrap();
             let value = interp.try_convert_mut(hash.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
-            let len = len.try_into::<usize>(&interp).unwrap();
+            let len = len.try_convert_into::<usize>(&interp).unwrap();
             if len != hash.len() {
                 return false;
             }
-            let recovered = value.try_into_mut::<Vec<(Value, Value)>>(&mut interp).unwrap();
+            let recovered = value.try_convert_into_mut::<Vec<(Value, Value)>>(&mut interp).unwrap();
             if recovered.len() != hash.len() {
                 return false;
             }
             for (key, val) in recovered {
-                let key = key.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
-                let val = val.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
+                let key = key.try_convert_into_mut::<Vec<u8>>(&mut interp).unwrap();
+                let val = val.try_convert_into_mut::<Vec<u8>>(&mut interp).unwrap();
                 match hash.get(&key) {
                     Some(retrieved) if retrieved == &val => {}
                     _ => return false,

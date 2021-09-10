@@ -74,7 +74,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<bool>(&interp);
+        let result = value.try_convert_into::<bool>(&interp);
         assert!(result.is_err());
     }
 
@@ -165,21 +165,21 @@ mod tests {
         fn roundtrip(b: bool) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(b);
-            let value = value.try_into::<bool>(&interp).unwrap();
+            let value = value.try_convert_into::<bool>(&interp).unwrap();
             value == b
         }
 
         fn nilable_roundtrip(b: Option<bool>) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(b);
-            let value = value.try_into::<Option<bool>>(&interp).unwrap();
+            let value = value.try_convert_into::<Option<bool>>(&interp).unwrap();
             value == b
         }
 
         fn roundtrip_err(i: i64) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(i);
-            let value = value.try_into::<bool>(&interp);
+            let value = value.try_convert_into::<bool>(&interp);
             value.is_err()
         }
     }

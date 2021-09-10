@@ -38,7 +38,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         // get a Ruby Value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<f64>(&interp);
+        let result = value.try_convert_into::<f64>(&interp);
         assert!(result.is_err());
     }
 
@@ -72,7 +72,7 @@ mod tests {
         fn roundtrip(f: f64) -> bool {
             let mut interp = interpreter().unwrap();
             let value = interp.convert_mut(f);
-            let value = value.try_into::<f64>(&interp).unwrap();
+            let value = value.try_convert_into::<f64>(&interp).unwrap();
             if f.is_nan() {
                 value.is_nan()
             } else if f.is_infinite() {
@@ -91,7 +91,7 @@ mod tests {
         fn roundtrip_err(b: bool) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(b);
-            let value = value.try_into::<f64>(&interp);
+            let value = value.try_convert_into::<f64>(&interp);
             value.is_err()
         }
     }

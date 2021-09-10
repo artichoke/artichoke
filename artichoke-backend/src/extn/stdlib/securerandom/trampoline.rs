@@ -35,7 +35,7 @@ pub fn urlsafe_base64(interp: &mut Artichoke, len: Option<Value>, padding: Optio
             // All truthy values evaluate to `true` for this argument. So either
             // `padding` is a `bool` and we can extract it, or we default to
             // `true` since only `nil` (handled above) and `false` are falsy.
-            padding.try_into::<bool>(interp).unwrap_or(true)
+            padding.try_convert_into::<bool>(interp).unwrap_or(true)
         }
     };
     let base64 = if let Some(len) = len {

@@ -25,7 +25,7 @@ fn arena() {
         // we have to call a function that calls into the Ruby VM, so we can't
         // just use `to_s`.
         let inspect = s.funcall(&mut interp, "inspect", &[], None).unwrap();
-        let inspect = inspect.try_into_mut::<String>(&mut interp).unwrap();
+        let inspect = inspect.try_convert_into_mut::<String>(&mut interp).unwrap();
         assert_eq!(inspect, expected);
         interp.incremental_gc().unwrap();
     }

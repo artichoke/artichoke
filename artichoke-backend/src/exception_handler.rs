@@ -152,14 +152,14 @@ pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Error, Err
     // the exception class and message, which should help debugging.
     //
     // let message = exception.funcall(&mut arena, "message", &[], None)?;
-    // let message = message.try_into_mut::<String>(&mut arena);
+    // let message = message.try_convert_into_mut::<String>(&mut arena);
     // println!("{:?}, {:?}", exception, message);
 
     let class = exception.funcall(&mut arena, "class", &[], None)?;
     let classname = class.funcall(&mut arena, "name", &[], None)?;
-    let classname = classname.try_into_mut::<&str>(&mut arena)?;
+    let classname = classname.try_convert_into_mut::<&str>(&mut arena)?;
     let message = exception.funcall(&mut arena, "message", &[], None)?;
-    let message = message.try_into_mut::<&[u8]>(&mut arena)?;
+    let message = message.try_convert_into_mut::<&[u8]>(&mut arena)?;
 
     let exc = CaughtException::builder()
         .with_value(exception)

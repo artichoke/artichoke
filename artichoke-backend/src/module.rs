@@ -128,7 +128,7 @@ impl Rclass {
     ///
     /// This function must be called within an [`Artichoke::with_ffi_boundary`]
     /// closure because the FFI APIs called in this function may require access
-    /// to the Artichoke [`State](crate::state::State).
+    /// to the Artichoke [`State`](crate::state::State).
     pub unsafe fn resolve(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         let module_name = self.name.as_ptr();
         if let Some(ref scope) = self.enclosing_scope {

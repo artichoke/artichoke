@@ -268,7 +268,7 @@ impl<'a> State<'a> {
 
     /// Construct a `State` that will quote byte contents after the initial `:`.
     ///
-    /// This constructor produces inspect contents like `:"Spinoso Symbol".
+    /// This constructor produces inspect contents like `:"Spinoso Symbol"`.
     #[inline]
     fn quoted(bytes: &'a [u8]) -> Self {
         Self {
