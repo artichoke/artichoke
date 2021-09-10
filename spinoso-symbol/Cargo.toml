@@ -13,7 +13,7 @@ keywords = ["ident", "intern", "no_std", "spinoso", "symbol"]
 categories = ["data-structures", "no-std", "parser-implementations"]
 
 [dependencies]
-artichoke-core = { version = "0.8", path = "../artichoke-core", optional = true, default-features = false }
+artichoke-core = { version = "0.9", path = "../artichoke-core", optional = true, default-features = false }
 bstr = { version = "0.2, >= 0.2.4", optional = true, default-features = false }
 focaccia = { version = "1.0", optional = true, default-features = false }
 scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", optional = true, default-features = false }
