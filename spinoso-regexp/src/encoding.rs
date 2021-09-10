@@ -35,7 +35,7 @@ impl error::Error for InvalidEncodingError {}
 /// Regexps are assumed to use the source encoding but literals may override
 /// the encoding with a Regexp modifier.
 ///
-/// See [`Regexp encoding][regexp-encoding].
+/// See [`Regexp` encoding][regexp-encoding].
 ///
 /// [regexp-encoding]: https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Encoding
 #[derive(Debug, Clone, Copy, PartialOrd, Ord)]

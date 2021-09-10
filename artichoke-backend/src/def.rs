@@ -159,7 +159,7 @@ impl EnclosingRubyScope {
     ///
     /// This function must be called within an [`Artichoke::with_ffi_boundary`]
     /// closure because the FFI APIs called in this function may require access
-    /// to the Artichoke [`State](crate::state::State).
+    /// to the Artichoke [`State`](crate::state::State).
     pub unsafe fn rclass(&self, mrb: *mut sys::mrb_state) -> Option<NonNull<sys::RClass>> {
         match self {
             Self::Class(scope) => {
