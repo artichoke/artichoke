@@ -9,7 +9,7 @@ impl Debug for Artichoke {
     type Value = Value;
 
     fn inspect_type_name_for_value(&mut self, value: Self::Value) -> &str {
-        match value.try_into(self) {
+        match value.try_convert_into(self) {
             Ok(Some(true)) => "true",
             Ok(Some(false)) => "false",
             Ok(None) => "nil",
@@ -21,7 +21,7 @@ impl Debug for Artichoke {
     fn class_name_for_value(&mut self, value: Self::Value) -> &str {
         if let Ok(class) = value.funcall(self, "class", &[], None) {
             if let Ok(class) = class.funcall(self, "name", &[], None) {
-                if let Ok(class) = class.try_into_mut(self) {
+                if let Ok(class) = class.try_convert_into_mut(self) {
                     return class;
                 }
             }

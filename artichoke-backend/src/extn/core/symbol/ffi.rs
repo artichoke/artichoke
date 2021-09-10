@@ -51,7 +51,7 @@ unsafe extern "C" fn mrb_intern_cstr(mrb: *mut sys::mrb_state, name: *const i8) 
 unsafe extern "C" fn mrb_intern_str(mrb: *mut sys::mrb_state, name: sys::mrb_value) -> sys::mrb_sym {
     unwrap_interpreter!(mrb, to => guard, or_else = 0);
     let name = Value::from(name);
-    if let Ok(bytes) = name.try_into_mut::<Vec<u8>>(&mut guard) {
+    if let Ok(bytes) = name.try_convert_into_mut::<Vec<u8>>(&mut guard) {
         let sym = guard.intern_bytes(bytes);
         let sym = sym.map(u32::from);
         sym.unwrap_or_default()
@@ -98,7 +98,7 @@ unsafe extern "C" fn mrb_intern_check_cstr(mrb: *mut sys::mrb_state, name: *cons
 unsafe extern "C" fn mrb_intern_check_str(mrb: *mut sys::mrb_state, name: sys::mrb_value) -> sys::mrb_sym {
     unwrap_interpreter!(mrb, to => guard, or_else = 0);
     let name = Value::from(name);
-    if let Ok(bytes) = name.try_into_mut::<&[u8]>(&mut guard) {
+    if let Ok(bytes) = name.try_convert_into_mut::<&[u8]>(&mut guard) {
         if let Ok(Some(sym)) = guard.check_interned_bytes(bytes) {
             sym
         } else {
@@ -150,7 +150,7 @@ unsafe extern "C" fn mrb_check_intern_cstr(mrb: *mut sys::mrb_state, name: *cons
 unsafe extern "C" fn mrb_check_intern_str(mrb: *mut sys::mrb_state, name: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let name = Value::from(name);
-    let symbol = if let Ok(bytes) = name.try_into_mut::<&[u8]>(&mut guard) {
+    let symbol = if let Ok(bytes) = name.try_convert_into_mut::<&[u8]>(&mut guard) {
         if let Ok(Some(sym)) = guard.check_interned_bytes(bytes) {
             Symbol::alloc_value(sym.into(), &mut guard).unwrap_or_default()
         } else {
@@ -213,7 +213,7 @@ unsafe extern "C" fn mrb_sym_dump(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -
         // Allocate a buffer with the lifetime of the interpreter and return
         // a pointer to it.
         if let Ok(string) = guard.try_convert_mut(bytes) {
-            if let Ok(bytes) = string.try_into_mut::<&[u8]>(&mut guard) {
+            if let Ok(bytes) = string.try_convert_into_mut::<&[u8]>(&mut guard) {
                 return bytes.as_ptr().cast::<i8>();
             }
         }

@@ -167,7 +167,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into::<i64>(&interp);
+        let result = value.try_convert_into::<i64>(&interp);
         assert!(result.is_err());
     }
 
@@ -189,14 +189,14 @@ mod tests {
         fn roundtrip(i: i64) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(i);
-            let value = value.try_into::<i64>(&interp).unwrap();
+            let value = value.try_convert_into::<i64>(&interp).unwrap();
             value == i
         }
 
         fn roundtrip_err(b: bool) -> bool {
             let interp = interpreter().unwrap();
             let value = interp.convert(b);
-            let value = value.try_into::<i64>(&interp);
+            let value = value.try_convert_into::<i64>(&interp);
             value.is_err()
         }
     }
@@ -205,10 +205,10 @@ mod tests {
     fn fixnum_to_usize() {
         let interp = interpreter().unwrap();
         let value = Convert::<_, Value>::convert(&*interp, 100);
-        let value = value.try_into::<usize>(&interp).unwrap();
+        let value = value.try_convert_into::<usize>(&interp).unwrap();
         assert_eq!(100, value);
         let value = Convert::<_, Value>::convert(&*interp, -100);
-        let value = value.try_into::<usize>(&interp);
+        let value = value.try_convert_into::<usize>(&interp);
         assert!(value.is_err());
     }
 }

@@ -38,7 +38,7 @@ where
         // TODO(GH-310): Use `Value::implicitly_convert_to_array` when
         // implemented so `Value`s that respond to `to_ary` are converted
         // and iterated over.
-        if let Ok(array) = value.try_into_mut::<Vec<_>>(interp) {
+        if let Ok(array) = value.try_convert_into_mut::<Vec<_>>(interp) {
             for value in &array {
                 puts_foreach(interp, value)?;
             }

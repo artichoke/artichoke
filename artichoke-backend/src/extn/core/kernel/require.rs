@@ -200,16 +200,16 @@ mod test {
         let mut interp = interpreter().unwrap();
         interp.def_file_for_type::<_, MockSourceFile>("file.rb").unwrap();
         let result = interp.eval(b"require 'file'").unwrap();
-        let require_result = result.try_into::<bool>(&interp).unwrap();
+        let require_result = result.try_convert_into::<bool>(&interp).unwrap();
         assert!(require_result);
         let result = interp.eval(b"@i").unwrap();
-        let i_result = result.try_into::<i64>(&interp).unwrap();
+        let i_result = result.try_convert_into::<i64>(&interp).unwrap();
         assert_eq!(i_result, 255);
         let result = interp.eval(b"@i = 1000; require 'file'").unwrap();
-        let second_require_result = result.try_into::<bool>(&interp).unwrap();
+        let second_require_result = result.try_convert_into::<bool>(&interp).unwrap();
         assert!(!second_require_result);
         let result = interp.eval(b"@i").unwrap();
-        let second_i_result = result.try_into::<i64>(&interp).unwrap();
+        let second_i_result = result.try_convert_into::<i64>(&interp).unwrap();
         assert_eq!(second_i_result, 1000);
         let err = interp.eval(b"require 'non-existent-source'").unwrap_err();
         assert_eq!(
@@ -238,9 +238,9 @@ mod test {
 
         interp.def_rb_source_file(path, &b"# a source file"[..]).unwrap();
         let result = interp.eval(require_code).unwrap();
-        assert!(result.try_into::<bool>(&interp).unwrap());
+        assert!(result.try_convert_into::<bool>(&interp).unwrap());
         let result = interp.eval(require_code).unwrap();
-        assert!(!result.try_into::<bool>(&interp).unwrap());
+        assert!(!result.try_convert_into::<bool>(&interp).unwrap());
     }
 
     #[test]
@@ -259,11 +259,11 @@ mod test {
             let result = interp
                 .eval(b"require 'c:/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
                 .unwrap();
-            assert!(result.try_into::<bool>(&interp).unwrap());
+            assert!(result.try_convert_into::<bool>(&interp).unwrap());
             let result = interp
                 .eval(b"require 'c:/artichoke/virtual_root/src/lib/foo/bar.rb'")
                 .unwrap();
-            assert!(!result.try_into::<bool>(&interp).unwrap());
+            assert!(!result.try_convert_into::<bool>(&interp).unwrap());
         } else {
             interp
                 .def_rb_source_file(
@@ -277,11 +277,11 @@ mod test {
             let result = interp
                 .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar/source.rb'")
                 .unwrap();
-            assert!(result.try_into::<bool>(&interp).unwrap());
+            assert!(result.try_convert_into::<bool>(&interp).unwrap());
             let result = interp
                 .eval(b"require '/artichoke/virtual_root/src/lib/foo/bar.rb'")
                 .unwrap();
-            assert!(!result.try_into::<bool>(&interp).unwrap());
+            assert!(!result.try_convert_into::<bool>(&interp).unwrap());
         };
     }
 
@@ -308,10 +308,10 @@ mod test {
             .def_file_for_type::<_, MockExtensionAndSourceFile>("foo.rb")
             .unwrap();
         let result = interp.eval(b"require 'foo'").unwrap();
-        let result = result.try_into::<bool>(&interp).unwrap();
+        let result = result.try_convert_into::<bool>(&interp).unwrap();
         assert!(result, "successfully required foo.rb");
         let result = interp.eval(b"Foo::RUBY + Foo::RUST").unwrap();
-        let result = result.try_into::<i64>(&interp).unwrap();
+        let result = result.try_convert_into::<i64>(&interp).unwrap();
         assert_eq!(result, 10, "defined Ruby and Rust sources from single require");
     }
 
@@ -325,10 +325,10 @@ mod test {
             .def_rb_source_file("foo.rb", &b"module Foo; RUBY = 3; end"[..])
             .unwrap();
         let result = interp.eval(b"require 'foo'").unwrap();
-        let result = result.try_into::<bool>(&interp).unwrap();
+        let result = result.try_convert_into::<bool>(&interp).unwrap();
         assert!(result, "successfully required foo.rb");
         let result = interp.eval(b"Foo::RUBY + Foo::RUST").unwrap();
-        let result = result.try_into::<i64>(&interp).unwrap();
+        let result = result.try_convert_into::<i64>(&interp).unwrap();
         assert_eq!(result, 10, "defined Ruby and Rust sources from single require");
     }
 }

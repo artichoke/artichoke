@@ -127,7 +127,7 @@ mod tests {
         let mut interp = interpreter().unwrap();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
-        let result = value.try_into_mut::<Vec<u8>>(&mut interp);
+        let result = value.try_convert_into_mut::<Vec<u8>>(&mut interp);
         assert!(result.is_err());
     }
 
@@ -136,15 +136,15 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let bytes: &[u8] = &[0];
         let value = interp.try_convert_mut(bytes).unwrap();
-        let retrieved_bytes = value.try_into_mut::<&[u8]>(&mut interp).unwrap();
+        let retrieved_bytes = value.try_convert_into_mut::<&[u8]>(&mut interp).unwrap();
         assert_eq!(bytes.as_bstr(), retrieved_bytes.as_bstr());
 
         let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
-        let len = len.try_into::<usize>(&interp).unwrap();
+        let len = len.try_convert_into::<usize>(&interp).unwrap();
         assert_eq!(len, 1);
 
         let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-        let empty = empty.try_into::<bool>(&interp).unwrap();
+        let empty = empty.try_convert_into::<bool>(&interp).unwrap();
         assert!(!empty);
 
         let zero = interp.convert(0);
@@ -152,11 +152,11 @@ mod tests {
 
         let str_bytes = value.funcall(&mut interp, "bytes", &[], None).unwrap();
         let first = str_bytes.funcall(&mut interp, "[]", &[zero], None).unwrap();
-        let first = first.try_into::<i64>(&interp).unwrap();
+        let first = first.try_convert_into::<i64>(&interp).unwrap();
         assert_eq!(first, 0_i64);
 
         let slice = value.funcall(&mut interp, "byteslice", &[zero, one], None).unwrap();
-        let slice = slice.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
+        let slice = slice.try_convert_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
         let expected: Option<&[u8]> = Some(&[0]);
         assert_eq!(slice, expected);
     }
@@ -174,13 +174,13 @@ mod tests {
             // Borrowed converter
             let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
-            let len = len.try_into::<usize>(&interp).unwrap();
+            let len = len.try_convert_into::<usize>(&interp).unwrap();
             if len != bytes.len() {
                 return false;
             }
 
             let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-            let empty = empty.try_into::<bool>(&interp).unwrap();
+            let empty = empty.try_convert_into::<bool>(&interp).unwrap();
             if empty != bytes.is_empty() {
                 return false;
             }
@@ -190,13 +190,13 @@ mod tests {
 
             let str_bytes = value.funcall(&mut interp, "bytes", &[], None).unwrap();
             let first = str_bytes.funcall(&mut interp, "[]", &[zero], None).unwrap();
-            let first = first.try_into::<Option<i64>>(&interp).unwrap();
+            let first = first.try_convert_into::<Option<i64>>(&interp).unwrap();
             if first != bytes.get(0).copied().map(i64::from) {
                 return false;
             }
 
             let slice = value.funcall(&mut interp, "byteslice", &[zero, one], None).unwrap();
-            let slice = slice.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
+            let slice = slice.try_convert_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
             if slice.unwrap_or_default() != bytes.get(0..1).unwrap_or_default() {
                 return false;
             }
@@ -214,13 +214,13 @@ mod tests {
             // Owned converter
             let value = interp.try_convert_mut(bytes.clone()).unwrap();
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
-            let len = len.try_into::<usize>(&interp).unwrap();
+            let len = len.try_convert_into::<usize>(&interp).unwrap();
             if len != bytes.len() {
                 return false;
             }
 
             let empty = value.funcall(&mut interp, "empty?", &[], None).unwrap();
-            let empty = empty.try_into::<bool>(&interp).unwrap();
+            let empty = empty.try_convert_into::<bool>(&interp).unwrap();
             if empty != bytes.is_empty() {
                 return false;
             }
@@ -230,13 +230,13 @@ mod tests {
 
             let str_bytes = value.funcall(&mut interp, "bytes", &[], None).unwrap();
             let first = str_bytes.funcall(&mut interp, "[]", &[zero], None).unwrap();
-            let first = first.try_into::<Option<i64>>(&interp).unwrap();
+            let first = first.try_convert_into::<Option<i64>>(&interp).unwrap();
             if first != bytes.get(0).copied().map(i64::from) {
                 return false;
             }
 
             let slice = value.funcall(&mut interp, "byteslice", &[zero, one], None).unwrap();
-            let slice = slice.try_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
+            let slice = slice.try_convert_into_mut::<Option<&[u8]>>(&mut interp).unwrap();
             if slice.unwrap_or_default() != bytes.get(0..1).unwrap_or_default() {
                 return false;
             }
@@ -252,14 +252,14 @@ mod tests {
         fn roundtrip(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
             let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
-            let value = value.try_into_mut::<Vec<u8>>(&mut interp).unwrap();
+            let value = value.try_convert_into_mut::<Vec<u8>>(&mut interp).unwrap();
             value == bytes
         }
 
         fn roundtrip_err(b: bool) -> bool {
             let mut interp = interpreter().unwrap();
             let value = interp.convert(b);
-            let value = value.try_into_mut::<Vec<u8>>(&mut interp);
+            let value = value.try_convert_into_mut::<Vec<u8>>(&mut interp);
             value.is_err()
         }
     }

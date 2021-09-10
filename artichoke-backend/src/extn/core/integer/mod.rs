@@ -162,7 +162,7 @@ impl Integer {
     pub fn div(self, interp: &mut Artichoke, denominator: Value) -> Result<Outcome, Error> {
         match denominator.ruby_type() {
             Ruby::Fixnum => {
-                let denom = denominator.try_into::<i64>(interp)?;
+                let denom = denominator.try_convert_into::<i64>(interp)?;
                 let value = self.as_i64();
                 if denom == 0 {
                     Err(ZeroDivisionError::with_message("divided by 0").into())
@@ -173,7 +173,7 @@ impl Integer {
                 }
             }
             Ruby::Float => {
-                let denom = denominator.try_into::<f64>(interp)?;
+                let denom = denominator.try_convert_into::<f64>(interp)?;
                 Ok((self.as_f64() / denom).into())
             }
             _ => {
@@ -234,12 +234,12 @@ mod tests {
                         return false;
                     }
                     let expr = format!("0 / {}", x).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_convert_into::<i64>(&interp).unwrap();
                     quotient == 0
                 }
                 (x, y) => {
                     let expr = format!("{} / {}", x, y).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_convert_into::<i64>(&interp).unwrap();
                     let expected = i64::from(x) / i64::from(y);
                     quotient == expected
                 }
@@ -256,12 +256,12 @@ mod tests {
                         return false;
                     }
                     let expr = format!("0.send('/', {})", x).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_convert_into::<i64>(&interp).unwrap();
                     quotient == 0
                 }
                 (x, y) => {
                     let expr = format!("{}.send('/', {})", x, y).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_convert_into::<i64>(&interp).unwrap();
                     let expected = i64::from(x) / i64::from(y);
                     quotient == expected
                 }
@@ -278,12 +278,12 @@ mod tests {
                         return false;
                     }
                     let expr = format!("0 / -{}", x).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_convert_into::<i64>(&interp).unwrap();
                     quotient == 0
                 }
                 (x, y) => {
                     let expr = format!("-{} / {}", x, y).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_convert_into::<i64>(&interp).unwrap();
                     if x % y == 0 {
                         let expected = -i64::from(x) / i64::from(y);
                         quotient == expected
@@ -306,12 +306,12 @@ mod tests {
                         return false;
                     }
                     let expr = format!("0.send('/', -{})", x).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_convert_into::<i64>(&interp).unwrap();
                     quotient == 0
                 }
                 (x, y) => {
                     let expr = format!("-{}.send('/', {})", x, y).into_bytes();
-                    let quotient = interp.eval(expr.as_slice()).unwrap().try_into::<i64>(&interp).unwrap();
+                    let quotient = interp.eval(expr.as_slice()).unwrap().try_convert_into::<i64>(&interp).unwrap();
                     if x % y == 0 {
                         let expected = -i64::from(x) / i64::from(y);
                         quotient == expected

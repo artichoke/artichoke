@@ -10,9 +10,9 @@ unsafe extern "C" fn mrb_to_flo(mrb: *mut sys::mrb_state, value: sys::mrb_value)
     unwrap_interpreter!(mrb, to => guard, or_else = 0.0);
     let value = Value::from(value);
     let result = value
-        .try_into::<Float>(&guard)
+        .try_convert_into::<Float>(&guard)
         .map(Float::as_f64)
-        .or_else(|_| value.try_into::<Integer>(&guard).map(Integer::as_f64));
+        .or_else(|_| value.try_convert_into::<Integer>(&guard).map(Integer::as_f64));
     match result {
         Ok(flt) => flt,
         Err(exception) => error::raise(guard, exception),

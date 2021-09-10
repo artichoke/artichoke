@@ -12,9 +12,9 @@ impl ConvertMut<Value, Options> for Artichoke {
         // will be case insensitive.
         if let Ok(options) = implicitly_convert_to_int(self, value) {
             Options::from(options)
-        } else if let Ok(options) = value.try_into::<Option<bool>>(self) {
+        } else if let Ok(options) = value.try_convert_into::<Option<bool>>(self) {
             Options::from(options)
-        } else if let Ok(options) = value.try_into_mut::<&[u8]>(self) {
+        } else if let Ok(options) = value.try_convert_into_mut::<&[u8]>(self) {
             Options::from(options)
         } else {
             Options::with_ignore_case()

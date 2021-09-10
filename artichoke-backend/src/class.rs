@@ -318,11 +318,11 @@ mod tests {
         interp.def_class::<RustError>(spec).unwrap();
 
         let result = interp.eval(b"RustError.new.is_a?(StandardError)").unwrap();
-        let result = result.try_into::<bool>(&interp).unwrap();
+        let result = result.try_convert_into::<bool>(&interp).unwrap();
         assert!(result, "RustError instances are instance of StandardError");
 
         let result = interp.eval(b"RustError < StandardError").unwrap();
-        let result = result.try_into::<bool>(&interp).unwrap();
+        let result = result.try_convert_into::<bool>(&interp).unwrap();
         assert!(result, "RustError inherits from StandardError");
     }
 

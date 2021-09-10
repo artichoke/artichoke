@@ -226,7 +226,7 @@ impl Float {
     #[inline]
     pub fn coerced_modulo(self, interp: &mut Artichoke, other: Value) -> Result<Outcome, Error> {
         if let Ruby::Float = other.ruby_type() {
-            let other = other.try_into::<Float>(interp)?;
+            let other = other.try_convert_into::<Float>(interp)?;
             return Ok(self.modulo(other).into());
         }
         let x = interp.convert_mut(self);

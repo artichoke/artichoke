@@ -204,7 +204,7 @@ impl ValueCore for Value {
 
     fn inspect(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
         if let Ok(display) = self.funcall(interp, "inspect", &[], None) {
-            display.try_into_mut(interp).unwrap_or_default()
+            display.try_convert_into_mut(interp).unwrap_or_default()
         } else {
             Vec::new()
         }
@@ -224,7 +224,7 @@ impl ValueCore for Value {
 
     fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
         if let Ok(display) = self.funcall(interp, "to_s", &[], None) {
-            display.try_into_mut(interp).unwrap_or_default()
+            display.try_convert_into_mut(interp).unwrap_or_default()
         } else {
             Vec::new()
         }
@@ -560,20 +560,20 @@ mod tests {
         let nil = Value::nil();
         let nil_is_nil = nil
             .funcall(&mut interp, "nil?", &[], None)
-            .and_then(|value| value.try_into::<bool>(&interp))
+            .and_then(|value| value.try_convert_into::<bool>(&interp))
             .unwrap();
         assert!(nil_is_nil);
         let s = interp.try_convert_mut("foo").unwrap();
         let string_is_nil = s
             .funcall(&mut interp, "nil?", &[], None)
-            .and_then(|value| value.try_into::<bool>(&interp))
+            .and_then(|value| value.try_convert_into::<bool>(&interp))
             .unwrap();
         assert!(!string_is_nil);
         #[cfg(feature = "core-regexp")]
         {
             let delim = interp.try_convert_mut("").unwrap();
             let split = s.funcall(&mut interp, "split", &[delim], None).unwrap();
-            let split = split.try_into_mut::<Vec<&str>>(&mut interp).unwrap();
+            let split = split.try_convert_into_mut::<Vec<&str>>(&mut interp).unwrap();
             assert_eq!(split, vec!["f", "o", "o"]);
         }
     }
@@ -585,7 +585,7 @@ mod tests {
         let s = interp.try_convert_mut("foo").unwrap();
         let eql = nil
             .funcall(&mut interp, "==", &[s], None)
-            .and_then(|value| value.try_into::<bool>(&interp))
+            .and_then(|value| value.try_convert_into::<bool>(&interp))
             .unwrap();
         assert!(!eql);
     }
@@ -597,7 +597,7 @@ mod tests {
         let s = interp.try_convert_mut("foo").unwrap();
         let err = s
             .funcall(&mut interp, "+", &[nil], None)
-            .and_then(|value| value.try_into_mut::<String>(&mut interp))
+            .and_then(|value| value.try_convert_into_mut::<String>(&mut interp))
             .unwrap_err();
         assert_eq!("TypeError", err.name().as_ref());
         assert_eq!(

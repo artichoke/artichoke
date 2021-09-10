@@ -45,7 +45,7 @@ pub trait Value {
     /// # Errors
     ///
     /// If a [`TryConvert`] conversion fails, then an error is returned.
-    fn try_into<T>(self, interp: &Self::Artichoke) -> Result<T, Self::Error>
+    fn try_convert_into<T>(self, interp: &Self::Artichoke) -> Result<T, Self::Error>
     where
         Self: Sized,
         Self::Artichoke: TryConvert<Self, T, Error = Self::Error>,
@@ -59,7 +59,7 @@ pub trait Value {
     /// # Errors
     ///
     /// If a [`TryConvertMut`] conversion fails, then an error is returned.
-    fn try_into_mut<T>(self, interp: &mut Self::Artichoke) -> Result<T, Self::Error>
+    fn try_convert_into_mut<T>(self, interp: &mut Self::Artichoke) -> Result<T, Self::Error>
     where
         Self: Sized,
         Self::Artichoke: TryConvertMut<Self, T, Error = Self::Error>,

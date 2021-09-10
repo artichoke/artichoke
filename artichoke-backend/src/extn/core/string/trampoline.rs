@@ -8,7 +8,7 @@ use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::prelude::*;
 
 pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
-    let string = value.try_into_mut::<&[u8]>(interp)?;
+    let string = value.try_convert_into_mut::<&[u8]>(interp)?;
     // NOTE: This implementation assumes all `String`s have encoding =
     // `Encoding::UTF_8`. Artichoke does not implement the `Encoding` APIs and
     // `String`s are assumed to be UTF-8 encoded.
@@ -32,7 +32,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
     }
     #[cfg(feature = "core-regexp")]
     if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut pattern, interp) } {
-        let haystack = value.try_into_mut::<&[u8]>(interp)?;
+        let haystack = value.try_convert_into_mut::<&[u8]>(interp)?;
         let scan = regexp.inner().scan(interp, haystack, block)?;
         return Ok(interp.try_convert_mut(scan)?.unwrap_or(value));
     }
@@ -44,7 +44,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
     if let Ok(pattern_bytes) = unsafe { implicitly_convert_to_string(interp, &mut pattern) } {
         let pattern_bytes = pattern_bytes.to_vec();
 
-        let string = value.try_into_mut::<&[u8]>(interp)?;
+        let string = value.try_convert_into_mut::<&[u8]>(interp)?;
         if let Some(ref block) = block {
             let regex = Regexp::lazy(pattern_bytes.clone());
             let matchdata = MatchData::new(string.to_vec(), regex, ..);
@@ -106,7 +106,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
     if let Ok(pattern_bytes) = unsafe { implicitly_convert_to_string(interp, &mut pattern) } {
         let pattern_bytes = pattern_bytes.to_vec();
 
-        let string = value.try_into_mut::<&[u8]>(interp)?;
+        let string = value.try_convert_into_mut::<&[u8]>(interp)?;
         if let Some(ref block) = block {
             let patlen = pattern_bytes.len();
             if let Some(pos) = string.find(&pattern_bytes) {
