@@ -10,6 +10,28 @@ use std::ptr::NonNull;
 use crate::backend::sys;
 use crate::backend::Artichoke;
 
+/// A compressed version of [`State`] error states to drive error recovery in
+/// the REPL.
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ErrorState {
+    /// Whether a code block is open.
+    ///
+    /// This variant can be used by a REPL to check whether to buffer code or
+    /// begin a multi-line editing session before attempting to eval the code on
+    /// an interpreter.
+    CodeBlockOpen,
+    /// Whether a parser state is a recoverable error.
+    ///
+    /// Recoverable errors should be handled by resetting the parser and input
+    /// buffer.
+    Recoverable,
+    /// Whether the parser has encountered is a fatal parse error.
+    ///
+    /// Fatal parser states indicate the parser is corrupted and cannot be used
+    /// again.
+    Fatal,
+}
+
 /// State shows whether artichoke can parse some code or why it cannot.
 ///
 /// This enum only encapsulates whether artichoke can parse the code. It may
@@ -43,35 +65,19 @@ impl State {
         Self::Valid
     }
 
-    /// Whether this variant indicates a code block is open.
-    ///
-    /// This method can be used by a REPL to check whether to buffer code or
-    /// begin a multi-line editing session before attempting to eval the code on
-    /// an interpreter.
+    /// Convert this parser state to a compressed [`ErrorState`] for consumption
+    /// in the REPL.
     #[must_use]
-    pub fn is_code_block_open(self) -> bool {
-        !matches!(
-            self,
-            Self::Valid | Self::UnexpectedEnd | Self::UnexpectedRegexpBegin | Self::CodeTooLong
-        )
-    }
-
-    /// Whether this variant is a recoverable error.
-    ///
-    /// Recoverable errors should be handled by resetting the parser and input
-    /// buffer.
-    #[must_use]
-    pub fn is_recoverable_error(self) -> bool {
-        matches!(self, Self::CodeTooLong)
-    }
-
-    /// Whether this variant is a fatal parse error.
-    ///
-    /// Fatal parser states indicate the parser is corrupted and cannot be used
-    /// again.
-    #[must_use]
-    pub fn is_fatal(self) -> bool {
-        matches!(self, Self::ParseError)
+    pub const fn to_error_state(self) -> Option<ErrorState> {
+        match self {
+            Self::UnexpectedProgramEnd
+            | Self::UnterminatedBlock
+            | Self::UnterminatedHeredoc
+            | Self::UnterminatedString => Some(ErrorState::CodeBlockOpen),
+            Self::CodeTooLong => Some(ErrorState::Recoverable),
+            Self::ParseError => Some(ErrorState::Fatal),
+            Self::Valid | Self::UnexpectedEnd | Self::UnexpectedRegexpBegin => None,
+        }
     }
 }
 

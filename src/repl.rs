@@ -14,7 +14,7 @@ use termcolor::WriteColor;
 use crate::backend::state::parser::Context;
 use crate::backtrace;
 use crate::filename::REPL;
-use crate::parser::{Parser, State};
+use crate::parser::{ErrorState, Parser, State};
 use crate::prelude::{Parser as _, *};
 
 /// Failed to initialize parser during REPL boot.
@@ -226,7 +226,7 @@ where
     let mut parser_state = State::new();
     loop {
         // Allow shell users to identify that they have an open code block.
-        let prompt = if parser_state.is_code_block_open() {
+        let prompt = if let Some(ErrorState::CodeBlockOpen) = parser_state.to_error_state() {
             config.continued
         } else {
             config.simple
@@ -239,18 +239,22 @@ where
                 buf.push_str(line.as_str());
                 parser_state = parser.parse(buf.as_bytes());
 
-                if parser_state.is_code_block_open() {
-                    buf.push('\n');
-                    continue;
+                match parser_state.to_error_state() {
+                    None => {}
+                    Some(ErrorState::CodeBlockOpen) => {
+                        buf.push('\n');
+                        continue;
+                    }
+                    Some(ErrorState::Recoverable) => {
+                        writeln!(error, "Could not parse input")?;
+                        buf.clear();
+                        continue;
+                    }
+                    Some(ErrorState::Fatal) => {
+                        return Err(Box::new(ParserInternalError::new()));
+                    }
                 }
-                if parser_state.is_fatal() {
-                    return Err(Box::new(ParserInternalError::new()));
-                }
-                if parser_state.is_recoverable_error() {
-                    writeln!(error, "Could not parse input")?;
-                    buf.clear();
-                    continue;
-                }
+
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
                         let result = value.inspect(interp);
