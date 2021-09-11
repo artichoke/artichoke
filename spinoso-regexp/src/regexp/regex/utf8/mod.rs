@@ -5,7 +5,7 @@ use bstr::{ByteSlice, ByteVec};
 use regex::{Match, Regex, RegexBuilder};
 use scolapasta_string_escape::format_debug_escape_into;
 
-use crate::{ArgumentError, Config, Debug, Encoding, Error, RegexpError, SyntaxError};
+use crate::{ArgumentError, Config, Debug, Encoding, Error, RegexpError, Source, SyntaxError};
 
 mod iter;
 
@@ -13,40 +13,40 @@ pub use iter::{CaptureIndices, Captures};
 
 #[derive(Debug, Clone)]
 pub struct Utf8 {
-    literal: Config,
-    derived: Config,
+    source: Source,
+    config: Config,
     encoding: Encoding,
     regex: Regex,
 }
 
 impl fmt::Display for Utf8 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let pattern = self.derived.pattern.as_slice();
+        let pattern = self.config.pattern();
         format_debug_escape_into(f, pattern)?;
         Ok(())
     }
 }
 
 impl Utf8 {
-    pub fn with_literal_derived_encoding(literal: Config, derived: Config, encoding: Encoding) -> Result<Self, Error> {
-        let pattern = str::from_utf8(derived.pattern.as_slice()).map_err(|_| {
+    pub fn with_literal_derived_encoding(source: Source, config: Config, encoding: Encoding) -> Result<Self, Error> {
+        let pattern = str::from_utf8(config.pattern()).map_err(|_| {
             ArgumentError::with_message("regex crate utf8 backend for Regexp only supports UTF-8 patterns")
         })?;
         let mut builder = RegexBuilder::new(pattern);
-        builder.case_insensitive(derived.options.ignore_case().is_enabled());
-        builder.multi_line(derived.options.multiline().is_enabled());
-        builder.ignore_whitespace(derived.options.extended().is_enabled());
+        builder.case_insensitive(config.options.ignore_case().is_enabled());
+        builder.multi_line(config.options.multiline().is_enabled());
+        builder.ignore_whitespace(config.options.extended().is_enabled());
 
         let regex = match builder.build() {
             Ok(regex) => regex,
-            Err(err) if literal.options.is_literal() => {
+            Err(err) if source.options.is_literal() => {
                 return Err(SyntaxError::from(err.to_string()).into());
             }
             Err(err) => return Err(RegexpError::from(err.to_string()).into()),
         };
         let regexp = Self {
-            literal,
-            derived,
+            source,
+            config,
             encoding,
             regex,
         };
@@ -100,18 +100,18 @@ impl Utf8 {
 
     pub fn debug(&self) -> Debug<'_> {
         Debug::new(
-            self.literal.pattern(),
-            self.literal.options.as_display_modifier(),
+            self.source.pattern(),
+            self.source.options.as_display_modifier(),
             self.encoding.as_modifier_string(),
         )
     }
 
-    pub fn literal_config(&self) -> &Config {
-        &self.literal
+    pub fn source(&self) -> &Source {
+        &self.source
     }
 
-    pub fn derived_config(&self) -> &Config {
-        &self.derived
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 
     pub fn encoding(&self) -> Encoding {
@@ -120,21 +120,21 @@ impl Utf8 {
 
     pub fn inspect(&self) -> Vec<u8> {
         // pattern length + 2x '/' + mix + encoding
-        let mut inspect = Vec::with_capacity(self.literal.pattern.len() + 2 + 4);
+        let mut inspect = Vec::with_capacity(self.source.pattern.len() + 2 + 4);
         inspect.push_byte(b'/');
-        if self.literal.pattern.contains_str("/") {
-            let mut escaped = self.literal.pattern.replace("/", r"\/");
+        if self.source.pattern.contains_str("/") {
+            let mut escaped = self.source.pattern.replace("/", r"\/");
             inspect.append(&mut escaped);
         } else {
-            inspect.extend_from_slice(&self.literal.pattern);
+            inspect.extend_from_slice(self.source.pattern());
         }
         inspect.push_byte(b'/');
-        inspect.push_str(self.literal.options.as_display_modifier());
+        inspect.push_str(self.source.options.as_display_modifier());
         inspect.push_str(self.encoding.as_modifier_string());
         inspect
     }
 
     pub fn string(&self) -> &[u8] {
-        &self.derived.pattern
+        self.config.pattern()
     }
 }
