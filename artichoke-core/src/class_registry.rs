@@ -1,8 +1,13 @@
-use std::any::Any;
+use core::any::Any;
 
 pub trait ClassRegistry {
+    /// Concrete value type for boxed Ruby values.
     type Value;
+
+    /// Concrete error type for errors encountered when manipulating the class registry.
     type Error;
+
+    /// Type representing a class specification.
     type Spec;
 
     /// Create a class definition bound to a Rust type `T`.

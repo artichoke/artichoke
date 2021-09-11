@@ -1,13 +1,13 @@
-use std::any::Any;
+use core::any::Any;
 
 pub trait ModuleRegistry {
-    /// Module value type
+    /// Concrete value type for boxed Ruby values.
     type Value;
 
-    /// Module error type
+    /// Concrete error type for errors encountered when manipulating the module registry.
     type Error;
 
-    /// Module specification type
+    /// Type representing a module specification.
     type Spec;
 
     /// Create a module definition bound to a Rust type `T`.

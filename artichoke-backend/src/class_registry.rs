@@ -47,7 +47,7 @@ impl ClassRegistry for Artichoke {
             self.with_ffi_boundary(|mrb| {
                 if let Some(mut rclass) = rclass.resolve(mrb) {
                     let value_class = sys::mrb_sys_class_value(rclass.as_mut());
-                    Some(Self::Value::from(value_class))
+                    Some(Value::from(value_class))
                 } else {
                     None
                 }
@@ -67,7 +67,7 @@ impl ClassRegistry for Artichoke {
         } else {
             return Ok(None);
         };
-        let args = args.iter().map(Self::Value::inner).collect::<Vec<_>>();
+        let args = args.iter().map(Value::inner).collect::<Vec<_>>();
         let arglen = if let Ok(len) = sys::mrb_int::try_from(args.len()) {
             len
         } else {
@@ -77,7 +77,7 @@ impl ClassRegistry for Artichoke {
             self.with_ffi_boundary(|mrb| {
                 if let Some(mut rclass) = rclass.resolve(mrb) {
                     let value = sys::mrb_obj_new(mrb, rclass.as_mut(), arglen, args.as_ptr());
-                    Some(Self::Value::from(value))
+                    Some(Value::from(value))
                 } else {
                     None
                 }
