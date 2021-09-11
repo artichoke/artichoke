@@ -1,4 +1,5 @@
 use core::iter::{Enumerate, FusedIterator};
+
 use regex::CaptureNames;
 
 #[derive(Debug)]
@@ -43,12 +44,13 @@ impl<'a> Iterator for Captures<'a> {
 
 impl<'a> FusedIterator for Captures<'a> {}
 
+#[derive(Debug)]
 pub struct CaptureIndices<'a, 'b> {
     name: &'b [u8],
     capture_names: Enumerate<CaptureNames<'a>>,
 }
 
-impl<'a, 'b> CapturesIndices<'a, 'b> {
+impl<'a, 'b> CaptureIndices<'a, 'b> {
     pub(crate) fn with_name_and_iter(name: &'b [u8], iter: CaptureNames<'a>) -> Self {
         Self {
             name,
@@ -62,12 +64,13 @@ impl<'a, 'b> CapturesIndices<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Iterator for CapturesIndices<'a, 'b> {
+impl<'a, 'b> Iterator for CaptureIndices<'a, 'b> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some((index, group)) = self.capture_names.next() {
-            if matches!(group.map(str::as_bytes), Some(group) if group == name) {
+            let group = group.map(str::as_bytes);
+            if matches!(group, Some(group) if group == self.name) {
                 return Some(index);
             }
         }
@@ -75,4 +78,4 @@ impl<'a, 'b> Iterator for CapturesIndices<'a, 'b> {
     }
 }
 
-impl<'a, 'b> FusedIterator for CapturesIndices<'a, 'b> {}
+impl<'a, 'b> FusedIterator for CaptureIndices<'a, 'b> {}

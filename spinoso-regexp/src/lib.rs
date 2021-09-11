@@ -41,6 +41,7 @@ pub use debug::Debug;
 pub use encoding::{Encoding, InvalidEncodingError};
 pub use error::{ArgumentError, Error, RegexpError, SyntaxError};
 pub use options::{Options, RegexpOption};
+pub use regexp::regex::utf8::Utf8;
 
 bitflags::bitflags! {
     #[derive(Default)]
