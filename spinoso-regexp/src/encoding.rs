@@ -223,9 +223,9 @@ impl Encoding {
     #[must_use]
     pub const fn flags(self) -> Flags {
         match self {
-            Encoding::Fixed => Flags::FIXEDENCODING,
-            Encoding::No => Flags::NOENCODING,
-            Encoding::None => Flags::empty(),
+            Self::Fixed => Flags::FIXEDENCODING,
+            Self::No => Flags::NOENCODING,
+            Self::None => Flags::empty(),
         }
     }
 
