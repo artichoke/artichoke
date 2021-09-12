@@ -74,6 +74,23 @@ pub const HIGHEST_MATCH_GROUP: &[u8] = b"$+";
 /// The information about the last match in the current scope.
 pub const LAST_MATCH: &[u8] = b"$~";
 
+/// A `Source` represents the literal contents used to construct a given
+/// `Regexp`.
+///
+/// When [`Regexp`]s are constructed with a `/.../` literal, [`Regexp#source`]
+/// refers to the literal characters contained within the `/` delimeters.
+/// For example, `/\t/.source.bytes` has byte sequence `[92, 116]`.
+///
+/// When `Regexp`s are constructed with [`Regexp::compile`], [`Regexp#source`]
+/// refers to the argument passed to `compile`. For example,
+/// `Regexp.compile("\t").source.bytes` has byte sequence `[9]`.
+///
+/// [`Regexp#inspect`] prints `"/#{source}/"`.
+///
+/// [`Regexp`]: https://ruby-doc.org/core-2.6.3/Regexp.html
+/// [`Regexp#source`]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-source
+/// [`Regexp::compile`]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-compile
+/// [`Regexp#inspect`]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-inspect
 #[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Source {
     pattern: Vec<u8>,
@@ -103,6 +120,16 @@ impl From<&Config> for Source {
 
 impl Source {
     /// Construct a new, empty `Source`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::Source;
+    ///
+    /// const SOURCE: Source = Source::new();
+    /// assert!(SOURCE.pattern().is_empty());
+    /// assert!(SOURCE.options().as_display_modifier().is_empty());
+    /// ```
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -112,12 +139,40 @@ impl Source {
     }
 
     /// Construct a new `Source` with the given pattern and [`Options`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::{Options, Source};
+    ///
+    /// let source = Source::with_pattern_and_options(
+    ///     b"Artichoke( Ruby)?".to_vec(),
+    ///     Options::with_ignore_case(),
+    /// );
+    /// assert_eq!(source.pattern(), b"Artichoke( Ruby)?");
+    /// assert_eq!(source.options().as_display_modifier(), "i");
+    /// ```
     #[must_use]
     pub const fn with_pattern_and_options(pattern: Vec<u8>, options: Options) -> Self {
         Self { pattern, options }
     }
 
     /// Whether this source was parsed with ignore case enabled.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::{Options, Source};
+    ///
+    /// let source = Source::new();
+    /// assert!(!source.is_casefold());
+    ///
+    /// let source = Source::with_pattern_and_options(
+    ///     b"Artichoke( Ruby)?".to_vec(),
+    ///     Options::with_ignore_case(),
+    /// );
+    /// assert!(source.is_casefold());
+    /// ```
     #[must_use]
     pub const fn is_casefold(&self) -> bool {
         self.options.ignore_case().is_enabled()
@@ -128,18 +183,44 @@ impl Source {
     /// This enables Ruby parsers to inject whether a Regexp is a literal to the
     /// core library. Literal Regexps have some special behavior regrding
     /// capturing groups and report parse failures differently.
+    ///
+    /// A source's literal flag can only be set using [`Options::try_from_int`].
     #[must_use]
     pub const fn is_literal(&self) -> bool {
         self.options.is_literal()
     }
 
     /// Extracts a slice containing the entire pattern.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::{Options, Source};
+    ///
+    /// let source = Source::with_pattern_and_options(
+    ///     b"Artichoke( Ruby)?".to_vec(),
+    ///     Options::with_ignore_case(),
+    /// );
+    /// assert_eq!(source.pattern(), b"Artichoke( Ruby)?");
+    /// ```
     #[must_use]
     pub fn pattern(&self) -> &[u8] {
         self.pattern.as_slice()
     }
 
     /// Return a copy of the underlying [`Options`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::{Options, Source};
+    ///
+    /// let source = Source::with_pattern_and_options(
+    ///     b"Artichoke( Ruby)?".to_vec(),
+    ///     Options::with_ignore_case(),
+    /// );
+    /// assert_eq!(source.options().as_display_modifier(), "i");
+    /// ```
     #[must_use]
     pub const fn options(&self) -> Options {
         self.options
