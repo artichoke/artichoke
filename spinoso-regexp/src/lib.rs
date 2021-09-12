@@ -29,10 +29,11 @@ mod readme {}
 #[macro_use]
 extern crate bitflags;
 
-use bstr::ByteSlice;
 use core::fmt;
 use core::num::NonZeroUsize;
 use std::borrow::Cow;
+
+use bstr::ByteSlice;
 
 mod debug;
 mod encoding;

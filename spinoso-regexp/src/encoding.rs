@@ -1,11 +1,12 @@
 //! Parse encoding parameter to `Regexp#initialize` and `Regexp::compile`.
 
-use bstr::ByteSlice;
 use core::convert::TryFrom;
 use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::mem;
 use std::error;
+
+use bstr::ByteSlice;
 
 use crate::Flags;
 

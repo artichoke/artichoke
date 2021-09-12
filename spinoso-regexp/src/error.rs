@@ -3,7 +3,6 @@ use std::borrow::Cow;
 use std::error;
 
 /// Sum type of all errors possibly returned from `Regexp` APIs.
-///
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Error {
     /// Error that indicates an argument parsing or value logic error occurred.

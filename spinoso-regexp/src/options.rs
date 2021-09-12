@@ -1,8 +1,9 @@
 //! Parse options parameter to `Regexp#initialize` and `Regexp::compile`.
 
-use bstr::ByteSlice;
 use core::convert::TryFrom;
 use core::fmt;
+
+use bstr::ByteSlice;
 
 use crate::Flags;
 
