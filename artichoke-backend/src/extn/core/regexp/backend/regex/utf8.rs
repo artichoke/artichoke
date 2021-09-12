@@ -134,7 +134,7 @@ impl RegexpType for Utf8 {
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
         debug.push_str(self.source.options().as_display_modifier());
-        debug.push_str(self.encoding.modifier_string());
+        debug.push_str(self.encoding.as_modifier_str());
         debug
     }
 
@@ -161,7 +161,7 @@ impl RegexpType for Utf8 {
         }
         inspect.push(b'/');
         inspect.extend_from_slice(self.source.options().as_display_modifier().as_bytes());
-        inspect.extend_from_slice(self.encoding.modifier_string().as_bytes());
+        inspect.extend_from_slice(self.encoding.as_modifier_str().as_bytes());
         inspect
     }
 

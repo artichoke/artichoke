@@ -203,7 +203,7 @@ impl From<&Encoding> for i64 {
 
 impl fmt::Display for Encoding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.modifier_string())
+        f.write_str(self.as_modifier_str())
     }
 }
 
@@ -243,7 +243,7 @@ impl Encoding {
     ///
     /// [regexp-inspect]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-inspect
     #[must_use]
-    pub const fn modifier_string(self) -> &'static str {
+    pub const fn as_modifier_str(self) -> &'static str {
         match self {
             Self::Fixed | Self::None => "",
             Self::No => "n",
