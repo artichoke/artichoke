@@ -36,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-time = "0.1"
+spinoso-time = "0.2"
 ```
 
 ## Examples
