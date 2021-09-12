@@ -1,13 +1,54 @@
 use core::convert::TryFrom;
 use core::iter::FusedIterator;
+
 use scolapasta_string_escape::InvalidUtf8ByteSequence;
 
 #[derive(Debug, Clone)]
+struct Delimiters {
+    bits: u8,
+}
+
+impl Default for Delimiters {
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
+
+impl Delimiters {
+    const EMIT_LEFT_DELIMITER: Self = Self { bits: 0b0000_0001 };
+    const EMIT_RIGHT_DELIMITER: Self = Self { bits: 0b0000_0010 };
+
+    const DEFAULT: Self = Self {
+        bits: Self::EMIT_LEFT_DELIMITER.bits | Self::EMIT_RIGHT_DELIMITER.bits,
+    };
+
+    #[inline]
+    fn emit_left_delimiter(&mut self) -> Option<char> {
+        if (self.bits & Self::EMIT_LEFT_DELIMITER.bits) == Self::EMIT_LEFT_DELIMITER.bits {
+            self.bits &= !Self::EMIT_LEFT_DELIMITER.bits;
+            Some('/')
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    fn emit_right_delimiter(&mut self) -> Option<char> {
+        if (self.bits & Self::EMIT_RIGHT_DELIMITER.bits) == Self::EMIT_RIGHT_DELIMITER.bits {
+            self.bits &= !Self::EMIT_RIGHT_DELIMITER.bits;
+            Some('/')
+        } else {
+            None
+        }
+    }
+}
+
+#[derive(Default, Debug, Clone)]
 #[must_use = "this `Debug` is an `Iterator`, which should be consumed if constructed"]
 pub struct Debug<'a> {
-    prefix: Option<char>,
+    delimiters: Delimiters,
     // When `Regexp`s are constructed with a `/.../` literal, `Regexp#source`
-    // refers to the literal characters contained within the `/` delimeters.
+    // refers to the literal characters contained within the `/` delimiters.
     // For example, `/\t/.source.bytes` has byte sequence `[92, 116]`.
     //
     // When `Regexp`s are constructed with `Regexp::compile`, `Regexp#source`
@@ -17,7 +58,6 @@ pub struct Debug<'a> {
     // `Regexp#inspect` prints `"/#{source}/"`.
     source: &'a [u8],
     literal: InvalidUtf8ByteSequence,
-    suffix: Option<char>,
     options: &'static str,
     encoding: &'static str,
 }
@@ -26,10 +66,9 @@ impl<'a> Debug<'a> {
     // TODO: make `Debug::new` pub(crate) once it is used internally.
     pub fn new(source: &'a [u8], options: &'static str, encoding: &'static str) -> Self {
         Self {
-            prefix: Some('/'),
+            delimiters: Delimiters::DEFAULT,
             source,
             literal: InvalidUtf8ByteSequence::new(),
-            suffix: Some('/'),
             options,
             encoding,
         }
@@ -40,7 +79,7 @@ impl<'a> Iterator for Debug<'a> {
     type Item = char;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some(prefix) = self.prefix.take() {
+        if let Some(prefix) = self.delimiters.emit_left_delimiter() {
             return Some(prefix);
         }
         if let Some(literal) = self.literal.next() {
@@ -73,7 +112,7 @@ impl<'a> Iterator for Debug<'a> {
             self.source = &self.source[size..];
             return next;
         }
-        if let Some(suffix) = self.suffix.take() {
+        if let Some(suffix) = self.delimiters.emit_right_delimiter() {
             return Some(suffix);
         }
         if let (Some(ch), size) = bstr::decode_utf8(self.options) {
