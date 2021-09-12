@@ -43,6 +43,34 @@ impl Delimiters {
     }
 }
 
+/// An iterator that yields a debug representation of a `Regexp` as a sequence
+/// of `char`s.
+///
+/// This struct is created by the `debug` method on the regexp implementations
+/// in this crate. See these functions' documentation for more.
+///
+/// # Examples
+///
+/// UTF-8 regexp patterns and options are formatted in a debug
+/// representation:
+///
+/// ```
+/// use spinoso_regexp::Debug;
+///
+/// let debug = Debug::new("crab 🦀 for Rust".as_bytes(), "mix", "");
+/// let s = debug.collect::<String>();
+/// assert_eq!(s, "/crab 🦀 for Rust/mix");
+/// ```
+///
+/// Binary content is hex escaped:
+///
+/// ```
+/// use spinoso_regexp::Debug;
+///
+/// let debug = Debug::new(b"\xFF\xFE", "", "");
+/// let s = debug.collect::<String>();
+/// assert_eq!(s, r"/\xFF\xFE/");
+/// ```
 #[derive(Default, Debug, Clone)]
 #[must_use = "this `Debug` is an `Iterator`, which should be consumed if constructed"]
 pub struct Debug<'a> {
@@ -63,7 +91,34 @@ pub struct Debug<'a> {
 }
 
 impl<'a> Debug<'a> {
-    // TODO: make `Debug::new` pub(crate) once it is used internally.
+    /// Construct a new `Debug` iterator with a regexp source, [options
+    /// modifiers], and [encoding modifiers].
+    ///
+    /// # Examples
+    ///
+    /// UTF-8 regexp patterns and options are formatted in a debug
+    /// representation:
+    ///
+    /// ```
+    /// use spinoso_regexp::Debug;
+    ///
+    /// let debug = Debug::new("crab 🦀 for Rust".as_bytes(), "mix", "");
+    /// let s = debug.collect::<String>();
+    /// assert_eq!(s, "/crab 🦀 for Rust/mix");
+    /// ```
+    ///
+    /// Binary content is hex escaped:
+    ///
+    /// ```
+    /// use spinoso_regexp::Debug;
+    ///
+    /// let debug = Debug::new(b"\xFF\xFE", "", "");
+    /// let s = debug.collect::<String>();
+    /// assert_eq!(s, r"/\xFF\xFE/");
+    /// ```
+    ///
+    /// [options modifiers]: crate::Options::as_display_modifier
+    /// [encoding modifiers]: crate::Encoding::as_modifier_str
     pub fn new(source: &'a [u8], options: &'static str, encoding: &'static str) -> Self {
         Self {
             delimiters: Delimiters::DEFAULT,
