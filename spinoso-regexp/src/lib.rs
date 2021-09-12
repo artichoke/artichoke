@@ -227,6 +227,12 @@ impl Source {
     }
 }
 
+/// A `Config` represents the parsed, expanded, and normalized pattern and
+/// options used to initialize a `Regexp`.
+///
+/// A `Config` is derived from a [`Source`].
+///
+/// When a `Regexp` is cloned, it is cloned from its compiled `Config`.
 #[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Config {
     pattern: Vec<u8>,
@@ -256,6 +262,16 @@ impl From<&Source> for Config {
 
 impl Config {
     /// Construct a new, empty `Config`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::Config;
+    ///
+    /// const CONFIG: Config = Config::new();
+    /// assert!(CONFIG.pattern().is_empty());
+    /// assert!(CONFIG.options().as_display_modifier().is_empty());
+    /// ```
     #[must_use]
     pub const fn new() -> Self {
         Self {
@@ -265,18 +281,55 @@ impl Config {
     }
 
     /// Construct a new `Config` with the given pattern and [`Options`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::{Config, Options};
+    ///
+    /// let config = Config::with_pattern_and_options(
+    ///     b"Artichoke( Ruby)?".to_vec(),
+    ///     Options::with_ignore_case(),
+    /// );
+    /// assert_eq!(config.pattern(), b"Artichoke( Ruby)?");
+    /// assert_eq!(config.options().as_display_modifier(), "i");
+    /// ```
     #[must_use]
     pub const fn with_pattern_and_options(pattern: Vec<u8>, options: Options) -> Self {
         Self { pattern, options }
     }
 
     /// Extracts a slice containing the entire pattern.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::{Config, Options};
+    ///
+    /// let config = Config::with_pattern_and_options(
+    ///     b"Artichoke( Ruby)?".to_vec(),
+    ///     Options::with_ignore_case(),
+    /// );
+    /// assert_eq!(config.pattern(), b"Artichoke( Ruby)?");
+    /// ```
     #[must_use]
     pub fn pattern(&self) -> &[u8] {
         self.pattern.as_slice()
     }
 
     /// Return a copy of the underlying [`Options`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_regexp::{Config, Options};
+    ///
+    /// let config = Config::with_pattern_and_options(
+    ///     b"Artichoke( Ruby)?".to_vec(),
+    ///     Options::with_ignore_case(),
+    /// );
+    /// assert_eq!(config.options().as_display_modifier(), "i");
+    /// ```
     #[must_use]
     pub const fn options(&self) -> Options {
         self.options
