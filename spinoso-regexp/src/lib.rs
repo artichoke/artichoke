@@ -26,9 +26,6 @@
 #[doc = include_str!("../README.md")]
 mod readme {}
 
-#[macro_use]
-extern crate bitflags;
-
 use core::fmt;
 use core::num::NonZeroUsize;
 use std::borrow::Cow;
@@ -46,7 +43,7 @@ pub use encoding::{Encoding, InvalidEncodingError};
 pub use error::{ArgumentError, Error, RegexpError, SyntaxError};
 pub use options::{Options, RegexpOption};
 
-bitflags! {
+bitflags::bitflags! {
     #[derive(Default)]
     pub struct Flags: u8 {
         const IGNORECASE      = 0b0000_0001;
