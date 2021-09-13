@@ -53,8 +53,8 @@ impl State {
     /// error if the interpreter-global psuedorandom number generator fails
     /// to initialize using the platform source of randomness.
     ///
-    /// [`Class`]: crate::class_registry::ClassRegistry
-    /// [`Module`]: crate::module_registry::ModuleRegistry
+    /// [`Class`]: crate::core::ClassRegistry
+    /// [`Module`]: crate::core::ModuleRegistry
     /// [regexp-state]: regexp::State
     /// [In-memory virtual filesystem]: load_path
     /// [Ruby parser and file context]: parser::State
