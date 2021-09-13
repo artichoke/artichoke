@@ -14,7 +14,7 @@ pub trait ClassRegistry {
     type Error;
 
     /// Type representing a class specification.
-    type Spec;
+    type Spec: 'static;
 
     /// Create a class definition bound to a Rust type `T`.
     ///

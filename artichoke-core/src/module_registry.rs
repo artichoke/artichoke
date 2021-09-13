@@ -14,7 +14,7 @@ pub trait ModuleRegistry {
     type Error;
 
     /// Type representing a module specification.
-    type Spec;
+    type Spec: 'static;
 
     /// Create a module definition bound to a Rust type `T`.
     ///
