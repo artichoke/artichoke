@@ -10,8 +10,7 @@ use std::ptr::{self, NonNull};
 
 use spinoso_exception::Fatal;
 
-use crate::class_registry::ClassRegistry;
-use crate::core::TryConvertMut;
+use crate::core::{ClassRegistry, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::state::State;
 use crate::sys;

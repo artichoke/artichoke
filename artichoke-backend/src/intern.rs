@@ -1,9 +1,7 @@
 use intaglio::SymbolOverflowError;
 use std::borrow::Cow;
 
-use crate::class_registry::ClassRegistry;
-use crate::core::Intern;
-use crate::core::TryConvertMut;
+use crate::core::{ClassRegistry, Intern, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::ffi::InterpreterExtractError;

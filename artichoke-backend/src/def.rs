@@ -5,9 +5,8 @@ use std::fmt;
 use std::ptr::NonNull;
 
 use crate::class;
-use crate::class_registry::ClassRegistry;
 use crate::convert::BoxUnboxVmValue;
-use crate::core::TryConvertMut;
+use crate::core::{ClassRegistry, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::extn::core::exception::{NameError, ScriptError};
 use crate::module;

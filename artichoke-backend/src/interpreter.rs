@@ -3,8 +3,7 @@ use std::error;
 use std::ffi::c_void;
 use std::fmt;
 
-use crate::class_registry::ClassRegistry;
-use crate::core::{Eval, TryConvertMut};
+use crate::core::{ClassRegistry, Eval, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::extn;
 use crate::extn::core::exception::Fatal;
