@@ -48,7 +48,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-symbol = "0.3"
+spinoso-symbol = "0.1"
 ```
 
 Most of the functionality in this crate depends on a Ruby interpreter that

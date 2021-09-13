@@ -85,7 +85,7 @@ impl RegexpType for Lazy {
         debug.push_str(pattern.replace("/", r"\/").as_str());
         debug.push('/');
         debug.push_str(self.config.options().as_display_modifier());
-        debug.push_str(self.encoding.modifier_string());
+        debug.push_str(self.encoding.as_modifier_str());
         debug
     }
 

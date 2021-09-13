@@ -19,8 +19,9 @@ use crate::extn::prelude::*;
 
 #[doc(inline)]
 pub use spinoso_regexp::{
-    nth_match_group, Config, Encoding, Flags, InvalidEncodingError, Options, RegexpError, RegexpOption, Source,
-    HIGHEST_MATCH_GROUP, LAST_MATCH, LAST_MATCHED_STRING, STRING_LEFT_OF_MATCH, STRING_RIGHT_OF_MATCH,
+    nth_match_group_bytes as nth_match_group, Config, Encoding, Flags, InvalidEncodingError, Options, RegexpError,
+    RegexpOption, Source, HIGHEST_MATCH_GROUP, LAST_MATCH, LAST_MATCHED_STRING, STRING_LEFT_OF_MATCH,
+    STRING_RIGHT_OF_MATCH,
 };
 
 pub mod backend;

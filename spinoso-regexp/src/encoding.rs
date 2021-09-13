@@ -1,11 +1,12 @@
 //! Parse encoding parameter to `Regexp#initialize` and `Regexp::compile`.
 
-use bstr::ByteSlice;
 use core::convert::TryFrom;
 use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::mem;
 use std::error;
+
+use bstr::ByteSlice;
 
 use crate::Flags;
 
@@ -203,7 +204,7 @@ impl From<&Encoding> for i64 {
 
 impl fmt::Display for Encoding {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.modifier_string())
+        f.write_str(self.as_modifier_str())
     }
 }
 
@@ -222,9 +223,9 @@ impl Encoding {
     #[must_use]
     pub const fn flags(self) -> Flags {
         match self {
-            Encoding::Fixed => Flags::FIXEDENCODING,
-            Encoding::No => Flags::NOENCODING,
-            Encoding::None => Flags::empty(),
+            Self::Fixed => Flags::FIXEDENCODING,
+            Self::No => Flags::NOENCODING,
+            Self::None => Flags::empty(),
         }
     }
 
@@ -243,7 +244,7 @@ impl Encoding {
     ///
     /// [regexp-inspect]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-inspect
     #[must_use]
-    pub const fn modifier_string(self) -> &'static str {
+    pub const fn as_modifier_str(self) -> &'static str {
         match self {
             Self::Fixed | Self::None => "",
             Self::No => "n",
