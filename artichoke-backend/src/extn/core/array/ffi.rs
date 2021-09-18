@@ -291,54 +291,5 @@ unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut 
     let len = (*ary).as_.heap.len as usize;
     let capacity = (*ary).as_.heap.aux.capa as usize;
 
-    // Zero capacity `Vec`s are created with a dangling `ptr`.
-    if len == 0 && capacity == 0 {
-        drop(Array::from_raw_parts(ptr, len, capacity));
-        return;
-    }
-
-    // Non-empty `Vec<sys::mrb_value>`s always allocate 0x10 aligned pointers.
-    //
-    // Sample alignments from experimentation:
-    //
-    // ```
-    // ptr = 0x7ffa23438b20, len = 2, capa = 2
-    // ptr = 0x7ffa23439c70, len = 1, capa = 1
-    // ptr = 0x7ffa23439c90, len = 1, capa = 1
-    // ptr = 0x7ffa23439c60, len = 1, capa = 1
-    // ptr = 0x7ffa23438c10, len = 2, capa = 2
-    // ptr = 0x7ffa23439a60, len = 1, capa = 1
-    // ptr = 0x7ffa2343d000, len = 1, capa = 1
-    // ptr = 0x7ffa23441070, len = 1, capa = 1
-    // ptr = 0x7ffa2343be30, len = 1, capa = 1
-    // ptr = 0x7ffa23440900, len = 3, capa = 3
-    // ptr = 0x7ffa23441400, len = 1, capa = 1
-    // ptr = 0x7ffa23441ac0, len = 1, capa = 1
-    // ptr = 0x7ffa23441ad0, len = 1, capa = 1
-    // ptr = 0x8, len = 0, capa = 0
-    // ptr = 0x7ffa23445b00, len = 1, capa = 1
-    // ptr = 0x7ffa23445800, len = 1, capa = 1
-    // ptr = 0x7ffa234525d0, len = 1, capa = 1
-    // ptr = 0x7ffa234525c0, len = 1, capa = 1
-    // ptr = 0x7ffa234535c0, len = 1, capa = 1
-    // ptr = 0x7ffa234543a0, len = 1, capa = 1
-    // ptr = 0x7ffa23454180, len = 1, capa = 1
-    // ptr = 0x7ffa2344b2d0, len = 1, capa = 1
-    // ```
-    if ptr.align_offset(0x10) == 0x00 {
-        drop(Array::from_raw_parts(ptr, len, capacity));
-        return;
-    }
-
-    // XXX: HACK.
-    //
-    // If the pointer we get is unaligned, there is no way we can safely free
-    // it. Prefer to leak the `Vec` if this happens so we don't segfault.
-    warn!(
-        "Attempted to free Array with unaligned pointer: ptr = {:p}, offset = {:x}, len = {}, capa = {}",
-        ptr,
-        ptr.align_offset(0x10),
-        len,
-        capacity
-    );
+    drop(Array::from_raw_parts(ptr, len, capacity));
 }
