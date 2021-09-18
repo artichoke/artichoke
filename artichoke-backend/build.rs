@@ -5,16 +5,13 @@
 use std::env;
 use std::fs;
 use std::io;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
+use std::path::PathBuf;
+
 use target_lexicon::Triple;
 
-fn enumerate_sources<T>(path: T, paths: &mut Vec<PathBuf>) -> io::Result<()>
-where
-    T: AsRef<Path>,
-{
-    let mut stack = vec![PathBuf::from(path.as_ref())];
-    paths.push(PathBuf::from(path.as_ref()));
+fn enumerate_sources(path: PathBuf, paths: &mut Vec<PathBuf>) -> io::Result<()> {
+    let mut stack = vec![path.clone()];
+    paths.push(path);
     while let Some(from) = stack.pop() {
         for entry in fs::read_dir(from)? {
             let entry = entry?;
@@ -33,11 +30,13 @@ mod buildpath {
     use std::path::PathBuf;
 
     pub fn crate_root() -> PathBuf {
-        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap())
+        let root = env::var_os("CARGO_MANIFEST_DIR").expect("cargo-provided CARGO_MANIFEST_DIR env variable not set");
+        PathBuf::from(root)
     }
 
     pub fn build_root() -> PathBuf {
-        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("artichoke-mruby")
+        let out = env::var_os("OUT_DIR").expect("cargo-provided OUT_DIR env variable not set");
+        PathBuf::from(out).join("artichoke-mruby")
     }
 
     pub mod source {
@@ -55,11 +54,11 @@ mod buildpath {
             crate::enumerate_sources(mruby_sys_ext_source_dir(), paths).unwrap();
         }
 
-        pub fn mruby_vendored_include_dir() -> PathBuf {
+        fn mruby_vendored_include_dir() -> PathBuf {
             super::crate_root().join("vendor").join("mruby").join("include")
         }
 
-        pub fn mruby_vendored_source_dir() -> PathBuf {
+        fn mruby_vendored_source_dir() -> PathBuf {
             super::crate_root().join("vendor").join("mruby").join("src")
         }
 
@@ -75,7 +74,7 @@ mod buildpath {
             super::crate_root().join("scripts").join("noop.rb")
         }
 
-        pub fn mruby_sys_ext_source_dir() -> PathBuf {
+        fn mruby_sys_ext_source_dir() -> PathBuf {
             super::crate_root().join("mruby-sys")
         }
 
@@ -97,11 +96,12 @@ mod libmruby {
     use std::path::PathBuf;
     use std::process::{Command, ExitStatus, Stdio};
     use std::str;
+
     use target_lexicon::{Architecture, OperatingSystem, Triple};
 
-    use super::buildpath;
+    use super::{buildpath, enumerate_sources};
 
-    fn gems() -> Vec<&'static str> {
+    fn gems() -> impl Iterator<Item = &'static str> {
         vec![
             "mruby-compiler",     // Ruby parser and bytecode generation
             "mruby-error",        // `mrb_raise`, `mrb_protect`
@@ -109,12 +109,13 @@ mod libmruby {
             "mruby-metaprog",     // APIs on Kernel and Module for accessing classes and variables
             "mruby-method",       // `Method`, `UnboundMethod`, and method APIs on Kernel and Module
             "mruby-toplevel-ext", // expose API for top self
-            "mruby-fiber",        // Fiber class from core, required by mruby-enumerator
+            "mruby-fiber",        // Fiber class from core, required by `Enumerator`
             "mruby-pack",         // Array#pack and String#unpack
             "mruby-sprintf",      // Kernel#sprintf, Kernel#format, String#%
             "mruby-class-ext",    // NOTE(GH-32): Pending removal.
             "mruby-proc-ext",     // NOTE(GH-32): This gem is required by `mruby-method`.
         ]
+        .into_iter()
     }
 
     pub fn mruby_build_config() -> PathBuf {
@@ -192,7 +193,7 @@ mod libmruby {
     }
 
     fn generate_mrbgem_config() {
-        let mut gembox = String::from("MRuby::GemBox.new do |conf|");
+        let mut gembox = String::from("MRuby::GemBox.new do |conf|\n");
         for gem in gems() {
             gembox.push_str("  conf.gem core: '");
             gembox.push_str(gem);
@@ -228,12 +229,14 @@ mod libmruby {
             buildpath::source::mruby_sys_ext_source_file(),
             buildpath::source::mruby_sys_ext_source_file(),
         );
+
         let mut mruby_sources = vec![];
-        crate::enumerate_sources(mruby_source_dir(), &mut mruby_sources).unwrap();
+        enumerate_sources(mruby_source_dir(), &mut mruby_sources).unwrap();
+
         for source in mruby_sources {
             let relative_source = source.strip_prefix(mruby_source_dir()).unwrap();
             let is_core_source = source.strip_prefix(mruby_source_dir().join("src")).is_ok();
-            let is_required_gem_source = gems().iter().any(|gem| {
+            let is_required_gem_source = gems().any(|gem| {
                 source
                     .components()
                     .any(|component| component.as_os_str() == OsStr::new(gem))
@@ -275,15 +278,14 @@ mod libmruby {
             .files(sources.values())
             .include(mruby_include_dir())
             .include(buildpath::source::mruby_sys_ext_include_dir())
+            .define("ARTICHOKE", None)
+            .define("MRB_ARY_NO_EMBED", None)
+            .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
+            .define("MRB_INT64", None)
             .define("MRB_NO_BOXING", None)
             .define("MRB_NO_PRESYM", None)
             .define("MRB_NO_STDIO", None)
-            .define("MRB_ARY_NO_EMBED", None)
-            .define("MRB_INT64", None)
-            .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
-            .define("MRB_UTF8_STRING", None)
-            .define("DISABLE_GEMS", None)
-            .define("ARTICHOKE", None);
+            .define("MRB_UTF8_STRING", None);
 
         for gem in gems() {
             let dir = if gem == "mruby-compiler" { "core" } else { "include" };
@@ -295,11 +297,15 @@ mod libmruby {
             for include_dir in wasm_include_dirs() {
                 build.include(include_dir);
             }
-            if let OperatingSystem::Emscripten = target.operating_system {
-                build.define("MRB_API", Some(r#"__attribute__((used))"#));
-            } else if let OperatingSystem::Unknown = target.operating_system {
-                build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
-                build.define("MRB_NO_DIRECT_THREADING", None);
+            match target.operating_system {
+                OperatingSystem::Emscripten => {
+                    build.define("MRB_API", Some(r#"__attribute__((used))"#));
+                }
+                OperatingSystem::Unknown => {
+                    build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
+                    build.define("MRB_NO_DIRECT_THREADING", None);
+                }
+                _ => {}
             }
         }
 
@@ -378,13 +384,14 @@ mod libmruby {
             .arg("-I")
             .arg(buildpath::source::mruby_sys_ext_include_dir())
             .arg("-DARTICHOKE")
+            .arg("-DMRB_ARY_NO_EMBED")
+            .arg("-DMRB_GC_TURN_OFF_GENERATIONAL")
+            .arg("-DMRB_INT64")
             .arg("-DMRB_NO_BOXING")
             .arg("-DMRB_NO_PRESYM")
             .arg("-DMRB_NO_STDIO")
-            .arg("-DMRB_ARY_NO_EMBED")
-            .arg("-DMRB_INT64")
-            .arg("-DMRB_GC_TURN_OFF_GENERATIONAL")
             .arg("-DMRB_UTF8_STRING");
+
         if let Architecture::Wasm32 = target.architecture {
             for include_dir in wasm_include_dirs() {
                 command.arg("-I").arg(include_dir);
@@ -417,8 +424,8 @@ mod build {
         fs::create_dir_all(buildpath::build_root()).unwrap();
 
         copy_dir_recursive(
-            buildpath::crate_root().join("vendor").join("mruby"),
-            libmruby::mruby_source_dir(),
+            &buildpath::crate_root().join("vendor").join("mruby"),
+            &libmruby::mruby_source_dir(),
         )
         .unwrap();
 
@@ -442,15 +449,11 @@ mod build {
         }
     }
 
-    fn copy_dir_recursive<T, U>(from: T, to: U) -> io::Result<()>
-    where
-        T: AsRef<Path>,
-        U: AsRef<Path>,
-    {
-        let mut stack = vec![PathBuf::from(from.as_ref())];
-        let dest_root = PathBuf::from(to.as_ref());
-        let input_root_depth = from.as_ref().components().count();
-        println!("copying {} -> {}", from.as_ref().display(), to.as_ref().display());
+    fn copy_dir_recursive(from: &Path, to: &Path) -> io::Result<()> {
+        let mut stack = vec![from.to_owned()];
+        let dest_root = to.to_owned();
+        let input_root_depth = from.components().count();
+        println!("copying {} -> {}", from.display(), to.display());
 
         while let Some(from) = stack.pop() {
             let dest = from.components().skip(input_root_depth);
@@ -476,9 +479,15 @@ mod build {
 }
 
 fn main() {
-    let target = env::var_os("TARGET").unwrap();
-    let target = Triple::from_str(target.to_str().unwrap()).unwrap();
-    let out_dir = env::var_os("OUT_DIR").unwrap();
+    let target = env::var_os("TARGET").expect("cargo-provided TARGET env variable not set");
+    let target = target.to_str().expect("TARGET env variable was not valid UTF-8");
+    let target = target.parse::<Triple>().unwrap_or_else(|err| {
+        panic!(
+            "target-lexicon could not parse build target '{}' with error: {}",
+            target, err
+        )
+    });
+    let out_dir = env::var_os("OUT_DIR").expect("cargo-provided OUT_DIR env variable not set");
     build::clean();
     build::rerun_if_changed();
     build::setup_build_root();
