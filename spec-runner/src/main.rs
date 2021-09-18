@@ -108,29 +108,26 @@ pub fn main() {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
 
     let app = App::new("spec-runner");
-    let app = app
-        .about("CLI specification for `spec-runner`")
-        .about("ruby/spec runner for Artichoke.");
+    let app = app.about("ruby/spec runner for Artichoke.");
     let app = app.arg(
-        Arg::with_name("formatter")
+        Arg::new("formatter")
             .long("format")
-            .short("f")
+            .short('f')
             .default_value("artichoke")
             .possible_values(&["artichoke", "summary", "tagger", "yaml"])
             .required(false)
-            .help("Output spec results in YAML"),
+            .help("Choose an output formatter"),
     );
     let app = app.arg(
-        Arg::with_name("quiet")
+        Arg::new("quiet")
             .long("quiet")
-            .short("q")
+            .short('q')
             .required(false)
             .help("Suppress spec failures when exiting"),
     );
     let app = app.arg(
-        Arg::with_name("config")
+        Arg::new("config")
             .takes_value(true)
-            .multiple(false)
             .required(true)
             .help("Path to TOML config file"),
     );
