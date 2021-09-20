@@ -9,7 +9,6 @@ Growable vector backends for the Ruby Array core type in Artichoke Ruby
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
-license-file = "../LICENSE"
 keywords = ["array", "no_std", "spinoso", "vec", "vector"]
 categories = ["data-structures", "no-std"]
 

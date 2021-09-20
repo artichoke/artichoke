@@ -9,7 +9,6 @@ String escape code and debug formatting utility package for Artichoke Ruby.
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
-license-file = "../LICENSE"
 keywords = ["artichoke", "escape", "no_std", "ruby"]
 categories = ["encoding", "no-std", "parser-implementations"]
 

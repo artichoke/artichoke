@@ -9,7 +9,6 @@ Implementation of the Ruby Math module
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
-license-file = "../LICENSE"
 keywords = ["libm", "math", "no_std", "spinoso"]
 categories = ["algorithms", "no-std"]
 

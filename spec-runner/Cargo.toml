@@ -7,7 +7,6 @@ description = "Binary for running Ruby Specs with Artichoke Ruby"
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
-license-file = "../LICENSE"
 keywords = ["artichoke", "artichoke-ruby", "ruby", "ruby-spec", "testing"]
 categories = ["development-tools::testing"]
 

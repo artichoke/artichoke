@@ -9,7 +9,6 @@ Symbol implementation for Ruby Symbol core type in Artichoke Ruby
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
-license-file = "../LICENSE"
 keywords = ["ident", "intern", "no_std", "spinoso", "symbol"]
 categories = ["data-structures", "no-std", "parser-implementations"]
 
