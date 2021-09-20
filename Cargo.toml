@@ -2,18 +2,19 @@
 name = "artichoke"
 version = "0.1.0-pre.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-license = "MIT"
 edition = "2018"
-readme = "README.md"
-repository = "https://github.com/artichoke/artichoke"
-documentation = "https://artichoke.github.io/artichoke/artichoke/"
-homepage = "https://github.com/artichoke/artichoke"
 description = """
 artichoke is a Ruby 2.6.3 implementation. Artichoke supports embedding and
 conditional compilation of the VM and standard library. Artichoke can be used to
 distribute Ruby applications as single-binary artifacts. Artichoke builds on
 Windows, macOS, and Linux, as well as WebAssembly via Emscripten.
 """
+repository = "https://github.com/artichoke/artichoke"
+documentation = "https://artichoke.github.io/artichoke/artichoke/"
+homepage = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+license-file = "LICENSE"
 keywords = ["artichoke", "artichoke-ruby", "mri", "cruby", "ruby"]
 categories = ["command-line-utilities"]
 

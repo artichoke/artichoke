@@ -9,6 +9,7 @@ Regex implementation for Ruby Regexp core type in Artichoke Ruby
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
+license-file = "../LICENSE"
 keywords = ["artichoke", "onig", "regex", "regexp", "ruby"]
 categories = ["data-structures", "parser-implementations"]
 
