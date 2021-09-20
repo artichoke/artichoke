@@ -9,6 +9,7 @@ Implementation of Ruby Random Core class.
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
+license-file = "../LICENSE"
 keywords = ["random", "rand", "rng", "mt", "spinoso"]
 categories = ["algorithms", "no-std"]
 

@@ -9,6 +9,7 @@ Encoding-aware string implementation for Ruby String core type in Artichoke Ruby
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
+license-file = "../LICENSE"
 keywords = ["encoding", "no_std", "spinoso", "string", "utf8"]
 categories = ["data-structures", "encoding", "no-std"]
 

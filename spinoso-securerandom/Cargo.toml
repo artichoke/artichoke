@@ -9,6 +9,7 @@ Secure PRNG backend for Artichoke Ruby, implements 'securerandom' package
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
+license-file = "../LICENSE"
 keywords = ["artichoke", "rand", "random", "rng", "spinoso"]
 categories = ["algorithms"]
 
