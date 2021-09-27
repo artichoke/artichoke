@@ -83,7 +83,7 @@ between boxed Ruby values and native Rust types like `i64` and
 
 ## License
 
-`artichoke-backend` is licensed with the [MIT License](../LICENSE) (c) Ryan
+`artichoke-backend` is licensed with the [MIT License](LICENSE) (c) Ryan
 Lopopolo.
 
 Some portions of artichoke-backend are derived from [mruby] which is Copyright

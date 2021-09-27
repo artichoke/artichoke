@@ -48,5 +48,4 @@ All features are enabled by default.
 
 ## License
 
-`spinoso-regex` is licensed with the [MIT License](../LICENSE) (c) Ryan
-Lopopolo.
+`spinoso-regex` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.

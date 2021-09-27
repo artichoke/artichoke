@@ -67,8 +67,7 @@ All features are enabled by default:
 
 ## License
 
-`artichoke-core` is licensed with the [MIT License](../LICENSE) (c) Ryan
-Lopopolo.
+`artichoke-core` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 [kernel#require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
 [`random::default`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT

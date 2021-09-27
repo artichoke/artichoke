@@ -84,7 +84,7 @@ All features are enabled by default:
 
 ## License
 
-`spinoso-env` is licensed with the [MIT License](../LICENSE) (c) Ryan Lopopolo.
+`spinoso-env` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 [`env`]: https://ruby-doc.org/core-2.6.3/ENV.html
 [`hashmap`]: std::collections::HashMap

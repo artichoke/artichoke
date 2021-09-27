@@ -102,8 +102,7 @@ All features are enabled by default.
 
 ## License
 
-`spinoso-symbol` is licensed with the [MIT License](../LICENSE) (c) Ryan
-Lopopolo.
+`spinoso-symbol` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 [the `symbol` api from ruby core]: https://ruby-doc.org/core-2.6.3/Symbol.html
 [`intern`]:

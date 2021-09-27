@@ -54,7 +54,7 @@ let timestamp = utc.to_int();
 
 ## License
 
-`spinoso-time` is licensed with the [MIT License](../LICENSE) (c) Ryan Lopopolo.
+`spinoso-time` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 [`time`]: https://ruby-doc.org/core-2.6.3/Time.html
 [`chrono`]: https://crates.io/crates/chrono

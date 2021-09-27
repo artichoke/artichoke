@@ -72,8 +72,7 @@ All features are enabled by default.
 
 ## License
 
-`spinoso-array` is licensed with the [MIT License](../LICENSE) (c) Ryan
-Lopopolo.
+`spinoso-array` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 [ruby-array]: https://ruby-doc.org/core-2.6.3/Array.html
 [artichoke]: https://github.com/artichoke/artichoke
