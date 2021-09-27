@@ -76,8 +76,7 @@ All features are enabled by default.
 
 ## License
 
-`spinoso-random` is licensed with the [MIT License](../LICENSE) (c) Ryan
-Lopopolo.
+`spinoso-random` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 `spinoso-random` is a substantially rewritten fork of [`rand_mt`] @
 [`aeb3274a`][rand-mt-forked-at], which is copyright rust-mersenne-twister

@@ -75,7 +75,7 @@ All features are enabled by default.
 
 ## License
 
-`spinoso-exception` is licensed with the [MIT License](../LICENSE) (c) Ryan
+`spinoso-exception` is licensed with the [MIT License](LICENSE) (c) Ryan
 Lopopolo.
 
 [`exception`]: https://ruby-doc.org/core-2.6.3/Exception.html

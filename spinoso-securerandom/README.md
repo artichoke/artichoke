@@ -84,7 +84,7 @@ fn example() -> Result<(), spinoso_securerandom::Error> {
 
 ## License
 
-`spinoso-securerandom` is licensed with the [MIT License](../LICENSE) (c) Ryan
+`spinoso-securerandom` is licensed with the [MIT License](LICENSE) (c) Ryan
 Lopopolo.
 
 [`securerandom`]:

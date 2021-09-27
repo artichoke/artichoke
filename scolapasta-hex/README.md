@@ -69,8 +69,7 @@ All features are enabled by default.
 
 ## License
 
-`scolapasta-hex` is licensed with the [MIT License](../LICENSE) (c) Ryan
-Lopopolo.
+`scolapasta-hex` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 [base 16 encoding]: https://tools.ietf.org/html/rfc4648#section-8
 [`string`]: https://doc.rust-lang.org/alloc/string/struct.String.html
