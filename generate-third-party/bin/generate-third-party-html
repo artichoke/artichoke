@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# avoid ugly stacks on permissible signals
+Signal.trap('INT', 'SYSTEM_DEFAULT') if Signal.list.include?('INT')
+Signal.trap('PIPE', 'SYSTEM_DEFAULT') if Signal.list.include?('PIPE')
+
+require 'generate_third_party'
+
+unless Artichoke::Generate::ThirdParty::CargoAbout.present?
+  warn <<~ERR
+    Error: `cargo-about` not found in PATH.
+
+    Try installing `cargo-about` with:
+
+        cargo install cargo-about
+
+  ERR
+  exit 1
+end
+
+puts Artichoke::Generate::ThirdParty::AllTargets.third_party_html
