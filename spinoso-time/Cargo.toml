@@ -14,7 +14,7 @@ categories = ["date-and-time"]
 
 [dependencies]
 chrono = { version = "0.4.19", default-features = false, features = ["clock"] }
-chrono-tz = "0.5"
+chrono-tz = "0.6"
 
 [package.metadata.docs.rs]
 all-features = true
