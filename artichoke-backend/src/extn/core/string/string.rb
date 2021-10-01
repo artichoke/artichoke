@@ -288,7 +288,7 @@ class String
 
     left_pad = (width - length) / 2
     left_pad = (padstr * left_pad)[0...left_pad]
-    right_pad = (width - length) / 2 + (width - length) % 2
+    right_pad = ((width - length) / 2) + ((width - length) % 2)
     right_pad = (padstr * right_pad)[0...right_pad]
     "#{left_pad}#{self}#{right_pad}"
   end
