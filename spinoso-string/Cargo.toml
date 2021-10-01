@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-string"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2018"
 description = """
@@ -21,6 +21,9 @@ scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escap
 quickcheck = { version = "1.0", default-features = false }
 
 [features]
-default = ["casecmp", "std"]
+default = ["casecmp", "ffi", "std"]
 casecmp = ["focaccia"]
+# Helpers for implementing Ruby and mruby FFI routines.
+ffi = []
+# Enable implementations of traits in `std` like `Error` and `io::Write`.
 std = []
