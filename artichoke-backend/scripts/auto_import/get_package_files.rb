@@ -14,6 +14,6 @@ lib_sources +=
   $LOADED_FEATURES
     .map { |f| f.gsub('/', '\\') }
     .select { |f| f.include?(BASE) }
-package_sources = lib_sources.select { |f| f =~ /#{PACKAGE}/ }
+package_sources = lib_sources.grep(/#{PACKAGE}/)
 
 puts package_sources.sort.uniq
