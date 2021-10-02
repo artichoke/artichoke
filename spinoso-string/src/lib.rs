@@ -53,6 +53,8 @@ pub use focaccia::CaseFold;
 mod chars;
 mod encoding;
 mod eq;
+#[cfg(feature = "ffi")]
+pub mod ffi;
 mod impls;
 mod inspect;
 
