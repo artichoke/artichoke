@@ -84,8 +84,6 @@ impl BoxUnboxVmValue for String {
     }
 
     fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
-        let _ = interp;
-
         // Make sure we have an String otherwise boxing will produce undefined
         // behavior.
         //

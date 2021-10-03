@@ -234,12 +234,28 @@ class String
     self
   end
 
+  def each_char(&block)
+    return to_enum(:each_char, &block) unless block
+
+    chars = self.chars
+    pos = 0
+    while pos < chars.size
+      block.call(chars[pos])
+      pos += 1
+    end
+    self
+  end
+
   def each_codepoint
     return to_enum(:each_codepoint) unless block_given?
 
-    chars do |c|
-      yield c.ord
+    codepoints = self.codepoints
+    pos = 0
+    while pos < codepoints.size
+      block.call(codepoints[pos])
+      pos += 1
     end
+    self
   end
 
   def each_grapheme_cluster

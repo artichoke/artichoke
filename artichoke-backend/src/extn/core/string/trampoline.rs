@@ -1,5 +1,4 @@
 use core::convert::TryFrom;
-use core::iter;
 
 use bstr::ByteSlice;
 
@@ -11,6 +10,53 @@ use crate::extn::core::matchdata::MatchData;
 #[cfg(feature = "core-regexp")]
 use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::prelude::*;
+
+pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Value, Error> {
+    let count = implicitly_convert_to_int(interp, count)?;
+    let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative argument"))?;
+
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // This guard ensures `repeat` below does not panic on usize overflow.
+    if count.checked_mul(s.len()).is_none() {
+        return Err(RangeError::with_message("bignum too big to convert into `long'").into());
+    }
+    let repeated_s = s.as_slice().repeat(count).into();
+    super::String::alloc_value(repeated_s, interp)
+}
+
+pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // Safety:
+    //
+    // The borrowed byte slice is immediately memcpy'd into the `s` byte
+    // buffer. There are no intervening interpreter accesses.
+    let to_append = unsafe { implicitly_convert_to_string(interp, &mut other)? };
+
+    let mut concatenated = s.clone();
+    concatenated.extend_from_slice(to_append);
+    super::String::alloc_value(concatenated, interp)
+}
+
+pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // Safety:
+    //
+    // The byteslice is immediately used and discarded after extraction. There
+    // are no intervening interpreter accesses.
+    let other = unsafe { implicitly_convert_to_string(interp, &mut other)? };
+    // Safety:
+    //
+    // The string is reboxed before any intervening operations on the
+    // interpreter.
+    // The string is reboxed without any intervening mruby allocations.
+    unsafe {
+        let string_mut = s.as_inner_mut();
+        string_mut.extend_from_slice(other);
+
+        let s = s.take();
+        super::String::box_into_value(s, value, interp)
+    }
+}
 
 pub fn cmp_rocket(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
@@ -46,34 +92,17 @@ pub fn equals_equals(interp: &mut Artichoke, mut value: Value, mut other: Value)
     }
 }
 
-pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
-    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // Safety:
-    //
-    // The borrowed byte slice is immediately memcpy'd into the `s` byte
-    // buffer. There are no intervening interpreter accesses.
-    let to_append = unsafe { implicitly_convert_to_string(interp, &mut other)? };
-    // Safety:
-    //
-    // The string is reboxed before any intervening operations on the
-    // interpreter.
-    // The string is reboxed without any intervening mruby allocations.
-    unsafe {
-        let string_mut = s.as_inner_mut();
-        string_mut.extend_from_slice(to_append);
-
-        let inner = s.take();
-        super::String::box_into_value(inner, value, interp)
-    }
+pub fn is_ascii_only(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let is_ascii_only = s.is_ascii_only();
+    Ok(interp.convert(is_ascii_only))
 }
 
-pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Value, Error> {
-    let count = implicitly_convert_to_int(interp, count)?;
-    let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative argument"))?;
-
+pub fn b(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let repeated_s = iter::repeat(s.bytes()).take(count).flatten().collect::<super::String>();
-    super::String::alloc_value(repeated_s, interp)
+    let mut dup = s.clone();
+    dup.make_binary();
+    super::String::alloc_value(dup, interp)
 }
 
 pub fn bytesize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
@@ -90,6 +119,56 @@ pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
         .map(|byte| interp.convert(byte))
         .collect::<Array>();
     Array::alloc_value(bytes, interp)
+}
+
+pub fn capitalize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let mut dup = s.clone();
+    dup.make_capitalized();
+    super::String::alloc_value(dup, interp)
+}
+
+pub fn capitalize_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // Safety:
+    //
+    // The string is reboxed before any intervening operations on the
+    // interpreter.
+    // The string is reboxed without any intervening mruby allocations.
+    unsafe {
+        let string_mut = s.as_inner_mut();
+        // `make_capitalized` might reallocate the string and invalidate the
+        // boxed pointer/capa/len.
+        string_mut.make_capitalized();
+
+        let s = s.take();
+        super::String::box_into_value(s, value, interp)
+    }
+}
+
+pub fn casecmp_ascii(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // Safety:
+    //
+    // The byteslice is immediately discarded after extraction. There are no
+    // intervening interpreter accesses.
+    if let Ok(other) = unsafe { implicitly_convert_to_string(interp, &mut other) } {
+        let cmp = s.ascii_casecmp(other) as i64;
+        Ok(interp.convert(cmp))
+    } else {
+        Ok(Value::nil())
+    }
+}
+
+pub fn casecmp_unicode(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // TODO: this needs to do an implicit conversion, but we need a spinoso string.
+    if let Ok(other) = unsafe { super::String::unbox_from_value(&mut other, interp) } {
+        let eql = *s == *other;
+        Ok(interp.convert(eql))
+    } else {
+        Ok(interp.convert(false))
+    }
 }
 
 pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
