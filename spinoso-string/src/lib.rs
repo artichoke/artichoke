@@ -51,6 +51,7 @@ use bstr::{ByteSlice, ByteVec};
 pub use focaccia::CaseFold;
 
 mod chars;
+mod codepoints;
 mod encoding;
 mod eq;
 #[cfg(feature = "ffi")]
@@ -59,6 +60,7 @@ mod impls;
 mod inspect;
 
 pub use chars::Chars;
+pub use codepoints::{Codepoints, CodepointsError};
 pub use encoding::{Encoding, InvalidEncodingError};
 pub use inspect::Inspect;
 
@@ -1941,6 +1943,72 @@ impl String {
     #[must_use]
     pub fn chars(&self) -> Chars<'_> {
         Chars::from(self)
+    }
+
+    /// Returns an iterator over the `u32` codepoints of a `String`.
+    ///
+    /// This function is encoding-aware. `String`s with [UTF-8 encoding] are
+    /// only [conventionally UTF-8]. This function only returns `Ok` for
+    /// `String`s with UTF-8 encoding if the underlying bytes in the `String`
+    /// are valid UTF-8. For UTF-8 `String`s, this iterator yields the `u32`
+    /// values of the [`char`]s in the bytestring. For [ASCII encoded] and
+    /// [binary encoded] strings, this iterator yields slices of single bytes.
+    ///
+    /// For UTF-8 encoded strings, the yielded byte slices can be parsed into
+    /// [`char`]s with `.into()`.
+    ///
+    /// # Errors
+    ///
+    /// This function requires the `String` contents to be well-formed with
+    /// respect to its encoding. This function will return an error if the
+    /// `String` has UTF-8 encoding and contains invalid UTF-8 byte sequences.
+    ///
+    /// # Examples
+    ///
+    /// Iterating over the codepoints of a conventionally UTF-8 string:
+    ///
+    /// ```
+    /// use spinoso_string::{CodepointsError, String};
+    ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let s = String::utf8(b"ab\xF0\x9F\x92\x8E\xFF".to_vec());
+    /// assert!(matches!(s.codepoints(), Err(CodepointsError::InvalidUtf8Codepoint)));
+    ///
+    /// let s = String::utf8("💎".as_bytes().to_vec());
+    /// let mut codepoints = s.codepoints()?;
+    /// assert_eq!(codepoints.next(), Some(u32::from('💎')));
+    /// assert_eq!(codepoints.next(), None);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
+    ///
+    /// Iterating over the codepoints of a binary string:
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// let s = String::binary("💎".as_bytes().to_vec());
+    /// let mut codepoints = s.codepoints()?;
+    /// assert_eq!(codepoints.next(), Some(0xF0));
+    /// assert_eq!(codepoints.next(), Some(0x9F));
+    /// assert_eq!(codepoints.next(), Some(0x92));
+    /// assert_eq!(codepoints.next(), Some(0x8E));
+    /// assert_eq!(codepoints.next(), None);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
+    ///
+    /// [UTF-8 encoding]: crate::Encoding::Utf8
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
+    /// [ASCII encoded]: crate::Encoding::Ascii
+    /// [binary encoded]: crate::Encoding::Binary
+    /// [`str::from_utf8`]: core::str::from_utf8
+    #[inline]
+    pub fn codepoints(&self) -> Result<Codepoints<'_>, CodepointsError> {
+        Codepoints::try_from(self)
     }
 
     /// Returns the character length of this `String`.

@@ -84,6 +84,7 @@ impl<'a> Bytes<'a> {
 }
 
 impl<'a> From<&'a [u8]> for Bytes<'a> {
+    #[inline]
     fn from(bytes: &'a [u8]) -> Self {
         Self::with_bytes(bytes)
     }
