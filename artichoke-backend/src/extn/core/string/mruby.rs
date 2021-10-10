@@ -223,6 +223,19 @@ unsafe extern "C" fn string_casecmp_unicode(mrb: *mut sys::mrb_state, slf: sys::
     }
 }
 
+unsafe extern "C" fn string_center(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let (width, padstr) = mrb_get_args!(mrb, required = 1, optional = 1);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let width = Value::from(width);
+    let padstr = padstr.map(Value::from);
+    let result = trampoline::center(&mut guard, value, width, padstr);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
 unsafe extern "C" fn string_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);

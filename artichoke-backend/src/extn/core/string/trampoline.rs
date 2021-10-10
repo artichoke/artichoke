@@ -171,6 +171,49 @@ pub fn casecmp_unicode(interp: &mut Artichoke, mut value: Value, mut other: Valu
     }
 }
 
+pub fn center(
+    interp: &mut Artichoke,
+    mut value: Value,
+    width: Value,
+    mut padstr: Option<Value>,
+) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let width = implicitly_convert_to_int(interp, width)?;
+    let width = if let Ok(width) = usize::try_from(width) {
+        width
+    } else {
+        // ```ruby
+        // [3.0.2] > "a".center(-1)
+        // => "a"
+        // [3.0.2] > "a".center(-10)
+        // => "a"
+        // [3.0.2] > x = "a"
+        // => "a"
+        // [3.0.2] > y = "a".center(-10)
+        // => "a"
+        // [3.0.2] > x.object_id == y.object_id
+        // => false
+        // ```
+        let dup = s.clone();
+        return super::String::alloc_value(dup, interp);
+    };
+    // Safety:
+    //
+    // The byteslice is immediately discarded after extraction. There are no
+    // intervening interpreter accesses.
+    let padstr = if let Some(padstr) = padstr {
+        let padstr = unsafe { implicitly_convert_to_string(interp, &mut padstr)? };
+        Some(padstr)
+    } else {
+        None
+    };
+    let centered = s
+        .center(width, padstr)
+        .map_err(|e| ArgumentError::with_message(e.message()))?
+        .collect::<super::String>();
+    super::String::alloc_value(centered, interp)
+}
+
 pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     if let Ok(other) = unsafe { super::String::unbox_from_value(&mut other, interp) } {
