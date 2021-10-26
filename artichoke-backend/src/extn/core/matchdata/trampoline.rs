@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::array::Array;
 use crate::extn::core::matchdata::{Capture, CaptureAt, CaptureExtract, MatchData};

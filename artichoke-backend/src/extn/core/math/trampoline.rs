@@ -1,7 +1,5 @@
 //! Glue between mruby FFI and `ENV` Rust implementation.
 
-use core::convert::TryFrom;
-
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 

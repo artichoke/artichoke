@@ -1,4 +1,3 @@
-use core::convert::TryFrom;
 use core::fmt;
 use core::iter::FusedIterator;
 use core::str::Chars;

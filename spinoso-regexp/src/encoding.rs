@@ -1,6 +1,5 @@
 //! Parse encoding parameter to `Regexp#initialize` and `Regexp::compile`.
 
-use core::convert::TryFrom;
 use core::fmt;
 use core::hash::{Hash, Hasher};
 use core::mem;

@@ -1,6 +1,5 @@
 use chrono::prelude::*;
 use core::cmp::Ordering;
-use core::convert::TryFrom;
 use core::hash::{Hash, Hasher};
 
 use crate::{ComponentOutOfRangeError, NANOS_IN_SECOND};

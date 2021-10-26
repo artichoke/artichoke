@@ -1,7 +1,6 @@
 use core::mem::size_of;
 use onig::{Regex, Syntax};
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::fmt;
 use std::num::NonZeroUsize;
 use std::rc::Rc;

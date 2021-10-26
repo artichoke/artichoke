@@ -7,7 +7,6 @@
 #![allow(clippy::shadow_unrelated)]
 
 use std::borrow::Cow;
-use std::convert::TryFrom;
 use std::ffi::{CStr, CString};
 use std::ptr::NonNull;
 

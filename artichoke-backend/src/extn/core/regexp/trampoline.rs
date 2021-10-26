@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_nilable_string, implicitly_convert_to_string};
 use crate::extn::core::regexp::{Options, Regexp};
 use crate::extn::core::symbol::Symbol;

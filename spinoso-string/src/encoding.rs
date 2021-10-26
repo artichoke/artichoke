@@ -1,4 +1,3 @@
-use core::convert::TryFrom;
 use core::fmt;
 
 // [2.6.3] > Encoding::UTF_8.names
@@ -22,7 +21,6 @@ const BINARY_NAMES: &[&str] = &["ASCII-8BIT", "BINARY"];
 /// # Examples
 ///
 /// ```
-/// # use core::convert::TryFrom;
 /// # use spinoso_string::{Encoding, InvalidEncodingError};
 /// assert_eq!(Encoding::try_from_flag(255), Err(InvalidEncodingError::new()));
 /// assert_eq!(Encoding::try_from(255), Err(InvalidEncodingError::new()));

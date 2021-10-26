@@ -2,7 +2,6 @@ use artichoke_core::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
 use artichoke_core::intern::Intern;
 use artichoke_core::value::Value as ValueCore;
 use std::borrow::Cow;
-use std::convert::TryFrom;
 use std::error;
 use std::fmt;
 use std::ptr;

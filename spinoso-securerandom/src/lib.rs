@@ -92,7 +92,6 @@
 #[doc = include_str!("../README.md")]
 mod readme {}
 
-use core::convert::TryFrom;
 use core::fmt;
 use rand::distributions::Alphanumeric;
 use rand::{self, Rng, RngCore};

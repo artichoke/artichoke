@@ -19,7 +19,6 @@
 //!
 //! [`Random`]: https://ruby-doc.org/core-2.6.3/Random.html
 
-use core::convert::TryFrom;
 use core::ops::{Deref, DerefMut};
 use spinoso_random::{
     ArgumentError as RandomArgumentError, InitializeError, NewSeedError, Random as SpinosoRandom, UrandomError,

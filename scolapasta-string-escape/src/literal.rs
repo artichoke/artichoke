@@ -1,4 +1,3 @@
-use core::convert::TryFrom;
 use core::fmt;
 use core::iter::FusedIterator;
 use core::slice;
@@ -650,7 +649,6 @@ impl std::error::Error for ByteSequenceTooLongError {}
 /// on their own are invalid. All of these bytes should be hex escaped.
 ///
 /// ```
-/// # use core::convert::TryFrom;
 /// # use scolapasta_string_escape::InvalidUtf8ByteSequence;
 /// let invalid_byte_sequence = &b"\xF0\x9D\x9C"[..];
 /// let iter = InvalidUtf8ByteSequence::try_from(invalid_byte_sequence).unwrap();

@@ -1,5 +1,4 @@
 use bstr::ByteSlice;
-use std::convert::{TryFrom, TryInto};
 use std::error;
 use std::fmt;
 use std::iter::Iterator;
@@ -382,8 +381,6 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryInto;
-
     use bstr::ByteSlice;
 
     use super::{method as integer, Radix};

@@ -1,4 +1,3 @@
-use core::convert::TryFrom;
 use core::iter::FusedIterator;
 
 use scolapasta_string_escape::InvalidUtf8ByteSequence;
