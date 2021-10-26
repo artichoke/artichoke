@@ -160,10 +160,6 @@ impl LoadSources for Artichoke {
                     if let Some(hook) = state.load_path_vfs.get_extension(&alternate_path) {
                         // dynamic, Rust-backed `File` require
                         hook(self)?;
-                        // This ensures that if we load the hook at an alternate
-                        // path, we use that alternate path to load the Ruby
-                        // source.
-                        &alternate_path
                     } else {
                         // Try to load the source at the given path
                         if let Ok(contents) = self.read_source_file_contents(path) {
@@ -175,8 +171,10 @@ impl LoadSources for Artichoke {
                             return Ok(true);
                         }
                         // else proceed with the alternate path
-                        &alternate_path
                     }
+                    // This ensures that if we load the hook at an alternate
+                    // path, we use that alternate path to load the Ruby source.
+                    &alternate_path
                 }
             }
         };
