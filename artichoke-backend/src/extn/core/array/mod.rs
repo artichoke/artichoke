@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::fmt::Write;
-use std::iter::FromIterator;
 use std::ops::Deref;
 use std::slice;
 
