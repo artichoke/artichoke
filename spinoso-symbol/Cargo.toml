@@ -2,7 +2,7 @@
 name = "spinoso-symbol"
 version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2018"
+edition = "2021"
 description = """
 Symbol implementation for Ruby Symbol core type in Artichoke Ruby
 """

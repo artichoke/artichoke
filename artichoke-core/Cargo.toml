@@ -2,7 +2,7 @@
 name = "artichoke-core"
 version = "0.9.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2018"
+edition = "2021"
 description = "Core traits for implementing an Artichoke Ruby interpreter"
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
