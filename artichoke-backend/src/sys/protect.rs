@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::ffi::c_void;
 use std::mem;
 use std::ptr::{self, NonNull};

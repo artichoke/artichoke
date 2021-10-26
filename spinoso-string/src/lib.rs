@@ -37,7 +37,6 @@ extern crate std;
 use alloc::boxed::Box;
 use alloc::vec::{self, Vec};
 use core::cmp::Ordering;
-use core::convert::TryFrom;
 use core::fmt::{self, Write};
 use core::iter::{Cycle, Take};
 use core::mem::{self, ManuallyDrop};

@@ -1,6 +1,4 @@
 #[cfg(feature = "full")]
-use core::convert::TryFrom;
-#[cfg(feature = "full")]
 use core::num::FpCategory;
 
 use crate::{DomainError, NotImplementedError};

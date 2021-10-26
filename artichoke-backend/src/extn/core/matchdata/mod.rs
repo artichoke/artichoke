@@ -11,7 +11,6 @@
 
 use bstr::BString;
 use std::collections::HashMap;
-use std::convert::TryFrom;
 use std::ops::{Bound, RangeBounds};
 use std::str;
 

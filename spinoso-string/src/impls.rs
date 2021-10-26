@@ -2,7 +2,7 @@ use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use core::borrow::{Borrow, BorrowMut};
 use core::fmt;
-use core::iter::{FromIterator, FusedIterator};
+use core::iter::FusedIterator;
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 use core::slice::SliceIndex;
 #[cfg(feature = "std")]

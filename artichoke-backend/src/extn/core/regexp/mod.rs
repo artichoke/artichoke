@@ -7,7 +7,6 @@
 #![allow(clippy::module_name_repetitions)]
 
 use std::collections::hash_map::DefaultHasher;
-use std::convert::TryFrom;
 use std::hash::{Hash, Hasher};
 use std::num::NonZeroUsize;
 use std::str;

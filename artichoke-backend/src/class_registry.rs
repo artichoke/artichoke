@@ -1,5 +1,4 @@
 use std::any::Any;
-use std::convert::TryFrom;
 
 use crate::class;
 use crate::core::ClassRegistry;

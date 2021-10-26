@@ -1,7 +1,5 @@
 //! Parse encoding parameter to `Regexp#initialize` and `Regexp::compile`.
 
-use core::convert::TryFrom;
-
 use super::{Encoding, InvalidEncodingError};
 use crate::extn::prelude::*;
 

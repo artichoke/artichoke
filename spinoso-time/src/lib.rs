@@ -76,7 +76,6 @@ pub const MICROS_IN_NANO: u32 = Duration::from_micros(1).as_nanos() as u32;
 /// Invalid date component:
 ///
 /// ```
-/// # use core::convert::TryFrom;
 /// # use spinoso_time::{Offset, Time, ToA, ComponentOutOfRangeError};
 /// let to_a = ToA {
 ///     sec: 21,
@@ -97,7 +96,6 @@ pub const MICROS_IN_NANO: u32 = Duration::from_micros(1).as_nanos() as u32;
 /// Invalid time component:
 ///
 /// ```
-/// # use core::convert::TryFrom;
 /// # use spinoso_time::{Offset, Time, ToA, ComponentOutOfRangeError};
 /// let to_a = ToA {
 ///     sec: 301,

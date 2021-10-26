@@ -3,7 +3,6 @@
 //! The REPL needs to check if code is valid to determine whether it should
 //! enter multiline editing mode.
 
-use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::ptr::NonNull;
 

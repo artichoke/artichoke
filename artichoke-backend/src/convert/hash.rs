@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::convert::TryFrom;
 
 use crate::convert::{BoxUnboxVmValue, UnboxRubyError};
 use crate::core::{TryConvertMut, Value as _};

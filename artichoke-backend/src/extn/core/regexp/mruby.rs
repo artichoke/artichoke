@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::ffi::CStr;
 
 use super::{trampoline, Flags, Regexp};

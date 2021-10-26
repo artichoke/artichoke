@@ -1,5 +1,3 @@
-use std::convert::TryFrom;
-
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 use crate::sys::protect;

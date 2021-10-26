@@ -1,4 +1,3 @@
-use core::convert::TryFrom;
 use core::num::{NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize};
 
 use crate::{Symbol, SymbolOverflowError};

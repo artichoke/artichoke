@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::ptr;
 use std::slice;

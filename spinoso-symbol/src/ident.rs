@@ -49,7 +49,6 @@
 //! ```
 
 use bstr::ByteSlice;
-use core::convert::TryFrom;
 use core::fmt;
 use core::str::FromStr;
 
@@ -633,7 +632,6 @@ mod tests {
     use super::{
         is_ident_until, is_next_ident_exhausting, is_special_global_name, IdentifierType, ParseIdentifierError,
     };
-    use core::convert::TryFrom;
 
     #[test]
     fn special_global_name() {

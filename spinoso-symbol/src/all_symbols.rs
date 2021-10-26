@@ -1,5 +1,4 @@
 use artichoke_core::intern::Intern;
-use core::convert::TryInto;
 use core::iter::FusedIterator;
 use core::ops::Range;
 
