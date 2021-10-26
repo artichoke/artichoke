@@ -252,17 +252,14 @@ impl<'a> Hex<'a> {
     #[inline]
     #[must_use]
     pub fn len(&self) -> usize {
+        let remaining_bytes = self.iter.as_slice().len();
+        // Every byte expands to two hexadecimal ASCII `char`s.
+        let remaining_bytes_encoded_len = remaining_bytes.saturating_mul(2);
         if let Some(ref escaped_byte) = self.escaped_byte {
-            let remaining_bytes = self.iter.as_slice().len();
-            // Every byte expands to two hexadecimal ASCII `char`s.
-            let remaining_bytes_encoded_len = remaining_bytes.saturating_mul(2);
             // Add the dangling char(s) from the `EscapedByte` iterator.
             remaining_bytes_encoded_len.saturating_add(escaped_byte.len())
         } else {
-            let remaining_bytes = self.iter.as_slice().len();
-            // Every byte expands to two hexadecimal ASCII `char`s.
-            // the only data remaining is unencoded bytes in the slice.
-            remaining_bytes.saturating_mul(2)
+            remaining_bytes_encoded_len
         }
     }
 
