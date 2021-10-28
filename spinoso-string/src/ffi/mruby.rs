@@ -2,7 +2,7 @@
 
 use core::num::Wrapping;
 
-/// Simple, non-cryptographic, non-collision-resistant bytestring hasher.
+/// Simple, non-cryptographic, non-collision-resistant byte string hasher.
 ///
 /// This hash routine is used in [mruby 3.0.0] and [MRI Ruby 1.8.7].
 ///

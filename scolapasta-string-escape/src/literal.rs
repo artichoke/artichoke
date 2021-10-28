@@ -46,8 +46,8 @@ pub const fn is_ascii_char_with_escape(ch: char) -> bool {
 /// # Usage notes
 ///
 /// This iterator operates on individual bytes, which makes it unsuitable for
-/// debug printing a conventionally UTF-8 bytestring on its own. See
-/// [`format_debug_escape_into`] to debug format an entire bytestring.
+/// debug printing a conventionally UTF-8 byte string on its own. See
+/// [`format_debug_escape_into`] to debug format an entire byte string.
 ///
 /// # Examples
 ///

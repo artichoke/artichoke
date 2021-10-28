@@ -1,4 +1,4 @@
-//! Parser for classifying bytestrings as Ruby identifiers.
+//! Parser for classifying byte strings as Ruby identifiers.
 //!
 //! This module exposes a parser for determining if a sequence of bytes is a
 //! valid Ruby identifier. These routines also classify idents by type, for
@@ -54,7 +54,7 @@ use core::str::FromStr;
 
 /// Valid types for Ruby identifiers.
 ///
-/// Spinoso symbol parses bytestrings to determine if they are valid idents for
+/// Spinoso symbol parses byte strings to determine if they are valid idents for
 /// the [`Inspect`] iterator (which requires the **inspect** Cargo feature to be
 /// enabled). Symbols that are valid idents do not get wrapped in `"` when
 /// generating their debug output.

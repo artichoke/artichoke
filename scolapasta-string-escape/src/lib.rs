@@ -23,7 +23,7 @@
 //! Routines for debug escaping Ruby Strings.
 //!
 //! Ruby Strings are conventionally UTF-8 byte sequences. When calling
-//! [`String#inspect`] or [`Symbol#inspect`], these maybe UTF-8 bytestrings are
+//! [`String#inspect`] or [`Symbol#inspect`], these maybe UTF-8 byte strings are
 //! escaped to have a valid and printable UTF-8 representation.
 //!
 //! This crate exposes functions and iterators for encoding arbitrary byte

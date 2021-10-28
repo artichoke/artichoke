@@ -136,7 +136,7 @@ Artichoke Core defines traits for the following interpreter capabilities:
   sources.
 - [`Globals`][core-globals]: Get, set, and unset interpreter-level global
   variables.
-- [`Intern`][core-intern]: Intern bytestrings to a cheap to copy and compare
+- [`Intern`][core-intern]: Intern byte strings to a cheap to copy and compare
   symbol type.
 - [`Io`][core-io]: External I/O APIs, such as writing to the standard output of
   the current process.

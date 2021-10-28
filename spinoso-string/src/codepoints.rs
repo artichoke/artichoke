@@ -22,7 +22,7 @@ use crate::{Encoding, String};
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CodepointsError {
     /// Error returned when calling [`String::codepoints`] on a [`String`] with
-    /// [UTF-8 encoding] which is not a valid UTF-8 bytestring.
+    /// [UTF-8 encoding] which is not a valid UTF-8 byte string.
     ///
     /// [UTF-8 encoding]: crate::Encoding::Utf8
     InvalidUtf8Codepoint,

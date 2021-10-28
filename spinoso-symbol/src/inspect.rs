@@ -15,7 +15,7 @@ use crate::ident::IdentifierType;
 ///
 /// # Examples
 ///
-/// To inspect an empty bytestring:
+/// To inspect an empty byte string:
 ///
 /// ```
 /// # extern crate alloc;
@@ -26,7 +26,7 @@ use crate::ident::IdentifierType;
 /// assert_eq!(debug, r#":"""#);
 /// ```
 ///
-/// To inspect a well-formed UTF-8 bytestring:
+/// To inspect a well-formed UTF-8 byte string:
 ///
 /// ```
 /// # extern crate alloc;
@@ -37,7 +37,7 @@ use crate::ident::IdentifierType;
 /// assert_eq!(debug, ":spinoso");
 /// ```
 ///
-/// To inspect a bytestring with invalid UTF-8 bytes:
+/// To inspect a byte string with invalid UTF-8 bytes:
 ///
 /// ```
 /// # extern crate alloc;

@@ -33,7 +33,7 @@
 //!   various sources.
 //! - [`Globals`](globals::Globals): Get, set, and unset interpreter-level
 //!   global variables.
-//! - [`Intern`](intern::Intern): Intern bytestrings to a cheap to copy and
+//! - [`Intern`](intern::Intern): Intern byte strings to a cheap to copy and
 //!   compare symbol type.
 //! - [`Io`](io::Io): External I/O APIs, such as writing to the standard output
 //!   of the current process.

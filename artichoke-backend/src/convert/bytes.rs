@@ -168,7 +168,7 @@ mod tests {
         }
 
         #[allow(clippy::needless_pass_by_value)]
-        fn bytestring_borrowed(bytes: Vec<u8>) -> bool {
+        fn byte_string_borrowed(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
             // Borrowed converter
             let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
@@ -208,7 +208,7 @@ mod tests {
         }
 
         #[allow(clippy::needless_pass_by_value)]
-        fn bytestring_owned(bytes: Vec<u8>) -> bool {
+        fn byte_string_owned(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter().unwrap();
             // Owned converter
             let value = interp.try_convert_mut(bytes.clone()).unwrap();

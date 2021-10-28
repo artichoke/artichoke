@@ -29,7 +29,7 @@ default = ["artichoke", "std"]
 #
 # When this feature is enabled, several types are re-exported from `focaccia`.
 artichoke = ["artichoke-core", "focaccia", "inspect"]
-# Implement an iterator for printing debug output of a bytestring associated
+# Implement an iterator for printing debug output of a byte string associated
 # with a `Symbol` that is suitable for implementing `Symbol#inspect`.
 inspect = ["ident-parser", "scolapasta-string-escape"]
 # Add a parser for valid Ruby identifiers.
