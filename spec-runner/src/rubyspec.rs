@@ -2,7 +2,7 @@
 
 use artichoke::prelude::*;
 
-/// Load ruby/spec sources into the Artichoke virtual filesystem.
+/// Load ruby/spec sources into the Artichoke virtual file system.
 ///
 /// # Errors
 ///

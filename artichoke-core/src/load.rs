@@ -16,43 +16,43 @@ pub trait LoadSources {
     /// Concrete type for interpreter.
     type Artichoke;
 
-    /// Concrete type for errors returned from filesystem IO.
+    /// Concrete type for errors returned from file system IO.
     type Error;
 
     /// Concrete type for errors returned by `File::require`.
     type Exception;
 
-    /// Add a Rust extension hook to the virtual filesystem. A stub Ruby file is
-    /// added to the filesystem and [`File::require`] will dynamically define
+    /// Add a Rust extension hook to the virtual file system. A stub Ruby file is
+    /// added to the file system and [`File::require`] will dynamically define
     /// Ruby items when invoked via `Kernel#require`.
     ///
     /// If `path` is a relative path, the Ruby source is added to the
-    /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
-    /// file is placed directly on the filesystem. Anscestor directories are
+    /// file system relative to `RUBY_LOAD_PATH`. If the path is absolute, the
+    /// file is placed directly on the file system. Anscestor directories are
     /// created automatically.
     ///
     /// # Errors
     ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
+    /// If the underlying file system is inaccessible, an error is returned.
     ///
-    /// If writes to the underlying filesystem fail, an error is returned.
+    /// If writes to the underlying file system fail, an error is returned.
     fn def_file_for_type<P, T>(&mut self, path: P) -> Result<(), Self::Error>
     where
         P: AsRef<Path>,
         T: File<Artichoke = Self::Artichoke, Error = Self::Exception>;
 
-    /// Add a Ruby source to the virtual filesystem.
+    /// Add a Ruby source to the virtual file system.
     ///
     /// If `path` is a relative path, the Ruby source is added to the
-    /// filesystem relative to `RUBY_LOAD_PATH`. If the path is absolute, the
-    /// file is placed directly on the filesystem. Anscestor directories are
+    /// file system relative to `RUBY_LOAD_PATH`. If the path is absolute, the
+    /// file is placed directly on the file system. Anscestor directories are
     /// created automatically.
     ///
     /// # Errors
     ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
+    /// If the underlying file system is inaccessible, an error is returned.
     ///
-    /// If writes to the underlying filesystem fail, an error is returned.
+    /// If writes to the underlying file system fail, an error is returned.
     fn def_rb_source_file<P, T>(&mut self, path: P, contents: T) -> Result<(), Self::Error>
     where
         P: AsRef<Path>,
@@ -61,37 +61,37 @@ pub trait LoadSources {
     /// Test for a source file at a path and return the absolute path of the
     /// resolved file.
     ///
-    /// Query the underlying virtual filesystem to check if `path` points to a
+    /// Query the underlying virtual file system to check if `path` points to a
     /// source file.
     ///
     /// This function returns [`None`] if `path` does not exist in the virtual
-    /// filesystem.
+    /// file system.
     ///
     /// # Errors
     ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
+    /// If the underlying file system is inaccessible, an error is returned.
     fn resolve_source_path<P>(&self, path: P) -> Result<Option<Vec<u8>>, Self::Error>
     where
         P: AsRef<Path>;
 
     /// Test for a source file at a path.
     ///
-    /// Query the underlying virtual filesystem to check if `path` points to a
+    /// Query the underlying virtual file system to check if `path` points to a
     /// source file.
     ///
     /// This function returns `false` if `path` does not exist in the virtual
-    /// filesystem.
+    /// file system.
     ///
     /// # Errors
     ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
+    /// If the underlying file system is inaccessible, an error is returned.
     fn source_is_file<P>(&self, path: P) -> Result<bool, Self::Error>
     where
         P: AsRef<Path>;
 
     /// Load source located at the given path.
     ///
-    /// Query the underlying virtual filesystem for a source file and load it
+    /// Query the underlying virtual file system for a source file and load it
     /// onto the interpreter. This loads files with the following steps:
     ///
     /// 1. Retrieve and execute the extension hook, if any.
@@ -103,9 +103,9 @@ pub trait LoadSources {
     ///
     /// # Errors
     ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
+    /// If the underlying file system is inaccessible, an error is returned.
     ///
-    /// If reads to the underlying filesystem fail, an error is returned.
+    /// If reads to the underlying file system fail, an error is returned.
     ///
     /// If `path` does not point to a source file, an error is returned.
     ///
@@ -116,7 +116,7 @@ pub trait LoadSources {
 
     /// Require source located at the given path.
     ///
-    /// Query the underlying virtual filesystem for a source file and require it
+    /// Query the underlying virtual file system for a source file and require it
     /// onto the interpreter. This requires files with the following steps:
     ///
     /// 1. Retrieve and execute the extension hook, if any.
@@ -129,9 +129,9 @@ pub trait LoadSources {
     ///
     /// # Errors
     ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
+    /// If the underlying file system is inaccessible, an error is returned.
     ///
-    /// If reads to the underlying filesystem fail, an error is returned.
+    /// If reads to the underlying file system fail, an error is returned.
     ///
     /// If `path` does not point to a source file, an error is returned.
     ///
@@ -142,14 +142,14 @@ pub trait LoadSources {
 
     /// Retrieve file contents for a source file.
     ///
-    /// Query the underlying virtual filesystem for the file contents of the
+    /// Query the underlying virtual file system for the file contents of the
     /// source file at `path`.
     ///
     /// # Errors
     ///
-    /// If the underlying filesystem is inaccessible, an error is returned.
+    /// If the underlying file system is inaccessible, an error is returned.
     ///
-    /// If reads to the underlying filesystem fail, an error is returned.
+    /// If reads to the underlying file system fail, an error is returned.
     ///
     /// If `path` does not point to a source file, an error is returned.
     fn read_source_file_contents<P>(&self, path: P) -> Result<Cow<'_, [u8]>, Self::Error>

@@ -212,7 +212,7 @@ fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Error> 
 }
 
 // This function exists to provide a workaround for Artichoke not being able to
-// read from the local filesystem.
+// read from the local file system.
 //
 // By passing the `--with-fixture PATH` argument, this function loads the file
 // at `PATH` into memory and stores it in the interpreter bound to the

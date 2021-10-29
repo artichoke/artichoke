@@ -16,7 +16,7 @@
 //! `artichoke` supports executing programs via files, stdin, or inline with one
 //! or more `-e` flags.
 //!
-//! Artichoke does not yet support reading from the local filesystem. A
+//! Artichoke does not yet support reading from the local file system. A
 //! temporary workaround is to inject data into the interpreter with the
 //! `--with-fixture` flag, which reads file contents into a `$fixture` global.
 //!

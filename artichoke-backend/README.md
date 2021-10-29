@@ -50,14 +50,14 @@ fn example() -> Result<(), Error> {
 }
 ```
 
-## Virtual Filesystem and `Kernel#require`
+## Virtual File System and `Kernel#require`
 
-The `artichoke-backend` interpreter includes an in-memory virtual filesystem.
-The filesystem stores Ruby sources and Rust extension functions that are similar
-to MRI C extensions.
+The `artichoke-backend` interpreter includes an in-memory virtual file system.
+The file system stores Ruby sources and Rust extension functions that are
+similar to MRI C extensions.
 
-The virtual filesystem enables applications built with `artichoke-backend` to
-`require` sources that are embedded in the binary without host filesystem
+The virtual file system enables applications built with `artichoke-backend` to
+`require` sources that are embedded in the binary without host file system
 access.
 
 ## Embed Rust Types in Ruby `Value`s

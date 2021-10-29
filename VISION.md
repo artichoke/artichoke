@@ -42,7 +42,7 @@ example of the approach.
 
 Artichoke core will support embedding with:
 
-- Multiple [filesystem backends], including an in-memory [virtual filesystem].
+- Multiple [file system backends], including an in-memory [virtual file system].
 - Multiple [`ENV` backends][extn-env], including an in-memory `HashMap` backend.
 - Optional C dependencies via multiple implementations of Core classes, e.g.
   [`Regexp`][extn-regexp].
@@ -113,9 +113,9 @@ Artichoke will include implementation-agnostic [C APIs][a-c-api] targeting:
 [a-ruby-core]: https://github.com/artichoke/artichoke/labels/A-ruby-core
 [a-ruby-stdlib]: https://github.com/artichoke/artichoke/labels/A-ruby-stdlib
 [extn-regexp]: artichoke-backend/src/extn/core/regexp
-[filesystem backends]:
+[file system backends]:
   https://github.com/artichoke/artichoke/labels/A-filesystem
-[virtual filesystem]:
+[virtual file system]:
   https://artichoke.github.io/artichoke/artichoke_backend/fs/index.html
 [extn-env]: artichoke-backend/src/extn/core/env
 [a-optional-stdlib]:

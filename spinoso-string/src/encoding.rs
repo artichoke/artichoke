@@ -1,7 +1,7 @@
 use core::fmt;
 
 // [2.6.3] > Encoding::UTF_8.names
-// => ["UTF-8", "CP65001", "locale", "external", "filesystem"]
+// => ["UTF-8", "CP65001", "locale", "external", "file system"]
 const UTF8_NAMES: &[&str] = &["UTF-8", "CP65001"];
 // [2.6.3] > Encoding::ASCII.names
 // => ["US-ASCII", "ASCII", "ANSI_X3.4-1968", "646"]

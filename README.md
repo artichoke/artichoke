@@ -88,7 +88,7 @@ and [REPL].
 more `-e` flags.
 
 Artichoke can `require`, `require_relative`, and `load` files from the local
-filesystem, but otherwise does not yet support local filesystem access. A
+file system, but otherwise does not yet support local file system access. A
 temporary workaround is to inject data into the interpreter with the
 `--with-fixture` flag, which reads file contents into a `$fixture` global.
 

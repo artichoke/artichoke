@@ -7,8 +7,8 @@
 `spec-runner` is the [ruby/spec][ruby-spec] runner for Artichoke.
 
 `spec-runner` is a wrapper around [`MSpec`][mspec-sources] and [vendored
-ruby/spec sources][ruby-spec-sources] that works with the Artichoke virtual
-filesystem. `spec-runner` runs the specs declared in a [manifest file].
+ruby/spec sources][ruby-spec-sources] that works with the Artichoke virtual file
+system. `spec-runner` runs the specs declared in a [manifest file].
 
 ## Spec Manifest
 

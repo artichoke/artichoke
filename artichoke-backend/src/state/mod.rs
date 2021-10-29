@@ -41,7 +41,7 @@ impl State {
     ///
     /// - [`Class`] and [`Module`] registries.
     /// - `Regexp` [global state][regexp-state].
-    /// - [In-memory virtual filesystem].
+    /// - [In-memory virtual file system].
     /// - [Ruby parser and file context].
     /// - [Intepreter-level PRNG] (requires activating the `core-random`
     ///   feature).
@@ -56,7 +56,7 @@ impl State {
     /// [`Class`]: crate::core::ClassRegistry
     /// [`Module`]: crate::core::ModuleRegistry
     /// [regexp-state]: regexp::State
-    /// [In-memory virtual filesystem]: load_path
+    /// [In-memory virtual file system]: load_path
     /// [Ruby parser and file context]: parser::State
     /// [Intepreter-level PRNG]: Random
     /// [IO capturing]: output::Strategy

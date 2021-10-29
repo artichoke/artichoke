@@ -2,7 +2,7 @@
 
 /// Rust extension hook that can be required.
 ///
-/// `File`s are mounted in the interpreter filesystem and can modify interpreter
+/// `File`s are mounted in the interpreter file system and can modify interpreter
 /// state when they are loaded.
 pub trait File {
     /// Concrete type for interpreter.

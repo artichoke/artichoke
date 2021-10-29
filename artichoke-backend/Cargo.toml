@@ -63,8 +63,8 @@ core-regexp = ["spinoso-regexp"]
 core-regexp-oniguruma = ["spinoso-regexp/oniguruma", "onig"]
 core-time = ["spinoso-time"]
 
-load-path-native-filesystem-loader = ["artichoke-load-path/native-filesystem-loader"]
-load-path-rubylib-native-filesystem-loader = ["load-path-native-filesystem-loader", "artichoke-load-path/rubylib-native-filesystem-loader"]
+load-path-native-file-system-loader = ["artichoke-load-path/native-file-system-loader"]
+load-path-rubylib-native-file-system-loader = ["load-path-native-file-system-loader", "artichoke-load-path/rubylib-native-file-system-loader"]
 
 output-strategy-capture = []
 output-strategy-null = ["output-strategy-capture"]

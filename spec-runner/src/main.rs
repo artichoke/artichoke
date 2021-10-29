@@ -16,7 +16,7 @@
 //! `spec-runner` is the ruby/spec runner for Artichoke.
 //!
 //! `spec-runner` is a wrapper around `MSpec` and ruby/spec that works with the
-//! Artichoke virtual filesystem. `spec-runner` runs the specs declared in a
+//! Artichoke virtual file system. `spec-runner` runs the specs declared in a
 //! manifest file.
 //!
 //! # Spec Manifest

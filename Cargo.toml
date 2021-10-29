@@ -79,8 +79,8 @@ backtrace = ["termcolor"]
 # Enable all features of Ruby Core, Standard Library, and the underlying VM.
 kitchen-sink = [
   "core-full",
-  "load-path-native-filesystem-loader",
-  "load-path-rubylib-native-filesystem-loader",
+  "load-path-native-file-system-loader",
+  "load-path-rubylib-native-file-system-loader",
   "stdlib-full",
 ]
 
@@ -120,15 +120,15 @@ core-regexp-oniguruma = ["artichoke-backend/core-regexp-oniguruma"]
 # and `chrono-tz`.
 core-time = ["artichoke-backend/core-time"]
 
-# Extend the Artichoke virtual filesystem to have native/host access.
+# Extend the Artichoke virtual file system to have native/host access.
 #
 # This feature enables requiring sources from local disk.
-load-path-native-filesystem-loader = ["artichoke-backend/load-path-native-filesystem-loader"]
-# Extend the Artichoke virtual filesystem to search a path separator-delimited
+load-path-native-file-system-loader = ["artichoke-backend/load-path-native-file-system-loader"]
+# Extend the Artichoke virtual file system to search a path separator-delimited
 # list of paths for Ruby sources by parsing the `RUBYLIB` environment variable.
 #
 # This feature enables requiring sources from local disk.
-load-path-rubylib-native-filesystem-loader = ["load-path-native-filesystem-loader", "artichoke-backend/load-path-rubylib-native-filesystem-loader"]
+load-path-rubylib-native-file-system-loader = ["load-path-native-file-system-loader", "artichoke-backend/load-path-rubylib-native-file-system-loader"]
 
 # Override the `stdout` and `stdin` streams to write to an in-memory buffer.
 output-strategy-capture = ["artichoke-backend/output-strategy-capture"]
