@@ -1,56 +1,26 @@
-
 accepted = [
   "MIT",
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
   "BSL-1.0",
 ]
-
 targets = [
   "x86_64-apple-darwin",
 ]
+workarounds = ["chrono", "clap"]
 
-[[artichoke.ignore]]
+[artichoke.clarify]
 license = "MIT"
-license-file = "spec-runner/vendor/mspec/LICENSE"
 
-[[artichoke.ignore]]
+[[artichoke.clarify.files]]
+path = "LICENSE"
 license = "MIT"
-license-file = "spec-runner/vendor/spec/LICENSE"
+checksum = "a7f7d7c7ab9585b1c5e43d592c648d6d3fff7debcf7cfbde301f63b02157444d"
 
-[[artichoke.ignore]]
+[artichoke-backend.clarify]
 license = "MIT"
-license-file = "artichoke-backend/vendor/mruby/LICENSE"
 
-[[artichoke.ignore]]
+[[artichoke-backend.clarify.files]]
+path = "LICENSE"
 license = "MIT"
-license-file = "artichoke-backend/vendor/ruby/LEGAL"
-
-[[artichoke.ignore]]
-license = "MIT"
-license-file = "artichoke-backend/vendor/ruby/spec/mspec/LICENSE"
-
-[[artichoke.ignore]]
-license = "MIT"
-license-file = "artichoke-backend/vendor/ruby/spec/ruby/LICENSE"
-
-[[artichoke-backend.ignore]]
-license = "MIT"
-license-file = "vendor/mruby/LICENSE"
-
-[[artichoke-backend.ignore]]
-license = "MIT"
-license-file = "vendor/ruby/LEGAL"
-
-[[artichoke-backend.ignore]]
-license = "MIT"
-license-file = "vendor/ruby/spec/mspec/LICENSE"
-
-[[artichoke-backend.ignore]]
-license = "MIT"
-license-file = "vendor/ruby/spec/ruby/LICENSE"
-
-[[artichoke-backend.additional]]
-root = "vendor/mruby"
-license = "MIT"
-license-file = "vendor/mruby/LICENSE"
+checksum = "a7f7d7c7ab9585b1c5e43d592c648d6d3fff7debcf7cfbde301f63b02157444d"
