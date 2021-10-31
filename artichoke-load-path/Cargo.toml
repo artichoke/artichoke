@@ -8,7 +8,7 @@ repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
 keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
-categories = ["file system"]
+categories = ["filesystem"]
 
 [dependencies]
 same-file = { version = "1, >= 1.0.6", optional = true }
