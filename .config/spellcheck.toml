@@ -5,7 +5,7 @@ skip_readme = false
 # lang and name of `.dic` file
 lang = "en_US"
 
-search_dirs = [".", ".config"]
+search_dirs = ["."]
 
 # Adds additional dictionaries, can be specified as
 # absolute paths or relative in the search dirs (in this order).
