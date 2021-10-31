@@ -9,7 +9,7 @@ use chrono_tz::Tz;
 /// datetime operations.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum Offset {
-    /// UTC, zero offset, zulu time.
+    /// UTC, zero offset, Zulu time.
     Utc,
     /// The local offset of the machine at runtime.
     Local,

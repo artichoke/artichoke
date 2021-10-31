@@ -60,7 +60,7 @@
 //! - **inspect** - Enables an iterator for generating debug output of a symbol
 //!   byte string. Activating this feature also activates the **ident-parser**
 //!   feature.
-//! - **ident-parser** - Enables a parser to determing the Ruby identifier type,
+//! - **ident-parser** - Enables a parser to determine the Ruby identifier type,
 //!   if any, for a byte string. Dropping this feature removes the `bstr` and
 //!   `scolapasta-string-escape` dependencies.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
@@ -186,7 +186,7 @@ impl Symbol {
     /// Construct a new `Symbol` from the given `u32`.
     ///
     /// `Symbol`s constructed manually may fail to resolve to an underlying
-    /// bytesstring.
+    /// byte string.
     ///
     /// `Symbol`s are not constrained to the interner which created them.
     /// No runtime checks ensure that the underlying interner is called with a
@@ -221,7 +221,7 @@ impl Symbol {
         self.0
     }
 
-    /// Returns whether the symbol is the empty byteslice `b""` in the
+    /// Returns whether the symbol is the empty byte slice `b""` in the
     /// underlying interner.
     ///
     /// If there symbol does not exist in the underlying interner or there is an
@@ -243,7 +243,7 @@ impl Symbol {
         }
     }
 
-    /// Returns the length of the byteslice associated with the symbol in the
+    /// Returns the length of the byte slice associated with the symbol in the
     /// underlying interner.
     ///
     /// If there symbol does not exist in the underlying interner or there is an
@@ -265,7 +265,7 @@ impl Symbol {
         }
     }
 
-    /// Returns the interned byteslice associated with the symbol in the
+    /// Returns the interned byte slice associated with the symbol in the
     /// underlying interner.
     ///
     /// If there symbol does not exist in the underlying interner or there is an
@@ -288,7 +288,7 @@ impl Symbol {
     }
 
     /// Returns an iterator that yields a debug representation of the interned
-    /// byteslice associated with the symbol in the underlying interner.
+    /// byte slice associated with the symbol in the underlying interner.
     ///
     /// This iterator produces [`char`] sequences like `:spinoso` and
     /// `:"invalid-\xFF-utf8"`.

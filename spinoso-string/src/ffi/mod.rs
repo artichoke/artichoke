@@ -1,3 +1,3 @@
-//! Helper routines for reimplementing functions in Ruby and mruby.
+//! Helper routines for re-implementing functions in Ruby and mruby.
 
 pub mod mruby;

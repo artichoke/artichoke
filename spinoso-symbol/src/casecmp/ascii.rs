@@ -6,7 +6,7 @@ use core::cmp::Ordering;
 /// Compare the byte contents of two symbols using ASCII case-insensitive
 /// comparison.
 ///
-/// The byteslice associated with each symbol is resolved via the given
+/// The byte slice associated with each symbol is resolved via the given
 /// interner. Unresolved symbols are compared as if they resolve to `&[]`.
 ///
 /// This function can be used to implement [`Symbol#casecmp`] for the [`Symbol`]

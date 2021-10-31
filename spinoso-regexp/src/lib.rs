@@ -78,7 +78,7 @@ pub const LAST_MATCH: &[u8] = b"$~";
 /// `Regexp`.
 ///
 /// When [`Regexp`]s are constructed with a `/.../` literal, [`Regexp#source`]
-/// refers to the literal characters contained within the `/` delimeters.
+/// refers to the literal characters contained within the `/` delimiters.
 /// For example, `/\t/.source.bytes` has byte sequence `[92, 116]`.
 ///
 /// When `Regexp`s are constructed with [`Regexp::compile`], [`Regexp#source`]
@@ -181,7 +181,7 @@ impl Source {
     /// Whether the Regexp was parsed as a literal, e.g. `'/artichoke/i`.
     ///
     /// This enables Ruby parsers to inject whether a Regexp is a literal to the
-    /// core library. Literal Regexps have some special behavior regrding
+    /// core library. Literal Regexps have some special behavior regarding
     /// capturing groups and report parse failures differently.
     ///
     /// A source's literal flag can only be set using [`Options::try_from_int`].
@@ -390,7 +390,7 @@ pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, str> {
         20 => Cow::Borrowed("$20"),
         num => {
             let mut buf = String::from("$");
-            // Suppress fmt errors because this function is infallible.
+            // Suppress formatting errors because this function is infallible.
             //
             // In practice `itoa::fmt` will never error because the `fmt::Write`
             // impl for `String` never panics.

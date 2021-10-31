@@ -1,4 +1,4 @@
-//! Helper routines for reimplementing functions in mruby.
+//! Helper routines for re-implementing functions in mruby.
 
 use core::num::Wrapping;
 

@@ -1,4 +1,4 @@
-// This source file is derived from rand_mt.
+// This source file is derived from `rand_mt`.
 //
 // See https://github.com/artichoke/rand_mt/blob/aeb3274a/src/mt.rs.
 

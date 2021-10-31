@@ -344,7 +344,7 @@ mod tests {
         assert_ne!(dt.hour(), succ.hour());
         assert_ne!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 0);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 500_000_000 {
             assert!(succ.nanosecond() - 500_000_000 < 50);
         } else {
@@ -364,7 +364,7 @@ mod tests {
         assert_eq!(dt.hour(), succ.hour());
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 59);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 700_000_000 {
             assert!(succ.nanosecond() - 700_000_000 < 50);
         } else {
@@ -381,7 +381,7 @@ mod tests {
         assert_ne!(dt.hour(), succ.hour());
         assert_ne!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 0);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 200_000_000 {
             assert!(succ.nanosecond() - 200_000_000 < 50);
         } else {
@@ -401,7 +401,7 @@ mod tests {
         assert_ne!(dt.hour(), succ.hour());
         assert_ne!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 0);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 700_000_000 {
             assert!(succ.nanosecond() - 700_000_000 < 50);
         } else {
@@ -418,7 +418,7 @@ mod tests {
         assert_ne!(dt.hour(), succ.hour());
         assert_ne!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 1);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 200_000_000 {
             assert!(succ.nanosecond() - 200_000_000 < 50);
         } else {
@@ -438,7 +438,7 @@ mod tests {
         assert_eq!(dt.hour(), succ.hour());
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 58);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 500_000_000 {
             assert!(succ.nanosecond() - 500_000_000 < 50);
         } else {
@@ -458,7 +458,7 @@ mod tests {
         assert_eq!(dt.hour(), succ.hour());
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 59);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 300_000_000 {
             assert!(succ.nanosecond() - 300_000_000 < 50);
         } else {
@@ -475,7 +475,7 @@ mod tests {
         assert_eq!(dt.hour(), succ.hour());
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 58);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 800_000_000 {
             assert!(succ.nanosecond() - 800_000_000 < 50);
         } else {
@@ -495,7 +495,7 @@ mod tests {
         assert_eq!(dt.hour(), succ.hour());
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 58);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 300_000_000 {
             assert!(succ.nanosecond() - 300_000_000 < 50);
         } else {
@@ -512,7 +512,7 @@ mod tests {
         assert_eq!(dt.hour(), succ.hour());
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 57);
-        // handle inexactitude of float arithmetic
+        // handle in-exactitude of float arithmetic
         if succ.nanosecond() > 800_000_000 {
             assert!(succ.nanosecond() - 800_000_000 < 50);
         } else {

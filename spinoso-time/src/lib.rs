@@ -67,7 +67,7 @@ pub const MICROS_IN_NANO: u32 = Duration::from_micros(1).as_nanos() as u32;
 
 /// Error returned when constructing a [`Time`] from a [`ToA`].
 ///
-/// This error is returned when a time component in the `ToA` exeeds the maximum
+/// This error is returned when a time component in the `ToA` exceeds the maximum
 /// permissible value for a datetime. For example, invalid values include a
 /// datetime 5000 days or 301 seconds.
 ///

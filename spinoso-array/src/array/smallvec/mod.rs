@@ -17,7 +17,7 @@ mod impls;
 /// optimization.
 ///
 /// `SmallArray` is an alternate implementation of [`Array`] that implements the
-/// small vector optimization. For `SmallArray`s less then [`INLINE_CAPACITY`]
+/// small vector optimization. For `SmallArray`s less than [`INLINE_CAPACITY`]
 /// elements long, there is no heap allocation.
 ///
 /// `SmallArray` provides a nearly identical API to the one in [`Array`]. There
@@ -134,7 +134,7 @@ impl<T> SmallArray<T> {
         Self(SmallVec::with_capacity(capacity))
     }
 
-    /// Constuct a new two-element `SmallArray` from the given arguments.
+    /// Construct a new two-element `SmallArray` from the given arguments.
     ///
     /// The vector is constructed without a heap allocation.
     ///
@@ -447,7 +447,7 @@ impl<T> SmallArray<T> {
     }
 
     /// Returns the number of elements in the vector, also referred to as its
-    /// 'length'.
+    /// "length".
     ///
     /// # Examples
     ///
@@ -1013,7 +1013,7 @@ where
             *cell = elem;
         } else {
             let buflen = self.len();
-            // index is *at least* buflen, so this calculation never underflows
+            // index is *at least* `buflen`, so this calculation never underflows
             // and ensures we allocate an additional slot.
             let additional = (index - buflen).checked_add(1).expect("capacity overflow");
             self.0.reserve(additional);
@@ -1062,7 +1062,7 @@ where
                 }
             }
         } else {
-            // start is *at least* buflen, so this calculation never underflows
+            // start is *at least* `buflen`, so this calculation never underflows
             // and ensures we allocate an additional slot.
             let additional = (start - buflen).checked_add(1).expect("capacity overflow");
             self.0.reserve(additional);

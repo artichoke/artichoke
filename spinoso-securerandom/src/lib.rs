@@ -755,7 +755,7 @@ mod tests {
         assert_eq!(hex(Some(32)).unwrap().len(), 64);
         assert_eq!(alphanumeric(Some(32)).unwrap().len(), 32);
 
-        // for a len that is not a power of two
+        // for a length that is not a power of two
         assert_eq!(random_bytes(Some(57)).unwrap().len(), 57);
         assert_eq!(base64(Some(57)).unwrap().len(), 76);
         assert_eq!(hex(Some(57)).unwrap().len(), 114);

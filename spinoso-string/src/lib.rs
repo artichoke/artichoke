@@ -902,7 +902,7 @@ impl String {
     }
 
     /// Returns the number of bytes in the string, also referred to as its
-    /// 'length' or 'bytesize'.
+    /// "length" or "bytesize".
     ///
     /// See also [`bytesize`].
     ///
@@ -946,7 +946,7 @@ impl String {
         Iter(self.buf.iter())
     }
 
-    /// Returns an iterator that allows modifiying this string's underlying byte
+    /// Returns an iterator that allows modifying this string's underlying byte
     /// slice.
     ///
     /// # Examples
@@ -1468,7 +1468,7 @@ impl String {
             }
             Encoding::Utf8 => {
                 // This allocation assumes that in the common case, capitalizing
-                // and lowercasing `char`s do not change the length of the
+                // and lower-casing `char`s do not change the length of the
                 // `String`.
                 let mut replacement = Vec::with_capacity(self.buf.len());
                 let mut bytes = self.buf.as_slice();
@@ -2247,12 +2247,14 @@ mod tests {
 
     #[test]
     fn utf8_char_len_mixed_ascii_emoji_invalid_bytes() {
+        // ```
         // [2.6.3] > s = "🦀abc💎\xff"
         // => "🦀abc💎\xFF"
         // [2.6.3] > s.length
         // => 6
         // [2.6.3] > puts s.bytes.map{|b| "\\x#{b.to_s(16).upcase}"}.join
         // \xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF
+        // ```
         let bytes = b"\xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF";
         assert_eq!(conventionally_utf8_byte_string_len(&bytes[..]), 6);
     }
@@ -2318,7 +2320,7 @@ mod tests {
 
     #[test]
     fn utf8_char_len_space_chars() {
-        // Whitespace: all of the characters with category Zs, Zl, or Zp (in Unicode
+        // Whitespace: all the characters with category Zs, Zl, or Zp (in Unicode
         // version 8.0.0), plus U+0009 (HT), U+000B (VT), U+000C (FF), U+0085 (NEL),
         // and U+200B (ZERO WIDTH SPACE), which are in the C categories but are often
         // treated as whitespace in some contexts.
@@ -2524,7 +2526,7 @@ mod tests {
         s.make_capitalized();
         assert_eq!(s, "𐐜 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮");
 
-        // Change length when lowercased
+        // Change length when lower-cased
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
         let mut s = String::utf8("zȺȾ".to_string().into_bytes());
         s.make_capitalized();
@@ -2595,7 +2597,7 @@ mod tests {
         s.make_capitalized();
         assert_eq!(s, "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
 
-        // Change length when lowercased
+        // Change length when lower-cased
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
         let mut s = String::ascii("zȺȾ".to_string().into_bytes());
         s.make_capitalized();
@@ -2666,7 +2668,7 @@ mod tests {
         s.make_capitalized();
         assert_eq!(s, "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
 
-        // Change length when lowercased
+        // Change length when lower-cased
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
         let mut s = String::binary("zȺȾ".to_string().into_bytes());
         s.make_capitalized();
@@ -2712,7 +2714,7 @@ mod tests {
         //
         // Per `bstr`:
         //
-        // The bytes \xF0\x9F\x87 could lead to a valid UTF-8 sequence, but 3 of them
+        // The bytes `\xF0\x9F\x87` could lead to a valid UTF-8 sequence, but 3 of them
         // on their own are invalid. Only one replacement codepoint is substituted,
         // which demonstrates the "substitution of maximal subparts" strategy.
         let s = String::utf8(b"\xF0\x9F\x87".to_vec());

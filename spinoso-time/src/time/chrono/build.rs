@@ -91,7 +91,7 @@ impl Time {
         let timestamp = seconds.checked_add(overflow)?;
 
         // Only the `sub_second_nanos` that fit within the range bounded by
-        // `0..nanos_in_second` are storeed in the `sub_second_nanos` field
+        // `0..nanos_in_second` are stored in the `sub_second_nanos` field
         // on the `Time` struct.
         //
         // `sub_second_nanos` will be in the range of (-nanos in second, 0] if

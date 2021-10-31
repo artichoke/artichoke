@@ -301,7 +301,7 @@ mod tests {
         assert_eq!(ENV.get(name), Ok(None));
     }
 
-    // ``console
+    // ```console
     // $ ruby -e 'ENV["0f87d787-bf18-437a-a205-ed38d81fa4da-foo\0bar"] = "3427d141-700f-494f-bfa6-877147333249-baz"'
     // Traceback (most recent call last):
     // 	1: from -e:1:in `<main>'
@@ -480,7 +480,7 @@ mod tests {
         );
     }
 
-    // ``console
+    // ```console
     // $ ruby -e 'ENV[""] = "157f6920-04e5-4561-8f06-6f00d09c3610-foo"'
     // Traceback (most recent call last):
     // 	1: from -e:1:in `<main>'
