@@ -21,7 +21,7 @@ use crate::prelude::*;
 /// fail
 /// ```
 ///
-/// Results in this stacktrace:
+/// Results in this stack trace:
 ///
 /// ```txt
 /// Traceback (most recent call last):
@@ -83,7 +83,7 @@ where
 /// fail
 /// ```
 ///
-/// Results in this stacktrace:
+/// Results in this stack trace:
 ///
 /// ```txt
 /// Traceback (most recent call last):
