@@ -28,7 +28,7 @@ pub trait LoadSources {
     ///
     /// If `path` is a relative path, the Ruby source is added to the
     /// file system relative to `RUBY_LOAD_PATH`. If the path is absolute, the
-    /// file is placed directly on the file system. Anscestor directories are
+    /// file is placed directly on the file system. Ancestor directories are
     /// created automatically.
     ///
     /// # Errors
@@ -45,7 +45,7 @@ pub trait LoadSources {
     ///
     /// If `path` is a relative path, the Ruby source is added to the
     /// file system relative to `RUBY_LOAD_PATH`. If the path is absolute, the
-    /// file is placed directly on the file system. Anscestor directories are
+    /// file is placed directly on the file system. Ancestor directories are
     /// created automatically.
     ///
     /// # Errors
@@ -109,7 +109,7 @@ pub trait LoadSources {
     ///
     /// If `path` does not point to a source file, an error is returned.
     ///
-    /// If the souce file at `path` has no contents, an error is returned.
+    /// If the source file at `path` has no contents, an error is returned.
     fn load_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
     where
         P: AsRef<Path>;
@@ -135,7 +135,7 @@ pub trait LoadSources {
     ///
     /// If `path` does not point to a source file, an error is returned.
     ///
-    /// If the souce file at `path` has no contents, an error is returned.
+    /// If the source file at `path` has no contents, an error is returned.
     fn require_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
     where
         P: AsRef<Path>;

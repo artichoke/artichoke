@@ -15,7 +15,7 @@ pub enum Rust {
     Float,
     /// Rust `HashMap<K, V>` type.
     Map,
-    /// Aribtrary Rust struct type.
+    /// Arbitrary Rust struct type.
     Object,
     /// Rust signed integer type.
     ///

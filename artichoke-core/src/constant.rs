@@ -5,7 +5,7 @@
 
 use crate::value::Value;
 
-/// Deifne constants on an interprter.
+/// Define constants on an interpreter.
 ///
 /// Constants can be an arbitrary Ruby value. Constants can be defined globally,
 /// on a class, or on a module.

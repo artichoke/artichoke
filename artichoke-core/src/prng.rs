@@ -7,7 +7,7 @@ pub trait Prng {
     /// Concrete type for PRNG errors.
     type Error;
 
-    /// Conrete type for the interpreter pseudorandom number generator.
+    /// Concrete type for the interpreter pseudorandom number generator.
     type Prng;
 
     /// Return a shared reference to the interpreter pseudorandom number

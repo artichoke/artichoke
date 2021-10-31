@@ -58,7 +58,7 @@
 //! [`artichoke-backend`](https://artichoke.github.io/artichoke/artichoke_backend/)
 //! is one implementation of the `artichoke-core` traits.
 //!
-//! To use all of the APIs defined in Artichoke Core, bring the traits into
+//! To use all the APIs defined in Artichoke Core, bring the traits into
 //! scope by importing the prelude:
 //!
 //! ```
