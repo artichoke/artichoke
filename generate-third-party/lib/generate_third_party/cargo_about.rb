@@ -26,22 +26,9 @@ module Artichoke
           File.expand_path(path)
         end
 
-        def root_config_path
-          path = File.join(__dir__, '..', '..', '..', 'about.toml')
-          File.expand_path(path)
-        end
-
         def invoke
-          # setup `about.toml`
-          config = File.read(@config)
-          File.open(root_config_path, 'w') do |f|
-            f.write config
-          end
-
-          command = ['cargo', 'about', '--manifest-path', manifest_path, 'generate', @template]
+          command = ['cargo', 'about', 'generate', @template, '--manifest-path', manifest_path, '--config', @config]
           out, err, status = Open3.capture3(command.shelljoin)
-
-          File.delete(root_config_path)
 
           unless status.success?
             warn 'Generate failed'

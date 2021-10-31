@@ -1,7 +1,7 @@
 ---
 deps:
-{{~#each licenses}}
-{{~#each used_by}}
+{{#each licenses}}
+{{#each used_by}}
   - name: "{{{crate.name}}}"
     version: "{{{crate.version}}}"
     url: "{{#if crate.repository ~}} {{{crate.repository}}} {{~ else ~}} https://crates.io/crates/{{{crate.name}}} {{~ /if}}"
@@ -10,8 +10,8 @@ deps:
 @@@@text-start@@@@
 {{{../text}}}
 @@@@text-end@@@@
-{{~/each}}
-{{~/each}}
+{{/each}}
+{{/each}}
   - name: "mruby"
     version: "3.0.0"
     url: "https://github.com/mruby/mruby"
