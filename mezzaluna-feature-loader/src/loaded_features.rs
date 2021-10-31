@@ -416,7 +416,7 @@ where
         self.insert(feature);
     }
 
-    /// Add a memory featre from its associated path.
+    /// Add a memory feature from its associated path.
     ///
     /// # Panics
     ///

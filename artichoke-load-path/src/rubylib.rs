@@ -15,7 +15,7 @@ use same_file::Handle;
 ///
 /// MRI Ruby allows manipulating the [require] search path by setting the
 /// `RUBYLIB` environment variable before launching the Ruby CLI. The `RUBYLIB`
-/// variable is read on startup and is expected to contain a platform-native
+/// variable is read on start-up and is expected to contain a platform-native
 /// path separator-delimited list of file system paths.
 ///
 /// This loader will attempt to resolve relative paths in any of the paths given
@@ -80,7 +80,7 @@ impl Rubylib {
     /// absolute paths, they are absolutized relative to the current process's
     /// [current working directory] at the time this method is called.
     ///
-    /// This source loader grants access to the host file system. The Rubylib
+    /// This source loader grants access to the host file system. The `Rubylib`
     /// loader does not support native extensions.
     ///
     /// This method returns [`None`] if there are errors resolving the
@@ -108,7 +108,7 @@ impl Rubylib {
     /// are absolutized relative to the current process's [current working
     /// directory] at the time this method is called.
     ///
-    /// This source loader grants access to the host file system. The Rubylib
+    /// This source loader grants access to the host file system. The `Rubylib`
     /// loader does not support native extensions.
     ///
     /// This method returns [`None`] if the current working directory cannot be
@@ -133,7 +133,7 @@ impl Rubylib {
     /// are absolutized relative to the given current working directory at the
     /// time this method is called.
     ///
-    /// This source loader grants access to the host file system. The Rubylib
+    /// This source loader grants access to the host file system. The `Rubylib`
     /// loader does not support native extensions.
     ///
     /// This method returns [`None`] if the given `rubylib` does not contain any
@@ -146,7 +146,7 @@ impl Rubylib {
             .collect::<Vec<_>>();
 
         // If the `RUBYLIB` env variable is empty or otherwise results in no
-        // search paths being resolved, return `None` so the Rubylib loader is
+        // search paths being resolved, return `None` so the `Rubylib` loader is
         // not used.
         if load_paths.is_empty() {
             return None;
@@ -179,7 +179,7 @@ impl Rubylib {
     #[inline]
     #[must_use]
     pub fn resolve_file(&self, path: &Path) -> Option<PathBuf> {
-        // The Rubylib loader only loads relative paths in `RUBYLIB`.
+        // The `Rubylib` loader only loads relative paths in `RUBYLIB`.
         if path.is_absolute() {
             return None;
         }
@@ -204,7 +204,7 @@ impl Rubylib {
     #[inline]
     #[must_use]
     pub fn is_file(&self, path: &Path) -> bool {
-        // The Rubylib loader only loads relative paths in `RUBYLIB`.
+        // The `Rubylib` loader only loads relative paths in `RUBYLIB`.
         if path.is_absolute() {
             return false;
         }
@@ -229,7 +229,7 @@ impl Rubylib {
     /// [`io::ErrorKind::NotFound`] is returned.
     #[inline]
     pub fn read_file(&self, path: &Path) -> io::Result<Vec<u8>> {
-        // The Rubylib loader only loads relative paths in `RUBYLIB`.
+        // The `Rubylib` loader only loads relative paths in `RUBYLIB`.
         if path.is_absolute() {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -259,7 +259,7 @@ impl Rubylib {
     #[inline]
     #[must_use]
     pub fn is_required(&self, path: &Path) -> Option<bool> {
-        // The Rubylib loader only loads relative paths in `RUBYLIB`.
+        // The `Rubylib` loader only loads relative paths in `RUBYLIB`.
         if path.is_absolute() {
             return None;
         }
