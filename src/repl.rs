@@ -220,7 +220,7 @@ where
     let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
 
     let mut rl = Editor::<()>::new();
-    // If a code block is open, accumulate code from multiple readlines in this
+    // If a code block is open, accumulate code from multiple read lines in this
     // mutable `String` buffer.
     let mut buf = String::new();
     let mut parser_state = State::new();
@@ -269,7 +269,7 @@ where
                 interp.incremental_gc()?;
                 buf.clear();
             }
-            // Reset the buf and present the user with a fresh prompt
+            // Reset the buffer and present the user with a fresh prompt
             Err(ReadlineError::Interrupted) => {
                 // Reset buffered code
                 buf.clear();

@@ -135,8 +135,8 @@ pub fn pre_match(interp: &mut Artichoke, mut value: Value) -> Result<Value, Erro
 pub fn regexp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
     let regexp = data.regexp();
-    // TODO(GH-614): MatchData#regexp needs to return an identical Regexp to the
-    // one used to create the match (same object ID).
+    // TODO(GH-614): `MatchData#regexp` needs to return an identical `Regexp` to
+    // the one used to create the match (same object ID).
     //
     // The `Regexp::alloc_value` here should be replaced with
     // `Regexp::box_into_value`.

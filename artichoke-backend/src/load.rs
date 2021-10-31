@@ -22,7 +22,7 @@ impl LoadSources for Artichoke {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         let path = path.as_ref();
         state.load_path_vfs.register_extension(path, T::require)?;
-        trace!("Added Rust extension to interpreter filesystem -- {}", path.display());
+        trace!("Added Rust extension to interpreter file system -- {}", path.display());
         Ok(())
     }
 
@@ -34,7 +34,7 @@ impl LoadSources for Artichoke {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         let path = path.as_ref();
         state.load_path_vfs.write_file(path, contents.into())?;
-        trace!("Added Ruby source to interpreter filesystem -- {}", path.display());
+        trace!("Added Ruby source to interpreter file system -- {}", path.display());
         Ok(())
     }
 

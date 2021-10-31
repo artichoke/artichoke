@@ -1,13 +1,19 @@
 use core::fmt;
 
+// ```
 // [2.6.3] > Encoding::UTF_8.names
 // => ["UTF-8", "CP65001", "locale", "external", "filesystem"]
+// ```
 const UTF8_NAMES: &[&str] = &["UTF-8", "CP65001"];
+// ```
 // [2.6.3] > Encoding::ASCII.names
 // => ["US-ASCII", "ASCII", "ANSI_X3.4-1968", "646"]
+// ```
 const ASCII_NAMES: &[&str] = &["US-ASCII", "ASCII", "ANSI_X3.4-1968", "646"];
+// ```
 // [2.6.3] > Encoding::BINARY.names
 // => ["ASCII-8BIT", "BINARY"]
+// ```
 const BINARY_NAMES: &[&str] = &["ASCII-8BIT", "BINARY"];
 
 /// Error returned when failing to deserialize an [`Encoding`].
@@ -33,7 +39,7 @@ pub struct InvalidEncodingError {
 }
 
 impl InvalidEncodingError {
-    /// Constuct a new `InvalidEncodingError`.
+    /// Construct a new `InvalidEncodingError`.
     ///
     /// # Examples
     ///
@@ -230,14 +236,20 @@ impl Encoding {
     #[must_use]
     pub const fn inspect(self) -> &'static str {
         match self {
+            // ```
             // [2.6.3] > Encoding::UTF_8.inspect
             // => "#<Encoding:UTF-8>"
+            // ```
             Self::Utf8 => "#<Encoding:UTF-8>",
+            // ```
             // [2.6.3] > Encoding::ASCII.inspect
             // => "#<Encoding:US-ASCII>"
+            // ```
             Self::Ascii => "#<Encoding:US-ASCII>",
+            // ```
             // [2.6.3] > Encoding::BINARY.inspect
             // => "#<Encoding:ASCII-8BIT>"
+            // ```
             Self::Binary => "#<Encoding:ASCII-8BIT>",
         }
     }

@@ -93,7 +93,7 @@ pub fn mrb_sys_state_debug(mrb: *mut mrb_state) -> String {
     let version = CStr::from_bytes_with_nul(MRUBY_RUBY_VERSION);
     let version = version.ok().and_then(|cstr| cstr.to_str().ok()).unwrap_or("0.0.0");
     let mut debug = String::new();
-    // Explicitly supressed error since we are only generating debug info and
+    // Explicitly suppressed error since we are only generating debug info and
     // cannot panic.
     //
     // In practice, this call to `write!` will never panic because the `Display`

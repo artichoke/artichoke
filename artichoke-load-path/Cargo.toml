@@ -14,9 +14,9 @@ categories = ["filesystem"]
 same-file = { version = "1, >= 1.0.6", optional = true }
 
 [features]
-default = ["native-filesystem-loader", "rubylib-native-filesystem-loader"]
-native-filesystem-loader = ["same-file"]
-rubylib-native-filesystem-loader = ["native-filesystem-loader"]
+default = ["native-file-system-loader", "rubylib-native-file-system-loader"]
+native-file-system-loader = ["same-file"]
+rubylib-native-file-system-loader = ["native-file-system-loader"]
 
 [package.metadata.docs.rs]
 all-features = true

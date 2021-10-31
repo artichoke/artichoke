@@ -11,7 +11,7 @@
 Routines for debug escaping Ruby Strings.
 
 Ruby Strings are conventionally UTF-8 byte sequences. When calling
-[`String#inspect`] or [`Symbol#inspect`], these maybe UTF-8 bytestrings are
+[`String#inspect`] or [`Symbol#inspect`], these maybe UTF-8 byte strings are
 escaped to have a valid UTF-8 representation.
 
 This crate exposes functions and iterators for encoding arbitrary byte slices as
@@ -43,7 +43,7 @@ Add this to your `Cargo.toml`:
 scolapasta-string-escape = "0.1"
 ```
 
-To debug escape a conventionally UTF-8 bytestring:
+To debug escape a conventionally UTF-8 byte string:
 
 ```rust
 use scolapasta_string_escape::format_debug_escape_into;

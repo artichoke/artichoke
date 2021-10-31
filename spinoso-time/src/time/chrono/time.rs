@@ -211,7 +211,7 @@ impl Time {
     /// # Implementation notes
     ///
     /// Time has a maximum granularity of nanoseconds, so in practice this
-    /// method always returns nanoseconds, but the returned tuple accomodates
+    /// method always returns nanoseconds, but the returned tuple accommodates
     /// returning any fractional part, such as millis or micros.
     #[inline]
     #[must_use]

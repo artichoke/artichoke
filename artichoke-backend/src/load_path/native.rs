@@ -13,15 +13,15 @@ pub struct Native {
 }
 
 impl Native {
-    /// Create a new native virtual filesystem.
+    /// Create a new native virtual file system.
     ///
-    /// This filesystem grants access to the host filesystem.
+    /// This file system grants access to the host file system.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Check whether `path` points to a file in the virtual filesystem and
+    /// Check whether `path` points to a file in the virtual file system and
     /// return the absolute path if it exists.
     ///
     /// This API is infallible and will return [`None`] for non-existent paths.
@@ -35,7 +35,7 @@ impl Native {
         }
     }
 
-    /// Check whether `path` points to a file in the virtual filesystem.
+    /// Check whether `path` points to a file in the virtual file system.
     ///
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]

@@ -145,15 +145,17 @@ pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Error, Err
     // message = exception.message
     // ```
 
-    // Sometimes when hacking on extn/core it is possible to enter a
+    // Sometimes when hacking on `extn/core` it is possible to enter a
     // crash loop where an exception is captured by this handler, but
     // extracting the exception name or backtrace throws again.
-    // Uncommenting the folllowing print statement will at least get you
-    // the exception class and message, which should help debugging.
+    // Un-commenting the following print statement will at least get you the
+    // exception class and message, which should help debugging.
     //
+    // ```
     // let message = exception.funcall(&mut arena, "message", &[], None)?;
     // let message = message.try_convert_into_mut::<String>(&mut arena);
     // println!("{:?}, {:?}", exception, message);
+    // ```
 
     let class = exception.funcall(&mut arena, "class", &[], None)?;
     let classname = class.funcall(&mut arena, "name", &[], None)?;

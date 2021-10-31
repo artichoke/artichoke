@@ -8,7 +8,7 @@ use focaccia::CaseFold;
 /// Compare the byte contents of two symbols using Unicode case-folding
 /// comparison for equality.
 ///
-/// The byteslice associated with each symbol is resolved via the given
+/// The byte slice associated with each symbol is resolved via the given
 /// interner. Unresolved symbols are compared as if they resolve to `&[]`.
 ///
 /// This comparison function attempts to convert each symbol's byte content to a
@@ -46,7 +46,7 @@ where
         (Ok(left), Ok(right)) => fold.case_eq(left, right),
         // Both slices are not UTF-8, fallback to ASCII comparator.
         (Err(_), Err(_)) => focaccia::ascii_case_eq(left, right),
-        // Encoding mismatch, the bytes are not comparable using unicode case
+        // Encoding mismatch, the bytes are not comparable using Unicode case
         // folding.
         //
         // > `nil` is returned if the two symbols have incompatible encodings,

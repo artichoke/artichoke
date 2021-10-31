@@ -76,7 +76,7 @@ pub trait ReleaseMetadata {
     /// > 2021-01-12
     fn ruby_release_date(&self) -> &str;
 
-    /// The revision count of the Artichoke git repo used for this build.
+    /// The revision count of the Artichoke git repository used for this build.
     ///
     /// This value will populate the `RUBY_REVISION` constant.
     ///

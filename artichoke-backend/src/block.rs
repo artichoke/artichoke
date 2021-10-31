@@ -92,7 +92,7 @@ impl Default for NoBlockGiven {
 }
 
 impl NoBlockGiven {
-    /// Construce a new, empty no block given error.
+    /// Construct a new, empty no block given error.
     ///
     /// The inner Ruby type is `nil`.
     #[must_use]
@@ -203,7 +203,7 @@ mod tests {
 
         assert!(dead.is_dead(&mut interp));
 
-        // now ensure that it produces a fatal error when passed to yield_arg
+        // now ensure that it produces a fatal error when passed to `yield_arg`
         let block = Block::default();
 
         let error = block.yield_arg(&mut interp, &dead).unwrap_err();

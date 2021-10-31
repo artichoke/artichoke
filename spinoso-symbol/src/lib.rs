@@ -20,8 +20,8 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 
-//! Identifier for interned bytestrings and routines for manipulating the
-//! underlying bytestrings.
+//! Identifier for interned byte strings and routines for manipulating the
+//! underlying byte strings.
 //!
 //! `Symbol` is a `Copy` type based on `u32`. `Symbol` is cheap to copy, store,
 //! and compare. It is suitable for representing indexes into a string interner.
@@ -58,10 +58,10 @@
 //!   `artichoke-core` and `focaccia` dependencies. Activating this feature also
 //!   activates the **inspect** feature.
 //! - **inspect** - Enables an iterator for generating debug output of a symbol
-//!   bytestring. Activating this feature also activates the **ident-parser**
+//!   byte string. Activating this feature also activates the **ident-parser**
 //!   feature.
-//! - **ident-parser** - Enables a parser to determing the Ruby identifier type,
-//!   if any, for a bytestring. Dropping this feature removes the `bstr` and
+//! - **ident-parser** - Enables a parser to determine the Ruby identifier type,
+//!   if any, for a byte string. Dropping this feature removes the `bstr` and
 //!   `scolapasta-string-escape` dependencies.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this
@@ -75,7 +75,7 @@
 
 #![no_std]
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}
@@ -164,10 +164,10 @@ impl fmt::Display for SymbolOverflowError {
 #[cfg(feature = "std")]
 impl std::error::Error for SymbolOverflowError {}
 
-/// Identifier bound to an interned bytestring.
+/// Identifier bound to an interned byte string.
 ///
 /// A `Symbol` allows retrieving a reference to the original interned
-/// bytestring.  Equivalent `Symbol`s will resolve to an identical bytestring.
+/// byte string. Equivalent `Symbol`s will resolve to an identical byte string.
 ///
 /// `Symbol`s are based on a `u32` index. They are cheap to compare and cheap to
 /// copy.
@@ -186,7 +186,7 @@ impl Symbol {
     /// Construct a new `Symbol` from the given `u32`.
     ///
     /// `Symbol`s constructed manually may fail to resolve to an underlying
-    /// bytesstring.
+    /// byte string.
     ///
     /// `Symbol`s are not constrained to the interner which created them.
     /// No runtime checks ensure that the underlying interner is called with a
@@ -221,7 +221,7 @@ impl Symbol {
         self.0
     }
 
-    /// Returns whether the symbol is the empty byteslice `b""` in the
+    /// Returns whether the symbol is the empty byte slice `b""` in the
     /// underlying interner.
     ///
     /// If there symbol does not exist in the underlying interner or there is an
@@ -243,7 +243,7 @@ impl Symbol {
         }
     }
 
-    /// Returns the length of the byteslice associated with the symbol in the
+    /// Returns the length of the byte slice associated with the symbol in the
     /// underlying interner.
     ///
     /// If there symbol does not exist in the underlying interner or there is an
@@ -265,7 +265,7 @@ impl Symbol {
         }
     }
 
-    /// Returns the interned byteslice associated with the symbol in the
+    /// Returns the interned byte slice associated with the symbol in the
     /// underlying interner.
     ///
     /// If there symbol does not exist in the underlying interner or there is an
@@ -288,7 +288,7 @@ impl Symbol {
     }
 
     /// Returns an iterator that yields a debug representation of the interned
-    /// byteslice associated with the symbol in the underlying interner.
+    /// byte slice associated with the symbol in the underlying interner.
     ///
     /// This iterator produces [`char`] sequences like `:spinoso` and
     /// `:"invalid-\xFF-utf8"`.

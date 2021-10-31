@@ -33,7 +33,7 @@
 //!   various sources.
 //! - [`Globals`](globals::Globals): Get, set, and unset interpreter-level
 //!   global variables.
-//! - [`Intern`](intern::Intern): Intern bytestrings to a cheap to copy and
+//! - [`Intern`](intern::Intern): Intern byte strings to a cheap to copy and
 //!   compare symbol type.
 //! - [`Io`](io::Io): External I/O APIs, such as writing to the standard output
 //!   of the current process.
@@ -58,7 +58,7 @@
 //! [`artichoke-backend`](https://artichoke.github.io/artichoke/artichoke_backend/)
 //! is one implementation of the `artichoke-core` traits.
 //!
-//! To use all of the APIs defined in Artichoke Core, bring the traits into
+//! To use all the APIs defined in Artichoke Core, bring the traits into
 //! scope by importing the prelude:
 //!
 //! ```
@@ -83,7 +83,7 @@
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}

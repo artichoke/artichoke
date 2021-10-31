@@ -65,14 +65,14 @@
 //! # example().unwrap();
 //! ```
 //!
-//! ## Virtual Filesystem and `Kernel#require`
+//! ## Virtual File System and `Kernel#require`
 //!
 //! The `artichoke-backend` interpreter includes an in-memory virtual
-//! filesystem.  The filesystem stores Ruby sources and Rust extension functions
+//! file system.  The file system stores Ruby sources and Rust extension functions
 //! that are similar to MRI C extensions.
 //!
-//! The virtual filesystem enables applications built with `artichoke-backend`
-//! to `require` sources that are embedded in the binary without host filesystem
+//! The virtual file system enables applications built with `artichoke-backend`
+//! to `require` sources that are embedded in the binary without host file system
 //! access.
 //!
 //! ## Embed Rust Types in Ruby `Value`s
@@ -100,7 +100,7 @@
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}

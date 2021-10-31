@@ -7,7 +7,7 @@ const JSON_CSTR: &CStr = cstr::cstr!("JSON");
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = module::Spec::new(interp, "JSON", JSON_CSTR, None)?;
     interp.def_module::<Json>(spec)?;
-    // NOTE(lopopolo): This setup of the JSON gem in the vfs does not include
+    // NOTE(lopopolo): This setup of the JSON gem in the virtual file system does not include
     // any of the `json/add` sources for serializing "extra" types like `Time`
     // and `BigDecimal`, not all of which Artichoke supports.
     interp.def_rb_source_file("json.rb", &include_bytes!("vendor/json.rb")[..])?;

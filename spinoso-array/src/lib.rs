@@ -110,10 +110,10 @@
 //!
 //! # Panics
 //!
-//! `Array`s in this crate do not expose panicking slicing operations (with the
-//! exception of [`Index`] and [`IndexMut`] implementations). Instead of
-//! panicking, slicing APIs operate until the end of the vector or return `&[]`.
-//! Mutating APIs extend `Array`s on out of bounds access.
+//! `Array`s in this crate do not expose panicking slicing operations (except for
+//! their [`Index`] and [`IndexMut`] implementations). Instead of panicking,
+//! slicing APIs operate until the end of the vector or return `&[]`. Mutating
+//! APIs extend `Array`s on out of bounds access.
 //!
 //! [Ruby `Array`]: https://ruby-doc.org/core-2.6.3/Array.html
 //! [collection of crates]: https://crates.io/keywords/spinoso
@@ -137,7 +137,7 @@
 // This crate is `no_std` + `alloc`
 #![no_std]
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}

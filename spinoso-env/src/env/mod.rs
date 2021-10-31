@@ -6,7 +6,7 @@
 //! virtualized `ENV` API that cannot modify the host system.
 //!
 //! [`System`](system::System) is based on [`env::var_os`] and directly accesses
-//! and modifiest the host system environ via platform-specific APIs.
+//! and modifies the host system environ via platform-specific APIs.
 //!
 //! [`HashMap`]: std::collections::HashMap
 //! [`env::var_os`]: std::env::var_os

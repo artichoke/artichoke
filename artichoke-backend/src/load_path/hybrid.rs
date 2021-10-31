@@ -4,7 +4,7 @@ use std::path::Path;
 
 use bstr::ByteSlice;
 
-#[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
+#[cfg(feature = "load-path-rubylib-native-file-system-loader")]
 use artichoke_load_path::Rubylib;
 
 use crate::platform_string::os_string_to_bytes;
@@ -13,10 +13,10 @@ use super::{ExtensionHook, Memory, Native};
 
 #[derive(Debug)]
 pub struct Hybrid {
-    #[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
+    #[cfg(feature = "load-path-rubylib-native-file-system-loader")]
     rubylib: Option<Rubylib>,
-    #[cfg(not(feature = "load-path-rubylib-native-filesystem-loader"))]
-    rubylib: Option<Native>, // hardcoded to `None`
+    #[cfg(not(feature = "load-path-rubylib-native-file-system-loader"))]
+    rubylib: Option<Native>, // hard-coded to `None`
     memory: Memory,
     native: Native,
 }
@@ -28,17 +28,17 @@ impl Default for Hybrid {
 }
 
 impl Hybrid {
-    /// Create a new hybrid virtual filesystem.
+    /// Create a new hybrid virtual file system.
     ///
-    /// This filesystem allows access to the host filesystem with an in-memory
-    /// filesystem mounted at [`RUBY_LOAD_PATH`].
+    /// This file system allows access to the host file system with an in-memory
+    /// file system mounted at [`RUBY_LOAD_PATH`].
     ///
     /// [`RUBY_LOAD_PATH`]: super::RUBY_LOAD_PATH
     #[must_use]
     pub fn new() -> Self {
-        #[cfg(feature = "load-path-rubylib-native-filesystem-loader")]
+        #[cfg(feature = "load-path-rubylib-native-file-system-loader")]
         let rubylib = Rubylib::new();
-        #[cfg(not(feature = "load-path-rubylib-native-filesystem-loader"))]
+        #[cfg(not(feature = "load-path-rubylib-native-file-system-loader"))]
         let rubylib = None;
         let memory = Memory::new();
         let native = Native::new();
@@ -49,7 +49,7 @@ impl Hybrid {
         }
     }
 
-    /// Check whether `path` points to a file in the virtual filesystem and
+    /// Check whether `path` points to a file in the virtual file system and
     /// return the absolute path if it exists.
     ///
     /// This API is infallible and will return [`None`] for non-existent paths.
@@ -82,7 +82,7 @@ impl Hybrid {
         }
     }
 
-    /// Check whether `path` points to a file in the virtual filesystem.
+    /// Check whether `path` points to a file in the virtual file system.
     ///
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]
@@ -126,11 +126,11 @@ impl Hybrid {
     /// Writes the full file contents. If any file contents already exist at
     /// `path`, they are replaced. Extension hooks are preserved.
     ///
-    /// Only the [`Memory`] filesystem at [`RUBY_LOAD_PATH`] is writeable.
+    /// Only the [`Memory`] file system at [`RUBY_LOAD_PATH`] is writable.
     ///
     /// # Errors
     ///
-    /// If access to the [`Memory`] filesystem returns an error, the error is
+    /// If access to the [`Memory`] file system returns an error, the error is
     /// returned. See [`Memory::write_file`].
     ///
     /// [`RUBY_LOAD_PATH`]: super::RUBY_LOAD_PATH
@@ -151,13 +151,13 @@ impl Hybrid {
     /// If any extension hooks already exist at `path`, they are replaced. File
     /// contents are preserved.
     ///
-    /// This function writes all extensions to the virtual filesystem. If the
-    /// given path does not map to the virtual filesystem, the extension is
+    /// This function writes all extensions to the virtual file system. If the
+    /// given path does not map to the virtual file system, the extension is
     /// unreachable.
     ///
     /// # Errors
     ///
-    /// If the given path does not resolve to the virtual filesystem, an error
+    /// If the given path does not resolve to the virtual file system, an error
     /// is returned.
     pub fn register_extension(&mut self, path: &Path, extension: ExtensionHook) -> io::Result<()> {
         self.memory.register_extension(path, extension)

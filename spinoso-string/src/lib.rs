@@ -25,7 +25,7 @@
 
 #![no_std]
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}
@@ -298,7 +298,7 @@ impl<'a> Bytes<'a> {
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CenterError {
     /// Error returned when calling [`String::center`] with an empty padding
-    /// bytestring.
+    /// byte string.
     ZeroWidthPadding,
 }
 
@@ -902,7 +902,7 @@ impl String {
     }
 
     /// Returns the number of bytes in the string, also referred to as its
-    /// 'length' or 'bytesize'.
+    /// "length" or "bytesize".
     ///
     /// See also [`bytesize`].
     ///
@@ -946,7 +946,7 @@ impl String {
         Iter(self.buf.iter())
     }
 
-    /// Returns an iterator that allows modifiying this string's underlying byte
+    /// Returns an iterator that allows modifying this string's underlying byte
     /// slice.
     ///
     /// # Examples
@@ -1468,7 +1468,7 @@ impl String {
             }
             Encoding::Utf8 => {
                 // This allocation assumes that in the common case, capitalizing
-                // and lowercasing `char`s do not change the length of the
+                // and lower-casing `char`s do not change the length of the
                 // `String`.
                 let mut replacement = Vec::with_capacity(self.buf.len());
                 let mut bytes = self.buf.as_slice();
@@ -1556,7 +1556,7 @@ impl String {
     ///
     /// # Errors
     ///
-    /// If given an empty padding bytestring, this function returns an error.
+    /// If given an empty padding byte string, this function returns an error.
     /// This error is returned regardless of whether the `String` would be
     /// centered with the given
     ///
@@ -1950,7 +1950,7 @@ impl String {
     /// only [conventionally UTF-8]. This function only returns `Ok` for
     /// `String`s with UTF-8 encoding if the underlying bytes in the `String`
     /// are valid UTF-8. For UTF-8 `String`s, this iterator yields the `u32`
-    /// values of the [`char`]s in the bytestring. For [ASCII encoded] and
+    /// values of the [`char`]s in the byte string. For [ASCII encoded] and
     /// [binary encoded] strings, this iterator yields slices of single bytes.
     ///
     /// For UTF-8 encoded strings, the yielded byte slices can be parsed into
@@ -2039,7 +2039,7 @@ impl String {
     pub fn char_len(&self) -> usize {
         match self.encoding {
             Encoding::Ascii | Encoding::Binary => self.buf.len(),
-            Encoding::Utf8 => conventionally_utf8_bytestring_len(self.buf.as_slice()),
+            Encoding::Utf8 => conventionally_utf8_byte_string_len(self.buf.as_slice()),
         }
     }
 
@@ -2096,7 +2096,7 @@ impl String {
 }
 
 #[must_use]
-fn conventionally_utf8_bytestring_len(mut bytes: &[u8]) -> usize {
+fn conventionally_utf8_byte_string_len(mut bytes: &[u8]) -> usize {
     let mut char_len = 0;
     while !bytes.is_empty() {
         let (ch, size) = bstr::decode_utf8(bytes);
@@ -2167,67 +2167,67 @@ mod tests {
     use core::str;
     use quickcheck::quickcheck;
 
-    use crate::{conventionally_utf8_bytestring_len, CenterError, String};
+    use crate::{conventionally_utf8_byte_string_len, CenterError, String};
 
     const REPLACEMENT_CHARACTER_BYTES: [u8; 3] = [239, 191, 189];
 
     #[test]
     fn utf8_char_len_empty() {
         let s = "".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 0);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 0);
     }
 
     #[test]
     fn utf8_char_len_ascii() {
         let s = "Artichoke Ruby".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 14);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 14);
     }
 
     #[test]
     fn utf8_char_len_emoji() {
         let s = "💎".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 1);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 1);
         let s = "💎🦀🎉".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 3);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 3);
         let s = "a💎b🦀c🎉d".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 7);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 7);
         // with invalid UFF-8 bytes
         let s = b"a\xF0\x9F\x92\x8E\xFFabc";
-        assert_eq!(conventionally_utf8_bytestring_len(&s[..]), 6);
+        assert_eq!(conventionally_utf8_byte_string_len(&s[..]), 6);
     }
 
     #[test]
     fn utf8_char_len_unicode_replacement_character() {
         let s = "�".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 1);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 1);
         let s = "���".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 3);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 3);
         let s = "a�b�c�d".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 7);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 7);
         let s = "�💎b🦀c🎉�".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 7);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 7);
         // with invalid UFF-8 bytes
         let s = b"\xEF\xBF\xBD\xF0\x9F\x92\x8E\xFF\xEF\xBF\xBDab";
-        assert_eq!(conventionally_utf8_bytestring_len(s), 6);
-        assert_eq!(conventionally_utf8_bytestring_len(&REPLACEMENT_CHARACTER_BYTES[..]), 1);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 6);
+        assert_eq!(conventionally_utf8_byte_string_len(&REPLACEMENT_CHARACTER_BYTES[..]), 1);
     }
 
     #[test]
     fn utf8_char_len_nul_byte() {
         let s = b"\x00";
-        assert_eq!(conventionally_utf8_bytestring_len(&s[..]), 1);
+        assert_eq!(conventionally_utf8_byte_string_len(&s[..]), 1);
         let s = b"abc\x00";
-        assert_eq!(conventionally_utf8_bytestring_len(&s[..]), 4);
+        assert_eq!(conventionally_utf8_byte_string_len(&s[..]), 4);
         let s = b"abc\x00xyz";
-        assert_eq!(conventionally_utf8_bytestring_len(&s[..]), 7);
+        assert_eq!(conventionally_utf8_byte_string_len(&s[..]), 7);
     }
 
     #[test]
     fn utf8_char_len_invalid_utf8_byte_sequences() {
         let s = b"\x00\x00\xD8\x00";
-        assert_eq!(conventionally_utf8_bytestring_len(&s[..]), 4);
+        assert_eq!(conventionally_utf8_byte_string_len(&s[..]), 4);
         let s = b"\xFF\xFE";
-        assert_eq!(conventionally_utf8_bytestring_len(&s[..]), 2);
+        assert_eq!(conventionally_utf8_byte_string_len(&s[..]), 2);
     }
 
     #[test]
@@ -2236,50 +2236,52 @@ mod tests {
             0xB3, 0x7E, 0x39, 0x70, 0x8E, 0xFD, 0xBB, 0x75, 0x62, 0x77, 0xE7, 0xDF, 0x6F, 0xF2, 0x76, 0x27, 0x81,
             0x9A, 0x3A, 0x9D, 0xED, 0x6B, 0x4F, 0xAE, 0xC4, 0xE7, 0xA1, 0x66, 0x11, 0xF1, 0x08, 0x1C,
         ];
-        assert_eq!(conventionally_utf8_bytestring_len(&bytes[..]), 32);
+        assert_eq!(conventionally_utf8_byte_string_len(&bytes[..]), 32);
         // Mixed binary and ASCII
         let bytes = &[
             b'?', b'!', b'a', b'b', b'c', 0xFD, 0xBB, 0x75, 0x62, 0x77, 0xE7, 0xDF, 0x6F, 0xF2, 0x76, 0x27, 0x81,
             0x9A, 0x3A, 0x9D, 0xED, 0x6B, 0x4F, 0xAE, 0xC4, 0xE7, 0xA1, 0x66, 0x11, 0xF1, 0x08, 0x1C,
         ];
-        assert_eq!(conventionally_utf8_bytestring_len(&bytes[..]), 32);
+        assert_eq!(conventionally_utf8_byte_string_len(&bytes[..]), 32);
     }
 
     #[test]
     fn utf8_char_len_mixed_ascii_emoji_invalid_bytes() {
+        // ```
         // [2.6.3] > s = "🦀abc💎\xff"
         // => "🦀abc💎\xFF"
         // [2.6.3] > s.length
         // => 6
         // [2.6.3] > puts s.bytes.map{|b| "\\x#{b.to_s(16).upcase}"}.join
         // \xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF
+        // ```
         let bytes = b"\xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF";
-        assert_eq!(conventionally_utf8_bytestring_len(&bytes[..]), 6);
+        assert_eq!(conventionally_utf8_byte_string_len(&bytes[..]), 6);
     }
 
     #[test]
     fn utf8_char_len_utf8() {
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L147-L157
         let s = "Ω≈ç√∫˜µ≤≥÷".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 10);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 10);
         let s = "åß∂ƒ©˙∆˚¬…æ".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 11);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 11);
         let s = "œ∑´®†¥¨ˆøπ“‘".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 12);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 12);
         let s = "¡™£¢∞§¶•ªº–≠".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 12);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 12);
         let s = "¸˛Ç◊ı˜Â¯˘¿".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 10);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 10);
         let s = "ÅÍÎÏ˝ÓÔÒÚÆ☃".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 12);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 12);
         let s = "Œ„´‰ˇÁ¨ˆØ∏”’".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 12);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 12);
         let s = "`⁄€‹›ﬁﬂ‡°·‚—±".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 13);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 13);
         let s = "⅛⅜⅝⅞".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 4);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 4);
         let s = "ЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюя".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 79);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 79);
     }
 
     #[test]
@@ -2290,35 +2292,35 @@ mod tests {
         //
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L202-L224
         let s = "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 17);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 17);
     }
 
     #[test]
     fn utf8_char_len_two_byte_chars() {
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L188-L196
         let s = "田中さんにあげて下さい".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 11);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 11);
         let s = "パーティーへ行かないか".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 11);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 11);
         let s = "和製漢語".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 4);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 4);
         let s = "部落格".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 3);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 3);
         let s = "사회과학원 어학연구소".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 11);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 11);
         let s = "찦차를 타고 온 펲시맨과 쑛다리 똠방각하".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 22);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 22);
         let s = "社會科學院語學研究所".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 10);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 10);
         let s = "울란바토르".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 5);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 5);
         let s = "𠜎𠜱𠝹𠱓𠱸𠲖𠳏".as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 7);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 7);
     }
 
     #[test]
     fn utf8_char_len_space_chars() {
-        // Whitespace: all of the characters with category Zs, Zl, or Zp (in Unicode
+        // Whitespace: all the characters with category Zs, Zl, or Zp (in Unicode
         // version 8.0.0), plus U+0009 (HT), U+000B (VT), U+000C (FF), U+0085 (NEL),
         // and U+200B (ZERO WIDTH SPACE), which are in the C categories but are often
         // treated as whitespace in some contexts.
@@ -2331,7 +2333,7 @@ mod tests {
         let s = "	              ​    　
 "
         .as_bytes();
-        assert_eq!(conventionally_utf8_bytestring_len(s), 24);
+        assert_eq!(conventionally_utf8_byte_string_len(s), 24);
     }
 
     quickcheck! {
@@ -2524,7 +2526,7 @@ mod tests {
         s.make_capitalized();
         assert_eq!(s, "𐐜 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮");
 
-        // Change length when lowercased
+        // Change length when lower-cased
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
         let mut s = String::utf8("zȺȾ".to_string().into_bytes());
         s.make_capitalized();
@@ -2595,7 +2597,7 @@ mod tests {
         s.make_capitalized();
         assert_eq!(s, "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
 
-        // Change length when lowercased
+        // Change length when lower-cased
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
         let mut s = String::ascii("zȺȾ".to_string().into_bytes());
         s.make_capitalized();
@@ -2666,7 +2668,7 @@ mod tests {
         s.make_capitalized();
         assert_eq!(s, "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
 
-        // Change length when lowercased
+        // Change length when lower-cased
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
         let mut s = String::binary("zȺȾ".to_string().into_bytes());
         s.make_capitalized();
@@ -2712,7 +2714,7 @@ mod tests {
         //
         // Per `bstr`:
         //
-        // The bytes \xF0\x9F\x87 could lead to a valid UTF-8 sequence, but 3 of them
+        // The bytes `\xF0\x9F\x87` could lead to a valid UTF-8 sequence, but 3 of them
         // on their own are invalid. Only one replacement codepoint is substituted,
         // which demonstrates the "substitution of maximal subparts" strategy.
         let s = String::utf8(b"\xF0\x9F\x87".to_vec());

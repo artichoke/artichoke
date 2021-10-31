@@ -26,7 +26,7 @@ use same_file::Handle;
 ///
 /// Features are identified by the (potentially relative) path used when loading
 /// the file for the first time. Features loaded from disk are deduplicated
-/// by their real position on the underlying filesystem (i.e. their device and
+/// by their real position on the underlying file system (i.e. their device and
 /// inode).
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub struct Feature {
@@ -142,7 +142,7 @@ mod memory {
 /// `$LOADED_FEATURES`).
 ///
 /// `$LOADED_FEATURES` is an append only set. Disk-based features are
-/// deduplicated by their real position on the underlying filesystem (i.e. their
+/// deduplicated by their real position on the underlying file system (i.e. their
 /// device and inode).
 ///
 /// [`require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
@@ -385,7 +385,7 @@ where
     /// Returns true if the set contains a feature.
     ///
     /// Features loaded from disk are compared based on whether they point to
-    /// the same file on the underlying filesystem. Features loaded from memory
+    /// the same file on the underlying file system. Features loaded from memory
     /// are compared by their paths.
     #[must_use]
     pub fn contains(&self, feature: &Feature) -> bool {
@@ -416,7 +416,7 @@ where
         self.insert(feature);
     }
 
-    /// Add a memory featre from its associated path.
+    /// Add a memory feature from its associated path.
     ///
     /// # Panics
     ///

@@ -108,8 +108,8 @@ unsafe extern "C" fn mrb_intern_check_str(mrb: *mut sys::mrb_state, name: sys::m
     }
 }
 
-/* mrb_check_intern series functions returns nil if the symbol is not defined */
-/* otherwise returns mrb_value */
+// `mrb_check_intern` series functions returns `nil` if the symbol is not
+// defined; otherwise returns `mrb_value`.
 
 // ```c
 // MRB_API mrb_value mrb_check_intern(mrb_state*,const char*,size_t);

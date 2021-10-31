@@ -104,7 +104,7 @@ impl Random {
     /// Create a new Mersenne Twister random number generator with a randomly
     /// generated seed.
     ///
-    /// This method initializes the mersenne twister randome number generator
+    /// This method initializes the Mersenne Twister random number generator
     /// with a seed derived from a cryptographically secure source of
     /// randomness.
     ///

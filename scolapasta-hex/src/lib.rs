@@ -73,7 +73,7 @@
 
 #![no_std]
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}
@@ -773,93 +773,135 @@ mod tests {
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
         fn rfc4648_test_vectors_encode() {
+            // ```
             // BASE16("") = ""
+            // ```
             assert_eq!(encode(""), "");
 
+            // ```
             // BASE16("f") = "66"
+            // ```
             assert_eq!(encode("f"), "66");
 
+            // ```
             // BASE16("fo") = "666F"
+            // ```
             assert_eq!(encode("fo"), "666f");
 
+            // ```
             // BASE16("foo") = "666F6F"
+            // ```
             assert_eq!(encode("foo"), "666f6f");
 
+            // ```
             // BASE16("foob") = "666F6F62"
+            // ```
             assert_eq!(encode("foob"), "666f6f62");
 
+            // ```
             // BASE16("fooba") = "666F6F6261"
+            // ```
             assert_eq!(encode("fooba"), "666f6f6261");
 
+            // ```
             // BASE16("foobar") = "666F6F626172"
+            // ```
             assert_eq!(encode("foobar"), "666f6f626172");
         }
 
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
         fn rfc4648_test_vectors_hex_iter() {
+            // ```
             // BASE16("") = ""
+            // ```
             assert_eq!(Hex::from("").collect::<String>(), "");
 
+            // ```
             // BASE16("f") = "66"
+            // ```
             assert_eq!(Hex::from("f").collect::<String>(), "66");
 
+            // ```
             // BASE16("fo") = "666F"
+            // ```
             assert_eq!(Hex::from("fo").collect::<String>(), "666f");
 
+            // ```
             // BASE16("foo") = "666F6F"
+            // ```
             assert_eq!(Hex::from("foo").collect::<String>(), "666f6f");
 
+            // ```
             // BASE16("foob") = "666F6F62"
+            // ```
             assert_eq!(Hex::from("foob").collect::<String>(), "666f6f62");
 
+            // ```
             // BASE16("fooba") = "666F6F6261"
+            // ```
             assert_eq!(Hex::from("fooba").collect::<String>(), "666f6f6261");
 
+            // ```
             // BASE16("foobar") = "666F6F626172"
+            // ```
             assert_eq!(Hex::from("foobar").collect::<String>(), "666f6f626172");
         }
 
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
         fn rfc4648_test_vectors_encode_into_string() {
+            // ```
             // BASE16("") = ""
+            // ```
             let mut s = String::new();
             encode_into("", &mut s);
             assert_eq!(s, "");
             assert_eq!(s.capacity(), 0);
 
+            // ```
             // BASE16("f") = "66"
+            // ```
             let mut s = String::new();
             encode_into("f", &mut s);
             assert_eq!(s, "66");
             assert!(s.capacity() >= 2);
 
+            // ```
             // BASE16("fo") = "666F"
+            // ```
             let mut s = String::new();
             encode_into("fo", &mut s);
             assert_eq!(s, "666f");
             assert!(s.capacity() >= 4);
 
+            // ```
             // BASE16("foo") = "666F6F"
+            // ```
             let mut s = String::new();
             encode_into("foo", &mut s);
             assert_eq!(s, "666f6f");
             assert!(s.capacity() >= 6);
 
+            // ```
             // BASE16("foob") = "666F6F62"
+            // ```
             let mut s = String::new();
             encode_into("foob", &mut s);
             assert_eq!(s, "666f6f62");
             assert!(s.capacity() >= 8);
 
+            // ```
             // BASE16("fooba") = "666F6F6261"
+            // ```
             let mut s = String::new();
             encode_into("fooba", &mut s);
             assert_eq!(s, "666f6f6261");
             assert!(s.capacity() >= 10);
 
+            // ```
             // BASE16("foobar") = "666F6F626172"
+            // ```
             let mut s = String::new();
             encode_into("foobar", &mut s);
             assert_eq!(s, "666f6f626172");
@@ -869,37 +911,51 @@ mod tests {
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
         fn rfc4648_test_vectors_format_into() {
+            // ```
             // BASE16("") = ""
+            // ```
             let mut fmt = String::new();
             format_into("", &mut fmt).unwrap();
             assert_eq!(fmt, "");
 
+            // ```
             // BASE16("f") = "66"
+            // ```
             let mut fmt = String::new();
             format_into("f", &mut fmt).unwrap();
             assert_eq!(fmt, "66");
 
+            // ```
             // BASE16("fo") = "666F"
+            // ```
             let mut fmt = String::new();
             format_into("fo", &mut fmt).unwrap();
             assert_eq!(fmt, "666f");
 
+            // ```
             // BASE16("foo") = "666F6F"
+            // ```
             let mut fmt = String::new();
             format_into("foo", &mut fmt).unwrap();
             assert_eq!(fmt, "666f6f");
 
+            // ```
             // BASE16("foob") = "666F6F62"
+            // ```
             let mut fmt = String::new();
             format_into("foob", &mut fmt).unwrap();
             assert_eq!(fmt, "666f6f62");
 
+            // ```
             // BASE16("fooba") = "666F6F6261"
+            // ```
             let mut fmt = String::new();
             format_into("fooba", &mut fmt).unwrap();
             assert_eq!(fmt, "666f6f6261");
 
+            // ```
             // BASE16("foobar") = "666F6F626172"
+            // ```
             let mut fmt = String::new();
             format_into("foobar", &mut fmt).unwrap();
             assert_eq!(fmt, "666f6f626172");
@@ -915,37 +971,51 @@ mod tests {
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
         fn rfc4648_test_vectors_write_into() {
+            // ```
             // BASE16("") = ""
+            // ```
             let mut write = Vec::new();
             write_into("", &mut write).unwrap();
             assert_eq!(write, b"".to_vec());
 
+            // ```
             // BASE16("f") = "66"
+            // ```
             let mut write = Vec::new();
             write_into("f", &mut write).unwrap();
             assert_eq!(write, b"66".to_vec());
 
+            // ```
             // BASE16("fo") = "666F"
+            // ```
             let mut write = Vec::new();
             write_into("fo", &mut write).unwrap();
             assert_eq!(write, b"666f".to_vec());
 
+            // ```
             // BASE16("foo") = "666F6F"
+            // ```
             let mut write = Vec::new();
             write_into("foo", &mut write).unwrap();
             assert_eq!(write, b"666f6f".to_vec());
 
+            // ```
             // BASE16("foob") = "666F6F62"
+            // ```
             let mut write = Vec::new();
             write_into("foob", &mut write).unwrap();
             assert_eq!(write, b"666f6f62".to_vec());
 
+            // ```
             // BASE16("fooba") = "666F6F6261"
+            // ```
             let mut write = Vec::new();
             write_into("fooba", &mut write).unwrap();
             assert_eq!(write, b"666f6f6261".to_vec());
 
+            // ```
             // BASE16("foobar") = "666F6F626172"
+            // ```
             let mut write = Vec::new();
             write_into("foobar", &mut write).unwrap();
             assert_eq!(write, b"666f6f626172".to_vec());

@@ -19,21 +19,21 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 
-//! Virtual filesystem.
+//! Virtual file system.
 //!
-//! Artichoke proxies all filesystem access through a virtual filesystem. The
-//! filesystem can store Ruby sources and extension hooks in memory and will
-//! support proxying to the host filesystem for reads and writes.
+//! Artichoke proxies all file system access through a virtual file system. The
+//! file system can store Ruby sources and extension hooks in memory and will
+//! support proxying to the host file system for reads and writes.
 //!
-//! Artichoke uses the virtual filesystem to track metadata about loaded
+//! Artichoke uses the virtual file system to track metadata about loaded
 //! features.
 //!
-//! Artichoke has several virtual filesystem implementations. Only some of them
-//! support reading from the system fs.
+//! Artichoke has several virtual file system implementations. Only some of them
+//! support reading from the system file system.
 
-#[cfg(feature = "rubylib-native-filesystem-loader")]
+#[cfg(feature = "rubylib-native-file-system-loader")]
 pub mod rubylib;
 
 #[doc(inline)]
-#[cfg(feature = "rubylib-native-filesystem-loader")]
+#[cfg(feature = "rubylib-native-file-system-loader")]
 pub use rubylib::Rubylib;

@@ -17,10 +17,10 @@ use crate::Artichoke;
 /// Create and initialize an [`Artichoke`] interpreter.
 ///
 /// This function creates a new [`State`], embeds it in the [`sys::mrb_state`],
-/// initializes an [in memory virtual filesystem], and loads the [`extn`]
+/// initializes an [in memory virtual file system], and loads the [`extn`]
 /// extensions to Ruby Core and Stdlib.
 ///
-/// [in memory virtual filesystem]: crate::load_path
+/// [in memory virtual file system]: crate::load_path
 pub fn interpreter() -> Result<Artichoke, Error> {
     let release_meta = ReleaseMetadata::new();
     interpreter_with_config(release_meta)
@@ -70,9 +70,9 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
         sys::mrb_sys_state_debug(unsafe { interp.mrb.as_mut() })
     );
 
-    // mruby lazily initializes some core objects like top_self and generates a
-    // lot of garbage on startup. Eagerly initialize the interpreter to provide
-    // predictable initialization behavior.
+    // mruby lazily initializes some core objects like `top_self` and generates
+    // a lot of garbage on start-up. Eagerly initialize the interpreter to
+    // provide predictable initialization behavior.
     interp.create_arena_savepoint()?.interp().eval(&[])?;
 
     if let GcState::Enabled = prior_gc_state {

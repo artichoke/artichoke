@@ -123,7 +123,7 @@ impl RegexpType for Utf8 {
     fn debug(&self) -> String {
         let mut debug = String::from("/");
         let mut pattern = String::new();
-        // Explicitly supress this error because `debug` is infallible and
+        // Explicitly suppress this error because `debug` is infallible and
         // cannot panic.
         //
         // In practice this error will never be triggered since the only
@@ -430,7 +430,7 @@ impl RegexpType for Utf8 {
         regexp::clear_capture_globals(interp)?;
         let mut matchdata = MatchData::new(haystack.into(), Regexp::from(self.box_clone()), ..);
 
-        // regex crate always includes the zero group in the captures len.
+        // regex crate always includes the zero group in the captures length.
         let len = self.regex.captures_len().checked_sub(1);
         interp.set_active_regexp_globals(len.unwrap_or_default())?;
         let len = len.and_then(NonZeroUsize::new);

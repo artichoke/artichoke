@@ -38,7 +38,7 @@ pub const fn is_ascii_char_with_escape(ch: char) -> bool {
 ///
 /// This iterator's item type is [`char`].
 ///
-/// Non printable bytes like `0xFF` or `0x0C` are escaped to `\xFF` or `\f`.
+/// Non-printable bytes like `0xFF` or `0x0C` are escaped to `\xFF` or `\f`.
 ///
 /// ASCII printable characters are passed through as is unless they are `"` or
 /// `\` since these fields are used to delimit strings and escape sequences.
@@ -46,8 +46,8 @@ pub const fn is_ascii_char_with_escape(ch: char) -> bool {
 /// # Usage notes
 ///
 /// This iterator operates on individual bytes, which makes it unsuitable for
-/// debug printing a conventionally UTF-8 bytestring on its own. See
-/// [`format_debug_escape_into`] to debug format an entire bytestring.
+/// debug printing a conventionally UTF-8 byte string on its own. See
+/// [`format_debug_escape_into`] to debug format an entire byte string.
 ///
 /// # Examples
 ///
@@ -279,12 +279,14 @@ impl Literal {
             31 => r"\x1F",
             32 => " ",
             33 => "!",
+            // ```
             // [2.6.3] > '"'.ord
             // => 34
             // [2.6.3] > '"'.ord.to_s(16)
             // => "22"
             // [2.6.3] > :"\x22"
             // => :"\""
+            // ```
             34 => r#"\""#,
             35 => "#",
             36 => "$",
@@ -343,12 +345,14 @@ impl Literal {
             89 => "Y",
             90 => "Z",
             91 => "[",
+            // ```
             // [2.6.3] > '\\'.ord
             // => 92
             // [2.6.3] > '\\'.ord.to_s(16)
             // => "5c"
             // [2.6.3] > :"\x5C"
             // => :"\\"
+            // ```
             92 => r"\\",
             93 => "]",
             94 => "^",
@@ -636,7 +640,7 @@ impl std::error::Error for ByteSequenceTooLongError {}
 ///
 /// This iterator's item type is [`char`].
 ///
-/// Non printable bytes like `0xFF` or `0x0C` are escaped to `\xFF` or `\f`.
+/// Non-printable bytes like `0xFF` or `0x0C` are escaped to `\xFF` or `\f`.
 ///
 /// # Usage notes
 ///

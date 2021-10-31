@@ -8,8 +8,8 @@
 [![API](https://docs.rs/spinoso-symbol/badge.svg)](https://docs.rs/spinoso-symbol)
 [![API trunk](https://img.shields.io/badge/docs-trunk-blue.svg)](https://artichoke.github.io/artichoke/spinoso_symbol/)
 
-Identifier for interned bytestrings and routines for manipulating the underlying
-bytestrings.
+Identifier for interned byte strings and routines for manipulating the
+underlying byte strings.
 
 `Symbol` is a `Copy` type based on `u32`. `Symbol` is cheap to copy, store, and
 compare. It is suitable for representing indexes into a string interner.
@@ -52,11 +52,11 @@ spinoso-symbol = "0.1"
 ```
 
 Most of the functionality in this crate depends on a Ruby interpreter that
-implements [bytestring interning APIs] and requires activating the `artichoke`
+implements [byte string interning APIs] and requires activating the `artichoke`
 feature.
 
-Without an interpreter, `spinoso-symbol` can determine whether a bytestring is a
-Ruby identifier:
+Without an interpreter, `spinoso-symbol` can determine whether a byte string is
+a Ruby identifier:
 
 ```rust
 use spinoso_symbol::IdentifierType;
@@ -65,7 +65,7 @@ assert_eq!("@features".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
 assert_eq!("artichoke_crates".parse::<IdentifierType>(), Ok(IdentifierType::Local));
 ```
 
-And print a debug representation of a bytestring suitable for implementing
+And print a debug representation of a byte string suitable for implementing
 [`Symbol#inspect`]:
 
 ```rust
@@ -91,11 +91,10 @@ All features are enabled by default.
   implementing APIs from Ruby Core. Dropping this feature removes the
   `artichoke-core` and `focaccia` dependencies. Activating this feature also
   activates the **inspect** feature.
-- **inspect** - Enables an iterator for generating debug output of a symbol
-  bytestring. Activating this feature also activates the **ident-parser**
-  feature.
+- **inspect** - Enables an iterator for generating debug output of a symbol byte
+  string. Activating this feature also activates the **ident-parser** feature.
 - **ident-parser** - Enables a parser to determing the Ruby identifier type, if
-  any, for a bytestring. Dropping this feature removes the `bstr` and
+  any, for a byte string. Dropping this feature removes the `bstr` and
   `scolapasta-string-escape` dependencies.
 - **std** - Enables a dependency on the Rust Standard Library. Activating this
   feature enables [`std::error::Error`] impls on error types in this crate.
@@ -110,7 +109,7 @@ All features are enabled by default.
 [`symbol::all_symbols`]:
   https://ruby-doc.org/core-2.6.3/Symbol.html#method-c-all_symbols
 [`symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
-[bytestring interning apis]:
+[byte string interning apis]:
   https://artichoke.github.io/artichoke/artichoke_core/intern/trait.Intern.html
 [`symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
 [`alloc`]: https://doc.rust-lang.org/alloc/

@@ -15,7 +15,7 @@ use crate::ident::IdentifierType;
 ///
 /// # Examples
 ///
-/// To inspect an empty bytestring:
+/// To inspect an empty byte string:
 ///
 /// ```
 /// # extern crate alloc;
@@ -26,7 +26,7 @@ use crate::ident::IdentifierType;
 /// assert_eq!(debug, r#":"""#);
 /// ```
 ///
-/// To inspect a well-formed UTF-8 bytestring:
+/// To inspect a well-formed UTF-8 byte string:
 ///
 /// ```
 /// # extern crate alloc;
@@ -37,7 +37,7 @@ use crate::ident::IdentifierType;
 /// assert_eq!(debug, ":spinoso");
 /// ```
 ///
-/// To inspect a bytestring with invalid UTF-8 bytes:
+/// To inspect a byte string with invalid UTF-8 bytes:
 ///
 /// ```
 /// # extern crate alloc;
@@ -93,7 +93,7 @@ impl<'a> FusedIterator for Inspect<'a> {}
 
 impl<'a> Inspect<'a> {
     /// Write an `Inspect` iterator into the given destination using the debug
-    /// representation of the interned byteslice associated with the symbol in
+    /// representation of the interned byte slice associated with the symbol in
     /// the underlying interner.
     ///
     /// This formatter writes content like `:spinoso` and `:"invalid-\xFF-utf8"`.
@@ -137,7 +137,7 @@ impl<'a> Inspect<'a> {
     }
 
     /// Write an `Inspect` iterator into the given destination using the debug
-    /// representation of the interned byteslice associated with the symbol in
+    /// representation of the interned byte slice associated with the symbol in
     /// the underlying interner.
     ///
     /// This formatter writes content like `:spinoso` and `:"invalid-\xFF-utf8"`.
@@ -744,7 +744,7 @@ mod specs {
         assert!(!flags.is_ident());
     }
 
-    // From spec/core/symbol/inspect_spec.rb:
+    // From `spec/core/symbol/inspect_spec.rb`:
     //
     // ```ruby
     // symbols = {

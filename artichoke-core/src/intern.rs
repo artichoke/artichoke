@@ -1,13 +1,13 @@
 //! Intern [`Symbol`][symbol]s on an interpreter.
 //!
-//! `Symbol`s are immutable bytestrings that have the same lifetime as the
+//! `Symbol`s are immutable byte strings that have the same lifetime as the
 //! interpreter.
 //!
 //! [symbol]: https://ruby-doc.org/core-2.6.3/Symbol.html
 
 use alloc::borrow::Cow;
 
-/// Store and retrieve bytestrings that have the same lifetime as the
+/// Store and retrieve byte strings that have the same lifetime as the
 /// interpreter.
 ///
 /// See the [Ruby `Symbol` type][symbol].
@@ -29,7 +29,7 @@ pub trait Intern {
     /// symbol identifiers must be representable by a `Range<u32>`.
     const SYMBOL_RANGE_START: Self::Symbol;
 
-    /// Store an immutable bytestring for the life of the interpreter.
+    /// Store an immutable byte string for the life of the interpreter.
     ///
     /// Returns an identifier that enables retrieving the original bytes.
     ///
@@ -42,7 +42,7 @@ pub trait Intern {
     where
         T: Into<Cow<'static, [u8]>>;
 
-    /// Check if a bytestring is already interned and return its symbol
+    /// Check if a byte string is already interned and return its symbol
     /// identifier.  Return `None` if the string has not been interned before.
     ///
     /// Returns an identifier that enables retrieving the original bytes.
@@ -89,7 +89,7 @@ pub trait Intern {
         self.check_interned_bytes(symbol.as_bytes())
     }
 
-    /// Retrieve the original byte content of an interned bytestring.
+    /// Retrieve the original byte content of an interned byte string.
     ///
     /// Returns `None` if the symbol identifier is invalid.
     ///

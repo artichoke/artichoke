@@ -23,7 +23,7 @@
 //!
 //! This module implements the [`ENV`] singleton object from Ruby Core.
 //!
-//! In Artichoke, the enviroment variable store is modeled as a hash map of
+//! In Artichoke, the environment variable store is modeled as a hash map of
 //! byte vector keys and values, e.g. `HashMap<Vec<u8>, Vec<u8>>`. Backends are
 //! expected to convert their internals to this representation in their public
 //! APIs. For this reason, all APIs exposed by ENV backends in this crate are
@@ -90,7 +90,7 @@
 //! [`HashMap`]: std::collections::HashMap
 //! [Rust Standard Library]: std
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}
@@ -130,8 +130,8 @@ pub const RUBY_API_POLYFILLS: &str = include_str!(concat!(env!("CARGO_MANIFEST_D
 ///
 /// These APIs can return errors under several conditions:
 ///
-/// - An environment variable name is not convertable to a [platform string].
-/// - An environment variable value is not convertable to a [platform string].
+/// - An environment variable name is not convertible to a [platform string].
+/// - An environment variable value is not convertible to a [platform string].
 /// - An environment variable name contains a NUL byte.
 /// - An environment variable name contains an `=` byte.
 /// - An environment variable value contains a NUL byte.

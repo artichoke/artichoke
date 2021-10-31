@@ -55,7 +55,7 @@ impl From<bool> for RegexpOption {
 }
 
 impl From<RegexpOption> for bool {
-    /// Convert from `RegexpOption` to its boolean representation.
+    /// Convert from `RegexpOption` to its Boolean representation.
     ///
     /// See also [`is_enabled`].
     ///
@@ -247,7 +247,7 @@ impl Options {
     /// Whether the Regexp was parsed as a literal, e.g. `'/artichoke/i`.
     ///
     /// This enables Ruby parsers to inject whether a Regexp is a literal to the
-    /// core library. Literal Regexps have some special behavior regrding
+    /// core library. Literal Regexps have some special behavior regarding
     /// capturing groups and report parse failures differently.
     #[must_use]
     pub const fn is_literal(self) -> bool {

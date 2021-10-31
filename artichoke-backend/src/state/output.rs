@@ -57,7 +57,7 @@ pub struct Captured {
 
 impl Captured {
     /// Constructs a new, default `Captured` output strategy.
-    // This method cannot be const becuase of:
+    // This method cannot be const because of:
     // https://github.com/BurntSushi/bstr/issues/73
     #[must_use]
     pub fn new() -> Self {

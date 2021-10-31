@@ -13,7 +13,7 @@ use scolapasta_string_escape::{is_ascii_char_with_escape, InvalidUtf8ByteSequenc
 ///
 /// # Examples
 ///
-/// To inspect an empty bytestring:
+/// To inspect an empty byte string:
 ///
 /// ```
 /// # extern crate alloc;
@@ -24,7 +24,7 @@ use scolapasta_string_escape::{is_ascii_char_with_escape, InvalidUtf8ByteSequenc
 /// assert_eq!(debug, r#""""#);
 /// ```
 ///
-/// To inspect a well-formed UTF-8 bytestring:
+/// To inspect a well-formed UTF-8 byte string:
 ///
 /// ```
 /// # extern crate alloc;
@@ -35,7 +35,7 @@ use scolapasta_string_escape::{is_ascii_char_with_escape, InvalidUtf8ByteSequenc
 /// assert_eq!(debug, "\"spinoso\"");
 /// ```
 ///
-/// To inspect a bytestring with invalid UTF-8 bytes:
+/// To inspect a byte string with invalid UTF-8 bytes:
 ///
 /// ```
 /// # extern crate alloc;

@@ -124,7 +124,7 @@ where
     }
 }
 
-/// An iterator that returns all of the Symbols in an [interner].
+/// An iterator that returns all the Symbols in an [interner].
 ///
 /// This iterator yields [`Symbol`] as its item type.
 ///

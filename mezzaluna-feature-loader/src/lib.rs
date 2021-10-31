@@ -23,7 +23,7 @@
 //! Ruby feature loader.
 //!
 //! An Artichoke Ruby VM may load code (called "features") with several
-//! strategies. Features can be loaded from an in-memory virtual filesystem
+//! strategies. Features can be loaded from an in-memory virtual file system
 //! which can also store native extensions, natively from local disk, or via a
 //! set of search paths given by the `RUBYLIB` environment variable on
 //! interpreter boot.

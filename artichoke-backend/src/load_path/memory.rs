@@ -210,7 +210,7 @@ impl Entry {
     }
 }
 
-/// Virtual filesystem for sources, extensions, and require metadata.
+/// Virtual file system for sources, extensions, and require metadata.
 ///
 /// `Memory` is a [`HashMap`] from paths to an entry struct that contains:
 ///
@@ -234,7 +234,7 @@ pub struct Memory {
 }
 
 impl Default for Memory {
-    /// Virtual filesystem with current working directory set to
+    /// Virtual file system with current working directory set to
     /// [`RUBY_LOAD_PATH`].
     fn default() -> Self {
         let cwd = PathBuf::from(RUBY_LOAD_PATH);
@@ -247,11 +247,11 @@ impl Default for Memory {
 }
 
 impl Memory {
-    /// Create a new in memory virtual filesystem.
+    /// Create a new in memory virtual file system.
     ///
-    /// Sets the current working directory of the VFS to [`RUBY_LOAD_PATH`] for
-    /// storing Ruby source files. This path is searched by
-    /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`].
+    /// Sets the current working directory of the virtual file system to
+    /// [`RUBY_LOAD_PATH`] for storing Ruby source files. This path is searched
+    /// by [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`].
     ///
     /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`]: crate::extn::core::kernel::require
     #[must_use]
@@ -259,7 +259,7 @@ impl Memory {
         Self::default()
     }
 
-    /// Create a new in memory virtual filesystem with the given working
+    /// Create a new in memory virtual file system with the given working
     /// directory.
     #[must_use]
     pub fn with_working_directory<T>(cwd: T) -> Self
@@ -274,7 +274,7 @@ impl Memory {
         }
     }
 
-    /// Check whether `path` points to a file in the virtual filesystem and
+    /// Check whether `path` points to a file in the virtual file system and
     /// return the absolute path if it exists.
     ///
     /// This API is infallible and will return [`None`] for non-existent paths.
@@ -290,7 +290,7 @@ impl Memory {
         }
     }
 
-    /// Check whether `path` points to a file in the virtual filesystem.
+    /// Check whether `path` points to a file in the virtual file system.
     ///
     /// This API is infallible and will return `false` for non-existent paths.
     #[must_use]

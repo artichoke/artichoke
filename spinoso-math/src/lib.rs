@@ -27,7 +27,7 @@
 //!
 //! This crate defines math operations as free functions. These functions differ
 //! from those defined in Rust [`core`] by returning a [`DomainError`] when an
-//! input is outside of the domain of the function and results in [`NaN`].
+//! input is outside the domain of the function and results in [`NaN`].
 //!
 //! `spinoso-math` assumes the Ruby VM uses double precision [`f64`] floats.
 //!
@@ -67,7 +67,7 @@
 //! [`NaN`]: f64::NAN
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}
@@ -239,12 +239,14 @@ impl DomainError {
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
+        // ```
         // [2.6.3] > Math::DomainError.new.message
         // => "Math::DomainError"
+        // ```
         Self("Math::DomainError")
     }
 
-    /// Construct a new, domaine error with a message.
+    /// Construct a new, domain error with a message.
     ///
     /// # Examples
     ///

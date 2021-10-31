@@ -15,7 +15,7 @@ pub mod regexp;
 /// Container for interpreter global state.
 ///
 /// A Ruby interpreter requires various pieces of state to execute Ruby code. It
-/// needs an object heap, type registry, symbol table, psuedorandom number
+/// needs an object heap, type registry, symbol table, pseudorandom number
 /// generator, and more.
 ///
 /// This struct stores all of these components and allows them to be passed
@@ -41,7 +41,7 @@ impl State {
     ///
     /// - [`Class`] and [`Module`] registries.
     /// - `Regexp` [global state][regexp-state].
-    /// - [In-memory virtual filesystem].
+    /// - [In-memory virtual file system].
     /// - [Ruby parser and file context].
     /// - [Intepreter-level PRNG] (requires activating the `core-random`
     ///   feature).
@@ -50,13 +50,13 @@ impl State {
     /// # Errors
     ///
     /// If the `core-random` feature is enabled, this function may return an
-    /// error if the interpreter-global psuedorandom number generator fails
+    /// error if the interpreter-global pseudorandom number generator fails
     /// to initialize using the platform source of randomness.
     ///
     /// [`Class`]: crate::core::ClassRegistry
     /// [`Module`]: crate::core::ModuleRegistry
     /// [regexp-state]: regexp::State
-    /// [In-memory virtual filesystem]: load_path
+    /// [In-memory virtual file system]: load_path
     /// [Ruby parser and file context]: parser::State
     /// [Intepreter-level PRNG]: Random
     /// [IO capturing]: output::Strategy

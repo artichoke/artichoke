@@ -142,7 +142,7 @@ impl<'a> Iterator for Debug<'a> {
         if !self.source.is_empty() {
             let (ch, size) = bstr::decode_utf8(self.source);
             let next = match ch {
-                // '/' is the `Regexp` literal delimeter, so escape it.
+                // '/' is the `Regexp` literal delimiter, so escape it.
                 Some('/') => {
                     // While not an invalid byte, we rely on the documented
                     // behavior of `InvalidUtf8ByteSequence` to always escape

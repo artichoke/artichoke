@@ -229,7 +229,7 @@ pub fn initialize_copy(interp: &mut Artichoke, ary: Value, mut from: Value) -> R
     // be safely marked if an mruby allocation occurs and a GC is triggered in
     // `Array::initialize`.
     //
-    // This ensures the given `RArry *` is initalized even if a non-`Array`
+    // This ensures the given `RArry *` is initialized even if a non-`Array`
     // object is called with `Array#initialize_copy` and the
     // `Array::unbox_from_value` call below short circuits with an error.
     Array::box_into_value(Array::new(), ary, interp)?;
@@ -359,7 +359,7 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
         // potential garbage collection, otherwise marking the children in `ary`
         // will have undefined behavior.
         //
-        // The call to `Array::alloc_value` happens outside of this block after
+        // The call to `Array::alloc_value` happens outside this block after
         // the `Array` has been repacked.
         let shifted = unsafe {
             let array_mut = array.as_inner_mut();
@@ -382,7 +382,7 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
         // potential garbage collection, otherwise marking the children in `ary`
         // will have undefined behavior.
         //
-        // The call to `interp.convert` happens outside of this block after the
+        // The call to `interp.convert` happens outside this block after the
         // `Array` has been repacked.
         let shifted = unsafe {
             let array_mut = array.as_inner_mut();

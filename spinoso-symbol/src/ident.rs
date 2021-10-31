@@ -1,4 +1,4 @@
-//! Parser for classifying bytestrings as Ruby identifiers.
+//! Parser for classifying byte strings as Ruby identifiers.
 //!
 //! This module exposes a parser for determining if a sequence of bytes is a
 //! valid Ruby identifier. These routines also classify idents by type, for
@@ -54,7 +54,7 @@ use core::str::FromStr;
 
 /// Valid types for Ruby identifiers.
 ///
-/// Spinoso symbol parses bytestrings to determine if they are valid idents for
+/// Spinoso symbol parses byte strings to determine if they are valid idents for
 /// the [`Inspect`] iterator (which requires the **inspect** Cargo feature to be
 /// enabled). Symbols that are valid idents do not get wrapped in `"` when
 /// generating their debug output.
@@ -206,8 +206,8 @@ pub enum IdentifierType {
     Class,
     /// Identifier that is an "attribute setter" method name.
     ///
-    /// AttrSet end in the `=` sigil and are otherwise valid [`Local`] or
-    /// [`Constant`] idents.  AttrSet idents cannot have any other "junk"
+    /// `AttrSet` idents end in the `=` sigil and are otherwise valid [`Local`]
+    /// or [`Constant`] idents. `AttrSet` idents cannot have any other "junk"
     /// symbols.
     ///
     /// # Examples
@@ -366,7 +366,7 @@ fn parse(name: &[u8]) -> Option<IdentifierType> {
         [] | [b'\0'] => None,
         // special global variable
         [b'$', name @ ..] if is_special_global_name(name) => Some(IdentifierType::Global),
-        // global vairable
+        // global variable
         [b'$', name @ ..] => parse_ident(name, IdentifierType::Global),
         // class variable
         [b'@', b'@', name @ ..] => parse_ident(name, IdentifierType::Class),
@@ -465,7 +465,7 @@ fn is_symbolic_method_name(name: &[u8]) -> bool {
     )
 }
 
-/// Return whther the input is a valid constant name.
+/// Return whether the input is a valid constant name.
 ///
 /// Constant names require the first character to be either ASCII or Unicode
 /// uppercase.
@@ -947,7 +947,7 @@ mod tests {
 mod specs {
     use super::IdentifierType;
 
-    // From spec/core/symbol/inspect_spec.rb:
+    // From `spec/core/symbol/inspect_spec.rb`:
     //
     // ```ruby
     // symbols = {

@@ -12,8 +12,8 @@ use same_file::Handle;
 ///
 /// MRI Ruby allows manipulating the [require] search path by setting the
 /// `RUBYLIB` environment variable before launching the Ruby CLI. The `RUBYLIB`
-/// variable is read on startup and is expected to contain a platform-native
-/// path separator-delimited list of filesystem paths.
+/// variable is read on start-up and is expected to contain a platform-native
+/// path separator-delimited list of file system paths.
 ///
 /// This loader will attempt to resolve relative paths in any of the paths given
 /// in `RUBYLIB`. Absolute paths are rejected by this loader.
@@ -60,12 +60,12 @@ use same_file::Handle;
 #[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "rubylib")))]
 pub struct Rubylib {
-    /// Fixed set of paths on the host filesystem to search for Ruby sources.
+    /// Fixed set of paths on the host file system to search for Ruby sources.
     load_paths: Box<[PathBuf]>,
 }
 
 impl Rubylib {
-    /// Create a new native filesystem loader that searches the filesystem for
+    /// Create a new native file system loader that searches the file system for
     /// Ruby sources at the paths specified by the `RUBYLIB` environment
     /// variable.
     ///
@@ -76,7 +76,7 @@ impl Rubylib {
     /// absolute paths, they are absolutized relative to the current process's
     /// [current working directory] at the time this method is called.
     ///
-    /// This source loader grants access to the host filesystem. The Rubylib
+    /// This source loader grants access to the host file system. The `Rubylib`
     /// loader does not support native extensions.
     ///
     /// This method returns [`None`] if there are errors resolving the
@@ -93,9 +93,9 @@ impl Rubylib {
         Self::with_rubylib_and_cwd(&rubylib, &cwd)
     }
 
-    /// Create a new native filesystem loader that searches the filesystem for
+    /// Create a new native file system loader that searches the file system for
     /// Ruby sources at the paths specified by the given `rubylib` platform
-    /// string. `rubylib` is expected to be a set of filesystem paths that are
+    /// string. `rubylib` is expected to be a set of file system paths that are
     /// delimited by the platform path separator.
     ///
     /// The resolved load path is immutable.
@@ -104,7 +104,7 @@ impl Rubylib {
     /// are absolutized relative to the current process's [current working
     /// directory] at the time this method is called.
     ///
-    /// This source loader grants access to the host filesystem. The Rubylib
+    /// This source loader grants access to the host file system. The `Rubylib`
     /// loader does not support native extensions.
     ///
     /// This method returns [`None`] if the current working directory cannot be
@@ -118,9 +118,9 @@ impl Rubylib {
         Self::with_rubylib_and_cwd(rubylib, &cwd)
     }
 
-    /// Create a new native filesystem loader that searches the filesystem for
+    /// Create a new native file system loader that searches the file system for
     /// Ruby sources at the paths specified by the given `rubylib` platform
-    /// string. `rubylib` is expected to be a set of filesystem paths that are
+    /// string. `rubylib` is expected to be a set of file system paths that are
     /// delimited by the platform path separator.
     ///
     /// The resolved load path is immutable.
@@ -129,7 +129,7 @@ impl Rubylib {
     /// are absolutized relative to the given current working directory at the
     /// time this method is called.
     ///
-    /// This source loader grants access to the host filesystem. The Rubylib
+    /// This source loader grants access to the host file system. The `Rubylib`
     /// loader does not support native extensions.
     ///
     /// This method returns [`None`] if the given `rubylib` does not contain any
@@ -142,7 +142,7 @@ impl Rubylib {
             .collect::<Vec<_>>();
 
         // If the `RUBYLIB` env variable is empty or otherwise results in no
-        // search paths being resolved, return `None` so the Rubylib loader is
+        // search paths being resolved, return `None` so the `Rubylib` loader is
         // not used.
         if load_paths.is_empty() {
             return None;
@@ -154,10 +154,10 @@ impl Rubylib {
         Some(Self { load_paths })
     }
 
-    /// Check whether `path` points to a file in the virtual filesystem and
+    /// Check whether `path` points to a file in the virtual file system and
     /// return the absolute path if it exists.
     ///
-    /// Returns [`Some`] if the filesystem object pointed to by `path` exists.
+    /// Returns [`Some`] if the file system object pointed to by `path` exists.
     /// If `path` is relative, it is joined to each path in the `RUBYLIB`
     /// environment variable at the time this loader was initialized.
     ///
@@ -166,7 +166,7 @@ impl Rubylib {
     #[inline]
     #[must_use]
     pub fn resolve_file(&self, path: &Path) -> Option<Handle> {
-        // The Rubylib loader only loads relative paths in `RUBYLIB`.
+        // The `Rubylib` loader only loads relative paths in `RUBYLIB`.
         if path.is_absolute() {
             return None;
         }

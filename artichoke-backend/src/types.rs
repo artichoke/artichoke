@@ -17,7 +17,7 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
     #[allow(clippy::match_same_arms)]
     match value.tt {
         // `nil` is implemented with the `MRB_TT_FALSE` type tag in mruby
-        // (since both values are falsy). The difference is that booleans are
+        // (since both values are falsy). The difference is that Booleans are
         // non-zero `Fixnum`s.
         MRB_TT_FALSE if unsafe { sys::mrb_sys_value_is_nil(value) } => Ruby::Nil,
         MRB_TT_FALSE => Ruby::Bool,
@@ -28,7 +28,7 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         MRB_TT_TRUE => Ruby::Bool,
         MRB_TT_INTEGER => Ruby::Fixnum,
         MRB_TT_SYMBOL => Ruby::Symbol,
-        // internal use: #undef; should not happen
+        // internal use: `#undef`; should not happen
         MRB_TT_UNDEF => Ruby::Unreachable,
         MRB_TT_FLOAT => Ruby::Float,
         // `MRB_TT_CPTR` wraps a borrowed `void *` pointer.
@@ -76,12 +76,12 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         MRB_TT_DATA => Ruby::Data,
         // NOTE(lopopolo): `Fiber`s are unimplemented in Artichoke.
         MRB_TT_FIBER => Ruby::Fiber,
-        // MRB_TT_ISTRUCT is an "inline structure", or a mrb_value that
-        // stores data in a char* buffer inside an mrb_value. These
-        // mrb_values cannot have a finalizer and cannot have instance
+        // `MRB_TT_ISTRUCT` is an "inline structure", or a `mrb_value` that
+        // stores data in a `char*` buffer inside an `mrb_value`. These
+        // `mrb_value`s cannot have a finalizer and cannot have instance
         // variables.
         //
-        // See vendor/mruby-*/include/mruby/istruct.h
+        // See `vendor/mruby-*/include/mruby/istruct.h`.
         MRB_TT_ISTRUCT => Ruby::InlineStruct,
         // `MRB_TT_BREAK` is used internally to the mruby VM. BREAK is used as
         // the return value of `mrb_yield` when the block has a non-local

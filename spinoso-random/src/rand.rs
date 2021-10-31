@@ -70,9 +70,9 @@ pub enum Rand {
 ///
 /// # Implementation notes
 ///
-/// This function does not yet support range constaints. When support is added,
+/// This function does not yet support range constraints. When support is added,
 /// when `max` is a `Range`, `rand` will return a random number where
-/// range.member?(number) == true.
+/// `range.member?(number) == true`.
 ///
 /// # Examples
 ///

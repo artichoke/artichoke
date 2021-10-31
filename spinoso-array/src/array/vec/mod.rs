@@ -114,7 +114,7 @@ impl<T> Array<T> {
         Self(Vec::with_capacity(capacity))
     }
 
-    /// Constuct a new two-element `Array` from the given arguments.
+    /// Construct a new two-element `Array` from the given arguments.
     ///
     /// The vector is constructed with `capacity` of 2.
     ///
@@ -470,7 +470,7 @@ impl<T> Array<T> {
     }
 
     /// Returns the number of elements in the vector, also referred to as its
-    /// 'length'.
+    /// "length".
     ///
     /// # Examples
     ///
@@ -1047,7 +1047,7 @@ where
             *cell = elem;
         } else {
             let buflen = self.len();
-            // index is *at least* buflen, so this calculation never underflows
+            // index is *at least* `buflen`, so this calculation never underflows
             // and ensures we allocate an additional slot.
             let additional = (index - buflen).checked_add(1).expect("capacity overflow");
             self.0.reserve(additional);
@@ -1096,7 +1096,7 @@ where
                 }
             }
         } else {
-            // start is *at least* buflen, so this calculation never underflows
+            // start is *at least* `buflen`, so this calculation never underflows
             // and ensures we allocate an additional slot.
             let additional = (start - buflen).checked_add(1).expect("capacity overflow");
             self.0.reserve(additional);

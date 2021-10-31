@@ -158,7 +158,7 @@ pub fn atan(value: f64) -> f64 {
 /// Computes the four quadrant arctangent of `value` (`y`) and `other` (`x`) in
 /// radians.
 ///
-/// Return value is a angle in radians between the positive x-axis of cartesian
+/// Return value is a angle in radians between the positive x-axis of Cartesian
 /// plane and the point given by the coordinates (`x`, `y`) on it.
 ///
 /// Domain: (-INFINITY, INFINITY)
@@ -484,7 +484,7 @@ pub const fn gamma(value: f64) -> Result<f64, NotImplementedError> {
 pub fn gamma(value: f64) -> Result<f64, DomainError> {
     // `gamma(n)` is the same as `n!` for integer n > 0. `gamma` returns float
     // and might be an approximation so include a lookup table for as many `n`
-    // as can fit in the float manitssa.
+    // as can fit in the float mantissa.
     const FACTORIAL_TABLE: [f64; 23] = [
         1.0_f64,                         // fact(0)
         1.0,                             // fact(1)
@@ -825,7 +825,7 @@ pub fn sinh(value: f64) -> f64 {
 ///
 /// Domain: [0, INFINITY)
 ///
-/// Codomain:[0, INFINITY)
+/// Codomain: [0, INFINITY)
 ///
 /// # Examples
 ///

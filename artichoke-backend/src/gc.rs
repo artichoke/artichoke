@@ -10,7 +10,7 @@ use arena::{ArenaIndex, ArenaSavepointError};
 pub trait MrbGarbageCollection {
     /// Create a savepoint in the GC arena.
     ///
-    /// Savepoints allow mruby to deallocate all of the objects created via the
+    /// Savepoints allow mruby to deallocate all the objects created via the
     /// C API.
     ///
     /// Normally objects created via the C API are marked as permanently alive
