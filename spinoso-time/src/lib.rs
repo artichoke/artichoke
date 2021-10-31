@@ -44,7 +44,7 @@
 //! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 //! [`chrono`]: https://crates.io/crates/chrono
 
-// Ensure code blocks in README.md compile
+// Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
 #[doc = include_str!("../README.md")]
 mod readme {}
