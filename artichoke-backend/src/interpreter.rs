@@ -70,9 +70,9 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
         sys::mrb_sys_state_debug(unsafe { interp.mrb.as_mut() })
     );
 
-    // mruby lazily initializes some core objects like top_self and generates a
-    // lot of garbage on startup. Eagerly initialize the interpreter to provide
-    // predictable initialization behavior.
+    // mruby lazily initializes some core objects like `top_self` and generates
+    // a lot of garbage on start-up. Eagerly initialize the interpreter to
+    // provide predictable initialization behavior.
     interp.create_arena_savepoint()?.interp().eval(&[])?;
 
     if let GcState::Enabled = prior_gc_state {

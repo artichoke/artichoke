@@ -74,8 +74,8 @@ impl Artichoke {
             //
             // Safety:
             //
-            // 1. Extract a `*mut sys::mrb_state` pointer from the `NonNull` mrb
-            //    field.
+            // 1. Extract a `*mut sys::mrb_state` pointer from the `NonNull`
+            //    `mrb` field.
             // 2. Function safety conditions declare that `Artichoke` is not
             //    accessed inside the closure.
             // 3. Rust borrowing rules enforce that `Artichoke` is not accessed
@@ -191,7 +191,7 @@ impl Artichoke {
 ///
 /// To ensure safety, the `State` must be moved back into the `mrb` userdata
 /// pointer before re-entering the FFI boundary. This guard implements [`Drop`]
-/// to reserialize the `State` into the `mrb` once it goes out of scope.
+/// to re-serialize the `State` into the `mrb` once it goes out of scope.
 ///
 /// `Guard` is passed directly to [`error::raise`](crate::error::raise).
 #[derive(Debug)]
@@ -201,7 +201,7 @@ impl<'a> Guard<'a> {
     /// Create a new guard that wraps an interpreter.
     ///
     /// This function is most effective when the interpreter is temporarily
-    /// reified and stored on the stack.
+    /// created from a source `mrb_state` and stored on the stack.
     pub fn new(interp: &'a mut Artichoke) -> Self {
         Self(interp)
     }

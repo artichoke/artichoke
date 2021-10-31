@@ -547,7 +547,7 @@ mod tests {
         // the result of the most recent eval is always live even after a full
         // garbage collection
         assert!(!live.is_dead(&mut interp));
-        // Fixnums are immediate even if they are created directly without an
+        // `Fixnum`s are immediate even if they are created directly without an
         // interpreter.
         let fixnum = Convert::<_, Value>::convert(&*interp, 99);
         assert!(!fixnum.is_dead(&mut interp));

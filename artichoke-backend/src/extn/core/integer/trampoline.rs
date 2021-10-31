@@ -43,7 +43,7 @@ pub fn is_nobits(interp: &mut Artichoke, value: Value, mask: Value) -> Result<Va
 }
 
 pub fn size(interp: &Artichoke) -> Result<Value, Error> {
-    // This `as` cast is lossless because size_of::<i64> is guaranteed to be
+    // This `as` cast is lossless because `size_of::<i64>` is guaranteed to be
     // less than `i64::MAX`.
     const SIZE: i64 = Integer::size() as i64;
     Ok(interp.convert(SIZE))

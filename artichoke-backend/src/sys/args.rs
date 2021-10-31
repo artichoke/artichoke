@@ -1,11 +1,13 @@
-//! Helpers for retreiving args from mrb function calls.
+//! Helpers for retrieving args from mruby function calls.
 
 use super::mrb_aspec;
 
 /// Function requires n arguments.
 ///
+/// ```text
 /// @param n
 ///     The number of required arguments.
+/// ```
 #[inline]
 #[must_use]
 pub const fn mrb_args_req(n: u32) -> mrb_aspec {
@@ -15,10 +17,12 @@ pub const fn mrb_args_req(n: u32) -> mrb_aspec {
     (n & 0x1f) << 18
 }
 
-/// Function takes n optional arguments
+/// Function takes `n` optional arguments
 ///
+/// ```text
 /// @param n
 ///      The number of optional arguments.
+/// ```
 #[inline]
 #[must_use]
 pub const fn mrb_args_opt(n: u32) -> mrb_aspec {
@@ -28,12 +32,14 @@ pub const fn mrb_args_opt(n: u32) -> mrb_aspec {
     (n & 0x1f) << 13
 }
 
-/// Function takes n1 mandatory arguments and n2 optional arguments
+/// Function takes `n1` mandatory arguments and `n2` optional arguments
 ///
+/// ```text
 /// @param n1
 ///      The number of required arguments.
 /// @param n2
 ///      The number of optional arguments.
+/// ```
 #[inline]
 #[must_use]
 pub const fn mrb_args_req_and_opt(n_req: u32, n_opt: u32) -> mrb_aspec {
@@ -67,7 +73,7 @@ pub const fn mrb_args_post(n: u32) -> mrb_aspec {
     (n & 0x1f) << 7
 }
 
-/// keyword arguments (n of keys, kdict)
+/// keyword arguments (`n` of keys, `kdict`)
 #[inline]
 #[must_use]
 pub const fn mrb_args_key(n1: u32, n2: u32) -> mrb_aspec {
@@ -151,7 +157,7 @@ pub mod specifiers {
     /// Retrieve a Class argument
     pub const CLASS: &str = "C";
 
-    /// Retreive a Module argument
+    /// Retrieve a Module argument
     pub const MODULE: &str = "C";
 
     /// Retrieve a String argument
@@ -193,14 +199,15 @@ pub mod specifiers {
     /// Retrieve a NUL-terminated `CString` argument. Gives NULL for `nil`
     pub const NULLABLE_CSTRING: &str = "z!";
 
-    /// Receive two arguments, a C Array of `mrb_value`s and len. Usable like:
+    /// Receive two arguments, a C Array of `mrb_value`s and its length. Usable
+    /// like:
     ///
     /// ```c
     /// mrb_get_args(mrb, "a", &ptr, &blen);
     /// ```
     pub const CARRAY_AND_LEN: &str = "a";
 
-    /// Receive two arguments, a C Array of `mrb_value`s and len. Gives
+    /// Receive two arguments, a C Array of `mrb_value`s and its length. Gives
     /// (NULL, 0) for `nil`. Usable like:
     ///
     /// ```c
@@ -252,7 +259,7 @@ pub mod specifiers {
     /// The following args specified are optional.
     pub const FOLLOWING_ARGS_OPTIONAL: &str = "|";
 
-    /// Retrieve a boolean indicating whether the previous optional argument
+    /// Retrieve a Boolean indicating whether the previous optional argument
     /// was given.
     pub const PREVIOUS_OPTIONAL_ARG_GIVEN: &str = "?";
 }

@@ -27,7 +27,7 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 /// # Safety
 ///
 /// This function assumes that the data pointer is to an [`Box`]`<T>` created by
-/// [`Box::into_raw`]. This fuction bounds `T` by [`BoxUnboxVmValue`] which
+/// [`Box::into_raw`]. This function bounds `T` by [`BoxUnboxVmValue`] which
 /// boxes `T` for the mruby VM like this.
 ///
 /// This function assumes it is called by the mruby VM as a free function for
@@ -97,7 +97,7 @@ pub struct ModuleScope {
 /// Typesafe wrapper for the [`RClass *`](sys::RClass) of the enclosing scope
 /// for an mruby `Module` or `Class`.
 ///
-/// In Ruby, classes and modules can be defined inside of another class or
+/// In Ruby, classes and modules can be defined inside another class or
 /// module. mruby only supports resolving [`RClass`](sys::RClass) pointers
 /// relative to an enclosing scope. This can be the top level with
 /// [`mrb_class_get`](sys::mrb_class_get) and
@@ -151,7 +151,7 @@ impl EnclosingRubyScope {
     ///
     /// Return [`None`] if the class-like has no [`EnclosingRubyScope`].
     ///
-    /// The current implemention results in recursive calls to this function
+    /// The current implementation results in recursive calls to this function
     /// for each enclosing scope.
     ///
     /// # Safety
@@ -172,9 +172,10 @@ impl EnclosingRubyScope {
         }
     }
 
-    /// Get the fully qualified name of the wrapped class or module.
+    /// Get the fully-qualified name of the wrapped class or module.
     ///
-    /// For example, in the following Ruby code, `C` has an fqname of `A::B::C`.
+    /// For example, in the following Ruby code, `C` has a fully-qualified name
+    /// of `A::B::C`.
     ///
     /// ```ruby
     /// module A
@@ -186,7 +187,7 @@ impl EnclosingRubyScope {
     /// end
     /// ```
     ///
-    /// The current implemention results in recursive calls to this function
+    /// The current implementation results in recursive calls to this function
     /// for each enclosing scope.
     #[must_use]
     pub fn fqname(&self) -> Cow<'_, str> {

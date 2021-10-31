@@ -8,7 +8,7 @@
 //! features.
 //!
 //! Artichoke has several virtual file system implementations. Only some of them
-//! support reading from the system fs.
+//! support reading from the system file system.
 //!
 //! [extension hooks]: ExtensionHook
 
@@ -37,7 +37,7 @@ pub use native::Native;
 /// `RUBY_LOAD_PATH` is the default current working directory for
 /// [`Memory`] file systems.
 ///
-/// [`Hybrid`] file systems locate the this path on a [`Memory`] file system.
+/// [`Hybrid`] file systems locate the path on a [`Memory`] file system.
 #[cfg(not(windows))]
 pub const RUBY_LOAD_PATH: &str = "/artichoke/virtual_root/src/lib";
 
@@ -47,7 +47,7 @@ pub const RUBY_LOAD_PATH: &str = "/artichoke/virtual_root/src/lib";
 /// `RUBY_LOAD_PATH` is the default current working directory for
 /// [`Memory`] file systems.
 ///
-/// [`Hybrid`] file systems locate the this path on a [`Memory`] file system.
+/// [`Hybrid`] file systems locate the path on a [`Memory`] file system.
 #[cfg(windows)]
 pub const RUBY_LOAD_PATH: &str = "c:/artichoke/virtual_root/src/lib";
 

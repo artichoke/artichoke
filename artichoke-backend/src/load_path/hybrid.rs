@@ -16,7 +16,7 @@ pub struct Hybrid {
     #[cfg(feature = "load-path-rubylib-native-file-system-loader")]
     rubylib: Option<Rubylib>,
     #[cfg(not(feature = "load-path-rubylib-native-file-system-loader"))]
-    rubylib: Option<Native>, // hardcoded to `None`
+    rubylib: Option<Native>, // hard-coded to `None`
     memory: Memory,
     native: Native,
 }
@@ -126,7 +126,7 @@ impl Hybrid {
     /// Writes the full file contents. If any file contents already exist at
     /// `path`, they are replaced. Extension hooks are preserved.
     ///
-    /// Only the [`Memory`] file system at [`RUBY_LOAD_PATH`] is writeable.
+    /// Only the [`Memory`] file system at [`RUBY_LOAD_PATH`] is writable.
     ///
     /// # Errors
     ///

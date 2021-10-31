@@ -2,7 +2,7 @@
 //!
 //! This module implements the [`ENV`] singleton object from Ruby Core.
 //!
-//! In Artichoke, the enviroment variable store is modeled as a hash map of
+//! In Artichoke, the environment variable store is modeled as a hash map of
 //! byte vector keys and values, e.g. `HashMap<Vec<u8>, Vec<u8>>`. Backends are
 //! expected to convert their internals to this representation in their public
 //! APIs. For this reason, all APIs exposed by ENV backends in this crate are

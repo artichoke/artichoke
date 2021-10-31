@@ -101,7 +101,7 @@ pub trait RubyException: error::Error + 'static {
     /// Optional backtrace specified by a `Vec` of frames.
     fn vm_backtrace(&self, interp: &mut Artichoke) -> Option<Vec<Vec<u8>>>;
 
-    /// Return a raiseable [`sys::mrb_value`].
+    /// Return a raise-able [`sys::mrb_value`].
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value>;
 }
 

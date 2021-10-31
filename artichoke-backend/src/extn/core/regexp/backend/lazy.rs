@@ -75,7 +75,7 @@ impl RegexpType for Lazy {
     fn debug(&self) -> String {
         let mut debug = String::from("/");
         let mut pattern = String::new();
-        // Explicitly supress this error because `debug` is infallible and
+        // Explicitly suppress this error because `debug` is infallible and
         // cannot panic.
         //
         // In practice this error will never be triggered since the only

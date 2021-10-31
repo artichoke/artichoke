@@ -2,7 +2,7 @@
 //
 // https://github.com/rust-lang/regex/blob/26f7318e2895eae56e95a260e81e2d48b90e7c25/regex-syntax/src/lib.rs
 //
-// MIT Licence
+// MIT License
 // Copyright (c) 2014 The Rust Project Developers
 
 #![allow(clippy::match_same_arms)]

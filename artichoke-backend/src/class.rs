@@ -140,7 +140,7 @@ impl<'a> Builder<'a> {
             }
         }
 
-        // If a `Spec` defines a `Class` whose isntances own a pointer to a
+        // If a `Spec` defines a `Class` whose instances own a pointer to a
         // Rust object, mark them as `MRB_TT_DATA`.
         if self.is_mrb_tt_data {
             unsafe {

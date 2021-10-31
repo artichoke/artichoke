@@ -1,4 +1,4 @@
-// This pragma is needed to allow passing `Value` by value in all of the mruby
+// This pragma is needed to allow passing `Value` by value in all the mruby
 // and Rust trampolines.
 #![allow(clippy::needless_pass_by_value)]
 

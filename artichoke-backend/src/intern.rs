@@ -30,7 +30,7 @@ impl Artichoke {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         let symbol = state.symbols.intern(bytes)?;
         let symbol = u32::from(symbol);
-        // mruby expexts symbols to be non-zero.
+        // mruby expects symbols to be non-zero.
         let symbol = symbol
             .checked_add(<Self as Intern>::SYMBOL_RANGE_START)
             .ok_or_else(SymbolOverflowError::new)?;
@@ -42,7 +42,7 @@ impl Artichoke {
         let symbol = state.symbols.check_interned(bytes);
         if let Some(symbol) = symbol {
             let symbol = u32::from(symbol);
-            // mruby expexts symbols to be non-zero.
+            // mruby expects symbols to be non-zero.
             let symbol = symbol
                 .checked_add(<Self as Intern>::SYMBOL_RANGE_START)
                 .ok_or_else(SymbolOverflowError::new)?;
@@ -70,7 +70,7 @@ impl Intern for Artichoke {
         bytes.push(b'\0');
         let symbol = state.symbols.intern(bytes)?;
         let symbol = u32::from(symbol);
-        // mruby expexts symbols to be non-zero.
+        // mruby expects symbols to be non-zero.
         let symbol = symbol
             .checked_add(Self::SYMBOL_RANGE_START)
             .ok_or_else(SymbolOverflowError::new)?;
@@ -84,7 +84,7 @@ impl Intern for Artichoke {
         let symbol = state.symbols.check_interned(&bytes);
         if let Some(symbol) = symbol {
             let symbol = u32::from(symbol);
-            // mruby expexts symbols to be non-zero.
+            // mruby expects symbols to be non-zero.
             let symbol = symbol
                 .checked_add(Self::SYMBOL_RANGE_START)
                 .ok_or_else(SymbolOverflowError::new)?;

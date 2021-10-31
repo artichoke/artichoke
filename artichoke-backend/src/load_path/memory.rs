@@ -249,9 +249,9 @@ impl Default for Memory {
 impl Memory {
     /// Create a new in memory virtual file system.
     ///
-    /// Sets the current working directory of the VFS to [`RUBY_LOAD_PATH`] for
-    /// storing Ruby source files. This path is searched by
-    /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`].
+    /// Sets the current working directory of the virtual file system to
+    /// [`RUBY_LOAD_PATH`] for storing Ruby source files. This path is searched
+    /// by [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`].
     ///
     /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`]: crate::extn::core::kernel::require
     #[must_use]

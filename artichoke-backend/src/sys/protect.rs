@@ -57,7 +57,7 @@ trait Protect {
     unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value;
 }
 
-// `Funcall` must be `Copy` because the we may unwind past the frames in which
+// `Funcall` must be `Copy` because we may unwind past the frames in which
 // it is used with `longjmp` which does not allow Rust  to run destructors.
 #[derive(Clone, Copy)]
 struct Funcall<'a> {
@@ -92,7 +92,7 @@ impl<'a> Protect for Funcall<'a> {
     }
 }
 
-// `Eval` must be `Copy` because the we may unwind past the frames in which
+// `Eval` must be `Copy` because we may unwind past the frames in which
 // it is used with `longjmp` which does not allow Rust  to run destructors.
 #[derive(Clone, Copy)]
 struct Eval<'a> {
@@ -115,7 +115,7 @@ impl<'a> Protect for Eval<'a> {
     }
 }
 
-// `BlockYield` must be `Copy` because the we may unwind past the frames in which
+// `BlockYield` must be `Copy` because we may unwind past the frames in which
 // it is used with `longjmp` which does not allow Rust  to run destructors.
 #[derive(Clone, Copy)]
 struct BlockYield {
@@ -153,7 +153,7 @@ pub struct Range {
     pub len: sys::mrb_int,
 }
 
-// `IsRange` must be `Copy` because the we may unwind past the frames in which
+// `IsRange` must be `Copy` because we may unwind past the frames in which
 // it is used with `longjmp` which does not allow Rust  to run destructors.
 #[derive(Default, Debug, Clone, Copy)]
 struct IsRange {

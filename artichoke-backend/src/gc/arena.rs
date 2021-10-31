@@ -88,7 +88,7 @@ impl From<Box<ArenaSavepointError>> for Box<dyn RubyException> {
 ///
 /// mruby manages objects created via the C API in a memory construct called
 /// the [arena]. The arena is a stack and objects stored there are permanently
-/// alive to avoid having to track lifetimes externally to the interperter.
+/// alive to avoid having to track lifetimes externally to the interpreter.
 ///
 /// An [`ArenaIndex`] is an index to some position of the stack. When restoring
 /// an `ArenaIndex`, the stack pointer is moved. All objects beyond the pointer

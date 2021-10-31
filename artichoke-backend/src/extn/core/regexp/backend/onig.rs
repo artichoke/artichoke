@@ -12,7 +12,7 @@ use crate::extn::prelude::*;
 
 use super::{NameToCaptureLocations, NilableString};
 
-// The oniguruma `Regexp` backend requries that `u32` can be widened to `usize`
+// The Oniguruma `Regexp` backend requires that `u32` can be widened to `usize`
 // losslessly.
 //
 // This const-evaluated expression ensures that `usize` is always at least as
@@ -122,7 +122,7 @@ impl RegexpType for Onig {
     fn debug(&self) -> String {
         let mut debug = String::from("/");
         let mut pattern = String::new();
-        // Explicitly supress this error because `debug` is infallible and
+        // Explicitly suppress this error because `debug` is infallible and
         // cannot panic.
         //
         // In practice this error will never be triggered since the only
