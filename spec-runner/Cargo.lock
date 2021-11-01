@@ -389,9 +389,9 @@ dependencies = [
 
 [[package]]
 name = "pkg-config"
-version = "0.3.20"
+version = "0.3.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c9b1041b4387893b91ee6746cddfc28516aff326a3519fb2adf820932c5e6cb"
+checksum = "12295df4f294471248581bc09bef3c38a5e46f1e36d6a37353621a0c6c357e1f"
 
 [[package]]
 name = "ppv-lite86"
