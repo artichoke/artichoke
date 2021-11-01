@@ -256,9 +256,9 @@ checksum = "692fcb63b64b1758029e0a96ee63e049ce8c5948587f2f7208df04625e5f6b56"
 
 [[package]]
 name = "onig"
-version = "6.2.0"
+version = "6.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b16fd3c0e73b516af509c13c4ba76ec0c987ce20d78b38cff356b8d01fc6a6c0"
+checksum = "67ddfe2c93bb389eea6e6d713306880c7f6dcc99a75b659ce145d962c861b225"
 dependencies = [
  "bitflags",
  "lazy_static",
@@ -268,9 +268,9 @@ dependencies = [
 
 [[package]]
 name = "onig_sys"
-version = "69.7.0"
+version = "69.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fd9442a09e4fbd08d196ddf419b2c79a43c3a46c800320cc841d45c2449a240"
+checksum = "5dd3eee045c84695b53b20255bb7317063df090b68e18bfac0abb6c39cf7f33e"
 dependencies = [
  "cc",
  "pkg-config",
