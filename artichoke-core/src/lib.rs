@@ -33,6 +33,7 @@
 //!   various sources.
 //! - [`Globals`](globals::Globals): Get, set, and unset interpreter-level
 //!   global variables.
+//! - [`BuildHasher`](hash::BuildHasher): Create instances of the RandomState hasher
 //! - [`Intern`](intern::Intern): Intern byte strings to a cheap to copy and
 //!   compare symbol type.
 //! - [`Io`](io::Io): External I/O APIs, such as writing to the standard output
@@ -100,6 +101,7 @@ pub mod debug;
 pub mod eval;
 pub mod file;
 pub mod globals;
+pub mod hash;
 pub mod intern;
 pub mod io;
 pub mod load;
@@ -133,6 +135,7 @@ pub mod prelude {
     pub use crate::eval::Eval;
     pub use crate::file::File;
     pub use crate::globals::Globals;
+    pub use crate::hash::BuildHasher;
     pub use crate::intern::Intern;
     pub use crate::io::Io;
     pub use crate::load::LoadSources;
