@@ -22,7 +22,7 @@ once_cell = "1"
 onig = { version = "6.3", optional = true, default-features = false }
 regex = "1"
 scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", default-features = false }
-spinoso-array = { version = "0.5", path = "../spinoso-array", default-features = false }
+spinoso-array = { version = "0.6", path = "../spinoso-array", default-features = false }
 spinoso-env = { version = "0.1", path = "../spinoso-env", optional = true, default-features = false }
 spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
 spinoso-math = { version = "0.2", path = "../spinoso-math", optional = true, default-features = false }
