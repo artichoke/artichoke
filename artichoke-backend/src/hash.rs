@@ -1,10 +1,10 @@
-use crate::core::BuildHasher;
+use crate::core::Hash;
 use crate::error::Error;
 use std::collections::hash_map::RandomState;
 use crate::ffi::InterpreterExtractError;
 use crate::Artichoke;
 
-impl BuildHasher for Artichoke {
+impl Hash for Artichoke {
     type Error = Error;
     type BuildHasher = RandomState;
 
