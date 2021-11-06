@@ -126,7 +126,7 @@ mod eval;
 pub mod exception_handler;
 pub mod extn;
 pub mod ffi;
-pub mod hash;
+mod hash;
 pub mod gc;
 mod globals;
 mod intern;
