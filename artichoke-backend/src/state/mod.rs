@@ -3,11 +3,11 @@ use intaglio::bytes::SymbolTable;
 use crate::class;
 #[cfg(feature = "core-random")]
 use crate::extn::core::random::Random;
-use std::collections::hash_map::RandomState;
 use crate::interpreter::InterpreterAllocError;
 use crate::load_path;
 use crate::module;
 use crate::sys;
+use std::collections::hash_map::RandomState;
 
 pub mod output;
 pub mod parser;
