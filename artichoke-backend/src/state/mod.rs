@@ -1,3 +1,5 @@
+use std::collections::hash_map::RandomState;
+
 use intaglio::bytes::SymbolTable;
 
 use crate::class;
@@ -30,6 +32,7 @@ pub struct State {
     pub regexp: regexp::State,
     pub symbols: SymbolTable,
     pub output: output::Strategy,
+    pub hash_builder: RandomState,
     #[cfg(feature = "core-random")]
     pub prng: Random,
 }
@@ -69,6 +72,7 @@ impl State {
             regexp: regexp::State::new(),
             symbols: SymbolTable::new(),
             output: output::Strategy::new(),
+            hash_builder: RandomState::new(),
             #[cfg(feature = "core-random")]
             prng: Random::new().map_err(|_| InterpreterAllocError::new())?,
         })

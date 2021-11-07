@@ -128,6 +128,7 @@ pub mod extn;
 pub mod ffi;
 pub mod gc;
 mod globals;
+mod hash;
 mod intern;
 mod interpreter;
 mod io;

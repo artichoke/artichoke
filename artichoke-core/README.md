@@ -26,6 +26,7 @@ Artichoke Core defines traits for the following interpreter capabilities:
   sources.
 - [`Globals`][core-globals]: Get, set, and unset interpreter-level global
   variables.
+- [`Hash`][core-hash]: Hashing functions such as building hashers.
 - [`Intern`][core-intern]: Intern byte strings to a cheap to copy and compare
   symbol type.
 - [`Io`][core-io]: External I/O APIs, such as writing to the standard output of
@@ -83,6 +84,8 @@ All features are enabled by default:
   https://artichoke.github.io/artichoke/artichoke_core/eval/trait.Eval.html
 [core-globals]:
   https://artichoke.github.io/artichoke/artichoke_core/globals/trait.Globals.html
+[core-hash]:
+  https://artichoke.github.io/artichoke/artichoke_core/hash/trait.Hash.html
 [core-intern]:
   https://artichoke.github.io/artichoke/artichoke_core/intern/trait.Intern.html
 [core-io]: https://artichoke.github.io/artichoke/artichoke_core/io/trait.Io.html
