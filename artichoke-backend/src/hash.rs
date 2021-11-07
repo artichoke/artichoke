@@ -1,8 +1,9 @@
+use std::collections::hash_map::RandomState;
+
 use crate::core::Hash;
 use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::Artichoke;
-use std::collections::hash_map::RandomState;
 
 impl Hash for Artichoke {
     type Error = Error;

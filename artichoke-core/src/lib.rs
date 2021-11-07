@@ -33,7 +33,7 @@
 //!   various sources.
 //! - [`Globals`](globals::Globals): Get, set, and unset interpreter-level
 //!   global variables.
-//! - [`Hash`](hash::Hash): Hashing functions such as building hashers
+//! - [`Hash`](hash::Hash): Hashing functions such as building hashers.
 //! - [`Intern`](intern::Intern): Intern byte strings to a cheap to copy and
 //!   compare symbol type.
 //! - [`Io`](io::Io): External I/O APIs, such as writing to the standard output

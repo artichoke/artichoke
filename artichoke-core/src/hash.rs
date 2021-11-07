@@ -9,5 +9,9 @@ pub trait Hash {
     type BuildHasher: core::hash::BuildHasher;
 
     /// Build a Hasher
+    ///
+    /// # Errors
+    ///
+    /// If the build hasher is inaccessible, an error is returned.
     fn build_hasher(&mut self) -> Result<&Self::BuildHasher, Self::Error>;
 }
