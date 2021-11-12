@@ -34,6 +34,8 @@ spinoso-string = "0.2"
 
 This crate is `no_std` compatible with a required dependency on [`alloc`].
 
+[`alloc`]: https://doc.rust-lang.org/alloc/
+
 ## Crate features
 
 All features are enabled by default.
