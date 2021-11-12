@@ -66,6 +66,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("to_sym", string_intern, sys::mrb_args_none())?
         .add_method("upcase", string_upcase, sys::mrb_args_any())?
         .add_method("upcase!", string_upcase_bang, sys::mrb_args_any())?
+        .add_method("valid_encoding?", string_valid_encoding, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<string::String>(spec)?;
     // interp.eval(&include_bytes!("string.rb")[..])?;
@@ -651,6 +652,17 @@ unsafe extern "C" fn string_upcase_bang(mrb: *mut sys::mrb_state, slf: sys::mrb_
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let result = trampoline::upcase_bang(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_valid_encoding(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::is_valid_encoding(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),

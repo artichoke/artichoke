@@ -552,3 +552,8 @@ pub fn upcase_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Er
     let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     Err(NotImplementedError::new().into())
 }
+
+pub fn is_valid_encoding(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Ok(interp.convert(s.is_valid_encoding()))
+}

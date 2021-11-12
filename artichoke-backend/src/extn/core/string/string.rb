@@ -655,10 +655,4 @@ class String
     end
     self
   end
-
-  def valid_encoding?
-    # mruby does not support encoding, all Strings are UTF-8. This method is a
-    # NOOP and is here for compatibility.
-    true
-  end
 end
