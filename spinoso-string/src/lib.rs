@@ -801,16 +801,93 @@ impl String {
         self.buf.as_mut_slice()
     }
 
+    /// Returns a raw pointer to the string's buffer.
+    ///
+    /// The caller must ensure that the string outlives the pointer this
+    /// function returns, or else it will end up pointing to garbage. Modifying
+    /// the string may cause its buffer to be reallocated, which would also make
+    /// any pointers to it invalid.
+    ///
+    /// The caller must also ensure that the memory the pointer
+    /// (non-transitively) points to is never written to (except inside an
+    /// `UnsafeCell`) using this pointer or any pointer derived from it. If you
+    /// need to mutate the contents of the slice, use [`as_mut_ptr`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8(b"xyz".to_vec());
+    /// let s_ptr = s.as_ptr();
+    ///
+    /// unsafe {
+    ///     for i in 0..s.len() {
+    ///         assert_eq!(*s_ptr.add(i), b'x' + (i as u8));
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// [`as_mut_ptr`]: Self::as_mut_ptr
     #[inline]
     #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         self.buf.as_ptr()
     }
 
+    /// Returns an unsafe mutable pointer to the string's buffer.
+    ///
+    /// The caller must ensure that the string outlives the pointer this
+    /// function returns, or else it will end up pointing to garbage. Modifying
+    /// the string may cause its buffer to be reallocated, which would also make
+    /// any pointers to it invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// // Allocate string big enough for 3 bytes.
+    /// let size = 3;
+    /// let mut s = String::with_capacity(size);
+    /// let s_ptr = s.as_mut_ptr();
+    ///
+    /// // Initialize elements via raw pointer writes, then set length.
+    /// unsafe {
+    ///     for i in 0..size {
+    ///         *s_ptr.add(i) = b'x' + (i as u8);
+    ///     }
+    ///     s.set_len(size);
+    /// }
+    /// assert_eq!(&*s, b"xyz");
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.buf.as_mut_ptr()
+    }
+
+    /// Forces the length of the string to `new_len`.
+    ///
+    /// This is a low-level operation that maintains none of the normal
+    /// invariants of the type. Normally changing the length of a string is done
+    /// using one of the safe operations instead, such as [`truncate`],
+    /// [`extend`], or [`clear`].
+    ///
+    /// This function can change the return value of [`String::is_valid_encoding`].
+    ///
+    /// # Safety
+    ///
+    /// - `new_len` must be less than or equal to [`capacity()`].
+    /// - The elements at `old_len..new_len` must be initialized.
+    ///
+    /// [`truncate`]: Self::truncate
+    /// [`extend`]: Extend::extend
+    /// [`clear`]: Self::clear
+    /// [`capacity()`]: Self::capacity
+    #[inline]
+    pub unsafe fn set_len(&mut self, new_len: usize) {
+        self.buf.set_len(new_len);
     }
 
     /// Creates a `String` directly from the raw components of another string.
