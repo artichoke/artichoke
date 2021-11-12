@@ -171,10 +171,6 @@ class String
     nil
   end
 
-  def codepoints
-    each_codepoint.to_a
-  end
-
   def count
     raise NotImplementedError
   end
@@ -565,10 +561,6 @@ class String
 
   def to_r
     raise NotImplementedError
-  end
-
-  def to_str
-    dup
   end
 
   def tr(from_str, to_str)

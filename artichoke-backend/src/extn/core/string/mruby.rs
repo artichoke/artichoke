@@ -69,7 +69,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("valid_encoding?", string_valid_encoding, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<string::String>(spec)?;
-    // interp.eval(&include_bytes!("string.rb")[..])?;
+    interp.eval(&include_bytes!("string.rb")[..])?;
     trace!("Patched String onto interpreter");
     Ok(())
 }
