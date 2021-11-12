@@ -882,6 +882,25 @@ impl String {
         self.buf.capacity()
     }
 
+    /// Clears the string, removing all bytes.
+    ///
+    /// Note that this method has no effect on the allocated capacity or the
+    /// encoding of the string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::from("abc");
+    /// s.clear();
+    /// assert!(s.is_empty());
+    /// ```
+    #[inline]
+    pub fn clear(&mut self) {
+        self.buf.clear();
+    }
+
     /// Returns true if the vector contains no bytes.
     ///
     /// # Examples

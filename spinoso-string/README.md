@@ -14,8 +14,8 @@ A String object holds and manipulates an arbitrary sequence of bytes, typically
 representing characters. String objects may be created using `::new` or as
 literals.
 
-`spinoso-string` is encoding-aware and implements support for Unicode, ASCII,
-and binary encodings.
+`spinoso-string` is encoding-aware and implements support for UTF-8, ASCII, and
+binary encodings.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
@@ -27,12 +27,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-string = "0.1"
+spinoso-string = "0.2"
 ```
 
 ## `no_std`
 
 This crate is `no_std` compatible with a required dependency on [`alloc`].
+
+[`alloc`]: https://doc.rust-lang.org/alloc/
 
 ## Crate features
 
