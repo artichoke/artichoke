@@ -734,6 +734,55 @@ impl String {
         self.encoding = encoding;
     }
 
+    /// Shortens the string, keeping the first `len` bytes and dropping the
+    /// rest.
+    ///
+    /// If `len` is greater than the string's current length, this has no
+    /// effect.
+    ///
+    /// Note that this method has no effect on the allocated capacity
+    /// of the string.
+    ///
+    /// # Examples
+    ///
+    /// Truncating a five byte to two elements:
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::from("12345");
+    /// s.truncate(2);
+    /// assert_eq!(*s, *b"12");
+    /// ```
+    ///
+    /// No truncation occurs when `len` is greater than the string's current
+    /// length:
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::from("12345");
+    /// s.truncate(10);
+    /// assert_eq!(*s, *b"12345");
+    /// ```
+    ///
+    /// Truncating when `len == 0` is equivalent to calling the [`clear`]
+    /// method.
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::from("12345");
+    /// s.truncate(0);
+    /// assert_eq!(*s, *b"");
+    /// ```
+    ///
+    /// [`clear`]: Self::clear
+    #[inline]
+    pub fn truncate(&mut self, len: usize) {
+        self.buf.truncate(len);
+    }
+
     /// Extracts a slice containing the entire byte string.
     ///
     /// Equivalent to `&s[..]`.
