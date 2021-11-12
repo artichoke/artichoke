@@ -11,6 +11,7 @@ use crate::extn::core::array::Array;
 use crate::extn::core::matchdata::MatchData;
 #[cfg(feature = "core-regexp")]
 use crate::extn::core::regexp::{self, Regexp};
+use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
 pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Value, Error> {
@@ -257,8 +258,19 @@ pub fn chr(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 }
 
 pub fn clear(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // Safety:
+    //
+    // The string is reboxed before any intervening operations on the
+    // interpreter.
+    // The string is reboxed without any intervening mruby allocations.
+    unsafe {
+        let string_mut = s.as_inner_mut();
+        string_mut.clear();
+
+        let s = s.take();
+        super::String::box_into_value(s, value, interp)
+    }
 }
 
 pub fn codepoints(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
@@ -305,6 +317,7 @@ pub fn hash(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let mut hasher = interp.build_hasher()?.build_hasher();
     s.as_slice().hash(&mut hasher);
+    #[allow(clippy::cast_possible_wrap)]
     let hash = hasher.finish() as i64;
     Ok(interp.convert(hash))
 }
@@ -336,8 +349,14 @@ pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error>
 }
 
 pub fn intern(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let bytes = s.as_slice();
+    let sym = if let Some(sym) = interp.check_interned_bytes(bytes)? {
+        sym
+    } else {
+        interp.intern_bytes(bytes.to_vec())?
+    };
+    Symbol::alloc_value(sym.into(), interp)
 }
 
 pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
