@@ -623,7 +623,7 @@ impl String {
     /// The `String` is [conventionally UTF-8].
     ///
     /// The string will be able to hold exactly `capacity` bytes without
-    /// reallocating. If `capacity` is 0, the vector will not allocate.
+    /// reallocating. If `capacity` is 0, the string will not allocate.
     ///
     /// It is important to note that although the returned string has the
     /// capacity specified, the string will have a zero length. For an
@@ -658,6 +658,7 @@ impl String {
     /// assert_eq!(s.len(), 10);
     /// ```
     ///
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
     /// [Capacity and reallocation]: https://doc.rust-lang.org/std/vec/struct.Vec.html#capacity-and-reallocation
     #[inline]
     #[must_use]
@@ -667,6 +668,47 @@ impl String {
         Self { buf, encoding }
     }
 
+    /// Constructs a new, empty `String` with the specified capacity and
+    /// encoding.
+    ///
+    /// The string will be able to hold exactly `capacity` bytes without
+    /// reallocating. If `capacity` is 0, the string will not allocate.
+    ///
+    /// It is important to note that although the returned string has the
+    /// capacity specified, the string will have a zero length. For an
+    /// explanation of the difference between length and capacity, see
+    /// *[Capacity and reallocation]*.
+    ///
+    /// # Examples
+    ///
+    /// Encoding, capacity, and length:
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// let s = String::with_capacity(10);
+    /// assert_eq!(s.encoding(), Encoding::Utf8);
+    /// assert_eq!(s.capacity(), 10);
+    /// assert_eq!(s.len(), 0);
+    /// ```
+    ///
+    /// Allocation:
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// let mut s = String::with_capacity_and_encoding(10, Encoding::Binary);
+    /// assert_eq!(s.encoding(), Encoding::Binary);
+    ///
+    /// for ch in 'a'..='j' {
+    ///     s.push_byte(ch as u8);
+    /// }
+    /// // 10 elements have been inserted without reallocating.
+    /// assert_eq!(s.capacity(), 10);
+    /// assert_eq!(s.len(), 10);
+    /// ```
+    ///
+    /// [Capacity and reallocation]: https://doc.rust-lang.org/std/vec/struct.Vec.html#capacity-and-reallocation
     #[inline]
     #[must_use]
     pub fn with_capacity_and_encoding(capacity: usize, encoding: Encoding) -> Self {
