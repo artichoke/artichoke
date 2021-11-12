@@ -14,8 +14,8 @@ A String object holds and manipulates an arbitrary sequence of bytes, typically
 representing characters. String objects may be created using `::new` or as
 literals.
 
-`spinoso-string` is encoding-aware and implements support for Unicode, ASCII,
-and binary encodings.
+`spinoso-string` is encoding-aware and implements support for UTF-8, ASCII, and
+binary encodings.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
