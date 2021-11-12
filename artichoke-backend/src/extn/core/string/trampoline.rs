@@ -1,5 +1,7 @@
 use core::convert::TryFrom;
+use core::hash::{BuildHasher, Hash, Hasher};
 
+use artichoke_core::hash::Hash as _;
 use bstr::ByteSlice;
 
 use crate::convert::implicitly_convert_to_int;
@@ -92,6 +94,16 @@ pub fn equals_equals(interp: &mut Artichoke, mut value: Value, mut other: Value)
     }
 }
 
+pub fn aref(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn aset(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
 pub fn is_ascii_only(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let is_ascii_only = s.is_ascii_only();
@@ -109,6 +121,11 @@ pub fn bytesize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let bytesize = s.bytesize();
     interp.try_convert(bytesize)
+}
+
+pub fn byteslice(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
 }
 
 pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
@@ -171,12 +188,7 @@ pub fn casecmp_unicode(interp: &mut Artichoke, mut value: Value, mut other: Valu
     }
 }
 
-pub fn center(
-    interp: &mut Artichoke,
-    mut value: Value,
-    width: Value,
-    mut padstr: Option<Value>,
-) -> Result<Value, Error> {
+pub fn center(interp: &mut Artichoke, mut value: Value, width: Value, padstr: Option<Value>) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let width = implicitly_convert_to_int(interp, width)?;
     let width = if let Ok(width) = usize::try_from(width) {
@@ -199,19 +211,79 @@ pub fn center(
     };
     // Safety:
     //
-    // The byteslice is immediately discarded after extraction. There are no
-    // intervening interpreter accesses.
-    let padstr = if let Some(padstr) = padstr {
+    // The byteslice is immediately discarded after extraction and turned into
+    // an owned value. There are no intervening interpreter accesses.
+    let padstr = if let Some(mut padstr) = padstr {
         let padstr = unsafe { implicitly_convert_to_string(interp, &mut padstr)? };
-        Some(padstr)
+        Some(padstr.to_vec())
     } else {
         None
     };
     let centered = s
-        .center(width, padstr)
+        .center(width, padstr.as_deref())
         .map_err(|e| ArgumentError::with_message(e.message()))?
         .collect::<super::String>();
     super::String::alloc_value(centered, interp)
+}
+
+pub fn chars(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn chomp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn chomp_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn chop(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn chop_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn chr(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn clear(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn codepoints(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn concat(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn downcase(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn downcase_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn is_empty(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Ok(interp.convert(s.is_empty()))
 }
 
 pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
@@ -224,10 +296,48 @@ pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
     }
 }
 
+pub fn getbyte(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn hash(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let mut hasher = interp.build_hasher()?.build_hasher();
+    s.as_slice().hash(&mut hasher);
+    let hash = hasher.finish() as i64;
+    Ok(interp.convert(hash))
+}
+
+pub fn include(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn index(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn initialize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn initialize_copy(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
 pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let inspect = s.inspect().collect::<super::String>();
     super::String::alloc_value(inspect, interp)
+}
+
+pub fn intern(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
 }
 
 pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
@@ -250,6 +360,21 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
         None => return Err(ArgumentError::with_message("invalid byte sequence in UTF-8").into()),
     };
     Ok(interp.convert(ord))
+}
+
+pub fn replace(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn reverse(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn reverse_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
 }
 
 pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Option<Block>) -> Result<Value, Error> {
@@ -367,4 +492,44 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
     message.push_str(interp.inspect_type_name_for_value(pattern));
     message.push_str(" (expected Regexp)");
     Err(TypeError::from(message).into())
+}
+
+pub fn setbyte(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn split(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn to_f(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn to_i(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn to_s(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Ok(value)
+}
+
+pub fn to_str(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn upcase(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn upcase_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
 }

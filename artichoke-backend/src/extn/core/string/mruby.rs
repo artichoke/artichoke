@@ -133,6 +133,28 @@ unsafe extern "C" fn string_equals_equals(mrb: *mut sys::mrb_state, slf: sys::mr
     }
 }
 
+unsafe extern "C" fn string_aref(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::aref(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_aset(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::aset(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
 unsafe extern "C" fn string_ascii_only(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
@@ -171,6 +193,17 @@ unsafe extern "C" fn string_bytesize(mrb: *mut sys::mrb_state, slf: sys::mrb_val
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let result = trampoline::bytesize(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_byteslice(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::byteslice(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -236,6 +269,138 @@ unsafe extern "C" fn string_center(mrb: *mut sys::mrb_state, slf: sys::mrb_value
     }
 }
 
+unsafe extern "C" fn string_chars(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::chars(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_chomp(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::chomp(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_chomp_bang(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::chomp_bang(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_chop(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::chop(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_chop_bang(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::chop_bang(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_chr(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::chr(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_clear(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::clear(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_codepoints(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::codepoints(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_concat(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::concat(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_downcase(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::downcase(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_downcase_bang(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::downcase_bang(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_empty(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::is_empty(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
 unsafe extern "C" fn string_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
@@ -248,11 +413,88 @@ unsafe extern "C" fn string_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
     }
 }
 
+unsafe extern "C" fn string_getbyte(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::getbyte(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_hash(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::hash(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_include(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::include(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_index(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::index(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::initialize(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_initialize_copy(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::initialize_copy(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
 unsafe extern "C" fn string_inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let result = trampoline::inspect(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_intern(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::intern(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -281,6 +523,39 @@ unsafe extern "C" fn string_ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
     }
 }
 
+unsafe extern "C" fn string_replace(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::replace(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_reverse(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::reverse(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_reverse_bang(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::reverse_bang(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
 unsafe extern "C" fn string_scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
     unwrap_interpreter!(mrb, to => guard);
@@ -293,8 +568,91 @@ unsafe extern "C" fn string_scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     }
 }
 
+unsafe extern "C" fn string_setbyte(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::setbyte(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_split(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::split(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_to_f(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::to_f(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_to_i(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::to_i(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
 unsafe extern "C" fn string_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
     // TODO: dup `slf` when slf is a subclass of `String`.
-    slf
+    let result = trampoline::to_s(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_to_str(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::to_str(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_upcase(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::upcase(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_upcase_bang(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::upcase_bang(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
 }
