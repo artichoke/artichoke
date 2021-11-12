@@ -676,23 +676,26 @@ impl String {
 
     #[inline]
     #[must_use]
-    pub fn utf8(buf: Vec<u8>) -> Self {
-        let encoding = Encoding::Utf8;
+    pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
         Self { buf, encoding }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn utf8(buf: Vec<u8>) -> Self {
+        Self::with_bytes_and_encoding(buf, Encoding::Utf8)
     }
 
     #[inline]
     #[must_use]
     pub fn ascii(buf: Vec<u8>) -> Self {
-        let encoding = Encoding::Ascii;
-        Self { buf, encoding }
+        Self::with_bytes_and_encoding(buf, Encoding::Ascii)
     }
 
     #[inline]
     #[must_use]
     pub fn binary(buf: Vec<u8>) -> Self {
-        let encoding = Encoding::Binary;
-        Self { buf, encoding }
+        Self::with_bytes_and_encoding(buf, Encoding::Binary)
     }
 }
 
