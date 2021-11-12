@@ -332,14 +332,87 @@ pub fn index(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-pub fn initialize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn initialize(interp: &mut Artichoke, mut value: Value, from: Option<Value>) -> Result<Value, Error> {
+    // We must convert `from` to a byte buffer first in case `#to_str` raises.
+    //
+    // If we don't, the following scenario could leave `value` with a dangling
+    // pointer.
+    //
+    // ```console
+    // [3.0.2] > s = "abc"
+    // => "abc"
+    // [3.0.2] > class B; def to_str; raise 'oh no'; end; end
+    // => :to_str
+    // [3.0.2] > s.send(:initialize, B.new)
+    // (irb):6:in `to_str': oh no (RuntimeError)
+    // 	from (irb):7:in `initialize'
+    // 	from (irb):7:in `<main>'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/bin/irb:23:in `load'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/bin/irb:23:in `<main>'
+    // [3.0.2] > s
+    // => "abc"
+    // ```
+    let buf = if let Some(mut from) = from {
+        // Safety:
+        //
+        // The extracted slice is immediately copied to an owned buffer.
+        //
+        // No intervening operations on the mruby VM occur.
+        let from = unsafe { implicitly_convert_to_string(interp, &mut from)? };
+        from.to_vec()
+    } else {
+        Vec::new()
+    };
+
+    // If we are calling `initialize` on an already initialized `String`,
+    // pluck out the inner buffer and drop it so we don't leak memory.
+    //
+    // ```console
+    // [3.0.2] > s = "abc"
+    // => "abc"
+    // [3.0.2] > class A; def to_str; 'foo'; end; end
+    // => :to_str
+    // [3.0.2] > s.send(:initialize, A.new)
+    // => "foo"
+    // [3.0.2] > s
+    // => "foo"
+    // ```
+    if let Ok(s) = unsafe { super::String::unbox_from_value(&mut value, interp) } {
+        unsafe {
+            let inner = s.take();
+            drop(inner);
+        }
+    }
+    // We are no guaranteed that the `buf` pointer in `value` is either dangling
+    // or uninitialized. We will ensure that we box the given bytes into it.
+    let buf = super::String::from(buf);
+    super::String::box_into_value(buf, value, interp)
 }
 
-pub fn initialize_copy(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn initialize_copy(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // Safety:
+    //
+    // The extracted slice is immediately copied to an owned buffer.
+    //
+    // No intervening operations on the mruby VM occur.
+    let buf = unsafe {
+        let from = implicitly_convert_to_string(interp, &mut other)?;
+        from.to_vec()
+    };
+    let replacement = super::String::with_bytes_and_encoding(buf, s.encoding());
+    // Safety:
+    //
+    // The string is reboxed before any intervening operations on the
+    // interpreter.
+    // The string is reboxed without any intervening mruby allocations.
+    unsafe {
+        let old = s.take();
+        drop(old);
+
+        super::String::box_into_value(replacement, value, interp)
+    }
 }
 
 pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
@@ -381,9 +454,8 @@ pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
     Ok(interp.convert(ord))
 }
 
-pub fn replace(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn replace(interp: &mut Artichoke, value: Value, other: Value) -> Result<Value, Error> {
+    initialize_copy(interp, value, other)
 }
 
 pub fn reverse(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {

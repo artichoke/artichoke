@@ -459,10 +459,11 @@ unsafe extern "C" fn string_index(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
 }
 
 unsafe extern "C" fn string_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
+    let s = mrb_get_args!(mrb, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-    let result = trampoline::initialize(&mut guard, value);
+    let s = s.map(Value::from);
+    let result = trampoline::initialize(&mut guard, value, s);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -470,10 +471,11 @@ unsafe extern "C" fn string_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_v
 }
 
 unsafe extern "C" fn string_initialize_copy(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
+    let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-    let result = trampoline::initialize_copy(&mut guard, value);
+    let other = Value::from(other);
+    let result = trampoline::initialize_copy(&mut guard, value, other);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -525,10 +527,11 @@ unsafe extern "C" fn string_ord(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
 }
 
 unsafe extern "C" fn string_replace(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
+    let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-    let result = trampoline::replace(&mut guard, value);
+    let other = Value::from(other);
+    let result = trampoline::replace(&mut guard, value, other);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
