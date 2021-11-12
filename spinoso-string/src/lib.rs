@@ -623,7 +623,7 @@ impl String {
     /// The `String` is [conventionally UTF-8].
     ///
     /// The string will be able to hold exactly `capacity` bytes without
-    /// reallocating. If `capacity` is 0, the vector will not allocate.
+    /// reallocating. If `capacity` is 0, the string will not allocate.
     ///
     /// It is important to note that although the returned string has the
     /// capacity specified, the string will have a zero length. For an
@@ -658,6 +658,7 @@ impl String {
     /// assert_eq!(s.len(), 10);
     /// ```
     ///
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
     /// [Capacity and reallocation]: https://doc.rust-lang.org/std/vec/struct.Vec.html#capacity-and-reallocation
     #[inline]
     #[must_use]
@@ -667,6 +668,47 @@ impl String {
         Self { buf, encoding }
     }
 
+    /// Constructs a new, empty `String` with the specified capacity and
+    /// encoding.
+    ///
+    /// The string will be able to hold exactly `capacity` bytes without
+    /// reallocating. If `capacity` is 0, the string will not allocate.
+    ///
+    /// It is important to note that although the returned string has the
+    /// capacity specified, the string will have a zero length. For an
+    /// explanation of the difference between length and capacity, see
+    /// *[Capacity and reallocation]*.
+    ///
+    /// # Examples
+    ///
+    /// Encoding, capacity, and length:
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// let s = String::with_capacity(10);
+    /// assert_eq!(s.encoding(), Encoding::Utf8);
+    /// assert_eq!(s.capacity(), 10);
+    /// assert_eq!(s.len(), 0);
+    /// ```
+    ///
+    /// Allocation:
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// let mut s = String::with_capacity_and_encoding(10, Encoding::Binary);
+    /// assert_eq!(s.encoding(), Encoding::Binary);
+    ///
+    /// for ch in 'a'..='j' {
+    ///     s.push_byte(ch as u8);
+    /// }
+    /// // 10 elements have been inserted without reallocating.
+    /// assert_eq!(s.capacity(), 10);
+    /// assert_eq!(s.len(), 10);
+    /// ```
+    ///
+    /// [Capacity and reallocation]: https://doc.rust-lang.org/std/vec/struct.Vec.html#capacity-and-reallocation
     #[inline]
     #[must_use]
     pub fn with_capacity_and_encoding(capacity: usize, encoding: Encoding) -> Self {
@@ -676,23 +718,26 @@ impl String {
 
     #[inline]
     #[must_use]
-    pub fn utf8(buf: Vec<u8>) -> Self {
-        let encoding = Encoding::Utf8;
+    pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
         Self { buf, encoding }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn utf8(buf: Vec<u8>) -> Self {
+        Self::with_bytes_and_encoding(buf, Encoding::Utf8)
     }
 
     #[inline]
     #[must_use]
     pub fn ascii(buf: Vec<u8>) -> Self {
-        let encoding = Encoding::Ascii;
-        Self { buf, encoding }
+        Self::with_bytes_and_encoding(buf, Encoding::Ascii)
     }
 
     #[inline]
     #[must_use]
     pub fn binary(buf: Vec<u8>) -> Self {
-        let encoding = Encoding::Binary;
-        Self { buf, encoding }
+        Self::with_bytes_and_encoding(buf, Encoding::Binary)
     }
 }
 
@@ -731,6 +776,55 @@ impl String {
         self.encoding = encoding;
     }
 
+    /// Shortens the string, keeping the first `len` bytes and dropping the
+    /// rest.
+    ///
+    /// If `len` is greater than the string's current length, this has no
+    /// effect.
+    ///
+    /// Note that this method has no effect on the allocated capacity
+    /// of the string.
+    ///
+    /// # Examples
+    ///
+    /// Truncating a five byte to two elements:
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::from("12345");
+    /// s.truncate(2);
+    /// assert_eq!(*s, *b"12");
+    /// ```
+    ///
+    /// No truncation occurs when `len` is greater than the string's current
+    /// length:
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::from("12345");
+    /// s.truncate(10);
+    /// assert_eq!(*s, *b"12345");
+    /// ```
+    ///
+    /// Truncating when `len == 0` is equivalent to calling the [`clear`]
+    /// method.
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::from("12345");
+    /// s.truncate(0);
+    /// assert_eq!(*s, *b"");
+    /// ```
+    ///
+    /// [`clear`]: Self::clear
+    #[inline]
+    pub fn truncate(&mut self, len: usize) {
+        self.buf.truncate(len);
+    }
+
     /// Extracts a slice containing the entire byte string.
     ///
     /// Equivalent to `&s[..]`.
@@ -749,16 +843,93 @@ impl String {
         self.buf.as_mut_slice()
     }
 
+    /// Returns a raw pointer to the string's buffer.
+    ///
+    /// The caller must ensure that the string outlives the pointer this
+    /// function returns, or else it will end up pointing to garbage. Modifying
+    /// the string may cause its buffer to be reallocated, which would also make
+    /// any pointers to it invalid.
+    ///
+    /// The caller must also ensure that the memory the pointer
+    /// (non-transitively) points to is never written to (except inside an
+    /// `UnsafeCell`) using this pointer or any pointer derived from it. If you
+    /// need to mutate the contents of the slice, use [`as_mut_ptr`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8(b"xyz".to_vec());
+    /// let s_ptr = s.as_ptr();
+    ///
+    /// unsafe {
+    ///     for i in 0..s.len() {
+    ///         assert_eq!(*s_ptr.add(i), b'x' + (i as u8));
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// [`as_mut_ptr`]: Self::as_mut_ptr
     #[inline]
     #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         self.buf.as_ptr()
     }
 
+    /// Returns an unsafe mutable pointer to the string's buffer.
+    ///
+    /// The caller must ensure that the string outlives the pointer this
+    /// function returns, or else it will end up pointing to garbage. Modifying
+    /// the string may cause its buffer to be reallocated, which would also make
+    /// any pointers to it invalid.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// // Allocate string big enough for 3 bytes.
+    /// let size = 3;
+    /// let mut s = String::with_capacity(size);
+    /// let s_ptr = s.as_mut_ptr();
+    ///
+    /// // Initialize elements via raw pointer writes, then set length.
+    /// unsafe {
+    ///     for i in 0..size {
+    ///         *s_ptr.add(i) = b'x' + (i as u8);
+    ///     }
+    ///     s.set_len(size);
+    /// }
+    /// assert_eq!(&*s, b"xyz");
+    /// ```
     #[inline]
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.buf.as_mut_ptr()
+    }
+
+    /// Forces the length of the string to `new_len`.
+    ///
+    /// This is a low-level operation that maintains none of the normal
+    /// invariants of the type. Normally changing the length of a string is done
+    /// using one of the safe operations instead, such as [`truncate`],
+    /// [`extend`], or [`clear`].
+    ///
+    /// This function can change the return value of [`String::is_valid_encoding`].
+    ///
+    /// # Safety
+    ///
+    /// - `new_len` must be less than or equal to [`capacity()`].
+    /// - The elements at `old_len..new_len` must be initialized.
+    ///
+    /// [`truncate`]: Self::truncate
+    /// [`extend`]: Extend::extend
+    /// [`clear`]: Self::clear
+    /// [`capacity()`]: Self::capacity
+    #[inline]
+    pub unsafe fn set_len(&mut self, new_len: usize) {
+        self.buf.set_len(new_len);
     }
 
     /// Creates a `String` directly from the raw components of another string.
