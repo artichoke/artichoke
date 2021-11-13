@@ -2278,7 +2278,8 @@ impl String {
     #[must_use]
     pub fn is_valid_encoding(&self) -> bool {
         match self.encoding {
-            Encoding::Utf8 => self.buf.is_utf8(),
+            Encoding::Utf8 if self.buf.is_ascii() => true,
+            Encoding::Utf8 => simdutf8::basic::from_utf8(&self.buf).is_ok(),
             Encoding::Ascii => self.buf.is_ascii(),
             Encoding::Binary => true,
         }
@@ -2287,11 +2288,23 @@ impl String {
 
 #[must_use]
 fn conventionally_utf8_byte_string_len(mut bytes: &[u8]) -> usize {
-    let mut char_len = 0;
-    while !bytes.is_empty() {
-        let (ch, size) = bstr::decode_utf8(bytes);
-        char_len += if ch.is_some() { 1 } else { size };
-        bytes = &bytes[size..];
+    let tail = if let Some(idx) = bytes.find_non_ascii_byte() {
+        idx
+    } else {
+        return bytes.len();
+    };
+    // Safety:
+    //
+    // If `ByteSlice::find_non_ascii_byte` returns `Some(_)`, the index is
+    // guaranteed to be a valid index within `bytes`.
+    bytes = unsafe { bytes.get_unchecked(tail..) };
+    if simdutf8::basic::from_utf8(bytes).is_ok() {
+        return tail + bytecount::num_chars(bytes);
+    }
+    let mut char_len = tail;
+    for chunk in bytes.utf8_chunks() {
+        char_len += bytecount::num_chars(chunk.valid().as_bytes());
+        char_len += chunk.invalid().len();
     }
     char_len
 }
