@@ -20,98 +20,22 @@
                     "kind": "lib"
                 }
             },
-            "args": ["${selectedText}"],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug integration test 'gc_stress'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--test=gc_stress",
-                    "--package=artichoke-backend"
-                ],
-                "filter": {
-                    "name": "gc_stress",
-                    "kind": "test"
-                }
-            },
             "args": [],
             "cwd": "${workspaceFolder}"
         },
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug integration test 'leak_funcall'",
+            "name": "Debug integration test 'integration'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--test=leak_funcall",
+                    "--test=integration",
                     "--package=artichoke-backend"
                 ],
                 "filter": {
-                    "name": "leak_funcall",
-                    "kind": "test"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug integration test 'leak_mrb_tt_data_rc'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--test=leak_mrb_tt_data_rc",
-                    "--package=artichoke-backend"
-                ],
-                "filter": {
-                    "name": "leak_mrb_tt_data_rc",
-                    "kind": "test"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug integration test 'leak_unbounded_arena_growth'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--test=leak_unbounded_arena_growth",
-                    "--package=artichoke-backend"
-                ],
-                "filter": {
-                    "name": "leak_unbounded_arena_growth",
-                    "kind": "test"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug integration test 'manual'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--test=manual",
-                    "--package=artichoke-backend"
-                ],
-                "filter": {
-                    "name": "manual",
+                    "name": "integration",
                     "kind": "test"
                 }
             },
@@ -140,16 +64,17 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'spec-runner'",
+            "name": "Debug unit tests in library 'artichoke-load-path'",
             "cargo": {
                 "args": [
-                    "build",
-                    "--bin=spec-runner",
-                    "--package=spec-runner"
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=artichoke-load-path"
                 ],
                 "filter": {
-                    "name": "spec-runner",
-                    "kind": "bin"
+                    "name": "artichoke-load-path",
+                    "kind": "lib"
                 }
             },
             "args": [],
@@ -158,17 +83,283 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'spec-runner'",
+            "name": "Debug unit tests in library 'scolapasta-string-escape'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=spec-runner",
-                    "--package=spec-runner"
+                    "--lib",
+                    "--package=scolapasta-string-escape"
                 ],
                 "filter": {
-                    "name": "spec-runner",
-                    "kind": "bin"
+                    "name": "scolapasta-string-escape",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-array'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-array"
+                ],
+                "filter": {
+                    "name": "spinoso-array",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-env'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-env"
+                ],
+                "filter": {
+                    "name": "spinoso-env",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-exception'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-exception"
+                ],
+                "filter": {
+                    "name": "spinoso-exception",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-math'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-math"
+                ],
+                "filter": {
+                    "name": "spinoso-math",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-random'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-random"
+                ],
+                "filter": {
+                    "name": "spinoso-random",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'ruby'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=ruby",
+                    "--package=spinoso-random"
+                ],
+                "filter": {
+                    "name": "ruby",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'random'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=random",
+                    "--package=spinoso-random"
+                ],
+                "filter": {
+                    "name": "random",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-regexp'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-regexp"
+                ],
+                "filter": {
+                    "name": "spinoso-regexp",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-securerandom'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-securerandom"
+                ],
+                "filter": {
+                    "name": "spinoso-securerandom",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'scolapasta-hex'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=scolapasta-hex"
+                ],
+                "filter": {
+                    "name": "scolapasta-hex",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-symbol'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-symbol"
+                ],
+                "filter": {
+                    "name": "spinoso-symbol",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-time'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-time"
+                ],
+                "filter": {
+                    "name": "spinoso-time",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'mezzaluna-feature-loader'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=mezzaluna-feature-loader"
+                ],
+                "filter": {
+                    "name": "mezzaluna-feature-loader",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'spinoso-string'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=spinoso-string"
+                ],
+                "filter": {
+                    "name": "spinoso-string",
+                    "kind": "lib"
                 }
             },
             "args": [],
@@ -262,25 +453,6 @@
                 "filter": {
                     "name": "artichoke",
                     "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug integration test 'version_numbers'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--test=version_numbers",
-                    "--package=artichoke"
-                ],
-                "filter": {
-                    "name": "version_numbers",
-                    "kind": "test"
                 }
             },
             "args": [],
