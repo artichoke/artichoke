@@ -31,6 +31,7 @@ use crate::value::Value;
 /// [`pop_n`]: Array::pop_n
 /// [`first_n`]: Array::first_n
 /// [`last_n`]: Array::last_n
+/// [`BoxUnboxVmValue`]: crate::convert::BoxUnboxVmValue
 #[derive(Debug, Clone)]
 pub struct Array(spinoso_array::Array<sys::mrb_value>);
 
@@ -322,10 +323,9 @@ impl Array {
 
     /// Consume the array and return its elements as a [`Vec<T>`].
     ///
-    /// For `Array`, this is a cheap operation that unwraps the inner `Vec` and
-    /// is an alias for [`into_inner`](Self::into_inner).
+    /// For `Array`, this is a cheap operation that unwraps the inner `Vec`.
     ///
-    /// [`Vec<T>`]: alloc::vec::Vec
+    /// [`Vec<T>`]: std::vec::Vec
     #[inline]
     #[must_use]
     pub fn into_vec(self) -> Vec<sys::mrb_value> {
