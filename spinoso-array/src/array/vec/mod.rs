@@ -1016,8 +1016,6 @@ where
             None
         }
     }
-    
-
 }
 
 impl<T> Array<T>
