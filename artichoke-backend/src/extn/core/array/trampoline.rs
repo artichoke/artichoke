@@ -6,15 +6,15 @@ pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     let result = if let Ok(other) = unsafe { Array::unbox_from_value(&mut other, interp) } {
         let mut result = Array::with_capacity(array.len() + other.len());
-        result.0.concat(array.0.as_slice());
-        result.0.concat(other.0.as_slice());
+        result.concat(array.as_slice());
+        result.concat(other.as_slice());
         result
     } else if other.respond_to(interp, "to_ary")? {
         let mut other_converted = other.funcall(interp, "to_ary", &[], None)?;
         if let Ok(other) = unsafe { Array::unbox_from_value(&mut other_converted, interp) } {
             let mut result = Array::with_capacity(array.len() + other.len());
-            result.0.concat(array.0.as_slice());
-            result.0.concat(other.0.as_slice());
+            result.concat(array.as_slice());
+            result.concat(other.as_slice());
             result
         } else {
             let mut message = String::from("can't convert ");
@@ -43,12 +43,12 @@ pub fn mul(interp: &mut Artichoke, mut ary: Value, mut joiner: Value) -> Result<
     // `joiner` is not garbage collected when invoking `to_s` during `join`.
     if let Ok(separator) = unsafe { implicitly_convert_to_string(interp, &mut joiner) } {
         let separator = separator.to_vec();
-        let s = array.join(interp, &separator)?;
+        let s = super::join(interp, &*array, &separator)?;
         interp.try_convert_mut(s)
     } else {
         let n = implicitly_convert_to_int(interp, joiner)?;
         if let Ok(n) = usize::try_from(n) {
-            let value = array.repeat(n)?;
+            let value = super::repeat(&*array, n)?;
             let result = Array::alloc_value(value, interp)?;
             let result_value = result.inner();
             let ary_value = ary.inner();
@@ -71,7 +71,7 @@ pub fn element_reference(
     second: Option<Value>,
 ) -> Result<Value, Error> {
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    let elem = array.element_reference(interp, first, second)?;
+    let elem = super::aref(interp, &*array, first, second)?;
     Ok(interp.convert(elem))
 }
 
@@ -94,7 +94,7 @@ pub fn element_assignment(
     // XXX: Ensure that `array_mut` does not allocate in between mruby
     // allocations.
     let array_mut = unsafe { array.as_inner_mut() };
-    let result = array_mut.element_assignment(interp, first, second, third);
+    let result = super::aset(interp, array_mut, first, second, third);
 
     unsafe {
         let inner = array.take();
@@ -147,17 +147,17 @@ where
     // This allocation assumes that each `Array` yielded by the iterator is
     // "small", where small means 5 elements or fewer.
     let mut replacement = Array::with_capacity(array.len() + others.clone().count() * OTHER_ARRAYS_AVG_LENGTH);
-    replacement.0.concat(array.0.as_slice());
+    replacement.concat(array.as_slice());
 
     for mut other in others {
         if let Ok(other) = unsafe { Array::unbox_from_value(&mut other, interp) } {
-            replacement.0.reserve(other.len());
-            replacement.0.concat(other.0.as_slice());
+            replacement.reserve(other.len());
+            replacement.concat(other.as_slice());
         } else if other.respond_to(interp, "to_ary")? {
             let mut other_converted = other.funcall(interp, "to_ary", &[], None)?;
             if let Ok(other) = unsafe { Array::unbox_from_value(&mut other_converted, interp) } {
-                replacement.0.reserve(other.len());
-                replacement.0.concat(other.0.as_slice());
+                replacement.reserve(other.len());
+                replacement.concat(other.as_slice());
             } else {
                 let mut message = String::from("can't convert ");
                 let name = interp.inspect_type_name_for_value(other);
@@ -193,14 +193,14 @@ pub fn first(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Resu
         }
         let n = implicitly_convert_to_int(interp, num)?;
         if let Ok(n) = usize::try_from(n) {
-            let slice = array.0.first_n(n);
+            let slice = array.first_n(n);
             let result = Array::from(slice);
             Array::alloc_value(result, interp)
         } else {
             Err(ArgumentError::with_message("negative array size").into())
         }
     } else {
-        let last = array.0.first().copied().map(Value::from);
+        let last = array.first();
         Ok(interp.convert(last))
     }
 }
@@ -220,7 +220,7 @@ pub fn initialize(
     // `Array#initialize` or when the first and second args must be coerced with
     // the `#to_*` family of methods.
     Array::box_into_value(Array::new(), into, interp)?;
-    let array = Array::initialize(interp, first, second, block)?;
+    let array = super::initialize(interp, first, second, block)?;
     Array::box_into_value(array, into, interp)
 }
 
@@ -247,14 +247,14 @@ pub fn last(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Resul
         }
         let n = implicitly_convert_to_int(interp, num)?;
         if let Ok(n) = usize::try_from(n) {
-            let slice = array.0.last_n(n);
+            let slice = array.last_n(n);
             let result = Array::from(slice);
             Array::alloc_value(result, interp)
         } else {
             Err(ArgumentError::with_message("negative array size").into())
         }
     } else {
-        let last = array.0.last().copied().map(Value::from);
+        let last = array.last();
         Ok(interp.convert(last))
     }
 }
