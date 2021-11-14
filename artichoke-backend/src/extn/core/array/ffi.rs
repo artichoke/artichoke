@@ -1,6 +1,6 @@
 use std::slice;
 
-use crate::extn::core::array::Array;
+use crate::extn::core::array::{Array, RawParts};
 use crate::extn::prelude::*;
 
 // ```c
@@ -311,8 +311,8 @@ unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut 
     let _ = mrb;
 
     let ptr = (*ary).as_.heap.ptr;
-    let len = (*ary).as_.heap.len as usize;
+    let length = (*ary).as_.heap.len as usize;
     let capacity = (*ary).as_.heap.aux.capa as usize;
 
-    drop(Array::from_raw_parts(ptr, len, capacity));
+    drop(Array::from_raw_parts(RawParts { ptr, length, capacity }));
 }

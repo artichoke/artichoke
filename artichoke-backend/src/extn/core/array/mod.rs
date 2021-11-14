@@ -9,6 +9,8 @@ use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string, Un
 use crate::extn::prelude::*;
 use crate::io::IoError;
 
+pub use spinoso_array::RawParts;
+
 pub mod args;
 mod ffi;
 pub mod mruby;
@@ -469,16 +471,14 @@ impl Array {
     /// pointed to by the pointer at will. Ensure that nothing else uses the
     /// pointer after calling this function.
     #[must_use]
-    pub unsafe fn from_raw_parts(ptr: *mut sys::mrb_value, length: usize, capacity: usize) -> Self {
-        Self(SpinosoArray::from_raw_parts(ptr, length, capacity))
+    pub unsafe fn from_raw_parts(raw_parts: RawParts<sys::mrb_value>) -> Self {
+        Self(SpinosoArray::from_raw_parts(raw_parts))
     }
 
     /// Decomposes an `Array<T>` into its raw components.
     ///
     /// Returns the raw pointer to the underlying data, the length of the array
     /// (in elements), and the allocated capacity of the data (in elements).
-    /// These are the same arguments in the same order as the arguments to
-    /// [`from_raw_parts`].
     ///
     /// After calling this function, the caller is responsible for the memory
     /// previously managed by the `Array`. The only way to do this is to convert
@@ -488,7 +488,7 @@ impl Array {
     ///
     /// [`from_raw_parts`]: Array::from_raw_parts
     #[must_use]
-    pub fn into_raw_parts(self) -> (*mut sys::mrb_value, usize, usize) {
+    pub fn into_raw_parts(self) -> RawParts<sys::mrb_value> {
         self.0.into_raw_parts()
     }
 }
@@ -523,15 +523,15 @@ impl BoxUnboxVmValue for Array {
         let ary = sys::mrb_sys_basic_ptr(value).cast::<sys::RArray>();
 
         let ptr = (*ary).as_.heap.ptr;
-        let len = (*ary).as_.heap.len as usize;
+        let length = (*ary).as_.heap.len as usize;
         let capacity = (*ary).as_.heap.aux.capa as usize;
-        let array = Array::from_raw_parts(ptr, len, capacity);
+        let array = Array::from_raw_parts(RawParts { ptr, length, capacity });
 
         Ok(UnboxedValueGuard::new(array))
     }
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
-        let (ptr, len, capacity) = Array::into_raw_parts(value);
+        let RawParts { ptr, length, capacity } = Array::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
                 // Overflow Safety:
@@ -545,11 +545,11 @@ impl BoxUnboxVmValue for Array {
                 //
                 // On 32-bit targets, `usize` is `u32` which will never overflow
                 // `i64`. Artichoke unconditionally compiles mruby with `-DMRB_INT64`.
-                let len = sys::mrb_int::try_from(len)
+                let length = sys::mrb_int::try_from(length)
                     .expect("Length of an `Array` cannot exceed isize::MAX == i64::MAX == mrb_int::MAX");
                 let capa = sys::mrb_int::try_from(capacity)
                     .expect("Capacity of an `Array` cannot exceed isize::MAX == i64::MAX == mrb_int::MAX");
-                sys::mrb_sys_alloc_rarray(mrb, ptr, len, capa)
+                sys::mrb_sys_alloc_rarray(mrb, ptr, length, capa)
             })?
         };
         Ok(interp.protect(value.into()))
@@ -565,9 +565,9 @@ impl BoxUnboxVmValue for Array {
             panic!("Tried to box Array into {:?} value", into.ruby_type());
         }
 
-        let (ptr, len, capacity) = Array::into_raw_parts(value);
+        let RawParts { ptr, length, capacity } = Array::into_raw_parts(value);
         unsafe {
-            sys::mrb_sys_repack_into_rarray(ptr, len as sys::mrb_int, capacity as sys::mrb_int, into.inner());
+            sys::mrb_sys_repack_into_rarray(ptr, length as sys::mrb_int, capacity as sys::mrb_int, into.inner());
         }
 
         Ok(interp.protect(into))

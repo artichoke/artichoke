@@ -395,6 +395,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "raw-parts"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40212472c0965c24516ac3e87ffeafc3bfd67274ad699dff8985e80d147644be"
+
+[[package]]
 name = "regex"
 version = "1.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -439,7 +445,10 @@ checksum = "533494a8f9b724d33625ab53c6c4800f7cc445895924a8ef649222dcb76e938b"
 
 [[package]]
 name = "spinoso-array"
-version = "0.6.0"
+version = "0.7.0"
+dependencies = [
+ "raw-parts",
+]
 
 [[package]]
 name = "spinoso-env"

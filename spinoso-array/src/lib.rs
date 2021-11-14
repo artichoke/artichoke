@@ -153,4 +153,4 @@ pub use array::tinyvec::TinyArray;
 #[cfg(any(feature = "small-array", feature = "tiny-array"))]
 pub use array::INLINE_CAPACITY;
 
-pub use array::vec::Array;
+pub use array::vec::{Array, RawParts};

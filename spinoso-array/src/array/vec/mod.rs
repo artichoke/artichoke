@@ -4,8 +4,10 @@ use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cmp;
-use core::mem::ManuallyDrop;
 use core::slice::{Iter, IterMut};
+
+#[doc(inline)]
+pub use raw_parts::RawParts;
 
 mod convert;
 mod eq;
@@ -311,16 +313,15 @@ impl<T> Array<T> {
     /// pointed to by the pointer at will. Ensure that nothing else uses the
     /// pointer after calling this function.
     #[must_use]
-    pub unsafe fn from_raw_parts(ptr: *mut T, length: usize, capacity: usize) -> Self {
-        Self(Vec::from_raw_parts(ptr, length, capacity))
+    pub unsafe fn from_raw_parts(raw_parts: RawParts<T>) -> Self {
+        let vec = RawParts::into_vec(raw_parts);
+        Self(vec)
     }
 
     /// Decomposes an `Array<T>` into its raw components.
     ///
     /// Returns the raw pointer to the underlying data, the length of the array
     /// (in elements), and the allocated capacity of the data (in elements).
-    /// These are the same arguments in the same order as the arguments to
-    /// [`from_raw_parts`].
     ///
     /// After calling this function, the caller is responsible for the memory
     /// previously managed by the `Array`. The only way to do this is to convert
@@ -330,13 +331,8 @@ impl<T> Array<T> {
     ///
     /// [`from_raw_parts`]: Array::from_raw_parts
     #[must_use]
-    pub fn into_raw_parts(self) -> (*mut T, usize, usize) {
-        // TODO: convert to `Vec::into_raw_parts` once it is stabilized.
-        // See: https://doc.rust-lang.org/1.48.0/src/alloc/vec.rs.html#399-402
-        //
-        // https://github.com/rust-lang/rust/issues/65816
-        let mut me = ManuallyDrop::new(self.0);
-        (me.as_mut_ptr(), me.len(), me.capacity())
+    pub fn into_raw_parts(self) -> RawParts<T> {
+        RawParts::from_vec(self.0)
     }
 
     /// Consume the array and return the inner [`Vec<T>`].
@@ -1195,7 +1191,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::array::vec::Array;
+    use crate::array::vec::{Array, RawParts};
 
     // `insert_slice`
 
@@ -1751,8 +1747,8 @@ mod test {
     #[test]
     fn into_raw_parts_from_raw_parts_round_trip_empty_no_alloc() {
         let ary = Array::<i32>::new();
-        let (ptr, len, capacity) = ary.into_raw_parts();
-        let ary = unsafe { Array::from_raw_parts(ptr, len, capacity) };
+        let RawParts { ptr, length, capacity } = ary.into_raw_parts();
+        let ary = unsafe { Array::from_raw_parts(RawParts { ptr, length, capacity }) };
         assert_eq!(ary.len(), 0);
         assert_eq!(ary.capacity(), 0);
     }
@@ -1760,8 +1756,8 @@ mod test {
     #[test]
     fn into_raw_parts_from_raw_parts_round_trip_empty_with_capacity() {
         let ary = Array::<i32>::with_capacity(100);
-        let (ptr, len, capacity) = ary.into_raw_parts();
-        let ary = unsafe { Array::from_raw_parts(ptr, len, capacity) };
+        let RawParts { ptr, length, capacity } = ary.into_raw_parts();
+        let ary = unsafe { Array::from_raw_parts(RawParts { ptr, length, capacity }) };
         assert_eq!(ary.len(), 0);
         assert_eq!(ary.capacity(), 100);
     }
@@ -1769,8 +1765,8 @@ mod test {
     #[test]
     fn into_raw_parts_from_raw_parts_round_trip_assoc() {
         let ary = Array::<i32>::assoc(1, 2);
-        let (ptr, len, capacity) = ary.into_raw_parts();
-        let ary = unsafe { Array::from_raw_parts(ptr, len, capacity) };
+        let RawParts { ptr, length, capacity } = ary.into_raw_parts();
+        let ary = unsafe { Array::from_raw_parts(RawParts { ptr, length, capacity }) };
         assert_eq!(ary.len(), 2);
         assert_eq!(ary.capacity(), 2);
         assert_eq!(ary, [1, 2]);
@@ -1779,8 +1775,8 @@ mod test {
     #[test]
     fn into_raw_parts_from_raw_parts_round_trip_from_slice() {
         let ary = Array::<i32>::from(&[1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
-        let (ptr, len, capacity) = ary.into_raw_parts();
-        let ary = unsafe { Array::from_raw_parts(ptr, len, capacity) };
+        let RawParts { ptr, length, capacity } = ary.into_raw_parts();
+        let ary = unsafe { Array::from_raw_parts(RawParts { ptr, length, capacity }) };
         assert_eq!(ary.len(), 10);
         assert!(ary.capacity() >= 10);
         assert_eq!(ary, [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
