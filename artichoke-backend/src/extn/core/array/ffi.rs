@@ -294,7 +294,7 @@ unsafe extern "C" fn mrb_ary_unshift(
         // The array is repacked before any intervening uses of `interp`.
         // The array is repacked before any intervening mruby allocations.
         let array_mut = array.as_inner_mut();
-        array_mut.0.unshift(value);
+        array_mut.unshift(value.into());
 
         let inner = array.take();
         Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
