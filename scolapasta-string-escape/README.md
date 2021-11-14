@@ -40,7 +40,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scolapasta-string-escape = "0.1"
+scolapasta-string-escape = "0.2"
 ```
 
 To debug escape a conventionally UTF-8 byte string:
