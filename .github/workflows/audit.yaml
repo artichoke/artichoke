@@ -52,6 +52,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+
+      - name: Generate Cargo.lock
+        run: |
+          if [[ ! -f "Cargo.lock" ]]; then
+            cargo generate-lockfile --verbose
+          fi
+
       - name: Setup cargo-deny
         run: |
           release_base="https://github.com/EmbarkStudios/cargo-deny/releases/download"
