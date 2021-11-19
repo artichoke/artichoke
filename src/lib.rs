@@ -95,7 +95,7 @@ pub mod repl;
 #[cfg(feature = "cli")]
 pub mod ruby;
 
-/// A "prelude" for users of the `artichoke-backend` crate.
+/// A "prelude" for users of the `artichoke` crate.
 ///
 /// This prelude is similar to the standard library's prelude in that you'll
 /// almost always want to import its entire contents, but unlike the standard
