@@ -1249,6 +1249,29 @@ impl String {
     pub fn shrink_to_fit(&mut self) {
         self.buf.shrink_to_fit();
     }
+
+    /// Shrinks the capacity of the vector with a lower bound.
+    ///
+    /// The capacity will remain at least as large as both the length and the
+    /// supplied value.
+    ///
+    /// If the current capacity is less than the lower limit, this is a no-op.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::with_capacity(10);
+    /// s.extend_from_slice(b"abc");
+    /// assert_eq!(s.capacity(), 10);
+    /// s.shrink_to(5);
+    /// assert!(s.capacity() >= 5);
+    /// ```
+    #[inline]
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.buf.shrink_to(min_capacity);
+    }
 }
 
 // Indexing
