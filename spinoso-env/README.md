@@ -80,7 +80,7 @@ This crate requires [`std`], the Rust Standard Library.
 All features are enabled by default:
 
 - **system-env** - Enable an `ENV` backend that accesses the host system's
-  environment variables via the [`std::env`](module@std::env) module.
+  environment variables via the [`std::env`] module.
 
 ## License
 
@@ -90,3 +90,4 @@ All features are enabled by default:
 [`hashmap`]: std::collections::HashMap
 [rust standard library]: https://doc.rust-lang.org/std/
 [`std`]: https://doc.rust-lang.org/std/
+[`std::env`]: https://doc.rust-lang.org/std/env/index.html

@@ -2,6 +2,9 @@
   "ignorePatterns": [
     {
       "pattern": "img.shields.io"
+    },
+    {
+      "pattern": "^https://docs.rs/.*"
     }
   ],
   "replacementPatterns": [],

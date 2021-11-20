@@ -116,7 +116,7 @@ Artichoke will include implementation-agnostic [C APIs][a-c-api] targeting:
 [file system backends]:
   https://github.com/artichoke/artichoke/labels/A-filesystem
 [virtual file system]:
-  https://artichoke.github.io/artichoke/artichoke_backend/fs/index.html
+  https://artichoke.github.io/artichoke/artichoke_backend/load_path/index.html
 [extn-env]: artichoke-backend/src/extn/core/env
 [a-optional-stdlib]:
   https://github.com/artichoke/artichoke/labels/A-optional-stdlib
