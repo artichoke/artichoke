@@ -23,6 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+      - name: Purge vendored sources
+        run: |
+          shopt -s globstar
+          rm -rf **/vendor/*/
       - uses: gaurav-nelson/github-action-markdown-link-check@v1
         # checks all markdown files from /docs including all subfolders
         with:
