@@ -22,15 +22,14 @@ jobs:
     name: Check links
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Purge vendored sources
-        run: |
-          shopt -s globstar
-          rm -rf **/vendor/*/*
-      - uses: gaurav-nelson/github-action-markdown-link-check@v1
-        # checks all markdown files from /docs including all subfolders
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Ruby toolchain
+        uses: ruby/setup-ruby@v1
         with:
-          use-quiet-mode: "yes"
-          use-verbose-mode: "yes"
-          config-file: ".github/markdown-link-check.json"
-          folder-path: "."
+          ruby-version: ".ruby-version"
+          bundler-cache: true
+
+      - name: Check for broken links in markdown files
+        run: bundle exec rake release:markdown_link_check
