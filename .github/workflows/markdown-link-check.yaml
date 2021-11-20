@@ -22,7 +22,7 @@ jobs:
     name: Check links
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - name: Purge vendored sources
         run: |
           shopt -s globstar
