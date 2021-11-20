@@ -29,7 +29,7 @@ Artichoke is organized into several layers:
 ### Frontend
 
 The entry point to Artichoke for running Ruby code is the `artichoke` crate. The
-code for this crate is located in the [`src` directory](/src). All functionality
+code for this crate is located in the [`src` directory](src). All functionality
 of Artichoke Ruby is accessible through this crate. You'll likely want to create
 an interpreter with [`artichoke::interpreter()`] and import the
 [`artichoke::prelude::*`] items to bring the traits that define the interpreter
@@ -55,7 +55,7 @@ The frontend crate provides [two binary targets]:
 - `artichoke` is the Ruby CLI frontend.
 - `airb` is Artichoke's [`irb` shell].
 
-[two binary targets]: /README.md#Usage
+[two binary targets]: README.md#Usage
 [`irb` shell]: https://en.wikipedia.org/wiki/Interactive_Ruby_Shell
 
 The frontend implements command line argument parsing and a readline shell,
@@ -103,13 +103,13 @@ of the [Strangler Fig pattern].
 [artichoke-backend-docs]:
   https://artichoke.github.io/artichoke/artichoke_backend/
 [mruby vm]: https://github.com/mruby/mruby
-[artichoke-backend-src]: /artichoke-backend
-[mruby c sources]: /artichoke-backend/vendor/mruby
-[mruby-build]: /artichoke-backend/build.rs
+[artichoke-backend-src]: artichoke-backend
+[mruby c sources]: artichoke-backend/vendor/mruby
+[mruby-build]: artichoke-backend/build.rs
 [`bindgen`]: https://rust-lang.github.io/rust-bindgen/
 [`sys` module]:
   https://artichoke.github.io/artichoke/artichoke_backend/sys/index.html
-[mruby-globals]: /artichoke-backend/src/globals.rs
+[mruby-globals]: artichoke-backend/src/globals.rs
 [gh-562]: https://github.com/artichoke/artichoke/pull/562
 [artichoke-strangler]:
   https://twitter.com/artichokeruby/status/1339578582222266368
@@ -156,7 +156,7 @@ Artichoke Core also describes what capabilities a Ruby [`Value`][core-value]
 must have and how to [convert][core-convert-module] between Ruby VM and Rust
 types.
 
-[artichoke-core-src]: /artichoke-core
+[artichoke-core-src]: artichoke-core
 [kernel#require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
 [`random::default`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT
 [regexp-globals]:
@@ -241,7 +241,7 @@ two implementations:
 out implementations by changing an import.
 
 [ruby `array`]: https://ruby-doc.org/core-2.6.3/Array.html
-[spinoso-array-src]: /spinoso-array
+[spinoso-array-src]: spinoso-array
 [rust-alloc-vec]: https://doc.rust-lang.org/alloc/vec/struct.Vec.html
 [`smallvec`]:
   https://artichoke.github.io/artichoke/smallvec/struct.SmallVec.html
@@ -271,7 +271,7 @@ where it may be undesirable for Ruby code to modify the host process's
 environment.
 
 [ruby-core-env]: https://ruby-doc.org/core-2.6.3/ENV.html
-[spinoso-env-src]: /spinoso-env
+[spinoso-env-src]: spinoso-env
 [rust-std-hashmap]:
   https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html
 [rust-std-env]: https://doc.rust-lang.org/nightly/std/env/index.html
