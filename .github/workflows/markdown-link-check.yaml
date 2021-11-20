@@ -26,7 +26,7 @@ jobs:
       - name: Purge vendored sources
         run: |
           shopt -s globstar
-          rm -rf **/vendor/*/
+          rm -rf **/vendor/*/*
       - uses: gaurav-nelson/github-action-markdown-link-check@v1
         # checks all markdown files from /docs including all subfolders
         with:
