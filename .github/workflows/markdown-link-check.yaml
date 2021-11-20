@@ -1,0 +1,32 @@
+---
+"on":
+  push:
+    branches:
+      - trunk
+    paths:
+      - .github/markdown-link-check.json
+      - .github/workflows/markdown-link-check.yaml
+      - "**/*.md"
+  pull_request:
+    branches:
+      - trunk
+    paths:
+      - .github/markdown-link-check.json
+      - .github/workflows/markdown-link-check.yaml
+      - "**/*.md"
+  schedule:
+    - cron: "0 0 * * TUE"
+name: Markdown Links Check
+jobs:
+  check-links:
+    name: Check links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+        # checks all markdown files from /docs including all subfolders
+        with:
+          use-quiet-mode: "yes"
+          use-verbose-mode: "yes"
+          config-file: ".github/markdown-link-check.json"
+          folder-path: "."
