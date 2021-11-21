@@ -1,8 +1,7 @@
 use core::fmt;
 use core::mem::size_of;
 
-#[doc(inline)]
-pub use rand_mt::Mt;
+use rand_mt::Mt;
 
 use crate::{InitializeError, NewSeedError};
 
