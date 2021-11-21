@@ -46,9 +46,9 @@ task format: %i[format:rust format:text format:c]
 namespace :format do
   desc 'Format Rust sources with rustfmt'
   task :rust do
-    sh 'cargo fmt -- --color=auto'
+    sh 'rustup run --install nightly cargo fmt -- --color=auto'
     Dir.chdir('spec-runner') do
-      sh 'cargo fmt -- --color=auto'
+      sh 'rustup run --install nightly cargo fmt -- --color=auto'
     end
   end
 
@@ -69,9 +69,9 @@ task fmt: %i[fmt:rust fmt:text fmt:c]
 namespace :fmt do
   desc 'Format Rust sources with rustfmt'
   task :rust do
-    sh 'cargo fmt -- --color=auto'
+    sh 'rustup run --install nightly cargo fmt -- --color=auto'
     Dir.chdir('spec-runner') do
-      sh 'cargo fmt -- --color=auto'
+      sh 'rustup run --install nightly cargo fmt -- --color=auto'
     end
   end
 
