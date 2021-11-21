@@ -62,7 +62,14 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: rustfmt, clippy
+          components: clippy
+
+      - name: Install nightly Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          components: rustfmt
 
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
@@ -73,7 +80,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Check artichoke formatting
-        run: cargo fmt -- --check --color=auto
+        run: cargo +nightly fmt -- --check --color=auto
 
       - name: Lint artichoke with Clippy
         uses: actions-rs/clippy-check@v1
@@ -136,7 +143,14 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          components: rustfmt, clippy
+          components: clippy
+
+      - name: Install nightly Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          components: rustfmt
 
       - name: Install Ruby toolchain
         uses: ruby/setup-ruby@v1
@@ -149,7 +163,7 @@ jobs:
           working-directory: "spec-runner"
 
       - name: Check spec-runner formatting
-        run: cargo fmt -- --check --color=auto
+        run: cargo +nightly fmt -- --check --color=auto
         working-directory: "spec-runner"
 
       - name: Check spec-runner with locked Cargo.lock
