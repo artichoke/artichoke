@@ -520,6 +520,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rand_mt"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9850304db7122f5b5f33bf751a4d15aabb298f3659141fb392012062e7bdb9fc"
+
+[[package]]
 name = "raw-parts"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -648,6 +654,7 @@ dependencies = [
  "libm",
  "rand",
  "rand_core",
+ "rand_mt",
 ]
 
 [[package]]
