@@ -26,7 +26,7 @@ spinoso-array = { version = "0.7", path = "../spinoso-array", default-features =
 spinoso-env = { version = "0.1", path = "../spinoso-env", optional = true, default-features = false }
 spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
 spinoso-math = { version = "0.2", path = "../spinoso-math", optional = true, default-features = false }
-spinoso-random = { version = "0.1", path = "../spinoso-random", optional = true }
+spinoso-random = { version = "0.2", path = "../spinoso-random", optional = true }
 spinoso-regexp = { version = "0.2", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }

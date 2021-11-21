@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-random"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 description = """
@@ -20,6 +20,7 @@ rand = { version = "0.8", optional = true, default-features = false }
 #
 # https://rustsec.org/advisories/RUSTSEC-2021-0023
 rand_core = { version = "0.6, >= 0.6.2", optional = true, default-features = false }
+rand_mt = { version = "4.0", default-features = false }
 
 [features]
 default = ["random-rand", "rand-traits", "std"]

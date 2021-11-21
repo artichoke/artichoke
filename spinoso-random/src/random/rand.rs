@@ -1,7 +1,6 @@
 use rand_core::{Error, RngCore, SeedableRng};
 
-use super::{seed_to_key, Random, DEFAULT_SEED_BYTES};
-use crate::Mt;
+use super::{seed_to_key, Mt, Random, DEFAULT_SEED_BYTES};
 
 impl SeedableRng for Random {
     type Seed = [u8; DEFAULT_SEED_BYTES];
@@ -127,6 +126,7 @@ impl RngCore for Random {
     /// [`fill_bytes`]: Random::fill_bytes
     #[inline]
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        self.mt.try_fill_bytes(dest)
+        self.mt.fill_bytes(dest);
+        Ok(())
     }
 }

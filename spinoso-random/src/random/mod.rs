@@ -1,13 +1,12 @@
 use core::fmt;
 use core::mem::size_of;
 
+use rand_mt::Mt;
+
 use crate::{InitializeError, NewSeedError};
 
 #[cfg(feature = "rand-traits")]
 mod rand;
-pub mod ruby;
-
-use ruby::Mt;
 
 const DEFAULT_SEED_CNT: usize = 4;
 const DEFAULT_SEED_BYTES: usize = size_of::<u32>() * DEFAULT_SEED_CNT;
@@ -150,7 +149,7 @@ impl Random {
     #[inline]
     #[must_use]
     pub fn with_seed(seed: u32) -> Self {
-        let mt = Mt::with_seed(seed);
+        let mt = Mt::new(seed);
         let seed = u128::from(seed).to_le_bytes();
         let seed = seed_to_key(seed);
         Self { mt, seed }
@@ -212,7 +211,7 @@ impl Random {
     #[inline]
     #[must_use]
     pub fn next_int32(&mut self) -> u32 {
-        self.mt.next_int32()
+        self.mt.next_u32()
     }
 
     /// Generate next `f64` output.
@@ -233,7 +232,9 @@ impl Random {
     #[inline]
     #[must_use]
     pub fn next_real(&mut self) -> f64 {
-        self.mt.next_real()
+        let a = self.next_int32();
+        let b = self.next_int32();
+        int_pair_to_real_exclusive(a, b)
     }
 
     /// Fill a buffer with bytes generated from the RNG.
@@ -283,6 +284,16 @@ impl Random {
     pub const fn seed(&self) -> [u32; 4] {
         self.seed
     }
+}
+
+#[inline]
+#[must_use]
+fn int_pair_to_real_exclusive(mut a: u32, mut b: u32) -> f64 {
+    a >>= 5;
+    b >>= 6;
+    let a = f64::from(a);
+    let b = f64::from(b);
+    (a * 67_108_864.0 + b) * (1.0 / 9_007_199_254_740_992.0)
 }
 
 #[inline]

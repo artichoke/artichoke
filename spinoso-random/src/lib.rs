@@ -77,8 +77,8 @@
 //! - **random-rand** - Enables range sampling methods for the [`rand()`]
 //!   function.  Activating this feature also activates the **rand-traits**
 //!   feature. Dropping this feature removes the [`rand`] dependency.
-//! - **rand-traits** - Enables implementations of [`RngCore`] on [`Random`] and
-//!   [`Mt`] types. Dropping this feature removes the [`rand_core`] dependency.
+//! - **rand-traits** - Enables implementations of [`RngCore`] on the [`Random`]
+//!   type. Dropping this feature removes the [`rand_core`] dependency.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
@@ -107,7 +107,6 @@ mod rand;
 mod random;
 mod urandom;
 
-pub use random::ruby::Mt;
 pub use random::{new_seed, seed_to_key, Random};
 pub use urandom::urandom;
 
@@ -194,8 +193,8 @@ impl error::Error for Error {
 /// Error that indicates a `Random` random number generator failed to
 /// initialize.
 ///
-/// When initializing an [`Mt`] with a random seed, gathering entropy from the
-/// host system can fail.
+/// When initializing an [`Random`] with a random seed, gathering entropy from
+/// the host system can fail.
 ///
 /// This error corresponds to the [Ruby `RuntimeError` Exception class].
 ///
