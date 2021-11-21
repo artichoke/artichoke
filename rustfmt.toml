@@ -10,3 +10,6 @@ use_small_heuristics = "Default"
 
 use_field_init_shorthand = true
 use_try_shorthand = true
+
+# nightly only option
+group_imports = "StdExternalCrate"
