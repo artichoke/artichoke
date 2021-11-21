@@ -1,5 +1,5 @@
-# Artichoke crates always use the 2018 edition.
-edition = "2018"
+# Artichoke crates always use the 2021 edition.
+edition = "2021"
 
 hard_tabs = false
 newline_style = "Unix"
