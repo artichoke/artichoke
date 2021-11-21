@@ -1,11 +1,11 @@
-use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType, Scan, Source};
-use crate::extn::prelude::*;
+use once_cell::sync::OnceCell;
 
 use super::{NameToCaptureLocations, NilableString};
+use crate::extn::core::regexp::{Config, Encoding, Regexp, RegexpType, Scan, Source};
+use crate::extn::prelude::*;
 
 #[derive(Default, Debug)]
 pub struct Lazy {

@@ -1,8 +1,8 @@
 //! Unicode case folding comparisons for byte content resolved from `Symbol`s.
 
-use artichoke_core::intern::Intern;
 use core::str;
 
+use artichoke_core::intern::Intern;
 use focaccia::CaseFold;
 
 /// Compare the byte contents of two symbols using Unicode case-folding

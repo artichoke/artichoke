@@ -16,8 +16,9 @@ pub struct Abbrev;
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "Abbrev";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("abbrev_test.rb");

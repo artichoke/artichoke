@@ -18,9 +18,10 @@
 //!
 //! [`ENV`]: https://ruby-doc.org/core-2.6.3/ENV.html
 
-use spinoso_env::{ArgumentError as EnvArgumentError, Error as EnvError, InvalidError};
 use std::borrow::Cow;
 use std::collections::HashMap;
+
+use spinoso_env::{ArgumentError as EnvArgumentError, Error as EnvError, InvalidError};
 
 use crate::extn::prelude::*;
 

@@ -1,5 +1,6 @@
 use core::fmt;
 use core::iter::FusedIterator;
+
 use scolapasta_string_escape::{is_ascii_char_with_escape, InvalidUtf8ByteSequence};
 
 use crate::ident::IdentifierType;

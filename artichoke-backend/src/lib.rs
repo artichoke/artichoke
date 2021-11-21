@@ -154,10 +154,11 @@ mod warn;
 #[cfg(test)]
 mod test;
 
+pub use artichoke_core::prelude as core;
+
 pub use crate::artichoke::{Artichoke, Guard};
 pub use crate::error::{Error, RubyException};
 pub use crate::interpreter::{interpreter, interpreter_with_config};
-pub use artichoke_core::prelude as core;
 
 /// A "prelude" for users of the `artichoke-backend` crate.
 ///

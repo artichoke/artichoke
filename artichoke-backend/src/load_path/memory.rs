@@ -1,10 +1,11 @@
-use bstr::{BString, ByteSlice};
 use std::borrow::Cow;
 use std::collections::hash_map::Entry as HashEntry;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
+
+use bstr::{BString, ByteSlice};
 
 use super::{absolutize_relative_to, normalize_slashes, ExtensionHook, RUBY_LOAD_PATH};
 
@@ -463,9 +464,8 @@ impl Memory {
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
-
     use super::Extension;
+    use crate::test::prelude::*;
 
     struct TestFile;
 

@@ -1,5 +1,6 @@
-use intaglio::SymbolOverflowError;
 use std::borrow::Cow;
+
+use intaglio::SymbolOverflowError;
 
 use crate::core::{ClassRegistry, Intern, TryConvertMut};
 use crate::error::{Error, RubyException};

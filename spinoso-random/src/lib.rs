@@ -107,11 +107,12 @@ mod rand;
 mod random;
 mod urandom;
 
-#[cfg(feature = "random-rand")]
-pub use self::rand::{rand, Max, Rand};
 pub use random::ruby::Mt;
 pub use random::{new_seed, seed_to_key, Random};
 pub use urandom::urandom;
+
+#[cfg(feature = "random-rand")]
+pub use self::rand::{rand, Max, Rand};
 
 /// Sum type of all errors possibly returned from `Random` functions.
 ///

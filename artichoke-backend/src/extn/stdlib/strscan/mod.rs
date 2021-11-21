@@ -16,8 +16,9 @@ pub struct StringScanner;
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "StringScanner";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("strscan_test.rb");

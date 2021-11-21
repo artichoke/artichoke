@@ -1,6 +1,7 @@
-use bstr::ByteSlice;
 use std::borrow::Cow;
 use std::collections::HashMap;
+
+use bstr::ByteSlice;
 
 use crate::{ArgumentError, Error, InvalidError};
 

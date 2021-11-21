@@ -8,8 +8,9 @@ pub struct Kernel;
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "Kernel";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("kernel_test.rb");

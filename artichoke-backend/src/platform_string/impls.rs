@@ -3,12 +3,11 @@ use std::borrow::Cow;
 use artichoke_core::convert::TryConvertMut;
 use spinoso_exception::ArgumentError;
 
+use super::ConvertBytesError;
 use crate::core::ClassRegistry;
 use crate::error::{Error, RubyException};
 use crate::sys;
 use crate::Artichoke;
-
-use super::ConvertBytesError;
 
 impl RubyException for ConvertBytesError {
     fn message(&self) -> Cow<'_, [u8]> {

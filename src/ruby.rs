@@ -8,6 +8,7 @@ use std::ffi::{OsStr, OsString};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+
 use termcolor::WriteColor;
 
 use crate::backend::platform_string::os_str_to_bytes;
@@ -233,6 +234,7 @@ fn setup_fixture_hack<P: AsRef<Path>>(interp: &mut Artichoke, fixture: P) -> Res
 mod tests {
     use std::ffi::OsString;
     use std::path::PathBuf;
+
     use termcolor::Ansi;
 
     use super::{run, Args};

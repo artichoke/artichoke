@@ -1,14 +1,14 @@
-use regex::{Match, Regex, RegexBuilder};
 use std::collections::HashMap;
 use std::fmt;
 use std::num::NonZeroUsize;
 use std::str;
 
+use regex::{Match, Regex, RegexBuilder};
+
+use super::super::{NameToCaptureLocations, NilableString};
 use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan, Source};
 use crate::extn::prelude::*;
-
-use super::super::{NameToCaptureLocations, NilableString};
 
 #[derive(Debug, Clone)]
 pub struct Utf8 {

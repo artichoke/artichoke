@@ -49,8 +49,9 @@ pub struct Uri;
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "URI";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("uri_test.rb");

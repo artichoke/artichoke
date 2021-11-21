@@ -793,8 +793,9 @@ impl FusedIterator for InvalidUtf8ByteSequence {}
 /// ```
 #[cfg(test)]
 mod tests {
-    use super::Literal;
     use alloc::string::String;
+
+    use super::Literal;
 
     #[test]
     #[allow(clippy::too_many_lines)]

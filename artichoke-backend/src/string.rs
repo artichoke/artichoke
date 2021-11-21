@@ -6,10 +6,11 @@
 //!
 //! Artichoke aims to support ASCII, UTF-8, maybe UTF-8, and binary encodings.
 
-use scolapasta_string_escape::format_debug_escape_into;
 use std::borrow::{Borrow, BorrowMut, Cow};
 use std::error;
 use std::fmt;
+
+use scolapasta_string_escape::format_debug_escape_into;
 
 use crate::core::{ClassRegistry, TryConvertMut};
 use crate::error::{Error, RubyException};

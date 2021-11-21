@@ -16,8 +16,9 @@ pub struct Monitor;
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "Monitor";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("monitor_test.rb");

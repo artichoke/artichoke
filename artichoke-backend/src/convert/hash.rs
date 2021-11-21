@@ -118,8 +118,9 @@ impl TryConvertMut<Value, Vec<(Value, Value)>> for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use quickcheck::quickcheck;
     use std::collections::HashMap;
+
+    use quickcheck::quickcheck;
 
     use crate::test::prelude::*;
 

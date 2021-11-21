@@ -7,10 +7,9 @@ use alloc::vec::Vec;
 #[cfg(feature = "small-array")]
 use smallvec::SmallVec;
 
-use crate::array::vec::Array;
-
 #[cfg(feature = "small-array")]
 use crate::array::smallvec::SmallArray;
+use crate::array::vec::Array;
 #[cfg(feature = "small-array")]
 use crate::array::INLINE_CAPACITY;
 

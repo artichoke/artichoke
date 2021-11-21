@@ -17,8 +17,9 @@ pub struct Forwardable;
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "Forwardable";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("forwardable_test.rb");

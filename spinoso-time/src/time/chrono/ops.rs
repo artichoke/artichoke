@@ -1,8 +1,9 @@
+use core::ops::{Add, Sub};
+use std::time;
+
 use chrono::prelude::*;
 use chrono::Duration;
 use chrono_tz::Tz;
-use core::ops::{Add, Sub};
-use std::time;
 
 use crate::time::chrono::{Offset, Time};
 
@@ -321,8 +322,9 @@ impl Sub<f64> for Time {
 
 #[cfg(test)]
 mod tests {
-    use super::Time;
     use chrono::prelude::*;
+
+    use super::Time;
 
     fn datetime() -> DateTime<Utc> {
         // halfway through a second
