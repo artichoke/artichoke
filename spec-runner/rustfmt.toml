@@ -1,0 +1,15 @@
+# Artichoke crates always use the 2021 edition.
+edition = "2021"
+
+hard_tabs = false
+newline_style = "Unix"
+
+# Wider width lines and less-aggressive line breaking.
+max_width = 119
+use_small_heuristics = "Default"
+
+use_field_init_shorthand = true
+use_try_shorthand = true
+
+# nightly only option
+group_imports = "StdExternalCrate"
