@@ -1,8 +1,9 @@
 //! Models for reading spec manifests.
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ffi::OsStr;
+
+use serde::{Deserialize, Serialize};
 
 /// Config file format for declaring the set of ruby/spec suites to run.
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

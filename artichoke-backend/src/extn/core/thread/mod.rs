@@ -35,8 +35,9 @@ pub struct Mutex;
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "Thread";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("thread_test.rb");

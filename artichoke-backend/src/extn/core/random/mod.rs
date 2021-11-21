@@ -20,15 +20,15 @@
 //! [`Random`]: https://ruby-doc.org/core-2.6.3/Random.html
 
 use core::ops::{Deref, DerefMut};
+
 use spinoso_random::{
     ArgumentError as RandomArgumentError, InitializeError, NewSeedError, Random as SpinosoRandom, UrandomError,
 };
+#[doc(inline)]
+pub use spinoso_random::{Max, Rand};
 
 use crate::convert::{implicitly_convert_to_int, HeapAllocatedData};
 use crate::extn::prelude::*;
-
-#[doc(inline)]
-pub use spinoso_random::{Max, Rand};
 
 pub mod mruby;
 pub mod trampoline;

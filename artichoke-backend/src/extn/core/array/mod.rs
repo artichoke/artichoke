@@ -338,8 +338,9 @@ impl<'a> Deref for UnboxedValueGuard<'a, Array> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "Array";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("array_functional_test.rb");

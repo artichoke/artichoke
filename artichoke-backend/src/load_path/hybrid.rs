@@ -2,14 +2,12 @@ use std::borrow::Cow;
 use std::io;
 use std::path::Path;
 
-use bstr::ByteSlice;
-
 #[cfg(feature = "load-path-rubylib-native-file-system-loader")]
 use artichoke_load_path::Rubylib;
-
-use crate::platform_string::os_string_to_bytes;
+use bstr::ByteSlice;
 
 use super::{ExtensionHook, Memory, Native};
+use crate::platform_string::os_string_to_bytes;
 
 #[derive(Debug)]
 pub struct Hybrid {

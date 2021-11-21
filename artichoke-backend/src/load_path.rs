@@ -12,8 +12,9 @@
 //!
 //! [extension hooks]: ExtensionHook
 
-use bstr::ByteVec;
 use std::path::{Component, Path, PathBuf};
+
+use bstr::ByteVec;
 
 use crate::error::Error;
 use crate::platform_string::ConvertBytesError;

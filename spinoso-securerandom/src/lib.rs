@@ -93,10 +93,10 @@
 mod readme {}
 
 use core::fmt;
-use rand::distributions::Alphanumeric;
-use rand::{self, Rng, RngCore};
 use std::error;
 
+use rand::distributions::Alphanumeric;
+use rand::{self, Rng, RngCore};
 use scolapasta_hex as hex;
 
 mod uuid;
@@ -711,6 +711,7 @@ pub fn uuid() -> Result<String, RandomBytesError> {
 #[cfg(test)]
 mod tests {
     use core::ops::Not;
+
     use rand::CryptoRng;
 
     use super::{alphanumeric, base64, hex, random_bytes, random_number, uuid, DomainError, Error, Max, Rand};

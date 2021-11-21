@@ -31,8 +31,9 @@ pub struct Json;
 
 #[cfg(test)]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "JSON";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("json_test.rb");

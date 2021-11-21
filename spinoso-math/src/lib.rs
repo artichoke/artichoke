@@ -72,13 +72,12 @@
 #[doc = include_str!("../README.md")]
 mod readme {}
 
-use core::fmt;
-use std::error;
-
 #[doc(inline)]
 pub use core::f64::consts::E;
 #[doc(inline)]
 pub use core::f64::consts::PI;
+use core::fmt;
+use std::error;
 
 mod math;
 

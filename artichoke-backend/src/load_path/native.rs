@@ -1,9 +1,10 @@
-use bstr::{BString, ByteSlice};
 use std::collections::HashSet;
 use std::env;
 use std::fs::{self, File};
 use std::io;
 use std::path::{Path, PathBuf};
+
+use bstr::{BString, ByteSlice};
 
 use super::{absolutize_relative_to, normalize_slashes};
 

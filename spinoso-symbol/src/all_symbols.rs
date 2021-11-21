@@ -1,6 +1,7 @@
-use artichoke_core::intern::Intern;
 use core::iter::FusedIterator;
 use core::ops::Range;
+
+use artichoke_core::intern::Intern;
 
 use crate::Symbol;
 
@@ -204,8 +205,9 @@ impl FusedIterator for AllSymbols {}
 
 #[cfg(test)]
 mod tests {
-    use artichoke_core::intern::Intern;
     use std::borrow::Cow;
+
+    use artichoke_core::intern::Intern;
 
     use super::InternerAllSymbols;
     use crate::Symbol;

@@ -1,9 +1,10 @@
-use bstr::ByteSlice;
 use std::error;
 use std::fmt;
 use std::iter::Iterator;
 use std::num::NonZeroU32;
 use std::str::{self, FromStr};
+
+use bstr::ByteSlice;
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::prelude::*;

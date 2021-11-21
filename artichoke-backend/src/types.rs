@@ -1,6 +1,5 @@
-use crate::sys;
-
 pub use crate::core::{Ruby, Rust};
+use crate::sys;
 
 /// Parse a [`Ruby`] type classifier from a [`sys::mrb_value`].
 ///

@@ -26,7 +26,6 @@ pub mod trampoline;
 
 #[doc(inline)]
 pub use spinoso_math::{DomainError, Math, E, PI};
-
 use spinoso_math::{Error as MathError, NotImplementedError as MathNotImplementedError};
 
 impl RubyException for DomainError {

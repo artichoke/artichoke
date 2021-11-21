@@ -96,9 +96,10 @@
 mod readme {}
 
 use core::fmt;
-use scolapasta_string_escape::format_debug_escape_into;
 use std::borrow::Cow;
 use std::error;
+
+use scolapasta_string_escape::format_debug_escape_into;
 
 mod env;
 

@@ -1,6 +1,7 @@
-use chrono::prelude::*;
 use core::cmp::Ordering;
 use core::hash::{Hash, Hasher};
+
+use chrono::prelude::*;
 
 use crate::{ComponentOutOfRangeError, NANOS_IN_SECOND};
 
@@ -281,8 +282,9 @@ impl TryFrom<ToA> for Time {
 
 #[cfg(test)]
 mod leap_second {
-    use super::{Time, ToA, NANOS_IN_SECOND};
     use chrono::prelude::*;
+
+    use super::{Time, ToA, NANOS_IN_SECOND};
 
     #[test]
     fn from_datetime() {
@@ -316,12 +318,14 @@ mod leap_second {
 
 #[cfg(test)]
 mod tests {
-    use super::Time;
-    use chrono::prelude::*;
-    use chrono_tz::Tz;
     use core::cmp::Ordering;
     use core::hash::{Hash, Hasher};
     use std::collections::hash_map::DefaultHasher;
+
+    use chrono::prelude::*;
+    use chrono_tz::Tz;
+
+    use super::Time;
 
     fn date() -> NaiveDateTime {
         // Artichoke's birthday, 2019-04-07T01:30Z

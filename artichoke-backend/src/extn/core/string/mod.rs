@@ -7,8 +7,9 @@ pub struct String;
 #[cfg(test)]
 #[cfg(feature = "core-regexp")]
 mod tests {
-    use crate::test::prelude::*;
     use bstr::ByteSlice;
+
+    use crate::test::prelude::*;
 
     const SUBJECT: &str = "String";
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("string_test.rb");

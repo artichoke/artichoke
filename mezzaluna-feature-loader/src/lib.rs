@@ -36,7 +36,6 @@ pub use loaded_features::LoadedFeatures;
 pub use loader::Loader;
 #[cfg(feature = "rubylib")]
 pub use loader::Rubylib;
-
 #[doc(inline)]
 #[cfg(feature = "disk")]
 pub use same_file::Handle;

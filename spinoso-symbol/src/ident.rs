@@ -48,9 +48,10 @@
 //! assert_eq!("spinoso_symbol=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
 //! ```
 
-use bstr::ByteSlice;
 use core::fmt;
 use core::str::FromStr;
+
+use bstr::ByteSlice;
 
 /// Valid types for Ruby identifiers.
 ///

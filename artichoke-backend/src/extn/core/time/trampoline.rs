@@ -1,9 +1,10 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
+use spinoso_time::MICROS_IN_NANO;
+
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::time::Time;
 use crate::extn::prelude::*;
-use spinoso_time::MICROS_IN_NANO;
 
 // Constructor
 

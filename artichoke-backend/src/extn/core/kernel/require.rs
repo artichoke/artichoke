@@ -1,7 +1,8 @@
 //! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
 
-use bstr::ByteSlice;
 use std::path::{Path, PathBuf};
+
+use bstr::ByteSlice;
 
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::prelude::*;

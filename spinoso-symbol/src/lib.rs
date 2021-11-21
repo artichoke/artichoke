@@ -83,13 +83,13 @@ mod readme {}
 #[cfg(any(feature = "std", test, doctest))]
 extern crate std;
 
-#[cfg(feature = "artichoke")]
-use artichoke_core::intern::Intern;
 use core::borrow::Borrow;
 use core::fmt;
 use core::mem::size_of;
 use core::num::TryFromIntError;
 
+#[cfg(feature = "artichoke")]
+use artichoke_core::intern::Intern;
 #[doc(inline)]
 #[cfg(feature = "artichoke")]
 #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
