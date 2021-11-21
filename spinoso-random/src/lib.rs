@@ -107,8 +107,7 @@ mod rand;
 mod random;
 mod urandom;
 
-pub use random::ruby::Mt;
-pub use random::{new_seed, seed_to_key, Random};
+pub use random::{new_seed, seed_to_key, Mt, Random};
 pub use urandom::urandom;
 
 #[cfg(feature = "random-rand")]
