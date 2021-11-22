@@ -53,8 +53,6 @@ mod chars;
 mod codepoints;
 mod encoding;
 mod eq;
-#[cfg(feature = "ffi")]
-pub mod ffi;
 mod impls;
 mod inspect;
 
