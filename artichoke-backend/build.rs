@@ -102,7 +102,7 @@ mod libmruby {
     use super::{buildpath, enumerate_sources};
 
     fn gems() -> impl Iterator<Item = &'static str> {
-        vec![
+        [
             "mruby-compiler",     // Ruby parser and bytecode generation
             "mruby-error",        // `mrb_raise`, `mrb_protect`
             "mruby-eval",         // eval, instance_eval, and friends
@@ -145,7 +145,7 @@ mod libmruby {
     // ```
     fn wasm_include_dirs() -> impl Iterator<Item = PathBuf> {
         let system = buildpath::crate_root().join("vendor").join("emscripten").join("system");
-        vec![
+        [
             system.join("include").join("compat"),
             system.join("include"),
             system.join("include").join("libc"),
