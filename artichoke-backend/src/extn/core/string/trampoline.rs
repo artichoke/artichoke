@@ -815,7 +815,6 @@ pub fn initialize(interp: &mut Artichoke, mut value: Value, from: Option<Value>)
 }
 
 pub fn initialize_copy(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
-    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     // Safety:
     //
     // The extracted slice is immediately copied to an owned buffer.
@@ -825,18 +824,17 @@ pub fn initialize_copy(interp: &mut Artichoke, mut value: Value, mut other: Valu
         let from = implicitly_convert_to_string(interp, &mut other)?;
         from.to_vec()
     };
-    let replacement = super::String::with_bytes_and_encoding(buf, s.encoding());
-    // Safety:
-    //
-    // The string is reboxed before any intervening operations on the
-    // interpreter.
-    // The string is reboxed without any intervening mruby allocations.
-    unsafe {
-        let old = s.take();
-        drop(old);
-
-        super::String::box_into_value(replacement, value, interp)
+    // If we are calling `initialize_copy` on an already initialized `String`,
+    // pluck out the inner buffer and drop it so we don't leak memory.
+    if let Ok(s) = unsafe { super::String::unbox_from_value(&mut value, interp) } {
+        unsafe {
+            let inner = s.take();
+            drop(inner);
+        }
     }
+    // XXX: This should use the encoding of the given `other`.
+    let replacement = super::String::with_bytes_and_encoding(buf, super::Encoding::Utf8);
+    super::String::box_into_value(replacement, value, interp)
 }
 
 pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
