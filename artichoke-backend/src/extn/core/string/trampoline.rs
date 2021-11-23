@@ -124,9 +124,184 @@ pub fn bytesize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error
     interp.try_convert(bytesize)
 }
 
-pub fn byteslice(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn byteslice(
+    interp: &mut Artichoke,
+    mut value: Value,
+    index: Value,
+    length: Option<Value>,
+) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // ```
+    // [3.0.2] > class A; def to_int; 1; end; end
+    // => :to_int
+    // [3.0.2] > s = "abc"
+    // => "abc"
+    // [3.0.2] > s.byteslice(A.new)
+    // => "b"
+    // [3.0.2] > s.byteslice(//)
+    // (irb):16:in `byteslice': no implicit conversion of Regexp into Integer (TypeError)
+    // 	from (irb):16:in `<main>'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/bin/irb:23:in `load'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/bin/irb:23:in `<main>'
+    // ```
+    let index = implicitly_convert_to_int(interp, index)?;
+
+    // ```
+    // [3.0.2] > s = "abc"
+    // => "abc"
+    // [3.0.2] > s.byteslice(-2, 10)
+    // => "bc"
+    // [3.0.2] > s.byteslice(-3, 10)
+    // => "abc"
+    // [3.0.2] > s.byteslice(-4, 10)
+    // => nil
+    // ```
+    let index = if let Ok(index) = usize::try_from(index) {
+        Some(index)
+    } else {
+        index
+            .checked_neg()
+            .and_then(|index| usize::try_from(index).ok())
+            .and_then(|index| s.len().checked_sub(index))
+    };
+    let index = match index {
+        None => return Ok(Value::nil()),
+        // Short circuit with `nil` if index > len.
+        //
+        // ```
+        // [3.0.1] > s = "abc"
+        // => "abc"
+        // [3.0.1] > s.byteslice(3, 10)
+        // => ""
+        // [3.0.1] > s.byteslice(4, 10)
+        // => nil
+        // ```
+        //
+        // Don't specialize on the case where index == len because the provided
+        // length can change the result. Even if the length argument is not
+        // given, we still need to preserve the encoding of the source string,
+        // so fall through to the happy path below.
+        Some(index) if index > s.len() => return Ok(Value::nil()),
+        Some(index) => index,
+    };
+
+    let length = if let Some(length) = length {
+        length
+    } else {
+        // Per the docs -- https://ruby-doc.org/core-3.0.2/String.html#method-i-byteslice
+        //
+        // > If passed a single Integer, returns a substring of one byte at that position.
+        //
+        // NOTE: Index out a single byte rather than a slice to avoid having
+        // to do an overflow check on the addition.
+        if let Some(&byte) = s.get(index) {
+            let s = super::String::with_bytes_and_encoding(vec![byte], s.encoding());
+            // ```
+            // [3.0.1] > class S < String; end
+            // => nil
+            // [3.0.1] > S.new("abc").byteslice(1, 2).class
+            // => String
+            // ```
+            //
+            // The returned `String` is never frozen:
+            //
+            // ```
+            // [3.0.1] > s = "abc"
+            // => "abc"
+            // [3.0.1] > s.frozen?
+            // => false
+            // [3.0.1] > s.byteslice(1, 2).frozen?
+            // => false
+            // [3.0.1] > t = "abc".freeze
+            // => "abc"
+            // [3.0.1] > t.byteslice(1, 2).frozen?
+            // => false
+            // ```
+            return super::String::alloc_value(s, interp);
+        }
+        return Ok(Value::nil());
+    };
+
+    // ```
+    // [3.0.2] > class A; def to_int; 1; end; end
+    // => :to_int
+    // [3.0.2] > s = "abc"
+    // => "abc"
+    // [3.0.2] > s.byteslice(A.new)
+    // => "b"
+    // [3.0.2] > s.byteslice(A.new, A.new)
+    // => "b"
+    // [3.0.2] > s.byteslice(2, //)
+    // (irb):17:in `byteslice': no implicit conversion of Regexp into Integer (TypeError)
+    // 	from (irb):17:in `<main>'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/bin/irb:23:in `load'
+    // 	from /usr/local/var/rbenv/versions/3.0.2/bin/irb:23:in `<main>
+    // ```
+    let length = implicitly_convert_to_int(interp, length)?;
+
+    // ```
+    // [3.0.2] > s = "abc"
+    // => "abc"
+    // [3.0.2] > s.byteslice(1, -1)
+    // => nil
+    // ```
+    if let Ok(length) = usize::try_from(length) {
+        // ```
+        // [3.0.2] > s = "abc"
+        // => "abc"
+        // [3.0.2] > s.byteslice(2**64, 2**64)
+        // (irb):38:in `byteslice': bignum too big to convert into `long' (RangeError)
+        // 	from (irb):38:in `<main>'
+        // 	from /usr/local/var/rbenv/versions/3.0.2/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+        // 	from /usr/local/var/rbenv/versions/3.0.2/bin/irb:23:in `load'
+        // 	from /usr/local/var/rbenv/versions/3.0.2/bin/irb:23:in `<main>'
+        // ```
+        let end = index
+            .checked_add(length)
+            .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
+        if let Some(slice) = s.get(index..end) {
+            // Encoding from the source string is preserved.
+            //
+            // ```
+            // [3.0.2] > s = "abc"
+            // => "abc"
+            // [3.0.2] > s.encoding
+            // => #<Encoding:UTF-8>
+            // [3.0.2] > s.byteslice(1, 2).encoding
+            // => #<Encoding:UTF-8>
+            // [3.0.2] > t = s.force_encoding(Encoding::ASCII)
+            // => "abc"
+            // [3.0.2] > t.byteslice(1, 2).encoding
+            // => #<Encoding:US-ASCII>
+            // ```
+            let s = super::String::with_bytes_and_encoding(slice.to_vec(), s.encoding());
+            // ```
+            // [3.0.1] > class S < String; end
+            // => nil
+            // [3.0.1] > S.new("abc").byteslice(1, 2).class
+            // => String
+            // ```
+            //
+            // The returned `String` is never frozen:
+            //
+            // ```
+            // [3.0.1] > s = "abc"
+            // => "abc"
+            // [3.0.1] > s.frozen?
+            // => false
+            // [3.0.1] > s.byteslice(1, 2).frozen?
+            // => false
+            // [3.0.1] > t = "abc".freeze
+            // => "abc"
+            // [3.0.1] > t.byteslice(1, 2).frozen?
+            // => false
+            // ```
+            return super::String::alloc_value(s, interp);
+        }
+    }
+    Ok(Value::nil())
 }
 
 pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {

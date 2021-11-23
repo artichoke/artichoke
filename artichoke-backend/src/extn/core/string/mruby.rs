@@ -201,10 +201,12 @@ unsafe extern "C" fn string_bytesize(mrb: *mut sys::mrb_state, slf: sys::mrb_val
 }
 
 unsafe extern "C" fn string_byteslice(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
+    let (index, length) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-    let result = trampoline::byteslice(&mut guard, value);
+    let index = Value::from(index);
+    let length = length.map(Value::from);
+    let result = trampoline::byteslice(&mut guard, value, index, length);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
