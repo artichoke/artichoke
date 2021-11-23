@@ -54,10 +54,12 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("replace", string_replace, sys::mrb_args_req(1))?
         .add_method("reverse", string_reverse, sys::mrb_args_none())?
         .add_method("reverse!", string_reverse_bang, sys::mrb_args_none())?
+        .add_method("rindex", string_rindex, sys::mrb_args_req_and_opt(1, 1))?
         .add_method("scan", string_scan, sys::mrb_args_req(1))?
         .add_method("setbyte", string_setbyte, sys::mrb_args_req(2))?
         .add_method("size", string_length, sys::mrb_args_none())?
         .add_method("slice", string_aref, sys::mrb_args_req(1))?
+        .add_method("slice!", string_slice_bang, sys::mrb_args_req(1))?
         .add_method("split", string_split, sys::mrb_args_opt(2))?
         .add_method("to_f", string_to_f, sys::mrb_args_none())?
         .add_method("to_i", string_to_i, sys::mrb_args_opt(1))?
@@ -565,6 +567,17 @@ unsafe extern "C" fn string_reverse_bang(mrb: *mut sys::mrb_state, slf: sys::mrb
     }
 }
 
+unsafe extern "C" fn string_rindex(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::index(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
 unsafe extern "C" fn string_scan(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (pattern, block) = mrb_get_args!(mrb, required = 1, &block);
     unwrap_interpreter!(mrb, to => guard);
@@ -582,6 +595,17 @@ unsafe extern "C" fn string_setbyte(mrb: *mut sys::mrb_state, slf: sys::mrb_valu
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let result = trampoline::setbyte(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_slice_bang(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::slice_bang(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),

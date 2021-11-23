@@ -364,6 +364,16 @@ pub fn b(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     super::String::alloc_value(dup, interp)
 }
 
+pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let bytes = s
+        .bytes()
+        .map(i64::from)
+        .map(|byte| interp.convert(byte))
+        .collect::<Array>();
+    Array::alloc_value(bytes, interp)
+}
+
 pub fn bytesize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let bytesize = s.bytesize();
@@ -548,16 +558,6 @@ pub fn byteslice(
         }
     }
     Ok(Value::nil())
-}
-
-pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let bytes = s
-        .bytes()
-        .map(i64::from)
-        .map(|byte| interp.convert(byte))
-        .collect::<Array>();
-    Array::alloc_value(bytes, interp)
 }
 
 pub fn capitalize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
@@ -904,6 +904,11 @@ pub fn reverse_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, E
     }
 }
 
+pub fn rindex(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
 pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Option<Block>) -> Result<Value, Error> {
     if let Ruby::Symbol = pattern.ruby_type() {
         let mut message = String::from("wrong argument type ");
@@ -1022,6 +1027,11 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
 }
 
 pub fn setbyte(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    Err(NotImplementedError::new().into())
+}
+
+pub fn slice_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     Err(NotImplementedError::new().into())
 }
