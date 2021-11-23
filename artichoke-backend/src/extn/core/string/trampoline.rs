@@ -674,9 +674,11 @@ pub fn hash(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     Ok(interp.convert(hash))
 }
 
-pub fn include(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn include(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let other_str = unsafe { implicitly_convert_to_string(interp, &mut other)? };
+    let includes = s.index(other_str, None).is_some();
+    Ok(interp.convert(includes))
 }
 
 pub fn index(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
