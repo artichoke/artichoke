@@ -1,5 +1,6 @@
 use core::convert::TryFrom;
 use core::hash::{BuildHasher, Hash, Hasher};
+use core::str;
 
 use artichoke_core::hash::Hash as _;
 use bstr::ByteSlice;
@@ -1036,9 +1037,59 @@ pub fn to_f(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-pub fn to_i(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Result<Value, Error> {
+    fn try_parse(slice: &[u8], base: u32) -> Option<i64> {
+        let s = str::from_utf8(slice).ok()?;
+        i64::from_str_radix(s, base).ok()
+    }
+
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let base = if let Some(base) = base {
+        let base = implicitly_convert_to_int(interp, base)?;
+        let base = u32::try_from(base).map_err(|_| ArgumentError::from(format!("invalid radix {}", base)))?;
+        match base {
+            0 => 10,
+            1 => return Err(ArgumentError::with_message("invalid radix 1").into()),
+            x if x > 36 => return Err(ArgumentError::from(format!("invalid radix {}", x)).into()),
+            x => x,
+        }
+    } else {
+        10_u32
+    };
+    let mut slice = s.as_slice();
+    let mut squeezed = false;
+    // squeeze preceeding zeros.
+    while let Some(&b'0') = slice.get(0) {
+        slice = &slice[1..];
+        squeezed = true;
+    }
+    // Trim leading literal specifier but only if there was a leading 0.
+    if squeezed {
+        #[allow(clippy::match_same_arms)]
+        match (base, slice.get(0).copied()) {
+            (2, Some(b'b' | b'B')) => slice = &slice[1..],
+            (8, Some(b'o' | b'O')) => slice = &slice[1..],
+            (10, Some(b'd' | b'D')) => slice = &slice[1..],
+            (16, Some(b'x' | b'X')) => slice = &slice[1..],
+            _ => {}
+        }
+    }
+
+    if slice.is_empty() {
+        return Ok(interp.convert(0));
+    }
+    loop {
+        // Try to greedily parse the whole string as an int.
+        if let Some(int) = try_parse(slice, base) {
+            return Ok(interp.convert(int));
+        }
+        // if parsing failed, start discarding from the end one byte at a time.
+        if let Some((_, head)) = slice.split_last() {
+            slice = head;
+        } else {
+            return Ok(interp.convert(0));
+        }
+    }
 }
 
 pub fn to_s(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
