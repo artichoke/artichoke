@@ -882,13 +882,26 @@ pub fn replace(interp: &mut Artichoke, value: Value, other: Value) -> Result<Val
 }
 
 pub fn reverse(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let mut reversed = s.clone();
+    reversed.reverse();
+    super::String::alloc_value(reversed, interp)
 }
 
 pub fn reverse_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // Safety:
+    //
+    // The string is reboxed before any intervening operations on the
+    // interpreter.
+    // The string is reboxed without any intervening mruby allocations.
+    unsafe {
+        let string_mut = s.as_inner_mut();
+        string_mut.reverse();
+
+        let s = s.take();
+        super::String::box_into_value(s, value, interp)
+    }
 }
 
 pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Option<Block>) -> Result<Value, Error> {
