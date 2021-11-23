@@ -2459,7 +2459,8 @@ impl String {
                 let last_ascii_byte_index = match self.buf.find_non_ascii_byte() {
                     None => return self.buf.get(index..end).or_else(|| self.buf.get(index..)),
                     Some(idx) if idx >= end => return self.buf.get(index..end).or_else(|| self.buf.get(index..)),
-                    Some(idx) => idx,
+                    Some(idx) if idx < index => idx,
+                    Some(_) => 0,
                 };
                 // Scan for the beginning of the slice
                 let mut slice = &self.buf[last_ascii_byte_index..];
