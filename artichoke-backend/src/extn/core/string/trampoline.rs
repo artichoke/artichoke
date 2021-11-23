@@ -1115,11 +1115,6 @@ pub fn to_s(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     Ok(value)
 }
 
-pub fn to_str(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
-}
-
 pub fn upcase(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     Err(NotImplementedError::new().into())

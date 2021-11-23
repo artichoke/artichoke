@@ -64,7 +64,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("to_f", string_to_f, sys::mrb_args_none())?
         .add_method("to_i", string_to_i, sys::mrb_args_opt(1))?
         .add_method("to_s", string_to_s, sys::mrb_args_none())?
-        .add_method("to_str", string_to_str, sys::mrb_args_none())?
         .add_method("to_sym", string_intern, sys::mrb_args_none())?
         .add_method("upcase", string_upcase, sys::mrb_args_any())?
         .add_method("upcase!", string_upcase_bang, sys::mrb_args_any())?
@@ -654,17 +653,6 @@ unsafe extern "C" fn string_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let value = Value::from(slf);
     // TODO: dup `slf` when slf is a subclass of `String`.
     let result = trampoline::to_s(&mut guard, value);
-    match result {
-        Ok(value) => value.inner(),
-        Err(exception) => error::raise(guard, exception),
-    }
-}
-
-unsafe extern "C" fn string_to_str(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
-    unwrap_interpreter!(mrb, to => guard);
-    let value = Value::from(slf);
-    let result = trampoline::to_str(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),

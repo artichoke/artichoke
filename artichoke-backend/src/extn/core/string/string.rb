@@ -974,10 +974,11 @@ class String
   # def to_s; end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-to_str
-  #
-  # NOTE: Implemented in native code.
-  #
-  # def to_str; end
+  def to_str
+    return self if self.class == String
+
+    String.new(self)
+  end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-to_sym
   #
