@@ -272,13 +272,10 @@ unsafe extern "C" fn mrb_str_dup(mrb: *mut sys::mrb_state, s: sys::mrb_value) ->
             let dup_basic = sys::mrb_sys_basic_ptr(value).cast::<sys::RString>();
             (*dup_basic).c = class;
 
-            value
-        } else {
-            Value::nil().into()
+            return value;
         }
-    } else {
-        Value::nil().into()
     }
+    Value::nil().into()
 }
 
 // MRB_API mrb_value mrb_str_substr(mrb_state *mrb, mrb_value str, mrb_int beg, mrb_int len)
