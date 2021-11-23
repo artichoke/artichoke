@@ -135,10 +135,12 @@ unsafe extern "C" fn string_equals_equals(mrb: *mut sys::mrb_state, slf: sys::mr
 }
 
 unsafe extern "C" fn string_aref(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
+    let (first, second) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-    let result = trampoline::aref(&mut guard, value);
+    let first = Value::from(first);
+    let second = second.map(Value::from);
+    let result = trampoline::aref(&mut guard, value, first, second);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
