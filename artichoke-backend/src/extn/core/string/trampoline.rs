@@ -233,8 +233,51 @@ pub fn aref(
     // 	from /usr/local/var/rbenv/versions/3.0.1/bin/irb:23:in `load'
     // 	from /usr/local/var/rbenv/versions/3.0.1/bin/irb:23:in `<main>'
     // 	```
-    if let Ok(_substring) = unsafe { super::String::unbox_from_value(&mut first, interp) } {
-        return Err(NotImplementedError::with_message("String#[] with String argument").into());
+    if let Ok(substring) = unsafe { super::String::unbox_from_value(&mut first, interp) } {
+        if s.index(&*substring, None).is_some() {
+            // Indexing with a `String` returns a newly allocated object that
+            // has the same encoding as the index, regardless of the encoding on
+            // the receiver.
+            //
+            // ```
+            // [3.0.2] > s = "abc"
+            // => "abc"
+            // [3.0.2] > s.encoding
+            // => #<Encoding:UTF-8>
+            // [3.0.2] > s["bc"].encoding
+            // => #<Encoding:UTF-8>
+            // [3.0.2] > t = s.force_encoding(Encoding::ASCII_8BIT)
+            // => "abc"
+            // [3.0.2] > t.encoding
+            // => #<Encoding:ASCII-8BIT>
+            // [3.0.2] > t["bc"].encoding
+            // => #<Encoding:UTF-8>
+            // [3.0.2] > x = "bc"
+            // => "bc"
+            // [3.0.2] > x.encoding
+            // => #<Encoding:UTF-8>
+            // [3.0.2] > x.object_id
+            // => 260
+            // [3.0.2] > y = t[x]
+            // => "bc"
+            // [3.0.2] > y.encoding
+            // => #<Encoding:UTF-8>
+            // [3.0.2] > y.object_id
+            // => 280
+            // [3.0.2] > z = "bc".force_encoding(Encoding::ASCII)
+            // => "bc"
+            // [3.0.2] > y[z].encoding
+            // => #<Encoding:US-ASCII>
+            // [3.0.2] > t[z].encoding
+            // => #<Encoding:US-ASCII>
+            // [3.0.2] > s[z].encoding
+            // => #<Encoding:US-ASCII>
+            // ```
+            let encoding = substring.encoding();
+            let s = super::String::with_bytes_and_encoding(substring.to_vec(), encoding);
+            return super::String::alloc_value(s, interp);
+        }
+        return Ok(Value::nil());
     }
     let index = implicitly_convert_to_int(interp, first)?;
 
