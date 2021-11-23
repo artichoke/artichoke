@@ -2372,6 +2372,45 @@ impl String {
         }
     }
 
+    #[inline]
+    #[must_use]
+    pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
+        let end = index.checked_add(1)?;
+        match self.encoding {
+            Encoding::Ascii | Encoding::Binary => self.buf.get(index..end),
+            Encoding::Utf8 => {
+                let last_ascii_byte_index = match self.buf.find_non_ascii_byte() {
+                    None => return self.buf.get(index..end),
+                    Some(idx) if idx >= end => return self.buf.get(index..end),
+                    Some(idx) => idx,
+                };
+                let mut slice = &self.buf[last_ascii_byte_index..];
+                let mut remaining = index - last_ascii_byte_index;
+                loop {
+                    if slice.is_empty() {
+                        return None;
+                    }
+                    let (ch, size) = bstr::decode_utf8(slice);
+                    if remaining == 0 {
+                        if ch.is_some() {
+                            return Some(&slice[..size]);
+                        }
+                        return Some(&slice[..1]);
+                    }
+                    if ch.is_some() {
+                        slice = &slice[size..];
+                        remaining -= 1;
+                        continue;
+                    }
+                    if remaining < size {
+                        return Some(&slice[remaining..=remaining]);
+                    }
+                    remaining -= size;
+                }
+            }
+        }
+    }
+
     /// Returns true for a `String` which is encoded correctly.
     ///
     /// For this method to return true, `String`s with [conventionally UTF-8]
