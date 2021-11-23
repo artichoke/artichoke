@@ -128,19 +128,26 @@ unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value,
     unwrap_interpreter!(mrb, to => guard, or_else = s);
     let mut value = s.into();
     if let Ok(mut string) = String::unbox_from_value(&mut value, &mut guard) {
-        let additional = usize::try_from(len)
-            .ok()
-            .and_then(|len| len.checked_sub(string.len()))
-            .unwrap_or(0);
-
+        let len = if let Ok(len) = usize::try_from(len) {
+            len
+        } else {
+            return s;
+        };
         // Safety:
         //
         // The string is repacked before any intervening use of the interpreter.
         // The string is repacked before any intervening mruby heap allocations.
         let string_mut = string.as_inner_mut();
-        if additional > 0 {
-            string_mut.reserve(additional);
+
+        if let Some(additional) = len.checked_sub(string_mut.len()) {
+            if additional > 0 {
+                string_mut.reserve(additional);
+            }
+        } else {
+            // If the given length is less than the length of the `String`, truncate.
+            string_mut.truncate(len);
         }
+
         let inner = string.take();
         let value = String::box_into_value(inner, value, &mut guard).expect("String reboxing should not fail");
 
