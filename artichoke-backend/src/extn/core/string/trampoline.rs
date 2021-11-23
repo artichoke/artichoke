@@ -654,14 +654,34 @@ pub fn chars(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-pub fn chomp(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn chomp(interp: &mut Artichoke, mut value: Value, separator: Option<Value>) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let mut dup = s.clone();
+    if let Some(mut separator) = separator {
+        let sep = unsafe { implicitly_convert_to_string(interp, &mut separator)? };
+        let _ = dup.chomp(Some(sep));
+    } else {
+        let _ = dup.chomp(None::<&[u8]>);
+    }
+    super::String::alloc_value(dup, interp)
 }
 
-pub fn chomp_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn chomp_bang(interp: &mut Artichoke, mut value: Value, separator: Option<Value>) -> Result<Value, Error> {
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    unsafe {
+        let string_mut = s.as_inner_mut();
+        let modified = if let Some(mut separator) = separator {
+            let sep = implicitly_convert_to_string(interp, &mut separator)?;
+            string_mut.chomp(Some(sep))
+        } else {
+            string_mut.chomp(None::<&[u8]>)
+        };
+        if modified {
+            let s = s.take();
+            return super::String::box_into_value(s, value, interp);
+        }
+    }
+    Ok(value)
 }
 
 pub fn chop(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
