@@ -170,7 +170,7 @@ pub fn aref(
             let end = index
                 .checked_add(length)
                 .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
-            if let Some(slice) = s.get(index..end) {
+            if let Some(slice) = s.get_char_slice(index..end) {
                 // Encoding from the source string is preserved.
                 //
                 // ```
