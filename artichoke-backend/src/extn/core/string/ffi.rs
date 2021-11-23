@@ -35,10 +35,14 @@ unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> 
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const i8, len: usize) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
-    let bytes = slice::from_raw_parts(p.cast::<u8>(), len);
-    let bytes = bytes.to_vec();
-    let result = String::utf8(bytes);
-    let result = String::alloc_value(result, &mut guard);
+    let s = if p.is_null() {
+        String::utf8(vec![0; len])
+    } else {
+        let bytes = slice::from_raw_parts(p.cast::<u8>(), len);
+        let bytes = bytes.to_vec();
+        String::utf8(bytes)
+    };
+    let result = String::alloc_value(s, &mut guard);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
