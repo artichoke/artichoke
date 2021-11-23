@@ -269,11 +269,8 @@ pub fn aref(
         // [3.0.1] > s[4]
         // => nil
         // ```
-        //
-        // NOTE: Index out a single byte rather than a slice to avoid having
-        // to do an overflow check on the addition.
-        if let Some(&byte) = s.get(index) {
-            let s = super::String::with_bytes_and_encoding(vec![byte], s.encoding());
+        if let Some(bytes) = s.get_char(index) {
+            let s = super::String::with_bytes_and_encoding(bytes.to_vec(), s.encoding());
             return super::String::alloc_value(s, interp);
         }
     }
