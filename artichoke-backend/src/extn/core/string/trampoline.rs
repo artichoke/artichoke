@@ -13,6 +13,7 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
+use crate::sys::protect;
 
 pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Value, Error> {
     let count = implicitly_convert_to_int(interp, count)?;
@@ -215,6 +216,31 @@ pub fn aref(
     #[cfg(feature = "core-regexp")]
     if let Ok(_regexp) = unsafe { Regexp::unbox_from_value(&mut first, interp) } {
         return Err(NotImplementedError::with_message("String#[] with Regexp argument").into());
+    }
+    if let Some(protect::Range { start: index, len }) = first.is_range(interp, s.char_len() as i64)? {
+        let index = if let Ok(index) = usize::try_from(index) {
+            Some(index)
+        } else {
+            index
+                .checked_neg()
+                .and_then(|index| usize::try_from(index).ok())
+                .and_then(|index| s.len().checked_sub(index))
+        };
+        let index = match index {
+            None => return Ok(Value::nil()),
+            Some(index) if index > s.len() => return Ok(Value::nil()),
+            Some(index) => index,
+        };
+        if let Ok(length) = usize::try_from(len) {
+            let end = index
+                .checked_add(length)
+                .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
+            if let Some(slice) = s.get_char_slice(index..end) {
+                let s = super::String::with_bytes_and_encoding(slice.to_vec(), s.encoding());
+                return super::String::alloc_value(s, interp);
+            }
+        }
+        return Ok(Value::nil());
     }
     // The overload of `String#[]` that takes a `String` **only** takes `String`s.
     // No implicit conversion is performed.
