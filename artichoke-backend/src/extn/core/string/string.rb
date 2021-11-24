@@ -885,6 +885,8 @@ class String
 
     raise NotImplementedError, "String#split with block is not supported" unless block.nil?
 
+    limit = -1 if limit_not_set
+
     if pattern.is_a?(Regexp)
       s = self
       chunks = []
@@ -902,7 +904,7 @@ class String
       return chunks
     end
 
-    pattern = $; if pattern.nil?
+    pattern = $; if pattern.nil? # rubocop:disable Style/SpecialGlobalVars
     pattern = ' ' if pattern.nil?
 
     if !pattern.is_a?(String)
@@ -916,7 +918,7 @@ class String
     s = self
     chunks = []
     while !s.empty?
-      if limit&.positive? && chunks.length == limit - 1
+      if limit.positive? && chunks.length == limit - 1
         chunks << s
         return chunks
       end
