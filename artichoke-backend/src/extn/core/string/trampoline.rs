@@ -786,9 +786,24 @@ pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
     }
 }
 
-pub fn getbyte(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn getbyte(interp: &mut Artichoke, mut value: Value, index: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let index = implicitly_convert_to_int(interp, index)?;
+    let index = if let Ok(index) = usize::try_from(index) {
+        index
+    } else {
+        let index = index
+            .checked_neg()
+            .and_then(|index| usize::try_from(index).ok())
+            .and_then(|index| s.len().checked_sub(index));
+        if let Some(index) = index {
+            index
+        } else {
+            return Ok(Value::nil());
+        }
+    };
+    let byte = s.get(index).copied().map(i64::from);
+    Ok(interp.convert(byte))
 }
 
 pub fn hash(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
