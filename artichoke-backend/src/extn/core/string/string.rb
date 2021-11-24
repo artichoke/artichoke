@@ -691,7 +691,17 @@ class String
   def lstrip
     strip_pointer = 0
     string_end = length - 1
-    strip_pointer += 1 while strip_pointer <= string_end && " \f\n\r\t\v".include?(self[strip_pointer])
+
+    # Whitespace is defined as any of the following characters:
+    #
+    # - null
+    # - horizontal tab
+    # - line feed
+    # - vertical tab
+    # - form feed
+    # - carriage return
+    # - space
+    strip_pointer += 1 while strip_pointer <= string_end && "\x00\t\n\v\f\r ".include?(self[strip_pointer])
     return '' if string_end.zero?
 
     dup[strip_pointer..string_end]
@@ -801,7 +811,17 @@ class String
   def rstrip
     strip_pointer = length - 1
     string_start = 0
-    strip_pointer -= 1 while strip_pointer >= string_start && " \f\n\r\t\v".include?(self[strip_pointer])
+
+    # Whitespace is defined as any of the following characters:
+    #
+    # - null
+    # - horizontal tab
+    # - line feed
+    # - vertical tab
+    # - form feed
+    # - carriage return
+    # - space
+    strip_pointer -= 1 while strip_pointer >= string_start && "\x00\t\n\v\f\r ".include?(self[strip_pointer])
     return '' if strip_pointer.zero?
 
     dup[string_start..strip_pointer]
