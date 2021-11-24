@@ -862,8 +862,22 @@ class String
   # def split(pattern=nil, [limit], &block); end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-squeeze
-  def squeeze(*_args)
-    raise NotImplementedError
+  def squeeze(*other_str)
+    return "" if empty?
+    raise NotImplementedError, "String#squeeze with arguments is not implemented" unless other_str.empty?
+
+    iter = chars
+    head, *tail = iter
+    runs = [head]
+    last_seen = head
+
+    tail.each do |ch|
+      next if ch == last_seen
+
+      last_seen = ch
+      runs << ch
+    end
+    runs.join
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-squeeze-21
