@@ -698,8 +698,9 @@ pub fn chop_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Erro
 }
 
 pub fn chr(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let chr = s.chr();
+    interp.try_convert_mut(chr)
 }
 
 pub fn clear(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
