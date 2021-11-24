@@ -571,10 +571,12 @@ unsafe extern "C" fn string_reverse_bang(mrb: *mut sys::mrb_state, slf: sys::mrb
 }
 
 unsafe extern "C" fn string_rindex(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
+    let (needle, offset) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-    let result = trampoline::rindex(&mut guard, value);
+    let needle = Value::from(needle);
+    let offset = offset.map(Value::from);
+    let result = trampoline::rindex(&mut guard, value, needle, offset);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
