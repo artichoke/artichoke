@@ -506,10 +506,12 @@ mod tests {
         let mut arena = interp.create_arena_savepoint().unwrap();
         let live = arena.eval(b"'dead'").unwrap();
         assert!(!live.is_dead(&mut arena));
+
         let dead = live;
         let live = arena.eval(b"'live'").unwrap();
         arena.restore();
         interp.full_gc().unwrap();
+
         // unreachable objects are dead after a full garbage collection
         assert!(dead.is_dead(&mut interp));
         // the result of the most recent eval is always live even after a full
@@ -539,15 +541,18 @@ mod tests {
         let mut arena = interp.create_arena_savepoint().unwrap();
         let live = arena.eval(b"27").unwrap();
         assert!(!live.is_dead(&mut arena));
+
         let immediate = live;
         let live = arena.eval(b"64").unwrap();
         arena.restore();
         interp.full_gc().unwrap();
+
         // immediate objects are never dead
         assert!(!immediate.is_dead(&mut interp));
         // the result of the most recent eval is always live even after a full
         // garbage collection
         assert!(!live.is_dead(&mut interp));
+
         // `Fixnum`s are immediate even if they are created directly without an
         // interpreter.
         let fixnum = Convert::<_, Value>::convert(&*interp, 99);
@@ -555,27 +560,41 @@ mod tests {
     }
 
     #[test]
-    fn funcall() {
+    fn funcall_nil_nil() {
         let mut interp = interpreter().unwrap();
+
         let nil = Value::nil();
-        let nil_is_nil = nil
+        let result = nil
             .funcall(&mut interp, "nil?", &[], None)
-            .and_then(|value| value.try_convert_into::<bool>(&interp))
-            .unwrap();
+            .and_then(|value| value.try_convert_into::<bool>(&interp));
+        let nil_is_nil = unwrap_or_panic_with_backtrace(&mut interp, "Value::funcall", result);
         assert!(nil_is_nil);
+    }
+
+    #[test]
+    fn funcall_string_nil() {
+        let mut interp = interpreter().unwrap();
+
         let s = interp.try_convert_mut("foo").unwrap();
-        let string_is_nil = s
+        let result = s
             .funcall(&mut interp, "nil?", &[], None)
-            .and_then(|value| value.try_convert_into::<bool>(&interp))
-            .unwrap();
+            .and_then(|value| value.try_convert_into::<bool>(&interp));
+        let string_is_nil = unwrap_or_panic_with_backtrace(&mut interp, "Value::funcall", result);
         assert!(!string_is_nil);
-        #[cfg(feature = "core-regexp")]
-        {
-            let delim = interp.try_convert_mut("").unwrap();
-            let split = s.funcall(&mut interp, "split", &[delim], None).unwrap();
-            let split = split.try_convert_into_mut::<Vec<&str>>(&mut interp).unwrap();
-            assert_eq!(split, vec!["f", "o", "o"]);
-        }
+    }
+
+    #[test]
+    #[cfg(feature = "core-regexp")]
+    fn funcall_string_split_regexp() {
+        let mut interp = interpreter().unwrap();
+
+        let s = interp.try_convert_mut("foo").unwrap();
+        let delim = interp.try_convert_mut("").unwrap();
+        let result = s
+            .funcall(&mut interp, "split", &[delim], None)
+            .and_then(|value| value.try_convert_into_mut::<Vec<&str>>(&mut interp));
+        let split = unwrap_or_panic_with_backtrace(&mut interp, "Value::funcall", result);
+        assert_eq!(split, vec!["f", "o", "o"]);
     }
 
     #[test]
@@ -583,10 +602,10 @@ mod tests {
         let mut interp = interpreter().unwrap();
         let nil = Value::nil();
         let s = interp.try_convert_mut("foo").unwrap();
-        let eql = nil
+        let result = nil
             .funcall(&mut interp, "==", &[s], None)
-            .and_then(|value| value.try_convert_into::<bool>(&interp))
-            .unwrap();
+            .and_then(|value| value.try_convert_into::<bool>(&interp));
+        let eql = unwrap_or_panic_with_backtrace(&mut interp, "Value::funcall", result);
         assert!(!eql);
     }
 

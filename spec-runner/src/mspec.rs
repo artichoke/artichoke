@@ -95,50 +95,65 @@ where
 
 #[cfg(test)]
 mod tests {
+    use artichoke::prelude::*;
+    use bstr::ByteSlice;
+
     use super::{init, run, Formatter};
+
+    fn load_mspec_with_formatter(formatter: Formatter) {
+        let mut interp = artichoke::interpreter().unwrap();
+        init(&mut interp).unwrap();
+        match run(&mut interp, formatter, vec![]) {
+            Ok(true) => {}
+            Ok(false) => {
+                panic!("mspec::run with {:?} formatter failed", formatter);
+            }
+            Err(exc) => {
+                let backtrace = exc.vm_backtrace(&mut interp);
+                let backtrace = backtrace
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|line| format!("{:?}", line.as_bstr()))
+                    .collect::<Vec<_>>();
+                let backtrace = backtrace.join("\n");
+                panic!(
+                    "mspec::run tests with {:?} formatter failed with message: {:?} and backtrace:\n{}",
+                    formatter,
+                    exc.message().as_bstr(),
+                    backtrace
+                );
+            }
+        }
+        interp.close();
+    }
 
     #[test]
     fn mspec_framework_loads() {
-        let mut interp = artichoke::interpreter().unwrap();
-        init(&mut interp).unwrap();
         // should not panic
-        assert!(run(&mut interp, Formatter::default(), vec![]).unwrap());
-        interp.close();
+        load_mspec_with_formatter(Formatter::default());
     }
 
     #[test]
     fn artichoke_formatter_succeeds() {
-        let mut interp = artichoke::interpreter().unwrap();
-        init(&mut interp).unwrap();
         // should not panic
-        assert!(run(&mut interp, Formatter::Artichoke, vec![]).unwrap());
-        interp.close();
+        load_mspec_with_formatter(Formatter::Artichoke);
     }
 
     #[test]
     fn summary_formatter_succeeds() {
-        let mut interp = artichoke::interpreter().unwrap();
-        init(&mut interp).unwrap();
         // should not panic
-        assert!(run(&mut interp, Formatter::Summary, vec![]).unwrap());
-        interp.close();
+        load_mspec_with_formatter(Formatter::Summary);
     }
 
     #[test]
     fn tagger_formatter_succeeds() {
-        let mut interp = artichoke::interpreter().unwrap();
-        init(&mut interp).unwrap();
         // should not panic
-        assert!(run(&mut interp, Formatter::Tagger, vec![]).unwrap());
-        interp.close();
+        load_mspec_with_formatter(Formatter::Tagger);
     }
 
     #[test]
     fn yaml_formatter_succeeds() {
-        let mut interp = artichoke::interpreter().unwrap();
-        init(&mut interp).unwrap();
         // should not panic
-        assert!(run(&mut interp, Formatter::Yaml, vec![]).unwrap());
-        interp.close();
+        load_mspec_with_formatter(Formatter::Yaml);
     }
 }

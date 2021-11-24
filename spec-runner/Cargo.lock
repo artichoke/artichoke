@@ -584,6 +584,7 @@ name = "spec-runner"
 version = "0.6.0"
 dependencies = [
  "artichoke",
+ "bstr",
  "clap",
  "rust-embed",
  "serde",
