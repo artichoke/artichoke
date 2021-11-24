@@ -877,9 +877,61 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-split
   #
-  # NOTE: Implemented in native code.
-  #
-  # def split(pattern=nil, [limit], &block); end
+  # XXX: This should probably be implemented in native code.
+  # TODO: Lots of branches are not implemented.
+  def split(pattern=nil, limit = (limit_not_set = true), &block)
+    return [] if empty?
+    return [dup] if limit == 1
+
+    raise NotImplementedError, "String#split with block is not supported" unless block.nil?
+
+    if pattern.is_a?(Regexp)
+      s = self
+      chunks = []
+      while !s.empty?
+        match = pattern.match(s)
+        if match.nil?
+          chunks << s
+          return chunks
+        end
+        chunks << s[0, match.begin(0)]
+        s = s[match.end(0), -1]
+
+        return chunks if s.nil?
+      end
+      return chunks
+    end
+
+    pattern = $; if pattern.nil?
+    pattern = ' ' if pattern.nil?
+
+    if !pattern.is_a?(String)
+      converted = pattern.to_str
+      raise TypeError, "can't convert #{pattern.class} to String (#{pattern.class}#to_str gives #{converted.class})" unless converted.is_a?(String)
+
+      pattern = converted
+    end
+    return chars if pattern.empty?
+
+    s = self
+    chunks = []
+    while !s.empty?
+      if limit&.positive? && chunks.length == limit - 1
+        chunks << s
+        return chunks
+      end
+
+      index = s.index(pattern)
+      if index.nil?
+        chunks << s
+        return chunks
+      end
+      chunks << s[0, index]
+      s = s[index + pattern.length..-1]
+    end
+    chunks << ""
+    chunks
+  end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-squeeze
   def squeeze(*other_str)
