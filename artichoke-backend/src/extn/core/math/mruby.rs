@@ -15,32 +15,32 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     }
     let spec = module::Spec::new(interp, "Math", MATH_CSTR, None)?;
     module::Builder::for_spec(interp, &spec)
-        .add_module_method("acos", artichoke_math_acos, sys::mrb_args_req(1))?
-        .add_module_method("acosh", artichoke_math_acosh, sys::mrb_args_req(1))?
-        .add_module_method("asin", artichoke_math_asin, sys::mrb_args_req(1))?
-        .add_module_method("asinh", artichoke_math_asinh, sys::mrb_args_req(1))?
-        .add_module_method("atan", artichoke_math_atan, sys::mrb_args_req(1))?
-        .add_module_method("atan2", artichoke_math_atan2, sys::mrb_args_req(2))?
-        .add_module_method("atanh", artichoke_math_atanh, sys::mrb_args_req(1))?
-        .add_module_method("cbrt", artichoke_math_cbrt, sys::mrb_args_req(1))?
-        .add_module_method("cos", artichoke_math_cos, sys::mrb_args_req(1))?
-        .add_module_method("cosh", artichoke_math_cosh, sys::mrb_args_req(1))?
-        .add_module_method("erf", artichoke_math_erf, sys::mrb_args_req(1))?
-        .add_module_method("erfc", artichoke_math_erfc, sys::mrb_args_req(1))?
-        .add_module_method("exp", artichoke_math_exp, sys::mrb_args_req(1))?
-        .add_module_method("frexp", artichoke_math_frexp, sys::mrb_args_req(1))?
-        .add_module_method("gamma", artichoke_math_gamma, sys::mrb_args_req(1))?
-        .add_module_method("hypot", artichoke_math_hypot, sys::mrb_args_req(2))?
-        .add_module_method("ldexp", artichoke_math_ldexp, sys::mrb_args_req(2))?
-        .add_module_method("lgamma", artichoke_math_lgamma, sys::mrb_args_req(1))?
-        .add_module_method("log", artichoke_math_log, sys::mrb_args_req_and_opt(1, 1))?
-        .add_module_method("log10", artichoke_math_log10, sys::mrb_args_req(1))?
-        .add_module_method("log2", artichoke_math_log2, sys::mrb_args_req(1))?
-        .add_module_method("sin", artichoke_math_sin, sys::mrb_args_req(1))?
-        .add_module_method("sinh", artichoke_math_sinh, sys::mrb_args_req(1))?
-        .add_module_method("sqrt", artichoke_math_sqrt, sys::mrb_args_req(1))?
-        .add_module_method("tan", artichoke_math_tan, sys::mrb_args_req(1))?
-        .add_module_method("tanh", artichoke_math_tanh, sys::mrb_args_req(1))?
+        .add_module_method("acos", math_acos, sys::mrb_args_req(1))?
+        .add_module_method("acosh", math_acosh, sys::mrb_args_req(1))?
+        .add_module_method("asin", math_asin, sys::mrb_args_req(1))?
+        .add_module_method("asinh", math_asinh, sys::mrb_args_req(1))?
+        .add_module_method("atan", math_atan, sys::mrb_args_req(1))?
+        .add_module_method("atan2", math_atan2, sys::mrb_args_req(2))?
+        .add_module_method("atanh", math_atanh, sys::mrb_args_req(1))?
+        .add_module_method("cbrt", math_cbrt, sys::mrb_args_req(1))?
+        .add_module_method("cos", math_cos, sys::mrb_args_req(1))?
+        .add_module_method("cosh", math_cosh, sys::mrb_args_req(1))?
+        .add_module_method("erf", math_erf, sys::mrb_args_req(1))?
+        .add_module_method("erfc", math_erfc, sys::mrb_args_req(1))?
+        .add_module_method("exp", math_exp, sys::mrb_args_req(1))?
+        .add_module_method("frexp", math_frexp, sys::mrb_args_req(1))?
+        .add_module_method("gamma", math_gamma, sys::mrb_args_req(1))?
+        .add_module_method("hypot", math_hypot, sys::mrb_args_req(2))?
+        .add_module_method("ldexp", math_ldexp, sys::mrb_args_req(2))?
+        .add_module_method("lgamma", math_lgamma, sys::mrb_args_req(1))?
+        .add_module_method("log", math_log, sys::mrb_args_req_and_opt(1, 1))?
+        .add_module_method("log10", math_log10, sys::mrb_args_req(1))?
+        .add_module_method("log2", math_log2, sys::mrb_args_req(1))?
+        .add_module_method("sin", math_sin, sys::mrb_args_req(1))?
+        .add_module_method("sinh", math_sinh, sys::mrb_args_req(1))?
+        .add_module_method("sqrt", math_sqrt, sys::mrb_args_req(1))?
+        .add_module_method("tan", math_tan, sys::mrb_args_req(1))?
+        .add_module_method("tanh", math_tanh, sys::mrb_args_req(1))?
         .define()?;
 
     let domainerror = class::Spec::new(
@@ -62,7 +62,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-unsafe extern "C" fn artichoke_math_acos(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_acos(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -73,7 +73,7 @@ unsafe extern "C" fn artichoke_math_acos(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_acosh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_acosh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -84,7 +84,7 @@ unsafe extern "C" fn artichoke_math_acosh(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_asin(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_asin(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -95,7 +95,7 @@ unsafe extern "C" fn artichoke_math_asin(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_asinh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_asinh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -106,7 +106,7 @@ unsafe extern "C" fn artichoke_math_asinh(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_atan(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_atan(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -117,7 +117,7 @@ unsafe extern "C" fn artichoke_math_atan(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_atan2(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_atan2(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let (value, other) = mrb_get_args!(mrb, required = 2);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -129,7 +129,7 @@ unsafe extern "C" fn artichoke_math_atan2(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_atanh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_atanh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -140,7 +140,7 @@ unsafe extern "C" fn artichoke_math_atanh(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_cbrt(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_cbrt(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -151,7 +151,7 @@ unsafe extern "C" fn artichoke_math_cbrt(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_cos(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_cos(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -162,7 +162,7 @@ unsafe extern "C" fn artichoke_math_cos(mrb: *mut sys::mrb_state, _slf: sys::mrb
     }
 }
 
-unsafe extern "C" fn artichoke_math_cosh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_cosh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -173,7 +173,7 @@ unsafe extern "C" fn artichoke_math_cosh(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_erf(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_erf(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -184,7 +184,7 @@ unsafe extern "C" fn artichoke_math_erf(mrb: *mut sys::mrb_state, _slf: sys::mrb
     }
 }
 
-unsafe extern "C" fn artichoke_math_erfc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_erfc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -195,7 +195,7 @@ unsafe extern "C" fn artichoke_math_erfc(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_exp(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_exp(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -206,7 +206,7 @@ unsafe extern "C" fn artichoke_math_exp(mrb: *mut sys::mrb_state, _slf: sys::mrb
     }
 }
 
-unsafe extern "C" fn artichoke_math_frexp(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_frexp(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -221,7 +221,7 @@ unsafe extern "C" fn artichoke_math_frexp(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_gamma(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_gamma(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -232,7 +232,7 @@ unsafe extern "C" fn artichoke_math_gamma(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_hypot(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_hypot(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let (value, other) = mrb_get_args!(mrb, required = 2);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -244,7 +244,7 @@ unsafe extern "C" fn artichoke_math_hypot(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_ldexp(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_ldexp(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let (fraction, exponent) = mrb_get_args!(mrb, required = 2);
     unwrap_interpreter!(mrb, to => guard);
     let fraction = Value::from(fraction);
@@ -256,7 +256,7 @@ unsafe extern "C" fn artichoke_math_ldexp(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_lgamma(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_lgamma(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -271,7 +271,7 @@ unsafe extern "C" fn artichoke_math_lgamma(mrb: *mut sys::mrb_state, _slf: sys::
     }
 }
 
-unsafe extern "C" fn artichoke_math_log(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_log(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let (value, base) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -283,7 +283,7 @@ unsafe extern "C" fn artichoke_math_log(mrb: *mut sys::mrb_state, _slf: sys::mrb
     }
 }
 
-unsafe extern "C" fn artichoke_math_log10(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_log10(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -294,7 +294,7 @@ unsafe extern "C" fn artichoke_math_log10(mrb: *mut sys::mrb_state, _slf: sys::m
     }
 }
 
-unsafe extern "C" fn artichoke_math_log2(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_log2(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -305,7 +305,7 @@ unsafe extern "C" fn artichoke_math_log2(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_sin(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_sin(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -316,7 +316,7 @@ unsafe extern "C" fn artichoke_math_sin(mrb: *mut sys::mrb_state, _slf: sys::mrb
     }
 }
 
-unsafe extern "C" fn artichoke_math_sinh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_sinh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -327,7 +327,7 @@ unsafe extern "C" fn artichoke_math_sinh(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_sqrt(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_sqrt(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -338,7 +338,7 @@ unsafe extern "C" fn artichoke_math_sqrt(mrb: *mut sys::mrb_state, _slf: sys::mr
     }
 }
 
-unsafe extern "C" fn artichoke_math_tan(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_tan(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
@@ -349,7 +349,7 @@ unsafe extern "C" fn artichoke_math_tan(mrb: *mut sys::mrb_state, _slf: sys::mrb
     }
 }
 
-unsafe extern "C" fn artichoke_math_tanh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn math_tanh(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
