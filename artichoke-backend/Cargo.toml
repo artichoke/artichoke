@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-backend"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 description = "Embeddable VM implementation for Artichoke Ruby"
@@ -60,7 +60,7 @@ core-math = ["spinoso-math"]
 core-math-full = ["core-math", "spinoso-math/full"]
 core-random = ["spinoso-random"]
 core-regexp = ["spinoso-regexp"]
-core-regexp-oniguruma = ["spinoso-regexp/oniguruma", "onig"]
+core-regexp-oniguruma = ["core-regexp", "spinoso-regexp/oniguruma", "onig"]
 core-time = ["spinoso-time"]
 
 load-path-native-file-system-loader = ["artichoke-load-path/native-file-system-loader"]
