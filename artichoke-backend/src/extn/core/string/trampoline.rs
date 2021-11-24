@@ -1,4 +1,5 @@
 use core::convert::TryFrom;
+use core::fmt::Write as _;
 use core::hash::{BuildHasher, Hash, Hasher};
 use core::str;
 
@@ -794,8 +795,8 @@ pub fn getbyte(interp: &mut Artichoke, mut value: Value, index: Value) -> Result
     } else {
         let index = index
             .checked_neg()
-            .and_then(|index| usize::try_from(index).ok())
-            .and_then(|index| s.len().checked_sub(index));
+            .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
+        let index = usize::try_from(index).ok().and_then(|index| s.len().checked_sub(index));
         if let Some(index) = index {
             index
         } else {
@@ -1136,9 +1137,73 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
     Err(TypeError::from(message).into())
 }
 
-pub fn setbyte(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Value) -> Result<Value, Error> {
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let index = implicitly_convert_to_int(interp, index)?;
+    let index = if let Ok(index) = usize::try_from(index) {
+        index
+    } else {
+        let idx = index
+            .checked_neg()
+            .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
+        let idx = usize::try_from(idx).ok().and_then(|index| s.len().checked_sub(index));
+        if let Some(idx) = idx {
+            idx
+        } else {
+            let mut message = String::from("index ");
+            // Suppress error because `String`'s `fmt::Write` impl is infallible.
+            // (It will abort on OOM).
+            let _ignored = write!(&mut message, "{} out of string", index);
+            return Err(IndexError::from(message).into());
+        }
+    };
+    let i64_byte = implicitly_convert_to_int(interp, byte)?;
+    // Wrapping when negative is intentional
+    //
+    // ```
+    // [3.0.2] > s = "abc"
+    // => "abc"
+    // [3.0.2] > s.setbyte(-3, 99)
+    // => 99
+    // [3.0.2] > s
+    // => "cbc"
+    // [3.0.2] > s.setbyte(-3, 255)
+    // => 255
+    // [3.0.2] > s
+    // => "\xFFbc"
+    // [3.0.2] > s.setbyte(-3, 256)
+    // => 256
+    // [3.0.2] > s
+    // => "\u0000bc"
+    // [3.0.2] > s.setbyte(-3, 257)
+    // => 257
+    // [3.0.2] > s
+    // => "\u0001bc"
+    // [3.0.2] > s.setbyte(-3, -1)
+    // => -1
+    // [3.0.2] > s
+    // => "\xFFbc"
+    // ```
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    let u8_byte = (i64_byte % 256) as u8;
+    // Safety:
+    //
+    // No need to repack, this is an in-place mutation.
+    unsafe {
+        let string_mut = s.as_inner_mut();
+        let cell = string_mut.get_mut(index).ok_or_else(|| {
+            let mut message = String::from("index ");
+            // Suppress error because `String`'s `fmt::Write` impl is infallible.
+            // (It will abort on OOM).
+            let _ignored = write!(&mut message, "{} out of string", index);
+            IndexError::from(message)
+        })?;
+        *cell = u8_byte;
+    }
+
+    // Return the original byte argument.
+    Ok(byte)
 }
 
 pub fn slice_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
