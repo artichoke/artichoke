@@ -9,7 +9,7 @@ use crate::convert::implicitly_convert_to_int;
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::core::array::Array;
 #[cfg(feature = "core-regexp")]
-use crate::extn::core::matchdata::MatchData;
+use crate::extn::core::matchdata::{self, MatchData};
 #[cfg(feature = "core-regexp")]
 use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::core::symbol::Symbol;
@@ -107,8 +107,9 @@ pub fn aref(
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     if let Some(second) = second {
         #[cfg(feature = "core-regexp")]
-        if let Ok(_regexp) = unsafe { Regexp::unbox_from_value(&mut first, interp) } {
-            return Err(NotImplementedError::with_message("String#[] with Regexp argument and capture group").into());
+        if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut first, interp) } {
+            let match_data = regexp.match_(interp, Some(s.as_slice()), None, None)?;
+            return matchdata::trampoline::element_reference(interp, match_data, second, None);
         }
         let index = implicitly_convert_to_int(interp, first)?;
         let length = implicitly_convert_to_int(interp, second)?;
@@ -215,8 +216,9 @@ pub fn aref(
         return Ok(Value::nil());
     }
     #[cfg(feature = "core-regexp")]
-    if let Ok(_regexp) = unsafe { Regexp::unbox_from_value(&mut first, interp) } {
-        return Err(NotImplementedError::with_message("String#[] with Regexp argument").into());
+    if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut first, interp) } {
+        let match_data = regexp.match_(interp, Some(s.as_slice()), None, None)?;
+        return matchdata::trampoline::element_reference(interp, match_data, interp.convert(0), None);
     }
     if let Some(protect::Range { start: index, len }) = first.is_range(interp, s.char_len() as i64)? {
         let index = if let Ok(index) = usize::try_from(index) {
