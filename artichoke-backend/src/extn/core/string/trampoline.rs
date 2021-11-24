@@ -688,13 +688,26 @@ pub fn chomp_bang(interp: &mut Artichoke, mut value: Value, separator: Option<Va
 }
 
 pub fn chop(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let mut dup = s.clone();
+    let _ = dup.chop();
+    super::String::alloc_value(dup, interp)
 }
 
 pub fn chop_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    if s.is_empty() {
+        return Ok(Value::nil());
+    }
+    unsafe {
+        let string_mut = s.as_inner_mut();
+        let modified = string_mut.chop();
+        if modified {
+            let s = s.take();
+            return super::String::box_into_value(s, value, interp);
+        }
+    }
+    Ok(value)
 }
 
 pub fn chr(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
