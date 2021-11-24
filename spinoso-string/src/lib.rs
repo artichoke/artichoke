@@ -3012,4 +3012,24 @@ mod tests {
         let s = String::utf8(b"\xF0\x9F\x87".to_vec());
         assert_eq!(s.chr(), b"\xF0");
     }
+
+    #[test]
+    fn strings_compare_equal_only_based_on_byte_content() {
+        let utf8 = String::utf8(b"abc".to_vec());
+        let ascii = String::ascii(b"abc".to_vec());
+        let binary = String::binary(b"abc".to_vec());
+        assert_eq!(utf8, ascii);
+        assert_eq!(utf8, binary);
+        assert_eq!(binary, ascii);
+    }
+
+    #[test]
+    fn strings_compare_equal_only_based_on_byte_content_without_valid_encoding() {
+        let utf8 = String::utf8(b"abc\xFE\xFF".to_vec());
+        let ascii = String::ascii(b"abc\xFE\xFF".to_vec());
+        let binary = String::binary(b"abc\xFE\xFF".to_vec());
+        assert_eq!(utf8, ascii);
+        assert_eq!(utf8, binary);
+        assert_eq!(binary, ascii);
+    }
 }
