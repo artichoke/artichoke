@@ -650,8 +650,9 @@ pub fn center(interp: &mut Artichoke, mut value: Value, width: Value, padstr: Op
 }
 
 pub fn chars(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let chars = s.chars().collect::<Vec<&[u8]>>();
+    interp.try_convert_mut(chars)
 }
 
 pub fn chomp(interp: &mut Artichoke, mut value: Value, separator: Option<Value>) -> Result<Value, Error> {
