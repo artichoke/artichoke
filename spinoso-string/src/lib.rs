@@ -1668,7 +1668,6 @@ impl String {
     /// Modify this `String` to have the first character converted to uppercase
     /// and the remainder to lowercase.
     #[inline]
-    #[allow(clippy::match_same_arms)]
     pub fn make_capitalized(&mut self) {
         match self.encoding {
             Encoding::Ascii | Encoding::Binary => {
@@ -1683,6 +1682,7 @@ impl String {
                 // `String`.
                 let mut replacement = Vec::with_capacity(self.buf.len());
                 let mut bytes = self.buf.as_slice();
+
                 match bstr::decode_utf8(bytes) {
                     (Some(ch), size) => {
                         // Converting a UTF-8 character to uppercase may yield
@@ -1699,12 +1699,79 @@ impl String {
                         bytes = remainder;
                     }
                 }
+
                 while !bytes.is_empty() {
                     let (ch, size) = bstr::decode_utf8(bytes);
                     if let Some(ch) = ch {
                         // Converting a UTF-8 character to lowercase may yield
                         // multiple codepoints.
                         for ch in ch.to_lowercase() {
+                            replacement.push_char(ch);
+                        }
+                        bytes = &bytes[size..];
+                    } else {
+                        let (substring, remainder) = bytes.split_at(size);
+                        replacement.extend_from_slice(substring);
+                        bytes = remainder;
+                    }
+                }
+                self.buf = replacement;
+            }
+        }
+    }
+
+    /// Modify this `String` to have all characters converted to lowercase.
+    #[inline]
+    pub fn make_lowercase(&mut self) {
+        match self.encoding {
+            Encoding::Ascii | Encoding::Binary => {
+                self.buf.make_ascii_lowercase();
+            }
+            Encoding::Utf8 => {
+                // This allocation assumes that in the common case, lower-casing
+                // `char`s do not change the length of the `String`.
+                let mut replacement = Vec::with_capacity(self.buf.len());
+                let mut bytes = self.buf.as_slice();
+
+                while !bytes.is_empty() {
+                    let (ch, size) = bstr::decode_utf8(bytes);
+                    if let Some(ch) = ch {
+                        // Converting a UTF-8 character to lowercase may yield
+                        // multiple codepoints.
+                        for ch in ch.to_lowercase() {
+                            replacement.push_char(ch);
+                        }
+                        bytes = &bytes[size..];
+                    } else {
+                        let (substring, remainder) = bytes.split_at(size);
+                        replacement.extend_from_slice(substring);
+                        bytes = remainder;
+                    }
+                }
+                self.buf = replacement;
+            }
+        }
+    }
+
+    /// Modify this `String` to have the all characters converted to uppercase.
+    #[inline]
+    pub fn make_uppercase(&mut self) {
+        match self.encoding {
+            Encoding::Ascii | Encoding::Binary => {
+                self.buf.make_ascii_uppercase();
+            }
+            Encoding::Utf8 => {
+                // This allocation assumes that in the common case, upper-casing
+                // `char`s do not change the length of the `String`.
+                let mut replacement = Vec::with_capacity(self.buf.len());
+                let mut bytes = self.buf.as_slice();
+
+                while !bytes.is_empty() {
+                    let (ch, size) = bstr::decode_utf8(bytes);
+                    if let Some(ch) = ch {
+                        // Converting a UTF-8 character to lowercase may yield
+                        // multiple codepoints.
+                        for ch in ch.to_uppercase() {
                             replacement.push_char(ch);
                         }
                         bytes = &bytes[size..];
