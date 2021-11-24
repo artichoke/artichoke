@@ -38,6 +38,7 @@ use alloc::boxed::Box;
 use alloc::vec::{self, Vec};
 use core::cmp::Ordering;
 use core::fmt::{self, Write};
+use core::hash::{Hash, Hasher};
 use core::iter::{Cycle, Take};
 use core::mem::{self, ManuallyDrop};
 use core::slice::{self, SliceIndex};
@@ -575,7 +576,7 @@ impl fmt::Display for OrdError {
 #[cfg(feature = "std")]
 impl std::error::Error for OrdError {}
 
-#[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Clone)]
 pub struct String {
     buf: Vec<u8>,
     encoding: Encoding,
@@ -587,6 +588,54 @@ impl fmt::Debug for String {
             .field("buf", &self.buf.as_bstr())
             .field("encoding", &self.encoding)
             .finish()
+    }
+}
+
+impl Hash for String {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        // A `String`'s hash only depends on its byte contents.
+        //
+        // ```
+        // [3.0.2] > s = "abc"
+        // => "abc"
+        // [3.0.2] > t = s.dup.force_encoding(Encoding::ASCII)
+        // => "abc"
+        // [3.0.2] > s.hash
+        // => 3398383793005079442
+        // [3.0.2] > t.hash
+        // => 3398383793005079442
+        // ```
+        self.buf.hash(hasher);
+    }
+}
+
+impl PartialEq for String {
+    fn eq(&self, other: &String) -> bool {
+        // Equality only depends on each `String`'s byte contents.
+        //
+        // ```
+        // [3.0.2] > s = "abc"
+        // => "abc"
+        // [3.0.2] > t = s.dup.force_encoding(Encoding::ASCII)
+        // => "abc"
+        // [3.0.2] > s == t
+        // => true
+        // ```
+        self.buf[..] == other.buf[..]
+    }
+}
+
+impl Eq for String {}
+
+impl PartialOrd for String {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.buf[..].partial_cmp(&other.buf[..])
+    }
+}
+
+impl Ord for String {
+    fn cmp(&self, other: &String) -> Ordering {
+        self.buf[..].cmp(&other.buf[..])
     }
 }
 
@@ -3011,5 +3060,25 @@ mod tests {
         // which demonstrates the "substitution of maximal subparts" strategy.
         let s = String::utf8(b"\xF0\x9F\x87".to_vec());
         assert_eq!(s.chr(), b"\xF0");
+    }
+
+    #[test]
+    fn strings_compare_equal_only_based_on_byte_content() {
+        let utf8 = String::utf8(b"abc".to_vec());
+        let ascii = String::ascii(b"abc".to_vec());
+        let binary = String::binary(b"abc".to_vec());
+        assert_eq!(utf8, ascii);
+        assert_eq!(utf8, binary);
+        assert_eq!(binary, ascii);
+    }
+
+    #[test]
+    fn strings_compare_equal_only_based_on_byte_content_without_valid_encoding() {
+        let utf8 = String::utf8(b"abc\xFE\xFF".to_vec());
+        let ascii = String::ascii(b"abc\xFE\xFF".to_vec());
+        let binary = String::binary(b"abc\xFE\xFF".to_vec());
+        assert_eq!(utf8, ascii);
+        assert_eq!(utf8, binary);
+        assert_eq!(binary, ascii);
     }
 }
