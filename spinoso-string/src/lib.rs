@@ -356,7 +356,7 @@ impl std::error::Error for CenterError {}
 ///
 /// ```
 /// use spinoso_string::String;
-/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # fn example() -> Result<(), spinoso_string::CenterError> {
 /// let s = String::from("hello");
 ///
 /// assert_eq!(s.center(4, None)?.collect::<Vec<_>>(), b"hello");
@@ -372,7 +372,7 @@ impl std::error::Error for CenterError {}
 ///
 /// ```
 /// use spinoso_string::String;
-/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # fn example() -> Result<(), spinoso_string::CenterError> {
 /// let s = String::from("💎");
 ///
 /// assert_eq!(s.center(3, None)?.collect::<Vec<_>>(), " 💎 ".as_bytes());
@@ -1891,7 +1891,7 @@ impl String {
     ///
     /// ```
     /// use spinoso_string::String;
-    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn example() -> Result<(), spinoso_string::CenterError> {
     /// let s = String::from("hello");
     ///
     /// assert_eq!(s.center(4, None)?.collect::<Vec<_>>(), b"hello");
@@ -1907,7 +1907,7 @@ impl String {
     ///
     /// ```
     /// use spinoso_string::String;
-    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn example() -> Result<(), spinoso_string::CenterError> {
     /// let s = String::from("💎");
     ///
     /// assert_eq!(s.center(3, None)?.collect::<Vec<_>>(), " 💎 ".as_bytes());
@@ -2296,7 +2296,7 @@ impl String {
     /// ```
     /// use spinoso_string::{CodepointsError, String};
     ///
-    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn example() -> Result<(), spinoso_string::CodepointsError> {
     /// let s = String::utf8(b"ab\xF0\x9F\x92\x8E\xFF".to_vec());
     /// assert!(matches!(s.codepoints(), Err(CodepointsError::InvalidUtf8Codepoint)));
     ///
@@ -2314,7 +2314,7 @@ impl String {
     /// ```
     /// use spinoso_string::String;
     ///
-    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # fn example() -> Result<(), spinoso_string::CodepointsError> {
     /// let s = String::binary("💎".as_bytes().to_vec());
     /// let mut codepoints = s.codepoints()?;
     /// assert_eq!(codepoints.next(), Some(0xF0));
