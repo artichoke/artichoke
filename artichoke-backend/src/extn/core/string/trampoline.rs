@@ -733,8 +733,12 @@ pub fn clear(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 }
 
 pub fn codepoints(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let codepoints = s
+        .codepoints()
+        .map_err(|err| ArgumentError::with_message(err.message()))?;
+    let codepoints = codepoints.map(|ch| interp.convert(ch)).collect::<Array>();
+    Array::alloc_value(codepoints, interp)
 }
 
 pub fn concat(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
