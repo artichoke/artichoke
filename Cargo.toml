@@ -23,7 +23,7 @@ rustyline = { version = "9", optional = true, default-features = false }
 termcolor = { version = "1.1", optional = true }
 
 [dependencies.artichoke-backend]
-version = "0.3"
+version = "0.4"
 path = "artichoke-backend"
 default-features = false
 
@@ -115,7 +115,7 @@ core-regexp = ["artichoke-backend/core-regexp"]
 # feature, Regexp patterns must be parsable by oniguruma regardless of the
 # backend they execute on. The `regex` crate backend remains the default as long
 # as it can parse the given pattern.
-core-regexp-oniguruma = ["artichoke-backend/core-regexp-oniguruma"]
+core-regexp-oniguruma = ["core-regexp", "artichoke-backend/core-regexp-oniguruma"]
 # Implement the `Time` core class. This feature adds dependencies on `chrono`
 # and `chrono-tz`.
 core-time = ["artichoke-backend/core-time"]
