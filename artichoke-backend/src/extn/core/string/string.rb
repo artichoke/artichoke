@@ -888,16 +888,21 @@ class String
     limit = -1 if limit_not_set
 
     if pattern.is_a?(Regexp)
-      s = self
+      s = dup
       chunks = []
       until s.empty?
+        if limit.positive? && chunks.length == limit - 1
+          chunks << s
+          return chunks
+        end
+
         match = pattern.match(s)
         if match.nil?
           chunks << s
           return chunks
         end
         chunks << s[0, match.begin(0)]
-        s = s[match.end(0), -1]
+        s = s[match.end(0)..-1]
 
         return chunks if s.nil?
       end
@@ -917,7 +922,7 @@ class String
     end
     return chars if pattern.empty?
 
-    s = self
+    s = dup
     chunks = []
     until s.empty?
       if limit.positive? && chunks.length == limit - 1
