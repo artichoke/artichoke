@@ -172,6 +172,16 @@ class << ENV
     !self[name].nil?
   end
 
+  def merge!(hash)
+    hash.each do |key, value|
+      value = yield(key, self[key], value) if block_given? && key?(key)
+      self[key] = value
+    end
+
+    to_h
+  end
+  alias update merge!
+
   def rassoc(value)
     value = value.to_str unless value.is_a?(String)
     to_h.each do |k, v|
@@ -292,15 +302,6 @@ class << ENV
 
   def to_s
     'ENV'
-  end
-
-  def update(hash)
-    hash.each do |key, value|
-      value = yield(key, self[key], value) if block_given? && key?(key)
-      self[key] = value
-    end
-
-    to_h
   end
 
   def value?(name)
