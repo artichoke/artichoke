@@ -139,13 +139,11 @@ unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value,
         // The string is repacked before any intervening mruby heap allocations.
         let string_mut = string.as_inner_mut();
 
-        if let Some(additional) = len.checked_sub(string_mut.len()) {
-            if additional > 0 {
-                string_mut.reserve(additional);
-            }
-        } else {
+        match len.checked_sub(string_mut.len()) {
+            Some(0) => return s,
+            Some(additional) => string_mut.reserve(additional),
             // If the given length is less than the length of the `String`, truncate.
-            string_mut.truncate(len);
+            None => string_mut.truncate(len),
         }
 
         let inner = string.take();
