@@ -110,6 +110,9 @@ pub fn aref(
         #[cfg(feature = "core-regexp")]
         if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut first, interp) } {
             let match_data = regexp.match_(interp, Some(s.as_slice()), None, None)?;
+            if match_data.is_nil() {
+                return Ok(Value::nil());
+            }
             return matchdata::trampoline::element_reference(interp, match_data, second, None);
         }
         let index = implicitly_convert_to_int(interp, first)?;
@@ -219,6 +222,9 @@ pub fn aref(
     #[cfg(feature = "core-regexp")]
     if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut first, interp) } {
         let match_data = regexp.match_(interp, Some(s.as_slice()), None, None)?;
+        if match_data.is_nil() {
+            return Ok(Value::nil());
+        }
         return matchdata::trampoline::element_reference(interp, match_data, interp.convert(0), None);
     }
     if let Some(protect::Range { start: index, len }) = first.is_range(interp, s.char_len() as i64)? {
