@@ -356,7 +356,7 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-crypt
   def crypt(_salt_str)
-    raise NotImplementedError, "String#crypt uses an insecure algorithm and is deprecated"
+    raise NotImplementedError, 'String#crypt uses an insecure algorithm and is deprecated'
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete
@@ -367,7 +367,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete-21
   def delete!(*args)
     replaced = delete(*args)
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_prefix
@@ -381,7 +381,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_prefix-21
   def delete_prefix!(prefix)
     replaced = delete_prefix(prefix)
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_suffix
@@ -396,7 +396,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_suffix-21
   def delete_suffix!(prefix)
     replaced = delete_suffix(prefix)
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-downcase
@@ -611,7 +611,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-gsub-21
   def gsub!(pattern, replacement = nil, &blk)
     replaced = gsub(pattern, replacement, &blk)
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-hash
@@ -710,7 +710,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-lstrip-21
   def lstrip!
     replaced = lstrip
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-match
@@ -830,7 +830,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-rstrip-21
   def rstrip!
     replaced = rstrip
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-scan
@@ -879,18 +879,18 @@ class String
   #
   # XXX: This should probably be implemented in native code.
   # TODO: Lots of branches are not implemented.
-  def split(pattern=nil, limit = (limit_not_set = true), &block)
+  def split(pattern = nil, limit = (limit_not_set = true), &block)
     return [] if empty?
     return [dup] if limit == 1
 
-    raise NotImplementedError, "String#split with block is not supported" unless block.nil?
+    raise NotImplementedError, 'String#split with block is not supported' unless block.nil?
 
     limit = -1 if limit_not_set
 
     if pattern.is_a?(Regexp)
       s = self
       chunks = []
-      while !s.empty?
+      until s.empty?
         match = pattern.match(s)
         if match.nil?
           chunks << s
@@ -907,9 +907,11 @@ class String
     pattern = $; if pattern.nil? # rubocop:disable Style/SpecialGlobalVars
     pattern = ' ' if pattern.nil?
 
-    if !pattern.is_a?(String)
+    unless pattern.is_a?(String)
       converted = pattern.to_str
-      raise TypeError, "can't convert #{pattern.class} to String (#{pattern.class}#to_str gives #{converted.class})" unless converted.is_a?(String)
+      unless converted.is_a?(String)
+        raise TypeError, "can't convert #{pattern.class} to String (#{pattern.class}#to_str gives #{converted.class})"
+      end
 
       pattern = converted
     end
@@ -917,7 +919,7 @@ class String
 
     s = self
     chunks = []
-    while !s.empty?
+    until s.empty?
       if limit.positive? && chunks.length == limit - 1
         chunks << s
         return chunks
@@ -931,14 +933,14 @@ class String
       chunks << s[0, index]
       s = s[index + pattern.length..-1]
     end
-    chunks << ""
+    chunks << ''
     chunks
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-squeeze
   def squeeze(*other_str)
-    return "" if empty?
-    raise NotImplementedError, "String#squeeze with arguments is not implemented" unless other_str.empty?
+    return '' if empty?
+    raise NotImplementedError, 'String#squeeze with arguments is not implemented' unless other_str.empty?
 
     iter = chars
     head, *tail = iter
@@ -957,7 +959,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-squeeze-21
   def squeeze!(*other_str)
     replaced = squeeze(*other_str)
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-start_with-3F
@@ -978,7 +980,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-strip-21
   def strip!
     replaced = strip
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-sub
@@ -1010,7 +1012,7 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-sub-21
   def sub!(pattern, replacement = nil, &blk)
     replaced = sub(pattern, replacement, &blk)
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-sum
@@ -1030,7 +1032,7 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-to_a
   def to_a
-    split('')
+    chars
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-to_c
@@ -1063,7 +1065,7 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-to_str
   def to_str
-    return self if self.class == String
+    return self if instance_of?(String)
 
     String.new(self)
   end
@@ -1084,7 +1086,7 @@ class String
     raise FrozenError if frozen?
 
     replaced = tr(from_str, to_str)
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-tr_s
@@ -1097,7 +1099,7 @@ class String
     raise FrozenError if frozen?
 
     replaced = tr_s(from_str, to_str)
-    self.replace(replaced) unless self == replaced
+    replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-undump
