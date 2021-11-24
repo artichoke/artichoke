@@ -1131,13 +1131,28 @@ pub fn to_s(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 }
 
 pub fn upcase(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let mut dup = s.clone();
+    dup.make_uppercase();
+    super::String::alloc_value(dup, interp)
 }
 
 pub fn upcase_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    // Safety:
+    //
+    // The string is reboxed before any intervening operations on the
+    // interpreter.
+    // The string is reboxed without any intervening mruby allocations.
+    unsafe {
+        let string_mut = s.as_inner_mut();
+        // `make_uppercase` might reallocate the string and invalidate the
+        // boxed pointer/capa/len.
+        string_mut.make_uppercase();
+
+        let s = s.take();
+        super::String::box_into_value(s, value, interp)
+    }
 }
 
 pub fn is_valid_encoding(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
