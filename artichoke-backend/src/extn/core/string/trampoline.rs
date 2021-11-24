@@ -787,9 +787,34 @@ pub fn include(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Re
     Ok(interp.convert(includes))
 }
 
-pub fn index(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
-    let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    Err(NotImplementedError::new().into())
+pub fn index(
+    interp: &mut Artichoke,
+    mut value: Value,
+    mut needle: Value,
+    offset: Option<Value>,
+) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    #[cfg(feature = "core-regexp")]
+    if let Ok(_pattern) = unsafe { Regexp::unbox_from_value(&mut needle, interp) } {
+        return Err(NotImplementedError::from("String#index with Regexp pattern").into());
+    }
+    let needle = unsafe { implicitly_convert_to_string(interp, &mut needle)? };
+    let index = if let Some(offset) = offset {
+        let offset = implicitly_convert_to_int(interp, offset)?;
+        let offset = if let Ok(offset) = usize::try_from(offset) {
+            Some(offset)
+        } else {
+            offset
+                .checked_neg()
+                .and_then(|offset| usize::try_from(offset).ok())
+                .and_then(|offset| s.len().checked_sub(offset))
+        };
+        s.index(needle, offset)
+    } else {
+        s.index(needle, None)
+    };
+    let index = index.and_then(|index| i64::try_from(index).ok());
+    interp.try_convert(index)
 }
 
 pub fn initialize(interp: &mut Artichoke, mut value: Value, from: Option<Value>) -> Result<Value, Error> {
