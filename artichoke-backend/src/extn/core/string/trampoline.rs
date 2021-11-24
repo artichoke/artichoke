@@ -39,6 +39,8 @@ pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
     let to_append = unsafe { implicitly_convert_to_string(interp, &mut other)? };
 
     let mut concatenated = s.clone();
+    // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+    //    size and may panic.
     concatenated.extend_from_slice(to_append);
     super::String::alloc_value(concatenated, interp)
 }
@@ -57,6 +59,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
     // The string is reboxed without any intervening mruby allocations.
     unsafe {
         let string_mut = s.as_inner_mut();
+        // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+        //    size and may panic.
         string_mut.extend_from_slice(other);
 
         let s = s.take();
