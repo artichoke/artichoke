@@ -27,7 +27,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-string = "0.8"
+spinoso-string = "0.9"
 ```
 
 ## `no_std`

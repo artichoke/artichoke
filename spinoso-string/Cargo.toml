@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-string"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 description = """
