@@ -2531,10 +2531,10 @@ impl String {
     #[inline]
     #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
-        let Range { start: index, end } = range;
+        let Range { start, end } = range;
 
         // Fast path the lookup if the end of the range is before the start.
-        if end < index {
+        if end < start {
             // Yes, these types of ranges are allowed and they return `""`.
             //
             // ```
@@ -2552,7 +2552,7 @@ impl String {
             // => ""
             // ```
             //
-            // but only if `index` is within the string.
+            // but only if `start` is within the string.
             //
             // ```
             // [3.0.1] > "aaa"[10..4]
@@ -2571,14 +2571,8 @@ impl String {
             // => nil
             // ```
             //
-            // Fast path rejection for indexes beyond bytesize, which is cheap
-            // to retrieve.
-            if index > self.len() {
-                return None;
-            }
-            // Check `char_len`, which may do a UTF-8 parse and SIMD things,
-            // only if we have to.
-            if matches!(self.encoding, Encoding::Utf8) && index > self.char_len() {
+            // attempt to short-circuit with a cheap len retrieval
+            if start > self.len() || start > self.char_len() {
                 return None;
             }
             return Some(&[]);
@@ -2607,17 +2601,17 @@ impl String {
         //
         // Fast path rejection for indexes beyond bytesize, which is cheap to
         // retrieve.
-        if index > self.len() {
+        if start > self.len() {
             return None;
         }
         match self.char_len() {
-            len if index > len => return None,
-            len if index == len => return Some(&[]),
+            char_length if start > char_length => return None,
+            char_length if start == char_length => return Some(&[]),
             _ => {}
         }
 
         // The span is guaranteed to at least partially overlap now.
-        match end - index {
+        match end - start {
             // Empty substrings are present in all strings, even empty ones.
             //
             // ```
@@ -2647,7 +2641,7 @@ impl String {
             // [3.0.1] > "🦀💎"[1, 1]
             // => "💎"
             // ```
-            1 => return self.get_char(index),
+            1 => return self.get_char(start),
             _ => {}
         }
 
@@ -2661,7 +2655,7 @@ impl String {
             // [3.0.1] > "🦀💎"[0, 10]
             // => "🦀💎"
             // ```
-            Encoding::Ascii | Encoding::Binary => self.buf.get(index..end).or_else(|| self.buf.get(index..)),
+            Encoding::Ascii | Encoding::Binary => self.buf.get(start..end).or_else(|| self.buf.get(start..)),
             Encoding::Utf8 => {
                 // Fast path for trying to treat the conventionally UTF-8 string
                 // as entirely ASCII.
@@ -2673,26 +2667,35 @@ impl String {
                 // Perform the same saturate-to-end slicing mechanism if `end`
                 // is beyond the character length of the string.
                 let consumed = match self.buf.find_non_ascii_byte() {
-                    None => return self.buf.get(index..end).or_else(|| self.buf.get(index..)),
-                    Some(idx) if idx <= index => idx,
-                    Some(_) => 0,
+                    // The entire string is ASCII, so byte indexing <=> char
+                    // indexing.
+                    None => return self.buf.get(start..end).or_else(|| self.buf.get(start..)),
+                    // The whole substring we are interested in is ASCII, so
+                    // byte indexing is still valid.
+                    Some(non_ascii_byte_offset) if non_ascii_byte_offset > end => return self.get(start..end),
+                    // We turn non-ASCII somewhere inside before the substring
+                    // we're interested in, so consume that much.
+                    Some(non_ascii_byte_offset) if non_ascii_byte_offset <= start => non_ascii_byte_offset,
+                    // This means we turn non-ASCII somewhere inside the substring.
+                    // Consume up to start.
+                    Some(_) => start,
                 };
                 // Scan for the beginning of the slice
                 let mut slice = &self.buf[consumed..];
-                // Count of "characters" remaining until the `index`th character.
-                let mut remaining = index - consumed;
+                // Count of "characters" remaining until the `start`th character.
+                let mut remaining = start - consumed;
                 if remaining > 0 {
                     // This loop will terminate when either:
                     //
-                    // - It counts `index` number of characters.
+                    // - It counts `start` number of characters.
                     // - It consumes the entire slice when scanning for the
-                    //   `index`th character.
+                    //   `start`th character.
                     //
                     // The loop will advance by at least one byte every iteration.
                     slice = loop {
                         match bstr::decode_utf8(slice) {
                             // If we've run out of slice while trying to find the
-                            // `index`th character, the lookup fails and we return `nil`.
+                            // `start`th character, the lookup fails and we return `nil`.
                             (_, 0) => return None,
 
                             // We found a single UTF-8 encoded character. keep track
@@ -2717,7 +2720,7 @@ impl String {
                             // number of "characters" we can advance the loop by.
                             //
                             // If the invalid UTF-8 sequence contains more bytes
-                            // than we have remaining to get to the `index`th char,
+                            // than we have remaining to get to the `start`th char,
                             // then we can break the loop directly.
                             (None, size) if remaining <= size => break &slice[remaining..],
                             // If there are more characters remaining than the number
@@ -2733,18 +2736,18 @@ impl String {
                 };
 
                 // Scan the slice for the span of characters we want to return.
-                remaining = end - index;
+                remaining = end - start;
                 // We know `remaining` is not zero because we fast-pathed that
                 // case above.
                 debug_assert!(remaining > 0);
 
-                // keep track of the start of the substring from the `index`th
+                // keep track of the start of the substring from the `start`th
                 // character.
                 let substr = slice;
 
                 // This loop will terminate when either:
                 //
-                // - It counts the next `index - end` number of characters.
+                // - It counts the next `start - end` number of characters.
                 // - It consumes the entire slice when scanning for the `end`th
                 //   character.
                 //
