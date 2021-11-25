@@ -41,6 +41,7 @@ use core::fmt::{self, Write};
 use core::hash::{Hash, Hasher};
 use core::iter::{Cycle, Take};
 use core::mem::{self, ManuallyDrop};
+use core::ops::Range;
 use core::slice::{self, SliceIndex};
 use core::str;
 
@@ -2404,6 +2405,103 @@ impl String {
                     }
                     if remaining < size {
                         return Some(&slice[remaining..=remaining]);
+                    }
+                    remaining -= size;
+                    slice = &slice[size..];
+                }
+            }
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
+        let Range { start: index, end } = range;
+        // If the start of the range is beyond the end of the string, the whole
+        // lookup must fail.
+        //
+        // ```
+        // [3.0.1] > "aaa"[10, 0]
+        // => nil
+        // [3.0.1] > "aaa"[10, 7]
+        // => nil
+        // [3.0.1] > "aaa"[3, 7]
+        // => ""
+        // ```
+        if index > self.len() {
+            return None;
+        }
+
+        // The span is guaranteed to at least partially overlap now.
+        match end - index {
+            // Empty substrings are present in all strings, even empty ones.
+            //
+            // ```
+            // [3.0.1] > "aaa"[""]
+            // => ""
+            // [3.0.1] > ""[""]
+            // => ""
+            // [3.0.1] > ""[0, 0]
+            // => ""
+            // [3.0.1] > "aaa"[0, 0]
+            // => ""
+            // ```
+            0 => return Some(&[]),
+            // delegate to the specialized single char lookup, which allows this
+            // function to fall back to the general of multi-character spans.
+            1 => return self.get_char(index),
+            _ => {}
+        }
+
+        match self.encoding {
+            Encoding::Ascii | Encoding::Binary => self.buf.get(index..end).or_else(|| self.buf.get(index..)),
+            Encoding::Utf8 => {
+                let last_ascii_byte_index = match self.buf.find_non_ascii_byte() {
+                    None => return self.buf.get(index..end).or_else(|| self.buf.get(index..)),
+                    Some(idx) if idx >= end => return self.buf.get(index..end).or_else(|| self.buf.get(index..)),
+                    Some(idx) => idx,
+                };
+                // Scan for the beginning of the slice
+                let mut slice = &self.buf[last_ascii_byte_index..];
+                let mut remaining = index - last_ascii_byte_index;
+                slice = loop {
+                    if slice.is_empty() {
+                        return None;
+                    }
+                    if remaining == 0 {
+                        break slice;
+                    }
+                    let (ch, size) = bstr::decode_utf8(slice);
+                    if ch.is_some() {
+                        slice = &slice[size..];
+                        remaining -= 1;
+                        continue;
+                    }
+                    if remaining < size {
+                        break &slice[remaining..];
+                    }
+                    remaining -= size;
+                    slice = &slice[size..];
+                };
+
+                // Scan the slice for the span of characters we want to return.
+                remaining = end - index;
+                let substr = slice;
+                loop {
+                    if slice.is_empty() {
+                        return Some(substr);
+                    }
+                    if remaining == 0 {
+                        return Some(&substr[..substr.len() - slice.len()]);
+                    }
+                    let (ch, size) = bstr::decode_utf8(slice);
+                    if ch.is_some() {
+                        slice = &slice[size..];
+                        remaining -= 1;
+                        continue;
+                    }
+                    if remaining < size {
+                        return Some(&substr[..substr.len() - slice.len() - remaining]);
                     }
                     remaining -= size;
                     slice = &slice[size..];
