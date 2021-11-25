@@ -2406,6 +2406,7 @@ impl String {
                         return Some(&slice[remaining..=remaining]);
                     }
                     remaining -= size;
+                    slice = &slice[size..];
                 }
             }
         }
