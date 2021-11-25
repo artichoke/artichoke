@@ -83,7 +83,7 @@ impl std::error::Error for CodepointsError {}
 ///
 /// ```
 /// use spinoso_string::{CodepointsError, String};
-/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # fn example() -> Result<(), CodepointsError> {
 /// let s = String::from("hello");
 ///
 /// assert_eq!(s.codepoints()?.collect::<Vec<_>>(), [104, 101, 108, 108, 111]);
@@ -103,7 +103,7 @@ impl std::error::Error for CodepointsError {}
 ///
 /// ```
 /// use spinoso_string::String;
-/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// # fn example() -> Result<(), spinoso_string::CodepointsError> {
 /// let s = String::from("💎");
 ///
 /// assert_eq!(s.codepoints()?.collect::<Vec<_>>(), [u32::from('💎')]);

@@ -351,7 +351,7 @@ impl<'a> FusedIterator for State<'a> {}
 
 #[cfg(test)]
 mod tests {
-    use std::string::String;
+    use alloc::string::String;
 
     use super::Inspect;
 

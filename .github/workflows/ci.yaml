@@ -280,6 +280,14 @@ jobs:
         run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-securerandom"
 
+      - name: Check spinoso-string with no default features
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
+        working-directory: "spinoso-string"
+
+      - name: Check spinoso-string with all features
+        run: cargo check --verbose --all-features --all-targets --profile=test
+        working-directory: "spinoso-string"
+
       - name: Check spinoso-symbol with no default features
         run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-symbol"
@@ -357,12 +365,12 @@ jobs:
       - name: Check artichoke with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
-          cargo check --all-targets --profile=test
+          cargo check --workspace --all-targets --profile=test
 
       - name: Check spec-runner with minimal versions
         run: |
           cargo +nightly generate-lockfile -Z minimal-versions
-          cargo check --all-targets --profile=test
+          cargo check --workspace --all-targets --profile=test
         working-directory: "spec-runner"
 
   ruby:
