@@ -4,7 +4,7 @@
 //!
 //! [RFC 4122]: https://tools.ietf.org/html/rfc4122#section-4.4
 
-use rand::RngCore;
+use rand::{CryptoRng, RngCore};
 use scolapasta_hex as hex;
 
 use crate::RandomBytesError;
@@ -24,10 +24,16 @@ const ENCODED_LENGTH: usize = 36;
 
 #[inline]
 pub fn v4() -> Result<String, RandomBytesError> {
-    let mut bytes = [0; OCTETS];
-    if rand::thread_rng().try_fill_bytes(&mut bytes).is_err() {
-        return Err(RandomBytesError::new());
+    fn get_random_bytes<T: RngCore + CryptoRng>(mut rng: T, slice: &mut [u8]) -> Result<(), RandomBytesError> {
+        if rng.try_fill_bytes(slice).is_err() {
+            return Err(RandomBytesError::new());
+        }
+        Ok(())
     }
+
+    let mut bytes = [0; OCTETS];
+    get_random_bytes(rand::thread_rng(), &mut bytes)?;
+
     // Per RFC 4122, Section 4.4, set bits for version and `clock_seq_hi_and_reserved`.
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;

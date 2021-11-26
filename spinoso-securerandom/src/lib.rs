@@ -96,7 +96,7 @@ use core::fmt;
 use std::error;
 
 use rand::distributions::Alphanumeric;
-use rand::{self, Rng, RngCore};
+use rand::{self, CryptoRng, Rng, RngCore};
 use scolapasta_hex as hex;
 
 mod uuid;
@@ -407,6 +407,13 @@ impl SecureRandom {
 /// [`RandomBytesError`].
 #[inline]
 pub fn random_bytes(len: Option<i64>) -> Result<Vec<u8>, Error> {
+    fn get_random_bytes<T: RngCore + CryptoRng>(mut rng: T, slice: &mut [u8]) -> Result<(), RandomBytesError> {
+        if rng.try_fill_bytes(slice).is_err() {
+            return Err(RandomBytesError::new());
+        }
+        Ok(())
+    }
+
     let len = match len.map(usize::try_from) {
         Some(Ok(0)) => return Ok(Vec::new()),
         Some(Ok(len)) => len,
@@ -416,11 +423,9 @@ pub fn random_bytes(len: Option<i64>) -> Result<Vec<u8>, Error> {
         }
         None => DEFAULT_REQUESTED_BYTES,
     };
-    let mut rng = rand::thread_rng();
+
     let mut bytes = vec![0; len];
-    if rng.try_fill_bytes(&mut bytes).is_err() {
-        return Err(Error::RandomBytes(RandomBytesError::new()));
-    }
+    get_random_bytes(rand::thread_rng(), &mut bytes)?;
     Ok(bytes)
 }
 
@@ -513,33 +518,36 @@ pub enum Rand {
 /// infinite, a [`DomainError`] is returned.
 #[inline]
 pub fn random_number(max: Max) -> Result<Rand, DomainError> {
-    let mut rng = rand::thread_rng();
-    match max {
-        Max::Float(max) if !max.is_finite() => {
-            // NOTE: MRI returns `Errno::EDOM` exception class.
-            Err(DomainError::new())
-        }
-        Max::Float(max) if max <= 0.0 => {
-            let number = rng.gen_range(0.0..1.0);
-            Ok(Rand::Float(number))
-        }
-        Max::Float(max) => {
-            let number = rng.gen_range(0.0..max);
-            Ok(Rand::Float(number))
-        }
-        Max::Integer(max) if !max.is_positive() => {
-            let number = rng.gen_range(0.0..1.0);
-            Ok(Rand::Float(number))
-        }
-        Max::Integer(max) => {
-            let number = rng.gen_range(0..max);
-            Ok(Rand::Integer(number))
-        }
-        Max::None => {
-            let number = rng.gen_range(0.0..1.0);
-            Ok(Rand::Float(number))
+    fn get_random_number<T: RngCore + CryptoRng>(mut rng: T, max: Max) -> Result<Rand, DomainError> {
+        match max {
+            Max::Float(max) if !max.is_finite() => {
+                // NOTE: MRI returns `Errno::EDOM` exception class.
+                Err(DomainError::new())
+            }
+            Max::Float(max) if max <= 0.0 => {
+                let number = rng.gen_range(0.0..1.0);
+                Ok(Rand::Float(number))
+            }
+            Max::Float(max) => {
+                let number = rng.gen_range(0.0..max);
+                Ok(Rand::Float(number))
+            }
+            Max::Integer(max) if !max.is_positive() => {
+                let number = rng.gen_range(0.0..1.0);
+                Ok(Rand::Float(number))
+            }
+            Max::Integer(max) => {
+                let number = rng.gen_range(0..max);
+                Ok(Rand::Integer(number))
+            }
+            Max::None => {
+                let number = rng.gen_range(0.0..1.0);
+                Ok(Rand::Float(number))
+            }
         }
     }
+
+    get_random_number(rand::thread_rng(), max)
 }
 
 /// Generate a hex-encoded [`String`] of random bytes.
@@ -667,6 +675,10 @@ pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> 
 /// [`RandomBytesError`].
 #[inline]
 pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, ArgumentError> {
+    fn get_alphanumeric<T: RngCore + CryptoRng>(rng: T, len: usize) -> Vec<u8> {
+        rng.sample_iter(Alphanumeric).take(len).collect()
+    }
+
     let len = match len.map(usize::try_from) {
         Some(Ok(0)) => return Ok(Vec::new()),
         Some(Ok(len)) => len,
@@ -676,8 +688,8 @@ pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, ArgumentError> {
         }
         None => DEFAULT_REQUESTED_BYTES,
     };
-    let rng = rand::thread_rng();
-    let string = rng.sample_iter(Alphanumeric).take(len).collect();
+
+    let string = get_alphanumeric(rand::thread_rng(), len);
     Ok(string)
 }
 
@@ -712,18 +724,7 @@ pub fn uuid() -> Result<String, RandomBytesError> {
 mod tests {
     use core::ops::Not;
 
-    use rand::CryptoRng;
-
     use super::{alphanumeric, base64, hex, random_bytes, random_number, uuid, DomainError, Error, Max, Rand};
-
-    fn rng_must_be_cryptographically_secure<T: CryptoRng>(rng: T) {
-        drop(rng);
-    }
-
-    #[test]
-    fn rand_thread_rng_must_be_cryptographically_secure() {
-        rng_must_be_cryptographically_secure(rand::thread_rng());
-    }
 
     #[test]
     fn random_bytes_default_bytes() {
