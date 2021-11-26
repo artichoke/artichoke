@@ -2373,6 +2373,42 @@ impl String {
         }
     }
 
+    /// Returns the `index`'th character in the string.
+    ///
+    /// This function is encoding-aware. For `String`s with [UTF-8 encoding],
+    /// multi-byte Unicode characters are length 1 and invalid UTF-8 bytes are
+    /// length 1. For `String`s with [ASCII encoding] or [binary encoding],
+    /// this function is equivalent to [`get`] with a range of length 1.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8(b"abc\xF0\x9F\x92\x8E\xFF".to_vec()); // "abc💎\xFF"
+    /// assert_eq!(s.get_char(0), Some(&b"a"[..]));
+    /// assert_eq!(s.get_char(1), Some(&b"b"[..]));
+    /// assert_eq!(s.get_char(2), Some(&b"c"[..]));
+    /// assert_eq!(s.get_char(3), Some("💎".as_bytes()));
+    /// assert_eq!(s.get_char(4), Some(&b"\xFF"[..]));
+    /// assert_eq!(s.get_char(5), None);
+    ///
+    /// let b = String::binary(b"abc\xF0\x9F\x92\x8E\xFF".to_vec()); // "abc💎\xFF"
+    /// assert_eq!(b.get_char(0), Some(&b"a"[..]));
+    /// assert_eq!(b.get_char(1), Some(&b"b"[..]));
+    /// assert_eq!(b.get_char(2), Some(&b"c"[..]));
+    /// assert_eq!(b.get_char(3), Some(&b"\xF0"[..]));
+    /// assert_eq!(b.get_char(4), Some(&b"\x9F"[..]));
+    /// assert_eq!(b.get_char(5), Some(&b"\x92"[..]));
+    /// assert_eq!(b.get_char(6), Some(&b"\x8E"[..]));
+    /// assert_eq!(b.get_char(7), Some(&b"\xFF"[..]));
+    /// assert_eq!(b.get_char(8), None);
+    /// ```
+    ///
+    /// [UTF-8 encoding]: crate::Encoding::Utf8
+    /// [ASCII encoding]: crate::Encoding::Ascii
+    /// [binary encoding]: crate::Encoding::Binary
+    /// [`get`]: Self::get
     #[inline]
     #[must_use]
     pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
@@ -2413,6 +2449,36 @@ impl String {
         }
     }
 
+    /// Returns a substring of characters in the string.
+    ///
+    /// This function is encoding-aware. For `String`s with [UTF-8 encoding],
+    /// multi-byte Unicode characters are length 1 and invalid UTF-8 bytes are
+    /// length 1. For `String`s with [ASCII encoding] or [binary encoding],
+    /// this function is equivalent to [`get`] with a range.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::ops::Range;
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8(b"abc\xF0\x9F\x92\x8E\xFF".to_vec()); // "abc💎\xFF"
+    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  1 }), Some(&b"a"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  3 }), Some(&b"abc"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  4 }), Some("abc💎".as_bytes()));
+    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  5 }), Some(&b"abc\xF0\x9F\x92\x8E\xFF"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start:  3, end: 10 }), Some(&b"\xF0\x9F\x92\x8E\xFF"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start:  4, end: 10 }), Some(&b"\xFF"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start: 10, end: 15 }), None);
+    /// assert_eq!(s.get_char_slice(Range { start: 15, end: 10 }), None);
+    /// assert_eq!(s.get_char_slice(Range { start: 15, end:  1 }), None);
+    /// assert_eq!(s.get_char_slice(Range { start:  4, end:  1 }), Some(&b""[..]));
+    /// ```
+    ///
+    /// [UTF-8 encoding]: crate::Encoding::Utf8
+    /// [ASCII encoding]: crate::Encoding::Ascii
+    /// [binary encoding]: crate::Encoding::Binary
+    /// [`get`]: Self::get
     #[inline]
     #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
