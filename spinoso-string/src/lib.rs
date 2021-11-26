@@ -2542,9 +2542,23 @@ impl String {
         // => nil
         // [3.0.1] > "aaa"[3, 7]
         // => ""
+        // [3.0.1] > "🦀💎"[2, 0]
+        // => ""
+        // [3.0.1] > "🦀💎"[3, 1]
+        // => nil
+        // [3.0.1] > "🦀💎"[2, 1]
+        // => ""
         // ```
+        //
+        // Fast path rejection for indexes beyond bytesize, which is cheap to
+        // retrieve.
         if index > self.len() {
             return None;
+        }
+        match self.char_len() {
+            len if index > len => return None,
+            len if index == len => return Some(&[]),
+            _ => {}
         }
 
         // The span is guaranteed to at least partially overlap now.
