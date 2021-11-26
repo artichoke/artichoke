@@ -2574,15 +2574,38 @@ impl String {
             // => ""
             // [3.0.1] > "aaa"[0, 0]
             // => ""
+            // [3.0.1] > "aaa"[2, 0]
+            // => ""
+            // [3.0.1] > "🦀💎"[1, 0]
+            // => ""
+            // [3.0.1] > "🦀💎"[2, 0]
+            // => ""
             // ```
             0 => return Some(&[]),
-            // delegate to the specialized single char lookup, which allows this
-            // function to fall back to the general of multi-character spans.
+            // Delegate to the specialized single char lookup, which allows the
+            // remainder of this routine to fall back to the general case of
+            // multi-character spans.
+            //
+            // ```
+            // [3.0.1] > "abc"[2, 1]
+            // => "c"
+            // [3.0.1] > "🦀💎"[1, 1]
+            // => "💎"
+            // ```
             1 => return self.get_char(index),
             _ => {}
         }
 
         match self.encoding {
+            // Ruby slice lookups saturate to the end of the string even if the
+            // ending index is beyond the string's character count.
+            //
+            // ```
+            // [3.0.1] > "abc"[1, 10]
+            // => "bc"
+            // [3.0.1] > "🦀💎"[0, 10]
+            // => "🦀💎"
+            // ```
             Encoding::Ascii | Encoding::Binary => self.buf.get(index..end).or_else(|| self.buf.get(index..)),
             Encoding::Utf8 => {
                 // Fast path for trying to treat the conventionally UTF-8 string
