@@ -861,19 +861,9 @@ pub fn length(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> 
     interp.try_convert(length)
 }
 
-pub fn ord(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
-    let string = value.try_convert_into_mut::<&[u8]>(interp)?;
-    // NOTE: This implementation assumes all `String`s have encoding =
-    // `Encoding::UTF_8`. Artichoke does not implement the `Encoding` APIs and
-    // `String`s are assumed to be UTF-8 encoded.
-    let (ch, size) = bstr::decode_utf8(string);
-    let ord = match ch {
-        // All `char`s are valid `u32`s
-        // https://github.com/rust-lang/rust/blob/1.48.0/library/core/src/char/convert.rs#L12-L20
-        Some(ch) => u32::from(ch),
-        None if size == 0 => return Err(ArgumentError::with_message("empty string").into()),
-        None => return Err(ArgumentError::with_message("invalid byte sequence in UTF-8").into()),
-    };
+pub fn ord(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let ord = s.ord().map_err(|err| ArgumentError::with_message(err.message()))?;
     Ok(interp.convert(ord))
 }
 
