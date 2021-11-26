@@ -163,153 +163,12 @@ class String
     dup.freeze
   end
 
-  def <<(obj)
-    raise TypeError if obj.nil?
-
-    obj = obj.chr if obj.is_a?(Integer)
-
-    self[0..-1] = "#{self}#{obj}"
-    self
-  end
-  alias concat <<
-
   def =~(other)
     return other.match(self)&.begin(0) if other.is_a?(Regexp)
     raise TypeError, "type mismatch: #{other.class} given" if other.is_a?(String)
     return other =~ self if other.respond_to?(:=~)
 
     nil
-  end
-
-  alias __old_element_reference []
-  def [](*args)
-    raise ArgumentError, 'wrong number of arguments (given 0, expected 1..2)' if args.empty? || args.length > 2
-
-    element =
-      if (regexp = args[0]).is_a?(Regexp)
-        capture = args.fetch(1, 0)
-        capture =
-          begin
-            capture.to_int
-          rescue NoMethodError
-            capture
-          end
-        regexp.match(self)&.[](capture)
-      elsif args.length == 1
-        index, = *args
-        index =
-          begin
-            index.to_int
-          rescue NoMethodError
-            index
-          end
-        __old_element_reference(index)
-      else
-        index, length = *args
-        index =
-          begin
-            index.to_int
-          rescue NoMethodError
-            index
-          end
-        length =
-          begin
-            length.to_int
-          rescue NoMethodError
-            length
-          end
-        __old_element_reference(index, length)
-      end
-    return nil if element.nil?
-
-    if instance_of?(String)
-      element
-    else
-      self.class.new(element)
-    end
-  end
-  alias slice []
-
-  alias __old_element_assignment []=
-  def []=(*args)
-    return __old_element_assignment(*args) unless args[0].is_a?(Regexp) # rubocop:disable Lint/ReturnInVoidContext
-
-    *args, replace = *args
-    regexp = args[0]
-    capture = args.fetch(1, 0)
-    match = regexp.match(self)
-    return if match.nil?
-
-    self[match.begin(capture)...match.end(capture)] = replace
-  end
-
-  def ascii_only?
-    bytes.length == length
-  end
-
-  def b
-    # mruby has no Encoding, so there is no difference between an ASCII_8BIT
-    # String and a UTF-8 String.
-    dup
-  end
-
-  def byteslice(*args)
-    if args[0].is_a?(Integer)
-      position, len = *args
-      len = 1 if len.nil?
-      position = length + position if position.negative?
-
-      slice = bytes[position...position + len]
-      slice.pack('c*')
-    elsif args.length == 1 && args[0].is_a?(Range)
-      range, = *args
-      position = range.begin
-      len = range.size
-
-      slice = bytes[position...position + len]
-      slice.pack('c*')
-    else
-      raise ArgumentError
-    end
-  end
-
-  def casecmp(str)
-    return nil unless String.try_convert(str)
-
-    downcase <=> str.downcase
-  end
-
-  def casecmp?(str)
-    casecmp(str)&.zero? == true
-  end
-
-  def center(width, padstr = ' ')
-    return self if length >= width
-
-    left_pad = (width - length) / 2
-    left_pad = (padstr * left_pad)[0...left_pad]
-    right_pad = ((width - length) / 2) + ((width - length) % 2)
-    right_pad = (padstr * right_pad)[0...right_pad]
-    "#{left_pad}#{self}#{right_pad}"
-  end
-
-  # rubocop:disable Style/StringChars
-  def chars(&blk)
-    if block_given?
-      split('').each(&blk)
-      self
-    else
-      split('')
-    end
-  end
-  # rubocop:enable Style/StringChars
-
-  def chr
-    dup[0]
-  end
-
-  def clear
-    self[0..-1] = ''
   end
 
   def codepoints
@@ -457,10 +316,6 @@ class String
     # mruby does not support encoding, all Strings are UTF-8. This method is a
     # NOOP and is here for compatibility.
     self
-  end
-
-  def getbyte(index)
-    bytes[index]
   end
 
   def grapheme_clusters
@@ -622,58 +477,6 @@ class String
   def scrub!
     # TODO: This is a stub. Implement scrub! correctly.
     self
-  end
-
-  def setbyte(index, integer)
-    slice = bytes
-    slice[index] = integer
-    self[0..-1] = slice.pack('c*')
-  end
-
-  def split(pattern = nil, limit = nil, &blk)
-    parts = []
-    return parts if self == ''
-
-    pattern = ' ' if pattern.nil?
-
-    pattern = Regexp.compile(Regexp.escape(pattern)) if pattern.is_a?(String)
-    if pattern.source == ''
-      length.times do |i|
-        yield self[i].dup if block_given?
-        parts << self[i].dup
-      end
-      return parts
-    end
-
-    remainder = dup
-    match = pattern.match(remainder)
-    if limit&.positive?
-      until match.nil? || remainder.nil? || parts.length >= limit - 1
-        parts << remainder[0...match.begin(0)]
-        remainder = remainder[match.end(0)..-1]
-        remainder = remainder[1..-1] if match.begin(0) == match.end(0)
-        match = nil
-        match = pattern.match(remainder) unless remainder.nil?
-      end
-      parts << remainder unless remainder.nil?
-    else
-      until match.nil? || remainder.nil?
-        parts << remainder[0...match.begin(0)]
-        remainder = remainder[match.end(0)..-1]
-        remainder = remainder[1..-1] if match.begin(0) == match.end(0)
-        match = nil
-        match = pattern.match(remainder) unless remainder.nil?
-      end
-      parts << remainder unless remainder.nil?
-      if limit&.negative? && -limit > parts.length
-        (-limit - parts.length).times do
-          parts << ''
-        end
-      end
-    end
-    parts.each(&blk) if block_given?
-
-    parts
   end
 
   def squeeze(*_args)
