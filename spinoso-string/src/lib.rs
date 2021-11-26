@@ -2532,8 +2532,63 @@ impl String {
     #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
         let Range { start: index, end } = range;
-        // If the start of the range is beyond the end of the string, the whole
-        // lookup must fail.
+
+        // Fast path the lookup if the end of the range is before the start.
+        if end < index {
+            // Yes, these types of ranges are allowed and they return `""`.
+            //
+            // ```
+            // [3.0.1] > "aaa"[1..0]
+            // => ""
+            // [3.0.1] > "aaa"[2..0]
+            // => ""
+            // [3.0.1] > "aaa"[2..1]
+            // => ""
+            // [3.0.1] > "aaa"[3..0]
+            // => ""
+            // [3.0.1] > "💎🦀😅"[2..1]
+            // => ""
+            // [3.0.1] > "💎🦀😅"[3..0]
+            // => ""
+            // ```
+            //
+            // but only if `index` is within the string.
+            //
+            // ```
+            // [3.0.1] > "aaa"[10..4]
+            // => nil
+            // [3.0.1] > "aaa"[10..4]
+            // => nil
+            // [3.0.1] > "aaa"[10..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[10..4]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[10..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[6..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[4..0]
+            // => nil
+            // ```
+            //
+            // Fast path rejection for indexes beyond bytesize, which is cheap
+            // to retrieve.
+            if index > self.len() {
+                return None;
+            }
+            // Check `char_len`, which may do a UTF-8 parse and SIMD things,
+            // only if we have to.
+            if matches!(self.encoding, Encoding::Utf8) && index > self.char_len() {
+                return None;
+            }
+            return Some(&[]);
+        }
+
+        // If the start of the range is beyond the character count of the
+        // string, the whole lookup must fail.
+        //
+        // Slice lookups where the start is just beyond the last character index
+        // always return an empty slice.
         //
         // ```
         // [3.0.1] > "aaa"[10, 0]
