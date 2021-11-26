@@ -2571,56 +2571,159 @@ impl String {
         match self.encoding {
             Encoding::Ascii | Encoding::Binary => self.buf.get(index..end).or_else(|| self.buf.get(index..)),
             Encoding::Utf8 => {
-                let last_ascii_byte_index = match self.buf.find_non_ascii_byte() {
+                // Fast path for trying to treat the conventionally UTF-8 string
+                // as entirely ASCII.
+                //
+                // If the string is either all ASCII or all ASCII for the subset
+                // of the string we wish to slice, fallback to byte slicing as in
+                // the ASCII and binary fast path.
+                //
+                // Perform the same saturate-to-end slicing mechanism if `end`
+                // is beyond the character length of the string.
+                let consumed = match self.buf.find_non_ascii_byte() {
                     None => return self.buf.get(index..end).or_else(|| self.buf.get(index..)),
-                    Some(idx) if idx >= end => return self.buf.get(index..end).or_else(|| self.buf.get(index..)),
-                    Some(idx) if idx < index => idx,
+                    Some(idx) if idx <= index => idx,
                     Some(_) => 0,
                 };
                 // Scan for the beginning of the slice
-                let mut slice = &self.buf[last_ascii_byte_index..];
-                let mut remaining = index - last_ascii_byte_index;
-                slice = loop {
-                    if slice.is_empty() {
-                        return None;
+                let mut slice = &self.buf[consumed..];
+                // Count of "characters" remaining until the `index`th character.
+                let mut remaining = index - consumed;
+                if remaining > 0 {
+                    // This loop will terminate when either:
+                    //
+                    // - It counts `index` number of characters.
+                    // - It consumes the entire slice when scanning for the
+                    //   `index`th character.
+                    //
+                    // The loop will advance by at least one byte every iteration.
+                    slice = loop {
+                        match bstr::decode_utf8(slice) {
+                            // If we've run out of slice while trying to find the
+                            // `index`th character, the lookup fails and we return `nil`.
+                            (_, 0) => return None,
+
+                            // We found a single UTF-8 encoded character. keep track
+                            // of the count and advance the substring to continue
+                            // decoding.
+                            //
+                            // If there's only one more to go, advance and stop the
+                            // loop.
+                            (Some(_), size) if remaining == 1 => break &slice[size..],
+                            // Otherwise, keep track of the character we observed and
+                            // advance the slice to continue decoding.
+                            (Some(_), size) => {
+                                slice = &slice[size..];
+                                remaining -= 1;
+                            }
+
+                            // The next two arms handle the case where we have
+                            // encountered an invalid UTF-8 byte sequence.
+                            //
+                            // In this case, `decode_utf8` will return slices whose
+                            // length is `1..=3`. The length of this slice is the
+                            // number of "characters" we can advance the loop by.
+                            //
+                            // If the invalid UTF-8 sequence contains more bytes
+                            // than we have remaining to get to the `index`th char,
+                            // then we can break the loop directly.
+                            (None, size) if remaining <= size => break &slice[remaining..],
+                            // If there are more characters remaining than the number
+                            // of bytes yielded in the invalid UTF-8 byte sequence,
+                            // count `size` bytes and advance the slice to continue
+                            // decoding.
+                            (None, size) => {
+                                slice = &slice[size..];
+                                remaining -= size;
+                            }
+                        }
                     }
-                    if remaining == 0 {
-                        break slice;
-                    }
-                    let (ch, size) = bstr::decode_utf8(slice);
-                    if ch.is_some() {
-                        slice = &slice[size..];
-                        remaining -= 1;
-                        continue;
-                    }
-                    if remaining < size {
-                        break &slice[remaining..];
-                    }
-                    remaining -= size;
-                    slice = &slice[size..];
                 };
 
                 // Scan the slice for the span of characters we want to return.
                 remaining = end - index;
+                // We know `remaining` is not zero because we fast-pathed that
+                // case above.
+                debug_assert!(remaining > 0);
+
+                // keep track of the start of the substring from the `index`th
+                // character.
                 let substr = slice;
+
+                // This loop will terminate when either:
+                //
+                // - It counts the next `index - end` number of characters.
+                // - It consumes the entire slice when scanning for the `end`th
+                //   character.
+                //
+                // The loop will advance by at least one byte every iteration.
                 loop {
-                    if slice.is_empty() {
-                        return Some(substr);
+                    match bstr::decode_utf8(slice) {
+                        // If we've run out of slice while trying to find the `end`th
+                        // character, saturate the slice to the end of the string.
+                        (_, 0) => return Some(substr),
+
+                        // We found a single UTF-8 encoded character. keep track
+                        // of the count and advance the substring to continue
+                        // decoding.
+                        //
+                        // If there's only one more to go, advance and stop the
+                        // loop.
+                        (Some(_), size) if remaining == 1 => {
+                            // Push `endth` more positive because this match has
+                            // the effect of shrinking `slice`.
+                            let endth = substr.len() - slice.len() + size;
+                            return Some(&substr[..endth]);
+                        }
+                        // Otherwise, keep track of the character we observed and
+                        // advance the slice to continue decoding.
+                        (Some(_), size) => {
+                            slice = &slice[size..];
+                            remaining -= 1;
+                        }
+
+                        // The next two arms handle the case where we have
+                        // encountered an invalid UTF-8 byte sequence.
+                        //
+                        // In this case, `decode_utf8` will return slices whose
+                        // length is `1..=3`. The length of this slice is the
+                        // number of "characters" we can advance the loop by.
+                        //
+                        // If the invalid UTF-8 sequence contains more bytes
+                        // than we have remaining to get to the `end`th char,
+                        // then we can break the loop directly.
+                        (None, size) if remaining <= size => {
+                            // For an explanation of this arithmetic:
+                            // If we're trying to slice:
+                            //
+                            // ```
+                            // s = "a\xF0\x9F\x87"
+                            // s[0, 2]
+                            // ```
+                            //
+                            // By the time we get to this branch in this loop:
+                            //
+                            // ```
+                            // substr = "a\xF0\x9F\x87"
+                            // slice = "\xF0\x9F\x87"
+                            // remaining = 1
+                            // ```
+                            //
+                            // We want to compute `endth == 2`:
+                            //
+                            //    2   =      4       -      3      +     1
+                            let endth = substr.len() - slice.len() + remaining;
+                            return Some(&substr[..endth]);
+                        }
+                        // If there are more characters remaining than the number
+                        // of bytes yielded in the invalid UTF-8 byte sequence,
+                        // count `size` bytes and advance the slice to continue
+                        // decoding.
+                        (None, size) => {
+                            slice = &slice[size..];
+                            remaining -= size;
+                        }
                     }
-                    if remaining == 0 {
-                        return Some(&substr[..substr.len() - slice.len()]);
-                    }
-                    let (ch, size) = bstr::decode_utf8(slice);
-                    if ch.is_some() {
-                        slice = &slice[size..];
-                        remaining -= 1;
-                        continue;
-                    }
-                    if remaining < size {
-                        return Some(&substr[..substr.len() - slice.len() - remaining]);
-                    }
-                    remaining -= size;
-                    slice = &slice[size..];
                 }
             }
         }
