@@ -41,6 +41,7 @@ use core::fmt::{self, Write};
 use core::hash::{Hash, Hasher};
 use core::iter::{Cycle, Take};
 use core::mem::{self, ManuallyDrop};
+use core::ops::Range;
 use core::slice::{self, SliceIndex};
 use core::str;
 
@@ -1938,7 +1939,7 @@ impl String {
     /// from the end of str (if given).
     ///
     /// If `separator` is [`None`] (i.e. `separator` has not been changed from
-    /// the default Ruby record separator, then `chomp` also removes carriage
+    /// the default Ruby record separator), then `chomp` also removes carriage
     /// return characters (that is it will remove `\n`, `\r`, and `\r\n`). If
     /// `separator` is an empty string, it will remove all trailing newlines
     /// from the string.
@@ -1947,6 +1948,8 @@ impl String {
     /// separator. For `str.chomp nil`, MRI returns `str.dup`. For
     /// `str.chomp! nil`, MRI makes no changes to the receiver and returns
     /// `nil`.
+    ///
+    /// This function returns `true` if self is modified, `false` otherwise.
     ///
     /// # Examples
     ///
@@ -2367,6 +2370,457 @@ impl String {
         match self.encoding {
             Encoding::Ascii | Encoding::Binary => self.buf.len(),
             Encoding::Utf8 => conventionally_utf8_byte_string_len(self.buf.as_slice()),
+        }
+    }
+
+    /// Returns the `index`'th character in the string.
+    ///
+    /// This function is encoding-aware. For `String`s with [UTF-8 encoding],
+    /// multi-byte Unicode characters are length 1 and invalid UTF-8 bytes are
+    /// length 1. For `String`s with [ASCII encoding] or [binary encoding],
+    /// this function is equivalent to [`get`] with a range of length 1.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8(b"abc\xF0\x9F\x92\x8E\xFF".to_vec()); // "abc💎\xFF"
+    /// assert_eq!(s.get_char(0), Some(&b"a"[..]));
+    /// assert_eq!(s.get_char(1), Some(&b"b"[..]));
+    /// assert_eq!(s.get_char(2), Some(&b"c"[..]));
+    /// assert_eq!(s.get_char(3), Some("💎".as_bytes()));
+    /// assert_eq!(s.get_char(4), Some(&b"\xFF"[..]));
+    /// assert_eq!(s.get_char(5), None);
+    ///
+    /// let b = String::binary(b"abc\xF0\x9F\x92\x8E\xFF".to_vec()); // "abc💎\xFF"
+    /// assert_eq!(b.get_char(0), Some(&b"a"[..]));
+    /// assert_eq!(b.get_char(1), Some(&b"b"[..]));
+    /// assert_eq!(b.get_char(2), Some(&b"c"[..]));
+    /// assert_eq!(b.get_char(3), Some(&b"\xF0"[..]));
+    /// assert_eq!(b.get_char(4), Some(&b"\x9F"[..]));
+    /// assert_eq!(b.get_char(5), Some(&b"\x92"[..]));
+    /// assert_eq!(b.get_char(6), Some(&b"\x8E"[..]));
+    /// assert_eq!(b.get_char(7), Some(&b"\xFF"[..]));
+    /// assert_eq!(b.get_char(8), None);
+    /// ```
+    ///
+    /// [UTF-8 encoding]: crate::Encoding::Utf8
+    /// [ASCII encoding]: crate::Encoding::Ascii
+    /// [binary encoding]: crate::Encoding::Binary
+    /// [`get`]: Self::get
+    #[inline]
+    #[must_use]
+    pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
+        // `Vec` has a max allocation size of `isize::MAX`. For a `Vec<u8>` like
+        // the one in `String` where the `size_of::<u8>() == 1`, the max length
+        // is `isize::MAX`. This checked add short circuits with `None` if we
+        // are given `usize::MAX` as an index, which we could never slice.
+        let end = index.checked_add(1)?;
+        match self.encoding {
+            // For ASCII and binary encodings, all character operations assume
+            // characters are exactly one byte, so we can fallback to byte
+            // slicing.
+            Encoding::Ascii | Encoding::Binary => self.buf.get(index..end),
+            Encoding::Utf8 => {
+                // Fast path rejection for indexes beyond bytesize, which is
+                // cheap to retrieve.
+                if index >= self.len() {
+                    return None;
+                }
+                // Fast path for trying to treat the conventionally UTF-8 string
+                // as entirely ASCII.
+                //
+                // If the string is either all ASCII or all ASCII for a prefix
+                // of the string that contains the range we wish to slice,
+                // fallback to byte slicing as in the ASCII and binary fast path.
+                let consumed = match self.buf.find_non_ascii_byte() {
+                    None => return self.buf.get(index..end),
+                    Some(idx) if idx >= end => return self.buf.get(index..end),
+                    Some(idx) => idx,
+                };
+                let mut slice = &self.buf[consumed..];
+                // Count of "characters" remaining until the `index`th character.
+                let mut remaining = index - consumed;
+                // This loop will terminate when either:
+                //
+                // - It counts `index` number of characters.
+                // - It consumes the entire slice when scanning for the
+                //   `index`th character.
+                //
+                // The loop will advance by at least one byte every iteration.
+                loop {
+                    match bstr::decode_utf8(slice) {
+                        // If we've run out of slice while trying to find the
+                        // `index`th character, the lookup fails and we return `nil`.
+                        (_, 0) => return None,
+
+                        // The next two arms mean we've reached the `index`th
+                        // character. Either return the next valid UTF-8
+                        // character byte slice or, if the next bytes are an
+                        // invalid UTF-8 sequence, the next byte.
+                        (Some(_), size) if remaining == 0 => return Some(&slice[..size]),
+                        // Size is guaranteed to be positive per the first arm
+                        // which means this slice operation will not panic.
+                        (None, _) if remaining == 0 => return Some(&slice[..1]),
+
+                        // We found a single UTF-8 encoded characterk keep track
+                        // of the count and advance the substring to continue
+                        // decoding.
+                        (Some(_), size) => {
+                            slice = &slice[size..];
+                            remaining -= 1;
+                        }
+
+                        // The next two arms handle the case where we have
+                        // encountered an invalid UTF-8 byte sequence.
+                        //
+                        // In this case, `decode_utf8` will return slices whose
+                        // length is `1..=3`. The length of this slice is the
+                        // number of "characters" we can advance the loop by.
+                        //
+                        // If the invalid UTF-8 sequence contains more bytes
+                        // than we have remaining to get to the `index`th char,
+                        // then the target character is inside the invalid UTF-8
+                        // sequence.
+                        (None, size) if remaining < size => return Some(&slice[remaining..=remaining]),
+                        // If there are more characters remaining than the number
+                        // of bytes yielded in the invalid UTF-8 byte sequence,
+                        // count `size` bytes and advance the slice to continue
+                        // decoding.
+                        (None, size) => {
+                            slice = &slice[size..];
+                            remaining -= size;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Returns a substring of characters in the string.
+    ///
+    /// This function is encoding-aware. For `String`s with [UTF-8 encoding],
+    /// multi-byte Unicode characters are length 1 and invalid UTF-8 bytes are
+    /// length 1. For `String`s with [ASCII encoding] or [binary encoding],
+    /// this function is equivalent to [`get`] with a range.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::ops::Range;
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8(b"abc\xF0\x9F\x92\x8E\xFF".to_vec()); // "abc💎\xFF"
+    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  1 }), Some(&b"a"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  3 }), Some(&b"abc"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  4 }), Some("abc💎".as_bytes()));
+    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  5 }), Some(&b"abc\xF0\x9F\x92\x8E\xFF"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start:  3, end: 10 }), Some(&b"\xF0\x9F\x92\x8E\xFF"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start:  4, end: 10 }), Some(&b"\xFF"[..]));
+    /// assert_eq!(s.get_char_slice(Range { start: 10, end: 15 }), None);
+    /// assert_eq!(s.get_char_slice(Range { start: 15, end: 10 }), None);
+    /// assert_eq!(s.get_char_slice(Range { start: 15, end:  1 }), None);
+    /// assert_eq!(s.get_char_slice(Range { start:  4, end:  1 }), Some(&b""[..]));
+    /// ```
+    ///
+    /// [UTF-8 encoding]: crate::Encoding::Utf8
+    /// [ASCII encoding]: crate::Encoding::Ascii
+    /// [binary encoding]: crate::Encoding::Binary
+    /// [`get`]: Self::get
+    #[inline]
+    #[must_use]
+    pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
+        let Range { start, end } = range;
+
+        // Fast path the lookup if the end of the range is before the start.
+        if end < start {
+            // Yes, these types of ranges are allowed and they return `""`.
+            //
+            // ```
+            // [3.0.1] > "aaa"[1..0]
+            // => ""
+            // [3.0.1] > "aaa"[2..0]
+            // => ""
+            // [3.0.1] > "aaa"[2..1]
+            // => ""
+            // [3.0.1] > "aaa"[3..0]
+            // => ""
+            // [3.0.1] > "💎🦀😅"[2..1]
+            // => ""
+            // [3.0.1] > "💎🦀😅"[3..0]
+            // => ""
+            // ```
+            //
+            // but only if `start` is within the string.
+            //
+            // ```
+            // [3.0.1] > "aaa"[10..4]
+            // => nil
+            // [3.0.1] > "aaa"[10..4]
+            // => nil
+            // [3.0.1] > "aaa"[10..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[10..4]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[10..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[6..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[4..0]
+            // => nil
+            // ```
+            //
+            // attempt to short-circuit with a cheap len retrieval
+            if start > self.len() || start > self.char_len() {
+                return None;
+            }
+            return Some(&[]);
+        }
+
+        // If the start of the range is beyond the character count of the
+        // string, the whole lookup must fail.
+        //
+        // Slice lookups where the start is just beyond the last character index
+        // always return an empty slice.
+        //
+        // ```
+        // [3.0.1] > "aaa"[10, 0]
+        // => nil
+        // [3.0.1] > "aaa"[10, 7]
+        // => nil
+        // [3.0.1] > "aaa"[3, 7]
+        // => ""
+        // [3.0.1] > "🦀💎"[2, 0]
+        // => ""
+        // [3.0.1] > "🦀💎"[3, 1]
+        // => nil
+        // [3.0.1] > "🦀💎"[2, 1]
+        // => ""
+        // ```
+        //
+        // Fast path rejection for indexes beyond bytesize, which is cheap to
+        // retrieve.
+        if start > self.len() {
+            return None;
+        }
+        match self.char_len() {
+            char_length if start > char_length => return None,
+            char_length if start == char_length => return Some(&[]),
+            _ => {}
+        }
+
+        // The span is guaranteed to at least partially overlap now.
+        match end - start {
+            // Empty substrings are present in all strings, even empty ones.
+            //
+            // ```
+            // [3.0.1] > "aaa"[""]
+            // => ""
+            // [3.0.1] > ""[""]
+            // => ""
+            // [3.0.1] > ""[0, 0]
+            // => ""
+            // [3.0.1] > "aaa"[0, 0]
+            // => ""
+            // [3.0.1] > "aaa"[2, 0]
+            // => ""
+            // [3.0.1] > "🦀💎"[1, 0]
+            // => ""
+            // [3.0.1] > "🦀💎"[2, 0]
+            // => ""
+            // ```
+            0 => return Some(&[]),
+            // Delegate to the specialized single char lookup, which allows the
+            // remainder of this routine to fall back to the general case of
+            // multi-character spans.
+            //
+            // ```
+            // [3.0.1] > "abc"[2, 1]
+            // => "c"
+            // [3.0.1] > "🦀💎"[1, 1]
+            // => "💎"
+            // ```
+            1 => return self.get_char(start),
+            _ => {}
+        }
+
+        match self.encoding {
+            // Ruby slice lookups saturate to the end of the string even if the
+            // ending index is beyond the string's character count.
+            //
+            // ```
+            // [3.0.1] > "abc"[1, 10]
+            // => "bc"
+            // [3.0.1] > "🦀💎"[0, 10]
+            // => "🦀💎"
+            // ```
+            Encoding::Ascii | Encoding::Binary => self.buf.get(start..end).or_else(|| self.buf.get(start..)),
+            Encoding::Utf8 => {
+                // Fast path for trying to treat the conventionally UTF-8 string
+                // as entirely ASCII.
+                //
+                // If the string is either all ASCII or all ASCII for the subset
+                // of the string we wish to slice, fallback to byte slicing as in
+                // the ASCII and binary fast path.
+                //
+                // Perform the same saturate-to-end slicing mechanism if `end`
+                // is beyond the character length of the string.
+                let consumed = match self.buf.find_non_ascii_byte() {
+                    // The entire string is ASCII, so byte indexing <=> char
+                    // indexing.
+                    None => return self.buf.get(start..end).or_else(|| self.buf.get(start..)),
+                    // The whole substring we are interested in is ASCII, so
+                    // byte indexing is still valid.
+                    Some(non_ascii_byte_offset) if non_ascii_byte_offset > end => return self.get(start..end),
+                    // We turn non-ASCII somewhere inside before the substring
+                    // we're interested in, so consume that much.
+                    Some(non_ascii_byte_offset) if non_ascii_byte_offset <= start => non_ascii_byte_offset,
+                    // This means we turn non-ASCII somewhere inside the substring.
+                    // Consume up to start.
+                    Some(_) => start,
+                };
+                // Scan for the beginning of the slice
+                let mut slice = &self.buf[consumed..];
+                // Count of "characters" remaining until the `start`th character.
+                let mut remaining = start - consumed;
+                if remaining > 0 {
+                    // This loop will terminate when either:
+                    //
+                    // - It counts `start` number of characters.
+                    // - It consumes the entire slice when scanning for the
+                    //   `start`th character.
+                    //
+                    // The loop will advance by at least one byte every iteration.
+                    slice = loop {
+                        match bstr::decode_utf8(slice) {
+                            // If we've run out of slice while trying to find the
+                            // `start`th character, the lookup fails and we return `nil`.
+                            (_, 0) => return None,
+
+                            // We found a single UTF-8 encoded character. keep track
+                            // of the count and advance the substring to continue
+                            // decoding.
+                            //
+                            // If there's only one more to go, advance and stop the
+                            // loop.
+                            (Some(_), size) if remaining == 1 => break &slice[size..],
+                            // Otherwise, keep track of the character we observed and
+                            // advance the slice to continue decoding.
+                            (Some(_), size) => {
+                                slice = &slice[size..];
+                                remaining -= 1;
+                            }
+
+                            // The next two arms handle the case where we have
+                            // encountered an invalid UTF-8 byte sequence.
+                            //
+                            // In this case, `decode_utf8` will return slices whose
+                            // length is `1..=3`. The length of this slice is the
+                            // number of "characters" we can advance the loop by.
+                            //
+                            // If the invalid UTF-8 sequence contains more bytes
+                            // than we have remaining to get to the `start`th char,
+                            // then we can break the loop directly.
+                            (None, size) if remaining <= size => break &slice[remaining..],
+                            // If there are more characters remaining than the number
+                            // of bytes yielded in the invalid UTF-8 byte sequence,
+                            // count `size` bytes and advance the slice to continue
+                            // decoding.
+                            (None, size) => {
+                                slice = &slice[size..];
+                                remaining -= size;
+                            }
+                        }
+                    }
+                };
+
+                // Scan the slice for the span of characters we want to return.
+                remaining = end - start;
+                // We know `remaining` is not zero because we fast-pathed that
+                // case above.
+                debug_assert!(remaining > 0);
+
+                // keep track of the start of the substring from the `start`th
+                // character.
+                let substr = slice;
+
+                // This loop will terminate when either:
+                //
+                // - It counts the next `start - end` number of characters.
+                // - It consumes the entire slice when scanning for the `end`th
+                //   character.
+                //
+                // The loop will advance by at least one byte every iteration.
+                loop {
+                    match bstr::decode_utf8(slice) {
+                        // If we've run out of slice while trying to find the `end`th
+                        // character, saturate the slice to the end of the string.
+                        (_, 0) => return Some(substr),
+
+                        // We found a single UTF-8 encoded character. keep track
+                        // of the count and advance the substring to continue
+                        // decoding.
+                        //
+                        // If there's only one more to go, advance and stop the
+                        // loop.
+                        (Some(_), size) if remaining == 1 => {
+                            // Push `endth` more positive because this match has
+                            // the effect of shrinking `slice`.
+                            let endth = substr.len() - slice.len() + size;
+                            return Some(&substr[..endth]);
+                        }
+                        // Otherwise, keep track of the character we observed and
+                        // advance the slice to continue decoding.
+                        (Some(_), size) => {
+                            slice = &slice[size..];
+                            remaining -= 1;
+                        }
+
+                        // The next two arms handle the case where we have
+                        // encountered an invalid UTF-8 byte sequence.
+                        //
+                        // In this case, `decode_utf8` will return slices whose
+                        // length is `1..=3`. The length of this slice is the
+                        // number of "characters" we can advance the loop by.
+                        //
+                        // If the invalid UTF-8 sequence contains more bytes
+                        // than we have remaining to get to the `end`th char,
+                        // then we can break the loop directly.
+                        (None, size) if remaining <= size => {
+                            // For an explanation of this arithmetic:
+                            // If we're trying to slice:
+                            //
+                            // ```
+                            // s = "a\xF0\x9F\x87"
+                            // s[0, 2]
+                            // ```
+                            //
+                            // By the time we get to this branch in this loop:
+                            //
+                            // ```
+                            // substr = "a\xF0\x9F\x87"
+                            // slice = "\xF0\x9F\x87"
+                            // remaining = 1
+                            // ```
+                            //
+                            // We want to compute `endth == 2`:
+                            //
+                            //    2   =      4       -      3      +     1
+                            let endth = substr.len() - slice.len() + remaining;
+                            return Some(&substr[..endth]);
+                        }
+                        // If there are more characters remaining than the number
+                        // of bytes yielded in the invalid UTF-8 byte sequence,
+                        // count `size` bytes and advance the slice to continue
+                        // decoding.
+                        (None, size) => {
+                            slice = &slice[size..];
+                            remaining -= size;
+                        }
+                    }
+                }
+            }
         }
     }
 
