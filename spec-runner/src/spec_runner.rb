@@ -115,6 +115,7 @@ module Artichoke
           case state.exception
           when ArgumentError
             skipped = true if state.message =~ /Oniguruma.*UTF-8/
+            skipped = true if state.message =~ /invalid encoding.*UTF-8/
           when NoMethodError
             skipped = true if state.message =~ /'allocate'/
             skipped = true if state.message =~ /'encoding'/

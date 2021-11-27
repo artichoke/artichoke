@@ -584,7 +584,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "core-regexp")]
     fn funcall_string_split_regexp() {
         let mut interp = interpreter().unwrap();
 
@@ -620,7 +619,7 @@ mod tests {
             .unwrap_err();
         assert_eq!("TypeError", err.name().as_ref());
         assert_eq!(
-            b"nil cannot be converted to String".as_bstr(),
+            b"no implicit conversion of nil into String".as_bstr(),
             err.message().as_ref().as_bstr()
         );
     }

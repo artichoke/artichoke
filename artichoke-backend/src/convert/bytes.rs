@@ -1,13 +1,13 @@
+use core::mem;
 use std::borrow::Cow;
 use std::ffi::{OsStr, OsString};
-use std::slice;
 
-use crate::convert::UnboxRubyError;
-use crate::core::{TryConvertMut, Value as _};
+use spinoso_string::String;
+
+use crate::convert::BoxUnboxVmValue;
+use crate::core::TryConvertMut;
 use crate::error::Error;
 use crate::platform_string::{os_str_to_bytes, os_string_to_bytes};
-use crate::sys;
-use crate::types::{Ruby, Rust};
 use crate::value::Value;
 use crate::Artichoke;
 
@@ -15,7 +15,9 @@ impl TryConvertMut<Vec<u8>, Value> for Artichoke {
     type Error = Error;
 
     fn try_convert_mut(&mut self, value: Vec<u8>) -> Result<Value, Self::Error> {
-        self.try_convert_mut(value.as_slice())
+        let s = String::utf8(value);
+        let value = String::alloc_value(s, self)?;
+        Ok(self.protect(value))
     }
 }
 
@@ -23,14 +25,7 @@ impl TryConvertMut<&[u8], Value> for Artichoke {
     type Error = Error;
 
     fn try_convert_mut(&mut self, value: &[u8]) -> Result<Value, Self::Error> {
-        // Ruby strings contain raw bytes, so we can convert from a &[u8] to a
-        // `char *` and `size_t`.
-        let raw = value.as_ptr().cast::<i8>();
-        let len = value.len();
-        // `mrb_str_new` copies the `char *` to the mruby heap so we do not have
-        // to worry about the lifetime of the slice passed into this converter.
-        let string = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_str_new(mrb, raw, len))? };
-        Ok(string.into())
+        self.try_convert_mut(value.to_vec())
     }
 }
 
@@ -83,34 +78,26 @@ impl<'a> TryConvertMut<Cow<'a, OsStr>, Value> for Artichoke {
 impl TryConvertMut<Value, Vec<u8>> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<Vec<u8>, Self::Error> {
-        TryConvertMut::<_, &[u8]>::try_convert_mut(self, value).map(<[_]>::to_vec)
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<Vec<u8>, Self::Error> {
+        let s = unsafe { String::unbox_from_value(&mut value, self)? };
+        Ok(s.clone().into_vec())
     }
 }
 
 impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, value: Value) -> Result<&'a [u8], Self::Error> {
-        if let Ruby::String = value.ruby_type() {
-            let bytes = value.inner();
-            unsafe {
-                self.with_ffi_boundary(|mrb| {
-                    let raw = sys::mrb_string_value_ptr(mrb, bytes).cast::<u8>();
-                    let len = sys::mrb_string_value_len(mrb, bytes);
-                    if let Ok(len) = usize::try_from(len) {
-                        // We can return a borrowed slice because the memory is
-                        // stored on the mruby heap. As long as `value` is
-                        // reachable, this slice points to valid memory.
-                        Ok(slice::from_raw_parts(raw, len))
-                    } else {
-                        Err(UnboxRubyError::new(&value, Rust::Bytes).into())
-                    }
-                })?
-            }
-        } else {
-            Err(UnboxRubyError::new(&value, Rust::Bytes).into())
-        }
+    fn try_convert_mut(&mut self, mut value: Value) -> Result<&'a [u8], Self::Error> {
+        self.protect(value);
+        let s = unsafe { String::unbox_from_value(&mut value, self)? };
+        // Safety
+        //
+        // This transmute modifies the lifetime of the byte slice pulled out of
+        // the boxed `String`. This is only safe if there are no garbage
+        // collections that reclaim `value`, which is enforced for at least this
+        // entry from an mruby trampoline by the call to `protect` above.
+        let slice = unsafe { mem::transmute(s.as_slice()) };
+        Ok(slice)
     }
 }
 

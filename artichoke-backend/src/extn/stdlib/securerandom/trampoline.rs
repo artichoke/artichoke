@@ -12,7 +12,8 @@ pub fn alphanumeric(interp: &mut Artichoke, len: Option<Value>) -> Result<Value,
     } else {
         securerandom::alphanumeric(None)?
     };
-    interp.try_convert_mut(alpha)
+    let alpha = spinoso_string::String::ascii(alpha);
+    spinoso_string::String::alloc_value(alpha, interp)
 }
 
 #[inline]
@@ -23,7 +24,8 @@ pub fn base64(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error
     } else {
         securerandom::base64(None)?
     };
-    interp.try_convert_mut(base64)
+    let base64 = spinoso_string::String::ascii(base64.into_bytes());
+    spinoso_string::String::alloc_value(base64, interp)
 }
 
 #[inline]
@@ -44,7 +46,8 @@ pub fn urlsafe_base64(interp: &mut Artichoke, len: Option<Value>, padding: Optio
     } else {
         securerandom::urlsafe_base64(None, padding)?
     };
-    interp.try_convert_mut(base64)
+    let base64 = spinoso_string::String::ascii(base64.into_bytes());
+    spinoso_string::String::alloc_value(base64, interp)
 }
 
 #[inline]
@@ -55,7 +58,8 @@ pub fn hex(interp: &mut Artichoke, len: Option<Value>) -> Result<Value, Error> {
     } else {
         securerandom::hex(None)?
     };
-    interp.try_convert_mut(hex)
+    let hex = spinoso_string::String::ascii(hex.into_bytes());
+    spinoso_string::String::alloc_value(hex, interp)
 }
 
 #[inline]
@@ -70,18 +74,20 @@ pub fn random_bytes(interp: &mut Artichoke, len: Option<Value>) -> Result<Value,
     } else {
         securerandom::random_bytes(None)?
     };
-    interp.try_convert_mut(bytes)
+    let bytes = spinoso_string::String::binary(bytes);
+    spinoso_string::String::alloc_value(bytes, interp)
 }
 
 #[inline]
 pub fn random_number(interp: &mut Artichoke, max: Option<Value>) -> Result<Value, Error> {
     let max = interp.try_convert_mut(max)?;
     let num = securerandom::random_number(max)?;
-    Ok(interp.convert_mut(num))
+    interp.try_convert_mut(num)
 }
 
 #[inline]
 pub fn uuid(interp: &mut Artichoke) -> Result<Value, Error> {
     let uuid = securerandom::uuid()?;
-    interp.try_convert_mut(uuid)
+    let uuid = spinoso_string::String::ascii(uuid.into_bytes());
+    spinoso_string::String::alloc_value(uuid, interp)
 }

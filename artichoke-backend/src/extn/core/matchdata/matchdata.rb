@@ -23,7 +23,7 @@ class MatchData
       end
     else
       names.each do |name|
-        s << %( #{name}:"#{self[name] || nil.inspect}")
+        s << %( #{name}:#{self[name].inspect})
       end
     end
     s << '>'
