@@ -902,7 +902,10 @@ class String
           return chunks
         end
         chunks << s[0, match.begin(0)]
-        s = s[match.end(0)..-1]
+        advance_to = match.end(0)
+        advance_to += 1 if (match.end(0) - match.begin(0)).zero?
+
+        s = s[advance_to..-1]
 
         return chunks if s.nil?
       end
