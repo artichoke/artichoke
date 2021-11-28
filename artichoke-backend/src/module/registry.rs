@@ -225,4 +225,13 @@ where
     pub fn shrink_to_fit(&mut self) {
         self.0.shrink_to_fit();
     }
+
+    /// Shrinks the capacity of the symbol table with a lower bound.
+    /// The capacity will remain at least as large as both the length and the
+    /// supplied value.
+    ///
+    /// If the current capacity is less than the lower limit, this is a no-op.
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.0.shrink_to(min_capacity);
+    }
 }
