@@ -382,6 +382,31 @@ where
         self.paths.shrink_to_fit();
     }
 
+    /// Shrinks the capacity of the set with a lower bound.
+    ///
+    /// The capacity will remain at least as large as both the length and the
+    /// supplied value.
+    ///
+    /// If the current capacity is less than the lower limit, this is a no-op.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::path::PathBuf;
+    /// use mezzaluna_feature_loader::LoadedFeatures;
+    ///
+    /// let mut features = LoadedFeatures::with_capacity(100);
+    /// features.insert_in_memory_feature(PathBuf::from("set.rb"));
+    /// features.insert_in_memory_feature(PathBuf::from("artichoke.rb"));
+    /// assert!(features.capacity() >= 100);
+    /// features.shrink_to(2);
+    /// assert!(features.capacity() >= 2);
+    /// ```
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.features.shrink_to(min_capacity);
+        self.paths.shrink_to(min_capacity);
+    }
+
     /// Returns true if the set contains a feature.
     ///
     /// Features loaded from disk are compared based on whether they point to
