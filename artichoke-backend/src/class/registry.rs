@@ -226,7 +226,7 @@ where
         self.0.shrink_to_fit();
     }
 
-    /// Shrinks the capacity of the symbol table with a lower bound.
+    /// Shrinks the capacity of the registry with a lower bound.
     /// The capacity will remain at least as large as both the length and the
     /// supplied value.
     ///
