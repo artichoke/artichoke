@@ -15,6 +15,7 @@ use crate::loaded_features::LoadedFeatures;
 pub struct Loader {
     #[cfg(feature = "rubylib")]
     rubylib: Rubylib,
+    #[allow(dead_code)]
     loaded_features: LoadedFeatures,
 }
 
