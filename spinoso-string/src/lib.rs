@@ -2953,7 +2953,6 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
 }
 
 #[cfg(test)]
-#[allow(clippy::shadow_unrelated)]
 #[allow(clippy::invisible_characters)]
 mod tests {
     use alloc::string::ToString;
