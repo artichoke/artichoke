@@ -186,7 +186,6 @@ impl<'a> Iterator for ConventionallyUtf8<'a> {
     type Item = &'a [u8];
 
     #[inline]
-    #[allow(clippy::branches_sharing_code)] // for clarity.
     fn next(&mut self) -> Option<Self::Item> {
         if let Some(slice) = self.invalid_bytes.next() {
             return Some(slice);
