@@ -16,4 +16,7 @@ Gem::Specification.new do |s|
   s.executables << 'generate-third-party-html'
   s.executables << 'generate-third-party-text-file'
   s.executables << 'generate-third-party-text-file-single-target'
+  s.metadata = {
+    'rubygems_mfa_required' => 'true'
+  }
 end
