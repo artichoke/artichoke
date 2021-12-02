@@ -628,7 +628,6 @@ fn is_special_global_punct(ch: u8) -> bool {
 }
 
 #[cfg(test)]
-#[allow(clippy::shadow_unrelated)]
 mod tests {
     use super::{
         is_ident_until, is_next_ident_exhausting, is_special_global_name, IdentifierType, ParseIdentifierError,

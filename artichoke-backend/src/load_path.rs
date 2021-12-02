@@ -113,7 +113,6 @@ pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, ConvertBytesError> {
 }
 
 #[cfg(test)]
-#[allow(clippy::shadow_unrelated)]
 mod tests {
     use std::path::Path;
 

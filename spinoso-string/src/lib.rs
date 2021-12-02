@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
-#![allow(clippy::option_if_let_else)]
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
 // TODO: warn on missing docs once crate is API-complete.
@@ -2953,7 +2952,6 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
 }
 
 #[cfg(test)]
-#[allow(clippy::shadow_unrelated)]
 #[allow(clippy::invisible_characters)]
 mod tests {
     use alloc::string::ToString;
