@@ -13,9 +13,9 @@ dependencies = [
 
 [[package]]
 name = "ansi_term"
-version = "0.11.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee49baf6cb617b853aa8d93bf420db2383fab46d314482ca2803b40d5fde979b"
+checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
 dependencies = [
  "winapi",
 ]
@@ -125,9 +125,9 @@ checksum = "72feb31ffc86498dacdbd0fcebb56138e7177a8cc5cea4516031d15ae85a742e"
 
 [[package]]
 name = "cc"
-version = "1.0.71"
+version = "1.0.72"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79c2681d6594606957bbb8631c4b90a7fcaaa72cdb714743a437b156d6a7eedd"
+checksum = "22a9137b95ea06864e018375b72adfb7db6e6f68cfc8df5a04d00288050485ee"
 
 [[package]]
 name = "cfg-if"
@@ -171,9 +171,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "2.33.3"
+version = "2.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37e58ac78573c40708d45522f0d80fa2f01cc4f9b4e2bf749807255454312002"
+checksum = "a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c"
 dependencies = [
  "ansi_term",
  "atty",
@@ -214,9 +214,9 @@ dependencies = [
 
 [[package]]
 name = "focaccia"
-version = "1.0.2"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6dd5c2feb696773b3fd15cca8387ce57d7f770da86ed475c1f4832848e317ec0"
+checksum = "bdea8da000c6a33ffd516c57b6d2c07080eda0c52ac56d2fb6ccdde71f2f0cde"
 
 [[package]]
 name = "generic-array"
@@ -250,9 +250,9 @@ dependencies = [
 
 [[package]]
 name = "intaglio"
-version = "1.3.0"
+version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2730d2ed3105fa1e7e3fc8de29bf8dd37dd58c7eb18bceb15880e3361a2cfd2"
+checksum = "1feb5417d69513d0a6755444a18a55b2ffff6e0521a2935087e595d6f7cb562d"
 
 [[package]]
 name = "itoa"
@@ -268,9 +268,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.106"
+version = "0.2.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a60553f9a9e039a333b4e9b20573b9e9b9c0bb3a11e201ccc48ef4283456d673"
+checksum = "8521a1b57e76b1ec69af7599e75e38e7b7fad6610f037db8c79b127201b5d119"
 
 [[package]]
 name = "libm"
@@ -466,15 +466,15 @@ dependencies = [
 
 [[package]]
 name = "rand_mt"
-version = "4.0.1"
+version = "4.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9850304db7122f5b5f33bf751a4d15aabb298f3659141fb392012062e7bdb9fc"
+checksum = "88015c62ee73400068c6b1ba3e6fa7215c3f88fe882d208ab82d2e36d95c7aad"
 
 [[package]]
 name = "raw-parts"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40212472c0965c24516ac3e87ffeafc3bfd67274ad699dff8985e80d147644be"
+checksum = "b86f9598ad5ee2abfdbfb67653a356ed2f50cfbb32915e672261a93853a3dc84"
 
 [[package]]
 name = "regex"
@@ -495,9 +495,9 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
 name = "rust-embed"
-version = "6.2.0"
+version = "6.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1be44a6694859b7cfc955699935944a6844aa9fe416aeda5d40829e3e38dfee6"
+checksum = "d40377bff8cceee81e28ddb73ac97f5c2856ce5522f0b260b763f434cdfae602"
 dependencies = [
  "rust-embed-impl",
  "rust-embed-utils",
@@ -506,9 +506,9 @@ dependencies = [
 
 [[package]]
 name = "rust-embed-impl"
-version = "6.1.0"
+version = "6.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f567ca01565c50c67b29e535f5f67b8ea8aeadaeed16a88f10792ab57438b957"
+checksum = "94e763e24ba2bf0c72bc6be883f967f794a019fafd1b86ba1daff9c91a7edd30"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -519,9 +519,9 @@ dependencies = [
 
 [[package]]
 name = "rust-embed-utils"
-version = "7.0.0"
+version = "7.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6116e7ab9ea963f60f2f20291d8fcf6c7273192cdd7273b3c80729a9605c97b2"
+checksum = "ad22c7226e4829104deab21df575e995bfbc4adfad13a595e387477f238c1aec"
 dependencies = [
  "sha2",
  "walkdir",
@@ -703,9 +703,9 @@ checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
 name = "syn"
-version = "1.0.81"
+version = "1.0.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2afee18b8beb5a596ecb4a2dce128c719b4ba399d34126b9e4396e3f9860966"
+checksum = "8daf5dd0bb60cbd4137b1b587d2fc0ae729bc07cf01cd70b36a1ed5ade3b9d59"
 dependencies = [
  "proc-macro2",
  "quote",
