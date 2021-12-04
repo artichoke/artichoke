@@ -22,7 +22,7 @@ Ruby runtime implemented in Rust and Ruby.
 
 <p align="center">
   <a href="https://artichoke.run">
-    <img alt="Artichoke Ruby WebAssembly playground" style="max-width: 400px" width="400" src="https://artichoke.run/playground.png">
+    <img alt="Artichoke Ruby WebAssembly playground" style="max-width: 400px" width="400" src="https://artichoke.run/artichoke-playground-safari-revision-4938-light-mode.png">
   </a>
   <br>
   <em>Artichoke Ruby Wasm Playground</em>
