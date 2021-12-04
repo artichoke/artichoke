@@ -393,12 +393,11 @@ Playground][playground-repo] runs a [WebAssembly] build of
 The Artichoke project hosts a project website at
 <https://www.artichokeruby.org>.
 
-The website is a [Webpack]-generated static site which is deployed on [GitHub
-Pages]. The source code can be found in the [artichoke/www.artichokeruby.org]
-repository and is [deployed automatically][github-actions-www-deploy] when PRs
-are merged.
+The website is a static site built with a custom static site generator which is
+deployed on [GitHub Pages]. The source code can be found in the
+[artichoke/www.artichokeruby.org] repository and is [deployed
+automatically][github-actions-www-deploy] when PRs are merged.
 
-[webpack]: https://webpack.js.org/
 [github pages]: https://pages.github.com/
 [artichoke/www.artichokeruby.org]:
   https://github.com/artichoke/www.artichokeruby.org
