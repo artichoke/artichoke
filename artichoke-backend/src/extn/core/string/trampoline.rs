@@ -1053,7 +1053,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
 
         let string = value.try_convert_into_mut::<&[u8]>(interp)?;
         if let Some(ref block) = block {
-            let regex = Regexp::lazy(pattern_bytes.clone());
+            let regex = Regexp::try_from(pattern_bytes.clone())?;
             let matchdata = MatchData::new(string.to_vec(), regex, ..);
             let patlen = pattern_bytes.len();
             if let Some(pos) = string.find(&pattern_bytes) {
@@ -1096,7 +1096,7 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
             result.push(interp.try_convert_mut(pattern_bytes.as_slice())?);
         }
         if matches > 0 {
-            let regex = Regexp::lazy(pattern_bytes.clone());
+            let regex = Regexp::try_from(pattern_bytes.clone())?;
             let matchdata = MatchData::new(string.to_vec(), regex, last_pos..last_pos + pattern_bytes.len());
             let data = MatchData::alloc_value(matchdata, interp)?;
             interp.set_global_variable(regexp::LAST_MATCH, &data)?;
