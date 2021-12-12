@@ -141,8 +141,7 @@ impl Integer {
                 }
                 _ => {
                     let mut message = String::new();
-                    write!(&mut message, "{}", self.as_i64()).map_err(WriteError::from)?;
-                    message.push_str(" out of char range");
+                    write!(&mut message, "{} out of char range", self.as_i64()).map_err(WriteError::from)?;
                     Err(RangeError::from(message).into())
                 }
             }
