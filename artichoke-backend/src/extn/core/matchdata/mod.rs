@@ -10,6 +10,7 @@
 //! [rubyspec]: https://github.com/ruby/spec
 
 use std::collections::HashMap;
+use std::fmt::Write as _;
 use std::ops::{Bound, RangeBounds};
 use std::str;
 
@@ -311,7 +312,7 @@ impl MatchData {
                     Ok(idx) if idx < captures_len => idx,
                     _ => {
                         let mut message = String::from("index ");
-                        itoa::fmt(&mut message, index).map_err(WriteError::from)?;
+                        write!(&mut message, "{}", index).map_err(WriteError::from)?;
                         message.push_str(" out of matches");
                         return Err(IndexError::from(message).into());
                     }

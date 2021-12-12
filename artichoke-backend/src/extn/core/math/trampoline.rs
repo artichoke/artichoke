@@ -1,5 +1,7 @@
 //! Glue between mruby FFI and `ENV` Rust implementation.
 
+use std::fmt::Write as _;
+
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 
@@ -124,13 +126,13 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
         }
         Err(_) if exponent < 0 => {
             let mut message = String::from("integer ");
-            itoa::fmt(&mut message, exponent).map_err(WriteError::from)?;
+            write!(&mut message, "{}", exponent).map_err(WriteError::from)?;
             message.push_str("too small to convert to `int'");
             Err(RangeError::from(message).into())
         }
         Err(_) => {
             let mut message = String::from("integer ");
-            itoa::fmt(&mut message, exponent).map_err(WriteError::from)?;
+            write!(&mut message, "{}", exponent).map_err(WriteError::from)?;
             message.push_str("too big to convert to `int'");
             Err(RangeError::from(message).into())
         }

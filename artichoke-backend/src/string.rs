@@ -53,7 +53,7 @@ where
 /// Error type for [`format_unicode_debug_into`].
 ///
 /// This error type can also be used to convert generic [`fmt::Error`] into an
-/// [`Error`], such as when formatting integers with [`itoa::fmt`].
+/// [`Error`], such as when formatting integers with [`write!`].
 ///
 /// This  error type wraps a [`fmt::Error`].
 ///
