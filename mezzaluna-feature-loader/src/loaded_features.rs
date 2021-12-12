@@ -360,10 +360,6 @@ where
         self.paths.reserve(additional);
     }
 
-    /// Reserves capacity for at least `additional` more elements to be inserted
-    /// in the `LoadedFeatures`. The collection may reserve more space to avoid
-    /// frequent reallocations.
-    ///
     /// Tries to reserve capacity for at least `additional` more elements to be
     /// inserted in the `LoadedFeatures`. The collection may reserve more space
     /// to avoid frequent reallocations.
