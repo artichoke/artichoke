@@ -11,6 +11,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<time::Time>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Time", TIME_CSTR, None, Some(def::box_unbox_free::<time::Time>))?;
     // NOTE: The ordering of method declarations in the builder below is the
     // same as in `Init_Time` in MRI `time.c`.
@@ -95,7 +96,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .define()?;
     interp.def_class::<time::Time>(spec)?;
 
-    trace!("Patched Time onto interpreter");
     Ok(())
 }
 

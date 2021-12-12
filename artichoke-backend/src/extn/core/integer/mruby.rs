@@ -5,11 +5,13 @@ use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
 const INTEGER_CSTR: &CStr = cstr::cstr!("Integer");
+static INTEGER_RUBY_SOURCE: &[u8] = include_bytes!("integer.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Integer>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Integer", INTEGER_CSTR, None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_method("chr", integer_chr, sys::mrb_args_opt(1))?
@@ -21,8 +23,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("size", integer_size, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<Integer>(spec)?;
-    interp.eval(&include_bytes!("integer.rb")[..])?;
-    trace!("Patched Integer onto interpreter");
+    interp.eval(INTEGER_RUBY_SOURCE)?;
+
     Ok(())
 }
 

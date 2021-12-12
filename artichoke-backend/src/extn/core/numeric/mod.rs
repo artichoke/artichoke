@@ -1,22 +1,8 @@
-use std::ffi::CStr;
-
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
 mod ffi;
-
-const NUMERIC_CSTR: &CStr = cstr::cstr!("Numeric");
-
-pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    if interp.is_class_defined::<Numeric>() {
-        return Ok(());
-    }
-    let spec = class::Spec::new("Numeric", NUMERIC_CSTR, None, None)?;
-    interp.def_class::<Numeric>(spec)?;
-    interp.eval(&include_bytes!("numeric.rb")[..])?;
-    trace!("Patched Numeric onto interpreter");
-    Ok(())
-}
+pub mod mruby;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Numeric;

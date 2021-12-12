@@ -2,18 +2,18 @@
 
 use std::ffi::CStr;
 
-use spinoso_env::RUBY_API_POLYFILLS;
-
 use crate::extn::core::artichoke;
 use crate::extn::core::env::{self, trampoline};
 use crate::extn::prelude::*;
 
 const ENVIRON_CSTR: &CStr = cstr::cstr!("Environ");
+static ENV_RUBY_SOURCE: &[u8] = spinoso_env::RUBY_API_POLYFILLS.as_bytes();
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<env::Environ>() {
         return Ok(());
     }
+
     let scope = interp
         .module_spec::<artichoke::Artichoke>()?
         .map(EnclosingRubyScope::module)
@@ -32,9 +32,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("to_h", env_to_h, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<env::Environ>(spec)?;
-    interp.eval(RUBY_API_POLYFILLS.as_bytes())?;
-    trace!("Patched ENV onto interpreter");
-    trace!("Patched Artichoke::Environ onto interpreter");
+    interp.eval(ENV_RUBY_SOURCE)?;
+
     Ok(())
 }
 

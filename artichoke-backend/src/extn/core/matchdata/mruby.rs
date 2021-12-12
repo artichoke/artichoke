@@ -4,11 +4,13 @@ use crate::extn::core::matchdata::{self, trampoline};
 use crate::extn::prelude::*;
 
 const MATCH_DATA_CSTR: &CStr = cstr::cstr!("MatchData");
+static MATCH_DATA_RUBY_SOURCE: &[u8] = include_bytes!("matchdata.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<matchdata::MatchData>() {
         return Ok(());
     }
+
     let spec = class::Spec::new(
         "MatchData",
         MATCH_DATA_CSTR,
@@ -34,8 +36,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("end", matchdata_end, sys::mrb_args_req(1))?
         .define()?;
     interp.def_class::<matchdata::MatchData>(spec)?;
-    interp.eval(&include_bytes!("matchdata.rb")[..])?;
-    trace!("Patched MatchData onto interpreter");
+    interp.eval(MATCH_DATA_RUBY_SOURCE)?;
+
     Ok(())
 }
 

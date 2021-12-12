@@ -6,6 +6,19 @@ const IP_SOCKET_CSTR: &CStr = cstr::cstr!("IPSocket");
 const IP_ADDR_CSTR: &CStr = cstr::cstr!("IPAddr");
 const URI_CSTR: &CStr = cstr::cstr!("URI");
 
+static URI_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri.rb");
+static URI_COMMON_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/common.rb");
+static URI_FILE_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/file.rb");
+static URI_FTP_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/ftp.rb");
+static URI_GENERIC_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/generic.rb");
+static URI_HTTP_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/http.rb");
+static URI_HTTPS_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/https.rb");
+static URI_LDAP_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/ldap.rb");
+static URI_LDAPS_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/ldaps.rb");
+static URI_MAILTO_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/mailto.rb");
+static URI_RFC2396_PARSER_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/rfc2396_parser.rb");
+static URI_RFC3986_PARSER_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/rfc3986_parser.rb");
+
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("IPSocket", IP_SOCKET_CSTR, None, None)?;
     interp.def_class::<IpSocket>(spec)?;
@@ -16,24 +29,18 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = module::Spec::new(interp, "URI", URI_CSTR, None)?;
     interp.def_module::<Uri>(spec)?;
 
-    interp.def_rb_source_file("uri.rb", &include_bytes!("vendor/uri.rb")[..])?;
-    interp.def_rb_source_file("uri/common.rb", &include_bytes!("vendor/uri/common.rb")[..])?;
-    interp.def_rb_source_file("uri/file.rb", &include_bytes!("vendor/uri/file.rb")[..])?;
-    interp.def_rb_source_file("uri/ftp.rb", &include_bytes!("vendor/uri/ftp.rb")[..])?;
-    interp.def_rb_source_file("uri/generic.rb", &include_bytes!("vendor/uri/generic.rb")[..])?;
-    interp.def_rb_source_file("uri/http.rb", &include_bytes!("vendor/uri/http.rb")[..])?;
-    interp.def_rb_source_file("uri/https.rb", &include_bytes!("vendor/uri/https.rb")[..])?;
-    interp.def_rb_source_file("uri/ldap.rb", &include_bytes!("vendor/uri/ldap.rb")[..])?;
-    interp.def_rb_source_file("uri/ldaps.rb", &include_bytes!("vendor/uri/ldaps.rb")[..])?;
-    interp.def_rb_source_file("uri/mailto.rb", &include_bytes!("vendor/uri/mailto.rb")[..])?;
-    interp.def_rb_source_file(
-        "uri/rfc2396_parser.rb",
-        &include_bytes!("vendor/uri/rfc2396_parser.rb")[..],
-    )?;
-    interp.def_rb_source_file(
-        "uri/rfc3986_parser.rb",
-        &include_bytes!("vendor/uri/rfc3986_parser.rb")[..],
-    )?;
+    interp.def_rb_source_file("uri.rb", URI_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/common.rb", URI_COMMON_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/file.rb", URI_FILE_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/ftp.rb", URI_FTP_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/generic.rb", URI_GENERIC_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/http.rb", URI_HTTP_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/https.rb", URI_HTTPS_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/ldap.rb", URI_LDAP_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/ldaps.rb", URI_LDAPS_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/mailto.rb", URI_MAILTO_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/rfc2396_parser.rb", URI_RFC2396_PARSER_RUBY_SOURCE)?;
+    interp.def_rb_source_file("uri/rfc3986_parser.rb", URI_RFC3986_PARSER_RUBY_SOURCE)?;
 
     Ok(())
 }

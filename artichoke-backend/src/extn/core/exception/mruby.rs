@@ -39,6 +39,8 @@ const SYSTEM_EXIT_CSTR: &CStr = cstr::cstr!("SystemExit");
 const SYSTEM_STACK_CSTR: &CStr = cstr::cstr!("SystemStackError");
 const FATAL_CSTR: &CStr = cstr::cstr!("fatal");
 
+static EXCEPTION_RUBY_SOURCE: &[u8] = include_bytes!("exception.rb");
+
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let exception_spec = class::Spec::new("Exception", EXCEPTION_CSTR, None, None)?;
     class::Builder::for_spec(interp, &exception_spec).define()?;
@@ -244,8 +246,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .define()?;
     interp.def_class::<Fatal>(fatal_spec)?;
 
-    interp.eval(&include_bytes!("exception.rb")[..])?;
-    trace!("Patched Exception onto interpreter");
-    trace!("Patched core exception hierarchy onto interpreter");
+    interp.eval(EXCEPTION_RUBY_SOURCE)?;
+
     Ok(())
 }

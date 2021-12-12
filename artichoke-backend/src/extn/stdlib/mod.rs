@@ -60,6 +60,5 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     #[cfg(feature = "stdlib-uri")]
     uri::init(interp)?;
 
-    trace!("Patched Ruby standard library onto interpreter");
     Ok(())
 }
