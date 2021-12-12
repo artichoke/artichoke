@@ -45,7 +45,7 @@ impl fmt::Debug for mrb_value {
             Ruby::Bool => f.write_str("false"),
             Ruby::Fixnum => {
                 let fixnum = unsafe { mrb_sys_fixnum_to_cint(*self) };
-                itoa::fmt(f, fixnum)
+                write!(f, "{}", fixnum)
             }
             Ruby::Float => {
                 let float = unsafe { mrb_sys_float_to_cdouble(*self) };

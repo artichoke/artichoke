@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Write as _};
 use std::mem;
 
 use crate::extn::core::numeric::{self, Coercion, Outcome};
@@ -141,7 +141,7 @@ impl Integer {
                 }
                 _ => {
                     let mut message = String::new();
-                    itoa::fmt(&mut message, self.as_i64()).map_err(WriteError::from)?;
+                    write!(&mut message, "{}", self.as_i64()).map_err(WriteError::from)?;
                     message.push_str(" out of char range");
                     Err(RangeError::from(message).into())
                 }

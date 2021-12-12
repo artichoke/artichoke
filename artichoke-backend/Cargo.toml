@@ -16,7 +16,6 @@ artichoke-load-path = { version = "0.1", path = "../artichoke-load-path", defaul
 bstr = { version = "0.2, >= 0.2.2", default-features = false, features = ["std"] }
 cstr = "0.2, >= 0.2.4"
 intaglio = "1.4"
-itoa = "0.4"
 log = "0.4, >= 0.4.5"
 once_cell = "1"
 onig = { version = "6.3", optional = true, default-features = false }

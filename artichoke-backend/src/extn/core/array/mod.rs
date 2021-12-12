@@ -1,10 +1,9 @@
 use std::ffi::c_void;
-use std::fmt::Write;
+use std::fmt::Write as _;
 use std::ops::Deref;
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string, UnboxedValueGuard};
 use crate::extn::prelude::*;
-use crate::io::IoError;
 
 pub mod args;
 mod ffi;
@@ -131,10 +130,10 @@ pub fn join(interp: &mut Artichoke, ary: &Array, sep: &[u8]) -> Result<Vec<u8>, 
                 }
             }
             Ruby::Fixnum => {
-                let mut buf = Vec::new();
+                let mut buf = String::new();
                 let int = unsafe { sys::mrb_sys_fixnum_to_cint(value.inner()) };
-                itoa::write(&mut buf, int).map_err(IoError::from)?;
-                out.push(buf);
+                write!(&mut buf, "{}", int).map_err(WriteError::from)?;
+                out.push(buf.into_bytes());
             }
             Ruby::Float => {
                 let float = unsafe { sys::mrb_sys_float_to_cdouble(value.inner()) };
