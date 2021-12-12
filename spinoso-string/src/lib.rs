@@ -1275,7 +1275,7 @@ impl String {
     /// assert!(str.capacity() >= 11);
     /// ```
     #[inline]
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), std::collections::TryReserveError> {
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         self.buf.try_reserve(additional)
     }
 
@@ -1331,7 +1331,7 @@ impl String {
     /// assert!(str.capacity() >= 11);
     /// ```
     #[inline]
-    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), std::collections::TryReserveError> {
+    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         self.buf.try_reserve_exact(additional)
     }
 
