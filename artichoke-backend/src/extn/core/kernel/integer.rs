@@ -77,8 +77,8 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
                     Ok(1) => return Ok(Some(Radix::default())),
                     Ok(radix) => radix,
                     Err(_) => {
-                        let mut message = String::from("invalid radix ");
-                        write!(&mut message, "{}", num).map_err(WriteError::from)?;
+                        let mut message = String::new();
+                        write!(&mut message, "invalid radix {}", num).map_err(WriteError::from)?;
                         return Err(ArgumentError::from(message).into());
                     }
                 }
@@ -89,8 +89,8 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
                 // of numeric literal prefixes.
                 None if radix == 0 => Ok(None),
                 None => {
-                    let mut message = String::from("invalid radix ");
-                    write!(&mut message, "{}", radix).map_err(WriteError::from)?;
+                    let mut message = String::new();
+                    write!(&mut message, "invalid radix {}", radix).map_err(WriteError::from)?;
                     Err(ArgumentError::from(message).into())
                 }
             }

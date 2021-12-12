@@ -388,12 +388,12 @@ pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, str> {
         19 => Cow::Borrowed("$19"),
         20 => Cow::Borrowed("$20"),
         num => {
-            let mut buf = String::from("$");
+            let mut buf = String::new();
             // Suppress formatting errors because this function is infallible.
             //
             // In practice `write!` will never error because the `fmt::Write`
             // impl for `String` never panics.
-            let _ = write!(&mut buf, "{}", num);
+            let _ = write!(&mut buf, "${}", num);
             Cow::Owned(buf)
         }
     }

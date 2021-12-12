@@ -61,10 +61,9 @@ pub fn element_assignment(
             if let Some(start) = pos {
                 start
             } else {
-                let mut message = String::from("index ");
-                write!(&mut message, "{}", start).map_err(WriteError::from)?;
-                message.push_str(" too small for array; minimum: -");
-                write!(&mut message, "{}", len).map_err(WriteError::from)?;
+                let mut message = String::new();
+                write!(&mut message, "index {} too small for array; minimum: -{}", start, len)
+                    .map_err(WriteError::from)?;
                 return Err(IndexError::from(message).into());
             }
         };
@@ -72,9 +71,8 @@ pub fn element_assignment(
         if let Ok(slice_len) = usize::try_from(slice_len) {
             Ok((start, Some(slice_len), elem))
         } else {
-            let mut message = String::from("negative length (");
-            write!(&mut message, "{}", slice_len).map_err(WriteError::from)?;
-            message.push(')');
+            let mut message = String::new();
+            write!(&mut message, "negative length ({})", slice_len).map_err(WriteError::from)?;
             Err(IndexError::from(message).into())
         }
     } else if let Ok(index) = implicitly_convert_to_int(interp, first) {
@@ -88,10 +86,9 @@ pub fn element_assignment(
             if let Some(idx) = idx {
                 Ok((idx, None, second))
             } else {
-                let mut message = String::from("index ");
-                write!(&mut message, "{}", index).map_err(WriteError::from)?;
-                message.push_str(" too small for array; minimum: -");
-                write!(&mut message, "{}", len).map_err(WriteError::from)?;
+                let mut message = String::new();
+                write!(&mut message, "index {} too small for array; minimum: -{}", index, len)
+                    .map_err(WriteError::from)?;
                 Err(IndexError::from(message).into())
             }
         }
@@ -110,10 +107,7 @@ pub fn element_assignment(
             // TODO: This conditional is probably not doing the right thing
             if start + (end - start) < 0 {
                 let mut message = String::new();
-                write!(&mut message, "{}", start).map_err(WriteError::from)?;
-                message.push_str("..");
-                write!(&mut message, "{}", end).map_err(WriteError::from)?;
-                message.push_str(" out of range");
+                write!(&mut message, "{}..{} out of range", start, end).map_err(WriteError::from)?;
                 return Err(RangeError::from(message).into());
             }
             match (usize::try_from(start), usize::try_from(end)) {
@@ -126,19 +120,17 @@ pub fn element_assignment(
                     if let Some(start) = pos {
                         Ok((start, end.checked_sub(start), second))
                     } else {
-                        let mut message = String::from("index ");
-                        write!(&mut message, "{}", start).map_err(WriteError::from)?;
-                        message.push_str(" too small for array; minimum: -");
-                        write!(&mut message, "{}", len).map_err(WriteError::from)?;
+                        let mut message = String::new();
+                        write!(&mut message, "index {} too small for array; minimum: -{}", start, len)
+                            .map_err(WriteError::from)?;
                         Err(IndexError::from(message).into())
                     }
                 }
                 (Ok(start), Err(_)) => Ok((start, None, second)),
                 (Err(_), Err(_)) => {
-                    let mut message = String::from("index ");
-                    write!(&mut message, "{}", start).map_err(WriteError::from)?;
-                    message.push_str(" too small for array; minimum: -");
-                    write!(&mut message, "{}", len).map_err(WriteError::from)?;
+                    let mut message = String::new();
+                    write!(&mut message, "index {} too small for array; minimum: -{}", start, len)
+                        .map_err(WriteError::from)?;
                     Err(IndexError::from(message).into())
                 }
             }

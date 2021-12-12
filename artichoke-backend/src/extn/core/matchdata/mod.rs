@@ -311,9 +311,8 @@ impl MatchData {
                 match usize::try_from(index) {
                     Ok(idx) if idx < captures_len => idx,
                     _ => {
-                        let mut message = String::from("index ");
-                        write!(&mut message, "{}", index).map_err(WriteError::from)?;
-                        message.push_str(" out of matches");
+                        let mut message = String::new();
+                        write!(&mut message, "index {} out of matches", index).map_err(WriteError::from)?;
                         return Err(IndexError::from(message).into());
                     }
                 }
