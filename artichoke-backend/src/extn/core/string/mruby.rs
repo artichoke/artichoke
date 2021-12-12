@@ -4,11 +4,13 @@ use crate::extn::core::string::{self, trampoline};
 use crate::extn::prelude::*;
 
 const STRING_CSTR: &CStr = cstr::cstr!("String");
+static STRING_RUBY_SOURCE: &[u8] = include_bytes!("string.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<string::String>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("String", STRING_CSTR, None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_method("*", string_mul, sys::mrb_args_req(1))?
@@ -70,8 +72,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("valid_encoding?", string_valid_encoding, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<string::String>(spec)?;
-    interp.eval(&include_bytes!("string.rb")[..])?;
-    trace!("Patched String onto interpreter");
+    interp.eval(STRING_RUBY_SOURCE)?;
+
     Ok(())
 }
 

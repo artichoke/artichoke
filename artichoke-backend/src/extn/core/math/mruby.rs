@@ -13,6 +13,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_module_defined::<Math>() {
         return Ok(());
     }
+
     let spec = module::Spec::new(interp, "Math", MATH_CSTR, None)?;
     module::Builder::for_spec(interp, &spec)
         .add_module_method("acos", math_acos, sys::mrb_args_req(1))?
@@ -59,6 +60,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.define_module_constant::<Math>("E", e)?;
     let pi = interp.convert_mut(math::PI);
     interp.define_module_constant::<Math>("PI", pi)?;
+
     Ok(())
 }
 

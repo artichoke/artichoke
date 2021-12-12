@@ -3,15 +3,17 @@ use std::ffi::CStr;
 use crate::extn::prelude::*;
 
 const PROC_CSTR: &CStr = cstr::cstr!("Proc");
+static PROC_RUBY_SOURCE: &[u8] = include_bytes!("proc.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Proc>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Proc", PROC_CSTR, None, None)?;
     interp.def_class::<Proc>(spec)?;
-    interp.eval(&include_bytes!("proc.rb")[..])?;
-    trace!("Patched Proc onto interpreter");
+    interp.eval(PROC_RUBY_SOURCE)?;
+
     Ok(())
 }
 

@@ -26,6 +26,7 @@ impl File for SecureRandomFile {
         if interp.is_module_defined::<securerandom::SecureRandom>() {
             return Ok(());
         }
+
         let spec = module::Spec::new(interp, "SecureRandom", SECURE_RANDOM_CSTR, None)?;
         module::Builder::for_spec(interp, &spec)
             .add_self_method("alphanumeric", securerandom_alphanumeric, sys::mrb_args_opt(1))?
@@ -38,7 +39,6 @@ impl File for SecureRandomFile {
             .define()?;
         interp.def_module::<securerandom::SecureRandom>(spec)?;
 
-        trace!("Patched SecureRandom onto interpreter");
         Ok(())
     }
 }

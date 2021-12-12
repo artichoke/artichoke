@@ -4,14 +4,16 @@ use crate::extn::core::float::Float;
 use crate::extn::prelude::*;
 
 const FLOAT_CSTR: &CStr = cstr::cstr!("Float");
+static FLOAT_RUBY_SOURCE: &[u8] = include_bytes!("float.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Float>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Float", FLOAT_CSTR, None, None)?;
     interp.def_class::<Float>(spec)?;
-    interp.eval(&include_bytes!("float.rb")[..])?;
+    interp.eval(FLOAT_RUBY_SOURCE)?;
 
     let dig = interp.convert(Float::DIG);
     interp.define_class_constant::<Float>("DIG", dig)?;
@@ -40,6 +42,5 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let rounds = interp.convert(Float::ROUNDS);
     interp.define_class_constant::<Float>("ROUNDS", rounds)?;
 
-    trace!("Patched Float onto interpreter");
     Ok(())
 }

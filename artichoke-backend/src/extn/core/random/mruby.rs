@@ -6,11 +6,13 @@ use super::{trampoline, Rng};
 use crate::extn::prelude::*;
 
 const RANDOM_CSTR: &CStr = cstr::cstr!("Random");
+static RANDOM_RUBY_SOURCE: &[u8] = include_bytes!("random.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Rng>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Random", RANDOM_CSTR, None, Some(def::box_unbox_free::<Rng>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
@@ -28,8 +30,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let default = Rng::Global;
     let default = Rng::alloc_value(default, interp).map_err(|_| NotDefinedError::class_constant("Random::DEFAULT"))?;
     interp.define_class_constant::<Rng>("DEFAULT", default)?;
-    interp.eval(&include_bytes!("random.rb")[..])?;
-    trace!("Patched Random onto interpreter");
+    interp.eval(RANDOM_RUBY_SOURCE)?;
+
     Ok(())
 }
 

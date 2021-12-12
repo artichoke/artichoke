@@ -3,11 +3,13 @@ use std::ffi::CStr;
 use crate::extn::prelude::*;
 
 const MONITOR_CSTR: &CStr = cstr::cstr!("Monitor");
+static MONITOR_RUBY_SOURCE: &[u8] = include_bytes!("vendor/monitor.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Monitor", MONITOR_CSTR, None, None)?;
     interp.def_class::<Monitor>(spec)?;
-    interp.def_rb_source_file("monitor.rb", &include_bytes!("vendor/monitor.rb")[..])?;
+    interp.def_rb_source_file("monitor.rb", MONITOR_RUBY_SOURCE)?;
+
     Ok(())
 }
 

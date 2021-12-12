@@ -3,15 +3,17 @@ use std::ffi::CStr;
 use crate::extn::prelude::*;
 
 const METHOD_CSTR: &CStr = cstr::cstr!("Method");
+static METHOD_RUBY_SOURCE: &[u8] = include_bytes!("method.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Method>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Method", METHOD_CSTR, None, None)?;
     interp.def_class::<Method>(spec)?;
-    interp.eval(&include_bytes!("method.rb")[..])?;
-    trace!("Patched Method onto interpreter");
+    interp.eval(METHOD_RUBY_SOURCE)?;
+
     Ok(())
 }
 

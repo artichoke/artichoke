@@ -3,15 +3,17 @@ use std::ffi::CStr;
 use crate::extn::prelude::*;
 
 const HASH_CSTR: &CStr = cstr::cstr!("Hash");
+static HASH_RUBY_SOURCE: &[u8] = include_bytes!("hash.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Hash>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Hash", HASH_CSTR, None, None)?;
     interp.def_class::<Hash>(spec)?;
-    interp.eval(&include_bytes!("hash.rb")[..])?;
-    trace!("Patched Hash onto interpreter");
+    interp.eval(HASH_RUBY_SOURCE)?;
+
     Ok(())
 }
 

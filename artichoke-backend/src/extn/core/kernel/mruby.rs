@@ -5,11 +5,13 @@ use crate::extn::core::kernel::{self, trampoline};
 use crate::extn::prelude::*;
 
 const KERNEL_CSTR: &CStr = cstr::cstr!("Kernel");
+static KERNEL_RUBY_SOURCE: &[u8] = include_bytes!("kernel.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_module_defined::<kernel::Kernel>() {
         return Ok(());
     }
+
     let spec = module::Spec::new(interp, "Kernel", KERNEL_CSTR, None)?;
     module::Builder::for_spec(interp, &spec)
         .add_method("require", kernel_require, sys::mrb_args_rest())?
@@ -20,8 +22,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("puts", kernel_puts, sys::mrb_args_rest())?
         .define()?;
     interp.def_module::<kernel::Kernel>(spec)?;
-    interp.eval(&include_bytes!("kernel.rb")[..])?;
-    trace!("Patched Kernel onto interpreter");
+    interp.eval(KERNEL_RUBY_SOURCE)?;
 
     // Some `Kernel` functions are implemented with methods in the
     // `Artichoke::Kernel` module. These functions are delegated to by Ruby
@@ -37,7 +38,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_self_method("Integer", kernel_integer, sys::mrb_args_req_and_opt(1, 1))?
         .define()?;
     interp.def_module::<artichoke::Kernel>(spec)?;
-    trace!("Patched Artichoke::Kernel onto interpreter");
+
     Ok(())
 }
 

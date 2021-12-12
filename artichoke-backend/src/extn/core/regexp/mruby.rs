@@ -4,11 +4,13 @@ use super::{trampoline, Flags, Regexp};
 use crate::extn::prelude::*;
 
 const REGEXP_CSTR: &CStr = cstr::cstr!("Regexp");
+static REGEXP_RUBY_SOURCE: &[u8] = include_bytes!("regexp.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<Regexp>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Regexp", REGEXP_CSTR, None, Some(def::box_unbox_free::<Regexp>))?;
     class::Builder::for_spec(interp, &spec)
         .value_is_rust_object()
@@ -35,7 +37,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .define()?;
     interp.def_class::<Regexp>(spec)?;
 
-    interp.eval(&include_bytes!("regexp.rb")[..])?;
+    interp.eval(REGEXP_RUBY_SOURCE)?;
 
     // Declare class constants
     let ignorecase = interp.convert(Flags::IGNORECASE.bits());
@@ -49,7 +51,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let no_encoding = interp.convert(Flags::NOENCODING.bits());
     interp.define_class_constant::<Regexp>("NOENCODING", no_encoding)?;
 
-    trace!("Patched Regexp onto interpreter");
     Ok(())
 }
 

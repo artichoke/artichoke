@@ -4,11 +4,13 @@ use crate::extn::core::symbol::{self, trampoline};
 use crate::extn::prelude::*;
 
 const SYMBOL_CSTR: &CStr = cstr::cstr!("Symbol");
+static SYMBOL_RUBY_SOURCE: &[u8] = include_bytes!("symbol.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<symbol::Symbol>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("Symbol", SYMBOL_CSTR, None, None)?;
     class::Builder::for_spec(interp, &spec)
         .add_self_method("all_symbols", symbol_all_symbols, sys::mrb_args_none())?
@@ -21,8 +23,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("to_s", symbol_to_s, sys::mrb_args_none())?
         .define()?;
     interp.def_class::<symbol::Symbol>(spec)?;
-    interp.eval(&include_bytes!("symbol.rb")[..])?;
-    trace!("Patched Symbol onto interpreter");
+    interp.eval(SYMBOL_RUBY_SOURCE)?;
+
     Ok(())
 }
 

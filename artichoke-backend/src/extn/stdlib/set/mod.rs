@@ -4,13 +4,15 @@ use crate::extn::prelude::*;
 
 const SET_CSTR: &CStr = cstr::cstr!("Set");
 const SORTED_SET_CSTR: &CStr = cstr::cstr!("SortedSet");
+static SET_RUBY_SOURCE: &[u8] = include_bytes!("vendor/set.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = class::Spec::new("Set", SET_CSTR, None, None)?;
     interp.def_class::<Set>(spec)?;
     let spec = class::Spec::new("SortedSet", SORTED_SET_CSTR, None, None)?;
     interp.def_class::<SortedSet>(spec)?;
-    interp.def_rb_source_file("set.rb", &include_bytes!("vendor/set.rb")[..])?;
+    interp.def_rb_source_file("set.rb", SET_RUBY_SOURCE)?;
+
     Ok(())
 }
 

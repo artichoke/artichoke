@@ -3,6 +3,13 @@ use std::ffi::CStr;
 use crate::extn::prelude::*;
 
 const JSON_CSTR: &CStr = cstr::cstr!("JSON");
+static JSON_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json.rb");
+static JSON_COMMON_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json/common.rb");
+static JSON_GENERIC_OBJECT_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json/generic_object.rb");
+static JSON_VERSION_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json/version.rb");
+static JSON_PURE_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json/pure.rb");
+static JSON_PURE_GENERATOR_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json/pure/generator.rb");
+static JSON_PURE_PARSER_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json/pure/parser.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     let spec = module::Spec::new(interp, "JSON", JSON_CSTR, None)?;
@@ -10,19 +17,14 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // NOTE(lopopolo): This setup of the JSON gem in the virtual file system does not include
     // any of the `json/add` sources for serializing "extra" types like `Time`
     // and `BigDecimal`, not all of which Artichoke supports.
-    interp.def_rb_source_file("json.rb", &include_bytes!("vendor/json.rb")[..])?;
-    interp.def_rb_source_file("json/common.rb", &include_bytes!("vendor/json/common.rb")[..])?;
-    interp.def_rb_source_file(
-        "json/generic_object.rb",
-        &include_bytes!("vendor/json/generic_object.rb")[..],
-    )?;
-    interp.def_rb_source_file("json/version.rb", &include_bytes!("vendor/json/version.rb")[..])?;
-    interp.def_rb_source_file("json/pure.rb", &include_bytes!("vendor/json/pure.rb")[..])?;
-    interp.def_rb_source_file(
-        "json/pure/generator.rb",
-        &include_bytes!("vendor/json/pure/generator.rb")[..],
-    )?;
-    interp.def_rb_source_file("json/pure/parser.rb", &include_bytes!("vendor/json/pure/parser.rb")[..])?;
+    interp.def_rb_source_file("json.rb", JSON_RUBY_SOURCE)?;
+    interp.def_rb_source_file("json/common.rb", JSON_COMMON_RUBY_SOURCE)?;
+    interp.def_rb_source_file("json/generic_object.rb", JSON_GENERIC_OBJECT_RUBY_SOURCE)?;
+    interp.def_rb_source_file("json/version.rb", JSON_VERSION_RUBY_SOURCE)?;
+    interp.def_rb_source_file("json/pure.rb", JSON_PURE_RUBY_SOURCE)?;
+    interp.def_rb_source_file("json/pure/generator.rb", JSON_PURE_GENERATOR_RUBY_SOURCE)?;
+    interp.def_rb_source_file("json/pure/parser.rb", JSON_PURE_PARSER_RUBY_SOURCE)?;
+
     Ok(())
 }
 

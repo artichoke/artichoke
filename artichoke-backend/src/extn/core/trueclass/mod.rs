@@ -3,15 +3,17 @@ use std::ffi::CStr;
 use crate::extn::prelude::*;
 
 const TRUE_CLASS_CSTR: &CStr = cstr::cstr!("TrueClass");
+static TRUE_CLASS_RUBY_SOURCE: &[u8] = include_bytes!("trueclass.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<TrueClass>() {
         return Ok(());
     }
+
     let spec = class::Spec::new("TrueClass", TRUE_CLASS_CSTR, None, None)?;
     interp.def_class::<TrueClass>(spec)?;
-    interp.eval(&include_bytes!("trueclass.rb")[..])?;
-    trace!("Patched TrueClass onto interpreter");
+    interp.eval(TRUE_CLASS_RUBY_SOURCE)?;
+
     Ok(())
 }
 

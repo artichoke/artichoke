@@ -55,7 +55,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     #[cfg(feature = "core-env")]
     env::mruby::init(interp)?;
     hash::init(interp)?;
-    numeric::init(interp)?;
+    numeric::mruby::init(interp)?;
     integer::mruby::init(interp)?;
     float::mruby::init(interp)?;
     kernel::mruby::init(interp)?;
