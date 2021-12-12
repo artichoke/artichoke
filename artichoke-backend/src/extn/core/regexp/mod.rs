@@ -32,7 +32,6 @@ pub mod pattern;
 pub mod syntax;
 pub mod trampoline;
 
-use backend::lazy::Lazy;
 #[cfg(feature = "core-regexp-oniguruma")]
 use backend::onig::Onig;
 use backend::regex::utf8::Utf8;
@@ -67,6 +66,16 @@ impl PartialEq for Regexp {
 
 impl Eq for Regexp {}
 
+impl TryFrom<Vec<u8>> for Regexp {
+    type Error = Error;
+
+    fn try_from(pattern: Vec<u8>) -> Result<Self, Self::Error> {
+        let config = Config::with_pattern_and_options(pattern, Options::new());
+        let source = Source::from(config.clone());
+        Self::new(source, config, Encoding::new())
+    }
+}
+
 impl Regexp {
     pub fn new(source: Source, config: Config, encoding: Encoding) -> Result<Self, Error> {
         #[cfg(feature = "core-regexp-oniguruma")]
@@ -84,13 +93,6 @@ impl Regexp {
             let regex = Utf8::new(source, config, encoding)?;
             Ok(Self(Box::new(regex)))
         }
-    }
-
-    #[must_use]
-    pub fn lazy(pattern: Vec<u8>) -> Self {
-        let config = Config::with_pattern_and_options(pattern, Options::new());
-        let backend = Box::new(Lazy::from(config));
-        Self(backend)
     }
 
     pub fn initialize(

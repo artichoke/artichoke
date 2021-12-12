@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-backend"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 description = "Embeddable VM implementation for Artichoke Ruby"
@@ -17,7 +17,6 @@ bstr = { version = "0.2, >= 0.2.2", default-features = false, features = ["std"]
 cstr = "0.2, >= 0.2.4"
 intaglio = "1.4"
 log = "0.4, >= 0.4.5"
-once_cell = "1"
 onig = { version = "6.3", optional = true, default-features = false }
 regex = "1"
 scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", default-features = false }

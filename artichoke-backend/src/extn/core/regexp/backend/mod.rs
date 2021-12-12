@@ -5,7 +5,6 @@ use std::hash::{Hash, Hasher};
 use crate::extn::core::regexp::{Config, Encoding, Source};
 use crate::extn::prelude::*;
 
-pub mod lazy;
 #[cfg(feature = "core-regexp-oniguruma")]
 pub mod onig;
 pub mod regex;
