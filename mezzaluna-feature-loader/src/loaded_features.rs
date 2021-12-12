@@ -360,6 +360,38 @@ where
         self.paths.reserve(additional);
     }
 
+    /// Reserves capacity for at least `additional` more elements to be inserted
+    /// in the `LoadedFeatures`. The collection may reserve more space to avoid
+    /// frequent reallocations.
+    ///
+    /// Tries to reserve capacity for at least `additional` more elements to be
+    /// inserted in the `LoadedFeatures`. The collection may reserve more space
+    /// to avoid frequent reallocations.
+    /// After calling `try_reserve`, capacity will be greater than or equal to
+    /// `self.len() + additional`.
+    /// Does nothing if capacity is already sufficient.
+    ///
+    ///
+    /// # Errors
+    ///
+    /// If the capacity overflows, or the allocator reports a failure, then an
+    /// error is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// let mut features = LoadedFeatures::new();
+    /// features.try_reserve(10).expect("why is this OOMing on 10 bytes?");
+    /// assert!(features.capacity() >= 10);
+    /// ```
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), std::collections::TryReserveError> {
+        self.features.try_reserve(additional)?;
+        self.paths.try_reserve(additional)?;
+
+        Ok(())
+    }
+
     /// Shrinks the capacity of the set as much as possible. It will drop down
     /// as much as possible while maintaining the internal rules and possibly
     /// leaving some space in accordance with the resize policy.
