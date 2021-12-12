@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::error;
 use std::ffi::{c_void, CStr};
 use std::fmt;
+use std::io::{self, Write as _};
 use std::ptr::NonNull;
 
 use crate::class;
@@ -17,30 +18,51 @@ use crate::Artichoke;
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
 pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void);
 
-/// A generic implementation of a [`Free`] function for
-/// [`mrb_value`](sys::mrb_value)s that store an owned copy of a [`Box`] smart
-/// pointer.
+/// A generic implementation of a [`Free`] function for [`mrb_value`]s that
+/// store an owned copy of a [`Box`] smart pointer.
 ///
 /// This function ultimately calls [`Box::from_raw`] on the data pointer and
 /// drops the resulting [`Box`].
 ///
 /// # Safety
 ///
+/// The given `data` pointer must be non-null and allocated by [`Box`].
+///
 /// This function assumes that the data pointer is to an [`Box`]`<T>` created by
 /// [`Box::into_raw`]. This function bounds `T` by [`BoxUnboxVmValue`] which
 /// boxes `T` for the mruby VM like this.
 ///
-/// This function assumes it is called by the mruby VM as a free function for
-/// an [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
+/// This function assumes it is called by the mruby VM as a free function for an
+/// [`MRB_TT_DATA`].
+///
+/// [`mrb_value`]: sys::mrb_value
+/// [`MRB_TT_DATA`]: sys::mrb_vtype::MRB_TT_DATA
 pub unsafe extern "C" fn box_unbox_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void)
 where
     T: 'static + BoxUnboxVmValue,
 {
-    if data.is_null() {
-        error!("Received null pointer in box_unbox_free<{}>: {:p}", T::RUBY_TYPE, data);
-        eprintln!("Received null pointer in box_unbox_free<{}>: {:p}", T::RUBY_TYPE, data);
+    // Ideally we'd be able to have the `data` argument in the function signature
+    // declared as `Option<NonNull<c_void>>` which is FFI safe, but this function
+    // is eventually passed into a bindgen-generated mruby struct, which expects
+    // the `*mut c_void` argument.
+    if let Some(data) = NonNull::new(data) {
+        // Only attempt to free if we are given a non-null pointer.
+        T::free(data.as_ptr());
+    } else {
+        // If we enter this branch, we have almost certainly encountered a bug.
+        // Rather than attempt a free and virtually guaranteed segfault, log
+        // loudly and short-circuit; a leak is better than a crash.
+        //
+        // `box_unbox_free::<T>` is only ever called in an FFI context when
+        // there are C frames in the stack. Using `eprintln!` or unwrapping the
+        // error from `write!` here is UB and may result in an abort. Instead,
+        // suppress the error.
+        let _ignored = write!(
+            io::stderr(),
+            "Received null pointer in box_unbox_free::<{}>",
+            T::RUBY_TYPE,
+        );
     }
-    T::free(data);
 }
 
 #[cfg(test)]
