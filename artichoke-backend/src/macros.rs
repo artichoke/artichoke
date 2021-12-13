@@ -53,18 +53,20 @@ macro_rules! unwrap_interpreter {
 
 #[doc(hidden)]
 pub mod argspec {
-    pub const NONE: &[u8] = b"\0";
-    pub const REQ1: &[u8] = b"o\0";
-    pub const OPT1: &[u8] = b"|o\0";
-    pub const REQ1_OPT1: &[u8] = b"o|o\0";
-    pub const REQ1_OPT2: &[u8] = b"o|oo\0";
-    pub const REQ1_REQBLOCK: &[u8] = b"o&\0";
-    pub const REQ1_REQBLOCK_OPT1: &[u8] = b"o&|o?\0";
-    pub const REQ2: &[u8] = b"oo\0";
-    pub const OPT2: &[u8] = b"|oo\0";
-    pub const OPT2_OPTBLOCK: &[u8] = b"&|o?o?\0";
-    pub const REQ2_OPT1: &[u8] = b"oo|o\0";
-    pub const REST: &[u8] = b"*\0";
+    use std::ffi::CStr;
+
+    pub const NONE: &CStr = cstr::cstr!("");
+    pub const REQ1: &CStr = cstr::cstr!("o");
+    pub const OPT1: &CStr = cstr::cstr!("|o");
+    pub const REQ1_OPT1: &CStr = cstr::cstr!("o|o");
+    pub const REQ1_OPT2: &CStr = cstr::cstr!("o|oo");
+    pub const REQ1_REQBLOCK: &CStr = cstr::cstr!("o&");
+    pub const REQ1_REQBLOCK_OPT1: &CStr = cstr::cstr!("o&|o?");
+    pub const REQ2: &CStr = cstr::cstr!("oo");
+    pub const OPT2: &CStr = cstr::cstr!("|oo");
+    pub const OPT2_OPTBLOCK: &CStr = cstr::cstr!("&|o?o?");
+    pub const REQ2_OPT1: &CStr = cstr::cstr!("oo|o");
+    pub const REST: &CStr = cstr::cstr!("*");
 }
 
 /// Extract [`sys::mrb_value`]s from a [`sys::mrb_state`] to adapt a C
@@ -81,15 +83,11 @@ pub mod argspec {
 #[macro_export]
 macro_rules! mrb_get_args {
     ($mrb:expr, none) => {{
-        $crate::sys::mrb_get_args($mrb, $crate::macros::argspec::NONE.as_ptr() as *const i8);
+        $crate::sys::mrb_get_args($mrb, $crate::macros::argspec::NONE.as_ptr());
     }};
     ($mrb:expr, required = 1) => {{
         let mut req1 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
-        let argc = $crate::sys::mrb_get_args(
-            $mrb,
-            $crate::macros::argspec::REQ1.as_ptr() as *const i8,
-            req1.as_mut_ptr(),
-        );
+        let argc = $crate::sys::mrb_get_args($mrb, $crate::macros::argspec::REQ1.as_ptr(), req1.as_mut_ptr());
         match argc {
             1 => req1.assume_init(),
             _ => unreachable!("mrb_get_args should have raised"),
@@ -97,11 +95,7 @@ macro_rules! mrb_get_args {
     }};
     ($mrb:expr, optional = 1) => {{
         let mut opt1 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
-        let argc = $crate::sys::mrb_get_args(
-            $mrb,
-            $crate::macros::argspec::OPT1.as_ptr() as *const i8,
-            opt1.as_mut_ptr(),
-        );
+        let argc = $crate::sys::mrb_get_args($mrb, $crate::macros::argspec::OPT1.as_ptr(), opt1.as_mut_ptr());
         match argc {
             1 => {
                 let opt1 = opt1.assume_init();
@@ -116,7 +110,7 @@ macro_rules! mrb_get_args {
         let mut opt1 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
         let argc = $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::REQ1_OPT1.as_ptr() as *const i8,
+            $crate::macros::argspec::REQ1_OPT1.as_ptr(),
             req1.as_mut_ptr(),
             opt1.as_mut_ptr(),
         );
@@ -139,7 +133,7 @@ macro_rules! mrb_get_args {
         let mut opt2 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
         let argc = $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::REQ1_OPT2.as_ptr() as *const i8,
+            $crate::macros::argspec::REQ1_OPT2.as_ptr(),
             req1.as_mut_ptr(),
             opt1.as_mut_ptr(),
             opt2.as_mut_ptr(),
@@ -168,7 +162,7 @@ macro_rules! mrb_get_args {
         let mut block = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
         let argc = $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::REQ1_REQBLOCK.as_ptr() as *const i8,
+            $crate::macros::argspec::REQ1_REQBLOCK.as_ptr(),
             req1.as_mut_ptr(),
             block.as_mut_ptr(),
         );
@@ -188,7 +182,7 @@ macro_rules! mrb_get_args {
         let mut block = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
         let argc = $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::REQ1_REQBLOCK_OPT1.as_ptr() as *const i8,
+            $crate::macros::argspec::REQ1_REQBLOCK_OPT1.as_ptr(),
             req1.as_mut_ptr(),
             block.as_mut_ptr(),
             opt1.as_mut_ptr(),
@@ -221,7 +215,7 @@ macro_rules! mrb_get_args {
         let mut req2 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
         let argc = $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::REQ2.as_ptr() as *const i8,
+            $crate::macros::argspec::REQ2.as_ptr(),
             req1.as_mut_ptr(),
             req2.as_mut_ptr(),
         );
@@ -239,7 +233,7 @@ macro_rules! mrb_get_args {
         let mut opt2 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
         let argc = $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::OPT2.as_ptr() as *const i8,
+            $crate::macros::argspec::OPT2.as_ptr(),
             opt1.as_mut_ptr(),
             opt2.as_mut_ptr(),
         );
@@ -265,7 +259,7 @@ macro_rules! mrb_get_args {
         let mut block = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
         $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::OPT2_OPTBLOCK.as_ptr() as *const i8,
+            $crate::macros::argspec::OPT2_OPTBLOCK.as_ptr(),
             block.as_mut_ptr(),
             opt1.as_mut_ptr(),
             has_opt1.as_mut_ptr(),
@@ -285,7 +279,7 @@ macro_rules! mrb_get_args {
         let mut opt1 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
         let argc = $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::REQ2_OPT1.as_ptr() as *const i8,
+            $crate::macros::argspec::REQ2_OPT1.as_ptr(),
             req1.as_mut_ptr(),
             req2.as_mut_ptr(),
             opt1.as_mut_ptr(),
@@ -310,7 +304,7 @@ macro_rules! mrb_get_args {
         let mut count = std::mem::MaybeUninit::<usize>::uninit();
         let _argc = $crate::sys::mrb_get_args(
             $mrb,
-            $crate::macros::argspec::REST.as_ptr() as *const i8,
+            $crate::macros::argspec::REST.as_ptr(),
             args.as_mut_ptr(),
             count.as_mut_ptr(),
         );
