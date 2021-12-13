@@ -367,7 +367,6 @@ where
     /// `self.len() + additional`.
     /// Does nothing if capacity is already sufficient.
     ///
-    ///
     /// # Errors
     ///
     /// If the capacity overflows, or the allocator reports a failure, then an
