@@ -1,7 +1,9 @@
 use std::borrow::Cow;
 use std::error;
+use std::ffi::CStr;
 use std::fmt;
 use std::hint;
+use std::io::{self, Write as _};
 
 use crate::sys;
 use crate::{Artichoke, Guard};
@@ -42,7 +44,10 @@ impl From<Box<dyn RubyException>> for Error {
     }
 }
 
-/// Raise implementation for `RubyException` boxed trait objects.
+static RUNTIME_ERROR_CSTR: &CStr = cstr::cstr!("RuntimeError");
+static UNABLE_TO_RAISE_MESSAGE: &CStr = cstr::cstr!("Unable to raise exception");
+
+/// Raise implementation for [`RubyException`] boxed trait objects.
 ///
 /// # Safety
 ///
@@ -57,28 +62,51 @@ pub unsafe fn raise<T>(mut guard: Guard<'_>, exception: T) -> !
 where
     T: RubyException + fmt::Debug,
 {
+    // Convert the `RubyException` into a raisable boxed Ruby value.
     let exc = exception.as_mrb_value(&mut guard);
+
+    // Pull out the raw pointer to the `mrb_state` so we can drop down to raw
+    // MRB_API functions.
     let mrb: *mut sys::mrb_state = guard.mrb.as_mut();
+
+    // Ensure the Artichoke `State` is moved back into the `mrb_state`.
     drop(guard);
+
     if let Some(exc) = exc {
         // Any non-`Copy` objects that we haven't cleaned up at this point will
         // leak, so drop everything.
         drop(exception);
+
         // `mrb_exc_raise` will call longjmp which will unwind the stack.
         sys::mrb_exc_raise(mrb, exc);
     } else {
-        error!("unable to raise {:?}", exception);
+        // Being unable to turn the given exception into an `mrb_value` is a
+        // bug, so log loudly to stderr and attempt to fallback to a runtime
+        // error.
+        //
+        // Suppress errors from logging to stderr because this function is
+        // called when there are foreign C frames in the stack and panics are
+        // either UB or will result in an abort.
+        let ignored_err = write!(io::stderr(), "Unable to raise exception: {:?}", exception);
+
         // Any non-`Copy` objects that we haven't cleaned up at this point will
         // leak, so drop everything.
+        drop(ignored_err);
         drop(exception);
+
         // `mrb_sys_raise` will call longjmp which will unwind the stack.
         sys::mrb_sys_raise(
             mrb,
-            "RuntimeError\0".as_ptr().cast::<i8>(),
-            "Unable to raise exception".as_ptr().cast::<i8>(),
+            RUNTIME_ERROR_CSTR.as_ptr().cast(),
+            UNABLE_TO_RAISE_MESSAGE.as_ptr().cast(),
         );
     }
-    // unreachable: `raise` will unwind the stack with longjmp.
+
+    // Safety:
+    //
+    // This line is unreachable because `raise` will unwind the stack with
+    // longjmp when calling either `sys::mrb_exc_raise` or `sys::mrb_sys_raise`
+    // above.
     hint::unreachable_unchecked()
 }
 
