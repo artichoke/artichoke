@@ -98,10 +98,10 @@ impl Integer {
 
     pub fn chr(self, interp: &mut Artichoke, encoding: Option<Value>) -> Result<Vec<u8>, Error> {
         if let Some(encoding) = encoding {
-            let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
+            let mut message = spinoso_string::String::ascii(b"encoding parameter of Integer#chr (given ".to_vec());
             message.extend(encoding.inspect(interp));
             message.extend(b") not supported");
-            Err(NotImplementedError::from(message).into())
+            spinoso_string::String::alloc_value(message, interp)
         } else {
             // When no encoding is supplied, MRI assumes the encoding is
             // either ASCII or ASCII-8BIT.
@@ -140,9 +140,9 @@ impl Integer {
                     Ok(vec![chr])
                 }
                 _ => {
-                    let mut message = String::new();
+                    let mut message = spinoso_string::String::new();
                     write!(&mut message, "{} out of char range", self.as_i64()).map_err(WriteError::from)?;
-                    Err(RangeError::from(message).into())
+                    spinoso_string::String::alloc_value(message, interp)
                 }
             }
         }
