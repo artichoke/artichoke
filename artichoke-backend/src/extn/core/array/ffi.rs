@@ -124,8 +124,9 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
             let inner = array.take();
             Array::box_into_value(inner, ary.into(), &mut guard).expect("Array reboxing should not fail");
         } else {
-            warn!(
-                "Attempted to call mrb_ary_concat with a {:?} argument",
+            emit_fatal_warning!(
+                "ffi: mrb_ary_concat: Expected {:?} argument but got {:?} argument",
+                Ruby::Array,
                 other.ruby_type()
             );
         }

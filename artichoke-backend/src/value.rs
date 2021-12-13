@@ -147,7 +147,7 @@ impl ValueCore for Value {
             return Err(Fatal::from("Value receiver for function call is dead. This indicates a bug in the mruby garbage collector. Please leave a comment at https://github.com/artichoke/artichoke/issues/1336.").into());
         }
         if let Ok(arg_count_error) = ArgCountError::try_from(args) {
-            warn!("{}", arg_count_error);
+            emit_fatal_warning!("Value::funcall invoked with too many arguments: {}", arg_count_error);
             return Err(arg_count_error.into());
         }
         let args = args.iter().map(Self::inner).collect::<Vec<_>>();
