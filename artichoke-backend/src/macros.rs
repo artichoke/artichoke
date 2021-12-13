@@ -16,7 +16,7 @@ macro_rules! emit_fatal_warning {
         //
         // Ensure the returned error is dropped so we don't leave anything on
         // the stack in the event of a foreign unwind.
-        let maybe_err = ::std::write!(::std::io::stderr(), $($arg)+);
+        let maybe_err = ::std::writeln!(::std::io::stderr(), $($arg)+);
         drop(maybe_err);
     }};
 }
