@@ -219,6 +219,13 @@ where
         self.0.reserve(additional);
     }
 
+    /// Tries to reserve capacity for at least additional more elements to be
+    /// inserted in the `Registry`. The collection may reserve more space to
+    /// avoid frequent reallocations.
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), std::collections::TryReserveError> {
+        self.0.try_reserve(additional)
+    }
+
     /// Shrinks the capacity of the map as much as possible. It will drop down
     /// as much as possible while maintaining the internal rules and possibly
     /// leaving some space in accordance with the resize policy.
