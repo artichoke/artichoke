@@ -190,13 +190,6 @@ pub trait RubyException {
     ///     println!("{} ({})", exc.name(), message);
     /// }
     /// ```
-    ///
-    /// # Implementation notes
-    ///
-    /// This method returns a byte slice since Ruby `String`s are best
-    /// represented as a [`Vec<u8>`].
-    ///
-    /// [`Vec<u8>`]: alloc::vec::Vec
     fn name(&self) -> Cow<'_, str>;
 }
 
