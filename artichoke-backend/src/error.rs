@@ -102,11 +102,7 @@ where
     drop(exception);
 
     // `mrb_sys_raise` will call longjmp which will unwind the stack.
-    sys::mrb_sys_raise(
-        mrb,
-        RUNTIME_ERROR_CSTR.as_ptr().cast(),
-        UNABLE_TO_RAISE_MESSAGE.as_ptr().cast(),
-    );
+    sys::mrb_sys_raise(mrb, RUNTIME_ERROR_CSTR.as_ptr(), UNABLE_TO_RAISE_MESSAGE.as_ptr());
 
     // Safety:
     //
