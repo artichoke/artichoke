@@ -1,9 +1,8 @@
 use std::ffi::OsStr;
+use std::io::{self, Write as _};
 use std::path::Path;
 
-use bstr::ByteSlice;
-
-use crate::core::{Eval, LoadSources, Parser, Value as _};
+use crate::core::{Eval, LoadSources, Parser};
 use crate::error::Error;
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal};
@@ -21,33 +20,28 @@ impl Eval for Artichoke {
     type Error = Error;
 
     fn eval(&mut self, code: &[u8]) -> Result<Self::Value, Self::Error> {
-        trace!("Attempting eval of Ruby source");
         let result = unsafe {
             let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
             let parser = state.parser.as_mut().ok_or_else(InterpreterExtractError::new)?;
             let context: *mut sys::mrbc_context = parser.context_mut();
             self.with_ffi_boundary(|mrb| protect::eval(mrb, context, code))?
         };
+
+        let result = result.map(Value::from).map_err(Value::from);
+
         match result {
-            Ok(value) => {
-                let value = Value::from(value);
-                if value.is_unreachable() {
-                    // Unreachable values are internal to the mruby interpreter
-                    // and interacting with them via the C API is unspecified
-                    // and may result in a segfault.
-                    //
-                    // See: https://github.com/mruby/mruby/issues/4460
-                    error!("Fatal eval returned unreachable value");
-                    Err(Fatal::from("Unreachable Ruby value").into())
-                } else {
-                    trace!("Sucessful eval");
-                    Ok(self.protect(value))
-                }
+            Ok(value) if value.is_unreachable() => {
+                // Unreachable values are internal to the mruby interpreter and
+                // interacting with them via the C API is unspecified and may
+                // result in a segfault.
+                //
+                // See: https://github.com/mruby/mruby/issues/4460
+                let _ignored = write!(io::stderr(), "fatal: eval returned an unreachable Ruby value");
+                Err(Fatal::from("eval returned an unreachable Ruby value").into())
             }
+            Ok(value) => Ok(self.protect(value)),
             Err(exception) => {
-                let exception = self.protect(Value::from(exception));
-                let debug = exception.inspect(self);
-                debug!("Failed eval raised exception: {:?}", debug.as_bstr());
+                let exception = self.protect(exception);
                 Err(exception_handler::last_error(self, exception)?)
             }
         }
