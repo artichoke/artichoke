@@ -101,7 +101,10 @@ impl Integer {
             let mut message = spinoso_string::String::ascii(b"encoding parameter of Integer#chr (given ".to_vec());
             message.extend(encoding.inspect(interp));
             message.extend(b") not supported");
-            spinoso_string::String::alloc_value(message, interp)
+            match spinoso_string::String::alloc_value(message, interp) {
+                Ok(msg) => Ok(msg.inspect(interp)),
+                Err(_) => Err(NotImplementedError::from(message).into()),
+            }
         } else {
             // When no encoding is supplied, MRI assumes the encoding is
             // either ASCII or ASCII-8BIT.
@@ -142,7 +145,10 @@ impl Integer {
                 _ => {
                     let mut message = spinoso_string::String::new();
                     write!(&mut message, "{} out of char range", self.as_i64()).map_err(WriteError::from)?;
-                    spinoso_string::String::alloc_value(message, interp)
+                    match spinoso_string::String::alloc_value(message, interp) {
+                        Ok(msg) => Ok(msg.inspect(interp)),
+                        Err(_) => Err(RangeError::from(message).into()),
+                    }
                 }
             }
         }
