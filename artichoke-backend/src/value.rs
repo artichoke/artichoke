@@ -151,13 +151,6 @@ impl ValueCore for Value {
             return Err(arg_count_error.into());
         }
         let args = args.iter().map(Self::inner).collect::<Vec<_>>();
-        trace!(
-            "Calling {}#{} with {} args{}",
-            self.ruby_type(),
-            func,
-            args.len(),
-            if block.is_some() { " and block" } else { "" }
-        );
         let func = interp.intern_string(func.to_string())?;
         let result = unsafe {
             interp.with_ffi_boundary(|mrb| {

@@ -22,7 +22,6 @@ impl LoadSources for Artichoke {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         let path = path.as_ref();
         state.load_path_vfs.register_extension(path, T::require)?;
-        trace!("Added Rust extension to interpreter file system -- {}", path.display());
         Ok(())
     }
 
@@ -34,7 +33,6 @@ impl LoadSources for Artichoke {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         let path = path.as_ref();
         state.load_path_vfs.write_file(path, contents.into())?;
-        trace!("Added Ruby source to interpreter file system -- {}", path.display());
         Ok(())
     }
 
@@ -123,7 +121,6 @@ impl LoadSources for Artichoke {
         };
         let contents = self.read_source_file_contents(path)?.into_owned();
         self.eval(contents.as_ref())?;
-        trace!("Successful load of {}", path.display());
         Ok(true)
     }
 
@@ -167,7 +164,6 @@ impl LoadSources for Artichoke {
                             self.eval(&contents)?;
                             let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
                             state.load_path_vfs.mark_required(path)?;
-                            trace!("Successful require of {}", path.display());
                             return Ok(true);
                         }
                         // else proceed with the alternate path
@@ -182,7 +178,6 @@ impl LoadSources for Artichoke {
         self.eval(contents.as_ref())?;
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         state.load_path_vfs.mark_required(path)?;
-        trace!("Successful require of {}", path.display());
         Ok(true)
     }
 

@@ -252,7 +252,6 @@ impl<'a> Drop for Guard<'a> {
         let state = state.unwrap_or_else(|| panic!("Dropping Guard with no State"));
 
         unsafe {
-            trace!("Serializing Artichoke State into mrb to prepare for FFI boundary");
             let mrb = self.0.mrb.as_ptr();
             (*mrb).ud = Box::into_raw(state).cast::<c_void>();
         }
