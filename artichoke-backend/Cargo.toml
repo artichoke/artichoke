@@ -27,7 +27,7 @@ spinoso-math = { version = "0.2", path = "../spinoso-math", optional = true, def
 spinoso-random = { version = "0.2", path = "../spinoso-random", optional = true }
 spinoso-regexp = { version = "0.2", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
-spinoso-string = { version = "0.10", path = "../spinoso-string" }
+spinoso-string = { version = "0.11", path = "../spinoso-string" }
 spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.2", path = "../spinoso-time", optional = true }
 

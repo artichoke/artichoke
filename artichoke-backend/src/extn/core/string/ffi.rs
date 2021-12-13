@@ -12,7 +12,7 @@ use artichoke_core::convert::Convert;
 use artichoke_core::hash::Hash as _;
 use bstr::ByteSlice;
 use spinoso_exception::ArgumentError;
-use spinoso_string::String;
+use spinoso_string::{RawParts, String};
 
 use crate::convert::BoxUnboxVmValue;
 use crate::error;
@@ -563,11 +563,16 @@ unsafe extern "C" fn mrb_gc_free_str(mrb: *mut sys::mrb_state, string: *mut sys:
     let _ = mrb;
 
     let ptr = (*string).as_.heap.ptr;
-    let len = (*string).as_.heap.len as usize;
+    let length = (*string).as_.heap.len as usize;
     let capacity = (*string).as_.heap.aux.capa as usize;
 
     // we don't need to free the encoding since `Encoding` is `Copy` and we pack
     // it into the `RString` flags as a `u32`.
 
-    drop(String::from_raw_parts(ptr.cast::<u8>(), len, capacity));
+    let raw_parts = RawParts {
+        ptr: ptr.cast::<u8>(),
+        length,
+        capacity,
+    };
+    drop(String::from_raw_parts(raw_parts));
 }

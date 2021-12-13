@@ -4,7 +4,7 @@ use std::ffi::c_void;
 use artichoke_core::value::Value as _;
 use spinoso_exception::TypeError;
 #[doc(inline)]
-use spinoso_string::{Encoding, String};
+use spinoso_string::{Encoding, RawParts, String};
 
 use crate::convert::{BoxUnboxVmValue, UnboxedValueGuard};
 use crate::error::Error;
@@ -49,7 +49,7 @@ impl BoxUnboxVmValue for String {
         let string = sys::mrb_sys_basic_ptr(value).cast::<sys::RString>();
 
         let ptr = (*string).as_.heap.ptr;
-        let len = (*string).as_.heap.len as usize;
+        let length = (*string).as_.heap.len as usize;
         let capacity = (*string).as_.heap.aux.capa as usize;
 
         // the encoding flag is 4 bits wide.
@@ -58,7 +58,11 @@ impl BoxUnboxVmValue for String {
         let encoding = (encoding_flag >> ENCODING_FLAG_BITPOS) as u8;
         let encoding = Encoding::try_from_flag(encoding).map_err(|_| TypeError::with_message("Unknown encoding"))?;
 
-        let mut s = String::from_raw_parts(ptr.cast::<u8>(), len, capacity);
+        let mut s = String::from_raw_parts(RawParts {
+            ptr: ptr.cast::<u8>(),
+            length,
+            capacity,
+        });
         s.set_encoding(encoding);
         let s = UnboxedValueGuard::new(s);
 
@@ -67,10 +71,10 @@ impl BoxUnboxVmValue for String {
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
         let encoding = value.encoding();
-        let (ptr, len, capacity) = String::into_raw_parts(value);
+        let RawParts { ptr, length, capacity } = String::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
-                sys::mrb_sys_alloc_rstring(mrb, ptr.cast::<i8>(), len as sys::mrb_int, capacity as sys::mrb_int)
+                sys::mrb_sys_alloc_rstring(mrb, ptr.cast::<i8>(), length as sys::mrb_int, capacity as sys::mrb_int)
             })?
         };
         let string = unsafe { sys::mrb_sys_basic_ptr(value).cast::<sys::RString>() };
@@ -94,11 +98,11 @@ impl BoxUnboxVmValue for String {
         }
 
         let encoding = value.encoding();
-        let (ptr, len, capacity) = String::into_raw_parts(value);
+        let RawParts { ptr, length, capacity } = String::into_raw_parts(value);
         let string = unsafe {
             sys::mrb_sys_repack_into_rstring(
                 ptr.cast::<i8>(),
-                len as sys::mrb_int,
+                length as sys::mrb_int,
                 capacity as sys::mrb_int,
                 into.inner(),
             )
