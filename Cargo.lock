@@ -42,7 +42,6 @@ dependencies = [
  "cc",
  "cstr",
  "intaglio",
- "log",
  "onig",
  "quickcheck",
  "regex",
