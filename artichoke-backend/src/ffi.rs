@@ -33,7 +33,7 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, Inte
     let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
         mrb
     } else {
-        emit_fatal_warning!("fatal: ffi: Attempted to extract Artichoke from null `mrb_state`");
+        emit_fatal_warning!("ffi: Attempted to extract Artichoke from null `mrb_state`");
         return Err(InterpreterExtractError::new());
     };
 
@@ -45,7 +45,7 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, Inte
         if let Some(state) = NonNull::new(alloc_ud) {
             state.cast::<State>()
         } else {
-            emit_fatal_warning!("fatal: ffi: Attempted to extract Artichoke from null `mrb_state->ud` pointer");
+            emit_fatal_warning!("ffi: Attempted to extract Artichoke from null `mrb_state->ud` pointer");
             return Err(InterpreterExtractError::new());
         }
     };

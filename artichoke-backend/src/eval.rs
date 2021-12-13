@@ -35,7 +35,7 @@ impl Eval for Artichoke {
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                emit_fatal_warning!("fatal: eval returned an unreachable Ruby value");
+                emit_fatal_warning!("eval returned an unreachable Ruby value");
                 Err(Fatal::from("eval returned an unreachable Ruby value").into())
             }
             Ok(value) => Ok(self.protect(value)),
