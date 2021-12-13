@@ -3,7 +3,6 @@ use std::error;
 use std::ffi::CStr;
 use std::fmt;
 use std::hint;
-use std::io::{self, Write as _};
 
 use crate::sys;
 use crate::{Artichoke, Guard};
@@ -90,15 +89,10 @@ where
 
     // Being unable to turn the given exception into an `mrb_value` is a bug, so
     // log loudly to stderr and attempt to fallback to a runtime error.
-
-    // Suppress errors from logging to stderr because this function is called
-    // when there are foreign C frames in the stack and panics are either UB or
-    // will result in an abort.
-    let ignored_err = write!(io::stderr(), "Unable to raise exception: {:?}", exception);
+    emit_fatal_warning!("Unable to raise exception: {:?}", exception);
 
     // Any non-`Copy` objects that we haven't cleaned up at this point will
     // leak, so drop everything.
-    drop(ignored_err);
     drop(exception);
 
     // `mrb_sys_raise` will call longjmp which will unwind the stack.

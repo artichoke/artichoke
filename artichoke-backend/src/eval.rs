@@ -1,5 +1,4 @@
 use std::ffi::OsStr;
-use std::io::{self, Write as _};
 use std::path::Path;
 
 use crate::core::{Eval, LoadSources, Parser};
@@ -36,7 +35,7 @@ impl Eval for Artichoke {
                 // result in a segfault.
                 //
                 // See: https://github.com/mruby/mruby/issues/4460
-                let _ignored = write!(io::stderr(), "fatal: eval returned an unreachable Ruby value");
+                emit_fatal_warning!("eval returned an unreachable Ruby value");
                 Err(Fatal::from("eval returned an unreachable Ruby value").into())
             }
             Ok(value) => Ok(self.protect(value)),
