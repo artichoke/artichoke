@@ -33,7 +33,7 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, Inte
     let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
         mrb
     } else {
-        emit_fatal_warning!("fatal: fi: Attempted to extract Artichoke from null `mrb_state`");
+        emit_fatal_warning!("fatal: ffi: Attempted to extract Artichoke from null `mrb_state`");
         return Err(InterpreterExtractError::new());
     };
 
