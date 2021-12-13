@@ -1,9 +1,14 @@
-// This module defines macros for working with interpreters and `Value`s. This
-// source module is included first in `lib.rs`, which means the macros are
-// available to all modules within the artichoke-backend crate in addition to
-// being exported.
+/// Macros for use within the Artichoke VM.
+///
+/// This module contains macros for working with interpreters and Ruby values.
+/// This module should be included first in `lib.rs` with the `#[macro_use]`
+/// attribute, which makes all macros available for all modules in this crate.
+///
+/// Macros that relate to manipulating the underlying mruby VM are exported.
 
-#[macro_export]
+/// Log a fatal error to stderr and suppress all errors.
+///
+/// This macro accepts a format string and arguments similar to [`write!`].
 macro_rules! emit_fatal_warning {
     ($($arg:tt)+) => {{
         use ::std::io::Write;
