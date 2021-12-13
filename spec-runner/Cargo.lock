@@ -458,9 +458,9 @@ checksum = "88015c62ee73400068c6b1ba3e6fa7215c3f88fe882d208ab82d2e36d95c7aad"
 
 [[package]]
 name = "raw-parts"
-version = "1.0.2"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b86f9598ad5ee2abfdbfb67653a356ed2f50cfbb32915e672261a93853a3dc84"
+checksum = "4d684eb692d561551750a408e516759f550d51033179e7d2f676efc4495b3d4e"
 
 [[package]]
 name = "regex"
@@ -653,11 +653,12 @@ dependencies = [
 
 [[package]]
 name = "spinoso-string"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "bstr",
  "bytecount",
  "focaccia",
+ "raw-parts",
  "scolapasta-string-escape",
  "simdutf8",
 ]

@@ -13,7 +13,7 @@ keywords = ["array", "no_std", "spinoso", "vec", "vector"]
 categories = ["data-structures", "no-std"]
 
 [dependencies]
-raw-parts = "1.0"
+raw-parts = "1.1"
 # 1.4.1 fixed UB when allocating zero-bytes for ZST element types.
 # https://github.com/servo/rust-smallvec/releases/tag/v1.4.1
 # 1.6.1 fixed a buffer overflow when calling `SmallVec::insert_many`.

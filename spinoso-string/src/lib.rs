@@ -39,7 +39,7 @@ use core::cmp::Ordering;
 use core::fmt::{self, Write};
 use core::hash::{Hash, Hasher};
 use core::iter::{Cycle, Take};
-use core::mem::{self, ManuallyDrop};
+use core::mem;
 use core::ops::Range;
 use core::slice::{self, SliceIndex};
 use core::str;
@@ -49,6 +49,8 @@ use bstr::{ByteSlice, ByteVec};
 #[cfg(feature = "casecmp")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "casecmp")))]
 pub use focaccia::CaseFold;
+#[doc(inline)]
+pub use raw_parts::RawParts;
 
 mod chars;
 mod codepoints;
@@ -1000,8 +1002,8 @@ impl String {
     /// to by the pointer at will. Ensure that nothing else uses the pointer
     /// after calling this function.
     #[must_use]
-    pub unsafe fn from_raw_parts(ptr: *mut u8, length: usize, capacity: usize) -> Self {
-        Self::utf8(Vec::from_raw_parts(ptr, length, capacity))
+    pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
+        Self::utf8(RawParts::into_vec(raw_parts))
     }
 
     /// Decomposes a `String` into its raw components.
@@ -1019,13 +1021,8 @@ impl String {
     ///
     /// [`from_raw_parts`]: String::from_raw_parts
     #[must_use]
-    pub fn into_raw_parts(self) -> (*mut u8, usize, usize) {
-        // TODO: convert to `Vec::into_raw_parts` once it is stabilized.
-        // See: https://doc.rust-lang.org/1.48.0/src/alloc/vec.rs.html#399-402
-        //
-        // https://github.com/rust-lang/rust/issues/65816
-        let mut me = ManuallyDrop::new(self.buf);
-        (me.as_mut_ptr(), me.len(), me.capacity())
+    pub fn into_raw_parts(self) -> RawParts<u8> {
+        RawParts::from_vec(self.buf)
     }
 
     /// Converts self into a vector without clones or allocation.
