@@ -3,6 +3,24 @@
 // available to all modules within the artichoke-backend crate in addition to
 // being exported.
 
+#[macro_export]
+macro_rules! emit_fatal_warning {
+    ($($arg:tt)+) => {{
+        use ::std::io::Write;
+
+        // Something bad, terrible, and unexpected has happened.
+        //
+        // Suppress errors from logging to stderr because this function may being
+        // called when there are foreign C frames in the stack and panics are
+        // either UB or will result in an abort.
+        //
+        // Ensure the returned error is dropped so we don't leave anything on
+        // the stack in the event of a foreign unwind.
+        let maybe_err = ::std::write!(::std::io::stderr(), $($arg)+);
+        drop(maybe_err);
+    }};
+}
+
 /// Extract an [`Artichoke`] instance from the userdata on a [`sys::mrb_state`].
 ///
 /// If there is an error when extracting the Rust wrapper around the
