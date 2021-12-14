@@ -96,15 +96,12 @@ impl Integer {
         self.0 as f64
     }
 
-    pub fn chr(self, interp: &mut Artichoke, encoding: Option<Value>) -> Result<Vec<u8>, Error> {
+    pub fn chr(self, interp: &mut Artichoke, encoding: Option<Value>) -> Result<spinoso_string::String, Error> {
         if let Some(encoding) = encoding {
-            let mut message = spinoso_string::String::ascii(b"encoding parameter of Integer#chr (given ".to_vec());
+            let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
             message.extend(encoding.inspect(interp));
             message.extend(b") not supported");
-            match spinoso_string::String::alloc_value(message, interp) {
-                Ok(msg) => Ok(msg.inspect(interp)),
-                Err(_) => Err(NotImplementedError::from(message).into()),
-            }
+            Err(NotImplementedError::from(message).into())
         } else {
             // When no encoding is supplied, MRI assumes the encoding is
             // either ASCII or ASCII-8BIT.
@@ -135,20 +132,18 @@ impl Integer {
             // ```
             #[allow(clippy::unnested_or_patterns)]
             match u8::try_from(self.as_i64()) {
-                // ASCII encoding | Binary/ASCII-8BIT encoding
                 // Without `Encoding` support, these two arms are the same
-                Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
-                    // Create a single byte `String` from the character given by
-                    // `self`.
-                    Ok(vec![chr])
-                }
+
+                // ASCII encoding - chr[0 - 127]
+                // Binary/ASCII-8BIT encoding - chr[128 - 255]
+
+                // Create a single byte `String` from the character given by `self`.
+                Ok(chr @ 0..=127) => Ok(spinoso_string::String::ascii(vec![chr])),
+                Ok(chr @ 128..=255) => Ok(spinoso_string::String::binary(vec![chr])),
                 _ => {
-                    let mut message = spinoso_string::String::new();
+                    let mut message = String::new();
                     write!(&mut message, "{} out of char range", self.as_i64()).map_err(WriteError::from)?;
-                    match spinoso_string::String::alloc_value(message, interp) {
-                        Ok(msg) => Ok(msg.inspect(interp)),
-                        Err(_) => Err(RangeError::from(message).into()),
-                    }
+                    Err(RangeError::from(message).into())
                 }
             }
         }
