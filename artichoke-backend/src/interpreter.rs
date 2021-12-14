@@ -37,7 +37,6 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
     let state = Box::new(state);
     let alloc_ud = Box::into_raw(state).cast::<c_void>();
     let raw = unsafe { sys::mrb_open_allocf(Some(sys::mrb_default_allocf), alloc_ud) };
-    debug!("Try initializing mrb interpreter");
 
     let mut interp = unsafe { ffi::from_user_data(raw).map_err(|_| InterpreterAllocError::new())? };
 
@@ -53,9 +52,7 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
     let prior_gc_state = interp.disable_gc()?;
 
     // Initialize Artichoke Core and Standard Library runtime
-    debug!("Begin initializing Artichoke Core and Standard Library");
     extn::init(&mut interp, config)?;
-    debug!("Succeeded initializing Artichoke Core and Standard Library");
 
     // Load mrbgems
     let mut arena = interp.create_arena_savepoint()?;
@@ -64,11 +61,6 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
         arena.interp().with_ffi_boundary(|mrb| sys::mrb_init_mrbgems(mrb))?;
     }
     arena.restore();
-
-    debug!(
-        "Allocated mrb interpreter: {}",
-        sys::mrb_sys_state_debug(unsafe { interp.mrb.as_mut() })
-    );
 
     // mruby lazily initializes some core objects like `top_self` and generates
     // a lot of garbage on start-up. Eagerly initialize the interpreter to

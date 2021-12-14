@@ -105,9 +105,6 @@
 mod readme {}
 
 #[macro_use]
-extern crate log;
-
-#[macro_use]
 #[doc(hidden)]
 pub mod macros;
 

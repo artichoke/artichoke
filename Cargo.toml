@@ -19,6 +19,17 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 clap = { version = "2.34", optional = true }
+# XXX: load-bearing unused dependency.
+#
+# `rustyline` improperly declares its minimum version on `log` as `0.4` despite
+# requiring `>=0.4.5` to compile. Link in at least the minimum version here so
+# cargo pulls in at least 0.4.5, e.g. when using `-Zminimal-versions`.
+#
+# Upstream has not been willing to merge a patch to fix this, so hack around it
+# here.
+#
+# See: https://github.com/kkawakam/rustyline/pull/583
+log = { version = "0.4.5", optional = true }
 rustyline = { version = "9", optional = true, default-features = false }
 termcolor = { version = "1.1", optional = true }
 
@@ -73,7 +84,7 @@ default = [
 ]
 # Enable a CLI frontend for Artichoke, including a `ruby`-equivalent CLI and
 # REPL.
-cli = ["backtrace", "clap", "rustyline"]
+cli = ["backtrace", "clap", "log", "rustyline"]
 # Enable a module for formtting backtraces from Ruby exceptions.
 backtrace = ["termcolor"]
 # Enable all features of Ruby Core, Standard Library, and the underlying VM.

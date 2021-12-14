@@ -169,7 +169,6 @@ pub fn last_error(interp: &mut Artichoke, exception: Value) -> Result<Error, Err
         .with_name(classname.into())
         .with_message(message.to_vec())
         .finish();
-    debug!("Extracted exception from interpreter: {}", exc);
     Ok(Error::from(exc))
 }
 

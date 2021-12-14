@@ -28,8 +28,6 @@ use crate::Artichoke;
 /// [`Box::into_raw`] and that the pointer is to a non-free'd
 /// [`Box`]`<`[`State`]`>`.
 pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, InterpreterExtractError> {
-    trace!("Extracting Artichoke State from FFI boundary");
-
     let mut mrb = if let Some(mrb) = NonNull::new(mrb) {
         mrb
     } else {
@@ -51,10 +49,6 @@ pub unsafe fn from_user_data(mrb: *mut sys::mrb_state) -> Result<Artichoke, Inte
     };
 
     let state = Box::from_raw(state.as_ptr());
-    trace!(
-        "Extracted Artichoke from user data pointer on {}",
-        sys::mrb_sys_state_debug(mrb.as_mut())
-    );
     Ok(Artichoke::new(mrb, state))
 }
 
