@@ -134,7 +134,7 @@ load-path-rubylib-native-file-system-loader = ["load-path-native-file-system-loa
 output-strategy-capture = ["artichoke-backend/output-strategy-capture"]
 # Override the `stdout` and `stdin` streams to write to be discarded.
 # `output-strategy-null` implies the `output-strategy-capture` feature.
-output-strategy-null = ["artichoke-backend/output-strategy-null"]
+output-strategy-null = ["output-strategy-capture", "artichoke-backend/output-strategy-null"]
 
 # Enable every integrated standard library package.
 stdlib-full = [
