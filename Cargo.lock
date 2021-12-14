@@ -27,6 +27,7 @@ dependencies = [
  "artichoke-backend",
  "chrono",
  "clap",
+ "log",
  "rustyline",
  "target-lexicon",
  "termcolor",
