@@ -96,7 +96,7 @@ impl Integer {
         self.0 as f64
     }
 
-    pub fn chr(self, interp: &mut Artichoke, encoding: Option<Value>) -> Result<Vec<u8>, Error> {
+    pub fn chr(self, interp: &mut Artichoke, encoding: Option<Value>) -> Result<spinoso_string::String, Error> {
         if let Some(encoding) = encoding {
             let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
             message.extend(encoding.inspect(interp));
@@ -132,14 +132,15 @@ impl Integer {
             // ```
             #[allow(clippy::unnested_or_patterns)]
             match u8::try_from(self.as_i64()) {
-                // ASCII encoding | Binary/ASCII-8BIT encoding
                 // Without `Encoding` support, these two arms are the same
-                Ok(chr @ 0..=127) | Ok(chr @ 128..=255) => {
-                    // Create a single byte `String` from the character given by
-                    // `self`.
-                    Ok(vec![chr])
-                }
-                _ => {
+
+                // ASCII encoding - chr[0 - 127]
+                // Binary/ASCII-8BIT encoding - chr[128 - 255]
+
+                // Create a single byte `String` from the character given by `self`.
+                Ok(chr @ 0..=127) => Ok(spinoso_string::String::ascii(vec![chr])),
+                Ok(chr @ 128..=255) => Ok(spinoso_string::String::binary(vec![chr])),
+                Err(_) => {
                     let mut message = String::new();
                     write!(&mut message, "{} out of char range", self.as_i64()).map_err(WriteError::from)?;
                     Err(RangeError::from(message).into())
