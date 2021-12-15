@@ -140,7 +140,7 @@ impl Integer {
                 // Create a single byte `String` from the character given by `self`.
                 Ok(chr @ 0..=127) => Ok(spinoso_string::String::ascii(vec![chr])),
                 Ok(chr @ 128..=255) => Ok(spinoso_string::String::binary(vec![chr])),
-                _ => {
+                Err(_) => {
                     let mut message = String::new();
                     write!(&mut message, "{} out of char range", self.as_i64()).map_err(WriteError::from)?;
                     Err(RangeError::from(message).into())
