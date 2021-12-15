@@ -238,7 +238,7 @@ where
             Ok(line) if line.is_empty() && buf.is_empty() => (),
             Ok(line) => {
                 buf.push_str(line.as_str());
-                parser_state = parser.parse(buf.as_bytes());
+                parser_state = parser.parse(buf.as_bytes())?;
 
                 if parser_state.is_code_block_open() {
                     buf.push('\n');
@@ -252,6 +252,8 @@ where
                     buf.clear();
                     continue;
                 }
+
+                let interp = parser.interp();
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
                         let result = value.inspect(interp);
