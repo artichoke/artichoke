@@ -7,7 +7,7 @@ use std::ffi::CStr;
 use std::ptr::NonNull;
 
 use crate::backend::sys;
-use crate::backend::Artichoke;
+use crate::backend::{Artichoke, Error};
 
 /// State shows whether artichoke can parse some code or why it cannot.
 ///
@@ -82,21 +82,32 @@ impl Default for State {
 
 /// Wraps a [`artichoke_backend`] mruby parser.
 #[derive(Debug)]
-pub struct Parser {
+pub struct Parser<'a> {
+    interp: &'a mut Artichoke,
     parser: NonNull<sys::mrb_parser_state>,
     context: NonNull<sys::mrbc_context>,
 }
 
-impl Parser {
+impl<'a> Parser<'a> {
     /// Create a new parser from an interpreter instance.
     #[must_use]
-    pub fn new(interp: &mut Artichoke) -> Option<Self> {
+    pub fn new(interp: &'a mut Artichoke) -> Option<Self> {
         let state = interp.state.as_deref_mut()?;
         let context = state.parser.as_mut()?.context_mut();
         let context = NonNull::new(context)?;
         let parser = unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_parser_new(mrb)).ok()? };
         let parser = NonNull::new(parser)?;
-        Some(Self { parser, context })
+        Some(Self {
+            interp,
+            parser,
+            context,
+        })
+    }
+
+    /// Return a reference to the wrapped interpreter.
+    #[must_use]
+    pub fn interp(&mut self) -> &mut Artichoke {
+        self.interp
     }
 
     /// Parse the code buffer to determine if the code is a complete expression
@@ -111,13 +122,13 @@ impl Parser {
     /// If the underlying parser returns a UTF-8 invalid error message, an error
     /// is returned.
     #[allow(clippy::enum_glob_use)]
-    pub fn parse(&mut self, code: &[u8]) -> State {
+    pub fn parse(&mut self, code: &[u8]) -> Result<State, Error> {
         use sys::mrb_lex_state_enum::*;
 
         let len = if let Ok(len) = isize::try_from(code.len()) {
             len
         } else {
-            return State::CodeTooLong;
+            return Ok(State::CodeTooLong);
         };
         let parser = unsafe { self.parser.as_mut() };
         let context = unsafe { self.context.as_mut() };
@@ -127,19 +138,21 @@ impl Parser {
         parser.send = unsafe { ptr.offset(len) };
         parser.lineno = context.lineno;
         unsafe {
-            sys::mrb_parser_parse(parser, context);
+            self.interp.with_ffi_boundary(|_| {
+                sys::mrb_parser_parse(parser, context);
+            })?;
         }
 
         if !parser.parsing_heredoc.is_null() {
-            return State::UnterminatedHeredoc;
+            return Ok(State::UnterminatedHeredoc);
         }
         if !parser.lex_strterm.is_null() {
-            return State::UnterminatedString;
+            return Ok(State::UnterminatedString);
         }
-        if parser.nerr > 0 {
+        let state = if parser.nerr > 0 {
             let errmsg = parser.error_buffer[0].message;
             if errmsg.is_null() {
-                return State::ParseError;
+                return Ok(State::ParseError);
             }
             let cstring = unsafe { CStr::from_ptr(errmsg) };
             if let Ok(message) = cstring.to_str() {
@@ -186,14 +199,21 @@ impl Parser {
             } else {
                 State::Valid
             }
-        }
+        };
+        Ok(state)
     }
 }
 
-impl Drop for Parser {
+impl<'a> Drop for Parser<'a> {
     fn drop(&mut self) {
+        let Self { interp, parser, .. } = self;
+
         unsafe {
-            sys::mrb_parser_free(self.parser.as_mut());
+            let _ignored = interp.with_ffi_boundary(|_| {
+                sys::mrb_parser_free(parser.as_mut());
+            });
         }
+        // There is no need to free `context` since it is owned by the
+        // Artichoke state.
     }
 }
