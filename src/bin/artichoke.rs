@@ -148,6 +148,7 @@ fn app() -> App<'static> {
     let app = app.arg(
         Arg::new("commands")
             .short('e')
+            .allow_invalid_utf8(true)
             .takes_value(true)
             .multiple_occurrences(true)
             .help(r"one line of script. Several -e's allowed. Omit [programfile]"),
@@ -155,11 +156,12 @@ fn app() -> App<'static> {
     let app = app.arg(
         Arg::new("fixture")
             .long("with-fixture")
+            .allow_invalid_utf8(true)
             .takes_value(true)
             .help("file whose contents will be read into the `$fixture` global"),
     );
-    let app = app.arg(Arg::new("programfile"));
-    let app = app.arg(Arg::new("arguments").multiple_values(true));
+    let app = app.arg(Arg::new("programfile").allow_invalid_utf8(true));
+    let app = app.arg(Arg::new("arguments").multiple_values(true).allow_invalid_utf8(true));
     let app = app.version(env!("CARGO_PKG_VERSION"));
     app.setting(AppSettings::TrailingVarArg)
 }
