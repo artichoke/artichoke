@@ -113,8 +113,10 @@ pub fn main() {
         Arg::new("formatter")
             .long("format")
             .short('f')
-            .default_value("artichoke")
+            .allow_invalid_utf8(true)
+            .takes_value(true)
             .possible_values(&["artichoke", "summary", "tagger", "yaml"])
+            .default_value("artichoke")
             .required(false)
             .help("Choose an output formatter"),
     );
