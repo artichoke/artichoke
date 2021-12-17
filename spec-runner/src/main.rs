@@ -127,6 +127,7 @@ pub fn main() {
     );
     let app = app.arg(
         Arg::new("config")
+            .allow_invalid_utf8(true)
             .takes_value(true)
             .required(true)
             .help("Path to TOML config file"),
