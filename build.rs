@@ -117,16 +117,21 @@ fn platform(target: &Triple) -> String {
 
 fn copyright(birth_date: Date, build_date: Date) -> String {
     if birth_date.year == build_date.year {
-        format!(
+        return format!(
             "artichoke - Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
             birth_date.year
-        )
-    } else {
-        format!(
+        );
+    } else if build_date.year >= 2019 {
+        return format!(
             "artichoke - Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
             birth_date.year, build_date.year
-        )
+        );
     }
+
+    format!(
+        "artichoke - Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
+        birth_date.year, 2019
+    )
 }
 
 fn description(version: &str, release_date: Date, revision_count: Option<usize>, platform: &str) -> String {
