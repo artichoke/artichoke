@@ -130,7 +130,7 @@ fn copyright(birth_date: Date, build_date: Date) -> String {
 
     format!(
         "artichoke - Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
-        birth_date.year, 2019
+        birth_date.year, birth_date.year
     )
 }
 
