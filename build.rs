@@ -121,7 +121,7 @@ fn copyright(birth_date: Date, build_date: Date) -> String {
             "artichoke - Copyright (c) {} Ryan Lopopolo <rjl@hyperbo.la>",
             birth_date.year
         );
-    } else if build_date.year >= 2019 {
+    } else if build_date.year >= birth_date.year {
         return format!(
             "artichoke - Copyright (c) {}-{} Ryan Lopopolo <rjl@hyperbo.la>",
             birth_date.year, build_date.year
