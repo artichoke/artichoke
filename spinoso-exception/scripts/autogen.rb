@@ -273,7 +273,5 @@ exception_classes.each do |config|
   filename = File.join(__dir__, '..', 'src', 'core', "#{name.downcase}.rs")
 
   rendered = render(exc: name, type: type)
-  File.open(filename, 'w') do |rs|
-    rs.write rendered
-  end
+  File.write(filename, rendered)
 end
