@@ -159,7 +159,7 @@ end
 namespace :pkg do
   desc 'Sync the root rust-toolchain version to all crates'
   task :'rust_version:sync' do
-    rust_version = File.open('rust-toolchain').read.chomp
+    rust_version = File.read('rust-toolchain').chomp
     regexp = /^rust-version = "(.*)"$/
     next_rust_version = "rust-version = \"#{rust_version}\""
 
