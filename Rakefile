@@ -164,7 +164,7 @@ namespace :pkg do
     next_rust_version = "rust-version = \"#{rust_version}\""
 
     failures = Dir.glob("#{__dir__}/{,*/}Cargo.toml").map do |file|
-      contents = File.open(file).read
+      contents = File.read(file)
 
       if (existing_version = contents.match(regexp))
         File.write(file, contents.gsub(regexp, next_rust_version)) if existing_version != rust_version
