@@ -163,7 +163,9 @@ namespace :pkg do
     regexp = /^rust-version = "(.*)"$/
     next_rust_version = "rust-version = \"#{rust_version}\""
 
-    failures = Dir.glob("#{__dir__}/{,*/}Cargo.toml").map do |file|
+    pkg_files = FileList.new('*/Cargo.toml').include('Cargo.toml')
+
+    failures = pkg_files.map do |file|
       contents = File.read(file)
 
       if (existing_version = contents.match(regexp))
