@@ -155,3 +155,28 @@ namespace :release do
     end
   end
 end
+
+namespace :pkg do
+  desc 'Sync the root rust-toolchain version to all crates'
+  task :'rust_version:sync' do
+    rust_version = File.read('rust-toolchain').chomp
+    regexp = /^rust-version = "(.*)"$/
+    next_rust_version = "rust-version = \"#{rust_version}\""
+
+    pkg_files = FileList.new('*/Cargo.toml').include('Cargo.toml')
+
+    failures = pkg_files.map do |file|
+      contents = File.read(file)
+
+      if (existing_version = contents.match(regexp))
+        File.write(file, contents.gsub(regexp, next_rust_version)) if existing_version != rust_version
+        next
+      end
+
+      puts "Failed to update #{file}, ensure there is a rust-version specified" if Rake.verbose
+      file
+    end.compact
+
+    raise 'Failed to update some rust-versions' if failures.any?
+  end
+end
