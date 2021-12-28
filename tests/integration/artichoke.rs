@@ -1,7 +1,7 @@
-use insta;
-use crate::run;
 use std::fs;
 use std::path::Path;
+
+use crate::run;
 
 #[test]
 fn test_ruby_apps() -> Result<(), String> {

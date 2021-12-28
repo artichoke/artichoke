@@ -25,6 +25,7 @@ name = "artichoke"
 version = "0.1.0-pre.0"
 dependencies = [
  "artichoke-backend",
+ "bstr",
  "chrono",
  "clap",
  "insta",

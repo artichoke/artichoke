@@ -183,6 +183,7 @@ stdlib-time = ["artichoke-backend/stdlib-time"]
 stdlib-uri = ["artichoke-backend/stdlib-uri"]
 
 [dev-dependencies]
+bstr = { version = "0.2.17", default-features = false, features = ["std"] }
 insta = "1.9.0"
 
 [package.metadata.docs.rs]
