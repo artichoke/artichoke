@@ -29,7 +29,7 @@ fn binary_path<'a>(name: &'a str) -> Result<PathBuf, String> {
 fn run<'a>(binary_name: &'a str, call_args: Vec<&'a str>) -> Result<CommandOutput<'a>, String> {
     let binary = binary_path(binary_name)?;
 
-    let output = Command::new(&binary)
+    let output = Command::new(binary)
         .args(call_args.clone())
         .output()
         .expect(format!("Failed to run ruby app {}", binary_name).as_str());
