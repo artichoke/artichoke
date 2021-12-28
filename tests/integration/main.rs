@@ -9,8 +9,8 @@ use std::process::Command;
 struct CommandOutput<'a> {
     call_args: Vec<&'a str>,
     status: i32,
-    stdout: String,
-    stderr: String,
+    stdout: BString,
+    stderr: BString,
 }
 
 fn manifest_path() -> String {
