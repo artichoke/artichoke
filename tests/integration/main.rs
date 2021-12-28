@@ -18,7 +18,8 @@ fn manifest_path() -> String {
 }
 
 fn binary_path<'a>(name: &'a str) -> Result<PathBuf, String> {
-    let path = Path::new(&manifest_path()).join("target").join("debug").join(name);
+    let manifest_path = env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR environment variable not set by cargo");
+    let path = PathBuf::from(manifest_path).join("target").join("debug").join(name);
     match path.exists() {
         true => Ok(path),
         false => Err(format!("Can't find binary {} in ./target/debug/", name)),
