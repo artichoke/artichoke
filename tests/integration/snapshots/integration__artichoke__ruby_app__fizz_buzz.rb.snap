@@ -1,0 +1,16 @@
+---
+source: tests/integration/artichoke.rs
+assertion_line: 20
+expression: "run(binary_name, args)"
+
+---
+Ok(
+    CommandOutput {
+        call_args: [
+            "./tests/integration/apps/fizz_buzz.rb",
+        ],
+        status: 1,
+        stdout: "",
+        stderr: "\u{1b}[0m\u{1b}[0m\u{1b}[1mTraceback\u{1b}[0m (most recent call last):\n\t3: from ./tests/integration/apps/fizz_buzz.rb:3\n\t2: from (eval):590:in each\n./tests/integration/apps/fizz_buzz.rb:4: \u{1b}[0m\u{1b}[1mundefined method '%'\u{1b}[0m\u{1b}[1m (\u{1b}[0m\u{1b}[1m\u{1b}[4mNoMethodError\u{1b}[0m\u{1b}[1m)\n\u{1b}[0m",
+    },
+)

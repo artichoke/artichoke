@@ -1,0 +1,16 @@
+---
+source: tests/integration/artichoke.rs
+assertion_line: 20
+expression: "run(binary_name, args)"
+
+---
+Ok(
+    CommandOutput {
+        call_args: [
+            "./tests/integration/apps/hello_world.rb",
+        ],
+        status: 0,
+        stdout: "Hello Artichoke!\n",
+        stderr: "",
+    },
+)
