@@ -1,7 +1,7 @@
 ---
 source: tests/integration/artichoke.rs
-assertion_line: 20
-expression: "run(binary_name, args)"
+assertion_line: 18
+expression: "run(BINARY, vec![& path])"
 
 ---
 Ok(
