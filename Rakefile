@@ -16,10 +16,10 @@ namespace :lint do
   desc 'Lint Rust sources with Clippy'
   task :clippy do
     sh 'cargo clippy --workspace --all-features --all-targets'
-    Dir.chdir('integration-tests') do
+    Dir.chdir('spec-runner') do
       sh 'cargo clippy --workspace --all-features --all-targets'
     end
-    Dir.chdir('spec-runner') do
+    Dir.chdir('ui-tests') do
       sh 'cargo clippy --workspace --all-features --all-targets'
     end
   end
@@ -100,10 +100,10 @@ task :'build:all' do
   Dir.chdir('fuzz') do
     sh 'cargo build --workspace'
   end
-  Dir.chdir('integration-tests') do
+  Dir.chdir('spec-runner') do
     sh 'cargo build --workspace'
   end
-  Dir.chdir('spec-runner') do
+  Dir.chdir('ui-tests') do
     sh 'cargo build --workspace'
   end
 end
@@ -133,7 +133,7 @@ task test: %i[test:unit]
 namespace :test do
   # TODO: Add fuzz into all list when tests work
   desc 'Run all tests'
-  task all: %i[integration unit]
+  task all: %i[unit ui]
 
   desc 'Run fuzz tests'
   task :fuzz do
@@ -142,10 +142,10 @@ namespace :test do
     end
   end
 
-  desc 'Run integration tests'
-  task :integration do
+  desc 'Run UI tests (check exact stdout/stderr of Artichoke binaries)'
+  task :ui do
     sh 'cargo build'
-    Dir.chdir('integration-tests') do
+    Dir.chdir('ui-tests') do
       sh 'cargo test --workspace'
     end
   end
