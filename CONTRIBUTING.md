@@ -86,7 +86,7 @@ rake spec                         # Run enforced ruby/spec suite
 rake test                         # Run Artichoke unit tests
 rake test:all                     # Run all tests
 rake test:fuzz                    # Run fuzz tests (Fuzz the interpreter for crashes with arbitrary input)
-rake test:ui                      # Run UI tests (check exact stdout/stderr of Artichoke binaries)
+rake test:ui                      # Run ui tests (check exact stdout/stderr of Artichoke binaries)
 rake test:unit                    # Run unit tests
 ```
 

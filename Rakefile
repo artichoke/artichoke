@@ -148,7 +148,7 @@ namespace :test do
     end
   end
 
-  desc 'Run UI tests (check exact stdout/stderr of Artichoke binaries)'
+  desc 'Run ui tests (check exact stdout/stderr of Artichoke binaries)'
   task :ui do
     sh 'cargo build'
     Dir.chdir('ui-tests') do
