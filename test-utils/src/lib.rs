@@ -86,7 +86,7 @@ fn binary_path(name: &str) -> Result<PathBuf, String> {
     let path = PathBuf::from(manifest_path)
         .join("target")
         .join("debug")
-        .join(executable.clone());
+        .join(&executable);
 
     match path.exists() {
         true => Ok(path),
