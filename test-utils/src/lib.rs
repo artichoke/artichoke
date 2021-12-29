@@ -1,6 +1,6 @@
 use std::env;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Output};
 
 use bstr::{BString, ByteSlice};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
@@ -28,7 +28,7 @@ impl CommandOutput {
         self
     }
 
-    fn with_command_output(&mut self, output: std::process::Output) -> &mut Self {
+    fn with_command_output(&mut self, output: Output) -> &mut Self {
         self.status = output.status.code().unwrap_or(-1);
         self.stdout = BString::from(output.stdout);
         self.stderr = BString::from(output.stderr);
