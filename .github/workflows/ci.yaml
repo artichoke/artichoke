@@ -228,7 +228,7 @@ jobs:
         working-directory: "ui-tests"
 
       - name: Build artichoke binaries
-        run: cargo build --release
+        run: cargo build
 
       - name: Build ui test suite
         run: cargo test --workspace --no-run
