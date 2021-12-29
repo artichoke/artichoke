@@ -182,10 +182,6 @@ stdlib-strscan = ["artichoke-backend/stdlib-strscan"]
 stdlib-time = ["artichoke-backend/stdlib-time"]
 stdlib-uri = ["artichoke-backend/stdlib-uri"]
 
-[dev-dependencies]
-insta = { version = "1.9.0", features = ["toml"] }
-test-utils = { version = "0.0.0", path = "test-utils" }
-
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

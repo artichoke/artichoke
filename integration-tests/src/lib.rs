@@ -84,6 +84,7 @@ fn binary_path(name: &str) -> Result<PathBuf, String> {
     let manifest_path =
         env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR environment variable not set by cargo");
     let path = PathBuf::from(manifest_path)
+        .join("..")
         .join("target")
         .join("debug")
         .join(&executable);

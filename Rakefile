@@ -16,6 +16,9 @@ namespace :lint do
   desc 'Lint Rust sources with Clippy'
   task :clippy do
     sh 'cargo clippy --workspace --all-features --all-targets'
+    Dir.chdir('integration-tests') do
+      sh 'cargo clippy --workspace --all-features --all-targets'
+    end
     Dir.chdir('spec-runner') do
       sh 'cargo clippy --workspace --all-features --all-targets'
     end
@@ -97,6 +100,9 @@ task :'build:all' do
   Dir.chdir('fuzz') do
     sh 'cargo build --workspace'
   end
+  Dir.chdir('integration-tests') do
+    sh 'cargo build --workspace'
+  end
   Dir.chdir('spec-runner') do
     sh 'cargo build --workspace'
   end
@@ -122,8 +128,32 @@ task :spec do
 end
 
 desc 'Run Artichoke unit tests'
-task :test do
-  sh 'cargo test --workspace'
+task test: %i[test:unit]
+
+namespace :test do
+  # TODO: Add fuzz into all list when tests work
+  desc 'Run all tests'
+  task all: %i[integration unit]
+
+  desc 'Run fuzz tests'
+  task :fuzz do
+    Dir.chdir('fuzz') do
+      sh 'cargo test --workspace'
+    end
+  end
+
+  desc 'Run integration tests'
+  task :integration do
+    sh 'cargo build'
+    Dir.chdir('integration-tests') do
+      sh 'cargo test --workspace'
+    end
+  end
+
+  desc 'Run unit tests'
+  task :unit do
+    sh 'cargo test --workspace'
+  end
 end
 
 desc 'Run Artichoke with LeakSanitizer'
