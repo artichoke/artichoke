@@ -1,7 +1,7 @@
 use crate::run;
 
 const BINARY: &str = "artichoke";
-const FIXTURES_ROOT: &str = "./tests/integration/apps/";
+const FIXTURES_ROOT: &str = "./tests/integration/fixtures/";
 
 #[test]
 fn test_hello_world() {

@@ -1,10 +1,10 @@
 ---
 source: tests/integration/artichoke.rs
-assertion_line: 18
-expression: "run(BINARY, &vec![& path]).unwrap()"
+assertion_line: 22
+expression: "run(BINARY, &[&path]).unwrap()"
 
 ---
-call_args = ['./tests/integration/apps/fizz_buzz.rb']
+call_args = ['./tests/integration/fixtures/fizz_buzz.rb']
 status = 0
 stdout = '''
 FizzBuzz
