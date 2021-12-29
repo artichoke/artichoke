@@ -53,6 +53,9 @@ namespace :format do
     Dir.chdir('spec-runner') do
       sh 'rustup run --install nightly cargo fmt -- --color=auto'
     end
+    Dir.chdir('ui-tests') do
+      sh 'rustup run --install nightly cargo fmt -- --color=auto'
+    end
   end
 
   desc 'Format text, YAML, and Markdown sources with prettier'
@@ -74,6 +77,9 @@ namespace :fmt do
   task :rust do
     sh 'rustup run --install nightly cargo fmt -- --color=auto'
     Dir.chdir('spec-runner') do
+      sh 'rustup run --install nightly cargo fmt -- --color=auto'
+    end
+    Dir.chdir('ui-tests') do
       sh 'rustup run --install nightly cargo fmt -- --color=auto'
     end
   end
