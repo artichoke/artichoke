@@ -1,5 +1,5 @@
 [package]
-name = "integration-tests"
+name = "ui-tests"
 version = "0.0.0"
 authors = ["Automatically generated"]
 publish = false
