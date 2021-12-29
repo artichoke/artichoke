@@ -16,14 +16,14 @@ fn help_unix() {
 }
 
 #[test]
-fn test_hello_world() {
+fn hello_world() {
     let app_name = "hello_world.rb";
     let path = format!("{}{}", FIXTURES_ROOT, app_name);
     insta::assert_toml_snapshot!(run(BINARY, &[&path]).unwrap());
 }
 
 #[test]
-fn test_fizz_buzz() {
+fn fizz_buzz() {
     let app_name = "fizz_buzz.rb";
     let path = format!("{}{}", FIXTURES_ROOT, app_name);
     insta::assert_toml_snapshot!(run(BINARY, &[&path]).unwrap());
