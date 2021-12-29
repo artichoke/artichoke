@@ -1,7 +1,7 @@
-use crate::run;
+use test_utils::run;
 
 const BINARY: &str = "artichoke";
-const FIXTURES_ROOT: &str = "./tests/integration/fixtures/";
+const FIXTURES_ROOT: &str = "./tests/fixtures/";
 
 #[cfg(target_family = "windows")]
 #[test]

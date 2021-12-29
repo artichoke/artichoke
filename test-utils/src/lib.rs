@@ -1,5 +1,3 @@
-mod artichoke;
-
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
@@ -7,7 +5,7 @@ use std::process::Command;
 use bstr::{BString, ByteSlice};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
-struct CommandOutput {
+pub struct CommandOutput {
     call_args: Vec<String>,
     status: i32,
     stdout: BString,
@@ -96,7 +94,7 @@ fn binary_path(name: &str) -> Result<PathBuf, String> {
     }
 }
 
-fn run(binary_name: &str, call_args: &[&str]) -> Result<CommandOutput, String> {
+pub fn run(binary_name: &str, call_args: &[&str]) -> Result<CommandOutput, String> {
     let binary = binary_path(binary_name)?;
 
     let output = Command::new(binary)
