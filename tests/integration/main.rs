@@ -4,7 +4,7 @@ use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
-use bstr::BString;
+use bstr::{BString, ByteSlice};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 struct CommandOutput {
@@ -55,8 +55,20 @@ impl Serialize for CommandOutput {
         let mut s = serializer.serialize_struct("parameters", 4)?;
         s.serialize_field("call_args", &self.call_args)?;
         s.serialize_field("status", &self.status)?;
-        s.serialize_field("stdout", &format!("{}", self.stdout))?;
-        s.serialize_field("stderr", &format!("{}", self.stderr))?;
+        let stdout = self
+            .stdout
+            .lines()
+            .map(|line| format!("{:?}", line.as_bstr()))
+            .collect::<Vec<String>>()
+            .join("\n");
+        s.serialize_field("stdout", &stdout)?;
+        let stderr = self
+            .stderr
+            .lines()
+            .map(|line| format!("{:?}", line.as_bstr()))
+            .collect::<Vec<String>>()
+            .join("\n");
+        s.serialize_field("stderr", &stderr)?;
         s.end()
     }
 }

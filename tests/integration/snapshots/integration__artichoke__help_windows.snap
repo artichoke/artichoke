@@ -7,22 +7,21 @@ expression: "run(BINARY, &[\"--help\"]).unwrap()"
 call_args = ['--help']
 status = 0
 stdout = '''
-artichoke 0.1.0-pre.0
-Artichoke is a Ruby made with Rust.
-
-USAGE:
-    artichoke.exe [FLAGS] [OPTIONS] [--] [programfile]...
-
-FLAGS:
-        --copyright    print the copyright
-    -h, --help         Prints help information
-    -V, --version      Prints version information
-
-OPTIONS:
-    -e <commands>...                one line of script. Several -e's allowed. Omit [programfile]
-        --with-fixture <fixture>    file whose contents will be read into the `$fixture` global
-
-ARGS:
-    <programfile>...    
-'''
+"artichoke 0.1.0-pre.0"
+"Artichoke is a Ruby made with Rust."
+""
+"USAGE:"
+"    artichoke.exe [FLAGS] [OPTIONS] [--] [programfile]..."
+""
+"FLAGS:"
+"        --copyright    print the copyright"
+"    -h, --help         Prints help information"
+"    -V, --version      Prints version information"
+""
+"OPTIONS:"
+"    -e <commands>...                one line of script. Several -e\'s allowed. Omit [programfile]"
+"        --with-fixture <fixture>    file whose contents will be read into the `$fixture` global"
+""
+"ARGS:"
+"    <programfile>...    "'''
 stderr = ''

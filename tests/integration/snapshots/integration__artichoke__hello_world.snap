@@ -1,12 +1,10 @@
 ---
 source: tests/integration/artichoke.rs
-assertion_line: 15
+assertion_line: 22
 expression: "run(BINARY, &[&path]).unwrap()"
 
 ---
 call_args = ['./tests/integration/fixtures/hello_world.rb']
 status = 0
-stdout = '''
-Hello Artichoke!
-'''
+stdout = '"Hello Artichoke!"'
 stderr = ''
