@@ -3,11 +3,10 @@ mod artichoke;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
-use serde::ser::{Serialize, Serializer, SerializeStruct};
-use bstr::BString;
 
-#[allow(dead_code)]
-#[derive(Debug)]
+use bstr::BString;
+use serde::ser::{Serialize, SerializeStruct, Serializer};
+
 struct CommandOutput {
     call_args: Vec<String>,
     status: i32,
@@ -25,8 +24,9 @@ impl CommandOutput {
         }
     }
 
-    fn with_args(&mut self, call_args: &Vec<&str>) -> &mut Self {
-        self.call_args.append(&mut call_args.clone().iter().map(|x| x.to_string()).collect());
+    fn with_args(&mut self, call_args: &[&str]) -> &mut Self {
+        self.call_args
+            .append(&mut (*call_args).iter().map(|x| x.to_string()).collect());
         self
     }
 
@@ -73,7 +73,10 @@ fn binary_path(name: &str) -> Result<PathBuf, String> {
     let executable = binary_name(name);
     let manifest_path =
         env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR environment variable not set by cargo");
-    let path = PathBuf::from(manifest_path).join("target").join("debug").join(executable.clone());
+    let path = PathBuf::from(manifest_path)
+        .join("target")
+        .join("debug")
+        .join(executable.clone());
 
     match path.exists() {
         true => Ok(path),
@@ -81,13 +84,16 @@ fn binary_path(name: &str) -> Result<PathBuf, String> {
     }
 }
 
-fn run<'a>(binary_name: &'a str, call_args: &Vec<&'a str>) -> Result<CommandOutput, String> {
+fn run(binary_name: &str, call_args: &[&str]) -> Result<CommandOutput, String> {
     let binary = binary_path(binary_name)?;
 
     let output = Command::new(binary)
-        .args(call_args.clone())
+        .args(call_args.to_owned())
         .output()
         .unwrap_or_else(|_| panic!("Failed to run ruby app {}", binary_name));
 
-    Ok(CommandOutput::new().with_args(call_args).with_command_output(output).build())
+    Ok(CommandOutput::new()
+        .with_args(call_args)
+        .with_command_output(output)
+        .build())
 }
