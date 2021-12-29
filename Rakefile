@@ -141,7 +141,7 @@ namespace :test do
   desc 'Run all tests'
   task all: %i[unit ui]
 
-  desc 'Run fuzz tests'
+  desc 'Run fuzz tests (Fuzz the interpreter for crashes with arbitrary input)'
   task :fuzz do
     Dir.chdir('fuzz') do
       sh 'cargo test --workspace'
