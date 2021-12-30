@@ -391,13 +391,13 @@ class Array
   end
 
   def compact
-    reject(&:nil?)
+    reject(&:nil?) # rubocop:disable Style/CollectionCompact
   end
 
   def compact!
     raise FrozenError, "can't modify frozen Array" if frozen?
 
-    reject!(&:nil?)
+    reject!(&:nil?) # rubocop:disable Style/CollectionCompact
   end
 
   def count(obj = (not_set = true), &block)
