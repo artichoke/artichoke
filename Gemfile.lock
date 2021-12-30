@@ -11,7 +11,7 @@ GEM
       bundler (>= 1.2.0, < 3)
       thor (~> 1.0)
     parallel (1.21.0)
-    parser (3.0.3.1)
+    parser (3.0.3.2)
       ast (~> 2.4.1)
     rainbow (3.0.0)
     rake (13.0.6)
