@@ -84,6 +84,10 @@ rake release:markdown_link_check  # Check for broken links in markdown files
 rake sanitizer:leak               # Run Artichoke with LeakSanitizer
 rake spec                         # Run enforced ruby/spec suite
 rake test                         # Run Artichoke unit tests
+rake test:all                     # Run all tests
+rake test:fuzz                    # Run fuzz tests (Fuzz the interpreter for crashes with arbitrary input)
+rake test:ui                      # Run ui tests (check exact stdout/stderr of Artichoke binaries)
+rake test:unit                    # Run unit tests
 ```
 
 To lint Ruby sources, Artichoke uses [RuboCop]. RuboCop runs as part of the

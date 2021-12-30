@@ -50,3 +50,14 @@ updates:
       - lopopolo
     labels:
       - A-deps
+  - package-ecosystem: cargo
+    directory: "/ui-tests"
+    schedule:
+      interval: monthly
+    allow:
+      - dependency-type: "all"
+    open-pull-requests-limit: 10
+    assignees:
+      - lopopolo
+    labels:
+      - A-deps

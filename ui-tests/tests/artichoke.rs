@@ -1,4 +1,4 @@
-use test_utils::run;
+use ui_tests::run;
 
 const BINARY: &str = "artichoke";
 const FIXTURES_ROOT: &str = "./tests/fixtures/";
