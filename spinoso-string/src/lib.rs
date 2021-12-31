@@ -3315,9 +3315,16 @@ mod tests {
     }
 
     #[test]
-    fn make_capitalized_utf8_string_empty() {
+    fn casing_utf8_string_empty() {
         let mut s = String::utf8(b"".to_vec());
+
         s.make_capitalized();
+        assert_eq!(s, "");
+
+        s.make_lowercase();
+        assert_eq!(s, "");
+
+        s.make_uppercase();
         assert_eq!(s, "");
     }
 
@@ -3347,206 +3354,401 @@ mod tests {
             (mid_upper.clone(), "abc", lowercase),
             (upper.clone(), "abc", lowercase),
             (long.clone(), "abc, 123, abc, baby you and me girl", lowercase),
-            (lower.clone(), "ABC", uppercase),
-            (mid_upper.clone(), "ABC", uppercase),
-            (upper.clone(), "ABC", uppercase),
-            (long.clone(), "ABC, 123, ABC, BABY YOU AND ME GIRL", uppercase),
+            (lower, "ABC", uppercase),
+            (mid_upper, "ABC", uppercase),
+            (upper, "ABC", uppercase),
+            (long, "ABC, 123, ABC, BABY YOU AND ME GIRL", uppercase),
         ];
 
-        for (value, expected, mutator) in assertions.iter_mut() {
+        for (value, expected, mutator) in &mut assertions {
             mutator(value);
             assert_eq!(value, expected);
         }
     }
 
     #[test]
-    fn make_capitalized_utf8_string_utf8() {
-        let mut s = String::utf8("ß".to_string().into_bytes());
-        s.make_capitalized();
-        // This differs from MRI:
+    fn casing_utf8_string_utf8() {
+        // Capitalization of ß (SS) differs from MRI:
         //
         // ```console
         // [2.6.3] > "ß".capitalize
         // => "Ss"
         // ```
-        assert_eq!(s, "SS");
-
-        let mut s = String::utf8("αύριο".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "Αύριο");
-
-        let mut s = String::utf8("έτος".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "Έτος");
-
+        let sharp_s = String::utf8("ß".to_string().into_bytes());
+        let tomorrow = String::utf8("αύριο".to_string().into_bytes());
+        let year = String::utf8("έτος".to_string().into_bytes());
         // two-byte characters
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L198-L200
-        let mut s = String::utf8(
+        let two_byte_chars = String::utf8(
             "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
                 .to_string()
                 .into_bytes(),
         );
-        s.make_capitalized();
-        assert_eq!(s, "𐐜 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮");
-
-        // Change length when lower-cased
+        // Changes length when case changes
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
-        let mut s = String::utf8("zȺȾ".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "Zⱥⱦ");
+        let varying_length = String::utf8("zȺȾ".to_string().into_bytes());
+        // There doesn't appear to be any RTL scripts that have cases, but might aswell make sure
+        let rtl = String::utf8("مرحبا الخرشوف".to_string().into_bytes());
+
+        let capitalize: fn(&mut String) = |value: &mut String| {
+            value.make_capitalized();
+        };
+        let lowercase: fn(&mut String) = |value: &mut String| {
+            value.make_lowercase();
+        };
+        let uppercase: fn(&mut String) = |value: &mut String| {
+            value.make_uppercase();
+        };
+
+        let mut assertions = [
+            (sharp_s.clone(), "SS", capitalize),
+            (tomorrow.clone(), "Αύριο", capitalize),
+            (year.clone(), "Έτος", capitalize),
+            (
+                two_byte_chars.clone(),
+                "𐐜 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮",
+                capitalize,
+            ),
+            (varying_length.clone(), "Zⱥⱦ", capitalize),
+            (rtl.clone(), "مرحبا الخرشوف", capitalize),
+            (sharp_s.clone(), "ß", lowercase),
+            (tomorrow.clone(), "αύριο", lowercase),
+            (year.clone(), "έτος", lowercase),
+            (
+                two_byte_chars.clone(),
+                "𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮",
+                lowercase,
+            ),
+            (varying_length.clone(), "zⱥⱦ", lowercase),
+            (rtl.clone(), "مرحبا الخرشوف", lowercase),
+            (sharp_s, "SS", uppercase),
+            (tomorrow, "ΑΎΡΙΟ", uppercase),
+            (year, "ΈΤΟΣ", uppercase),
+            (
+                two_byte_chars,
+                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐉𐐚 𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
+                uppercase,
+            ),
+            (varying_length, "ZȺȾ", uppercase),
+            (rtl, "مرحبا الخرشوف", uppercase),
+        ];
+
+        for (value, expected, mutator) in &mut assertions {
+            mutator(value);
+            assert_eq!(value, expected);
+        }
     }
 
     #[test]
-    fn make_capitalized_utf8_string_invalid_utf8() {
+    fn casing_utf8_string_invalid_utf8() {
         let mut s = String::utf8(b"\xFF\xFE".to_vec());
+
         s.make_capitalized();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+
+        s.make_lowercase();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+
+        s.make_uppercase();
         assert_eq!(s, &b"\xFF\xFE"[..]);
     }
 
     #[test]
-    fn make_capitalized_utf8_string_unicode_replacement_character() {
+    fn casing_utf8_string_unicode_replacement_character() {
         let mut s = String::utf8("�".to_string().into_bytes());
+
         s.make_capitalized();
+        assert_eq!(s, "�");
+
+        s.make_lowercase();
+        assert_eq!(s, "�");
+
+        s.make_uppercase();
         assert_eq!(s, "�");
     }
 
     #[test]
-    fn make_capitalized_ascii_string_empty() {
+    fn casing_ascii_string_empty() {
         let mut s = String::ascii(b"".to_vec());
+
         s.make_capitalized();
+        assert_eq!(s, "");
+
+        s.make_lowercase();
+        assert_eq!(s, "");
+
+        s.make_uppercase();
         assert_eq!(s, "");
     }
 
     #[test]
-    fn make_capitalized_ascii_string_ascii() {
-        let mut s = String::ascii(b"abc".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+    fn casing_ascii_string_ascii() {
+        let lower = String::ascii(b"abc".to_vec());
+        let mid_upper = String::ascii(b"aBc".to_vec());
+        let upper = String::ascii(b"ABC".to_vec());
+        let long = String::ascii(b"aBC, 123, ABC, baby you and me girl".to_vec());
 
-        let mut s = String::ascii(b"aBC".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+        let capitalize: fn(&mut String) = |value: &mut String| {
+            value.make_capitalized();
+        };
+        let lowercase: fn(&mut String) = |value: &mut String| {
+            value.make_lowercase();
+        };
+        let uppercase: fn(&mut String) = |value: &mut String| {
+            value.make_uppercase();
+        };
 
-        let mut s = String::ascii(b"ABC".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+        let mut assertions = [
+            (lower.clone(), "Abc", capitalize),
+            (mid_upper.clone(), "Abc", capitalize),
+            (upper.clone(), "Abc", capitalize),
+            (long.clone(), "Abc, 123, abc, baby you and me girl", capitalize),
+            (lower.clone(), "abc", lowercase),
+            (mid_upper.clone(), "abc", lowercase),
+            (upper.clone(), "abc", lowercase),
+            (long.clone(), "abc, 123, abc, baby you and me girl", lowercase),
+            (lower, "ABC", uppercase),
+            (mid_upper, "ABC", uppercase),
+            (upper, "ABC", uppercase),
+            (long, "ABC, 123, ABC, BABY YOU AND ME GIRL", uppercase),
+        ];
 
-        let mut s = String::ascii(b"aBC, 123, ABC, baby you and me girl".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc, 123, abc, baby you and me girl");
+        for (value, expected, mutator) in &mut assertions {
+            mutator(value);
+            assert_eq!(value, expected);
+        }
     }
 
     #[test]
-    fn make_capitalized_ascii_string_utf8() {
-        let mut s = String::ascii("ß".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "ß");
-
-        let mut s = String::ascii("αύριο".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "αύριο");
-
-        let mut s = String::ascii("έτος".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "έτος");
-
+    fn casing_ascii_string_utf8() {
+        let sharp_s = String::ascii("ß".to_string().into_bytes());
+        let tomorrow = String::ascii("αύριο".to_string().into_bytes());
+        let year = String::ascii("έτος".to_string().into_bytes());
         // two-byte characters
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L198-L200
-        let mut s = String::ascii(
+        let two_byte_chars = String::ascii(
             "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
                 .to_string()
                 .into_bytes(),
         );
-        s.make_capitalized();
-        assert_eq!(s, "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
-
-        // Change length when lower-cased
+        // Changes length when case changes
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
-        let mut s = String::ascii("zȺȾ".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "ZȺȾ");
+        let varying_length = String::ascii("zȺȾ".to_string().into_bytes());
+        let rtl = String::ascii("مرحبا الخرشوف".to_string().into_bytes());
+
+        let capitalize: fn(&mut String) = |value: &mut String| {
+            value.make_capitalized();
+        };
+        let lowercase: fn(&mut String) = |value: &mut String| {
+            value.make_lowercase();
+        };
+        let uppercase: fn(&mut String) = |value: &mut String| {
+            value.make_uppercase();
+        };
+
+        // The only values to change are zȺȾ since the leading character is ascii
+        let mut assertions = [
+            (sharp_s.clone(), "ß", capitalize),
+            (tomorrow.clone(), "αύριο", capitalize),
+            (year.clone(), "έτος", capitalize),
+            (
+                two_byte_chars.clone(),
+                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
+                capitalize,
+            ),
+            (varying_length.clone(), "ZȺȾ", capitalize),
+            (rtl.clone(), "مرحبا الخرشوف", capitalize),
+            (sharp_s.clone(), "ß", lowercase),
+            (tomorrow.clone(), "αύριο", lowercase),
+            (year.clone(), "έτος", lowercase),
+            (
+                two_byte_chars.clone(),
+                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
+                lowercase,
+            ),
+            (varying_length.clone(), "zȺȾ", lowercase),
+            (rtl.clone(), "مرحبا الخرشوف", lowercase),
+            (sharp_s, "ß", uppercase),
+            (tomorrow, "αύριο", uppercase),
+            (year, "έτος", uppercase),
+            (
+                two_byte_chars,
+                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
+                uppercase,
+            ),
+            (varying_length, "ZȺȾ", uppercase),
+            (rtl, "مرحبا الخرشوف", uppercase),
+        ];
+
+        for (value, expected, mutator) in &mut assertions {
+            mutator(value);
+            assert_eq!(value, expected);
+        }
     }
 
     #[test]
-    fn make_capitalized_ascii_string_invalid_utf8() {
+    fn casing_ascii_string_invalid_utf8() {
         let mut s = String::ascii(b"\xFF\xFE".to_vec());
+
         s.make_capitalized();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+
+        s.make_lowercase();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+
+        s.make_uppercase();
         assert_eq!(s, &b"\xFF\xFE"[..]);
     }
 
     #[test]
-    fn make_capitalized_ascii_string_unicode_replacement_character() {
+    fn casing_ascii_string_unicode_replacement_character() {
         let mut s = String::ascii("�".to_string().into_bytes());
+
         s.make_capitalized();
+        assert_eq!(s, "�");
+
+        s.make_lowercase();
+        assert_eq!(s, "�");
+
+        s.make_uppercase();
         assert_eq!(s, "�");
     }
 
     #[test]
-    fn make_capitalized_binary_string_empty() {
+    fn casing_binary_string_empty() {
         let mut s = String::binary(b"".to_vec());
+
         s.make_capitalized();
+        assert_eq!(s, "");
+
+        s.make_lowercase();
+        assert_eq!(s, "");
+
+        s.make_uppercase();
         assert_eq!(s, "");
     }
 
     #[test]
-    fn make_capitalized_binary_string_ascii() {
-        let mut s = String::binary(b"abc".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+    fn casing_binary_string_ascii() {
+        let lower = String::binary(b"abc".to_vec());
+        let mid_upper = String::binary(b"aBc".to_vec());
+        let upper = String::binary(b"ABC".to_vec());
+        let long = String::binary(b"aBC, 123, ABC, baby you and me girl".to_vec());
 
-        let mut s = String::ascii(b"aBC".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+        let capitalize: fn(&mut String) = |value: &mut String| {
+            value.make_capitalized();
+        };
+        let lowercase: fn(&mut String) = |value: &mut String| {
+            value.make_lowercase();
+        };
+        let uppercase: fn(&mut String) = |value: &mut String| {
+            value.make_uppercase();
+        };
 
-        let mut s = String::ascii(b"ABC".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+        let mut assertions = [
+            (lower.clone(), "Abc", capitalize),
+            (mid_upper.clone(), "Abc", capitalize),
+            (upper.clone(), "Abc", capitalize),
+            (long.clone(), "Abc, 123, abc, baby you and me girl", capitalize),
+            (lower.clone(), "abc", lowercase),
+            (mid_upper.clone(), "abc", lowercase),
+            (upper.clone(), "abc", lowercase),
+            (long.clone(), "abc, 123, abc, baby you and me girl", lowercase),
+            (lower, "ABC", uppercase),
+            (mid_upper, "ABC", uppercase),
+            (upper, "ABC", uppercase),
+            (long, "ABC, 123, ABC, BABY YOU AND ME GIRL", uppercase),
+        ];
 
-        let mut s = String::ascii(b"aBC, 123, ABC, baby you and me girl".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc, 123, abc, baby you and me girl");
+        for (value, expected, mutator) in &mut assertions {
+            mutator(value);
+            assert_eq!(value, expected);
+        }
     }
 
     #[test]
-    fn make_capitalized_binary_string_utf8() {
-        let mut s = String::binary("ß".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "ß");
-
-        let mut s = String::binary("αύριο".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "αύριο");
-
-        let mut s = String::binary("έτος".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "έτος");
-
+    fn casing_binary_string_utf8() {
+        let sharp_s = String::binary("ß".to_string().into_bytes());
+        let tomorrow = String::binary("αύριο".to_string().into_bytes());
+        let year = String::binary("έτος".to_string().into_bytes());
         // two-byte characters
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L198-L200
-        let mut s = String::binary(
+        let two_byte_chars = String::binary(
             "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
                 .to_string()
                 .into_bytes(),
         );
-        s.make_capitalized();
-        assert_eq!(s, "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
-
-        // Change length when lower-cased
+        // Changes length when case changes
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
-        let mut s = String::binary("zȺȾ".to_string().into_bytes());
-        s.make_capitalized();
-        assert_eq!(s, "ZȺȾ");
+        let varying_length = String::binary("zȺȾ".to_string().into_bytes());
+        let rtl = String::binary("مرحبا الخرشوف".to_string().into_bytes());
+
+        let capitalize: fn(&mut String) = |value: &mut String| {
+            value.make_capitalized();
+        };
+        let lowercase: fn(&mut String) = |value: &mut String| {
+            value.make_lowercase();
+        };
+        let uppercase: fn(&mut String) = |value: &mut String| {
+            value.make_uppercase();
+        };
+
+        // The only values to change are zȺȾ since the leading character is ascii
+        let mut assertions = [
+            (sharp_s.clone(), "ß", capitalize),
+            (tomorrow.clone(), "αύριο", capitalize),
+            (year.clone(), "έτος", capitalize),
+            (
+                two_byte_chars.clone(),
+                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
+                capitalize,
+            ),
+            (varying_length.clone(), "ZȺȾ", capitalize),
+            (rtl.clone(), "مرحبا الخرشوف", capitalize),
+            (sharp_s.clone(), "ß", lowercase),
+            (tomorrow.clone(), "αύριο", lowercase),
+            (year.clone(), "έτος", lowercase),
+            (
+                two_byte_chars.clone(),
+                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
+                lowercase,
+            ),
+            (varying_length.clone(), "zȺȾ", lowercase),
+            (rtl.clone(), "مرحبا الخرشوف", lowercase),
+            (sharp_s, "ß", uppercase),
+            (tomorrow, "αύριο", uppercase),
+            (year, "έτος", uppercase),
+            (
+                two_byte_chars,
+                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
+                uppercase,
+            ),
+            (varying_length, "ZȺȾ", uppercase),
+            (rtl, "مرحبا الخرشوف", uppercase),
+        ];
+
+        for (value, expected, mutator) in &mut assertions {
+            mutator(value);
+            assert_eq!(value, expected);
+        }
     }
 
     #[test]
-    fn make_capitalized_binary_string_invalid_utf8() {
+    fn casing_binary_string_invalid_utf8() {
         let mut s = String::binary(b"\xFF\xFE".to_vec());
+
         s.make_capitalized();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+
+        s.make_lowercase();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+
+        s.make_uppercase();
         assert_eq!(s, &b"\xFF\xFE"[..]);
     }
 
     #[test]
-    fn make_capitalized_binary_string_unicode_replacement_character() {
+    fn casing_binary_string_unicode_replacement_character() {
         let mut s = String::binary("�".to_string().into_bytes());
         s.make_capitalized();
         assert_eq!(s, "�");
