@@ -3335,35 +3335,36 @@ mod tests {
         let upper = String::utf8(b"ABC".to_vec());
         let long = String::utf8(b"aBC, 123, ABC, baby you and me girl".to_vec());
 
-        let capitalize: fn(&mut String) = |value: &mut String| {
+        let capitalize: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_capitalized();
+            value
         };
-        let lowercase: fn(&mut String) = |value: &mut String| {
+        let lowercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_lowercase();
+            value
         };
-        let uppercase: fn(&mut String) = |value: &mut String| {
+        let uppercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_uppercase();
+            value
         };
 
-        let mut assertions = [
-            (lower.clone(), "Abc", capitalize),
-            (mid_upper.clone(), "Abc", capitalize),
-            (upper.clone(), "Abc", capitalize),
-            (long.clone(), "Abc, 123, abc, baby you and me girl", capitalize),
-            (lower.clone(), "abc", lowercase),
-            (mid_upper.clone(), "abc", lowercase),
-            (upper.clone(), "abc", lowercase),
-            (long.clone(), "abc, 123, abc, baby you and me girl", lowercase),
-            (lower, "ABC", uppercase),
-            (mid_upper, "ABC", uppercase),
-            (upper, "ABC", uppercase),
-            (long, "ABC, 123, ABC, BABY YOU AND ME GIRL", uppercase),
-        ];
+        assert_eq!(capitalize(&lower), "Abc");
+        assert_eq!(capitalize(&mid_upper), "Abc");
+        assert_eq!(capitalize(&upper), "Abc");
+        assert_eq!(capitalize(&long), "Abc, 123, abc, baby you and me girl");
 
-        for (value, expected, mutator) in &mut assertions {
-            mutator(value);
-            assert_eq!(value, expected);
-        }
+        assert_eq!(lowercase(&lower), "abc");
+        assert_eq!(lowercase(&mid_upper), "abc");
+        assert_eq!(lowercase(&upper), "abc");
+        assert_eq!(lowercase(&long), "abc, 123, abc, baby you and me girl");
+
+        assert_eq!(uppercase(&lower), "ABC");
+        assert_eq!(uppercase(&mid_upper), "ABC");
+        assert_eq!(uppercase(&upper), "ABC");
+        assert_eq!(uppercase(&long), "ABC, 123, ABC, BABY YOU AND ME GIRL");
     }
 
     #[test]
@@ -3390,53 +3391,51 @@ mod tests {
         // There doesn't appear to be any RTL scripts that have cases, but might aswell make sure
         let rtl = String::utf8("مرحبا الخرشوف".to_string().into_bytes());
 
-        let capitalize: fn(&mut String) = |value: &mut String| {
+        let capitalize: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_capitalized();
+            value
         };
-        let lowercase: fn(&mut String) = |value: &mut String| {
+        let lowercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_lowercase();
+            value
         };
-        let uppercase: fn(&mut String) = |value: &mut String| {
+        let uppercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_uppercase();
+            value
         };
 
-        let mut assertions = [
-            (sharp_s.clone(), "SS", capitalize),
-            (tomorrow.clone(), "Αύριο", capitalize),
-            (year.clone(), "Έτος", capitalize),
-            (
-                two_byte_chars.clone(),
-                "𐐜 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮",
-                capitalize,
-            ),
-            (varying_length.clone(), "Zⱥⱦ", capitalize),
-            (rtl.clone(), "مرحبا الخرشوف", capitalize),
-            (sharp_s.clone(), "ß", lowercase),
-            (tomorrow.clone(), "αύριο", lowercase),
-            (year.clone(), "έτος", lowercase),
-            (
-                two_byte_chars.clone(),
-                "𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮",
-                lowercase,
-            ),
-            (varying_length.clone(), "zⱥⱦ", lowercase),
-            (rtl.clone(), "مرحبا الخرشوف", lowercase),
-            (sharp_s, "SS", uppercase),
-            (tomorrow, "ΑΎΡΙΟ", uppercase),
-            (year, "ΈΤΟΣ", uppercase),
-            (
-                two_byte_chars,
-                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐉𐐚 𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
-                uppercase,
-            ),
-            (varying_length, "ZȺȾ", uppercase),
-            (rtl, "مرحبا الخرشوف", uppercase),
-        ];
+        assert_eq!(capitalize(&sharp_s), "SS");
+        assert_eq!(capitalize(&tomorrow), "Αύριο");
+        assert_eq!(capitalize(&year), "Έτος");
+        assert_eq!(
+            capitalize(&two_byte_chars),
+            "𐐜 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮"
+        );
+        assert_eq!(capitalize(&varying_length), "Zⱥⱦ");
+        assert_eq!(capitalize(&rtl), "مرحبا الخرشوف");
 
-        for (value, expected, mutator) in &mut assertions {
-            mutator(value);
-            assert_eq!(value, expected);
-        }
+        assert_eq!(lowercase(&sharp_s), "ß");
+        assert_eq!(lowercase(&tomorrow), "αύριο");
+        assert_eq!(lowercase(&year), "έτος");
+        assert_eq!(
+            lowercase(&two_byte_chars),
+            "𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐑁𐐲𐑉𐑅𐐻/𐑅𐐯𐐿𐐲𐑌𐐼 𐐺𐐳𐐿 𐐺𐐴 𐑄 𐑉𐐨𐐾𐐯𐑌𐐻𐑅 𐐱𐑂 𐑄 𐐼𐐯𐑅𐐨𐑉𐐯𐐻 𐐷𐐮𐐭𐑌𐐮𐑂𐐲𐑉𐑅𐐮𐐻𐐮"
+        );
+        assert_eq!(lowercase(&varying_length), "zⱥⱦ");
+        assert_eq!(lowercase(&rtl), "مرحبا الخرشوف");
+
+        assert_eq!(uppercase(&sharp_s), "SS");
+        assert_eq!(uppercase(&tomorrow), "ΑΎΡΙΟ");
+        assert_eq!(uppercase(&year), "ΈΤΟΣ");
+        assert_eq!(
+            uppercase(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐉𐐚 𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(uppercase(&varying_length), "ZȺȾ");
+        assert_eq!(uppercase(&rtl), "مرحبا الخرشوف");
     }
 
     #[test]
@@ -3488,35 +3487,36 @@ mod tests {
         let upper = String::ascii(b"ABC".to_vec());
         let long = String::ascii(b"aBC, 123, ABC, baby you and me girl".to_vec());
 
-        let capitalize: fn(&mut String) = |value: &mut String| {
+        let capitalize: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_capitalized();
+            value
         };
-        let lowercase: fn(&mut String) = |value: &mut String| {
+        let lowercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_lowercase();
+            value
         };
-        let uppercase: fn(&mut String) = |value: &mut String| {
+        let uppercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_uppercase();
+            value
         };
 
-        let mut assertions = [
-            (lower.clone(), "Abc", capitalize),
-            (mid_upper.clone(), "Abc", capitalize),
-            (upper.clone(), "Abc", capitalize),
-            (long.clone(), "Abc, 123, abc, baby you and me girl", capitalize),
-            (lower.clone(), "abc", lowercase),
-            (mid_upper.clone(), "abc", lowercase),
-            (upper.clone(), "abc", lowercase),
-            (long.clone(), "abc, 123, abc, baby you and me girl", lowercase),
-            (lower, "ABC", uppercase),
-            (mid_upper, "ABC", uppercase),
-            (upper, "ABC", uppercase),
-            (long, "ABC, 123, ABC, BABY YOU AND ME GIRL", uppercase),
-        ];
+        assert_eq!(capitalize(&lower), "Abc");
+        assert_eq!(capitalize(&mid_upper), "Abc");
+        assert_eq!(capitalize(&upper), "Abc");
+        assert_eq!(capitalize(&long), "Abc, 123, abc, baby you and me girl");
 
-        for (value, expected, mutator) in &mut assertions {
-            mutator(value);
-            assert_eq!(value, expected);
-        }
+        assert_eq!(lowercase(&lower), "abc");
+        assert_eq!(lowercase(&mid_upper), "abc");
+        assert_eq!(lowercase(&upper), "abc");
+        assert_eq!(lowercase(&long), "abc, 123, abc, baby you and me girl");
+
+        assert_eq!(uppercase(&lower), "ABC");
+        assert_eq!(uppercase(&mid_upper), "ABC");
+        assert_eq!(uppercase(&upper), "ABC");
+        assert_eq!(uppercase(&long), "ABC, 123, ABC, BABY YOU AND ME GIRL");
     }
 
     #[test]
@@ -3536,54 +3536,51 @@ mod tests {
         let varying_length = String::ascii("zȺȾ".to_string().into_bytes());
         let rtl = String::ascii("مرحبا الخرشوف".to_string().into_bytes());
 
-        let capitalize: fn(&mut String) = |value: &mut String| {
+        let capitalize: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_capitalized();
+            value
         };
-        let lowercase: fn(&mut String) = |value: &mut String| {
+        let lowercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_lowercase();
+            value
         };
-        let uppercase: fn(&mut String) = |value: &mut String| {
+        let uppercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_uppercase();
+            value
         };
 
-        // The only values to change are zȺȾ since the leading character is ascii
-        let mut assertions = [
-            (sharp_s.clone(), "ß", capitalize),
-            (tomorrow.clone(), "αύριο", capitalize),
-            (year.clone(), "έτος", capitalize),
-            (
-                two_byte_chars.clone(),
-                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
-                capitalize,
-            ),
-            (varying_length.clone(), "ZȺȾ", capitalize),
-            (rtl.clone(), "مرحبا الخرشوف", capitalize),
-            (sharp_s.clone(), "ß", lowercase),
-            (tomorrow.clone(), "αύριο", lowercase),
-            (year.clone(), "έτος", lowercase),
-            (
-                two_byte_chars.clone(),
-                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
-                lowercase,
-            ),
-            (varying_length.clone(), "zȺȾ", lowercase),
-            (rtl.clone(), "مرحبا الخرشوف", lowercase),
-            (sharp_s, "ß", uppercase),
-            (tomorrow, "αύριο", uppercase),
-            (year, "έτος", uppercase),
-            (
-                two_byte_chars,
-                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
-                uppercase,
-            ),
-            (varying_length, "ZȺȾ", uppercase),
-            (rtl, "مرحبا الخرشوف", uppercase),
-        ];
+        assert_eq!(capitalize(&sharp_s), "ß");
+        assert_eq!(capitalize(&tomorrow), "αύριο");
+        assert_eq!(capitalize(&year), "έτος");
+        assert_eq!(
+            capitalize(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(capitalize(&varying_length), "ZȺȾ");
+        assert_eq!(capitalize(&rtl), "مرحبا الخرشوف");
 
-        for (value, expected, mutator) in &mut assertions {
-            mutator(value);
-            assert_eq!(value, expected);
-        }
+        assert_eq!(lowercase(&sharp_s), "ß");
+        assert_eq!(lowercase(&tomorrow), "αύριο");
+        assert_eq!(lowercase(&year), "έτος");
+        assert_eq!(
+            lowercase(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(lowercase(&varying_length), "zȺȾ");
+        assert_eq!(lowercase(&rtl), "مرحبا الخرشوف");
+
+        assert_eq!(uppercase(&sharp_s), "ß");
+        assert_eq!(uppercase(&tomorrow), "αύριο");
+        assert_eq!(uppercase(&year), "έτος");
+        assert_eq!(
+            uppercase(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(uppercase(&varying_length), "ZȺȾ");
+        assert_eq!(uppercase(&rtl), "مرحبا الخرشوف");
     }
 
     #[test]
@@ -3635,35 +3632,36 @@ mod tests {
         let upper = String::binary(b"ABC".to_vec());
         let long = String::binary(b"aBC, 123, ABC, baby you and me girl".to_vec());
 
-        let capitalize: fn(&mut String) = |value: &mut String| {
+        let capitalize: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_capitalized();
+            value
         };
-        let lowercase: fn(&mut String) = |value: &mut String| {
+        let lowercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_lowercase();
+            value
         };
-        let uppercase: fn(&mut String) = |value: &mut String| {
+        let uppercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_uppercase();
+            value
         };
 
-        let mut assertions = [
-            (lower.clone(), "Abc", capitalize),
-            (mid_upper.clone(), "Abc", capitalize),
-            (upper.clone(), "Abc", capitalize),
-            (long.clone(), "Abc, 123, abc, baby you and me girl", capitalize),
-            (lower.clone(), "abc", lowercase),
-            (mid_upper.clone(), "abc", lowercase),
-            (upper.clone(), "abc", lowercase),
-            (long.clone(), "abc, 123, abc, baby you and me girl", lowercase),
-            (lower, "ABC", uppercase),
-            (mid_upper, "ABC", uppercase),
-            (upper, "ABC", uppercase),
-            (long, "ABC, 123, ABC, BABY YOU AND ME GIRL", uppercase),
-        ];
+        assert_eq!(capitalize(&lower), "Abc");
+        assert_eq!(capitalize(&mid_upper), "Abc");
+        assert_eq!(capitalize(&upper), "Abc");
+        assert_eq!(capitalize(&long), "Abc, 123, abc, baby you and me girl");
 
-        for (value, expected, mutator) in &mut assertions {
-            mutator(value);
-            assert_eq!(value, expected);
-        }
+        assert_eq!(lowercase(&lower), "abc");
+        assert_eq!(lowercase(&mid_upper), "abc");
+        assert_eq!(lowercase(&upper), "abc");
+        assert_eq!(lowercase(&long), "abc, 123, abc, baby you and me girl");
+
+        assert_eq!(uppercase(&lower), "ABC");
+        assert_eq!(uppercase(&mid_upper), "ABC");
+        assert_eq!(uppercase(&upper), "ABC");
+        assert_eq!(uppercase(&long), "ABC, 123, ABC, BABY YOU AND ME GIRL");
     }
 
     #[test]
@@ -3683,54 +3681,51 @@ mod tests {
         let varying_length = String::binary("zȺȾ".to_string().into_bytes());
         let rtl = String::binary("مرحبا الخرشوف".to_string().into_bytes());
 
-        let capitalize: fn(&mut String) = |value: &mut String| {
+        let capitalize: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_capitalized();
+            value
         };
-        let lowercase: fn(&mut String) = |value: &mut String| {
+        let lowercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_lowercase();
+            value
         };
-        let uppercase: fn(&mut String) = |value: &mut String| {
+        let uppercase: fn(&String) -> String = |value: &String| {
+            let mut value = value.clone();
             value.make_uppercase();
+            value
         };
 
-        // The only values to change are zȺȾ since the leading character is ascii
-        let mut assertions = [
-            (sharp_s.clone(), "ß", capitalize),
-            (tomorrow.clone(), "αύριο", capitalize),
-            (year.clone(), "έτος", capitalize),
-            (
-                two_byte_chars.clone(),
-                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
-                capitalize,
-            ),
-            (varying_length.clone(), "ZȺȾ", capitalize),
-            (rtl.clone(), "مرحبا الخرشوف", capitalize),
-            (sharp_s.clone(), "ß", lowercase),
-            (tomorrow.clone(), "αύριο", lowercase),
-            (year.clone(), "έτος", lowercase),
-            (
-                two_byte_chars.clone(),
-                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
-                lowercase,
-            ),
-            (varying_length.clone(), "zȺȾ", lowercase),
-            (rtl.clone(), "مرحبا الخرشوف", lowercase),
-            (sharp_s, "ß", uppercase),
-            (tomorrow, "αύριο", uppercase),
-            (year, "έτος", uppercase),
-            (
-                two_byte_chars,
-                "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆",
-                uppercase,
-            ),
-            (varying_length, "ZȺȾ", uppercase),
-            (rtl, "مرحبا الخرشوف", uppercase),
-        ];
+        assert_eq!(capitalize(&sharp_s), "ß");
+        assert_eq!(capitalize(&tomorrow), "αύριο");
+        assert_eq!(capitalize(&year), "έτος");
+        assert_eq!(
+            capitalize(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(capitalize(&varying_length), "ZȺȾ");
+        assert_eq!(capitalize(&rtl), "مرحبا الخرشوف");
 
-        for (value, expected, mutator) in &mut assertions {
-            mutator(value);
-            assert_eq!(value, expected);
-        }
+        assert_eq!(lowercase(&sharp_s), "ß");
+        assert_eq!(lowercase(&tomorrow), "αύριο");
+        assert_eq!(lowercase(&year), "έτος");
+        assert_eq!(
+            lowercase(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(lowercase(&varying_length), "zȺȾ");
+        assert_eq!(lowercase(&rtl), "مرحبا الخرشوف");
+
+        assert_eq!(uppercase(&sharp_s), "ß");
+        assert_eq!(uppercase(&tomorrow), "αύριο");
+        assert_eq!(uppercase(&year), "έτος");
+        assert_eq!(
+            uppercase(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(uppercase(&varying_length), "ZȺȾ");
+        assert_eq!(uppercase(&rtl), "مرحبا الخرشوف");
     }
 
     #[test]
