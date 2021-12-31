@@ -3322,22 +3322,41 @@ mod tests {
     }
 
     #[test]
-    fn make_capitalized_utf8_string_ascii() {
-        let mut s = String::utf8(b"abc".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+    fn casing_utf8_string_ascii() {
+        let lower = String::utf8(b"abc".to_vec());
+        let mid_upper = String::utf8(b"aBc".to_vec());
+        let upper = String::utf8(b"ABC".to_vec());
+        let long = String::utf8(b"aBC, 123, ABC, baby you and me girl".to_vec());
 
-        let mut s = String::utf8(b"aBC".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+        let capitalize: fn(&mut String) = |value: &mut String| {
+            value.make_capitalized();
+        };
+        let lowercase: fn(&mut String) = |value: &mut String| {
+            value.make_lowercase();
+        };
+        let uppercase: fn(&mut String) = |value: &mut String| {
+            value.make_uppercase();
+        };
 
-        let mut s = String::utf8(b"ABC".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc");
+        let mut assertions = [
+            (lower.clone(), "Abc", capitalize),
+            (mid_upper.clone(), "Abc", capitalize),
+            (upper.clone(), "Abc", capitalize),
+            (long.clone(), "Abc, 123, abc, baby you and me girl", capitalize),
+            (lower.clone(), "abc", lowercase),
+            (mid_upper.clone(), "abc", lowercase),
+            (upper.clone(), "abc", lowercase),
+            (long.clone(), "abc, 123, abc, baby you and me girl", lowercase),
+            (lower.clone(), "ABC", uppercase),
+            (mid_upper.clone(), "ABC", uppercase),
+            (upper.clone(), "ABC", uppercase),
+            (long.clone(), "ABC, 123, ABC, BABY YOU AND ME GIRL", uppercase),
+        ];
 
-        let mut s = String::utf8(b"aBC, 123, ABC, baby you and me girl".to_vec());
-        s.make_capitalized();
-        assert_eq!(s, "Abc, 123, abc, baby you and me girl");
+        for (value, expected, mutator) in assertions.iter_mut() {
+            mutator(value);
+            assert_eq!(value, expected);
+        }
     }
 
     #[test]
