@@ -53,19 +53,17 @@
 //! ruby/spec runner for Artichoke.
 //!
 //! USAGE:
-//!     spec-runner [FLAGS] [OPTIONS] <config>
-//!
-//! FLAGS:
-//!     -h, --help       Prints help information
-//!     -q, --quiet      Suppress spec failures when exiting
-//!     -V, --version    Prints version information
-//!
-//! OPTIONS:
-//!     -f, --format <formatter>    Output spec results in YAML [default: artichoke]  [possible values: artichoke, summary,
-//!                                 tagger, yaml]
+//!     spec-runner [OPTIONS] <config>
 //!
 //! ARGS:
 //!     <config>    Path to TOML config file
+//!
+//! OPTIONS:
+//!     -f, --format <formatter>    Choose an output formatter [default: artichoke] [possible values:
+//!                                 artichoke, summary, tagger, yaml]
+//!     -h, --help                  Print help information
+//!     -q, --quiet                 Suppress spec failures when exiting
+//!     -V, --version               Print version information
 //! ```
 
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]

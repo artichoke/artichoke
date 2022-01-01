@@ -98,19 +98,18 @@ artichoke 0.1.0-pre.0
 Artichoke is a Ruby made with Rust.
 
 USAGE:
-    artichoke [FLAGS] [OPTIONS] [--] [programfile]...
-
-FLAGS:
-        --copyright    print the copyright
-    -h, --help         Prints help information
-    -V, --version      Prints version information
-
-OPTIONS:
-    -e <commands>...                one line of script. Several -e's allowed. Omit [programfile]
-        --with-fixture <fixture>    file whose contents will be read into the `$fixture` global
+    artichoke [OPTIONS] [ARGS]
 
 ARGS:
-    <programfile>...
+    <programfile>
+    <arguments>...
+
+OPTIONS:
+        --copyright                 print the copyright
+    -e <commands>                   one line of script. Several -e's allowed. Omit [programfile]
+    -h, --help                      Print help information
+    -V, --version                   Print version information
+        --with-fixture <fixture>    file whose contents will be read into the `$fixture` global
 ```
 
 ## Design and Goals
