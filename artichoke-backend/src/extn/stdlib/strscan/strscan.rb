@@ -198,13 +198,8 @@ class StringScanner
   def pos=(pointer)
     raise RangeError unless pointer.abs < @string.bytesize
 
-    @pos =
-      if pointer.negative?
-        pointer = @string.bytesize + pointer
-        @string.byteslice(0, pointer).bytesize
-      else
-        @string.byteslice(0, pointer).bytesize
-      end
+    pointer = @string.bytesize + pointer if pointer.negative?
+    @pos = @string.byteslice(0, pointer).bytesize
     pointer
   end
   alias pointer= pos=
