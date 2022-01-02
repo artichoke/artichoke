@@ -28,3 +28,13 @@ fn fizz_buzz() {
     let path = format!("{}{}", FIXTURES_ROOT, app_name);
     insta::assert_toml_snapshot!(run(BINARY, &[&path]).unwrap());
 }
+
+#[test]
+fn e_flag_argv() {
+    insta::assert_toml_snapshot!(run(BINARY, &["-e", "puts ARGV.inspect", "a", "b", "c"]).unwrap());
+}
+
+#[test]
+fn e_flag_dash_dash_argv() {
+    insta::assert_toml_snapshot!(run(BINARY, &["-e", "puts ARGV.inspect", "--", "a", "b", "c"]).unwrap());
+}

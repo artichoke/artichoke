@@ -1,0 +1,16 @@
+---
+source: tests/artichoke.rs
+assertion_line: 34
+expression: "run(BINARY, &[\"-e\", \"puts ARGV.inspect\", \"a\", \"b\", \"c\"]).unwrap()"
+
+---
+call_args = [
+    '-e',
+    'puts ARGV.inspect',
+    'a',
+    'b',
+    'c',
+]
+status = 0
+stdout = '"[\"a\", \"b\", \"c\"]"'
+stderr = ''
