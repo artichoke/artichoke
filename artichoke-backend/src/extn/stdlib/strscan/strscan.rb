@@ -7,7 +7,7 @@ class StringScanner
     self
   end
 
-  attr_reader :string
+  attr_reader :string, :pos
 
   def string=(str)
     @string = String.try_convert(str)
@@ -188,10 +188,6 @@ class StringScanner
     warn 'peep is obsolete use peek instead' if $VERBOSE
     peek(len)
   end
-
-  def pos
-    @pos
-  end
   alias pointer pos
 
   # rubocop:disable Lint/Void
@@ -273,7 +269,7 @@ class StringScanner
       return nil
     end
 
-    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize
     @pos += match_end_byte_pos if advance_pointer_p
     @previous_pos = previous_pos
     @last_match = match
@@ -294,7 +290,7 @@ class StringScanner
     match = pattern.match(haystack)
     return nil if match.nil?
 
-    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize
     @pos += match_end_byte_pos
     @previous_pos = previous_pos
     @last_match = match
@@ -309,7 +305,7 @@ class StringScanner
     match = pattern.match(haystack)
     return nil if match.nil?
 
-    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize
     @pos += match_end_byte_pos if advance_pointer_p
     @previous_pos = previous_pos
     if return_string_p
@@ -334,7 +330,7 @@ class StringScanner
       return nil
     end
 
-    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize
     @pos += match_end_byte_pos
     @previous_pos = previous_pos
     @last_match = match
@@ -353,7 +349,7 @@ class StringScanner
       return nil
     end
 
-    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize
     @pos += match_end_byte_pos
     @previous_pos = previous_pos
     @last_match = match
