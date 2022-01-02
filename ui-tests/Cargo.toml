@@ -8,7 +8,6 @@ rust-version = "1.57.0"
 license = "MIT"
 
 [dependencies]
-artichoke = { version = "0.1.0-pre.0", path = "..", default-features = false, features = ["kitchen-sink"] }
 bstr = { version = "0.2.17", default-features = false, features = ["std"] }
 insta = { version = "1.9.0", features = ["toml"] }
 serde = "1.0.132"
