@@ -7,7 +7,7 @@ class StringScanner
     self
   end
 
-  attr_reader :charpos, :string
+  attr_reader :string
 
   def string=(str)
     @string = String.try_convert(str)
@@ -15,10 +15,10 @@ class StringScanner
 
   def initialize(string)
     @string = String.try_convert(string)
-    @charpos = 0
-    @previous_charpos = nil
+    @pos = 0
+    @previous_pos = nil
     @last_match = nil
-    @last_match_charpos = nil
+    @last_match_pos = nil
   end
 
   def <<(str)
@@ -49,9 +49,9 @@ class StringScanner
   end
 
   def beginning_of_line?
-    return true if @charpos.zero?
+    return true if @pos.zero?
 
-    @string[@charpos - 1] == "\n"
+    @string.byteslice(@pos - 1) == "\n"
   end
   alias bol? beginning_of_line?
 
@@ -59,15 +59,20 @@ class StringScanner
     @last_match&.captures
   end
 
+  def charpos
+    @string.byteslice(0, @pos).length
+  end
+
   def charpos=(pointer)
     raise RangeError unless pointer.abs < @string.length
 
-    @charpos =
+    charpos =
       if pointer.negative?
         @string.length + pointer
       else
         pointer
       end
+    @pos = @string[0, charpos].bytesize
   end
 
   def check(pattern)
@@ -75,14 +80,14 @@ class StringScanner
   end
 
   def check_until(pattern)
-    old = @charpos
+    old = @pos
     result = scan_until(pattern)
-    @charpos = old
+    @pos = old
     result
   end
 
   def eos?
-    @charpos == @string.length
+    @pos == @string.bytesize
   end
 
   def empty?
@@ -92,7 +97,7 @@ class StringScanner
   end
 
   def exist?(pattern)
-    match = @string[@charpos..-1].match(pattern)
+    match = @string.byteslice(@pos, @string.bytesize - @pos).match(pattern)
     return nil if match.nil?
 
     match.end(0)
@@ -101,10 +106,10 @@ class StringScanner
   def get_byte # rubocop:disable Naming/AccessorMethodName
     return nil if eos?
 
-    byte, *_bytes = @string[@charpos..-1].bytes
-    @charpos += 1
-    @last_match_charpos = @charpos
-    @last_match = [byte].pack('c*')
+    byte = @string.byteslice(@pos)
+    @pos += 1
+    @last_match_pos = @pos
+    @last_match = byte
   end
 
   def getbyte
@@ -120,28 +125,39 @@ class StringScanner
   def inspect
     return "#<#{self.class.name} fin>" if eos?
 
-    before = @string.reverse[@string.length - @charpos, 5].reverse
+    charpos = @string.byteslice(0, @pos).length
+
+    before = @string.byteslice(0, @pos)
+    prior = before.length - 5
+    prior = 0 if prior.negative?
+
+    before = before[prior, 5]
     if before.length.positive? && before.length < 5
-      before = " \"#{before}\""
+      before = " #{before.inspect}"
     elsif !before.empty?
-      before = " \"...#{before}\""
+      before = " \"...#{before.inspect[1..-1]}"
     end
-    after = @string[@charpos, 5]
-    after = "\"#{after}...\"" unless after&.empty?
+
+    after = @string.byteslice(@pos, 5)
+    after = "#{after.inspect[0..-2]}...\"" unless after&.empty?
+
     "#<#{self.class.name} #{charpos}/#{@string.length}#{before} @ #{after}>"
   end
 
   def match?(pattern)
-    match = pattern.match(@string[@charpos..-1])
+    haystack = @string.byteslice(@pos, @string.bytesize - @pos)
+    match = pattern.match(haystack)
     if match.nil? || match.begin(0).positive?
       @last_match = nil
-      @last_match_charpos = nil
+      @last_match_pos = nil
       return nil
     end
 
     @last_match = match
-    @last_match_charpos ||= 0
-    @last_match_charpos += match.end(0)
+    @last_match_pos ||= 0
+
+    @last_match_pos += haystack[0, match.end(0)].bytesize
+
     match.end(0) - match.begin(0)
   end
 
@@ -165,7 +181,7 @@ class StringScanner
     raise RangeError unless len.is_a?(Integer)
     raise ArgumentError if len.negative?
 
-    @string.bytes[pos, len].pack('c*')
+    @string.byteslice(pos, len)
   end
 
   def peep(len)
@@ -174,7 +190,7 @@ class StringScanner
   end
 
   def pos
-    @string[0...@charpos].bytes.length
+    @pos
   end
   alias pointer pos
 
@@ -182,11 +198,12 @@ class StringScanner
   def pos=(pointer)
     raise RangeError unless pointer.abs < @string.bytesize
 
-    @charpos =
+    @pos =
       if pointer.negative?
-        @string.bytes[0..pointer - 1].pack('c*').length
+        pointer = @string.bytesize + pointer
+        @string.byteslice(0, pointer).bytesize
       else
-        @string.bytes[0, pointer].pack('c*').length
+        @string.byteslice(0, pointer).bytesize
       end
     pointer
   end
@@ -196,7 +213,7 @@ class StringScanner
   def post_match
     return nil if @last_match.nil?
 
-    ret = @string[@last_match_charpos..-1]
+    ret = @string.byteslice(@last_match_pos, @string.bytesize - @last_match_pos) || ''
     ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
@@ -204,26 +221,27 @@ class StringScanner
   def pre_match
     return nil if @last_match.nil?
 
-    match_len =
+    match_byte_offset =
       if @last_match.is_a?(MatchData)
-        @last_match.end(0) - @last_match.begin(0)
+        match_char_len = @last_match.end(0) - @last_match.begin(0)
+        @last_match.string[@last_match.begin(0), match_char_len].bytesize
       else
-        @last_match.length
+        @last_match.bytesize
       end
-    ret = @string[0...@last_match_charpos - match_len]
+    ret = @string.byteslice(0, @last_match_pos - match_byte_offset) || ''
     ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
 
   def reset
-    @charpos = 0
-    @previous_charpos = nil
+    @pos = 0
+    @previous_pos = nil
     @last_match = nil
-    @last_match_charpos = nil
+    @last_match_pos = nil
   end
 
   def rest
-    ret = @string[@charpos..-1]
+    ret = @string.byteslice(@pos, @string.bytesize - @pos)
     ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
@@ -249,22 +267,25 @@ class StringScanner
   def scan_full(pattern, advance_pointer_p, return_string_p)
     raise TypeError, "wrong argument type #{pattern.class} (expected Regexp)" unless pattern.is_a?(Regexp)
 
-    previous_charpos = @charpos
-    match = pattern.match(@string[@charpos..-1])
+    previous_pos = @pos
+    haystack = @string.byteslice(@pos, @string.bytesize - @pos)
+    match = pattern.match(haystack)
+
     if match.nil? || match.begin(0).positive?
       @last_match = nil
-      @last_match_charpos = nil
-      @previous_charpos = nil
+      @last_match_pos = nil
+      @previous_pos = nil
       return nil
     end
 
-    @charpos += match.end(0) if advance_pointer_p
-    @previous_charpos = previous_charpos
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    @pos += match_end_byte_pos if advance_pointer_p
+    @previous_pos = previous_pos
     @last_match = match
-    @last_match_charpos = @charpos
+    @last_match_pos = @pos
 
     if return_string_p
-      ret = @string[previous_charpos, match.end(0)]
+      ret = @string.byteslice(previous_pos, match_end_byte_pos)
       ret = String.new(ret) unless ret.instance_of?(String)
       ret
     else
@@ -273,27 +294,31 @@ class StringScanner
   end
 
   def scan_until(pattern)
-    previous_charpos = @charpos
-    match = pattern.match(@string[@charpos..-1])
+    previous_pos = @pos
+    haystack = @string.byteslice(@pos, @string.bytesize - @pos)
+    match = pattern.match(haystack)
     return nil if match.nil?
 
-    @charpos += match.end(0)
-    @previous_charpos = previous_charpos
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    @pos += match_end_byte_pos
+    @previous_pos = previous_pos
     @last_match = match
-    @last_match_charpos = @charpos
+    @last_match_pos = @pos
 
-    @string[previous_charpos, match.end(0)]
+    @string.byteslice(previous_pos, match_end_byte_pos)
   end
 
   def search_full(pattern, advance_pointer_p, return_string_p)
-    previous_charpos = @charpos
-    match = pattern.match(@string[@charpos..-1])
+    previous_pos = @pos
+    haystack = @string.byteslice(@pos, @string.bytesize - @pos)
+    match = pattern.match(haystack)
     return nil if match.nil?
 
-    @charpos += match.end(0) if advance_pointer_p
-    @previous_charpos = previous_charpos
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    @pos += match_end_byte_pos if advance_pointer_p
+    @previous_pos = previous_pos
     if return_string_p
-      @string[previous_charpos, match.end(0)]
+      @string.byteslice(previous_pos, match_end_byte_pos)
     else
       match.end(0)
     end
@@ -304,53 +329,57 @@ class StringScanner
   end
 
   def skip(pattern)
-    previous_charpos = @charpos
-    match = pattern.match(@string[@charpos..-1])
+    previous_pos = @pos
+    haystack = @string.byteslice(@pos, @string.bytesize - @pos)
+    match = pattern.match(haystack)
     if match.nil? || match.begin(0).positive?
       @last_match = nil
-      @last_match_charpos = nil
-      @previous_charpos = nil
+      @last_match_pos = nil
+      @previous_pos = nil
       return nil
     end
 
-    @charpos += match.end(0)
-    @previous_charpos = previous_charpos
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    @pos += match_end_byte_pos
+    @previous_pos = previous_pos
     @last_match = match
-    @last_match_charpos = @charpos
+    @last_match_pos = @pos
     match.end(0)
   end
 
   def skip_until(pattern)
-    previous_charpos = @charpos
-    match = pattern.match(@string[@charpos..-1])
+    previous_pos = @pos
+    haystack = @string.byteslice(@pos, @string.bytesize - @pos)
+    match = pattern.match(haystack)
     if match.nil?
       @last_match = nil
-      @last_match_charpos = nil
-      @previous_charpos = nil
+      @last_match_pos = nil
+      @previous_pos = nil
       return nil
     end
 
-    @charpos += match.end(0)
-    @previous_charpos = previous_charpos
+    match_end_byte_pos = haystack[0, match.end(0)].bytesize 
+    @pos += match_end_byte_pos
+    @previous_pos = previous_pos
     @last_match = match
-    @last_match_charpos = @charpos
+    @last_match_pos = @pos
     match.end(0)
   end
 
   def unscan
-    raise ScanError, 'unscan failed: previous match record not exist' if @previous_charpos.nil?
+    raise ScanError, 'unscan failed: previous match record not exist' if @previous_pos.nil?
 
-    @charpos = @previous_charpos
-    @previous_charpos = nil
+    @pos = @previous_pos
+    @previous_pos = nil
     @last_match = nil
-    @last_match_charpos = nil
+    @last_match_pos = nil
     nil
   end
 
   def terminate
-    @charpos = @string.length
+    @pos = @string.bytesize
     @last_match = nil
-    @last_match_charpos = nil
+    @last_match_pos = nil
     self
   end
 
