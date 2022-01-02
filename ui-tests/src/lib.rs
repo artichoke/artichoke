@@ -99,7 +99,7 @@ pub fn run(binary_name: &str, call_args: &[&str]) -> Result<CommandOutput, Strin
     let binary = binary_path(binary_name)?;
 
     let output = Command::new(binary)
-        .args(call_args.to_owned())
+        .args(call_args.iter())
         .output()
         .unwrap_or_else(|_| panic!("Failed to run ruby app {}", binary_name));
 

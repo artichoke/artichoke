@@ -53,19 +53,17 @@
 //! ruby/spec runner for Artichoke.
 //!
 //! USAGE:
-//!     spec-runner [FLAGS] [OPTIONS] <config>
-//!
-//! FLAGS:
-//!     -h, --help       Prints help information
-//!     -q, --quiet      Suppress spec failures when exiting
-//!     -V, --version    Prints version information
-//!
-//! OPTIONS:
-//!     -f, --format <formatter>    Output spec results in YAML [default: artichoke]  [possible values: artichoke, summary,
-//!                                 tagger, yaml]
+//!     spec-runner [OPTIONS] <config>
 //!
 //! ARGS:
 //!     <config>    Path to TOML config file
+//!
+//! OPTIONS:
+//!     -f, --format <formatter>    Choose an output formatter [default: artichoke] [possible values:
+//!                                 artichoke, summary, tagger, yaml]
+//!     -h, --help                  Print help information
+//!     -q, --quiet                 Suppress spec failures when exiting
+//!     -V, --version               Print version information
 //! ```
 
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
@@ -108,29 +106,29 @@ pub fn main() {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
 
     let app = App::new("spec-runner");
-    let app = app
-        .about("CLI specification for `spec-runner`")
-        .about("ruby/spec runner for Artichoke.");
+    let app = app.about("ruby/spec runner for Artichoke.");
     let app = app.arg(
-        Arg::with_name("formatter")
+        Arg::new("formatter")
             .long("format")
-            .short("f")
-            .default_value("artichoke")
+            .short('f')
+            .allow_invalid_utf8(true)
+            .takes_value(true)
             .possible_values(&["artichoke", "summary", "tagger", "yaml"])
+            .default_value("artichoke")
             .required(false)
-            .help("Output spec results in YAML"),
+            .help("Choose an output formatter"),
     );
     let app = app.arg(
-        Arg::with_name("quiet")
+        Arg::new("quiet")
             .long("quiet")
-            .short("q")
+            .short('q')
             .required(false)
             .help("Suppress spec failures when exiting"),
     );
     let app = app.arg(
-        Arg::with_name("config")
+        Arg::new("config")
+            .allow_invalid_utf8(true)
             .takes_value(true)
-            .multiple(false)
             .required(true)
             .help("Path to TOML config file"),
     );
