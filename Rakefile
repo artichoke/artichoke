@@ -19,6 +19,9 @@ namespace :lint do
     Dir.chdir('spec-runner') do
       sh 'cargo clippy --workspace --all-features --all-targets'
     end
+    Dir.chdir('ui-tests') do
+      sh 'cargo clippy --workspace --all-features --all-targets'
+    end
   end
 
   desc 'Lint Rust sources with Clippy restriction pass (unenforced lints)'
@@ -50,6 +53,9 @@ namespace :format do
     Dir.chdir('spec-runner') do
       sh 'rustup run --install nightly cargo fmt -- --color=auto'
     end
+    Dir.chdir('ui-tests') do
+      sh 'rustup run --install nightly cargo fmt -- --color=auto'
+    end
   end
 
   desc 'Format text, YAML, and Markdown sources with prettier'
@@ -71,6 +77,9 @@ namespace :fmt do
   task :rust do
     sh 'rustup run --install nightly cargo fmt -- --color=auto'
     Dir.chdir('spec-runner') do
+      sh 'rustup run --install nightly cargo fmt -- --color=auto'
+    end
+    Dir.chdir('ui-tests') do
       sh 'rustup run --install nightly cargo fmt -- --color=auto'
     end
   end
@@ -100,6 +109,9 @@ task :'build:all' do
   Dir.chdir('spec-runner') do
     sh 'cargo build --workspace'
   end
+  Dir.chdir('ui-tests') do
+    sh 'cargo build --workspace'
+  end
 end
 
 desc 'Generate Rust API documentation'
@@ -122,8 +134,32 @@ task :spec do
 end
 
 desc 'Run Artichoke unit tests'
-task :test do
-  sh 'cargo test --workspace'
+task test: %i[test:unit]
+
+namespace :test do
+  # TODO: Add fuzz into all list when tests work
+  desc 'Run all tests'
+  task all: %i[unit ui]
+
+  desc 'Run fuzz tests (Fuzz the interpreter for crashes with arbitrary input)'
+  task :fuzz do
+    Dir.chdir('fuzz') do
+      sh 'cargo test --workspace'
+    end
+  end
+
+  desc 'Run ui tests (check exact stdout/stderr of Artichoke binaries)'
+  task :ui do
+    sh 'cargo build'
+    Dir.chdir('ui-tests') do
+      sh 'cargo test --workspace'
+    end
+  end
+
+  desc 'Run unit tests'
+  task :unit do
+    sh 'cargo test --workspace'
+  end
 end
 
 desc 'Run Artichoke with LeakSanitizer'
@@ -153,5 +189,30 @@ namespace :release do
       sh command.shelljoin
       sleep(rand(1..5))
     end
+  end
+end
+
+namespace :pkg do
+  desc 'Sync the root rust-toolchain version to all crates'
+  task :'rust_version:sync' do
+    rust_version = File.read('rust-toolchain').chomp
+    regexp = /^rust-version = "(.*)"$/
+    next_rust_version = "rust-version = \"#{rust_version}\""
+
+    pkg_files = FileList.new('*/Cargo.toml').include('Cargo.toml')
+
+    failures = pkg_files.map do |file|
+      contents = File.read(file)
+
+      if (existing_version = contents.match(regexp))
+        File.write(file, contents.gsub(regexp, next_rust_version)) if existing_version != rust_version
+        next
+      end
+
+      puts "Failed to update #{file}, ensure there is a rust-version specified" if Rake.verbose
+      file
+    end.compact
+
+    raise 'Failed to update some rust-versions' if failures.any?
   end
 end

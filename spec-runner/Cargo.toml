@@ -3,6 +3,7 @@ name = "spec-runner"
 version = "0.6.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
+rust-version = "1.57.0"
 description = "Binary for running Ruby Specs with Artichoke Ruby"
 repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
@@ -12,7 +13,7 @@ categories = ["development-tools::testing"]
 
 [dependencies]
 artichoke = { version = "0.1.0-pre.0", path = "..", default-features = false, features = ["backtrace", "kitchen-sink"] }
-clap = "2.34"
+clap = { version = "3.0", default-features = false, features = ["std", "suggestions"] }
 rust-embed = "6.3.0"
 serde = { version = "1.0", features = ["derive"] }
 termcolor = "1.1"
