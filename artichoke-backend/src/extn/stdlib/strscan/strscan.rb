@@ -88,7 +88,7 @@ class StringScanner
   end
 
   def fixed_anchor?
-    raise NotImplementedError, "StringScanner#fixed_anchor? is not yet implemented"
+    raise NotImplementedError, 'StringScanner#fixed_anchor? is not yet implemented'
   end
 
   def get_byte # rubocop:disable Naming/AccessorMethodName
@@ -177,7 +177,7 @@ class StringScanner
     peek(len)
   end
 
-  attr_reader :pos
+  attr_reader :pos # rubocop:disable Style/AccessorGrouping
   alias pointer pos
 
   # rubocop:disable Lint/Void
@@ -347,8 +347,9 @@ class StringScanner
     match.end(0)
   end
 
-  attr_reader :string
+  attr_reader :string # rubocop:disable Style/AccessorGrouping
 
+  # rubocop:disable Lint/Void
   def string=(str)
     s = str
     s = String.try_convert(str) unless str.is_a?(String)
@@ -358,6 +359,7 @@ class StringScanner
 
     str
   end
+  # rubocop:enable Lint/Void
 
   def terminate
     @pos = @string.bytesize
