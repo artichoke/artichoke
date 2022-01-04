@@ -7,18 +7,8 @@ class StringScanner
     self
   end
 
-  attr_reader :pos, :string
-
-  def string=(str)
-    @string = String.try_convert(str)
-  end
-
   def initialize(string)
-    @string = String.try_convert(string)
-    @pos = 0
-    @previous_pos = nil
-    @last_match = nil
-    @last_match_pos = nil
+    self.string = string
   end
 
   def <<(str)
@@ -63,18 +53,6 @@ class StringScanner
     @string.byteslice(0, @pos).length
   end
 
-  def charpos=(pointer)
-    raise RangeError unless pointer.abs < @string.length
-
-    charpos =
-      if pointer.negative?
-        @string.length + pointer
-      else
-        pointer
-      end
-    @pos = @string[0, charpos].bytesize
-  end
-
   def check(pattern)
     scan_full(pattern, false, true)
   end
@@ -86,8 +64,10 @@ class StringScanner
     result
   end
 
-  def eos?
-    @pos == @string.bytesize
+  def clear
+    warn 'clear is obsolete use terminate instead' if $VERBOSE
+
+    terminate
   end
 
   def empty?
@@ -96,11 +76,19 @@ class StringScanner
     eos?
   end
 
+  def eos?
+    @pos == @string.bytesize
+  end
+
   def exist?(pattern)
     match = @string.byteslice(@pos, @string.bytesize - @pos).match(pattern)
     return nil if match.nil?
 
     match.end(0)
+  end
+
+  def fixed_anchor?
+    raise NotImplementedError, "StringScanner#fixed_anchor? is not yet implemented"
   end
 
   def get_byte # rubocop:disable Naming/AccessorMethodName
@@ -188,6 +176,8 @@ class StringScanner
     warn 'peep is obsolete use peek instead' if $VERBOSE
     peek(len)
   end
+
+  attr_reader :pos
   alias pointer pos
 
   # rubocop:disable Lint/Void
@@ -357,14 +347,16 @@ class StringScanner
     match.end(0)
   end
 
-  def unscan
-    raise ScanError, 'unscan failed: previous match record not exist' if @previous_pos.nil?
+  attr_reader :string
 
-    @pos = @previous_pos
-    @previous_pos = nil
-    @last_match = nil
-    @last_match_pos = nil
-    nil
+  def string=(str)
+    s = str
+    s = String.try_convert(str) unless str.is_a?(String)
+
+    @string = s
+    reset
+
+    str
   end
 
   def terminate
@@ -374,10 +366,14 @@ class StringScanner
     self
   end
 
-  def clear
-    warn 'clear is obsolete use terminate instead' if $VERBOSE
+  def unscan
+    raise ScanError, 'unscan failed: previous match record not exist' if @previous_pos.nil?
 
-    terminate
+    @pos = @previous_pos
+    @previous_pos = nil
+    @last_match = nil
+    @last_match_pos = nil
+    nil
   end
 
   def values_at(*args)
