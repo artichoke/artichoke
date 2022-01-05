@@ -4,6 +4,7 @@
 //! enter multiline editing mode.
 
 use std::ffi::CStr;
+use std::os::raw::c_char;
 use std::ptr::NonNull;
 
 use crate::backend::sys;
@@ -133,7 +134,7 @@ impl<'a> Parser<'a> {
         let parser = unsafe { self.parser.as_mut() };
         let context = unsafe { self.context.as_mut() };
 
-        let ptr = code.as_ptr().cast::<i8>();
+        let ptr = code.as_ptr().cast::<c_char>();
         parser.s = ptr;
         parser.send = unsafe { ptr.offset(len) };
         parser.lineno = context.lineno;
