@@ -1,5 +1,6 @@
 use core::ops::Deref;
 use std::ffi::c_void;
+use std::os::raw::c_char;
 
 use artichoke_core::value::Value as _;
 use spinoso_exception::TypeError;
@@ -74,7 +75,12 @@ impl BoxUnboxVmValue for String {
         let RawParts { ptr, length, capacity } = String::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
-                sys::mrb_sys_alloc_rstring(mrb, ptr.cast::<i8>(), length as sys::mrb_int, capacity as sys::mrb_int)
+                sys::mrb_sys_alloc_rstring(
+                    mrb,
+                    ptr.cast::<c_char>(),
+                    length as sys::mrb_int,
+                    capacity as sys::mrb_int,
+                )
             })?
         };
         let string = unsafe { sys::mrb_sys_basic_ptr(value).cast::<sys::RString>() };
@@ -101,7 +107,7 @@ impl BoxUnboxVmValue for String {
         let RawParts { ptr, length, capacity } = String::into_raw_parts(value);
         let string = unsafe {
             sys::mrb_sys_repack_into_rstring(
-                ptr.cast::<i8>(),
+                ptr.cast::<c_char>(),
                 length as sys::mrb_int,
                 capacity as sys::mrb_int,
                 into.inner(),

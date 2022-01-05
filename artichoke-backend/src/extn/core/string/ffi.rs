@@ -6,7 +6,7 @@ use core::slice;
 use core::str;
 use std::ffi::{c_void, CStr};
 use std::io::Write as _;
-use std::os::raw::{c_double, c_int};
+use std::os::raw::{c_char, c_double, c_int};
 
 use artichoke_core::convert::Convert;
 use artichoke_core::hash::Hash as _;
@@ -33,7 +33,7 @@ unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> 
 
 // MRB_API mrb_value mrb_str_new(mrb_state *mrb, const char *p, size_t len)
 #[no_mangle]
-unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const i8, len: usize) -> sys::mrb_value {
+unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const c_char, len: usize) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let s = if p.is_null() {
         String::utf8(vec![0; len])
@@ -51,7 +51,7 @@ unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const i8, len: us
 
 // MRB_API mrb_value mrb_str_new_cstr(mrb_state *mrb, const char *p)
 #[no_mangle]
-unsafe extern "C" fn mrb_str_new_cstr(mrb: *mut sys::mrb_state, p: *const i8) -> sys::mrb_value {
+unsafe extern "C" fn mrb_str_new_cstr(mrb: *mut sys::mrb_state, p: *const c_char) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let cstr = CStr::from_ptr(p);
     let bytes = cstr.to_bytes().to_vec();
@@ -65,7 +65,7 @@ unsafe extern "C" fn mrb_str_new_cstr(mrb: *mut sys::mrb_state, p: *const i8) ->
 
 // MRB_API mrb_value mrb_str_new_static(mrb_state *mrb, const char *p, size_t len)
 #[no_mangle]
-unsafe extern "C" fn mrb_str_new_static(mrb: *mut sys::mrb_state, p: *const i8, len: usize) -> sys::mrb_value {
+unsafe extern "C" fn mrb_str_new_static(mrb: *mut sys::mrb_state, p: *const c_char, len: usize) -> sys::mrb_value {
     // Artichoke doesn't have a static string optimization.
     mrb_str_new(mrb, p, len)
 }
@@ -75,7 +75,7 @@ unsafe extern "C" fn mrb_str_new_static(mrb: *mut sys::mrb_state, p: *const i8, 
 unsafe extern "C" fn mrb_str_index(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
-    sptr: *const i8,
+    sptr: *const c_char,
     slen: sys::mrb_int,
     offset: sys::mrb_int,
 ) -> sys::mrb_int {
@@ -335,12 +335,12 @@ unsafe extern "C" fn mrb_ptr_to_str(mrb: *mut sys::mrb_state, p: *mut c_void) ->
 //
 // obsolete: use RSTRING_CSTR() or mrb_string_cstr()
 #[no_mangle]
-unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: *mut sys::mrb_value) -> *const i8 {
+unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: *mut sys::mrb_value) -> *const c_char {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
     let mut s = Value::from(*ptr);
     let mut string = if let Ok(string) = String::unbox_from_value(&mut s, &mut guard) {
         if let Some(b'\0') = string.last() {
-            return string.as_ptr().cast::<i8>();
+            return string.as_ptr().cast();
         }
         string
     } else {
@@ -356,7 +356,7 @@ unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: *mut s
     //
     // This raw pointer will not be invalidated since we rebox this `String`
     // into the mruby heap where the GC will keep it alive.
-    let cstr = string.as_ptr().cast::<i8>();
+    let cstr = string.as_ptr().cast::<c_char>();
 
     let inner = string.take();
     String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
@@ -366,12 +366,12 @@ unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: *mut s
 
 // MRB_API const char* mrb_string_cstr(mrb_state *mrb, mrb_value str)
 #[no_mangle]
-unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value) -> *const i8 {
+unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value) -> *const c_char {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
     let mut s = Value::from(s);
     let mut string = if let Ok(string) = String::unbox_from_value(&mut s, &mut guard) {
         if let Some(b'\0') = string.last() {
-            return string.as_ptr().cast::<i8>();
+            return string.as_ptr().cast();
         }
         string
     } else {
@@ -387,7 +387,7 @@ unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value
     //
     // This raw pointer will not be invalidated since we rebox this `String`
     // into the mruby heap where the GC will keep it alive.
-    let cstr = string.as_ptr().cast::<i8>();
+    let cstr = string.as_ptr().cast::<c_char>();
 
     let inner = string.take();
     String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
@@ -499,7 +499,7 @@ unsafe extern "C" fn mrb_str_to_dbl(mrb: *mut sys::mrb_state, s: sys::mrb_value,
 unsafe extern "C" fn mrb_str_cat(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
-    ptr: *const i8,
+    ptr: *const c_char,
     len: usize,
 ) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard, or_else = s);

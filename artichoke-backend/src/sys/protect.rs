@@ -1,5 +1,6 @@
 use std::ffi::c_void;
 use std::mem;
+use std::os::raw::c_char;
 use std::ptr::{self, NonNull};
 
 use crate::sys;
@@ -111,7 +112,7 @@ impl<'a> Protect for Eval<'a> {
         // `mrb_load_nstring_ctx` sets the "stack keep" field on the context
         // which means the most recent value returned by eval will always be
         // considered live by the GC.
-        sys::mrb_load_nstring_cxt(mrb, code.as_ptr().cast::<i8>(), code.len(), context)
+        sys::mrb_load_nstring_cxt(mrb, code.as_ptr().cast::<c_char>(), code.len(), context)
     }
 }
 
