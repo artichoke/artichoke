@@ -51,6 +51,7 @@ pub use focaccia::CaseFold;
 #[doc(inline)]
 pub use raw_parts::RawParts;
 
+mod center;
 mod chars;
 mod codepoints;
 mod encoding;
@@ -59,11 +60,12 @@ mod impls;
 mod inspect;
 mod iter;
 
+pub use center::{Center, CenterError};
 pub use chars::Chars;
 pub use codepoints::{Codepoints, CodepointsError};
 pub use encoding::{Encoding, InvalidEncodingError};
 pub use inspect::Inspect;
-pub use iter::{Bytes, Center, CenterError, IntoIter, Iter, IterMut};
+pub use iter::{Bytes, IntoIter, Iter, IterMut};
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 enum CodePointRangeError {
@@ -871,6 +873,7 @@ impl String {
 impl IntoIterator for String {
     type Item = u8;
     type IntoIter = IntoIter;
+
     /// Returns an iterator that moves over the remaining bytes of a slice
     ///
     /// # Examples
