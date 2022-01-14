@@ -123,27 +123,64 @@ pub struct Center<'a, 'b> {
     pub right: Take<Cycle<slice::Iter<'b, u8>>>,
 }
 
-impl<'a, 'b> Default for Center<'a, 'b> {
-    #[inline]
-    fn default() -> Self {
-        Self::with_chars_width_and_padding(Chars::new(), 0, &[])
-    }
-}
-
 impl<'a, 'b> Center<'a, 'b> {
     #[inline]
     #[must_use]
-    pub(crate) fn with_chars_width_and_padding(s: Chars<'a>, padding_width: usize, padding: &'b [u8]) -> Self {
+    pub(crate) fn with_chars_width_and_padding(
+        s: Chars<'a>,
+        padding_width: usize,
+        padding: Option<&'b [u8]>,
+    ) -> Result<Self, CenterError> {
+        // ```
+        // [3.0.3] > "abc".center 10, ""
+        // (irb):5:in `center': zero width padding (ArgumentError)
+        // 	from (irb):5:in `<main>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `load'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `<main>'
+        // [3.0.3] > "abc".center 3, ""
+        // (irb):6:in `center': zero width padding (ArgumentError)
+        // 	from (irb):6:in `<main>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `load'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `<main>'
+        // [3.0.3] > "abc".center 0, ""
+        // (irb):7:in `center': zero width padding (ArgumentError)
+        // 	from (irb):7:in `<main>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `load'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `<main>'
+        // [3.0.3] > "abc".center 10, " "
+        // => "   abc    "
+        // [3.0.3] > "abc".center 3, " "
+        // => "abc"
+        // [3.0.3] > "abc".center 0, " "
+        // => "abc"
+        // ```
+        let padding = match padding {
+            None => b" ",
+            Some(p) if p.is_empty() => return Err(CenterError::ZeroWidthPadding),
+            Some(p) => p,
+        };
+
         let pre_pad = padding_width / 2;
-        let post_pad = (padding_width + 1) / 2;
+        let post_pad = padding_width - pre_pad;
+
+        // Left and right padding starts from the beginning of padding.
+        //
+        // ```
+        // [3.0.3] > "abc".center 10, "123456789"
+        // => "123abc1234"
+        // ```
         let left = padding.iter().cycle().take(pre_pad);
         let right = padding.iter().cycle().take(post_pad);
-        Self {
+
+        Ok(Self {
             left,
             next: None,
             s,
             right,
-        }
+        })
     }
 }
 
@@ -176,3 +213,18 @@ impl<'a, 'b> Iterator for Center<'a, 'b> {
 impl<'a, 'b> FusedIterator for Center<'a, 'b> {}
 
 impl<'a, 'b> ExactSizeIterator for Center<'a, 'b> {}
+
+#[cfg(test)]
+mod tests {
+    use alloc::string::String;
+    use alloc::vec::Vec;
+
+    use super::{Center, CenterError};
+
+    #[test]
+    fn empty_padding_gives_error() {
+        let s = crate::String::from("");
+        let center = Center::with_chars_width_and_padding(s.chars(), 0, Some(&b""[..]));
+        assert_eq!(center.unwrap_err(), CenterError::ZeroWidthPadding);
+    }
+}

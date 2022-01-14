@@ -1435,17 +1435,8 @@ impl String {
     /// [Conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     pub fn center<'a, 'b>(&'a self, width: usize, padding: Option<&'b [u8]>) -> Result<Center<'a, 'b>, CenterError> {
-        let padding = match padding {
-            None => b" ",
-            Some(p) if p.is_empty() => return Err(CenterError::ZeroWidthPadding),
-            Some(p) => p,
-        };
         let padding_width = width.saturating_sub(self.char_len());
-        Ok(Center::with_chars_width_and_padding(
-            self.chars(),
-            padding_width,
-            padding,
-        ))
+        Center::with_chars_width_and_padding(self.chars(), padding_width, padding)
     }
 
     /// Modifies this `String` in-place with the given record separator removed
