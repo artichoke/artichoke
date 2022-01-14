@@ -30,9 +30,10 @@ jobs:
           profile: minimal
 
       - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
+        uses: MSP-Greg/setup-ruby-pkgs@v1
         with:
           ruby-version: ".ruby-version"
+          mingw: clang
           bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
