@@ -451,9 +451,12 @@ where
     /// Panics if the given feature is already loaded.
     pub fn insert(&mut self, feature: Feature) {
         let path = feature.path().to_owned();
-        if !self.features.insert(feature) {
-            panic!("duplicate feature inserted at {}", path.display());
-        }
+        let feature_was_not_loaded = self.features.insert(feature);
+        assert!(
+            feature_was_not_loaded,
+            "duplicate feature inserted at {}",
+            path.display()
+        );
         self.paths.push(path);
     }
 
