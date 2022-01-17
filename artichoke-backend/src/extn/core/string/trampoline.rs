@@ -1240,11 +1240,11 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let base = if let Some(base) = base {
         let base = implicitly_convert_to_int(interp, base)?;
-        let base = u32::try_from(base).map_err(|_| ArgumentError::from(format!("invalid radix {}", base)))?;
+        let base = u32::try_from(base).map_err(|_| ArgumentError::from(format!("invalid radix {base}")))?;
         match base {
             0 => 10,
             1 => return Err(ArgumentError::with_message("invalid radix 1").into()),
-            x if x > 36 => return Err(ArgumentError::from(format!("invalid radix {}", x)).into()),
+            x if x > 36 => return Err(ArgumentError::from(format!("invalid radix {x}")).into()),
             x => x,
         }
     } else {

@@ -134,12 +134,9 @@ fn copyright(birth_date: Date, build_date: Date) -> String {
 
 fn description(version: &str, release_date: Date, revision_count: Option<usize>, platform: &str) -> String {
     if let Some(revision_count) = revision_count {
-        format!(
-            "artichoke {} ({} revision {}) [{}]",
-            version, release_date, revision_count, platform
-        )
+        format!("artichoke {version} ({release_date} revision {revision_count}) [{platform}]",)
     } else {
-        format!("artichoke {} ({}) [{}]", version, release_date, platform)
+        format!("artichoke {version} ({release_date}) [{platform}]")
     }
 }
 

@@ -449,7 +449,7 @@ mod tests {
         for num in 1..=1024 {
             let num = NonZeroUsize::new(num).unwrap();
             let sym = nth_match_group(num);
-            let num = format!("{}", num);
+            let num = format!("{num}");
             assert!(sym.len() > 1);
             assert_eq!(&sym[0..1], "$");
             assert_eq!(&sym[1..], num);

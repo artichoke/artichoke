@@ -73,7 +73,7 @@ impl Serialize for CommandOutput {
 
 fn binary_name(name: &str) -> String {
     if cfg!(windows) {
-        format!("{}.exe", name)
+        format!("{name}.exe")
     } else {
         String::from(name)
     }
@@ -91,7 +91,7 @@ fn binary_path(name: &str) -> Result<PathBuf, String> {
 
     match path.exists() {
         true => Ok(path),
-        false => Err(format!("Can't find binary {} in ./target/debug/", executable)),
+        false => Err(format!("Can't find binary {executable} in ./target/debug/")),
     }
 }
 
