@@ -37,7 +37,7 @@ where
     T: IntoIterator<Item = Value>,
 {
     let _ = interp;
-    let _ignored_while_unimplemented = args;
+    let _ignored_while_unimplemented = args.into_iter();
     Err(NotImplementedError::new().into())
 }
 
@@ -46,7 +46,7 @@ where
     T: IntoIterator<Item = Value>,
 {
     let _ = interp;
-    let _ignored_while_unimplemented = args;
+    let _ignored_while_unimplemented = args.into_iter();
     Err(NotImplementedError::new().into())
 }
 
@@ -106,7 +106,7 @@ where
 {
     let _ = interp;
     let _ = time;
-    let _ignored_while_unimplemented = args;
+    let _ignored_while_unimplemented = args.into_iter();
     Err(NotImplementedError::new().into())
 }
 
