@@ -74,7 +74,7 @@ impl Loader {
                 return Ok(buf);
             }
         }
-        let _ignore_not_implemented = path;
+        let _ = path;
         unimplemented!("implement Loader::read");
     }
 }

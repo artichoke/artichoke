@@ -99,9 +99,12 @@ impl BoxUnboxVmValue for String {
         //
         // This check is critical to the memory safety of future runs of the
         // garbage collector.
-        if into.ruby_type() != Ruby::String {
-            panic!("Tried to box String into {:?} value", into.ruby_type());
-        }
+        assert_eq!(
+            into.ruby_type(),
+            Ruby::String,
+            "Tried to box String into {:?} value",
+            into.ruby_type()
+        );
 
         let encoding = value.encoding();
         let RawParts { ptr, length, capacity } = String::into_raw_parts(value);

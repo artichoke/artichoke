@@ -300,9 +300,12 @@ impl BoxUnboxVmValue for Array {
         //
         // This check is critical to the memory safety of future runs of the
         // garbage collector.
-        if !matches!(into.ruby_type(), Ruby::Array) {
-            panic!("Tried to box Array into {:?} value", into.ruby_type());
-        }
+        assert_eq!(
+            into.ruby_type(),
+            Ruby::Array,
+            "Tried to box Array into {:?} value",
+            into.ruby_type()
+        );
 
         let RawParts { ptr, length, capacity } = Array::into_raw_parts(value);
         unsafe {

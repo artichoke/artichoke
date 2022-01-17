@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
+#![allow(clippy::question_mark)] // https://github.com/rust-lang/rust-clippy/issues/8281
 #![allow(unknown_lints)]
 // TODO: warn on missing docs once crate is API-complete.
 // #![warn(missing_docs)]

@@ -220,9 +220,7 @@ mod libmruby {
             .current_dir(mruby_source_dir())
             .status()
             .unwrap();
-        if !status.success() {
-            panic!("minirake failed");
-        }
+        assert!(status.success(), "minirake failed");
 
         let mut sources = HashMap::new();
         sources.insert(
@@ -333,17 +331,14 @@ mod libmruby {
             .arg("bindgen")
             .status()
             .unwrap();
-        if !status.success() {
-            panic!("cargo install bindgen failed");
-        }
+        assert!(status.success(), "cargo install bindgen failed");
+
         let status = invoke_bindgen(
             target,
             out_dir,
             bindgen_install_dir.join("bin").join("bindgen").as_os_str(),
         );
-        if !status.unwrap().success() {
-            panic!("bindgen failed");
-        }
+        assert!(status.unwrap().success(), "bindgen failed");
     }
 
     pub fn invoke_bindgen(target: &Triple, out_dir: &OsStr, bindgen_executable: &OsStr) -> Option<ExitStatus> {
