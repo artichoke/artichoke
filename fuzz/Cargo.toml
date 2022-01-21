@@ -4,7 +4,7 @@ version = "0.0.0"
 authors = ["Automatically generated"]
 publish = false
 edition = "2021"
-rust-version = "1.58.0"
+rust-version = "1.58.1"
 license = "MIT"
 
 [package.metadata]
