@@ -125,7 +125,7 @@ impl<'a> TryFrom<&'a String> for Codepoints<'a> {
     fn try_from(s: &'a String) -> Result<Self, Self::Error> {
         let state = match s.encoding() {
             Encoding::Utf8 => {
-                if let Ok(s) = s.buf.to_str() {
+                if let Ok(s) = s.inner.buf().to_str() {
                     State::Utf8(s.chars())
                 } else {
                     return Err(CodepointsError::invalid_utf8_codepoint());

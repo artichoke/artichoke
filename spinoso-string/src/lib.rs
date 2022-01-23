@@ -261,7 +261,7 @@ impl Hash for String {
         // [3.0.2] > t.hash
         // => 3398383793005079442
         // ```
-        self.buf.hash(hasher);
+        self.inner.buf().hash(hasher);
     }
 }
 
@@ -277,7 +277,7 @@ impl PartialEq for String {
         // [3.0.2] > s == t
         // => true
         // ```
-        self.buf[..] == other.buf[..]
+        self.inner.buf()[..] == other.inner.buf()[..]
     }
 }
 
@@ -285,13 +285,13 @@ impl Eq for String {}
 
 impl PartialOrd for String {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.buf[..].partial_cmp(&other.buf[..])
+        self.inner.buf()[..].partial_cmp(&other.inner.buf()[..])
     }
 }
 
 impl Ord for String {
     fn cmp(&self, other: &String) -> Ordering {
-        self.buf[..].cmp(&other.buf[..])
+        self.inner.buf()[..].cmp(&other.inner.buf()[..])
     }
 }
 
@@ -308,14 +308,14 @@ impl String {
     /// ```
     /// use spinoso_string::{Encoding, String};
     ///
-    /// const S: String = String::new();
+    /// let S: String = String::new();
     /// assert_eq!(S.encoding(), Encoding::Utf8);
     /// ```
     ///
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     #[must_use]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         let buf = Vec::new();
         Self { inner: EncodedString::new(buf, Encoding::Utf8) }
     }
@@ -456,7 +456,7 @@ impl String {
     /// ```
     #[inline]
     #[must_use]
-    pub const fn encoding(&self) -> Encoding {
+    pub fn encoding(&self) -> Encoding {
         self.inner.encoding()
     }
 
@@ -506,7 +506,7 @@ impl String {
     /// [`clear`]: Self::clear
     #[inline]
     pub fn truncate(&mut self, len: usize) {
-        self.buf.truncate(len);
+        self.inner.truncate(len);
     }
 
     /// Extracts a slice containing the entire byte string.
@@ -515,7 +515,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn as_slice(&self) -> &[u8] {
-        self.buf.as_slice()
+        self.inner.buf().as_slice()
     }
 
     /// Extracts a mutable slice containing the entire byte string.
@@ -524,7 +524,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
-        self.buf.as_mut_slice()
+        self.inner.buf_mut().as_mut_slice()
     }
 
     /// Returns a raw pointer to the string's buffer.
@@ -558,7 +558,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
-        self.buf.as_ptr()
+        self.inner.buf().as_ptr()
     }
 
     /// Returns an unsafe mutable pointer to the string's buffer.
@@ -590,7 +590,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        self.buf.as_mut_ptr()
+        self.inner.buf_mut().as_mut_ptr()
     }
 
     /// Forces the length of the string to `new_len`.
@@ -613,7 +613,7 @@ impl String {
     /// [`capacity()`]: Self::capacity
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
-        self.buf.set_len(new_len);
+        self.inner.buf_mut().set_len(new_len);
     }
 
     /// Creates a `String` directly from the raw components of another string.
@@ -657,7 +657,7 @@ impl String {
     /// [`from_raw_parts`]: String::from_raw_parts
     #[must_use]
     pub fn into_raw_parts(self) -> RawParts<u8> {
-        RawParts::from_vec(self.buf)
+        RawParts::from_vec(self.inner.buf().clone())
     }
 
     /// Converts self into a vector without clones or allocation.
@@ -680,7 +680,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
-        self.buf
+        self.inner.buf().clone()
     }
 
     /// Converts the vector into `Box<[u8]>`.
@@ -713,7 +713,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn into_boxed_slice(self) -> Box<[u8]> {
-        self.buf.into_boxed_slice()
+        self.inner.buf().clone().into_boxed_slice()
     }
 
     /// Returns the number of bytes the string can hold without reallocating.
@@ -729,7 +729,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn capacity(&self) -> usize {
-        self.buf.capacity()
+        self.inner.buf().capacity()
     }
 
     /// Clears the string, removing all bytes.
@@ -748,7 +748,7 @@ impl String {
     /// ```
     #[inline]
     pub fn clear(&mut self) {
-        self.buf.clear();
+        self.inner.buf_mut().clear();
     }
 
     /// Returns true if the vector contains no bytes.
@@ -767,7 +767,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.buf.is_empty()
+        self.inner.buf().is_empty()
     }
 
     /// Returns the number of bytes in the string, also referred to as its
@@ -788,7 +788,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn len(&self) -> usize {
-        self.buf.len()
+        self.inner.len()
     }
 }
 
@@ -812,7 +812,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn iter(&self) -> Iter<'_> {
-        Iter(self.buf.iter())
+        Iter(self.inner.buf().iter())
     }
 
     /// Returns an iterator that allows modifying this string's underlying byte
@@ -834,7 +834,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_> {
-        IterMut(self.buf.iter_mut())
+        IterMut(self.inner.buf_mut().iter_mut())
     }
 
     /// Returns an iterator over the bytes in this byte string.
@@ -851,10 +851,11 @@ impl String {
     #[inline]
     #[must_use]
     pub fn bytes(&self) -> Bytes<'_> {
-        Bytes(self.buf.iter())
+        Bytes(self.inner.buf().iter())
     }
 }
 
+/*
 // Additional IntoIterator iterator
 impl IntoIterator for String {
     type Item = u8;
@@ -880,9 +881,9 @@ impl IntoIterator for String {
     #[inline]
     #[must_use]
     fn into_iter(self) -> IntoIter {
-        IntoIter(self.buf.into_iter())
+        IntoIter(self.inner.buf().into_iter())
     }
-}
+}*/
 
 // Memory management
 impl String {
@@ -907,7 +908,7 @@ impl String {
     /// ```
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        self.buf.reserve(additional);
+        self.inner.buf_mut().reserve(additional);
     }
 
     /// Tries to reserve capacity for at least `additional` more elements to be
@@ -932,7 +933,7 @@ impl String {
     /// ```
     #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
-        self.buf.try_reserve(additional)
+        self.inner.buf_mut().try_reserve(additional)
     }
 
     /// Reserves the minimum capacity for exactly `additional` more bytes to be
@@ -959,7 +960,7 @@ impl String {
     /// ```
     #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
-        self.buf.reserve_exact(additional);
+        self.inner.buf_mut().reserve_exact(additional);
     }
 
     /// Tries to reserve the minimum capacity for exactly `additional`
@@ -988,7 +989,7 @@ impl String {
     /// ```
     #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
-        self.buf.try_reserve_exact(additional)
+        self.inner.buf_mut().try_reserve_exact(additional)
     }
 
     /// Shrinks the capacity of the vector as much as possible.
@@ -1009,7 +1010,7 @@ impl String {
     /// ```
     #[inline]
     pub fn shrink_to_fit(&mut self) {
-        self.buf.shrink_to_fit();
+        self.inner.buf_mut().shrink_to_fit();
     }
 
     /// Shrinks the capacity of the vector with a lower bound.
@@ -1032,7 +1033,7 @@ impl String {
     /// ```
     #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
-        self.buf.shrink_to(min_capacity);
+        self.inner.buf_mut().shrink_to(min_capacity);
     }
 }
 
@@ -1063,7 +1064,7 @@ impl String {
     where
         I: SliceIndex<[u8]>,
     {
-        self.buf.get(index)
+        self.inner.buf().get(index)
     }
 
     /// Returns a mutable reference to a byte or sub-byteslice depending on the
@@ -1089,7 +1090,7 @@ impl String {
     where
         I: SliceIndex<[u8]>,
     {
-        self.buf.get_mut(index)
+        self.inner.buf_mut().get_mut(index)
     }
 
     /// Returns a reference to a byte or sub-byteslice, without doing bounds
@@ -1122,7 +1123,7 @@ impl String {
     where
         I: SliceIndex<[u8]>,
     {
-        self.buf.get_unchecked(index)
+        self.inner.buf().get_unchecked(index)
     }
 
     /// Returns a mutable reference to a byte or sub-byteslice, without doing
@@ -1157,7 +1158,7 @@ impl String {
     where
         I: SliceIndex<[u8]>,
     {
-        self.buf.get_unchecked_mut(index)
+        self.inner.buf_mut().get_unchecked_mut(index)
     }
 }
 
@@ -1181,7 +1182,7 @@ impl String {
     /// [encoding]: crate::Encoding
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {
-        self.buf.push_byte(byte);
+        self.inner.buf_mut().push_byte(byte);
     }
 
     /// Try to append a given Unicode codepoint onto the end of this `String`.
@@ -1249,7 +1250,7 @@ impl String {
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
-        match self.encoding {
+        match self.encoding() {
             Encoding::Utf8 => {
                 let codepoint = if let Ok(codepoint) = u32::try_from(codepoint) {
                     codepoint
@@ -1257,7 +1258,7 @@ impl String {
                     return Err(InvalidCodepointError::codepoint_out_of_range(codepoint));
                 };
                 if let Ok(ch) = char::try_from(codepoint) {
-                    self.buf.push_char(ch);
+                    self.inner.buf_mut().push_char(ch);
                     Ok(())
                 } else {
                     Err(InvalidCodepointError::invalid_utf8_codepoint(codepoint))
@@ -1265,7 +1266,7 @@ impl String {
             }
             Encoding::Ascii | Encoding::Binary => {
                 if let Ok(byte) = u8::try_from(codepoint) {
-                    self.buf.push_byte(byte);
+                    self.inner.buf_mut().push_byte(byte);
                     Ok(())
                 } else {
                     Err(InvalidCodepointError::codepoint_out_of_range(codepoint))
@@ -1290,7 +1291,7 @@ impl String {
     /// ```
     #[inline]
     pub fn push_char(&mut self, ch: char) {
-        self.buf.push_char(ch);
+        self.inner.buf_mut().push_char(ch);
     }
 
     /// Appends a given string slice onto the end of this `String`.
@@ -1306,7 +1307,7 @@ impl String {
     /// ```
     #[inline]
     pub fn push_str(&mut self, s: &str) {
-        self.buf.push_str(s);
+        self.inner.buf_mut().push_str(s);
     }
 
     /// Copies and appends all bytes in a slice to the `String`.
@@ -1325,7 +1326,7 @@ impl String {
     /// ```
     #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
-        self.buf.extend_from_slice(other);
+        self.inner.buf_mut().extend_from_slice(other);
     }
 }
 
@@ -1353,7 +1354,7 @@ impl String {
     #[inline]
     pub fn concat<T: AsRef<[u8]>>(&mut self, other: T) {
         let other = other.as_ref();
-        self.buf.extend_from_slice(other);
+        self.inner.buf_mut().extend_from_slice(other);
     }
 
     /// Returns true for a string which has only ASCII characters.
@@ -1379,7 +1380,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn is_ascii_only(&self) -> bool {
-        self.buf.is_ascii()
+        self.inner.buf().is_ascii()
     }
 
     /// Change the [encoding] of this `String` to [`Encoding::Binary`].
@@ -1401,7 +1402,8 @@ impl String {
     /// [`String#b`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-b
     #[inline]
     pub fn make_binary(&mut self) {
-        self.encoding = Encoding::Binary;
+        let old = self.inner.buf().clone();
+        self.inner = EncodedString::new(old, Encoding::Binary);
     }
 
     /// Returns the length of this `String` in bytes.
@@ -1426,16 +1428,16 @@ impl String {
     #[inline]
     #[must_use]
     pub fn bytesize(&self) -> usize {
-        self.buf.len()
+        self.len()
     }
 
     /// Modify this `String` to have the first character converted to uppercase
     /// and the remainder to lowercase.
     #[inline]
     pub fn make_capitalized(&mut self) {
-        match self.encoding {
+        match self.encoding() {
             Encoding::Ascii | Encoding::Binary => {
-                if let Some((head, tail)) = self.buf.split_first_mut() {
+                if let Some((head, tail)) = self.inner.buf_mut().split_first_mut() {
                     head.make_ascii_uppercase();
                     tail.make_ascii_lowercase();
                 }
@@ -1444,8 +1446,8 @@ impl String {
                 // This allocation assumes that in the common case, capitalizing
                 // and lower-casing `char`s do not change the length of the
                 // `String`.
-                let mut replacement = Vec::with_capacity(self.buf.len());
-                let mut bytes = self.buf.as_slice();
+                let mut replacement = Vec::with_capacity(self.len());
+                let mut bytes = self.inner.buf().as_slice();
 
                 match bstr::decode_utf8(bytes) {
                     (Some(ch), size) => {
@@ -1479,7 +1481,7 @@ impl String {
                         bytes = remainder;
                     }
                 }
-                self.buf = replacement;
+                //self.buf = replacement;
             }
         }
     }
@@ -1487,15 +1489,15 @@ impl String {
     /// Modify this `String` to have all characters converted to lowercase.
     #[inline]
     pub fn make_lowercase(&mut self) {
-        match self.encoding {
+        match self.encoding() {
             Encoding::Ascii | Encoding::Binary => {
-                self.buf.make_ascii_lowercase();
+                self.inner.buf_mut().make_ascii_lowercase();
             }
             Encoding::Utf8 => {
                 // This allocation assumes that in the common case, lower-casing
                 // `char`s do not change the length of the `String`.
-                let mut replacement = Vec::with_capacity(self.buf.len());
-                let mut bytes = self.buf.as_slice();
+                let mut replacement = Vec::with_capacity(self.len());
+                let mut bytes = self.inner.buf().as_slice();
 
                 while !bytes.is_empty() {
                     let (ch, size) = bstr::decode_utf8(bytes);
@@ -1512,7 +1514,7 @@ impl String {
                         bytes = remainder;
                     }
                 }
-                self.buf = replacement;
+                //self.buf = replacement;
             }
         }
     }
@@ -1520,15 +1522,15 @@ impl String {
     /// Modify this `String` to have the all characters converted to uppercase.
     #[inline]
     pub fn make_uppercase(&mut self) {
-        match self.encoding {
+        match self.encoding() {
             Encoding::Ascii | Encoding::Binary => {
-                self.buf.make_ascii_uppercase();
+                self.inner.buf_mut().make_ascii_uppercase();
             }
             Encoding::Utf8 => {
                 // This allocation assumes that in the common case, upper-casing
                 // `char`s do not change the length of the `String`.
-                let mut replacement = Vec::with_capacity(self.buf.len());
-                let mut bytes = self.buf.as_slice();
+                let mut replacement = Vec::with_capacity(self.len());
+                let mut bytes = self.inner.buf().as_slice();
 
                 while !bytes.is_empty() {
                     let (ch, size) = bstr::decode_utf8(bytes);
@@ -1545,7 +1547,7 @@ impl String {
                         bytes = remainder;
                     }
                 }
-                self.buf = replacement;
+                //self.buf = replacement;
             }
         }
     }
@@ -1555,7 +1557,7 @@ impl String {
     #[cfg(feature = "casecmp")]
     #[cfg_attr(feature = "docsrs", doc(cfg(feature = "casecmp")))]
     pub fn ascii_casecmp(&self, other: &[u8]) -> Ordering {
-        focaccia::ascii_casecmp(self.buf.as_slice(), other)
+        focaccia::ascii_casecmp(self.inner.buf().as_slice(), other)
     }
 
     #[inline]
@@ -1563,12 +1565,12 @@ impl String {
     #[cfg(feature = "casecmp")]
     #[cfg_attr(feature = "docsrs", doc(cfg(feature = "casecmp")))]
     pub fn unicode_casecmp(&self, other: &String, options: CaseFold) -> Option<bool> {
-        let left = self.buf.as_slice();
+        let left = self.inner.buf().as_slice();
         let right = other;
         // If both `String`s are conventionally UTF-8, they must be case
         // compared using the given case folding strategy. This requires the
         // `String`s be well-formed UTF-8.
-        if let (Encoding::Utf8, Encoding::Utf8) = (self.encoding, other.encoding) {
+        if let (Encoding::Utf8, Encoding::Utf8) = (self.encoding(), other.encoding()) {
             if let (Ok(left), Ok(right)) = (str::from_utf8(left), str::from_utf8(right)) {
                 // Both slices are UTF-8, compare with the given Unicode case
                 // folding scheme.
@@ -1748,13 +1750,13 @@ impl String {
     #[inline]
     #[must_use]
     pub fn chop(&mut self) -> bool {
-        if self.buf.is_empty() {
+        if self.inner.buf_mut().is_empty() {
             return false;
         }
-        let bytes_to_remove = if self.buf.ends_with(b"\r\n") {
+        let bytes_to_remove = if self.inner.buf().ends_with(b"\r\n") {
             2
-        } else if let Encoding::Utf8 = self.encoding {
-            let (ch, size) = bstr::decode_last_utf8(&self.buf);
+        } else if let Encoding::Utf8 = self.encoding() {
+            let (ch, size) = bstr::decode_last_utf8(&self.inner.buf());
             if ch.is_some() {
                 size
             } else {
@@ -1766,7 +1768,7 @@ impl String {
         };
         // This subtraction is guaranteed to not panic because we have validated
         // that we're removing a subslice of `buf`.
-        self.buf.truncate(self.buf.len() - bytes_to_remove);
+        self.inner.truncate(self.len() - bytes_to_remove);
         true
     }
 
@@ -1818,14 +1820,14 @@ impl String {
     #[inline]
     #[must_use]
     pub fn chr(&self) -> &[u8] {
-        if let Encoding::Utf8 = self.encoding {
-            match bstr::decode_utf8(self.buf.as_slice()) {
-                (Some(_), size) => &self.buf[..size],
+        if let Encoding::Utf8 = self.encoding() {
+            match bstr::decode_utf8(self.inner.buf().as_slice()) {
+                (Some(_), size) => &self.inner.buf()[..size],
                 (None, 0) => &[],
-                (None, _) => &self.buf[..1],
+                (None, _) => &self.inner.buf()[..1],
             }
         } else {
-            self.buf.get(0..1).unwrap_or_default()
+            self.inner.buf().get(0..1).unwrap_or_default()
         }
     }
 
@@ -1870,7 +1872,7 @@ impl String {
         // convert to a concrete type and delegate to a single `index` impl
         // to minimize code duplication when monomorphizing.
         let needle = needle.as_ref();
-        inner(&self.buf, needle, offset)
+        inner(&self.inner.buf(), needle, offset)
     }
 
     #[inline]
@@ -1888,7 +1890,7 @@ impl String {
         // convert to a concrete type and delegate to a single `rindex` impl
         // to minimize code duplication when monomorphizing.
         let needle = needle.as_ref();
-        inner(&self.buf, needle, offset)
+        inner(&self.inner.buf(), needle, offset)
     }
 
     /// Returns an iterator that yields a debug representation of the `String`.
@@ -1917,8 +1919,8 @@ impl String {
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     pub fn ord(&self) -> Result<u32, OrdError> {
-        if let Encoding::Utf8 = self.encoding {
-            let (ch, size) = bstr::decode_utf8(self.buf.as_slice());
+        if let Encoding::Utf8 = self.encoding() {
+            let (ch, size) = bstr::decode_utf8(self.inner.buf().as_slice());
             match ch {
                 // All `char`s are valid `u32`s
                 // https://github.com/rust-lang/rust/blob/1.48.0/library/core/src/char/convert.rs#L12-L20
@@ -1927,7 +1929,7 @@ impl String {
                 None => Err(OrdError::invalid_utf8_byte_sequence()),
             }
         } else {
-            let byte = self.buf.get(0).copied().ok_or_else(OrdError::empty_string)?;
+            let byte = self.inner.buf().get(0).copied().ok_or_else(OrdError::empty_string)?;
             Ok(u32::from(byte))
         }
     }
@@ -2081,9 +2083,9 @@ impl String {
     #[inline]
     #[must_use]
     pub fn char_len(&self) -> usize {
-        match self.encoding {
-            Encoding::Ascii | Encoding::Binary => self.buf.len(),
-            Encoding::Utf8 => conventionally_utf8_byte_string_len(self.buf.as_slice()),
+        match self.encoding() {
+            Encoding::Ascii | Encoding::Binary => self.len(),
+            Encoding::Utf8 => conventionally_utf8_byte_string_len(self.inner.buf().as_slice()),
         }
     }
 
@@ -2131,11 +2133,11 @@ impl String {
         // is `isize::MAX`. This checked add short circuits with `None` if we
         // are given `usize::MAX` as an index, which we could never slice.
         let end = index.checked_add(1)?;
-        match self.encoding {
+        match self.encoding() {
             // For ASCII and binary encodings, all character operations assume
             // characters are exactly one byte, so we can fallback to byte
             // slicing.
-            Encoding::Ascii | Encoding::Binary => self.buf.get(index..end),
+            Encoding::Ascii | Encoding::Binary => self.inner.buf().get(index..end),
             Encoding::Utf8 => {
                 // Fast path rejection for indexes beyond bytesize, which is
                 // cheap to retrieve.
@@ -2148,12 +2150,12 @@ impl String {
                 // If the string is either all ASCII or all ASCII for a prefix
                 // of the string that contains the range we wish to slice,
                 // fallback to byte slicing as in the ASCII and binary fast path.
-                let consumed = match self.buf.find_non_ascii_byte() {
-                    None => return self.buf.get(index..end),
-                    Some(idx) if idx >= end => return self.buf.get(index..end),
+                let consumed = match self.inner.buf().find_non_ascii_byte() {
+                    None => return self.inner.buf().get(index..end),
+                    Some(idx) if idx >= end => return self.inner.buf().get(index..end),
                     Some(idx) => idx,
                 };
-                let mut slice = &self.buf[consumed..];
+                let mut slice = &self.inner.buf()[consumed..];
                 // Count of "characters" remaining until the `index`th character.
                 let mut remaining = index - consumed;
                 // This loop will terminate when either:
@@ -2359,7 +2361,7 @@ impl String {
             _ => {}
         }
 
-        match self.encoding {
+        match self.encoding() {
             // Ruby slice lookups saturate to the end of the string even if the
             // ending index is beyond the string's character count.
             //
@@ -2369,7 +2371,7 @@ impl String {
             // [3.0.1] > "🦀💎"[0, 10]
             // => "🦀💎"
             // ```
-            Encoding::Ascii | Encoding::Binary => self.buf.get(start..end).or_else(|| self.buf.get(start..)),
+            Encoding::Ascii | Encoding::Binary => self.inner.buf().get(start..end).or_else(|| self.inner.buf().get(start..)),
             Encoding::Utf8 => {
                 // Fast path for trying to treat the conventionally UTF-8 string
                 // as entirely ASCII.
@@ -2380,10 +2382,10 @@ impl String {
                 //
                 // Perform the same saturate-to-end slicing mechanism if `end`
                 // is beyond the character length of the string.
-                let consumed = match self.buf.find_non_ascii_byte() {
+                let consumed = match self.inner.buf().find_non_ascii_byte() {
                     // The entire string is ASCII, so byte indexing <=> char
                     // indexing.
-                    None => return self.buf.get(start..end).or_else(|| self.buf.get(start..)),
+                    None => return self.inner.buf().get(start..end).or_else(|| self.inner.buf().get(start..)),
                     // The whole substring we are interested in is ASCII, so
                     // byte indexing is still valid.
                     Some(non_ascii_byte_offset) if non_ascii_byte_offset > end => return self.get(start..end),
@@ -2395,7 +2397,7 @@ impl String {
                     Some(_) => start,
                 };
                 // Scan for the beginning of the slice
-                let mut slice = &self.buf[consumed..];
+                let mut slice = &self.inner.buf()[consumed..];
                 // Count of "characters" remaining until the `start`th character.
                 let mut remaining = start - consumed;
                 if remaining > 0 {
@@ -2582,10 +2584,10 @@ impl String {
     #[inline]
     #[must_use]
     pub fn is_valid_encoding(&self) -> bool {
-        match self.encoding {
-            Encoding::Utf8 if self.buf.is_ascii() => true,
-            Encoding::Utf8 => simdutf8::basic::from_utf8(&self.buf).is_ok(),
-            Encoding::Ascii => self.buf.is_ascii(),
+        match self.encoding() {
+            Encoding::Utf8 if self.inner.buf().is_ascii() => true,
+            Encoding::Utf8 => simdutf8::basic::from_utf8(&self.inner.buf()).is_ok(),
+            Encoding::Ascii => self.inner.buf().is_ascii(),
             Encoding::Binary => true,
         }
     }
@@ -2630,15 +2632,15 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
                 }
             }
             let truncate_to = iter.count();
-            string.buf.truncate(truncate_to);
+            string.inner.buf_mut().truncate(truncate_to);
             truncate_to != original_len
         }
-        Some(separator) if string.buf.ends_with(separator) => {
+        Some(separator) if string.inner.buf().ends_with(separator) => {
             let original_len = string.len();
             // This subtraction is guaranteed not to panic because
             // `separator` is a substring of `buf`.
             let truncate_to_len = original_len - separator.len();
-            string.buf.truncate(truncate_to_len);
+            string.inner.buf_mut().truncate(truncate_to_len);
             // Separator is non-empty and we are always truncating, so this
             // branch always modifies the buffer.
             true
@@ -2660,12 +2662,13 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
                 Some(_) | None => {}
             };
             let truncate_to_len = iter.count();
-            string.buf.truncate(truncate_to_len);
+            string.inner.buf_mut().truncate(truncate_to_len);
             truncate_to_len != original_len
         }
     }
 }
 
+/*
 #[cfg(test)]
 #[allow(clippy::invisible_characters)]
 mod tests {
@@ -3465,3 +3468,4 @@ mod tests {
         assert_eq!(binary, ascii);
     }
 }
+*/

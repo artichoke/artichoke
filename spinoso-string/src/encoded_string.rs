@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use bstr::{BStr};
 
 use crate::encoding::Encoding;
 use crate::ascii_string::AsciiString;
@@ -11,6 +12,7 @@ pub enum EncodedString {
     Utf8(Utf8String),
 }
 
+// Constructors
 impl EncodedString {
     pub fn new(buf: Vec<u8>, encoding: Encoding) -> Self {
         match encoding {
@@ -21,7 +23,6 @@ impl EncodedString {
     }
 }
 
-// functions where EncodedString can make the decision
 impl EncodedString {
     pub fn encoding(&self) -> Encoding {
         match self {
@@ -32,13 +33,50 @@ impl EncodedString {
     }
 }
 
-// Functions whre the instance defines the method
+// Defer to Encoded Implementation
 impl EncodedString {
-    pub fn as_bstr(&self) -> Vec<u8> {
+    pub fn as_bstr(&self) -> &BStr {
         match self {
             EncodedString::Ascii(n) => n.as_bstr(),
             EncodedString::Binary(n) => n.as_bstr(),
             EncodedString::Utf8(n) => n.as_bstr(),
         }
     }
+
+    pub fn len(&self) -> usize {
+        match self {
+            EncodedString::Ascii(n) => n.len(),
+            EncodedString::Binary(n) => n.len(),
+            EncodedString::Utf8(n) => n.len(),
+        }
+    }
+
+    pub fn truncate(&mut self, len: usize) {
+         match self {
+            EncodedString::Ascii(n) => n.truncate(len),
+            EncodedString::Binary(n) => n.truncate(len),
+            EncodedString::Utf8(n) => n.truncate(len),
+        };
+    }
 }
+
+// Migration functions
+// TODO: Remove these. If it compiles, we've migrated successfully
+impl EncodedString {
+    pub fn buf(&self) -> &Vec<u8> {
+        match self {
+            EncodedString::Ascii(n) => n.buf(),
+            EncodedString::Binary(n) => n.buf(),
+            EncodedString::Utf8(n) => n.buf(),
+        }
+    }
+
+    pub fn buf_mut(&mut self) -> &mut Vec<u8> {
+        match self {
+            EncodedString::Ascii(n) => n.buf_mut(),
+            EncodedString::Binary(n) => n.buf_mut(),
+            EncodedString::Utf8(n) => n.buf_mut(),
+        }
+    }
+}
+
