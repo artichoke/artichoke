@@ -54,11 +54,17 @@ pub use raw_parts::RawParts;
 mod center;
 mod chars;
 mod codepoints;
+mod encoded_string;
 mod encoding;
 mod eq;
 mod impls;
 mod inspect;
 mod iter;
+mod ascii_string;
+mod binary_string;
+mod utf8_string;
+
+use encoded_string::EncodedString;
 
 pub use center::{Center, CenterError};
 pub use chars::Chars;
@@ -227,17 +233,16 @@ impl fmt::Display for OrdError {
 #[cfg(feature = "std")]
 impl std::error::Error for OrdError {}
 
-#[derive(Default, Clone)]
+//#[derive(Default, Clone)]
 pub struct String {
-    buf: Vec<u8>,
-    encoding: Encoding,
+    inner: EncodedString,
 }
 
 impl fmt::Debug for String {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("String")
-            .field("buf", &self.buf.as_bstr())
-            .field("encoding", &self.encoding)
+            .field("buf", &self.inner.as_bstr())
+            .field("encoding", &self.inner.encoding())
             .finish()
     }
 }
@@ -312,8 +317,7 @@ impl String {
     #[must_use]
     pub const fn new() -> Self {
         let buf = Vec::new();
-        let encoding = Encoding::Utf8;
-        Self { buf, encoding }
+        Self { inner: EncodedString::new(buf, Encoding::Utf8) }
     }
 
     /// Constructs a new, empty `String` with the specified capacity.
@@ -362,8 +366,7 @@ impl String {
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         let buf = Vec::with_capacity(capacity);
-        let encoding = Encoding::Utf8;
-        Self { buf, encoding }
+        Self { inner: EncodedString::new(buf, Encoding::Utf8) }
     }
 
     /// Constructs a new, empty `String` with the specified capacity and
@@ -411,13 +414,13 @@ impl String {
     #[must_use]
     pub fn with_capacity_and_encoding(capacity: usize, encoding: Encoding) -> Self {
         let buf = Vec::with_capacity(capacity);
-        Self { buf, encoding }
+        Self { inner: EncodedString::new(buf, encoding) }
     }
 
     #[inline]
     #[must_use]
     pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
-        Self { buf, encoding }
+        Self { inner: EncodedString::new(buf, encoding) }
     }
 
     #[inline]
@@ -454,24 +457,7 @@ impl String {
     #[inline]
     #[must_use]
     pub const fn encoding(&self) -> Encoding {
-        self.encoding
-    }
-
-    /// Set the [`Encoding`] of this `String`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use spinoso_string::{Encoding, String};
-    ///
-    /// let mut s = String::utf8(b"xyz".to_vec());
-    /// assert_eq!(s.encoding(), Encoding::Utf8);
-    /// s.set_encoding(Encoding::Binary);
-    /// assert_eq!(s.encoding(), Encoding::Binary);
-    /// ```
-    #[inline]
-    pub fn set_encoding(&mut self, encoding: Encoding) {
-        self.encoding = encoding;
+        self.inner.encoding()
     }
 
     /// Shortens the string, keeping the first `len` bytes and dropping the
