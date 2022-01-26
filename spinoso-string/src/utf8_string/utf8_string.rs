@@ -31,6 +31,10 @@ impl Utf8String {
         &mut self.inner
     }
 
+    pub fn into_vec(self) -> Vec<u8> {
+        self.inner
+    }
+
     pub fn as_slice(&self) -> &[u8] {
         &self.inner
     }
@@ -75,6 +79,18 @@ impl Utf8String {
 
     pub unsafe fn set_len(&mut self, len: usize) {
         self.inner.set_len(len);
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
+
+    pub fn clear(&mut self) {
+        self.inner.clear()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
     }
 
     pub fn truncate(&mut self, len: usize) {

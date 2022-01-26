@@ -589,7 +589,7 @@ impl String {
     /// [`from_raw_parts`]: String::from_raw_parts
     #[must_use]
     pub fn into_raw_parts(self) -> RawParts<u8> {
-        RawParts::from_vec(self.inner.buf().clone())
+        RawParts::from_vec(self.inner.into_vec())
     }
 
     /// Converts self into a vector without clones or allocation.
@@ -612,7 +612,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
-        self.inner.buf().clone()
+        self.inner.into_vec()
     }
 
     /// Converts the vector into `Box<[u8]>`.
@@ -645,7 +645,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn into_boxed_slice(self) -> Box<[u8]> {
-        self.inner.buf().clone().into_boxed_slice()
+        self.inner.into_vec().into_boxed_slice()
     }
 
     /// Returns the number of bytes the string can hold without reallocating.
@@ -661,7 +661,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn capacity(&self) -> usize {
-        self.inner.buf().capacity()
+        self.inner.capacity()
     }
 
     /// Clears the string, removing all bytes.
@@ -680,7 +680,7 @@ impl String {
     /// ```
     #[inline]
     pub fn clear(&mut self) {
-        self.inner.buf_mut().clear();
+        self.inner.clear();
     }
 
     /// Returns true if the vector contains no bytes.
@@ -699,7 +699,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.inner.buf().is_empty()
+        self.inner.is_empty()
     }
 
     /// Returns the number of bytes in the string, also referred to as its

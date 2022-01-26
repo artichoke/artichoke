@@ -53,7 +53,6 @@ impl EncodedString {
             EncodedString::Binary(n) => n.as_vec(),
             EncodedString::Utf8(n) => n.as_vec(),
         }
-
     }
 
     pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
@@ -61,6 +60,14 @@ impl EncodedString {
             EncodedString::Ascii(n) => n.as_mut_vec(),
             EncodedString::Binary(n) => n.as_mut_vec(),
             EncodedString::Utf8(n) => n.as_mut_vec(),
+        }
+    }
+
+    pub fn into_vec(self) -> Vec<u8> {
+        match self {
+            EncodedString::Ascii(n) => n.into_vec(),
+            EncodedString::Binary(n) => n.into_vec(),
+            EncodedString::Utf8(n) => n.into_vec(),
         }
     }
 
@@ -117,6 +124,30 @@ impl EncodedString {
             EncodedString::Ascii(n) => n.set_len(len),
             EncodedString::Binary(n) => n.set_len(len),
             EncodedString::Utf8(n) => n.set_len(len),
+        }
+    }
+
+    pub fn capacity(&self) -> usize {
+        match self {
+            EncodedString::Ascii(n) => n.capacity(),
+            EncodedString::Binary(n) => n.capacity(),
+            EncodedString::Utf8(n) => n.capacity(),
+        }
+    }
+
+    pub fn clear(&mut self) {
+        match self {
+            EncodedString::Ascii(n) => n.clear(),
+            EncodedString::Binary(n) => n.clear(),
+            EncodedString::Utf8(n) => n.clear(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            EncodedString::Ascii(n) => n.is_empty(),
+            EncodedString::Binary(n) => n.is_empty(),
+            EncodedString::Utf8(n) => n.is_empty(),
         }
     }
 
