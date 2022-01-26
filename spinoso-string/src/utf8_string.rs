@@ -2,30 +2,32 @@ use alloc::vec::Vec;
 use bstr::{ByteSlice, BStr};
 
 #[derive(Default, Clone)]
-pub struct Utf8String(Vec<u8>);
+pub struct Utf8String {
+    inner: Vec<u8>
+}
 
 // Constructors
 impl Utf8String {
     pub fn new(buf: Vec<u8>) -> Self {
-        Self(buf)
+        Self { inner: buf }
     }
 }
 
 // Debug
 impl Utf8String {
     pub fn as_bstr(&self) -> &BStr {
-        self.0.as_bstr()
+        self.inner.as_bstr()
     }
 }
 
 // Size and Capacity
 impl Utf8String {
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.inner.len()
     }
 
     pub fn truncate(&mut self, len: usize) {
-        self.0.truncate(len);
+        self.inner.truncate(len);
     }
 }
 
@@ -33,11 +35,11 @@ impl Utf8String {
 // TODO: Remove these. If it compiles, we've migrated successfully
 impl Utf8String {
     pub fn buf(&self) -> &Vec<u8> {
-        &self.0
+        &self.inner
     }
 
     pub fn buf_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.0
+        &mut self.inner
     }
 }
 
@@ -49,6 +51,6 @@ mod tests {
     #[test]
     fn constructs_empty_buffer() {
         let s = BinaryString::new(Vec::new());
-        assert_eq!(0, s.len());
+        assert_eq!(inner, s.len());
     }
 }
