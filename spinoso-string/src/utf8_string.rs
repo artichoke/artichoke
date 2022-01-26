@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use bstr::{ByteSlice, BStr};
+use crate::encoded_accessors::EncodedAccessors;
 
 #[derive(Default, Clone)]
 pub struct Utf8String {
@@ -20,10 +21,25 @@ impl Utf8String {
     }
 }
 
+// Raw
+impl EncodedAccessors for Utf8String {
+    fn as_vec(&self) -> &Vec<u8> {
+        &self.inner
+    }
+
+    fn as_mut_vec(&mut self) -> &mut Vec<u8> {
+        &mut self.inner
+    }
+}
+
 // Size and Capacity
 impl Utf8String {
     pub fn len(&self) -> usize {
         self.inner.len()
+    }
+
+    pub fn set_len(&mut self, len: usize) {
+        self.inner.set_len(len);
     }
 
     pub fn truncate(&mut self, len: usize) {
@@ -51,6 +67,6 @@ mod tests {
     #[test]
     fn constructs_empty_buffer() {
         let s = BinaryString::new(Vec::new());
-        assert_eq!(inner, s.len());
+        assert_eq!(0, s.len());
     }
 }

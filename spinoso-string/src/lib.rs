@@ -62,6 +62,7 @@ mod iter;
 mod ascii_string;
 mod binary_string;
 mod utf8_string;
+mod encoded_accessors;
 
 use encoded_string::EncodedString;
 
@@ -193,12 +194,12 @@ impl Hash for String {
         // [3.0.2] > t.hash
         // => 3398383793005079442
         // ```
-        self.inner.buf().hash(hasher);
+        self.inner.as_slice().hash(hasher);
     }
 }
 
 impl PartialEq for String {
-    fn eq(&self, other: &String) -> bool {
+    fn eq(&self, other: &Self) -> bool {
         // Equality only depends on each `String`'s byte contents.
         //
         // ```
@@ -209,7 +210,7 @@ impl PartialEq for String {
         // [3.0.2] > s == t
         // => true
         // ```
-        self.inner.buf()[..] == other.inner.buf()[..]
+        *self.inner.as_slice() == *other.inner.as_slice()
     }
 }
 
@@ -217,13 +218,13 @@ impl Eq for String {}
 
 impl PartialOrd for String {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.inner.buf()[..].partial_cmp(&other.inner.buf()[..])
+        self.inner.as_slice().partial_cmp(other.inner.as_slice())
     }
 }
 
 impl Ord for String {
-    fn cmp(&self, other: &String) -> Ordering {
-        self.inner.buf()[..].cmp(&other.inner.buf()[..])
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.inner.as_slice().cmp(&other.inner.as_slice())
     }
 }
 
@@ -447,7 +448,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn as_slice(&self) -> &[u8] {
-        self.inner.buf().as_slice()
+        self.inner.as_slice()
     }
 
     /// Extracts a mutable slice containing the entire byte string.
@@ -456,7 +457,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
-        self.inner.buf_mut().as_mut_slice()
+        self.inner.as_mut_slice()
     }
 
     /// Returns a raw pointer to the string's buffer.
@@ -490,7 +491,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
-        self.inner.buf().as_ptr()
+        self.inner.as_ptr()
     }
 
     /// Returns an unsafe mutable pointer to the string's buffer.
@@ -522,7 +523,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-        self.inner.buf_mut().as_mut_ptr()
+        self.inner.as_mut_ptr()
     }
 
     /// Forces the length of the string to `new_len`.
@@ -545,7 +546,7 @@ impl String {
     /// [`capacity()`]: Self::capacity
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
-        self.inner.buf_mut().set_len(new_len);
+        self.inner.set_len(new_len);
     }
 
     /// Creates a `String` directly from the raw components of another string.

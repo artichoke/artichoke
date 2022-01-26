@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 use bstr::{BStr};
 
+use crate::encoded_accessors::EncodedAccessors;
 use crate::encoding::Encoding;
 use crate::ascii_string::AsciiString;
 use crate::binary_string::BinaryString;
@@ -51,12 +52,70 @@ impl EncodedString {
         }
     }
 
+    pub fn set_len(&mut self, len: usize) {
+        match self {
+            EncodedString::Ascii(n) => n.set_len(len),
+            EncodedString::Binary(n) => n.set_len(len),
+            EncodedString::Utf8(n) => n.set_len(len),
+        }
+    }
+
     pub fn truncate(&mut self, len: usize) {
          match self {
             EncodedString::Ascii(n) => n.truncate(len),
             EncodedString::Binary(n) => n.truncate(len),
             EncodedString::Utf8(n) => n.truncate(len),
         };
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+         match self {
+            EncodedString::Ascii(n) => n.as_slice(),
+            EncodedString::Binary(n) => n.as_slice(),
+            EncodedString::Utf8(n) => n.as_slice(),
+        }
+    }
+
+    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+         match self {
+            EncodedString::Ascii(n) => n.as_mut_slice(),
+            EncodedString::Binary(n) => n.as_mut_slice(),
+            EncodedString::Utf8(n) => n.as_mut_slice(),
+        }
+    }
+
+    pub fn as_vec(&self) -> &Vec<u8> {
+         match self {
+            EncodedString::Ascii(n) => n.as_vec(),
+            EncodedString::Binary(n) => n.as_vec(),
+            EncodedString::Utf8(n) => n.as_vec(),
+        }
+
+    }
+
+    pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
+         match self {
+            EncodedString::Ascii(n) => n.as_mut_vec(),
+            EncodedString::Binary(n) => n.as_mut_vec(),
+            EncodedString::Utf8(n) => n.as_mut_vec(),
+        }
+    }
+
+    pub fn as_ptr(&self) -> *const u8 {
+         match self {
+            EncodedString::Ascii(n) => n.as_ptr(),
+            EncodedString::Binary(n) => n.as_ptr(),
+            EncodedString::Utf8(n) => n.as_ptr(),
+        }
+
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+         match self {
+            EncodedString::Ascii(n) => n.as_mut_ptr(),
+            EncodedString::Binary(n) => n.as_mut_ptr(),
+            EncodedString::Utf8(n) => n.as_mut_ptr(),
+        }
     }
 }
 
