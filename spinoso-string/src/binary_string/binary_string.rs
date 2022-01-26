@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 use bstr::{ByteSlice, BStr};
-use crate::encoded_accessors::EncodedAccessors;
+use crate::iter::{IntoIter, Iter, IterMut, Bytes};
 
 #[derive(Default, Clone)]
 pub struct BinaryString {
@@ -22,13 +22,48 @@ impl BinaryString {
 }
 
 // Raw
-impl EncodedAccessors for BinaryString {
-    fn as_vec(&self) -> &Vec<u8> {
+impl BinaryString {
+    pub fn as_vec(&self) -> &Vec<u8> {
         &self.inner
     }
 
-    fn as_mut_vec(&mut self) -> &mut Vec<u8> {
+    pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
         &mut self.inner
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        &self.inner
+    }
+
+    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+        &mut self.inner
+    }
+
+    pub fn as_ptr(&self) -> *const u8 {
+        self.inner.as_ptr()
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut u8 {
+        self.inner.as_mut_ptr()
+    }
+}
+
+// Core Iterators
+impl BinaryString {
+    pub fn iter(&self) -> Iter<'_> {
+        Iter(self.inner.iter())
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_> {
+        IterMut(self.inner.iter_mut())
+    }
+
+    pub fn bytes(&self) -> Bytes<'_> {
+        Bytes(self.inner.iter())
+    }
+
+    pub fn into_iter(self) -> IntoIter {
+        IntoIter(self.inner.into_iter())
     }
 }
 
@@ -38,7 +73,7 @@ impl BinaryString {
         self.inner.len()
     }
 
-    pub fn set_len(&mut self, len: usize) {
+    pub unsafe fn set_len(&mut self, len: usize) {
         self.inner.set_len(len);
     }
 

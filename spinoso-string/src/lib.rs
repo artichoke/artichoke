@@ -62,7 +62,6 @@ mod iter;
 mod ascii_string;
 mod binary_string;
 mod utf8_string;
-mod encoded_accessors;
 
 use encoded_string::EncodedString;
 
@@ -745,7 +744,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn iter(&self) -> Iter<'_> {
-        Iter(self.inner.buf().iter())
+        self.inner.iter()
     }
 
     /// Returns an iterator that allows modifying this string's underlying byte
@@ -767,7 +766,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_> {
-        IterMut(self.inner.buf_mut().iter_mut())
+        self.inner.iter_mut()
     }
 
     /// Returns an iterator over the bytes in this byte string.
@@ -784,11 +783,10 @@ impl String {
     #[inline]
     #[must_use]
     pub fn bytes(&self) -> Bytes<'_> {
-        Bytes(self.inner.buf().iter())
+        self.inner.bytes()
     }
 }
 
-/*
 // Additional IntoIterator iterator
 impl IntoIterator for String {
     type Item = u8;
@@ -813,10 +811,10 @@ impl IntoIterator for String {
 
     #[inline]
     #[must_use]
-    fn into_iter(self) -> IntoIter {
-        IntoIter(self.inner.buf().into_iter())
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.into_iter()
     }
-}*/
+}
 
 // Memory management
 impl String {
