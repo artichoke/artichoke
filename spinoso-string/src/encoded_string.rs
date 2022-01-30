@@ -183,6 +183,53 @@ impl EncodedString {
         }
     }
 
+    pub fn reserve(&mut self, additional: usize) {
+        match self {
+            EncodedString::Ascii(n) => n.reserve(additional),
+            EncodedString::Binary(n) => n.reserve(additional),
+            EncodedString::Utf8(n) => n.reserve(additional),
+        }
+    }
+
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+        match self {
+            EncodedString::Ascii(n) => n.try_reserve(additional),
+            EncodedString::Binary(n) => n.try_reserve(additional),
+            EncodedString::Utf8(n) => n.try_reserve(additional),
+        }
+    }
+
+    pub fn reserve_exact(&mut self, additional: usize) {
+        match self {
+            EncodedString::Ascii(n) => n.reserve_exact(additional),
+            EncodedString::Binary(n) => n.reserve_exact(additional),
+            EncodedString::Utf8(n) => n.reserve_exact(additional),
+        }
+    }
+
+    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+        match self {
+            EncodedString::Ascii(n) => n.try_reserve_exact(additional),
+            EncodedString::Binary(n) => n.try_reserve_exact(additional),
+            EncodedString::Utf8(n) => n.try_reserve_exact(additional),
+        }
+    }
+
+    pub fn shrink_to_fit(&mut self) {
+        match self {
+            EncodedString::Ascii(n) => n.shrink_to_fit(),
+            EncodedString::Binary(n) => n.shrink_to_fit(),
+            EncodedString::Utf8(n) => n.shrink_to_fit(),
+        }
+    }
+
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        match self {
+            EncodedString::Ascii(n) => n.shrink_to(min_capacity),
+            EncodedString::Binary(n) => n.shrink_to(min_capacity),
+            EncodedString::Utf8(n) => n.shrink_to(min_capacity),
+        }
+    }
 }
 
 // Migration functions

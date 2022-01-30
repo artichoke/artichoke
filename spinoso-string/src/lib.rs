@@ -839,7 +839,7 @@ impl String {
     /// ```
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
-        self.inner.buf_mut().reserve(additional);
+        self.inner.reserve(additional);
     }
 
     /// Tries to reserve capacity for at least `additional` more elements to be
@@ -864,7 +864,7 @@ impl String {
     /// ```
     #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
-        self.inner.buf_mut().try_reserve(additional)
+        self.inner.try_reserve(additional)
     }
 
     /// Reserves the minimum capacity for exactly `additional` more bytes to be
@@ -891,7 +891,7 @@ impl String {
     /// ```
     #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
-        self.inner.buf_mut().reserve_exact(additional);
+        self.inner.reserve_exact(additional);
     }
 
     /// Tries to reserve the minimum capacity for exactly `additional`
@@ -920,7 +920,7 @@ impl String {
     /// ```
     #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
-        self.inner.buf_mut().try_reserve_exact(additional)
+        self.inner.try_reserve_exact(additional)
     }
 
     /// Shrinks the capacity of the vector as much as possible.
@@ -941,7 +941,7 @@ impl String {
     /// ```
     #[inline]
     pub fn shrink_to_fit(&mut self) {
-        self.inner.buf_mut().shrink_to_fit();
+        self.inner.shrink_to_fit();
     }
 
     /// Shrinks the capacity of the vector with a lower bound.
@@ -964,7 +964,7 @@ impl String {
     /// ```
     #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
-        self.inner.buf_mut().shrink_to(min_capacity);
+        self.inner.shrink_to(min_capacity);
     }
 }
 
