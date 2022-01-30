@@ -1,8 +1,9 @@
 use alloc::vec::Vec;
 use core::slice::SliceIndex;
 
-use bstr::{BStr, ByteSlice};
+use bstr::{BStr, ByteSlice, ByteVec};
 
+use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 
 #[derive(Default, Clone)]
@@ -156,6 +157,39 @@ impl Utf8String {
         I: SliceIndex<[u8]>,
     {
         self.inner.get_unchecked_mut(index)
+    }
+}
+
+// Pushing and popping bytes, codepoints, and strings.
+impl Utf8String {
+    pub fn push_byte(&mut self, byte: u8) {
+        self.inner.push_byte(byte);
+    }
+
+    pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
+        let codepoint = if let Ok(codepoint) = u32::try_from(codepoint) {
+            codepoint
+        } else {
+            return Err(InvalidCodepointError::codepoint_out_of_range(codepoint));
+        };
+        if let Ok(ch) = char::try_from(codepoint) {
+            self.push_char(ch);
+            Ok(())
+        } else {
+            Err(InvalidCodepointError::invalid_utf8_codepoint(codepoint))
+        }
+    }
+
+    pub fn push_char(&mut self, ch: char) {
+        self.inner.push_char(ch);
+    }
+
+    pub fn push_str(&mut self, s: &str) {
+        self.inner.push_str(s);
+    }
+
+    pub fn extend_from_slice(&mut self, other: &[u8]) {
+        self.inner.extend_from_slice(other);
     }
 }
 

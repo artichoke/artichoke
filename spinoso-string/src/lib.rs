@@ -1120,7 +1120,7 @@ impl String {
     /// [encoding]: crate::Encoding
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {
-        self.inner.buf_mut().push_byte(byte);
+        self.inner.push_byte(byte);
     }
 
     /// Try to append a given Unicode codepoint onto the end of this `String`.
@@ -1188,29 +1188,7 @@ impl String {
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
-        match self.encoding() {
-            Encoding::Utf8 => {
-                let codepoint = if let Ok(codepoint) = u32::try_from(codepoint) {
-                    codepoint
-                } else {
-                    return Err(InvalidCodepointError::codepoint_out_of_range(codepoint));
-                };
-                if let Ok(ch) = char::try_from(codepoint) {
-                    self.inner.buf_mut().push_char(ch);
-                    Ok(())
-                } else {
-                    Err(InvalidCodepointError::invalid_utf8_codepoint(codepoint))
-                }
-            }
-            Encoding::Ascii | Encoding::Binary => {
-                if let Ok(byte) = u8::try_from(codepoint) {
-                    self.inner.buf_mut().push_byte(byte);
-                    Ok(())
-                } else {
-                    Err(InvalidCodepointError::codepoint_out_of_range(codepoint))
-                }
-            }
-        }
+        self.inner.try_push_codepoint(codepoint)
     }
 
     /// Appends a given [`char`] onto the end of this `String`.
@@ -1229,7 +1207,7 @@ impl String {
     /// ```
     #[inline]
     pub fn push_char(&mut self, ch: char) {
-        self.inner.buf_mut().push_char(ch);
+        self.inner.push_char(ch);
     }
 
     /// Appends a given string slice onto the end of this `String`.
@@ -1245,7 +1223,7 @@ impl String {
     /// ```
     #[inline]
     pub fn push_str(&mut self, s: &str) {
-        self.inner.buf_mut().push_str(s);
+        self.inner.push_str(s);
     }
 
     /// Copies and appends all bytes in a slice to the `String`.
@@ -1264,7 +1242,7 @@ impl String {
     /// ```
     #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
-        self.inner.buf_mut().extend_from_slice(other);
+        self.inner.extend_from_slice(other);
     }
 }
 

@@ -5,6 +5,7 @@ use bstr::BStr;
 
 use crate::ascii_string::AsciiString;
 use crate::binary_string::BinaryString;
+use crate::codepoints::InvalidCodepointError;
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::utf8_string::Utf8String;
@@ -273,6 +274,46 @@ impl EncodedString {
             EncodedString::Ascii(n) => n.get_unchecked_mut(index),
             EncodedString::Binary(n) => n.get_unchecked_mut(index),
             EncodedString::Utf8(n) => n.get_unchecked_mut(index),
+        }
+    }
+
+    pub fn push_byte(&mut self, byte: u8) {
+        match self {
+            EncodedString::Ascii(n) => n.push_byte(byte),
+            EncodedString::Binary(n) => n.push_byte(byte),
+            EncodedString::Utf8(n) => n.push_byte(byte),
+        }
+    }
+
+    pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
+        match self {
+            EncodedString::Ascii(n) => n.try_push_codepoint(codepoint),
+            EncodedString::Binary(n) => n.try_push_codepoint(codepoint),
+            EncodedString::Utf8(n) => n.try_push_codepoint(codepoint),
+        }
+    }
+
+    pub fn push_char(&mut self, ch: char) {
+        match self {
+            EncodedString::Ascii(n) => n.push_char(ch),
+            EncodedString::Binary(n) => n.push_char(ch),
+            EncodedString::Utf8(n) => n.push_char(ch),
+        }
+    }
+
+    pub fn push_str(&mut self, s: &str) {
+        match self {
+            EncodedString::Ascii(n) => n.push_str(s),
+            EncodedString::Binary(n) => n.push_str(s),
+            EncodedString::Utf8(n) => n.push_str(s),
+        }
+    }
+
+    pub fn extend_from_slice(&mut self, other: &[u8]) {
+        match self {
+            EncodedString::Ascii(n) => n.extend_from_slice(other),
+            EncodedString::Binary(n) => n.extend_from_slice(other),
+            EncodedString::Utf8(n) => n.extend_from_slice(other),
         }
     }
 }
