@@ -5,6 +5,7 @@ use bstr::{BStr, ByteSlice, ByteVec};
 
 use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
+use crate::ord::OrdError;
 
 #[derive(Default, Clone)]
 pub struct BinaryString {
@@ -188,15 +189,47 @@ impl BinaryString {
     }
 }
 
+// Encoding
+impl BinaryString {
+    pub fn is_ascii_only(&self) -> bool {
+        self.inner.is_ascii()
+    }
+}
+
+// Casing
+impl BinaryString {
+    pub fn make_capitalized(&mut self) {
+        if let Some((head, tail)) = self.inner.split_first_mut() {
+            head.make_ascii_uppercase();
+            tail.make_ascii_lowercase();
+        }
+    }
+
+    pub fn make_lowercase(&mut self) {
+        self.inner.make_ascii_lowercase();
+    }
+
+    pub fn make_uppercase(&mut self) {
+        self.inner.make_ascii_uppercase();
+    }
+}
+
+impl BinaryString {
+    pub fn chr(&self) -> &[u8] {
+        self.inner.get(0..1).unwrap_or_default()
+    }
+
+    pub fn ord(&self) -> Result<u32, OrdError> {
+        let byte = self.inner.get(0).copied().ok_or_else(OrdError::empty_string)?;
+        Ok(u32::from(byte))
+    }
+}
+
 // Migration functions
 // TODO: Remove these. If it compiles, we've migrated successfully
 impl BinaryString {
     pub fn buf(&self) -> &Vec<u8> {
         &self.inner
-    }
-
-    pub fn buf_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.inner
     }
 }
 

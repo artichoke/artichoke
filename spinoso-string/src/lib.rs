@@ -42,7 +42,7 @@ use core::ops::Range;
 use core::slice::SliceIndex;
 use core::str;
 
-use bstr::{ByteSlice, ByteVec};
+use bstr::ByteSlice;
 #[doc(inline)]
 #[cfg(feature = "casecmp")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "casecmp")))]
@@ -61,6 +61,7 @@ mod eq;
 mod impls;
 mod inspect;
 mod iter;
+mod ord;
 mod utf8_string;
 
 pub use center::{Center, CenterError};
@@ -70,99 +71,7 @@ use encoded_string::EncodedString;
 pub use encoding::{Encoding, InvalidEncodingError};
 pub use inspect::Inspect;
 pub use iter::{Bytes, IntoIter, Iter, IterMut};
-
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum OrdError {
-    /// The first character in a [conventionally UTF-8] `String` is an invalid
-    /// UTF-8 byte sequence.
-    ///
-    /// [conventionally UTF-8]: Encoding::Utf8
-    InvalidUtf8ByteSequence,
-    /// The given `String` is empty and has no first character.
-    EmptyString,
-}
-
-impl OrdError {
-    /// `OrdError` corresponds to an [`ArgumentError`] Ruby exception.
-    ///
-    /// [`ArgumentError`]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
-    pub const EXCEPTION_TYPE: &'static str = "ArgumentError";
-
-    /// Construct a new `OrdError` for an invalid UTF-8 byte sequence.
-    ///
-    /// Only [conventionally UTF-8] `String`s can generate this error.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use spinoso_string::{OrdError, String};
-    ///
-    /// let s = String::utf8(b"\xFFabc".to_vec());
-    /// assert_eq!(s.ord(), Err(OrdError::invalid_utf8_byte_sequence()));
-    ///
-    /// let s = String::binary(b"\xFFabc".to_vec());
-    /// assert_eq!(s.ord(), Ok(0xFF));
-    /// ```
-    ///
-    /// [conventionally UTF-8]: Encoding::Utf8
-    #[inline]
-    #[must_use]
-    pub const fn invalid_utf8_byte_sequence() -> Self {
-        Self::InvalidUtf8ByteSequence
-    }
-
-    /// Construct a new `OrdError` for an empty `String`.
-    ///
-    /// Empty `String`s have no first character. Empty `String`s with any
-    /// encoding return this error.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use spinoso_string::{OrdError, String};
-    ///
-    /// let s = String::utf8(b"\xFFabc".to_vec());
-    /// assert_eq!(s.ord(), Err(OrdError::invalid_utf8_byte_sequence()));
-    /// ```
-    #[inline]
-    #[must_use]
-    pub const fn empty_string() -> Self {
-        Self::EmptyString
-    }
-
-    /// Error message for this `OrdError`.
-    ///
-    /// This message is suitable for generating an [`ArgumentError`] exception
-    /// from this `OrdError`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use spinoso_string::OrdError;
-    ///
-    /// assert_eq!(OrdError::invalid_utf8_byte_sequence().message(), "invalid byte sequence in UTF-8");
-    /// assert_eq!(OrdError::empty_string().message(), "empty string");
-    /// ```
-    ///
-    /// [`ArgumentError`]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
-    #[inline]
-    #[must_use]
-    pub const fn message(self) -> &'static str {
-        match self {
-            Self::InvalidUtf8ByteSequence => "invalid byte sequence in UTF-8",
-            Self::EmptyString => "empty string",
-        }
-    }
-}
-
-impl fmt::Display for OrdError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.message())
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for OrdError {}
+pub use ord::OrdError;
 
 //#[derive(Default, Clone)]
 pub struct String {
@@ -1270,7 +1179,7 @@ impl String {
     #[inline]
     pub fn concat<T: AsRef<[u8]>>(&mut self, other: T) {
         let other = other.as_ref();
-        self.inner.buf_mut().extend_from_slice(other);
+        self.inner.extend_from_slice(other);
     }
 
     /// Returns true for a string which has only ASCII characters.
@@ -1296,7 +1205,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn is_ascii_only(&self) -> bool {
-        self.inner.buf().is_ascii()
+        self.inner.is_ascii_only()
     }
 
     /// Change the [encoding] of this `String` to [`Encoding::Binary`].
@@ -1351,121 +1260,19 @@ impl String {
     /// and the remainder to lowercase.
     #[inline]
     pub fn make_capitalized(&mut self) {
-        match self.encoding() {
-            Encoding::Ascii | Encoding::Binary => {
-                if let Some((head, tail)) = self.inner.buf_mut().split_first_mut() {
-                    head.make_ascii_uppercase();
-                    tail.make_ascii_lowercase();
-                }
-            }
-            Encoding::Utf8 => {
-                // This allocation assumes that in the common case, capitalizing
-                // and lower-casing `char`s do not change the length of the
-                // `String`.
-                let mut replacement = Vec::with_capacity(self.len());
-                let mut bytes = self.inner.buf().as_slice();
-
-                match bstr::decode_utf8(bytes) {
-                    (Some(ch), size) => {
-                        // Converting a UTF-8 character to uppercase may yield
-                        // multiple codepoints.
-                        for ch in ch.to_uppercase() {
-                            replacement.push_char(ch);
-                        }
-                        bytes = &bytes[size..];
-                    }
-                    (None, size) if size == 0 => return,
-                    (None, size) => {
-                        let (substring, remainder) = bytes.split_at(size);
-                        replacement.extend_from_slice(substring);
-                        bytes = remainder;
-                    }
-                }
-
-                while !bytes.is_empty() {
-                    let (ch, size) = bstr::decode_utf8(bytes);
-                    if let Some(ch) = ch {
-                        // Converting a UTF-8 character to lowercase may yield
-                        // multiple codepoints.
-                        for ch in ch.to_lowercase() {
-                            replacement.push_char(ch);
-                        }
-                        bytes = &bytes[size..];
-                    } else {
-                        let (substring, remainder) = bytes.split_at(size);
-                        replacement.extend_from_slice(substring);
-                        bytes = remainder;
-                    }
-                }
-                //self.buf = replacement;
-            }
-        }
+        self.inner.make_capitalized();
     }
 
     /// Modify this `String` to have all characters converted to lowercase.
     #[inline]
     pub fn make_lowercase(&mut self) {
-        match self.encoding() {
-            Encoding::Ascii | Encoding::Binary => {
-                self.inner.buf_mut().make_ascii_lowercase();
-            }
-            Encoding::Utf8 => {
-                // This allocation assumes that in the common case, lower-casing
-                // `char`s do not change the length of the `String`.
-                let mut replacement = Vec::with_capacity(self.len());
-                let mut bytes = self.inner.buf().as_slice();
-
-                while !bytes.is_empty() {
-                    let (ch, size) = bstr::decode_utf8(bytes);
-                    if let Some(ch) = ch {
-                        // Converting a UTF-8 character to lowercase may yield
-                        // multiple codepoints.
-                        for ch in ch.to_lowercase() {
-                            replacement.push_char(ch);
-                        }
-                        bytes = &bytes[size..];
-                    } else {
-                        let (substring, remainder) = bytes.split_at(size);
-                        replacement.extend_from_slice(substring);
-                        bytes = remainder;
-                    }
-                }
-                //self.buf = replacement;
-            }
-        }
+        self.inner.make_lowercase();
     }
 
     /// Modify this `String` to have the all characters converted to uppercase.
     #[inline]
     pub fn make_uppercase(&mut self) {
-        match self.encoding() {
-            Encoding::Ascii | Encoding::Binary => {
-                self.inner.buf_mut().make_ascii_uppercase();
-            }
-            Encoding::Utf8 => {
-                // This allocation assumes that in the common case, upper-casing
-                // `char`s do not change the length of the `String`.
-                let mut replacement = Vec::with_capacity(self.len());
-                let mut bytes = self.inner.buf().as_slice();
-
-                while !bytes.is_empty() {
-                    let (ch, size) = bstr::decode_utf8(bytes);
-                    if let Some(ch) = ch {
-                        // Converting a UTF-8 character to lowercase may yield
-                        // multiple codepoints.
-                        for ch in ch.to_uppercase() {
-                            replacement.push_char(ch);
-                        }
-                        bytes = &bytes[size..];
-                    } else {
-                        let (substring, remainder) = bytes.split_at(size);
-                        replacement.extend_from_slice(substring);
-                        bytes = remainder;
-                    }
-                }
-                //self.buf = replacement;
-            }
-        }
+        self.inner.make_uppercase();
     }
 
     #[inline]
@@ -1473,7 +1280,7 @@ impl String {
     #[cfg(feature = "casecmp")]
     #[cfg_attr(feature = "docsrs", doc(cfg(feature = "casecmp")))]
     pub fn ascii_casecmp(&self, other: &[u8]) -> Ordering {
-        focaccia::ascii_casecmp(self.inner.buf().as_slice(), other)
+        focaccia::ascii_casecmp(self.as_slice(), other)
     }
 
     #[inline]
@@ -1481,7 +1288,7 @@ impl String {
     #[cfg(feature = "casecmp")]
     #[cfg_attr(feature = "docsrs", doc(cfg(feature = "casecmp")))]
     pub fn unicode_casecmp(&self, other: &String, options: CaseFold) -> Option<bool> {
-        let left = self.inner.buf().as_slice();
+        let left = self;
         let right = other;
         // If both `String`s are conventionally UTF-8, they must be case
         // compared using the given case folding strategy. This requires the
@@ -1666,13 +1473,13 @@ impl String {
     #[inline]
     #[must_use]
     pub fn chop(&mut self) -> bool {
-        if self.inner.buf_mut().is_empty() {
+        if self.is_empty() {
             return false;
         }
-        let bytes_to_remove = if self.inner.buf().ends_with(b"\r\n") {
+        let bytes_to_remove = if self.inner.as_slice().ends_with(b"\r\n") {
             2
         } else if let Encoding::Utf8 = self.encoding() {
-            let (ch, size) = bstr::decode_last_utf8(&self.inner.buf());
+            let (ch, size) = bstr::decode_last_utf8(&self.as_slice());
             if ch.is_some() {
                 size
             } else {
@@ -1684,7 +1491,7 @@ impl String {
         };
         // This subtraction is guaranteed to not panic because we have validated
         // that we're removing a subslice of `buf`.
-        self.inner.truncate(self.len() - bytes_to_remove);
+        self.truncate(self.len() - bytes_to_remove);
         true
     }
 
@@ -1736,15 +1543,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn chr(&self) -> &[u8] {
-        if let Encoding::Utf8 = self.encoding() {
-            match bstr::decode_utf8(self.inner.buf().as_slice()) {
-                (Some(_), size) => &self.inner.buf()[..size],
-                (None, 0) => &[],
-                (None, _) => &self.inner.buf()[..1],
-            }
-        } else {
-            self.inner.buf().get(0..1).unwrap_or_default()
-        }
+        self.inner.chr()
     }
 
     /// Returns the index of the first occurrence of the given substring in this
@@ -1788,7 +1587,7 @@ impl String {
         // convert to a concrete type and delegate to a single `index` impl
         // to minimize code duplication when monomorphizing.
         let needle = needle.as_ref();
-        inner(&self.inner.buf(), needle, offset)
+        inner(self.inner.as_slice(), needle, offset)
     }
 
     #[inline]
@@ -1806,7 +1605,7 @@ impl String {
         // convert to a concrete type and delegate to a single `rindex` impl
         // to minimize code duplication when monomorphizing.
         let needle = needle.as_ref();
-        inner(&self.inner.buf(), needle, offset)
+        inner(self.inner.as_slice(), needle, offset)
     }
 
     /// Returns an iterator that yields a debug representation of the `String`.
@@ -1835,19 +1634,7 @@ impl String {
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     pub fn ord(&self) -> Result<u32, OrdError> {
-        if let Encoding::Utf8 = self.encoding() {
-            let (ch, size) = bstr::decode_utf8(self.inner.buf().as_slice());
-            match ch {
-                // All `char`s are valid `u32`s
-                // https://github.com/rust-lang/rust/blob/1.48.0/library/core/src/char/convert.rs#L12-L20
-                Some(ch) => Ok(u32::from(ch)),
-                None if size == 0 => Err(OrdError::empty_string()),
-                None => Err(OrdError::invalid_utf8_byte_sequence()),
-            }
-        } else {
-            let byte = self.inner.buf().get(0).copied().ok_or_else(OrdError::empty_string)?;
-            Ok(u32::from(byte))
-        }
+        self.inner.ord()
     }
 }
 
@@ -2558,7 +2345,7 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
                 }
             }
             let truncate_to = iter.count();
-            string.inner.buf_mut().truncate(truncate_to);
+            string.inner.truncate(truncate_to);
             truncate_to != original_len
         }
         Some(separator) if string.inner.buf().ends_with(separator) => {
@@ -2566,7 +2353,7 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
             // This subtraction is guaranteed not to panic because
             // `separator` is a substring of `buf`.
             let truncate_to_len = original_len - separator.len();
-            string.inner.buf_mut().truncate(truncate_to_len);
+            string.inner.truncate(truncate_to_len);
             // Separator is non-empty and we are always truncating, so this
             // branch always modifies the buffer.
             true
@@ -2588,7 +2375,7 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
                 Some(_) | None => {}
             };
             let truncate_to_len = iter.count();
-            string.inner.buf_mut().truncate(truncate_to_len);
+            string.inner.truncate(truncate_to_len);
             truncate_to_len != original_len
         }
     }

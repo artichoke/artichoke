@@ -8,6 +8,7 @@ use crate::binary_string::BinaryString;
 use crate::codepoints::InvalidCodepointError;
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
+use crate::ord::OrdError;
 use crate::utf8_string::Utf8String;
 
 pub enum EncodedString {
@@ -316,6 +317,53 @@ impl EncodedString {
             EncodedString::Utf8(n) => n.extend_from_slice(other),
         }
     }
+
+    pub fn is_ascii_only(&self) -> bool {
+        match self {
+            EncodedString::Ascii(n) => n.is_ascii_only(),
+            EncodedString::Binary(n) => n.is_ascii_only(),
+            EncodedString::Utf8(n) => n.is_ascii_only(),
+        }
+    }
+
+    pub fn make_capitalized(&mut self) {
+        match self {
+            EncodedString::Ascii(n) => n.make_capitalized(),
+            EncodedString::Binary(n) => n.make_capitalized(),
+            EncodedString::Utf8(n) => n.make_capitalized(),
+        }
+    }
+
+    pub fn make_uppercase(&mut self) {
+        match self {
+            EncodedString::Ascii(n) => n.make_uppercase(),
+            EncodedString::Binary(n) => n.make_uppercase(),
+            EncodedString::Utf8(n) => n.make_uppercase(),
+        }
+    }
+    pub fn make_lowercase(&mut self) {
+        match self {
+            EncodedString::Ascii(n) => n.make_lowercase(),
+            EncodedString::Binary(n) => n.make_lowercase(),
+            EncodedString::Utf8(n) => n.make_lowercase(),
+        }
+    }
+
+    pub fn chr(&self) -> &[u8] {
+        match self {
+            EncodedString::Ascii(n) => n.chr(),
+            EncodedString::Binary(n) => n.chr(),
+            EncodedString::Utf8(n) => n.chr(),
+        }
+    }
+
+    pub fn ord(&self) -> Result<u32, OrdError> {
+        match self {
+            EncodedString::Ascii(n) => n.ord(),
+            EncodedString::Binary(n) => n.ord(),
+            EncodedString::Utf8(n) => n.ord(),
+        }
+    }
 }
 
 // Migration functions
@@ -326,14 +374,6 @@ impl EncodedString {
             EncodedString::Ascii(n) => n.buf(),
             EncodedString::Binary(n) => n.buf(),
             EncodedString::Utf8(n) => n.buf(),
-        }
-    }
-
-    pub fn buf_mut(&mut self) -> &mut Vec<u8> {
-        match self {
-            EncodedString::Ascii(n) => n.buf_mut(),
-            EncodedString::Binary(n) => n.buf_mut(),
-            EncodedString::Utf8(n) => n.buf_mut(),
         }
     }
 }

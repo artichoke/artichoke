@@ -5,6 +5,7 @@ use bstr::{BStr, ByteSlice, ByteVec};
 
 use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
+use crate::ord::OrdError;
 
 #[derive(Default, Clone)]
 pub struct Utf8String {
@@ -193,15 +194,132 @@ impl Utf8String {
     }
 }
 
+impl Utf8String {
+    pub fn is_ascii_only(&self) -> bool {
+        self.inner.is_ascii()
+    }
+}
+
+// Casing
+impl Utf8String {
+    pub fn make_capitalized(&mut self) {
+        // This allocation assumes that in the common case, capitalizing
+        // and lower-casing `char`s do not change the length of the
+        // `String`.
+        let mut replacement = Vec::with_capacity(self.len());
+        let mut bytes = self.inner.as_slice();
+
+        match bstr::decode_utf8(bytes) {
+            (Some(ch), size) => {
+                // Converting a UTF-8 character to uppercase may yield
+                // multiple codepoints.
+                for ch in ch.to_uppercase() {
+                    replacement.push_char(ch);
+                }
+                bytes = &bytes[size..];
+            }
+            (None, size) if size == 0 => return,
+            (None, size) => {
+                let (substring, remainder) = bytes.split_at(size);
+                replacement.extend_from_slice(substring);
+                bytes = remainder;
+            }
+        }
+
+        while !bytes.is_empty() {
+            let (ch, size) = bstr::decode_utf8(bytes);
+            if let Some(ch) = ch {
+                // Converting a UTF-8 character to lowercase may yield
+                // multiple codepoints.
+                for ch in ch.to_lowercase() {
+                    replacement.push_char(ch);
+                }
+                bytes = &bytes[size..];
+            } else {
+                let (substring, remainder) = bytes.split_at(size);
+                replacement.extend_from_slice(substring);
+                bytes = remainder;
+            }
+        }
+        self.inner = replacement;
+    }
+
+    pub fn make_lowercase(&mut self) {
+        // This allocation assumes that in the common case, lower-casing
+        // `char`s do not change the length of the `String`.
+        let mut replacement = Vec::with_capacity(self.len());
+        let mut bytes = self.inner.as_slice();
+
+        while !bytes.is_empty() {
+            let (ch, size) = bstr::decode_utf8(bytes);
+            if let Some(ch) = ch {
+                // Converting a UTF-8 character to lowercase may yield
+                // multiple codepoints.
+                for ch in ch.to_lowercase() {
+                    replacement.push_char(ch);
+                }
+                bytes = &bytes[size..];
+            } else {
+                let (substring, remainder) = bytes.split_at(size);
+                replacement.extend_from_slice(substring);
+                bytes = remainder;
+            }
+        }
+        self.inner = replacement;
+    }
+
+    pub fn make_uppercase(&mut self) {
+        // This allocation assumes that in the common case, upper-casing
+        // `char`s do not change the length of the `String`.
+        let mut replacement = Vec::with_capacity(self.len());
+        let mut bytes = self.inner.as_slice();
+
+        while !bytes.is_empty() {
+            let (ch, size) = bstr::decode_utf8(bytes);
+            if let Some(ch) = ch {
+                // Converting a UTF-8 character to lowercase may yield
+                // multiple codepoints.
+                for ch in ch.to_uppercase() {
+                    replacement.push_char(ch);
+                }
+                bytes = &bytes[size..];
+            } else {
+                let (substring, remainder) = bytes.split_at(size);
+                replacement.extend_from_slice(substring);
+                bytes = remainder;
+            }
+        }
+        self.inner = replacement;
+    }
+}
+
+impl Utf8String {
+    pub fn chr(&self) -> &[u8] {
+        match bstr::decode_utf8(self.inner.as_slice()) {
+            (Some(_), size) => &self.inner[..size],
+            (None, 0) => &[],
+            (None, _) => &self.inner[..1],
+        }
+    }
+
+    #[inline]
+    pub fn ord(&self) -> Result<u32, OrdError> {
+        let (ch, size) = bstr::decode_utf8(self.inner.as_slice());
+        match ch {
+            // All `char`s are valid `u32`s
+            // https://github.com/rust-lang/rust/blob/1.48.0/library/core/src/char/convert.rs#L12-L20
+            Some(ch) => Ok(u32::from(ch)),
+            None if size == 0 => Err(OrdError::empty_string()),
+            None => Err(OrdError::invalid_utf8_byte_sequence()),
+        }
+    }
+}
+
 // Migration functions
 // TODO: Remove these. If it compiles, we've migrated successfully
 impl Utf8String {
     pub fn buf(&self) -> &Vec<u8> {
         &self.inner
-    }
-
-    pub fn buf_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.inner
     }
 }
 
