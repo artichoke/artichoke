@@ -1,7 +1,7 @@
 use core::fmt::{self, Write};
 use core::iter::FusedIterator;
-use core::str::Chars;
 use core::mem;
+use core::str::Chars;
 
 use bstr::{ByteSlice, Bytes};
 
@@ -74,8 +74,6 @@ impl fmt::Display for CodepointsError {
 
 #[cfg(feature = "std")]
 impl std::error::Error for CodepointsError {}
-
-
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 enum CodePointRangeError {

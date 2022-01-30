@@ -1,11 +1,13 @@
 use alloc::vec::Vec;
 use core::slice::SliceIndex;
-use bstr::{ByteSlice, BStr};
-use crate::iter::{IntoIter, Iter, IterMut, Bytes};
+
+use bstr::{BStr, ByteSlice};
+
+use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 
 #[derive(Default, Clone)]
 pub struct Utf8String {
-    inner: Vec<u8>
+    inner: Vec<u8>,
 }
 
 // Constructors
@@ -157,7 +159,6 @@ impl Utf8String {
     }
 }
 
-
 // Migration functions
 // TODO: Remove these. If it compiles, we've migrated successfully
 impl Utf8String {
@@ -172,8 +173,9 @@ impl Utf8String {
 
 #[cfg(test)]
 mod tests {
-    use crate::binary_string::BinaryString;
     use alloc::vec::Vec;
+
+    use crate::binary_string::BinaryString;
 
     #[test]
     fn constructs_empty_buffer() {

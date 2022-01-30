@@ -50,6 +50,8 @@ pub use focaccia::CaseFold;
 #[doc(inline)]
 pub use raw_parts::RawParts;
 
+mod ascii_string;
+mod binary_string;
 mod center;
 mod chars;
 mod codepoints;
@@ -59,15 +61,12 @@ mod eq;
 mod impls;
 mod inspect;
 mod iter;
-mod ascii_string;
-mod binary_string;
 mod utf8_string;
-
-use encoded_string::EncodedString;
 
 pub use center::{Center, CenterError};
 pub use chars::Chars;
 pub use codepoints::{Codepoints, CodepointsError, InvalidCodepointError};
+use encoded_string::EncodedString;
 pub use encoding::{Encoding, InvalidEncodingError};
 pub use inspect::Inspect;
 pub use iter::{Bytes, IntoIter, Iter, IterMut};
@@ -249,7 +248,9 @@ impl String {
     #[must_use]
     pub fn new() -> Self {
         let buf = Vec::new();
-        Self { inner: EncodedString::new(buf, Encoding::Utf8) }
+        Self {
+            inner: EncodedString::new(buf, Encoding::Utf8),
+        }
     }
 
     /// Constructs a new, empty `String` with the specified capacity.
@@ -298,7 +299,9 @@ impl String {
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         let buf = Vec::with_capacity(capacity);
-        Self { inner: EncodedString::new(buf, Encoding::Utf8) }
+        Self {
+            inner: EncodedString::new(buf, Encoding::Utf8),
+        }
     }
 
     /// Constructs a new, empty `String` with the specified capacity and
@@ -346,13 +349,17 @@ impl String {
     #[must_use]
     pub fn with_capacity_and_encoding(capacity: usize, encoding: Encoding) -> Self {
         let buf = Vec::with_capacity(capacity);
-        Self { inner: EncodedString::new(buf, encoding) }
+        Self {
+            inner: EncodedString::new(buf, encoding),
+        }
     }
 
     #[inline]
     #[must_use]
     pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
-        Self { inner: EncodedString::new(buf, encoding) }
+        Self {
+            inner: EncodedString::new(buf, encoding),
+        }
     }
 
     #[inline]
@@ -2302,7 +2309,11 @@ impl String {
             // [3.0.1] > "🦀💎"[0, 10]
             // => "🦀💎"
             // ```
-            Encoding::Ascii | Encoding::Binary => self.inner.buf().get(start..end).or_else(|| self.inner.buf().get(start..)),
+            Encoding::Ascii | Encoding::Binary => self
+                .inner
+                .buf()
+                .get(start..end)
+                .or_else(|| self.inner.buf().get(start..)),
             Encoding::Utf8 => {
                 // Fast path for trying to treat the conventionally UTF-8 string
                 // as entirely ASCII.
@@ -2316,7 +2327,13 @@ impl String {
                 let consumed = match self.inner.buf().find_non_ascii_byte() {
                     // The entire string is ASCII, so byte indexing <=> char
                     // indexing.
-                    None => return self.inner.buf().get(start..end).or_else(|| self.inner.buf().get(start..)),
+                    None => {
+                        return self
+                            .inner
+                            .buf()
+                            .get(start..end)
+                            .or_else(|| self.inner.buf().get(start..))
+                    }
                     // The whole substring we are interested in is ASCII, so
                     // byte indexing is still valid.
                     Some(non_ascii_byte_offset) if non_ascii_byte_offset > end => return self.get(start..end),
@@ -2772,7 +2789,7 @@ mod tests {
         // The next line may be flagged for "trailing whitespace" in some viewers.
         //
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L131
-        let s = "	              ​    　
+        let s = "	              ​
 "
         .as_bytes();
         assert_eq!(conventionally_utf8_byte_string_len(s), 24);

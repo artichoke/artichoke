@@ -1,13 +1,13 @@
 use alloc::vec::Vec;
-use bstr::{BStr};
 use core::slice::SliceIndex;
 
-use crate::encoding::Encoding;
+use bstr::BStr;
+
 use crate::ascii_string::AsciiString;
 use crate::binary_string::BinaryString;
+use crate::encoding::Encoding;
+use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::utf8_string::Utf8String;
-use crate::iter::{IntoIter, Iter, IterMut, Bytes};
-
 
 pub enum EncodedString {
     Ascii(AsciiString),
@@ -49,7 +49,7 @@ impl EncodedString {
     }
 
     pub fn as_vec(&self) -> &Vec<u8> {
-         match self {
+        match self {
             EncodedString::Ascii(n) => n.as_vec(),
             EncodedString::Binary(n) => n.as_vec(),
             EncodedString::Utf8(n) => n.as_vec(),
@@ -57,7 +57,7 @@ impl EncodedString {
     }
 
     pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
-         match self {
+        match self {
             EncodedString::Ascii(n) => n.as_mut_vec(),
             EncodedString::Binary(n) => n.as_mut_vec(),
             EncodedString::Utf8(n) => n.as_mut_vec(),
@@ -81,7 +81,7 @@ impl EncodedString {
     }
 
     pub fn as_slice(&self) -> &[u8] {
-         match self {
+        match self {
             EncodedString::Ascii(n) => n.as_slice(),
             EncodedString::Binary(n) => n.as_slice(),
             EncodedString::Utf8(n) => n.as_slice(),
@@ -89,7 +89,7 @@ impl EncodedString {
     }
 
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
-         match self {
+        match self {
             EncodedString::Ascii(n) => n.as_mut_slice(),
             EncodedString::Binary(n) => n.as_mut_slice(),
             EncodedString::Utf8(n) => n.as_mut_slice(),
@@ -97,7 +97,7 @@ impl EncodedString {
     }
 
     pub fn as_ptr(&self) -> *const u8 {
-         match self {
+        match self {
             EncodedString::Ascii(n) => n.as_ptr(),
             EncodedString::Binary(n) => n.as_ptr(),
             EncodedString::Utf8(n) => n.as_ptr(),
@@ -105,7 +105,7 @@ impl EncodedString {
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
-         match self {
+        match self {
             EncodedString::Ascii(n) => n.as_mut_ptr(),
             EncodedString::Binary(n) => n.as_mut_ptr(),
             EncodedString::Utf8(n) => n.as_mut_ptr(),
@@ -153,7 +153,7 @@ impl EncodedString {
     }
 
     pub fn truncate(&mut self, len: usize) {
-         match self {
+        match self {
             EncodedString::Ascii(n) => n.truncate(len),
             EncodedString::Binary(n) => n.truncate(len),
             EncodedString::Utf8(n) => n.truncate(len),
@@ -241,7 +241,6 @@ impl EncodedString {
             EncodedString::Binary(n) => n.get(index),
             EncodedString::Utf8(n) => n.get(index),
         }
-
     }
 
     pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
@@ -253,7 +252,6 @@ impl EncodedString {
             EncodedString::Binary(n) => n.get_mut(index),
             EncodedString::Utf8(n) => n.get_mut(index),
         }
-
     }
 
     pub unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
@@ -265,7 +263,6 @@ impl EncodedString {
             EncodedString::Binary(n) => n.get_unchecked(index),
             EncodedString::Utf8(n) => n.get_unchecked(index),
         }
-
     }
 
     pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
@@ -277,7 +274,6 @@ impl EncodedString {
             EncodedString::Binary(n) => n.get_unchecked_mut(index),
             EncodedString::Utf8(n) => n.get_unchecked_mut(index),
         }
-
     }
 }
 
@@ -300,4 +296,3 @@ impl EncodedString {
         }
     }
 }
-
