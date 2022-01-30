@@ -1786,10 +1786,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn char_len(&self) -> usize {
-        match self.encoding() {
-            Encoding::Ascii | Encoding::Binary => self.len(),
-            Encoding::Utf8 => conventionally_utf8_byte_string_len(self.inner.buf().as_slice()),
-        }
+        self.inner.char_len()
     }
 
     /// Returns the `index`'th character in the string.
@@ -2304,29 +2301,6 @@ impl String {
             Encoding::Binary => true,
         }
     }
-}
-
-#[must_use]
-fn conventionally_utf8_byte_string_len(mut bytes: &[u8]) -> usize {
-    let tail = if let Some(idx) = bytes.find_non_ascii_byte() {
-        idx
-    } else {
-        return bytes.len();
-    };
-    // Safety:
-    //
-    // If `ByteSlice::find_non_ascii_byte` returns `Some(_)`, the index is
-    // guaranteed to be a valid index within `bytes`.
-    bytes = unsafe { bytes.get_unchecked(tail..) };
-    if simdutf8::basic::from_utf8(bytes).is_ok() {
-        return tail + bytecount::num_chars(bytes);
-    }
-    let mut char_len = tail;
-    for chunk in bytes.utf8_chunks() {
-        char_len += bytecount::num_chars(chunk.valid().as_bytes());
-        char_len += chunk.invalid().len();
-    }
-    char_len
 }
 
 #[must_use]

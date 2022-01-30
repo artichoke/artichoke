@@ -101,6 +101,10 @@ impl AsciiString {
     pub fn truncate(&mut self, len: usize) {
         self.inner.truncate(len);
     }
+
+    pub fn char_len(&self) -> usize {
+        self.len()
+    }
 }
 
 // Memory management

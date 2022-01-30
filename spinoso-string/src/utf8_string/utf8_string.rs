@@ -101,6 +101,29 @@ impl Utf8String {
     pub fn truncate(&mut self, len: usize) {
         self.inner.truncate(len);
     }
+
+    pub fn char_len(&self) -> usize {
+        let mut bytes = self.as_slice();
+        let tail = if let Some(idx) = bytes.find_non_ascii_byte() {
+            idx
+        } else {
+            return bytes.len();
+        };
+        // Safety:
+        //
+        // If `ByteSlice::find_non_ascii_byte` returns `Some(_)`, the index is
+        // guaranteed to be a valid index within `bytes`.
+        bytes = unsafe { bytes.get_unchecked(tail..) };
+        if simdutf8::basic::from_utf8(bytes).is_ok() {
+            return tail + bytecount::num_chars(bytes);
+        }
+        let mut char_len = tail;
+        for chunk in bytes.utf8_chunks() {
+            char_len += bytecount::num_chars(chunk.valid().as_bytes());
+            char_len += chunk.invalid().len();
+        }
+        char_len
+    }
 }
 
 // Memory management

@@ -162,6 +162,14 @@ impl EncodedString {
         };
     }
 
+    pub fn char_len(&self) -> usize {
+        match self {
+            EncodedString::Ascii(n) => n.char_len(),
+            EncodedString::Binary(n) => n.char_len(),
+            EncodedString::Utf8(n) => n.char_len(),
+        }
+    }
+
     pub fn iter(&self) -> Iter<'_> {
         match self {
             EncodedString::Ascii(n) => n.iter(),
