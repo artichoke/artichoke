@@ -252,7 +252,39 @@ impl BinaryString {
 mod tests {
     use alloc::vec::Vec;
 
+    use quickcheck::quickcheck;
+
     use super::BinaryString;
+
+    quickcheck! {
+        #[allow(clippy::needless_pass_by_value)]
+        fn fuzz_char_len_utf8_contents_binary_string(contents: alloc::string::String) -> bool {
+            let expected = contents.len();
+            let s = BinaryString::new(contents.into_bytes());
+            s.char_len() == expected
+        }
+
+        #[allow(clippy::needless_pass_by_value)]
+        fn fuzz_len_utf8_contents_binary_string(contents: alloc::string::String) -> bool {
+            let expected = contents.len();
+            let s = BinaryString::new(contents.into_bytes());
+            s.len() == expected
+        }
+
+        #[allow(clippy::needless_pass_by_value)]
+        fn fuzz_char_len_binary_contents_binary_string(contents: Vec<u8>) -> bool {
+            let expected = contents.len();
+            let s = BinaryString::new(contents);
+            s.char_len() == expected
+        }
+
+        #[allow(clippy::needless_pass_by_value)]
+        fn fuzz_len_binary_contents_binary_string(contents: Vec<u8>) -> bool {
+            let expected = contents.len();
+            let s = BinaryString::new(contents);
+            s.len() == expected
+        }
+    }
 
     #[test]
     fn constructs_empty_buffer() {
