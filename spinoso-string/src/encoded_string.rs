@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use bstr::{BStr};
+use core::slice::SliceIndex;
 
 use crate::encoding::Encoding;
 use crate::ascii_string::AsciiString;
@@ -229,6 +230,54 @@ impl EncodedString {
             EncodedString::Binary(n) => n.shrink_to(min_capacity),
             EncodedString::Utf8(n) => n.shrink_to(min_capacity),
         }
+    }
+
+    pub fn get<I>(&self, index: I) -> Option<&I::Output>
+    where
+        I: SliceIndex<[u8]>,
+    {
+        match self {
+            EncodedString::Ascii(n) => n.get(index),
+            EncodedString::Binary(n) => n.get(index),
+            EncodedString::Utf8(n) => n.get(index),
+        }
+
+    }
+
+    pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
+    where
+        I: SliceIndex<[u8]>,
+    {
+        match self {
+            EncodedString::Ascii(n) => n.get_mut(index),
+            EncodedString::Binary(n) => n.get_mut(index),
+            EncodedString::Utf8(n) => n.get_mut(index),
+        }
+
+    }
+
+    pub unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
+    where
+        I: SliceIndex<[u8]>,
+    {
+        match self {
+            EncodedString::Ascii(n) => n.get_unchecked(index),
+            EncodedString::Binary(n) => n.get_unchecked(index),
+            EncodedString::Utf8(n) => n.get_unchecked(index),
+        }
+
+    }
+
+    pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
+    where
+        I: SliceIndex<[u8]>,
+    {
+        match self {
+            EncodedString::Ascii(n) => n.get_unchecked_mut(index),
+            EncodedString::Binary(n) => n.get_unchecked_mut(index),
+            EncodedString::Utf8(n) => n.get_unchecked_mut(index),
+        }
+
     }
 }
 

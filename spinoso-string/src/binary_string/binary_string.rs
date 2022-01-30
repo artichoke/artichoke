@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use core::slice::SliceIndex;
 use bstr::{ByteSlice, BStr};
 use crate::iter::{IntoIter, Iter, IterMut, Bytes};
 
@@ -124,6 +125,38 @@ impl BinaryString {
         self.inner.shrink_to(min_capacity);
     }
 }
+
+// Indexing
+impl BinaryString {
+    pub fn get<I>(&self, index: I) -> Option<&I::Output>
+    where
+        I: SliceIndex<[u8]>,
+    {
+        self.inner.get(index)
+    }
+
+    pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
+    where
+        I: SliceIndex<[u8]>,
+    {
+        self.inner.get_mut(index)
+    }
+
+    pub unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
+    where
+        I: SliceIndex<[u8]>,
+    {
+        self.inner.get_unchecked(index)
+    }
+
+    pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
+    where
+        I: SliceIndex<[u8]>,
+    {
+        self.inner.get_unchecked_mut(index)
+    }
+}
+
 
 // Migration functions
 // TODO: Remove these. If it compiles, we've migrated successfully

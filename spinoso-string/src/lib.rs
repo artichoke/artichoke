@@ -995,7 +995,7 @@ impl String {
     where
         I: SliceIndex<[u8]>,
     {
-        self.inner.buf().get(index)
+        self.inner.get(index)
     }
 
     /// Returns a mutable reference to a byte or sub-byteslice depending on the
@@ -1021,7 +1021,7 @@ impl String {
     where
         I: SliceIndex<[u8]>,
     {
-        self.inner.buf_mut().get_mut(index)
+        self.inner.get_mut(index)
     }
 
     /// Returns a reference to a byte or sub-byteslice, without doing bounds
@@ -1054,7 +1054,7 @@ impl String {
     where
         I: SliceIndex<[u8]>,
     {
-        self.inner.buf().get_unchecked(index)
+        self.inner.get_unchecked(index)
     }
 
     /// Returns a mutable reference to a byte or sub-byteslice, without doing
@@ -1089,7 +1089,7 @@ impl String {
     where
         I: SliceIndex<[u8]>,
     {
-        self.inner.buf_mut().get_unchecked_mut(index)
+        self.inner.get_unchecked_mut(index)
     }
 }
 
