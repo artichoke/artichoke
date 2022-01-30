@@ -1,9 +1,11 @@
 use alloc::vec::Vec;
+use core::fmt;
 use core::slice::SliceIndex;
 
 use bstr::{BStr, ByteSlice, ByteVec};
 
 use crate::codepoints::InvalidCodepointError;
+use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
@@ -16,6 +18,15 @@ pub struct BinaryString {
 impl BinaryString {
     pub fn new(buf: Vec<u8>) -> Self {
         Self { inner: buf }
+    }
+}
+
+impl fmt::Debug for BinaryString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Utf8String")
+            .field("buf", &self.as_bstr())
+            .field("encoding", &Encoding::Binary)
+            .finish()
     }
 }
 
@@ -241,11 +252,145 @@ impl BinaryString {
 mod tests {
     use alloc::vec::Vec;
 
-    use crate::binary_string::BinaryString;
+    use super::BinaryString;
 
     #[test]
     fn constructs_empty_buffer() {
         let s = BinaryString::new(Vec::new());
         assert_eq!(0, s.len());
+    }
+
+    #[test]
+    fn casing_binary_string_empty() {
+        let mut s = BinaryString::new(b"".to_vec());
+
+        s.make_capitalized();
+        assert_eq!(s, "");
+
+        s.make_lowercase();
+        assert_eq!(s, "");
+
+        s.make_uppercase();
+        assert_eq!(s, "");
+    }
+
+    #[test]
+    fn casing_binary_string_ascii() {
+        let lower = BinaryString::new(b"abc".to_vec());
+        let mid_upper = BinaryString::new(b"aBc".to_vec());
+        let upper = BinaryString::new(b"ABC".to_vec());
+        let long = BinaryString::new(b"aBC, 123, ABC, baby you and me girl".to_vec());
+
+        let capitalize: fn(&BinaryString) -> BinaryString = |value: &BinaryString| {
+            let mut value = value.clone();
+            value.make_capitalized();
+            value
+        };
+        let lowercase: fn(&BinaryString) -> BinaryString = |value: &BinaryString| {
+            let mut value = value.clone();
+            value.make_lowercase();
+            value
+        };
+        let uppercase: fn(&BinaryString) -> BinaryString = |value: &BinaryString| {
+            let mut value = value.clone();
+            value.make_uppercase();
+            value
+        };
+
+        assert_eq!(capitalize(&lower), "Abc");
+        assert_eq!(capitalize(&mid_upper), "Abc");
+        assert_eq!(capitalize(&upper), "Abc");
+        assert_eq!(capitalize(&long), "Abc, 123, abc, baby you and me girl");
+
+        assert_eq!(lowercase(&lower), "abc");
+        assert_eq!(lowercase(&mid_upper), "abc");
+        assert_eq!(lowercase(&upper), "abc");
+        assert_eq!(lowercase(&long), "abc, 123, abc, baby you and me girl");
+
+        assert_eq!(uppercase(&lower), "ABC");
+        assert_eq!(uppercase(&mid_upper), "ABC");
+        assert_eq!(uppercase(&upper), "ABC");
+        assert_eq!(uppercase(&long), "ABC, 123, ABC, BABY YOU AND ME GIRL");
+    }
+
+    #[test]
+    fn casing_binary_string_utf8() {
+        let sharp_s = BinaryString::from("ß");
+        let tomorrow = BinaryString::from("αύριο");
+        let year = BinaryString::from("έτος");
+        // two-byte characters
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L198-L200
+        let two_byte_chars = BinaryString::from("𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆");
+        // Changes length when case changes
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
+        let varying_length = BinaryString::from("zȺȾ");
+        let rtl = BinaryString::from("مرحبا الخرشوف");
+
+        let capitalize: fn(&BinaryString) -> BinaryString = |value: &BinaryString| {
+            let mut value = value.clone();
+            value.make_capitalized();
+            value
+        };
+        let lowercase: fn(&BinaryString) -> BinaryString = |value: &BinaryString| {
+            let mut value = value.clone();
+            value.make_lowercase();
+            value
+        };
+        let uppercase: fn(&BinaryString) -> BinaryString = |value: &BinaryString| {
+            let mut value = value.clone();
+            value.make_uppercase();
+            value
+        };
+
+        assert_eq!(capitalize(&sharp_s), "ß");
+        assert_eq!(capitalize(&tomorrow), "αύριο");
+        assert_eq!(capitalize(&year), "έτος");
+        assert_eq!(
+            capitalize(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(capitalize(&varying_length), "ZȺȾ");
+        assert_eq!(capitalize(&rtl), "مرحبا الخرشوف");
+
+        assert_eq!(lowercase(&sharp_s), "ß");
+        assert_eq!(lowercase(&tomorrow), "αύριο");
+        assert_eq!(lowercase(&year), "έτος");
+        assert_eq!(
+            lowercase(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(lowercase(&varying_length), "zȺȾ");
+        assert_eq!(lowercase(&rtl), "مرحبا الخرشوف");
+
+        assert_eq!(uppercase(&sharp_s), "ß");
+        assert_eq!(uppercase(&tomorrow), "αύριο");
+        assert_eq!(uppercase(&year), "έτος");
+        assert_eq!(
+            uppercase(&two_byte_chars),
+            "𐐜 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐙𐐊𐐡𐐝𐐓/𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐋𐐗 𐐒𐐌 𐐜 𐐡𐐀𐐖𐐇𐐤𐐓𐐝 𐐱𐑂 𐑄 𐐔𐐇𐐝𐐀𐐡𐐇𐐓 𐐏𐐆𐐅𐐤𐐆𐐚𐐊𐐡𐐝𐐆𐐓𐐆"
+        );
+        assert_eq!(uppercase(&varying_length), "ZȺȾ");
+        assert_eq!(uppercase(&rtl), "مرحبا الخرشوف");
+    }
+
+    #[test]
+    fn casing_binary_string_invalid_utf8() {
+        let mut s = BinaryString::new(b"\xFF\xFE".to_vec());
+
+        s.make_capitalized();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+
+        s.make_lowercase();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+
+        s.make_uppercase();
+        assert_eq!(s, &b"\xFF\xFE"[..]);
+    }
+
+    #[test]
+    fn casing_binary_string_unicode_replacement_character() {
+        let mut s = BinaryString::from("�");
+        s.make_capitalized();
+        assert_eq!(s, "�");
     }
 }
