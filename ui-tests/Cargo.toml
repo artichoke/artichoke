@@ -10,7 +10,7 @@ license = "MIT"
 [dependencies]
 bstr = { version = "0.2.17", default-features = false, features = ["std"] }
 insta = { version = "1.9.0", features = ["toml"] }
-serde = "1.0.132"
+serde = "1.0.136"
 
 [workspace]
 members = ["."]
