@@ -162,9 +162,9 @@ dependencies = [
 
 [[package]]
 name = "focaccia"
-version = "1.1.0"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdea8da000c6a33ffd516c57b6d2c07080eda0c52ac56d2fb6ccdde71f2f0cde"
+checksum = "81a5987956b8394019bd75c05158075f9c14ffed5bb7f0d100569d224094947e"
 
 [[package]]
 name = "getrandom"
