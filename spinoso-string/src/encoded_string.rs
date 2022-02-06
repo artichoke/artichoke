@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use core::ops::Range;
 use core::slice::SliceIndex;
 
 use bstr::BStr;
@@ -261,6 +262,14 @@ impl EncodedString {
         }
     }
 
+    pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
+        match self {
+            EncodedString::Ascii(n) => n.get_char_slice(range),
+            EncodedString::Binary(n) => n.get_char_slice(range),
+            EncodedString::Utf8(n) => n.get_char_slice(range),
+        }
+    }
+
     pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
     where
         I: SliceIndex<[u8]>,
@@ -339,6 +348,14 @@ impl EncodedString {
             EncodedString::Ascii(n) => n.is_ascii_only(),
             EncodedString::Binary(n) => n.is_ascii_only(),
             EncodedString::Utf8(n) => n.is_ascii_only(),
+        }
+    }
+
+    pub fn is_valid_encoding(&self) -> bool {
+        match self {
+            EncodedString::Ascii(n) => n.is_valid_encoding(),
+            EncodedString::Binary(n) => n.is_valid_encoding(),
+            EncodedString::Utf8(n) => n.is_valid_encoding(),
         }
     }
 

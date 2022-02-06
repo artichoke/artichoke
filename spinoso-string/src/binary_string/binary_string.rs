@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use core::fmt;
+use core::ops::Range;
 use core::slice::SliceIndex;
 
 use bstr::{BStr, ByteSlice, ByteVec};
@@ -158,6 +159,12 @@ impl BinaryString {
         self.get(index..=index)
     }
 
+    pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
+        let Range { start, end } = range;
+
+        self.inner.get(start..end).or_else(|| self.inner.get(start..))
+    }
+
     pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
     where
         I: SliceIndex<[u8]>,
@@ -212,6 +219,10 @@ impl BinaryString {
 impl BinaryString {
     pub fn is_ascii_only(&self) -> bool {
         self.inner.is_ascii()
+    }
+
+    pub fn is_valid_encoding(&self) -> bool {
+        true
     }
 }
 
