@@ -1,3 +1,4 @@
+#[cfg(feature = "std")]
 use std::fmt;
 
 #[allow(clippy::module_name_repetitions)]
@@ -6,7 +7,7 @@ pub enum OrdError {
     /// The first character in a [conventionally UTF-8] `String` is an invalid
     /// UTF-8 byte sequence.
     ///
-    /// [conventionally UTF-8]: Encoding::Utf8
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
     InvalidUtf8ByteSequence,
     /// The given `String` is empty and has no first character.
     EmptyString,
@@ -34,7 +35,7 @@ impl OrdError {
     /// assert_eq!(s.ord(), Ok(0xFF));
     /// ```
     ///
-    /// [conventionally UTF-8]: Encoding::Utf8
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     #[must_use]
     pub const fn invalid_utf8_byte_sequence() -> Self {
@@ -85,6 +86,7 @@ impl OrdError {
     }
 }
 
+#[cfg(feature = "std")]
 impl fmt::Display for OrdError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.message())
