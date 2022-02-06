@@ -1832,86 +1832,9 @@ impl String {
         // the one in `String` where the `size_of::<u8>() == 1`, the max length
         // is `isize::MAX`. This checked add short circuits with `None` if we
         // are given `usize::MAX` as an index, which we could never slice.
-        let end = index.checked_add(1)?;
-        match self.encoding() {
-            // For ASCII and binary encodings, all character operations assume
-            // characters are exactly one byte, so we can fallback to byte
-            // slicing.
-            Encoding::Ascii | Encoding::Binary => self.inner.buf().get(index..end),
-            Encoding::Utf8 => {
-                // Fast path rejection for indexes beyond bytesize, which is
-                // cheap to retrieve.
-                if index >= self.len() {
-                    return None;
-                }
-                // Fast path for trying to treat the conventionally UTF-8 string
-                // as entirely ASCII.
-                //
-                // If the string is either all ASCII or all ASCII for a prefix
-                // of the string that contains the range we wish to slice,
-                // fallback to byte slicing as in the ASCII and binary fast path.
-                let consumed = match self.inner.buf().find_non_ascii_byte() {
-                    None => return self.inner.buf().get(index..end),
-                    Some(idx) if idx >= end => return self.inner.buf().get(index..end),
-                    Some(idx) => idx,
-                };
-                let mut slice = &self.inner.buf()[consumed..];
-                // Count of "characters" remaining until the `index`th character.
-                let mut remaining = index - consumed;
-                // This loop will terminate when either:
-                //
-                // - It counts `index` number of characters.
-                // - It consumes the entire slice when scanning for the
-                //   `index`th character.
-                //
-                // The loop will advance by at least one byte every iteration.
-                loop {
-                    match bstr::decode_utf8(slice) {
-                        // If we've run out of slice while trying to find the
-                        // `index`th character, the lookup fails and we return `nil`.
-                        (_, 0) => return None,
+        index.checked_add(1)?;
 
-                        // The next two arms mean we've reached the `index`th
-                        // character. Either return the next valid UTF-8
-                        // character byte slice or, if the next bytes are an
-                        // invalid UTF-8 sequence, the next byte.
-                        (Some(_), size) if remaining == 0 => return Some(&slice[..size]),
-                        // Size is guaranteed to be positive per the first arm
-                        // which means this slice operation will not panic.
-                        (None, _) if remaining == 0 => return Some(&slice[..1]),
-
-                        // We found a single UTF-8 encoded characterk keep track
-                        // of the count and advance the substring to continue
-                        // decoding.
-                        (Some(_), size) => {
-                            slice = &slice[size..];
-                            remaining -= 1;
-                        }
-
-                        // The next two arms handle the case where we have
-                        // encountered an invalid UTF-8 byte sequence.
-                        //
-                        // In this case, `decode_utf8` will return slices whose
-                        // length is `1..=3`. The length of this slice is the
-                        // number of "characters" we can advance the loop by.
-                        //
-                        // If the invalid UTF-8 sequence contains more bytes
-                        // than we have remaining to get to the `index`th char,
-                        // then the target character is inside the invalid UTF-8
-                        // sequence.
-                        (None, size) if remaining < size => return Some(&slice[remaining..=remaining]),
-                        // If there are more characters remaining than the number
-                        // of bytes yielded in the invalid UTF-8 byte sequence,
-                        // count `size` bytes and advance the slice to continue
-                        // decoding.
-                        (None, size) => {
-                            slice = &slice[size..];
-                            remaining -= size;
-                        }
-                    }
-                }
-            }
-        }
+        self.inner.get_char(index)
     }
 
     /// Returns a substring of characters in the string.

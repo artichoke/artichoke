@@ -253,6 +253,14 @@ impl EncodedString {
         }
     }
 
+    pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
+        match self {
+            EncodedString::Ascii(n) => n.get_char(index),
+            EncodedString::Binary(n) => n.get_char(index),
+            EncodedString::Utf8(n) => n.get_char(index),
+        }
+    }
+
     pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
     where
         I: SliceIndex<[u8]>,

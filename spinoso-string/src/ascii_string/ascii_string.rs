@@ -154,6 +154,10 @@ impl AsciiString {
         self.inner.get(index)
     }
 
+    pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
+        self.get(index..=index)
+    }
+
     pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
     where
         I: SliceIndex<[u8]>,
