@@ -488,6 +488,32 @@ impl String {
         Self::utf8(RawParts::into_vec(raw_parts))
     }
 
+    /// Creates a `String` directly from the raw components of another string
+    /// with the specified encoding.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't
+    /// checked:
+    ///
+    /// - `ptr` needs to have been previously allocated via `String` (at least,
+    ///   it's highly likely to be incorrect if it wasn't).
+    /// - `length` needs to be less than or equal to `capacity`.
+    /// - `capacity` needs to be the `capacity` that the pointer was allocated
+    ///   with.
+    ///
+    /// Violating these may cause problems like corrupting the allocator's
+    /// internal data structures.
+    ///
+    /// The ownership of `ptr` is effectively transferred to the `String` which
+    /// may then deallocate, reallocate or change the contents of memory pointed
+    /// to by the pointer at will. Ensure that nothing else uses the pointer
+    /// after calling this function.
+    #[must_use]
+    pub unsafe fn from_raw_parts_with_encoding(raw_parts: RawParts<u8>, encoding: Encoding) -> Self {
+        Self::with_bytes_and_encoding(RawParts::into_vec(raw_parts), encoding)
+    }
+
     /// Decomposes a `String` into its raw components.
     ///
     /// Returns the raw pointer to the underlying data, the length of the string

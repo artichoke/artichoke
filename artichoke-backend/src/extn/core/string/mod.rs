@@ -59,12 +59,14 @@ impl BoxUnboxVmValue for String {
         let encoding = (encoding_flag >> ENCODING_FLAG_BITPOS) as u8;
         let encoding = Encoding::try_from_flag(encoding).map_err(|_| TypeError::with_message("Unknown encoding"))?;
 
-        let mut s = String::from_raw_parts(RawParts {
-            ptr: ptr.cast::<u8>(),
-            length,
-            capacity,
-        });
-        s.set_encoding(encoding);
+        let s = String::from_raw_parts_with_encoding(
+            RawParts {
+                ptr: ptr.cast::<u8>(),
+                length,
+                capacity,
+            },
+            encoding,
+        );
         let s = UnboxedValueGuard::new(s);
 
         Ok(s)
