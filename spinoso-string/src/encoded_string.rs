@@ -397,16 +397,12 @@ impl EncodedString {
             EncodedString::Utf8(n) => n.ord(),
         }
     }
-}
 
-// Migration functions
-// TODO: Remove these. If it compiles, we've migrated successfully
-impl EncodedString {
-    pub fn buf(&self) -> &Vec<u8> {
+    pub fn ends_with(&self, slice: &[u8]) -> bool {
         match self {
-            EncodedString::Ascii(n) => n.buf(),
-            EncodedString::Binary(n) => n.buf(),
-            EncodedString::Utf8(n) => n.buf(),
+            EncodedString::Ascii(n) => n.ends_with(slice),
+            EncodedString::Binary(n) => n.ends_with(slice),
+            EncodedString::Utf8(n) => n.ends_with(slice),
         }
     }
 }

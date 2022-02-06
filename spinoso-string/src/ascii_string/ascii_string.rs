@@ -253,13 +253,9 @@ impl AsciiString {
         let byte = self.inner.get(0).copied().ok_or_else(OrdError::empty_string)?;
         Ok(u32::from(byte))
     }
-}
 
-// Migration functions
-// TODO: Remove these. If it compiles, we've migrated successfully
-impl AsciiString {
-    pub fn buf(&self) -> &Vec<u8> {
-        &self.inner
+    pub fn ends_with(&self, slice: &[u8]) -> bool {
+        self.inner.ends_with(slice)
     }
 }
 

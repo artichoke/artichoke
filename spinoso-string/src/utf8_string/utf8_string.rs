@@ -485,6 +485,7 @@ impl Utf8String {
     }
 }
 
+// Encoding
 impl Utf8String {
     pub fn is_ascii_only(&self) -> bool {
         self.inner.is_ascii()
@@ -612,13 +613,9 @@ impl Utf8String {
             None => Err(OrdError::invalid_utf8_byte_sequence()),
         }
     }
-}
 
-// Migration functions
-// TODO: Remove these. If it compiles, we've migrated successfully
-impl Utf8String {
-    pub fn buf(&self) -> &Vec<u8> {
-        &self.inner
+    pub fn ends_with(&self, slice: &[u8]) -> bool {
+        self.inner.ends_with(slice)
     }
 }
 

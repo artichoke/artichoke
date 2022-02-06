@@ -1227,7 +1227,7 @@ impl String {
     /// [`String#b`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-b
     #[inline]
     pub fn make_binary(&mut self) {
-        let old = self.inner.buf().clone();
+        let old = self.inner.as_vec().clone();
         self.inner = EncodedString::new(old, Encoding::Binary);
     }
 
@@ -2054,7 +2054,7 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
             string.inner.truncate(truncate_to);
             truncate_to != original_len
         }
-        Some(separator) if string.inner.buf().ends_with(separator) => {
+        Some(separator) if string.inner.ends_with(separator) => {
             let original_len = string.len();
             // This subtraction is guaranteed not to panic because
             // `separator` is a substring of `buf`.
