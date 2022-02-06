@@ -20,6 +20,8 @@ pub enum EncodedString {
 
 // Constructors
 impl EncodedString {
+    #[inline]
+    #[must_use]
     pub fn new(buf: Vec<u8>, encoding: Encoding) -> Self {
         match encoding {
             Encoding::Ascii => Self::Ascii(AsciiString::new(buf)),
@@ -30,6 +32,8 @@ impl EncodedString {
 }
 
 impl EncodedString {
+    #[inline]
+    #[must_use]
     pub fn encoding(&self) -> Encoding {
         match self {
             EncodedString::Ascii(_) => Encoding::Ascii,
@@ -41,8 +45,8 @@ impl EncodedString {
 
 // Defer to Encoded Implementation
 impl EncodedString {
-    // TODO:
-    //   Maybe we don't expost bstr, but rely on formatting instead?
+    #[inline]
+    #[must_use]
     pub fn as_bstr(&self) -> &BStr {
         match self {
             EncodedString::Ascii(n) => n.as_bstr(),
@@ -51,6 +55,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_vec(&self) -> &Vec<u8> {
         match self {
             EncodedString::Ascii(n) => n.as_vec(),
@@ -59,6 +65,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
         match self {
             EncodedString::Ascii(n) => n.as_mut_vec(),
@@ -67,6 +75,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
         match self {
             EncodedString::Ascii(n) => n.into_vec(),
@@ -75,6 +85,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn into_iter(self) -> IntoIter {
         match self {
             EncodedString::Ascii(n) => n.into_iter(),
@@ -83,6 +95,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_slice(&self) -> &[u8] {
         match self {
             EncodedString::Ascii(n) => n.as_slice(),
@@ -91,6 +105,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         match self {
             EncodedString::Ascii(n) => n.as_mut_slice(),
@@ -99,6 +115,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         match self {
             EncodedString::Ascii(n) => n.as_ptr(),
@@ -107,6 +125,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         match self {
             EncodedString::Ascii(n) => n.as_mut_ptr(),
@@ -115,6 +135,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         match self {
             EncodedString::Ascii(n) => n.len(),
@@ -123,6 +145,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub unsafe fn set_len(&mut self, len: usize) {
         match self {
             EncodedString::Ascii(n) => n.set_len(len),
@@ -131,6 +154,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn capacity(&self) -> usize {
         match self {
             EncodedString::Ascii(n) => n.capacity(),
@@ -139,6 +164,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn clear(&mut self) {
         match self {
             EncodedString::Ascii(n) => n.clear(),
@@ -147,6 +173,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         match self {
             EncodedString::Ascii(n) => n.is_empty(),
@@ -155,6 +183,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn truncate(&mut self, len: usize) {
         match self {
             EncodedString::Ascii(n) => n.truncate(len),
@@ -163,6 +192,8 @@ impl EncodedString {
         };
     }
 
+    #[inline]
+    #[must_use]
     pub fn char_len(&self) -> usize {
         match self {
             EncodedString::Ascii(n) => n.char_len(),
@@ -171,6 +202,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn iter(&self) -> Iter<'_> {
         match self {
             EncodedString::Ascii(n) => n.iter(),
@@ -179,6 +212,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_> {
         match self {
             EncodedString::Ascii(n) => n.iter_mut(),
@@ -187,6 +222,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn bytes(&self) -> Bytes<'_> {
         match self {
             EncodedString::Ascii(n) => n.bytes(),
@@ -195,6 +232,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn reserve(&mut self, additional: usize) {
         match self {
             EncodedString::Ascii(n) => n.reserve(additional),
@@ -203,6 +241,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         match self {
             EncodedString::Ascii(n) => n.try_reserve(additional),
@@ -211,6 +250,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         match self {
             EncodedString::Ascii(n) => n.reserve_exact(additional),
@@ -219,6 +259,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         match self {
             EncodedString::Ascii(n) => n.try_reserve_exact(additional),
@@ -227,6 +268,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn shrink_to_fit(&mut self) {
         match self {
             EncodedString::Ascii(n) => n.shrink_to_fit(),
@@ -235,6 +277,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         match self {
             EncodedString::Ascii(n) => n.shrink_to(min_capacity),
@@ -243,6 +286,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn get<I>(&self, index: I) -> Option<&I::Output>
     where
         I: SliceIndex<[u8]>,
@@ -254,6 +299,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
         match self {
             EncodedString::Ascii(n) => n.get_char(index),
@@ -262,6 +309,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
         match self {
             EncodedString::Ascii(n) => n.get_char_slice(range),
@@ -270,6 +319,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
     where
         I: SliceIndex<[u8]>,
@@ -281,6 +332,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
     where
         I: SliceIndex<[u8]>,
@@ -292,6 +345,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
     where
         I: SliceIndex<[u8]>,
@@ -303,6 +358,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn push_byte(&mut self, byte: u8) {
         match self {
             EncodedString::Ascii(n) => n.push_byte(byte),
@@ -311,6 +367,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
         match self {
             EncodedString::Ascii(n) => n.try_push_codepoint(codepoint),
@@ -319,6 +376,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn push_char(&mut self, ch: char) {
         match self {
             EncodedString::Ascii(n) => n.push_char(ch),
@@ -327,6 +385,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn push_str(&mut self, s: &str) {
         match self {
             EncodedString::Ascii(n) => n.push_str(s),
@@ -335,6 +394,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
         match self {
             EncodedString::Ascii(n) => n.extend_from_slice(other),
@@ -343,6 +403,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_ascii_only(&self) -> bool {
         match self {
             EncodedString::Ascii(n) => n.is_ascii_only(),
@@ -351,6 +413,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_valid_encoding(&self) -> bool {
         match self {
             EncodedString::Ascii(n) => n.is_valid_encoding(),
@@ -359,6 +423,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn make_capitalized(&mut self) {
         match self {
             EncodedString::Ascii(n) => n.make_capitalized(),
@@ -367,6 +432,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn make_uppercase(&mut self) {
         match self {
             EncodedString::Ascii(n) => n.make_uppercase(),
@@ -374,6 +440,8 @@ impl EncodedString {
             EncodedString::Utf8(n) => n.make_uppercase(),
         }
     }
+
+    #[inline]
     pub fn make_lowercase(&mut self) {
         match self {
             EncodedString::Ascii(n) => n.make_lowercase(),
@@ -382,6 +450,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn chr(&self) -> &[u8] {
         match self {
             EncodedString::Ascii(n) => n.chr(),
@@ -390,6 +460,7 @@ impl EncodedString {
         }
     }
 
+    #[inline]
     pub fn ord(&self) -> Result<u32, OrdError> {
         match self {
             EncodedString::Ascii(n) => n.ord(),
@@ -398,6 +469,8 @@ impl EncodedString {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn ends_with(&self, slice: &[u8]) -> bool {
         match self {
             EncodedString::Ascii(n) => n.ends_with(slice),

@@ -48,6 +48,8 @@ impl fmt::Debug for Utf8String {
 
 // Debug
 impl Utf8String {
+    #[inline]
+    #[must_use]
     pub fn as_bstr(&self) -> &BStr {
         self.inner.as_bstr()
     }
@@ -55,30 +57,44 @@ impl Utf8String {
 
 // Raw
 impl Utf8String {
+    #[inline]
+    #[must_use]
     pub fn as_vec(&self) -> &Vec<u8> {
         &self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
         &mut self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
         self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_slice(&self) -> &[u8] {
         &self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         &mut self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         self.inner.as_ptr()
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.inner.as_mut_ptr()
     }
@@ -86,18 +102,26 @@ impl Utf8String {
 
 // Core Iterators
 impl Utf8String {
+    #[inline]
+    #[must_use]
     pub fn iter(&self) -> Iter<'_> {
         Iter(self.inner.iter())
     }
 
+    #[inline]
+    #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_> {
         IterMut(self.inner.iter_mut())
     }
 
+    #[inline]
+    #[must_use]
     pub fn bytes(&self) -> Bytes<'_> {
         Bytes(self.inner.iter())
     }
 
+    #[inline]
+    #[must_use]
     pub fn into_iter(self) -> IntoIter {
         IntoIter(self.inner.into_iter())
     }
@@ -105,30 +129,41 @@ impl Utf8String {
 
 // Size and Capacity
 impl Utf8String {
+    #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
+    #[inline]
     pub unsafe fn set_len(&mut self, len: usize) {
         self.inner.set_len(len);
     }
 
+    #[inline]
+    #[must_use]
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
     }
 
+    #[inline]
     pub fn clear(&mut self) {
-        self.inner.clear()
+        self.inner.clear();
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
+    #[inline]
     pub fn truncate(&mut self, len: usize) {
         self.inner.truncate(len);
     }
 
+    #[inline]
+    #[must_use]
     pub fn char_len(&self) -> usize {
         let mut bytes = self.as_slice();
         let tail = if let Some(idx) = bytes.find_non_ascii_byte() {
@@ -155,26 +190,32 @@ impl Utf8String {
 
 // Memory management
 impl Utf8String {
+    #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.inner.reserve(additional);
     }
 
+    #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         self.inner.try_reserve(additional)
     }
 
+    #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.inner.reserve_exact(additional);
     }
 
+    #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         self.inner.try_reserve_exact(additional)
     }
 
+    #[inline]
     pub fn shrink_to_fit(&mut self) {
         self.inner.shrink_to_fit();
     }
 
+    #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.inner.shrink_to(min_capacity);
     }
@@ -182,6 +223,8 @@ impl Utf8String {
 
 // Indexing
 impl Utf8String {
+    #[inline]
+    #[must_use]
     pub fn get<I>(&self, index: I) -> Option<&I::Output>
     where
         I: SliceIndex<[u8]>,
@@ -189,6 +232,8 @@ impl Utf8String {
         self.inner.get(index)
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
         // Fast path rejection for indexes beyond bytesize, which is
         // cheap to retrieve.
@@ -263,6 +308,8 @@ impl Utf8String {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
         let Range { start, end } = range;
         // Fast path for trying to treat the conventionally UTF-8 string
@@ -430,6 +477,8 @@ impl Utf8String {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
     where
         I: SliceIndex<[u8]>,
@@ -437,6 +486,8 @@ impl Utf8String {
         self.inner.get_mut(index)
     }
 
+    #[inline]
+    #[must_use]
     pub unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
     where
         I: SliceIndex<[u8]>,
@@ -444,6 +495,8 @@ impl Utf8String {
         self.inner.get_unchecked(index)
     }
 
+    #[inline]
+    #[must_use]
     pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
     where
         I: SliceIndex<[u8]>,
@@ -454,10 +507,12 @@ impl Utf8String {
 
 // Pushing and popping bytes, codepoints, and strings.
 impl Utf8String {
+    #[inline]
     pub fn push_byte(&mut self, byte: u8) {
         self.inner.push_byte(byte);
     }
 
+    #[inline]
     pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
         let codepoint = if let Ok(codepoint) = u32::try_from(codepoint) {
             codepoint
@@ -472,14 +527,17 @@ impl Utf8String {
         }
     }
 
+    #[inline]
     pub fn push_char(&mut self, ch: char) {
         self.inner.push_char(ch);
     }
 
+    #[inline]
     pub fn push_str(&mut self, s: &str) {
         self.inner.push_str(s);
     }
 
+    #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
         self.inner.extend_from_slice(other);
     }
@@ -487,10 +545,14 @@ impl Utf8String {
 
 // Encoding
 impl Utf8String {
+    #[inline]
+    #[must_use]
     pub fn is_ascii_only(&self) -> bool {
         self.inner.is_ascii()
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_valid_encoding(&self) -> bool {
         if self.is_ascii_only() {
             return true;
@@ -502,6 +564,7 @@ impl Utf8String {
 
 // Casing
 impl Utf8String {
+    #[inline]
     pub fn make_capitalized(&mut self) {
         // This allocation assumes that in the common case, capitalizing
         // and lower-casing `char`s do not change the length of the
@@ -544,6 +607,7 @@ impl Utf8String {
         self.inner = replacement;
     }
 
+    #[inline]
     pub fn make_lowercase(&mut self) {
         // This allocation assumes that in the common case, lower-casing
         // `char`s do not change the length of the `String`.
@@ -568,6 +632,7 @@ impl Utf8String {
         self.inner = replacement;
     }
 
+    #[inline]
     pub fn make_uppercase(&mut self) {
         // This allocation assumes that in the common case, upper-casing
         // `char`s do not change the length of the `String`.
@@ -594,6 +659,8 @@ impl Utf8String {
 }
 
 impl Utf8String {
+    #[inline]
+    #[must_use]
     pub fn chr(&self) -> &[u8] {
         match bstr::decode_utf8(self.inner.as_slice()) {
             (Some(_), size) => &self.inner[..size],
@@ -614,6 +681,8 @@ impl Utf8String {
         }
     }
 
+    #[inline]
+    #[must_use]
     pub fn ends_with(&self, slice: &[u8]) -> bool {
         self.inner.ends_with(slice)
     }

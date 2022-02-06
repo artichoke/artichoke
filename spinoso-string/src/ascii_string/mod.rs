@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod ascii_string;
 mod eq;
 mod impls;

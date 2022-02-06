@@ -87,7 +87,7 @@ impl BorrowMut<[u8]> for Utf8String {
 impl Borrow<Vec<u8>> for Utf8String {
     #[inline]
     fn borrow(&self) -> &Vec<u8> {
-        &self.as_vec()
+        self.as_vec()
     }
 }
 

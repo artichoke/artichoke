@@ -33,6 +33,8 @@ impl fmt::Debug for AsciiString {
 
 // Debug
 impl AsciiString {
+    #[inline]
+    #[must_use]
     pub fn as_bstr(&self) -> &BStr {
         self.inner.as_bstr()
     }
@@ -40,30 +42,44 @@ impl AsciiString {
 
 // Raw Accessors
 impl AsciiString {
+    #[inline]
+    #[must_use]
     pub fn as_vec(&self) -> &Vec<u8> {
         &self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
         &mut self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
         self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_slice(&self) -> &[u8] {
         &self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         &mut self.inner
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         self.inner.as_ptr()
     }
 
+    #[inline]
+    #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.inner.as_mut_ptr()
     }
@@ -71,18 +87,26 @@ impl AsciiString {
 
 // Core Iterators
 impl AsciiString {
+    #[inline]
+    #[must_use]
     pub fn iter(&self) -> Iter<'_> {
         Iter(self.inner.iter())
     }
 
+    #[inline]
+    #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_> {
         IterMut(self.inner.iter_mut())
     }
 
+    #[inline]
+    #[must_use]
     pub fn bytes(&self) -> Bytes<'_> {
         Bytes(self.inner.iter())
     }
 
+    #[inline]
+    #[must_use]
     pub fn into_iter(self) -> IntoIter {
         IntoIter(self.inner.into_iter())
     }
@@ -90,30 +114,41 @@ impl AsciiString {
 
 // Size and Capacity
 impl AsciiString {
+    #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
+    #[inline]
     pub unsafe fn set_len(&mut self, len: usize) {
         self.inner.set_len(len);
     }
 
+    #[inline]
+    #[must_use]
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
     }
 
+    #[inline]
     pub fn clear(&mut self) {
-        self.inner.clear()
+        self.inner.clear();
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
+    #[inline]
     pub fn truncate(&mut self, len: usize) {
         self.inner.truncate(len);
     }
 
+    #[inline]
+    #[must_use]
     pub fn char_len(&self) -> usize {
         self.len()
     }
@@ -121,26 +156,32 @@ impl AsciiString {
 
 // Memory management
 impl AsciiString {
+    #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.inner.reserve(additional);
     }
 
+    #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         self.inner.try_reserve(additional)
     }
 
+    #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.inner.reserve_exact(additional);
     }
 
+    #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         self.inner.try_reserve_exact(additional)
     }
 
+    #[inline]
     pub fn shrink_to_fit(&mut self) {
         self.inner.shrink_to_fit();
     }
 
+    #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.inner.shrink_to(min_capacity);
     }
@@ -148,6 +189,8 @@ impl AsciiString {
 
 // Indexing
 impl AsciiString {
+    #[inline]
+    #[must_use]
     pub fn get<I>(&self, index: I) -> Option<&I::Output>
     where
         I: SliceIndex<[u8]>,
@@ -155,16 +198,22 @@ impl AsciiString {
         self.inner.get(index)
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
         self.get(index..=index)
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
         let Range { start, end } = range;
 
         self.inner.get(start..end).or_else(|| self.inner.get(start..))
     }
 
+    #[inline]
+    #[must_use]
     pub fn get_mut<I>(&mut self, index: I) -> Option<&mut I::Output>
     where
         I: SliceIndex<[u8]>,
@@ -172,6 +221,8 @@ impl AsciiString {
         self.inner.get_mut(index)
     }
 
+    #[inline]
+    #[must_use]
     pub unsafe fn get_unchecked<I>(&self, index: I) -> &I::Output
     where
         I: SliceIndex<[u8]>,
@@ -179,6 +230,8 @@ impl AsciiString {
         self.inner.get_unchecked(index)
     }
 
+    #[inline]
+    #[must_use]
     pub unsafe fn get_unchecked_mut<I>(&mut self, index: I) -> &mut I::Output
     where
         I: SliceIndex<[u8]>,
@@ -189,10 +242,12 @@ impl AsciiString {
 
 // Pushing and popping bytes, codepoints, and strings.
 impl AsciiString {
+    #[inline]
     pub fn push_byte(&mut self, byte: u8) {
         self.inner.push_byte(byte);
     }
 
+    #[inline]
     pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
         if let Ok(byte) = u8::try_from(codepoint) {
             self.push_byte(byte);
@@ -202,14 +257,17 @@ impl AsciiString {
         }
     }
 
+    #[inline]
     pub fn push_char(&mut self, ch: char) {
         self.inner.push_char(ch);
     }
 
+    #[inline]
     pub fn push_str(&mut self, s: &str) {
         self.inner.push_str(s);
     }
 
+    #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
         self.inner.extend_from_slice(other);
     }
@@ -217,10 +275,14 @@ impl AsciiString {
 
 // Encoding
 impl AsciiString {
+    #[inline]
+    #[must_use]
     pub fn is_ascii_only(&self) -> bool {
         self.inner.is_ascii()
     }
 
+    #[inline]
+    #[must_use]
     pub fn is_valid_encoding(&self) -> bool {
         self.is_ascii_only()
     }
@@ -228,6 +290,7 @@ impl AsciiString {
 
 // Casing
 impl AsciiString {
+    #[inline]
     pub fn make_capitalized(&mut self) {
         if let Some((head, tail)) = self.inner.split_first_mut() {
             head.make_ascii_uppercase();
@@ -235,25 +298,32 @@ impl AsciiString {
         }
     }
 
+    #[inline]
     pub fn make_lowercase(&mut self) {
         self.inner.make_ascii_lowercase();
     }
 
+    #[inline]
     pub fn make_uppercase(&mut self) {
         self.inner.make_ascii_uppercase();
     }
 }
 
 impl AsciiString {
+    #[inline]
+    #[must_use]
     pub fn chr(&self) -> &[u8] {
         self.inner.get(0..1).unwrap_or_default()
     }
 
+    #[inline]
     pub fn ord(&self) -> Result<u32, OrdError> {
         let byte = self.inner.get(0).copied().ok_or_else(OrdError::empty_string)?;
         Ok(u32::from(byte))
     }
 
+    #[inline]
+    #[must_use]
     pub fn ends_with(&self, slice: &[u8]) -> bool {
         self.inner.ends_with(slice)
     }

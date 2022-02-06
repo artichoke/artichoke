@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum OrdError {
     /// The first character in a [conventionally UTF-8] `String` is an invalid

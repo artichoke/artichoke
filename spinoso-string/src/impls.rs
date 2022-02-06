@@ -205,7 +205,7 @@ impl AsMut<[u8]> for String {
 impl AsRef<Vec<u8>> for String {
     #[inline]
     fn as_ref(&self) -> &Vec<u8> {
-        &self.inner.as_vec()
+        self.inner.as_vec()
     }
 }
 
@@ -249,7 +249,7 @@ impl BorrowMut<[u8]> for String {
 impl Borrow<Vec<u8>> for String {
     #[inline]
     fn borrow(&self) -> &Vec<u8> {
-        &self.inner.as_vec()
+        self.inner.as_vec()
     }
 }
 

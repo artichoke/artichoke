@@ -130,7 +130,7 @@ impl PartialOrd for String {
 
 impl Ord for String {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.inner.as_slice().cmp(&other.inner.as_slice())
+        self.inner.as_slice().cmp(other.inner.as_slice())
     }
 }
 
