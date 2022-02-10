@@ -12,7 +12,7 @@ keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
 categories = ["filesystem"]
 
 [dependencies]
-same-file = { version = "1, >= 1.0.6", optional = true }
+same-file = { version = "1.0.6", optional = true }
 
 [features]
 default = ["native-file-system-loader", "rubylib-native-file-system-loader"]

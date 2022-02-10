@@ -14,7 +14,7 @@ keywords = ["libm", "math", "no_std", "spinoso"]
 categories = ["algorithms", "no-std"]
 
 [dependencies]
-libm = { version = "0.2", optional = true }
+libm = { version = "0.2.2", optional = true }
 
 [features]
 default = ["full"]
