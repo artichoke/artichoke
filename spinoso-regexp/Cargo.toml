@@ -26,3 +26,7 @@ oniguruma = ["onig"]
 regex-full = ["regex-perf", "regex-unicode"]
 regex-perf = ["regex/perf"]
 regex-unicode = ["regex/unicode"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

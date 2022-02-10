@@ -31,3 +31,7 @@ casecmp = ["focaccia"]
 #
 # Enable runtime SIMD dispatch in `bytecount` and `simdutf8` dependencies.
 std = ["bytecount/runtime-dispatch-simd", "simdutf8/std"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
