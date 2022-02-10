@@ -14,8 +14,8 @@ keywords = ["artichoke", "env", "environ", "spinoso"]
 categories = ["os", "wasm"]
 
 [dependencies]
-bstr = { version = "0.2, >= 0.2.4", default-features = false }
-scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", default-features = false }
+bstr = { version = "0.2.9", default-features = false }
+scolapasta-string-escape = { version = "0.2.0", path = "../scolapasta-string-escape", default-features = false }
 
 [features]
 default = ["system-env"]

@@ -12,31 +12,31 @@ keywords = ["artichoke", "artichoke-ruby", "mruby", "ruby"]
 categories = ["api-bindings"]
 
 [dependencies]
-artichoke-core = { version = "0.10", path = "../artichoke-core" }
-artichoke-load-path = { version = "0.1", path = "../artichoke-load-path", default-features = false }
-bstr = { version = "0.2, >= 0.2.2", default-features = false, features = ["std"] }
-cstr = "0.2, >= 0.2.4"
-intaglio = "1.4"
-onig = { version = "6.3", optional = true, default-features = false }
+artichoke-core = { version = "0.10.0", path = "../artichoke-core" }
+artichoke-load-path = { version = "0.1.0", path = "../artichoke-load-path", default-features = false }
+bstr = { version = "0.2.9", default-features = false, features = ["std"] }
+cstr = "0.2.4"
+intaglio = "1.4.0"
+onig = { version = "6.3.0", optional = true, default-features = false }
 regex = "1"
-scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", default-features = false }
-spinoso-array = { version = "0.7", path = "../spinoso-array", default-features = false }
-spinoso-env = { version = "0.1", path = "../spinoso-env", optional = true, default-features = false }
-spinoso-exception = { version = "0.1", path = "../spinoso-exception" }
-spinoso-math = { version = "0.2", path = "../spinoso-math", optional = true, default-features = false }
-spinoso-random = { version = "0.2", path = "../spinoso-random", optional = true }
-spinoso-regexp = { version = "0.2", path = "../spinoso-regexp", optional = true, default-features = false }
-spinoso-securerandom = { version = "0.1", path = "../spinoso-securerandom", optional = true }
-spinoso-string = { version = "0.11", path = "../spinoso-string" }
-spinoso-symbol = { version = "0.1", path = "../spinoso-symbol" }
-spinoso-time = { version = "0.2", path = "../spinoso-time", optional = true }
+scolapasta-string-escape = { version = "0.2.0", path = "../scolapasta-string-escape", default-features = false }
+spinoso-array = { version = "0.7.0", path = "../spinoso-array", default-features = false }
+spinoso-env = { version = "0.1.1", path = "../spinoso-env", optional = true, default-features = false }
+spinoso-exception = { version = "0.1.0", path = "../spinoso-exception" }
+spinoso-math = { version = "0.2.0", path = "../spinoso-math", optional = true, default-features = false }
+spinoso-random = { version = "0.2.0", path = "../spinoso-random", optional = true }
+spinoso-regexp = { version = "0.2.0", path = "../spinoso-regexp", optional = true, default-features = false }
+spinoso-securerandom = { version = "0.1.0", path = "../spinoso-securerandom", optional = true }
+spinoso-string = { version = "0.11.0", path = "../spinoso-string" }
+spinoso-symbol = { version = "0.1.0", path = "../spinoso-symbol" }
+spinoso-time = { version = "0.2.0", path = "../spinoso-time", optional = true }
 
 [dev-dependencies]
-quickcheck = { version = "1.0", default-features = false }
+quickcheck = { version = "1.0.3", default-features = false }
 
 [build-dependencies]
-cc = "1.0"
-target-lexicon = "0.12"
+cc = "1.0.72"
+target-lexicon = "0.12.3"
 
 [features]
 default = [
