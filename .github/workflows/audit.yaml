@@ -10,24 +10,8 @@ name: Audit
   schedule:
     - cron: "0 0 * * TUE"
 jobs:
-  js:
-    name: Audit JS Dependencies
-    if: false
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install Nodejs toolchain
-        run: npm ci
-
-      - name: npm audit
-        run: npm audit
-
   ruby:
     name: Audit Ruby Dependencies
-    if: true
     runs-on: ubuntu-latest
 
     steps:
@@ -45,7 +29,6 @@ jobs:
 
   rust:
     name: Audit Rust Dependencies
-    if: true
     runs-on: ubuntu-latest
 
     steps:
@@ -55,7 +38,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           profile: minimal
           override: true
 
@@ -66,14 +49,9 @@ jobs:
           fi
 
       - name: Setup cargo-deny
-        run: |
-          release_base="https://github.com/EmbarkStudios/cargo-deny/releases/download"
-          version="0.10.1"
-          cargo_deny_tarball="$release_base/$version/cargo-deny-$version-x86_64-unknown-linux-musl.tar.gz"
-          echo "Downloading cargo-deny $version from $cargo_deny_tarball."
-          curl -sL "$cargo_deny_tarball" | sudo tar xvz -C /usr/local/bin/ --strip-components=1
+        run: curl -sL "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.11.2/cargo-deny-0.11.2-x86_64-unknown-linux-musl.tar.gz" | sudo tar xvz -C /usr/local/bin/ --strip-components=1
 
-      - name: cargo-deny version
+      - name: Show cargo-deny version
         run: cargo-deny --version
 
       - name: Run cargo-deny
