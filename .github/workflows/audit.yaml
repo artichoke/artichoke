@@ -49,7 +49,7 @@ jobs:
           fi
 
       - name: Setup cargo-deny
-        run: curl -sL "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.11.2/cargo-deny-0.11.2-x86_64-unknown-linux-musl.tar.gz" | sudo tar xvz -C /usr/local/bin/ --strip-components=1
+        run: curl -sL "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.11.3/cargo-deny-0.11.3-x86_64-unknown-linux-musl.tar.gz" | sudo tar xvz -C /usr/local/bin/ --strip-components=1
 
       - name: Show cargo-deny version
         run: cargo-deny --version
