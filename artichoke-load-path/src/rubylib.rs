@@ -143,7 +143,7 @@ impl Rubylib {
     pub fn with_rubylib_and_cwd(rubylib: &OsStr, cwd: &Path) -> Option<Self> {
         let load_paths = env::split_paths(rubylib)
             .map(|load_path| cwd.join(&load_path))
-            .collect::<Vec<_>>();
+            .collect::<Box<[_]>>();
 
         // If the `RUBYLIB` env variable is empty or otherwise results in no
         // search paths being resolved, return `None` so the `Rubylib` loader is
@@ -151,9 +151,6 @@ impl Rubylib {
         if load_paths.is_empty() {
             return None;
         }
-        // Using a boxed slice ensures that the load path is immutable and it
-        // saves a little bit of memory.
-        let load_paths = load_paths.into_boxed_slice();
         // Individual source files that the Ruby interpreter requires and loads
         // are called "features" and are exposed in a virtual global variable
         // called `$LOADED_FEATURES` or `$"`.
@@ -174,8 +171,6 @@ impl Rubylib {
     ///
     /// This method is infallible and will return [`None`] for non-existent
     /// paths.
-    ///
-    /// [converted to a byte vec]: crate::ConvertBytesError
     #[inline]
     #[must_use]
     pub fn resolve_file(&self, path: &Path) -> Option<PathBuf> {
