@@ -139,7 +139,7 @@ impl Rubylib {
     pub fn with_rubylib_and_cwd(rubylib: &OsStr, cwd: &Path) -> Option<Self> {
         let load_paths = env::split_paths(&rubylib)
             .map(|load_path| cwd.join(&load_path))
-            .collect::<Vec<_>>();
+            .collect::<Box<[_]>>();
 
         // If the `RUBYLIB` env variable is empty or otherwise results in no
         // search paths being resolved, return `None` so the `Rubylib` loader is
@@ -147,9 +147,6 @@ impl Rubylib {
         if load_paths.is_empty() {
             return None;
         }
-        // Using a boxed slice ensures that the load path is immutable and it
-        // saves a little bit of memory.
-        let load_paths = load_paths.into_boxed_slice();
 
         Some(Self { load_paths })
     }
