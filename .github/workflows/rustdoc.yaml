@@ -30,11 +30,6 @@ jobs:
           profile: minimal
           override: true
 
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-          bundler-cache: true
 
       - name: Build Documentation
         run: cargo doc --workspace
