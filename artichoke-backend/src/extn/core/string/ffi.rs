@@ -270,22 +270,22 @@ unsafe extern "C" fn mrb_str_equal(
     str1: sys::mrb_value,
     str2: sys::mrb_value,
 ) -> sys::mrb_bool {
-    unwrap_interpreter!(mrb, to => guard, or_else = false as sys::mrb_bool);
+    unwrap_interpreter!(mrb, to => guard, or_else = sys::mrb_bool::from(false));
     let mut a = Value::from(str1);
     let mut b = Value::from(str2);
 
     let a = if let Ok(a) = String::unbox_from_value(&mut a, &mut guard) {
         a
     } else {
-        return false as sys::mrb_bool;
+        return sys::mrb_bool::from(false);
     };
     let b = if let Ok(b) = String::unbox_from_value(&mut b, &mut guard) {
         b
     } else {
-        return false as sys::mrb_bool;
+        return sys::mrb_bool::from(false);
     };
 
-    (*a == *b) as sys::mrb_bool
+    sys::mrb_bool::from(*a == *b)
 }
 
 // ```c
