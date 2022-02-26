@@ -48,7 +48,7 @@ use std::path::PathBuf;
 use std::process;
 
 use artichoke::ruby::{self, Args};
-use clap::{App, AppSettings, Arg, ArgMatches};
+use clap::{Arg, ArgMatches, Command};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 type Result<T> = ::std::result::Result<T, Box<dyn error::Error>>;
@@ -135,16 +135,16 @@ fn parse_args() -> Result<Args> {
     Ok(args)
 }
 
-fn app() -> App<'static> {
-    let app = App::new("artichoke");
-    let app = app.about("Artichoke is a Ruby made with Rust.");
-    let app = app.arg(
+fn command() -> Command<'static> {
+    let command = Command::new("artichoke");
+    let command = command.about("Artichoke is a Ruby made with Rust.");
+    let command = command.arg(
         Arg::new("copyright")
             .long("copyright")
             .takes_value(false)
             .help("print the copyright"),
     );
-    let app = app.arg(
+    let command = command.arg(
         Arg::new("commands")
             .short('e')
             .allow_invalid_utf8(true)
@@ -152,17 +152,17 @@ fn app() -> App<'static> {
             .multiple_occurrences(true)
             .help(r"one line of script. Several -e's allowed. Omit [programfile]"),
     );
-    let app = app.arg(
+    let command = command.arg(
         Arg::new("fixture")
             .long("with-fixture")
             .allow_invalid_utf8(true)
             .takes_value(true)
             .help("file whose contents will be read into the `$fixture` global"),
     );
-    let app = app.arg(Arg::new("programfile").allow_invalid_utf8(true));
-    let app = app.arg(Arg::new("arguments").multiple_values(true).allow_invalid_utf8(true));
-    let app = app.version(env!("CARGO_PKG_VERSION"));
-    app.setting(AppSettings::TrailingVarArg)
+    let command = command.arg(Arg::new("programfile").allow_invalid_utf8(true));
+    let command = command.arg(Arg::new("arguments").multiple_values(true).allow_invalid_utf8(true));
+    let command = command.version(env!("CARGO_PKG_VERSION"));
+    command.trailing_var_arg(true)
 }
 
 // NOTE: This routine is plucked from `ripgrep` as of
@@ -185,7 +185,7 @@ where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone,
 {
-    let err = match app().try_get_matches_from(args) {
+    let err = match command().try_get_matches_from(args) {
         Ok(matches) => return Ok(matches),
         Err(err) => err,
     };
