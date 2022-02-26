@@ -364,10 +364,8 @@ impl MatchData {
             Bound::Excluded(end) => self.haystack.get(end..),
             Bound::Unbounded => return &[],
         };
-        post.unwrap_or_else(|| {
-            // if end is out of range, there is no post match
-            &[]
-        })
+        // if end is out of range, there is no post match
+        post.unwrap_or_default()
     }
 
     #[inline]
