@@ -82,7 +82,7 @@ use std::str;
 
 use artichoke::backtrace;
 use artichoke::prelude::*;
-use clap::{App, Arg};
+use clap::{Arg, Command};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 mod model;
@@ -105,9 +105,9 @@ struct Args {
 pub fn main() {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
 
-    let app = App::new("spec-runner");
-    let app = app.about("ruby/spec runner for Artichoke.");
-    let app = app.arg(
+    let command = Command::new("spec-runner");
+    let command = command.about("ruby/spec runner for Artichoke.");
+    let command = command.arg(
         Arg::new("formatter")
             .long("format")
             .short('f')
@@ -118,23 +118,23 @@ pub fn main() {
             .required(false)
             .help("Choose an output formatter"),
     );
-    let app = app.arg(
+    let command = command.arg(
         Arg::new("quiet")
             .long("quiet")
             .short('q')
             .required(false)
             .help("Suppress spec failures when exiting"),
     );
-    let app = app.arg(
+    let command = command.arg(
         Arg::new("config")
             .allow_invalid_utf8(true)
             .takes_value(true)
             .required(true)
             .help("Path to TOML config file"),
     );
-    let app = app.version(env!("CARGO_PKG_VERSION"));
+    let command = command.version(env!("CARGO_PKG_VERSION"));
 
-    let matches = app.get_matches();
+    let matches = command.get_matches();
 
     let formatter = matches
         .value_of_os("formatter")
