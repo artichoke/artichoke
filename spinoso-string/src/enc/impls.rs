@@ -85,6 +85,7 @@ impl AsMut<Vec<u8>> for EncodedString {
 impl Deref for EncodedString {
     type Target = [u8];
 
+    #[allow(clippy::explicit_deref_methods)]
     #[inline]
     fn deref(&self) -> &[u8] {
         match self {
@@ -96,6 +97,7 @@ impl Deref for EncodedString {
 }
 
 impl DerefMut for EncodedString {
+    #[allow(clippy::explicit_deref_methods)]
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
         match self {

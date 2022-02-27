@@ -1,7 +1,7 @@
 mod ascii;
 mod binary;
-mod utf8;
 mod impls;
+mod utf8;
 
 use alloc::vec::Vec;
 use core::ops::Range;

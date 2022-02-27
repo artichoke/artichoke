@@ -74,21 +74,21 @@ impl io::Write for String {
 impl Extend<u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
-        self.inner.extend(iter)
+        self.inner.extend(iter);
     }
 }
 
 impl<'a> Extend<&'a u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a u8>>(&mut self, iter: I) {
-        self.inner.extend(iter)
+        self.inner.extend(iter);
     }
 }
 
 impl<'a> Extend<&'a mut u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a mut u8>>(&mut self, iter: I) {
-        self.inner.extend(iter)
+        self.inner.extend(iter);
     }
 }
 
