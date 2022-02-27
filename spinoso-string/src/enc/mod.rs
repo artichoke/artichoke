@@ -23,6 +23,12 @@ pub enum EncodedString {
     Utf8(Utf8String),
 }
 
+impl Default for EncodedString {
+    fn default() -> Self {
+        Self::Utf8(Utf8String::new(Vec::new()))
+    }
+}
+
 // Constructors
 impl EncodedString {
     #[inline]

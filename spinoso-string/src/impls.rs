@@ -9,12 +9,6 @@ use std::io;
 
 use crate::String;
 
-impl Default for String {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl fmt::Write for String {
     #[inline]
     fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> fmt::Result {
