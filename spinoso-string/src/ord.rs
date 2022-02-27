@@ -1,5 +1,4 @@
-#[cfg(feature = "std")]
-use std::fmt;
+use core::fmt;
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -86,7 +85,6 @@ impl OrdError {
     }
 }
 
-#[cfg(feature = "std")]
 impl fmt::Display for OrdError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.message())
