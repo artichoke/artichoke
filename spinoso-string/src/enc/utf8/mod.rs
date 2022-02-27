@@ -673,6 +673,7 @@ impl Utf8String {
 #[allow(clippy::invisible_characters)]
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
     use alloc::vec::Vec;
     use core::str;
 
@@ -685,14 +686,14 @@ mod tests {
 
     quickcheck! {
         #[allow(clippy::needless_pass_by_value)]
-        fn fuzz_char_len_utf8_contents_utf8_string(contents: alloc::string::String) -> bool {
+        fn fuzz_char_len_utf8_contents_utf8_string(contents: String) -> bool {
             let expected = contents.chars().count();
             let s = Utf8String::new(contents.into_bytes());
             s.char_len() == expected
         }
 
         #[allow(clippy::needless_pass_by_value)]
-        fn fuzz_len_utf8_contents_utf8_string(contents: alloc::string::String) -> bool {
+        fn fuzz_len_utf8_contents_utf8_string(contents: String) -> bool {
             let expected = contents.len();
             let s = Utf8String::new(contents.into_bytes());
             s.len() == expected

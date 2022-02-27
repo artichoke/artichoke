@@ -1,4 +1,5 @@
 use alloc::borrow::Cow;
+use alloc::string::String;
 use alloc::vec::Vec;
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut};
@@ -54,9 +55,9 @@ impl<'a> From<Cow<'a, [u8]>> for AsciiString {
     }
 }
 
-impl From<alloc::string::String> for AsciiString {
+impl From<String> for AsciiString {
     #[inline]
-    fn from(s: alloc::string::String) -> Self {
+    fn from(s: String) -> Self {
         Self::new(s.into_bytes())
     }
 }
