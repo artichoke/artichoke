@@ -16,6 +16,7 @@ use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
+#[derive(Clone)]
 pub enum EncodedString {
     Ascii(AsciiString),
     Binary(BinaryString),

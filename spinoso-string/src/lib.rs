@@ -70,6 +70,7 @@ pub use inspect::Inspect;
 pub use iter::{Bytes, IntoIter, Iter, IterMut};
 pub use ord::OrdError;
 
+#[derive(Clone)]
 pub struct String {
     inner: EncodedString,
 }

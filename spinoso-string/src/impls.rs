@@ -15,12 +15,6 @@ impl Default for String {
     }
 }
 
-impl Clone for String {
-    fn clone(&self) -> Self {
-        Self::with_bytes_and_encoding(self.inner.as_slice().to_vec(), self.encoding())
-    }
-}
-
 impl fmt::Write for String {
     #[inline]
     fn write_fmt(&mut self, args: fmt::Arguments<'_>) -> fmt::Result {
