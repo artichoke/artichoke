@@ -19,7 +19,7 @@ keywords = ["artichoke", "artichoke-ruby", "mri", "cruby", "ruby"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-clap = { version = "3.0", optional = true, default-features = false, features = ["std", "suggestions"] }
+clap = { version = "3.1.2", optional = true, default-features = false, features = ["std", "suggestions"] }
 # XXX: load-bearing unused dependency.
 #
 # `rustyline` improperly declares its minimum version on `log` as `0.4` despite
@@ -31,8 +31,8 @@ clap = { version = "3.0", optional = true, default-features = false, features = 
 #
 # See: https://github.com/kkawakam/rustyline/pull/583
 log = { version = "0.4.5", optional = true }
-rustyline = { version = "9", optional = true, default-features = false }
-termcolor = { version = "1.1", optional = true }
+rustyline = { version = "9.1.2", optional = true, default-features = false }
+termcolor = { version = "1.1.0", optional = true }
 
 [dependencies.artichoke-backend]
 version = "0.6"
@@ -41,7 +41,7 @@ default-features = false
 
 [build-dependencies]
 chrono = { version = "0.4.19", default-features = false, features = ["clock"] }
-target-lexicon = "0.12"
+target-lexicon = "0.12.3"
 
 [[bin]]
 name = "airb"

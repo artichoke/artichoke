@@ -12,8 +12,8 @@ keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
 categories = ["filesystem"]
 
 [dependencies]
-bstr = { version = "0.2, >= 0.2.4", optional = true, default-features = false }
-same-file = { version = "1, >= 1.0.6", optional = true }
+bstr = { version = "0.2.9", optional = true, default-features = false }
+same-file = { version = "1.0.6", optional = true }
 
 [features]
 default = ["rubylib"]

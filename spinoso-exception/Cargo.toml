@@ -14,7 +14,7 @@ keywords = ["error", "exception", "no_std", "spinoso"]
 categories = ["rust-patterns"]
 
 [dependencies]
-scolapasta-string-escape = { version = "0.2", path = "../scolapasta-string-escape", default-features = false }
+scolapasta-string-escape = { version = "0.2.0", path = "../scolapasta-string-escape", default-features = false }
 
 [features]
 default = ["std"]

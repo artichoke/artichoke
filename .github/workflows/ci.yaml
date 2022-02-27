@@ -29,12 +29,6 @@ jobs:
         with:
           profile: minimal
 
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-          bundler-cache: true
-
       - uses: Swatinem/rust-cache@v1
         with:
           key: v3
@@ -70,12 +64,6 @@ jobs:
           toolchain: nightly
           profile: minimal
           components: rustfmt
-
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
 
@@ -115,12 +103,6 @@ jobs:
         with:
           profile: minimal
 
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-          bundler-cache: true
-
       - uses: Swatinem/rust-cache@v1
         with:
           working-directory: "fuzz"
@@ -151,12 +133,6 @@ jobs:
           toolchain: nightly
           profile: minimal
           components: rustfmt
-
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
         with:
@@ -200,12 +176,6 @@ jobs:
           toolchain: nightly
           profile: minimal
           components: rustfmt
-
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
         with:
@@ -252,12 +222,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-          bundler-cache: true
 
       - uses: Swatinem/rust-cache@v1
 
