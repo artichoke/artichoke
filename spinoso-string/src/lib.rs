@@ -1249,7 +1249,7 @@ impl String {
     /// [`String#b`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-b
     #[inline]
     pub fn make_binary(&mut self) {
-        let old = self.inner.as_vec().clone();
+        let old = self.inner.as_slice().to_vec();
         self.inner = EncodedString::new(old, Encoding::Binary);
     }
 

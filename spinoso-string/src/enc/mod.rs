@@ -1,6 +1,7 @@
 mod ascii;
 mod binary;
 mod utf8;
+mod impls;
 
 use alloc::vec::Vec;
 use core::ops::Range;
@@ -48,26 +49,6 @@ impl EncodedString {
 
 // Defer to Encoded Implementation
 impl EncodedString {
-    #[inline]
-    #[must_use]
-    pub fn as_vec(&self) -> &Vec<u8> {
-        match self {
-            EncodedString::Ascii(n) => n.as_vec(),
-            EncodedString::Binary(n) => n.as_vec(),
-            EncodedString::Utf8(n) => n.as_vec(),
-        }
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
-        match self {
-            EncodedString::Ascii(n) => n.as_mut_vec(),
-            EncodedString::Binary(n) => n.as_mut_vec(),
-            EncodedString::Utf8(n) => n.as_mut_vec(),
-        }
-    }
-
     #[inline]
     #[must_use]
     pub fn into_vec(self) -> Vec<u8> {

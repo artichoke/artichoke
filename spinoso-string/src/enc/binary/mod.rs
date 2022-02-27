@@ -37,18 +37,6 @@ impl fmt::Debug for BinaryString {
 impl BinaryString {
     #[inline]
     #[must_use]
-    pub fn as_vec(&self) -> &Vec<u8> {
-        &self.inner
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn as_mut_vec(&mut self) -> &mut Vec<u8> {
-        &mut self.inner
-    }
-
-    #[inline]
-    #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
         self.inner
     }

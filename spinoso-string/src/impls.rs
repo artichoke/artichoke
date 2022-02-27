@@ -17,7 +17,7 @@ impl Default for String {
 
 impl Clone for String {
     fn clone(&self) -> Self {
-        Self::with_bytes_and_encoding(self.inner.as_vec().clone(), self.encoding())
+        Self::with_bytes_and_encoding(self.inner.as_slice().to_vec(), self.encoding())
     }
 }
 
@@ -74,21 +74,21 @@ impl io::Write for String {
 impl Extend<u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
-        self.inner.as_mut_vec().extend(iter.into_iter());
+        self.inner.extend(iter)
     }
 }
 
 impl<'a> Extend<&'a u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a u8>>(&mut self, iter: I) {
-        self.inner.as_mut_vec().extend(iter.into_iter().copied());
+        self.inner.extend(iter)
     }
 }
 
 impl<'a> Extend<&'a mut u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a mut u8>>(&mut self, iter: I) {
-        self.inner.as_mut_vec().extend(iter.into_iter().map(|byte| *byte));
+        self.inner.extend(iter)
     }
 }
 
@@ -184,35 +184,35 @@ impl From<&str> for String {
 impl From<String> for Vec<u8> {
     #[inline]
     fn from(s: String) -> Self {
-        s.inner.as_vec().clone()
+        s.inner.as_slice().to_vec()
     }
 }
 
 impl AsRef<[u8]> for String {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        self.inner.as_slice()
+        self.inner.as_ref()
     }
 }
 
 impl AsMut<[u8]> for String {
     #[inline]
     fn as_mut(&mut self) -> &mut [u8] {
-        self.inner.as_mut_slice()
+        self.inner.as_mut()
     }
 }
 
 impl AsRef<Vec<u8>> for String {
     #[inline]
     fn as_ref(&self) -> &Vec<u8> {
-        self.inner.as_vec()
+        self.inner.as_ref()
     }
 }
 
 impl AsMut<Vec<u8>> for String {
     #[inline]
     fn as_mut(&mut self) -> &mut Vec<u8> {
-        self.inner.as_mut_vec()
+        self.inner.as_mut()
     }
 }
 
@@ -249,14 +249,14 @@ impl BorrowMut<[u8]> for String {
 impl Borrow<Vec<u8>> for String {
     #[inline]
     fn borrow(&self) -> &Vec<u8> {
-        self.inner.as_vec()
+        self.inner.borrow()
     }
 }
 
 impl BorrowMut<Vec<u8>> for String {
     #[inline]
     fn borrow_mut(&mut self) -> &mut Vec<u8> {
-        self.inner.as_mut_vec()
+        self.inner.borrow_mut()
     }
 }
 

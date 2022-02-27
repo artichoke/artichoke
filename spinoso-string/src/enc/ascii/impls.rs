@@ -5,6 +5,27 @@ use core::ops::{Deref, DerefMut};
 
 use super::AsciiString;
 
+impl Extend<u8> for AsciiString {
+    #[inline]
+    fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
+        self.inner.extend(iter.into_iter());
+    }
+}
+
+impl<'a> Extend<&'a u8> for AsciiString {
+    #[inline]
+    fn extend<I: IntoIterator<Item = &'a u8>>(&mut self, iter: I) {
+        self.inner.extend(iter.into_iter().copied());
+    }
+}
+
+impl<'a> Extend<&'a mut u8> for AsciiString {
+    #[inline]
+    fn extend<I: IntoIterator<Item = &'a mut u8>>(&mut self, iter: I) {
+        self.inner.extend(iter.into_iter().map(|byte| *byte));
+    }
+}
+
 impl From<Vec<u8>> for AsciiString {
     #[inline]
     fn from(content: Vec<u8>) -> Self {
@@ -54,6 +75,34 @@ impl From<AsciiString> for Vec<u8> {
     }
 }
 
+impl AsRef<[u8]> for AsciiString {
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.inner.as_slice()
+    }
+}
+
+impl AsMut<[u8]> for AsciiString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.inner.as_mut_slice()
+    }
+}
+
+impl AsRef<Vec<u8>> for AsciiString {
+    #[inline]
+    fn as_ref(&self) -> &Vec<u8> {
+        &self.inner
+    }
+}
+
+impl AsMut<Vec<u8>> for AsciiString {
+    #[inline]
+    fn as_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.inner
+    }
+}
+
 impl Deref for AsciiString {
     type Target = [u8];
 
@@ -87,13 +136,13 @@ impl BorrowMut<[u8]> for AsciiString {
 impl Borrow<Vec<u8>> for AsciiString {
     #[inline]
     fn borrow(&self) -> &Vec<u8> {
-        self.as_vec()
+        &self.inner
     }
 }
 
 impl BorrowMut<Vec<u8>> for AsciiString {
     #[inline]
     fn borrow_mut(&mut self) -> &mut Vec<u8> {
-        self.as_mut_vec()
+        &mut self.inner
     }
 }
