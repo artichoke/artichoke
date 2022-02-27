@@ -1,3 +1,6 @@
+mod eq;
+mod impls;
+
 use alloc::vec::Vec;
 use core::fmt;
 use core::ops::Range;
@@ -10,6 +13,7 @@ use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Default, Clone)]
 pub struct AsciiString {
     inner: Vec<u8>,

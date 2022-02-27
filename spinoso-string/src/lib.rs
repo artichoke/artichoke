@@ -50,24 +50,21 @@ pub use focaccia::CaseFold;
 #[doc(inline)]
 pub use raw_parts::RawParts;
 
-mod ascii_string;
-mod binary_string;
 mod center;
 mod chars;
 mod codepoints;
-mod encoded_string;
+mod enc;
 mod encoding;
 mod eq;
 mod impls;
 mod inspect;
 mod iter;
 mod ord;
-mod utf8_string;
 
 pub use center::{Center, CenterError};
 pub use chars::Chars;
 pub use codepoints::{Codepoints, CodepointsError, InvalidCodepointError};
-use encoded_string::EncodedString;
+use enc::EncodedString;
 pub use encoding::{Encoding, InvalidEncodingError};
 pub use inspect::Inspect;
 pub use iter::{Bytes, IntoIter, Iter, IterMut};

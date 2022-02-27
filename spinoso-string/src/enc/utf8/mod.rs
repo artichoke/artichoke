@@ -1,3 +1,6 @@
+mod eq;
+mod impls;
+
 use alloc::vec::Vec;
 use core::fmt;
 use core::hash::{Hash, Hasher};
@@ -11,6 +14,7 @@ use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Default, Clone)]
 pub struct Utf8String {
     inner: Vec<u8>,

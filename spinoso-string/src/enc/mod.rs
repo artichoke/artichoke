@@ -1,16 +1,20 @@
+mod ascii;
+mod binary;
+mod utf8;
+
 use alloc::vec::Vec;
 use core::ops::Range;
 use core::slice::SliceIndex;
 
+use ascii::AsciiString;
+use binary::BinaryString;
 use bstr::BStr;
+use utf8::Utf8String;
 
-use crate::ascii_string::AsciiString;
-use crate::binary_string::BinaryString;
 use crate::codepoints::InvalidCodepointError;
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
-use crate::utf8_string::Utf8String;
 
 pub enum EncodedString {
     Ascii(AsciiString),
