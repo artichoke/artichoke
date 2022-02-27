@@ -109,14 +109,14 @@ impl Deref for AsciiString {
 
     #[inline]
     fn deref(&self) -> &[u8] {
-        &*self.as_slice()
+        self.as_slice()
     }
 }
 
 impl DerefMut for AsciiString {
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
-        &mut *self.as_mut_slice()
+        self.as_mut_slice()
     }
 }
 
