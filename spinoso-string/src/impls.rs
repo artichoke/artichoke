@@ -172,7 +172,7 @@ impl From<&str> for String {
 impl From<String> for Vec<u8> {
     #[inline]
     fn from(s: String) -> Self {
-        s.inner.as_slice().to_vec()
+        s.inner.into_vec()
     }
 }
 
@@ -209,14 +209,14 @@ impl Deref for String {
 
     #[inline]
     fn deref(&self) -> &[u8] {
-        &*self.inner.as_slice()
+        self.inner.as_slice()
     }
 }
 
 impl DerefMut for String {
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
-        &mut *self.inner.as_mut_slice()
+        self.inner.as_mut_slice()
     }
 }
 
