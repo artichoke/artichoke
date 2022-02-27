@@ -59,13 +59,13 @@ impl Utf8String {
     #[inline]
     #[must_use]
     pub fn as_slice(&self) -> &[u8] {
-        &self.inner
+        self.inner.as_slice()
     }
 
     #[inline]
     #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
-        &mut self.inner
+        self.inner.as_mut_slice()
     }
 
     #[inline]
