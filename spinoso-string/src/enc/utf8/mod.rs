@@ -1,6 +1,7 @@
 mod eq;
 mod impls;
 
+use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
 use core::fmt;
 use core::hash::{Hash, Hasher};
@@ -177,7 +178,7 @@ impl Utf8String {
     }
 
     #[inline]
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.inner.try_reserve(additional)
     }
 
@@ -187,7 +188,7 @@ impl Utf8String {
     }
 
     #[inline]
-    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.inner.try_reserve_exact(additional)
     }
 

@@ -1,6 +1,7 @@
 mod eq;
 mod impls;
 
+use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
 use core::fmt;
 use core::ops::Range;
@@ -142,7 +143,7 @@ impl BinaryString {
     }
 
     #[inline]
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.inner.try_reserve(additional)
     }
 
@@ -152,7 +153,7 @@ impl BinaryString {
     }
 
     #[inline]
-    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.inner.try_reserve_exact(additional)
     }
 
