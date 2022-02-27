@@ -8,7 +8,6 @@ use core::slice::SliceIndex;
 
 use ascii::AsciiString;
 use binary::BinaryString;
-use bstr::BStr;
 use utf8::Utf8String;
 
 use crate::codepoints::InvalidCodepointError;
@@ -49,16 +48,6 @@ impl EncodedString {
 
 // Defer to Encoded Implementation
 impl EncodedString {
-    #[inline]
-    #[must_use]
-    pub fn as_bstr(&self) -> &BStr {
-        match self {
-            EncodedString::Ascii(n) => n.as_bstr(),
-            EncodedString::Binary(n) => n.as_bstr(),
-            EncodedString::Utf8(n) => n.as_bstr(),
-        }
-    }
-
     #[inline]
     #[must_use]
     pub fn as_vec(&self) -> &Vec<u8> {

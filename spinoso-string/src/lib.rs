@@ -77,7 +77,7 @@ pub struct String {
 impl fmt::Debug for String {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("String")
-            .field("buf", &self.inner.as_bstr())
+            .field("buf", &self.inner.as_slice().as_bstr())
             .field("encoding", &self.inner.encoding())
             .finish()
     }

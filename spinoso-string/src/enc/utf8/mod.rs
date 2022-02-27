@@ -7,10 +7,9 @@ use core::hash::{Hash, Hasher};
 use core::ops::Range;
 use core::slice::SliceIndex;
 
-use bstr::{BStr, ByteSlice, ByteVec};
+use bstr::{ByteSlice, ByteVec};
 
 use crate::codepoints::InvalidCodepointError;
-use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
@@ -44,18 +43,8 @@ impl Utf8String {
 impl fmt::Debug for Utf8String {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Utf8String")
-            .field("buf", &self.as_bstr())
-            .field("encoding", &Encoding::Utf8)
+            .field("buf", &self.inner.as_bstr())
             .finish()
-    }
-}
-
-// Debug
-impl Utf8String {
-    #[inline]
-    #[must_use]
-    pub fn as_bstr(&self) -> &BStr {
-        self.inner.as_bstr()
     }
 }
 

@@ -6,10 +6,9 @@ use core::fmt;
 use core::ops::Range;
 use core::slice::SliceIndex;
 
-use bstr::{BStr, ByteSlice, ByteVec};
+use bstr::{ByteSlice, ByteVec};
 
 use crate::codepoints::InvalidCodepointError;
-use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
@@ -28,19 +27,9 @@ impl BinaryString {
 
 impl fmt::Debug for BinaryString {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Utf8String")
-            .field("buf", &self.as_bstr())
-            .field("encoding", &Encoding::Binary)
+        f.debug_struct("BinaryString")
+            .field("buf", &self.inner.as_bstr())
             .finish()
-    }
-}
-
-// Debug
-impl BinaryString {
-    #[inline]
-    #[must_use]
-    pub fn as_bstr(&self) -> &BStr {
-        self.inner.as_bstr()
     }
 }
 
