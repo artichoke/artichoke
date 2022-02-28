@@ -209,28 +209,28 @@ impl Deref for String {
 
     #[inline]
     fn deref(&self) -> &[u8] {
-        self.inner.as_slice()
+        self.inner.deref()
     }
 }
 
 impl DerefMut for String {
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
-        self.inner.as_mut_slice()
+        self.inner.deref_mut()
     }
 }
 
 impl Borrow<[u8]> for String {
     #[inline]
     fn borrow(&self) -> &[u8] {
-        self.inner.as_slice()
+        self.inner.borrow()
     }
 }
 
 impl BorrowMut<[u8]> for String {
     #[inline]
     fn borrow_mut(&mut self) -> &mut [u8] {
-        self.inner.as_mut_slice()
+        self.inner.borrow_mut()
     }
 }
 
