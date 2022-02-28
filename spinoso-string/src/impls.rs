@@ -35,27 +35,27 @@ impl fmt::Write for String {
 impl io::Write for String {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.inner.as_mut_slice().write(buf)
+        self.inner.write(buf)
     }
 
     #[inline]
     fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.inner.as_mut_slice().write_all(buf)
+        self.inner.write_all(buf)
     }
 
     #[inline]
     fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> io::Result<()> {
-        self.inner.as_mut_slice().write_fmt(fmt)
+        self.inner.write_fmt(fmt)
     }
 
     #[inline]
     fn write_vectored(&mut self, bufs: &[io::IoSlice<'_>]) -> io::Result<usize> {
-        self.inner.as_mut_slice().write_vectored(bufs)
+        self.inner.write_vectored(bufs)
     }
 
     #[inline]
     fn flush(&mut self) -> io::Result<()> {
-        self.inner.as_mut_slice().flush()
+        self.inner.flush()
     }
 }
 

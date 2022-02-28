@@ -2,9 +2,40 @@ use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::borrow::{Borrow, BorrowMut};
+use core::fmt::Arguments;
 use core::ops::{Deref, DerefMut};
+#[cfg(feature = "std")]
+use std::io::{IoSlice, Result, Write};
 
 use super::Utf8String;
+
+#[cfg(feature = "std")]
+impl Write for Utf8String {
+    #[inline]
+    fn write(&mut self, buf: &[u8]) -> Result<usize> {
+        self.inner.write(buf)
+    }
+
+    #[inline]
+    fn write_all(&mut self, buf: &[u8]) -> Result<()> {
+        self.inner.write_all(buf)
+    }
+
+    #[inline]
+    fn write_fmt(&mut self, fmt: Arguments<'_>) -> Result<()> {
+        self.inner.write_fmt(fmt)
+    }
+
+    #[inline]
+    fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> Result<usize> {
+        self.inner.write_vectored(bufs)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> Result<()> {
+        self.inner.flush()
+    }
+}
 
 impl Extend<u8> for Utf8String {
     #[inline]
