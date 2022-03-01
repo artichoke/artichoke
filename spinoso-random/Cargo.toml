@@ -16,7 +16,7 @@ categories = ["algorithms", "no-std"]
 [dependencies]
 getrandom = { version = "0.2.0", default-features = false }
 libm = "0.2.2"
-rand = { version = "0.8.0", optional = true, default-features = false }
+rand = { version = "0.8.5", optional = true, default-features = false }
 # 0.6.1 is vulnerable to underfilling a buffer.
 #
 # https://rustsec.org/advisories/RUSTSEC-2021-0023
