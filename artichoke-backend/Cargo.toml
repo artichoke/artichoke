@@ -35,7 +35,7 @@ spinoso-time = { version = "0.2.0", path = "../spinoso-time", optional = true }
 quickcheck = { version = "1.0.3", default-features = false }
 
 [build-dependencies]
-cc = "1.0.72"
+cc = "1.0.73"
 target-lexicon = "0.12.3"
 
 [features]
