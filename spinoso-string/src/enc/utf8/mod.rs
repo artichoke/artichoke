@@ -646,7 +646,6 @@ impl Utf8String {
         let (ch, size) = bstr::decode_utf8(self.inner.as_slice());
         match ch {
             // All `char`s are valid `u32`s
-            // https://github.com/rust-lang/rust/blob/1.48.0/library/core/src/char/convert.rs#L12-L20
             Some(ch) => Ok(u32::from(ch)),
             None if size == 0 => Err(OrdError::empty_string()),
             None => Err(OrdError::invalid_utf8_byte_sequence()),
