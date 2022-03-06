@@ -219,6 +219,7 @@ impl Utf8String {
             Some(idx) => idx,
         };
         let mut slice = &self.inner[consumed..];
+        // TODO: See if we can use `get_unchcked` as implmented in`fn char_len`
         // Count of "characters" remaining until the `index`th character.
         let mut remaining = index - consumed;
         // This loop will terminate when either:
@@ -278,6 +279,7 @@ impl Utf8String {
     #[inline]
     #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
+        // TODO: use fast path rejection from `get_char` here too
         let Range { start, end } = range;
         // Fast path for trying to treat the conventionally UTF-8 string
         // as entirely ASCII.
@@ -531,6 +533,9 @@ impl Utf8String {
 
 // Casing
 impl Utf8String {
+    // TODO: Use roe for case changing operations. UTF-8 case changing needs to
+    //       be parameterized on the casefolding strategy to account for e.g.
+    //       Turkic or ASCII-only modes
     #[inline]
     pub fn make_capitalized(&mut self) {
         // This allocation assumes that in the common case, capitalizing
