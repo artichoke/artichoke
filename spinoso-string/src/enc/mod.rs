@@ -60,9 +60,9 @@ impl EncodedString {
     #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
         match self {
-            EncodedString::Ascii(n) => n.into_vec(),
-            EncodedString::Binary(n) => n.into_vec(),
-            EncodedString::Utf8(n) => n.into_vec(),
+            EncodedString::Ascii(inner) => inner.into_vec(),
+            EncodedString::Binary(inner) => inner.into_vec(),
+            EncodedString::Utf8(inner) => inner.into_vec(),
         }
     }
 
@@ -70,9 +70,9 @@ impl EncodedString {
     #[must_use]
     pub fn into_iter(self) -> IntoIter {
         match self {
-            EncodedString::Ascii(n) => n.into_iter(),
-            EncodedString::Binary(n) => n.into_iter(),
-            EncodedString::Utf8(n) => n.into_iter(),
+            EncodedString::Ascii(inner) => inner.into_iter(),
+            EncodedString::Binary(inner) => inner.into_iter(),
+            EncodedString::Utf8(inner) => inner.into_iter(),
         }
     }
 
@@ -80,9 +80,9 @@ impl EncodedString {
     #[must_use]
     pub fn as_slice(&self) -> &[u8] {
         match self {
-            EncodedString::Ascii(n) => n.as_slice(),
-            EncodedString::Binary(n) => n.as_slice(),
-            EncodedString::Utf8(n) => n.as_slice(),
+            EncodedString::Ascii(inner) => inner.as_slice(),
+            EncodedString::Binary(inner) => inner.as_slice(),
+            EncodedString::Utf8(inner) => inner.as_slice(),
         }
     }
 
@@ -90,9 +90,9 @@ impl EncodedString {
     #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         match self {
-            EncodedString::Ascii(n) => n.as_mut_slice(),
-            EncodedString::Binary(n) => n.as_mut_slice(),
-            EncodedString::Utf8(n) => n.as_mut_slice(),
+            EncodedString::Ascii(inner) => inner.as_mut_slice(),
+            EncodedString::Binary(inner) => inner.as_mut_slice(),
+            EncodedString::Utf8(inner) => inner.as_mut_slice(),
         }
     }
 
@@ -100,9 +100,9 @@ impl EncodedString {
     #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         match self {
-            EncodedString::Ascii(n) => n.as_ptr(),
-            EncodedString::Binary(n) => n.as_ptr(),
-            EncodedString::Utf8(n) => n.as_ptr(),
+            EncodedString::Ascii(inner) => inner.as_ptr(),
+            EncodedString::Binary(inner) => inner.as_ptr(),
+            EncodedString::Utf8(inner) => inner.as_ptr(),
         }
     }
 
@@ -110,9 +110,9 @@ impl EncodedString {
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         match self {
-            EncodedString::Ascii(n) => n.as_mut_ptr(),
-            EncodedString::Binary(n) => n.as_mut_ptr(),
-            EncodedString::Utf8(n) => n.as_mut_ptr(),
+            EncodedString::Ascii(inner) => inner.as_mut_ptr(),
+            EncodedString::Binary(inner) => inner.as_mut_ptr(),
+            EncodedString::Utf8(inner) => inner.as_mut_ptr(),
         }
     }
 
@@ -120,18 +120,18 @@ impl EncodedString {
     #[must_use]
     pub fn len(&self) -> usize {
         match self {
-            EncodedString::Ascii(n) => n.len(),
-            EncodedString::Binary(n) => n.len(),
-            EncodedString::Utf8(n) => n.len(),
+            EncodedString::Ascii(inner) => inner.len(),
+            EncodedString::Binary(inner) => inner.len(),
+            EncodedString::Utf8(inner) => inner.len(),
         }
     }
 
     #[inline]
     pub unsafe fn set_len(&mut self, len: usize) {
         match self {
-            EncodedString::Ascii(n) => n.set_len(len),
-            EncodedString::Binary(n) => n.set_len(len),
-            EncodedString::Utf8(n) => n.set_len(len),
+            EncodedString::Ascii(inner) => inner.set_len(len),
+            EncodedString::Binary(inner) => inner.set_len(len),
+            EncodedString::Utf8(inner) => inner.set_len(len),
         }
     }
 
@@ -139,18 +139,18 @@ impl EncodedString {
     #[must_use]
     pub fn capacity(&self) -> usize {
         match self {
-            EncodedString::Ascii(n) => n.capacity(),
-            EncodedString::Binary(n) => n.capacity(),
-            EncodedString::Utf8(n) => n.capacity(),
+            EncodedString::Ascii(inner) => inner.capacity(),
+            EncodedString::Binary(inner) => inner.capacity(),
+            EncodedString::Utf8(inner) => inner.capacity(),
         }
     }
 
     #[inline]
     pub fn clear(&mut self) {
         match self {
-            EncodedString::Ascii(n) => n.clear(),
-            EncodedString::Binary(n) => n.clear(),
-            EncodedString::Utf8(n) => n.clear(),
+            EncodedString::Ascii(inner) => inner.clear(),
+            EncodedString::Binary(inner) => inner.clear(),
+            EncodedString::Utf8(inner) => inner.clear(),
         }
     }
 
@@ -158,18 +158,18 @@ impl EncodedString {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         match self {
-            EncodedString::Ascii(n) => n.is_empty(),
-            EncodedString::Binary(n) => n.is_empty(),
-            EncodedString::Utf8(n) => n.is_empty(),
+            EncodedString::Ascii(inner) => inner.is_empty(),
+            EncodedString::Binary(inner) => inner.is_empty(),
+            EncodedString::Utf8(inner) => inner.is_empty(),
         }
     }
 
     #[inline]
     pub fn truncate(&mut self, len: usize) {
         match self {
-            EncodedString::Ascii(n) => n.truncate(len),
-            EncodedString::Binary(n) => n.truncate(len),
-            EncodedString::Utf8(n) => n.truncate(len),
+            EncodedString::Ascii(inner) => inner.truncate(len),
+            EncodedString::Binary(inner) => inner.truncate(len),
+            EncodedString::Utf8(inner) => inner.truncate(len),
         };
     }
 
@@ -177,9 +177,9 @@ impl EncodedString {
     #[must_use]
     pub fn char_len(&self) -> usize {
         match self {
-            EncodedString::Ascii(n) => n.char_len(),
-            EncodedString::Binary(n) => n.char_len(),
-            EncodedString::Utf8(n) => n.char_len(),
+            EncodedString::Ascii(inner) => inner.char_len(),
+            EncodedString::Binary(inner) => inner.char_len(),
+            EncodedString::Utf8(inner) => inner.char_len(),
         }
     }
 
@@ -187,9 +187,9 @@ impl EncodedString {
     #[must_use]
     pub fn iter(&self) -> Iter<'_> {
         match self {
-            EncodedString::Ascii(n) => n.iter(),
-            EncodedString::Binary(n) => n.iter(),
-            EncodedString::Utf8(n) => n.iter(),
+            EncodedString::Ascii(inner) => inner.iter(),
+            EncodedString::Binary(inner) => inner.iter(),
+            EncodedString::Utf8(inner) => inner.iter(),
         }
     }
 
@@ -197,9 +197,9 @@ impl EncodedString {
     #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_> {
         match self {
-            EncodedString::Ascii(n) => n.iter_mut(),
-            EncodedString::Binary(n) => n.iter_mut(),
-            EncodedString::Utf8(n) => n.iter_mut(),
+            EncodedString::Ascii(inner) => inner.iter_mut(),
+            EncodedString::Binary(inner) => inner.iter_mut(),
+            EncodedString::Utf8(inner) => inner.iter_mut(),
         }
     }
 
@@ -207,63 +207,63 @@ impl EncodedString {
     #[must_use]
     pub fn bytes(&self) -> Bytes<'_> {
         match self {
-            EncodedString::Ascii(n) => n.bytes(),
-            EncodedString::Binary(n) => n.bytes(),
-            EncodedString::Utf8(n) => n.bytes(),
+            EncodedString::Ascii(inner) => inner.bytes(),
+            EncodedString::Binary(inner) => inner.bytes(),
+            EncodedString::Utf8(inner) => inner.bytes(),
         }
     }
 
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         match self {
-            EncodedString::Ascii(n) => n.reserve(additional),
-            EncodedString::Binary(n) => n.reserve(additional),
-            EncodedString::Utf8(n) => n.reserve(additional),
+            EncodedString::Ascii(inner) => inner.reserve(additional),
+            EncodedString::Binary(inner) => inner.reserve(additional),
+            EncodedString::Utf8(inner) => inner.reserve(additional),
         }
     }
 
     #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         match self {
-            EncodedString::Ascii(n) => n.try_reserve(additional),
-            EncodedString::Binary(n) => n.try_reserve(additional),
-            EncodedString::Utf8(n) => n.try_reserve(additional),
+            EncodedString::Ascii(inner) => inner.try_reserve(additional),
+            EncodedString::Binary(inner) => inner.try_reserve(additional),
+            EncodedString::Utf8(inner) => inner.try_reserve(additional),
         }
     }
 
     #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         match self {
-            EncodedString::Ascii(n) => n.reserve_exact(additional),
-            EncodedString::Binary(n) => n.reserve_exact(additional),
-            EncodedString::Utf8(n) => n.reserve_exact(additional),
+            EncodedString::Ascii(inner) => inner.reserve_exact(additional),
+            EncodedString::Binary(inner) => inner.reserve_exact(additional),
+            EncodedString::Utf8(inner) => inner.reserve_exact(additional),
         }
     }
 
     #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
         match self {
-            EncodedString::Ascii(n) => n.try_reserve_exact(additional),
-            EncodedString::Binary(n) => n.try_reserve_exact(additional),
-            EncodedString::Utf8(n) => n.try_reserve_exact(additional),
+            EncodedString::Ascii(inner) => inner.try_reserve_exact(additional),
+            EncodedString::Binary(inner) => inner.try_reserve_exact(additional),
+            EncodedString::Utf8(inner) => inner.try_reserve_exact(additional),
         }
     }
 
     #[inline]
     pub fn shrink_to_fit(&mut self) {
         match self {
-            EncodedString::Ascii(n) => n.shrink_to_fit(),
-            EncodedString::Binary(n) => n.shrink_to_fit(),
-            EncodedString::Utf8(n) => n.shrink_to_fit(),
+            EncodedString::Ascii(inner) => inner.shrink_to_fit(),
+            EncodedString::Binary(inner) => inner.shrink_to_fit(),
+            EncodedString::Utf8(inner) => inner.shrink_to_fit(),
         }
     }
 
     #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         match self {
-            EncodedString::Ascii(n) => n.shrink_to(min_capacity),
-            EncodedString::Binary(n) => n.shrink_to(min_capacity),
-            EncodedString::Utf8(n) => n.shrink_to(min_capacity),
+            EncodedString::Ascii(inner) => inner.shrink_to(min_capacity),
+            EncodedString::Binary(inner) => inner.shrink_to(min_capacity),
+            EncodedString::Utf8(inner) => inner.shrink_to(min_capacity),
         }
     }
 
@@ -274,9 +274,9 @@ impl EncodedString {
         I: SliceIndex<[u8]>,
     {
         match self {
-            EncodedString::Ascii(n) => n.get(index),
-            EncodedString::Binary(n) => n.get(index),
-            EncodedString::Utf8(n) => n.get(index),
+            EncodedString::Ascii(inner) => inner.get(index),
+            EncodedString::Binary(inner) => inner.get(index),
+            EncodedString::Utf8(inner) => inner.get(index),
         }
     }
 
@@ -284,9 +284,9 @@ impl EncodedString {
     #[must_use]
     pub fn get_char(&self, index: usize) -> Option<&'_ [u8]> {
         match self {
-            EncodedString::Ascii(n) => n.get_char(index),
-            EncodedString::Binary(n) => n.get_char(index),
-            EncodedString::Utf8(n) => n.get_char(index),
+            EncodedString::Ascii(inner) => inner.get_char(index),
+            EncodedString::Binary(inner) => inner.get_char(index),
+            EncodedString::Utf8(inner) => inner.get_char(index),
         }
     }
 
@@ -294,9 +294,9 @@ impl EncodedString {
     #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
         match self {
-            EncodedString::Ascii(n) => n.get_char_slice(range),
-            EncodedString::Binary(n) => n.get_char_slice(range),
-            EncodedString::Utf8(n) => n.get_char_slice(range),
+            EncodedString::Ascii(inner) => inner.get_char_slice(range),
+            EncodedString::Binary(inner) => inner.get_char_slice(range),
+            EncodedString::Utf8(inner) => inner.get_char_slice(range),
         }
     }
 
@@ -307,9 +307,9 @@ impl EncodedString {
         I: SliceIndex<[u8]>,
     {
         match self {
-            EncodedString::Ascii(n) => n.get_mut(index),
-            EncodedString::Binary(n) => n.get_mut(index),
-            EncodedString::Utf8(n) => n.get_mut(index),
+            EncodedString::Ascii(inner) => inner.get_mut(index),
+            EncodedString::Binary(inner) => inner.get_mut(index),
+            EncodedString::Utf8(inner) => inner.get_mut(index),
         }
     }
 
@@ -320,9 +320,9 @@ impl EncodedString {
         I: SliceIndex<[u8]>,
     {
         match self {
-            EncodedString::Ascii(n) => n.get_unchecked(index),
-            EncodedString::Binary(n) => n.get_unchecked(index),
-            EncodedString::Utf8(n) => n.get_unchecked(index),
+            EncodedString::Ascii(inner) => inner.get_unchecked(index),
+            EncodedString::Binary(inner) => inner.get_unchecked(index),
+            EncodedString::Utf8(inner) => inner.get_unchecked(index),
         }
     }
 
@@ -333,54 +333,54 @@ impl EncodedString {
         I: SliceIndex<[u8]>,
     {
         match self {
-            EncodedString::Ascii(n) => n.get_unchecked_mut(index),
-            EncodedString::Binary(n) => n.get_unchecked_mut(index),
-            EncodedString::Utf8(n) => n.get_unchecked_mut(index),
+            EncodedString::Ascii(inner) => inner.get_unchecked_mut(index),
+            EncodedString::Binary(inner) => inner.get_unchecked_mut(index),
+            EncodedString::Utf8(inner) => inner.get_unchecked_mut(index),
         }
     }
 
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {
         match self {
-            EncodedString::Ascii(n) => n.push_byte(byte),
-            EncodedString::Binary(n) => n.push_byte(byte),
-            EncodedString::Utf8(n) => n.push_byte(byte),
+            EncodedString::Ascii(inner) => inner.push_byte(byte),
+            EncodedString::Binary(inner) => inner.push_byte(byte),
+            EncodedString::Utf8(inner) => inner.push_byte(byte),
         }
     }
 
     #[inline]
     pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
         match self {
-            EncodedString::Ascii(n) => n.try_push_codepoint(codepoint),
-            EncodedString::Binary(n) => n.try_push_codepoint(codepoint),
-            EncodedString::Utf8(n) => n.try_push_codepoint(codepoint),
+            EncodedString::Ascii(inner) => inner.try_push_codepoint(codepoint),
+            EncodedString::Binary(inner) => inner.try_push_codepoint(codepoint),
+            EncodedString::Utf8(inner) => inner.try_push_codepoint(codepoint),
         }
     }
 
     #[inline]
     pub fn push_char(&mut self, ch: char) {
         match self {
-            EncodedString::Ascii(n) => n.push_char(ch),
-            EncodedString::Binary(n) => n.push_char(ch),
-            EncodedString::Utf8(n) => n.push_char(ch),
+            EncodedString::Ascii(inner) => inner.push_char(ch),
+            EncodedString::Binary(inner) => inner.push_char(ch),
+            EncodedString::Utf8(inner) => inner.push_char(ch),
         }
     }
 
     #[inline]
     pub fn push_str(&mut self, s: &str) {
         match self {
-            EncodedString::Ascii(n) => n.push_str(s),
-            EncodedString::Binary(n) => n.push_str(s),
-            EncodedString::Utf8(n) => n.push_str(s),
+            EncodedString::Ascii(inner) => inner.push_str(s),
+            EncodedString::Binary(inner) => inner.push_str(s),
+            EncodedString::Utf8(inner) => inner.push_str(s),
         }
     }
 
     #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
         match self {
-            EncodedString::Ascii(n) => n.extend_from_slice(other),
-            EncodedString::Binary(n) => n.extend_from_slice(other),
-            EncodedString::Utf8(n) => n.extend_from_slice(other),
+            EncodedString::Ascii(inner) => inner.extend_from_slice(other),
+            EncodedString::Binary(inner) => inner.extend_from_slice(other),
+            EncodedString::Utf8(inner) => inner.extend_from_slice(other),
         }
     }
 
@@ -388,9 +388,9 @@ impl EncodedString {
     #[must_use]
     pub fn is_ascii_only(&self) -> bool {
         match self {
-            EncodedString::Ascii(n) => n.is_ascii_only(),
-            EncodedString::Binary(n) => n.is_ascii_only(),
-            EncodedString::Utf8(n) => n.is_ascii_only(),
+            EncodedString::Ascii(inner) => inner.is_ascii_only(),
+            EncodedString::Binary(inner) => inner.is_ascii_only(),
+            EncodedString::Utf8(inner) => inner.is_ascii_only(),
         }
     }
 
@@ -398,36 +398,36 @@ impl EncodedString {
     #[must_use]
     pub fn is_valid_encoding(&self) -> bool {
         match self {
-            EncodedString::Ascii(n) => n.is_valid_encoding(),
-            EncodedString::Binary(n) => n.is_valid_encoding(),
-            EncodedString::Utf8(n) => n.is_valid_encoding(),
+            EncodedString::Ascii(inner) => inner.is_valid_encoding(),
+            EncodedString::Binary(inner) => inner.is_valid_encoding(),
+            EncodedString::Utf8(inner) => inner.is_valid_encoding(),
         }
     }
 
     #[inline]
     pub fn make_capitalized(&mut self) {
         match self {
-            EncodedString::Ascii(n) => n.make_capitalized(),
-            EncodedString::Binary(n) => n.make_capitalized(),
-            EncodedString::Utf8(n) => n.make_capitalized(),
+            EncodedString::Ascii(inner) => inner.make_capitalized(),
+            EncodedString::Binary(inner) => inner.make_capitalized(),
+            EncodedString::Utf8(inner) => inner.make_capitalized(),
         }
     }
 
     #[inline]
     pub fn make_uppercase(&mut self) {
         match self {
-            EncodedString::Ascii(n) => n.make_uppercase(),
-            EncodedString::Binary(n) => n.make_uppercase(),
-            EncodedString::Utf8(n) => n.make_uppercase(),
+            EncodedString::Ascii(inner) => inner.make_uppercase(),
+            EncodedString::Binary(inner) => inner.make_uppercase(),
+            EncodedString::Utf8(inner) => inner.make_uppercase(),
         }
     }
 
     #[inline]
     pub fn make_lowercase(&mut self) {
         match self {
-            EncodedString::Ascii(n) => n.make_lowercase(),
-            EncodedString::Binary(n) => n.make_lowercase(),
-            EncodedString::Utf8(n) => n.make_lowercase(),
+            EncodedString::Ascii(inner) => inner.make_lowercase(),
+            EncodedString::Binary(inner) => inner.make_lowercase(),
+            EncodedString::Utf8(inner) => inner.make_lowercase(),
         }
     }
 
@@ -435,18 +435,18 @@ impl EncodedString {
     #[must_use]
     pub fn chr(&self) -> &[u8] {
         match self {
-            EncodedString::Ascii(n) => n.chr(),
-            EncodedString::Binary(n) => n.chr(),
-            EncodedString::Utf8(n) => n.chr(),
+            EncodedString::Ascii(inner) => inner.chr(),
+            EncodedString::Binary(inner) => inner.chr(),
+            EncodedString::Utf8(inner) => inner.chr(),
         }
     }
 
     #[inline]
     pub fn ord(&self) -> Result<u32, OrdError> {
         match self {
-            EncodedString::Ascii(n) => n.ord(),
-            EncodedString::Binary(n) => n.ord(),
-            EncodedString::Utf8(n) => n.ord(),
+            EncodedString::Ascii(inner) => inner.ord(),
+            EncodedString::Binary(inner) => inner.ord(),
+            EncodedString::Utf8(inner) => inner.ord(),
         }
     }
 
@@ -454,9 +454,9 @@ impl EncodedString {
     #[must_use]
     pub fn ends_with(&self, slice: &[u8]) -> bool {
         match self {
-            EncodedString::Ascii(n) => n.ends_with(slice),
-            EncodedString::Binary(n) => n.ends_with(slice),
-            EncodedString::Utf8(n) => n.ends_with(slice),
+            EncodedString::Ascii(inner) => inner.ends_with(slice),
+            EncodedString::Binary(inner) => inner.ends_with(slice),
+            EncodedString::Utf8(inner) => inner.ends_with(slice),
         }
     }
 }
