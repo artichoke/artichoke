@@ -2,7 +2,8 @@ use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::borrow::{Borrow, BorrowMut};
-use core::fmt::Arguments;
+#[cfg(feature = "std")]
+use core::fmt;
 use core::ops::{Deref, DerefMut};
 #[cfg(feature = "std")]
 use std::io::{IoSlice, Result, Write};
@@ -22,7 +23,7 @@ impl Write for AsciiString {
     }
 
     #[inline]
-    fn write_fmt(&mut self, fmt: Arguments<'_>) -> Result<()> {
+    fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> Result<()> {
         self.inner.write_fmt(fmt)
     }
 
