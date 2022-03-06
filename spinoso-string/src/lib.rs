@@ -37,7 +37,6 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::fmt::{self};
-use core::hash::{Hash, Hasher};
 use core::ops::Range;
 use core::slice::SliceIndex;
 use core::str;
@@ -70,7 +69,7 @@ pub use inspect::Inspect;
 pub use iter::{Bytes, IntoIter, Iter, IterMut};
 pub use ord::OrdError;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct String {
     inner: EncodedString,
 }
@@ -81,54 +80,6 @@ impl fmt::Debug for String {
             .field("buf", &self.inner.as_slice().as_bstr())
             .field("encoding", &self.inner.encoding())
             .finish()
-    }
-}
-
-impl Hash for String {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        // A `String`'s hash only depends on its byte contents.
-        //
-        // ```
-        // [3.0.2] > s = "abc"
-        // => "abc"
-        // [3.0.2] > t = s.dup.force_encoding(Encoding::ASCII)
-        // => "abc"
-        // [3.0.2] > s.hash
-        // => 3398383793005079442
-        // [3.0.2] > t.hash
-        // => 3398383793005079442
-        // ```
-        self.inner.as_slice().hash(hasher);
-    }
-}
-
-impl PartialEq for String {
-    fn eq(&self, other: &Self) -> bool {
-        // Equality only depends on each `String`'s byte contents.
-        //
-        // ```
-        // [3.0.2] > s = "abc"
-        // => "abc"
-        // [3.0.2] > t = s.dup.force_encoding(Encoding::ASCII)
-        // => "abc"
-        // [3.0.2] > s == t
-        // => true
-        // ```
-        *self.inner.as_slice() == *other.inner.as_slice()
-    }
-}
-
-impl Eq for String {}
-
-impl PartialOrd for String {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.inner.as_slice().partial_cmp(other.inner.as_slice())
-    }
-}
-
-impl Ord for String {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.inner.as_slice().cmp(other.inner.as_slice())
     }
 }
 

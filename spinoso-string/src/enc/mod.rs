@@ -4,6 +4,8 @@ mod impls;
 mod utf8;
 
 use alloc::vec::Vec;
+use core::cmp::Ordering;
+use core::hash::{Hash, Hasher};
 use core::ops::Range;
 use core::slice::SliceIndex;
 
@@ -16,7 +18,7 @@ use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
-#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone)]
 pub enum EncodedString {
     Ascii(AsciiString),
     Binary(BinaryString),
@@ -26,6 +28,54 @@ pub enum EncodedString {
 impl Default for EncodedString {
     fn default() -> Self {
         Self::Utf8(Utf8String::new(Vec::new()))
+    }
+}
+
+impl Hash for EncodedString {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        // A `EncodedString`'s hash only depends on its byte contents.
+        //
+        // ```
+        // [3.0.2] > s = "abc"
+        // => "abc"
+        // [3.0.2] > t = s.dup.force_encoding(Encoding::ASCII)
+        // => "abc"
+        // [3.0.2] > s.hash
+        // => 3398383793005079442
+        // [3.0.2] > t.hash
+        // => 3398383793005079442
+        // ```
+        self.as_slice().hash(hasher);
+    }
+}
+
+impl PartialEq for EncodedString {
+    fn eq(&self, other: &Self) -> bool {
+        // Equality only depends on each `EncodedString`'s byte contents.
+        //
+        // ```
+        // [3.0.2] > s = "abc"
+        // => "abc"
+        // [3.0.2] > t = s.dup.force_encoding(Encoding::ASCII)
+        // => "abc"
+        // [3.0.2] > s == t
+        // => true
+        // ```
+        *self.as_slice() == *other.as_slice()
+    }
+}
+
+impl Eq for EncodedString {}
+
+impl PartialOrd for EncodedString {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.as_slice().partial_cmp(other.as_slice())
+    }
+}
+
+impl Ord for EncodedString {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_slice().cmp(other.as_slice())
     }
 }
 
