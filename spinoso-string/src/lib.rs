@@ -1262,8 +1262,8 @@ impl String {
     #[cfg(feature = "casecmp")]
     #[cfg_attr(feature = "docsrs", doc(cfg(feature = "casecmp")))]
     pub fn unicode_casecmp(&self, other: &String, options: CaseFold) -> Option<bool> {
-        let left = self;
-        let right = other;
+        let left = self.as_slice();
+        let right = other.as_slice();
         // If both `String`s are conventionally UTF-8, they must be case
         // compared using the given case folding strategy. This requires the
         // `String`s be well-formed UTF-8.
