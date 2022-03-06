@@ -103,7 +103,7 @@ impl From<&str> for BinaryString {
 impl From<BinaryString> for Vec<u8> {
     #[inline]
     fn from(s: BinaryString) -> Self {
-        s.to_vec()
+        s.into_vec()
     }
 }
 

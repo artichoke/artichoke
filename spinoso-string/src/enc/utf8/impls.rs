@@ -103,7 +103,7 @@ impl From<&str> for Utf8String {
 impl From<Utf8String> for Vec<u8> {
     #[inline]
     fn from(s: Utf8String) -> Self {
-        s.to_vec()
+        s.into_vec()
     }
 }
 

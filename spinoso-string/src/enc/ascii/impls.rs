@@ -103,7 +103,7 @@ impl From<&str> for AsciiString {
 impl From<AsciiString> for Vec<u8> {
     #[inline]
     fn from(s: AsciiString) -> Self {
-        s.to_vec()
+        s.into_vec()
     }
 }
 
