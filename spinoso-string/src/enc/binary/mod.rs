@@ -21,7 +21,7 @@ pub struct BinaryString {
 
 // Constructors
 impl BinaryString {
-    pub fn new(buf: Vec<u8>) -> Self {
+    pub const fn new(buf: Vec<u8>) -> Self {
         Self { inner: buf }
     }
 }

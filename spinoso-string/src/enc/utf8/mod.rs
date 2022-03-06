@@ -36,7 +36,7 @@ impl Eq for Utf8String {}
 
 // Constructors
 impl Utf8String {
-    pub fn new(buf: Vec<u8>) -> Self {
+    pub const fn new(buf: Vec<u8>) -> Self {
         Self { inner: buf }
     }
 }

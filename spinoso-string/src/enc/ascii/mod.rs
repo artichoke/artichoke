@@ -21,7 +21,7 @@ pub struct AsciiString {
 
 // Constructors
 impl AsciiString {
-    pub fn new(buf: Vec<u8>) -> Self {
+    pub const fn new(buf: Vec<u8>) -> Self {
         Self { inner: buf }
     }
 }
