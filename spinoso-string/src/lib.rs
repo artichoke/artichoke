@@ -35,6 +35,7 @@ extern crate std;
 
 use alloc::boxed::Box;
 use alloc::vec::Vec;
+#[cfg(feature = "casecmp")]
 use core::cmp::Ordering;
 use core::fmt;
 use core::ops::Range;
