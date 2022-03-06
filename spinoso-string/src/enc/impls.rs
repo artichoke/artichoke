@@ -1,7 +1,8 @@
 //use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use core::borrow::{Borrow, BorrowMut};
-use core::fmt::Arguments;
+#[cfg(feature = "std")]
+use core::fmt;
 use core::ops::{Deref, DerefMut};
 #[cfg(feature = "std")]
 use std::io::{IoSlice, Result, Write};
@@ -29,7 +30,7 @@ impl Write for EncodedString {
     }
 
     #[inline]
-    fn write_fmt(&mut self, fmt: Arguments<'_>) -> Result<()> {
+    fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> Result<()> {
         match self {
             EncodedString::Ascii(inner) => inner.write_fmt(fmt),
             EncodedString::Binary(inner) => inner.write_fmt(fmt),
