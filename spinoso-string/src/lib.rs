@@ -36,7 +36,7 @@ extern crate std;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
-use core::fmt::{self};
+use core::fmt;
 use core::ops::Range;
 use core::slice::SliceIndex;
 use core::str;
