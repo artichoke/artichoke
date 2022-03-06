@@ -14,7 +14,7 @@ use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AsciiString {
     inner: Vec<u8>,
 }

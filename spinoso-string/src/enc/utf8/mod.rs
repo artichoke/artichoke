@@ -4,7 +4,6 @@ mod impls;
 use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
 use core::fmt;
-use core::hash::{Hash, Hasher};
 use core::ops::Range;
 use core::slice::SliceIndex;
 
@@ -15,24 +14,10 @@ use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Utf8String {
     inner: Vec<u8>,
 }
-
-impl Hash for Utf8String {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        self.as_slice().hash(hasher);
-    }
-}
-
-impl PartialEq for Utf8String {
-    fn eq(&self, other: &Self) -> bool {
-        *self.inner.as_slice() == *other.inner.as_slice()
-    }
-}
-
-impl Eq for Utf8String {}
 
 // Constructors
 impl Utf8String {
