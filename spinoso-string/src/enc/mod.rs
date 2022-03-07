@@ -83,7 +83,7 @@ impl Ord for EncodedString {
 impl EncodedString {
     #[inline]
     #[must_use]
-    pub fn new(buf: Vec<u8>, encoding: Encoding) -> Self {
+    pub const fn new(buf: Vec<u8>, encoding: Encoding) -> Self {
         match encoding {
             Encoding::Ascii => Self::Ascii(AsciiString::new(buf)),
             Encoding::Binary => Self::Binary(BinaryString::new(buf)),
