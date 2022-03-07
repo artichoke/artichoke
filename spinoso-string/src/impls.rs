@@ -35,48 +35,48 @@ impl fmt::Write for String {
 impl io::Write for String {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.buf.write(buf)
+        self.inner.write(buf)
     }
 
     #[inline]
     fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.buf.write_all(buf)
+        self.inner.write_all(buf)
     }
 
     #[inline]
     fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> io::Result<()> {
-        self.buf.write_fmt(fmt)
+        self.inner.write_fmt(fmt)
     }
 
     #[inline]
     fn write_vectored(&mut self, bufs: &[io::IoSlice<'_>]) -> io::Result<usize> {
-        self.buf.write_vectored(bufs)
+        self.inner.write_vectored(bufs)
     }
 
     #[inline]
     fn flush(&mut self) -> io::Result<()> {
-        self.buf.flush()
+        self.inner.flush()
     }
 }
 
 impl Extend<u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
-        self.buf.extend(iter.into_iter());
+        self.inner.extend(iter);
     }
 }
 
 impl<'a> Extend<&'a u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a u8>>(&mut self, iter: I) {
-        self.buf.extend(iter.into_iter().copied());
+        self.inner.extend(iter);
     }
 }
 
 impl<'a> Extend<&'a mut u8> for String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a mut u8>>(&mut self, iter: I) {
-        self.buf.extend(iter.into_iter().map(|byte| *byte));
+        self.inner.extend(iter);
     }
 }
 
@@ -172,79 +172,81 @@ impl From<&str> for String {
 impl From<String> for Vec<u8> {
     #[inline]
     fn from(s: String) -> Self {
-        s.buf
+        s.inner.into_vec()
     }
 }
 
 impl AsRef<[u8]> for String {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        self.buf.as_slice()
+        self.inner.as_ref()
     }
 }
 
 impl AsMut<[u8]> for String {
     #[inline]
     fn as_mut(&mut self) -> &mut [u8] {
-        self.buf.as_mut_slice()
+        self.inner.as_mut()
     }
 }
 
 impl AsRef<Vec<u8>> for String {
     #[inline]
     fn as_ref(&self) -> &Vec<u8> {
-        &self.buf
+        self.inner.as_ref()
     }
 }
 
 impl AsMut<Vec<u8>> for String {
     #[inline]
     fn as_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.buf
+        self.inner.as_mut()
     }
 }
 
 impl Deref for String {
     type Target = [u8];
 
+    #[allow(clippy::explicit_deref_methods)]
     #[inline]
     fn deref(&self) -> &[u8] {
-        &*self.buf
+        self.inner.deref()
     }
 }
 
 impl DerefMut for String {
+    #[allow(clippy::explicit_deref_methods)]
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
-        &mut *self.buf
+        self.inner.deref_mut()
     }
 }
 
 impl Borrow<[u8]> for String {
     #[inline]
     fn borrow(&self) -> &[u8] {
-        self.buf.as_slice()
+        self.inner.borrow()
     }
 }
 
 impl BorrowMut<[u8]> for String {
     #[inline]
     fn borrow_mut(&mut self) -> &mut [u8] {
-        self.buf.as_mut_slice()
+        self.inner.borrow_mut()
     }
 }
 
 impl Borrow<Vec<u8>> for String {
     #[inline]
     fn borrow(&self) -> &Vec<u8> {
-        &self.buf
+        self.inner.borrow()
     }
 }
 
 impl BorrowMut<Vec<u8>> for String {
     #[inline]
     fn borrow_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.buf
+        self.inner.borrow_mut()
     }
 }
 
@@ -253,13 +255,13 @@ impl<I: SliceIndex<[u8]>> Index<I> for String {
 
     #[inline]
     fn index(&self, index: I) -> &Self::Output {
-        Index::index(&self.buf, index)
+        Index::index(self.inner.as_slice(), index)
     }
 }
 
 impl<I: SliceIndex<[u8]>> IndexMut<I> for String {
     #[inline]
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
-        IndexMut::index_mut(&mut self.buf, index)
+        IndexMut::index_mut(self.inner.as_mut_slice(), index)
     }
 }

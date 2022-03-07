@@ -1,5 +1,6 @@
-use core::fmt;
+use core::fmt::{self, Write};
 use core::iter::FusedIterator;
+use core::mem;
 use core::str::Chars;
 
 use bstr::{ByteSlice, Bytes};
@@ -74,6 +75,73 @@ impl fmt::Display for CodepointsError {
 #[cfg(feature = "std")]
 impl std::error::Error for CodepointsError {}
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+enum CodePointRangeError {
+    InvalidUtf8Codepoint(u32),
+    OutOfRange(i64),
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct InvalidCodepointError(CodePointRangeError);
+
+impl InvalidCodepointError {
+    pub const EXCEPTION_TYPE: &'static str = "RangeError";
+
+    #[inline]
+    #[must_use]
+    pub const fn invalid_utf8_codepoint(codepoint: u32) -> Self {
+        Self(CodePointRangeError::InvalidUtf8Codepoint(codepoint))
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn codepoint_out_of_range(codepoint: i64) -> Self {
+        Self(CodePointRangeError::OutOfRange(codepoint))
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn is_invalid_utf8(self) -> bool {
+        matches!(self.0, CodePointRangeError::InvalidUtf8Codepoint(_))
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn is_out_of_range(self) -> bool {
+        matches!(self.0, CodePointRangeError::OutOfRange(_))
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn message(self) -> alloc::string::String {
+        // The longest error message is 27 bytes + a hex-encoded codepoint
+        // formatted as `0x...`.
+        const MESSAGE_MAX_LENGTH: usize = 27 + 2 + mem::size_of::<u32>() * 2;
+        let mut s = alloc::string::String::with_capacity(MESSAGE_MAX_LENGTH);
+        // In practice, the errors from `write!` below are safe to ignore
+        // because the `core::fmt::Write` impl for `String` will never panic
+        // and these `String`s will never approach `isize::MAX` bytes.
+        //
+        // See the `core::fmt::Display` impl for `InvalidCodepointError`.
+        let _ = write!(s, "{}", self);
+        s
+    }
+}
+
+impl fmt::Display for InvalidCodepointError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.0 {
+            CodePointRangeError::InvalidUtf8Codepoint(codepoint) => {
+                write!(f, "invalid codepoint {:X} in UTF-8", codepoint)
+            }
+            CodePointRangeError::OutOfRange(codepoint) => write!(f, "{} out of char range", codepoint),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for InvalidCodepointError {}
+
 /// An iterator that yields a `u32` codepoints from a [`String`].
 ///
 /// This struct is created by the [`codepoints`] method on a Spinoso [`String`].
@@ -125,7 +193,7 @@ impl<'a> TryFrom<&'a String> for Codepoints<'a> {
     fn try_from(s: &'a String) -> Result<Self, Self::Error> {
         let state = match s.encoding() {
             Encoding::Utf8 => {
-                if let Ok(s) = s.buf.to_str() {
+                if let Ok(s) = s.inner.as_slice().to_str() {
                     State::Utf8(s.chars())
                 } else {
                     return Err(CodepointsError::invalid_utf8_codepoint());
