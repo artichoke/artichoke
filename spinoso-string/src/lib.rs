@@ -97,14 +97,14 @@ impl String {
     /// ```
     /// use spinoso_string::{Encoding, String};
     ///
-    /// let S: String = String::new();
+    /// const S: String = String::new();
     /// assert_eq!(S.encoding(), Encoding::Utf8);
     /// ```
     ///
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     #[must_use]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         let buf = Vec::new();
         Self {
             inner: EncodedString::new(buf, Encoding::Utf8),

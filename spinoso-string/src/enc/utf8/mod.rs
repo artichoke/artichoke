@@ -219,7 +219,7 @@ impl Utf8String {
             Some(idx) => idx,
         };
         let mut slice = &self.inner[consumed..];
-        // TODO: See if we can use `get_unchcked` as implmented in`fn char_len`
+        // TODO: See if we can use `get_unchecked` as implemented in`fn char_len`
         // Count of "characters" remaining until the `index`th character.
         let mut remaining = index - consumed;
         // This loop will terminate when either:
