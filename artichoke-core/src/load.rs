@@ -93,6 +93,7 @@ pub enum Loaded {
     ///
     /// This variant has value `true` when converting to a Boolean as returned
     /// by `Kernel#load`.
+    ///
     /// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
     Success,
 }
