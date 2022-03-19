@@ -455,9 +455,7 @@ pub fn random_bytes(len: Option<i64>) -> Result<Vec<u8>, Error> {
 
     let mut bytes = Vec::new();
     bytes.try_reserve(len)?;
-    for _ in 0..len {
-        bytes.push(0);
-    }
+    bytes.resize(len, 0);
     get_random_bytes(rand::thread_rng(), &mut bytes)?;
     Ok(bytes)
 }
