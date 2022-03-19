@@ -204,7 +204,7 @@ pub trait LoadSources {
     /// If `path` does not point to a source file, an error is returned.
     ///
     /// If the source file at `path` has no contents, an error is returned.
-    fn load_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
+    fn load_source<P>(&mut self, path: P) -> Result<Loaded, Self::Error>
     where
         P: AsRef<Path>;
 
@@ -221,6 +221,11 @@ pub trait LoadSources {
     /// is loaded and added to `$LOADED_FEATURES`. This function is equivalent
     /// to `Kernel#require`.
     ///
+    /// Implementations should ensure that this method returns
+    /// [`Ok(Required::Success)`][success] at most once. Subsequent `Ok(_)`
+    /// return values should include [`Required::AlreadyRequired`]. See the
+    /// documentation of [`Required`] for more details.
+    ///
     /// # Errors
     ///
     /// If the underlying file system is inaccessible, an error is returned.
@@ -230,7 +235,9 @@ pub trait LoadSources {
     /// If `path` does not point to a source file, an error is returned.
     ///
     /// If the source file at `path` has no contents, an error is returned.
-    fn require_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
+    ///
+    /// [success]: Required::Success
+    fn require_source<P>(&mut self, path: P) -> Result<Required, Self::Error>
     where
         P: AsRef<Path>;
 

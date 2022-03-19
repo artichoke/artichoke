@@ -2,7 +2,10 @@ use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::path::Path;
 
-use crate::core::{Eval, File, LoadSources};
+use artichoke_core::eval::Eval;
+use artichoke_core::file::File;
+use artichoke_core::load::{LoadSources, Loaded, Required};
+
 use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
 use crate::Artichoke;
@@ -76,7 +79,7 @@ impl LoadSources for Artichoke {
         Ok(false)
     }
 
-    fn load_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
+    fn load_source<P>(&mut self, path: P) -> Result<Loaded, Self::Error>
     where
         P: AsRef<Path>,
     {
@@ -84,10 +87,6 @@ impl LoadSources for Artichoke {
         let mut alternate_path;
         let path = {
             let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
-            // If a file is already required, short circuit.
-            if let Some(true) = state.load_path_vfs.is_required(path) {
-                return Ok(false);
-            }
             // Require Rust `File` first because an File may define classes and
             // modules with `LoadSources` and Ruby files can require arbitrary
             // other files, including some child sources that may depend on these
@@ -102,10 +101,6 @@ impl LoadSources for Artichoke {
                 None => {
                     alternate_path = path.to_owned();
                     alternate_path.set_extension(RUBY_EXTENSION);
-                    // If a file is already required, short circuit.
-                    if let Some(true) = state.load_path_vfs.is_required(&alternate_path) {
-                        return Ok(false);
-                    }
                     if let Some(hook) = state.load_path_vfs.get_extension(&alternate_path) {
                         // dynamic, Rust-backed `File` require
                         hook(self)?;
@@ -121,10 +116,10 @@ impl LoadSources for Artichoke {
         };
         let contents = self.read_source_file_contents(path)?.into_owned();
         self.eval(contents.as_ref())?;
-        Ok(true)
+        Ok(Loaded::Success)
     }
 
-    fn require_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
+    fn require_source<P>(&mut self, path: P) -> Result<Required, Self::Error>
     where
         P: AsRef<Path>,
     {
@@ -134,7 +129,7 @@ impl LoadSources for Artichoke {
             let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
             // If a file is already required, short circuit.
             if let Some(true) = state.load_path_vfs.is_required(path) {
-                return Ok(false);
+                return Ok(Required::AlreadyRequired);
             }
             // Require Rust `File` first because an File may define classes and
             // modules with `LoadSources` and Ruby files can require arbitrary
@@ -152,7 +147,7 @@ impl LoadSources for Artichoke {
                     alternate_path.set_extension(RUBY_EXTENSION);
                     // If a file is already required, short circuit.
                     if let Some(true) = state.load_path_vfs.is_required(&alternate_path) {
-                        return Ok(false);
+                        return Ok(Required::AlreadyRequired);
                     }
                     if let Some(hook) = state.load_path_vfs.get_extension(&alternate_path) {
                         // dynamic, Rust-backed `File` require
@@ -164,7 +159,7 @@ impl LoadSources for Artichoke {
                             self.eval(&contents)?;
                             let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
                             state.load_path_vfs.mark_required(path)?;
-                            return Ok(true);
+                            return Ok(Required::Success);
                         }
                         // else proceed with the alternate path
                     }
@@ -178,7 +173,7 @@ impl LoadSources for Artichoke {
         self.eval(contents.as_ref())?;
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         state.load_path_vfs.mark_required(path)?;
-        Ok(true)
+        Ok(Required::Success)
     }
 
     fn read_source_file_contents<P>(&self, path: P) -> Result<Cow<'_, [u8]>, Self::Error>
@@ -194,6 +189,7 @@ impl LoadSources for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    use artichoke_core::load::{Loaded, Required};
     use bstr::ByteSlice;
 
     use crate::test::prelude::*;
@@ -226,7 +222,7 @@ LoadSources::Counter.instance.inc!
         interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
 
         let result = interp.load_source("./counter.rb").unwrap();
-        assert!(result);
+        assert_eq!(result, Loaded::Success);
         let count = interp
             .eval(b"LoadSources::Counter.instance.c")
             .unwrap()
@@ -236,7 +232,7 @@ LoadSources::Counter.instance.inc!
 
         // `Kernel#load` has no memory and will always execute
         let result = interp.load_source("./counter.rb").unwrap();
-        assert!(result);
+        assert_eq!(result, Loaded::Success);
         let count = interp
             .eval(b"LoadSources::Counter.instance.c")
             .unwrap()
@@ -251,7 +247,7 @@ LoadSources::Counter.instance.inc!
         interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
 
         let result = interp.require_source("./counter.rb").unwrap();
-        assert!(result);
+        assert_eq!(result, Required::Success);
         let count = interp
             .eval(b"LoadSources::Counter.instance.c")
             .unwrap()
@@ -260,10 +256,10 @@ LoadSources::Counter.instance.inc!
         assert_eq!(count, 11);
 
         let result = interp.require_source("./counter.rb").unwrap();
-        assert!(!result);
+        assert_eq!(result, Required::AlreadyRequired);
 
         let result = interp.load_source("./counter.rb").unwrap();
-        assert!(result);
+        assert_eq!(result, Loaded::Success);
         let count = interp
             .eval(b"LoadSources::Counter.instance.c")
             .unwrap()
@@ -273,7 +269,7 @@ LoadSources::Counter.instance.inc!
 
         // `Kernel#load` has no memory and will always execute
         let result = interp.load_source("./counter.rb").unwrap();
-        assert!(result);
+        assert_eq!(result, Loaded::Success);
         let count = interp
             .eval(b"LoadSources::Counter.instance.c")
             .unwrap()
@@ -288,7 +284,7 @@ LoadSources::Counter.instance.inc!
         interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
 
         let result = interp.require_source("./counter").unwrap();
-        assert!(result);
+        assert_eq!(result, Required::Success);
         let count = interp
             .eval(b"LoadSources::Counter.instance.c")
             .unwrap()
