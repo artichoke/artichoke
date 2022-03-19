@@ -25,7 +25,7 @@ where
 {
     for value in args {
         let display = value.to_s(interp);
-        interp.print(display)?;
+        interp.print(&display)?;
     }
     Ok(Value::nil())
 }
@@ -44,7 +44,7 @@ where
             }
         } else {
             let display = value.to_s(interp);
-            interp.puts(display)?;
+            interp.puts(&display)?;
         }
         Ok(())
     }
@@ -68,14 +68,14 @@ where
     let mut args = args.into_iter().peekable();
     if let Some(first) = args.next() {
         let display = first.inspect(interp);
-        interp.puts(display)?;
+        interp.puts(&display)?;
         if args.peek().is_none() {
             return Ok(first);
         }
         let mut result = vec![first];
         for value in args {
             let display = value.inspect(interp);
-            interp.puts(display)?;
+            interp.puts(&display)?;
             result.push(value);
         }
         interp.try_convert_mut(result)

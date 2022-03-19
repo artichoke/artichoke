@@ -21,9 +21,9 @@ impl Io for Artichoke {
     /// # Errors
     ///
     /// If the output stream encounters an error, an error is returned.
-    fn print<T: AsRef<[u8]>>(&mut self, message: T) -> Result<(), Self::Error> {
+    fn print(&mut self, message: &[u8]) -> Result<(), Self::Error> {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
-        state.output.write_stdout(message.as_ref())?;
+        state.output.write_stdout(message)?;
         Ok(())
     }
 
@@ -35,9 +35,9 @@ impl Io for Artichoke {
     /// # Errors
     ///
     /// If the output stream encounters an error, an error is returned.
-    fn puts<T: AsRef<[u8]>>(&mut self, message: T) -> Result<(), Self::Error> {
+    fn puts(&mut self, message: &[u8]) -> Result<(), Self::Error> {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
-        state.output.write_stdout(message.as_ref())?;
+        state.output.write_stdout(message)?;
         state.output.write_stdout(b"\n")?;
         Ok(())
     }
