@@ -62,6 +62,10 @@ pub enum Required {
 }
 
 impl From<Required> for bool {
+    /// Convert a [`Required`] enum into a [`bool`] as returned by
+    /// [`Kernel#require`].
+    ///
+    /// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
     fn from(req: Required) -> Self {
         match req {
             Required::Success => true,
@@ -99,6 +103,10 @@ pub enum Loaded {
 }
 
 impl From<Loaded> for bool {
+    /// Convert a [`Loaded`] enum into a [`bool`] as returned by
+    /// [`Kernel#load`].
+    ///
+    /// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
     fn from(loaded: Loaded) -> Self {
         let Loaded::Success = loaded;
         true
