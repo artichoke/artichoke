@@ -34,6 +34,8 @@ impl From<SecureRandomError> for Error {
         match err {
             SecureRandomError::Argument(err) => err.into(),
             SecureRandomError::RandomBytes(err) => err.into(),
+            // FIXME: this branch allocates when we might be out of memory.
+            SecureRandomError::Memory(_) => NoMemoryError::with_message("out of memory").into(),
         }
     }
 }

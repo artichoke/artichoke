@@ -27,7 +27,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-securerandom = "0.1"
+spinoso-securerandom = "0.2.0"
 ```
 
 ## Examples
