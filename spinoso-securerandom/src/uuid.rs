@@ -25,9 +25,7 @@ const ENCODED_LENGTH: usize = 36;
 #[inline]
 pub fn v4() -> Result<String, RandomBytesError> {
     fn get_random_bytes<T: RngCore + CryptoRng>(mut rng: T, slice: &mut [u8]) -> Result<(), RandomBytesError> {
-        if rng.try_fill_bytes(slice).is_err() {
-            return Err(RandomBytesError::new());
-        }
+        rng.try_fill_bytes(slice)?;
         Ok(())
     }
 
