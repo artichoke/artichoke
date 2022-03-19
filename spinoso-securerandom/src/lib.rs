@@ -136,6 +136,13 @@ impl From<RandomBytesError> for Error {
     }
 }
 
+impl From<rand::Error> for Error {
+    #[inline]
+    fn from(err: rand::Error) -> Self {
+        Self::from(RandomBytesError::from(err))
+    }
+}
+
 impl fmt::Display for Error {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -298,6 +305,12 @@ impl RandomBytesError {
     }
 }
 
+impl From<rand::Error> for RandomBytesError {
+    fn from(_: rand::Error) -> Self {
+        Self::new()
+    }
+}
+
 /// Error that indicates the given maximum value is not finite and cannot be
 /// used to bound a domain for generating random numbers.
 ///
@@ -407,9 +420,7 @@ impl SecureRandom {
 #[inline]
 pub fn random_bytes(len: Option<i64>) -> Result<Vec<u8>, Error> {
     fn get_random_bytes<T: RngCore + CryptoRng>(mut rng: T, slice: &mut [u8]) -> Result<(), RandomBytesError> {
-        if rng.try_fill_bytes(slice).is_err() {
-            return Err(RandomBytesError::new());
-        }
+        rng.try_fill_bytes(slice)?;
         Ok(())
     }
 
