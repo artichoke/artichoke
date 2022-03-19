@@ -3,6 +3,7 @@ mod binary;
 mod impls;
 mod utf8;
 
+use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
 use core::hash::{Hash, Hasher};
@@ -291,7 +292,7 @@ impl EncodedString {
     }
 
     #[inline]
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         match self {
             EncodedString::Ascii(inner) => inner.try_reserve(additional),
             EncodedString::Binary(inner) => inner.try_reserve(additional),
@@ -309,7 +310,7 @@ impl EncodedString {
     }
 
     #[inline]
-    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
         match self {
             EncodedString::Ascii(inner) => inner.try_reserve_exact(additional),
             EncodedString::Binary(inner) => inner.try_reserve_exact(additional),

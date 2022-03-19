@@ -26,21 +26,25 @@
 //!
 //! This crate offers encoders that:
 //!
-//! - Allocate and return a [`String`]: [`encode`].
-//! - Encode into an already allocated [`String`]: [`encode_into`].
+//! - Allocate and return a [`String`]: [`try_encode`].
+//! - Encode into an already allocated [`String`]: [`try_encode_into`].
 //! - Encode into a [`fmt::Write`]: [`format_into`].
 //! - Encode into a [`io::Write`]: [`write_into`].
 //!
 //! # Examples
 //!
 //! ```
+//! # #![cfg(feature = "alloc")]
+//! # extern crate alloc;
+//! # use alloc::collections::TryReserveError;
+//! # fn example() -> Result<(), TryReserveError> {
 //! let data = b"Artichoke Ruby";
 //! let mut buf = String::new();
-//! # #[cfg(feature = "alloc")]
-//! scolapasta_hex::encode_into(data, &mut buf);
-//! # #[cfg(not(feature = "alloc"))]
-//! # buf.push_str("4172746963686f6b652052756279");
+//! scolapasta_hex::try_encode_into(data, &mut buf)?;
 //! assert_eq!(buf, "4172746963686f6b652052756279");
+//! # Ok(())
+//! # }
+//! # example().unwrap()
 //! ```
 //!
 //! This module also exposes an iterator:
@@ -56,6 +60,11 @@
 //!
 //! This crate is `no_std` compatible when built without the `std` feature. This
 //! crate optionally depends on [`alloc`] when the `alloc` feature is enabled.
+//!
+//! When this crate depends on `alloc`, it exclusively uses fallible allocation
+//! APIs. The APIs in this crate will never abort due to allocation failure or
+//! capacity overflows. Note that writers given to [`format_into`] and
+//! [`write_into`] may have abort on allocation failure behavior.
 //!
 //! # Crate features
 //!
@@ -85,6 +94,8 @@ extern crate alloc;
 extern crate std;
 
 #[cfg(feature = "alloc")]
+use alloc::collections::TryReserveError;
+#[cfg(feature = "alloc")]
 use alloc::string::String;
 use core::fmt;
 use core::iter::FusedIterator;
@@ -95,22 +106,34 @@ use std::io;
 
 /// Encode arbitrary octets as base16. Returns a [`String`].
 ///
-/// This function allocates a [`String`] and delegates to [`encode_into`].
+/// This function allocates an empty [`String`] and delegates to
+/// [`try_encode_into`].
+///
+/// # Errors
+///
+/// If the allocated string's capacity overflows, or the allocator reports a
+/// failure, then an error is returned.
 ///
 /// # Examples
 ///
 /// ```
+/// # extern crate alloc;
+/// # use alloc::collections::TryReserveError;
+/// # fn example() -> Result<(), TryReserveError> {
 /// let data = b"Artichoke Ruby";
-/// let buf = scolapasta_hex::encode(data);
+/// let buf = scolapasta_hex::try_encode(data)?;
 /// assert_eq!(buf, "4172746963686f6b652052756279");
+/// # Ok(())
+/// # }
+/// # example().unwrap()
 /// ```
 #[inline]
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn encode<T: AsRef<[u8]>>(data: T) -> String {
+pub fn try_encode<T: AsRef<[u8]>>(data: T) -> Result<String, TryReserveError> {
     let mut buf = String::new();
-    encode_into(data.as_ref(), &mut buf);
-    buf
+    try_encode_into(data.as_ref(), &mut buf)?;
+    Ok(buf)
 }
 
 /// Encode arbitrary octets as base16 into the given [`String`].
@@ -118,26 +141,37 @@ pub fn encode<T: AsRef<[u8]>>(data: T) -> String {
 /// This function writes encoded octets into the given `String`. This function
 /// will allocate at most once.
 ///
+/// # Errors
+///
+/// If the given string's capacity overflows, or the allocator reports a
+/// failure, then an error is returned.
+///
 /// # Examples
 ///
 /// ```
 /// # extern crate alloc;
+/// # use alloc::collections::TryReserveError;
 /// # use alloc::string::String;
+/// # fn example() -> Result<(), TryReserveError> {
 /// let data = b"Artichoke Ruby";
 /// let mut buf = String::new();
-/// scolapasta_hex::encode_into(data, &mut buf);
+/// scolapasta_hex::try_encode_into(data, &mut buf)?;
 /// assert_eq!(buf, "4172746963686f6b652052756279");
+/// # Ok(())
+/// # }
+/// # example().unwrap()
 /// ```
 #[inline]
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn encode_into<T: AsRef<[u8]>>(data: T, buf: &mut String) {
+pub fn try_encode_into<T: AsRef<[u8]>>(data: T, buf: &mut String) -> Result<(), TryReserveError> {
     let data = data.as_ref();
     let iter = Hex::from(data);
-    buf.reserve(iter.len());
+    buf.try_reserve(iter.len())?;
     for ch in iter {
         buf.push(ch);
     }
+    Ok(())
 }
 
 /// Write hex-encoded octets into the given [`fmt::Write`].
@@ -767,7 +801,7 @@ mod tests {
     mod alloc {
         use alloc::string::String;
 
-        use crate::{encode, encode_into, format_into, Hex};
+        use crate::{format_into, try_encode, try_encode_into, Hex};
 
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
@@ -775,37 +809,37 @@ mod tests {
             // ```
             // BASE16("") = ""
             // ```
-            assert_eq!(encode(""), "");
+            assert_eq!(try_encode("").unwrap(), "");
 
             // ```
             // BASE16("f") = "66"
             // ```
-            assert_eq!(encode("f"), "66");
+            assert_eq!(try_encode("f").unwrap(), "66");
 
             // ```
             // BASE16("fo") = "666F"
             // ```
-            assert_eq!(encode("fo"), "666f");
+            assert_eq!(try_encode("fo").unwrap(), "666f");
 
             // ```
             // BASE16("foo") = "666F6F"
             // ```
-            assert_eq!(encode("foo"), "666f6f");
+            assert_eq!(try_encode("foo").unwrap(), "666f6f");
 
             // ```
             // BASE16("foob") = "666F6F62"
             // ```
-            assert_eq!(encode("foob"), "666f6f62");
+            assert_eq!(try_encode("foob").unwrap(), "666f6f62");
 
             // ```
             // BASE16("fooba") = "666F6F6261"
             // ```
-            assert_eq!(encode("fooba"), "666f6f6261");
+            assert_eq!(try_encode("fooba").unwrap(), "666f6f6261");
 
             // ```
             // BASE16("foobar") = "666F6F626172"
             // ```
-            assert_eq!(encode("foobar"), "666f6f626172");
+            assert_eq!(try_encode("foobar").unwrap(), "666f6f626172");
         }
 
         // https://tools.ietf.org/html/rfc4648#section-10
@@ -854,7 +888,7 @@ mod tests {
             // BASE16("") = ""
             // ```
             let mut s = String::new();
-            encode_into("", &mut s);
+            try_encode_into("", &mut s).unwrap();
             assert_eq!(s, "");
             assert_eq!(s.capacity(), 0);
 
@@ -862,7 +896,7 @@ mod tests {
             // BASE16("f") = "66"
             // ```
             let mut s = String::new();
-            encode_into("f", &mut s);
+            try_encode_into("f", &mut s).unwrap();
             assert_eq!(s, "66");
             assert!(s.capacity() >= 2);
 
@@ -870,7 +904,7 @@ mod tests {
             // BASE16("fo") = "666F"
             // ```
             let mut s = String::new();
-            encode_into("fo", &mut s);
+            try_encode_into("fo", &mut s).unwrap();
             assert_eq!(s, "666f");
             assert!(s.capacity() >= 4);
 
@@ -878,7 +912,7 @@ mod tests {
             // BASE16("foo") = "666F6F"
             // ```
             let mut s = String::new();
-            encode_into("foo", &mut s);
+            try_encode_into("foo", &mut s).unwrap();
             assert_eq!(s, "666f6f");
             assert!(s.capacity() >= 6);
 
@@ -886,7 +920,7 @@ mod tests {
             // BASE16("foob") = "666F6F62"
             // ```
             let mut s = String::new();
-            encode_into("foob", &mut s);
+            try_encode_into("foob", &mut s).unwrap();
             assert_eq!(s, "666f6f62");
             assert!(s.capacity() >= 8);
 
@@ -894,7 +928,7 @@ mod tests {
             // BASE16("fooba") = "666F6F6261"
             // ```
             let mut s = String::new();
-            encode_into("fooba", &mut s);
+            try_encode_into("fooba", &mut s).unwrap();
             assert_eq!(s, "666f6f6261");
             assert!(s.capacity() >= 10);
 
@@ -902,7 +936,7 @@ mod tests {
             // BASE16("foobar") = "666F6F626172"
             // ```
             let mut s = String::new();
-            encode_into("foobar", &mut s);
+            try_encode_into("foobar", &mut s).unwrap();
             assert_eq!(s, "666f6f626172");
             assert!(s.capacity() >= 12);
         }

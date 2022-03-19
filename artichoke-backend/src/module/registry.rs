@@ -21,8 +21,8 @@
 //! name, are not invalidated as the underlying storage reallocates.
 
 use std::any::{self, Any, TypeId};
-use std::collections::hash_map::{RandomState, Values};
-use std::collections::HashMap;
+use std::collections::hash_map::{HashMap, RandomState, Values};
+use std::collections::TryReserveError;
 use std::hash::BuildHasher;
 use std::iter::FusedIterator;
 
@@ -222,7 +222,7 @@ where
     /// Tries to reserve capacity for at least additional more elements to be
     /// inserted in the `Registry`. The collection may reserve more space to
     /// avoid frequent reallocations.
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), std::collections::TryReserveError> {
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.0.try_reserve(additional)
     }
 

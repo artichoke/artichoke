@@ -15,8 +15,8 @@ for encoding arbitrary octets.
 
 This crate offers encoders that:
 
-- Allocate and return a [`String`]: `encode`.
-- Encode into an already allocated [`String`]: `encode_into`.
+- Allocate and return a [`String`]: `try_encode`.
+- Encode into an already allocated [`String`]: `try_encode_into`.
 - Encode into a [`fmt::Write`]: `format_into`.
 - Encode into a [`io::Write`]: `write_into`.
 
@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scolapasta-hex = "0.1"
+scolapasta-hex = "0.2.0"
 ```
 
 Hex encode data like:
@@ -38,7 +38,7 @@ Hex encode data like:
 ```rust
 let data = b"Artichoke Ruby";
 let mut buf = String::new();
-scolapasta_hex::encode_into(data, &mut buf);
+let _ignored = scolapasta_hex::try_encode_into(data, &mut buf);
 assert_eq!(buf, "4172746963686f6b652052756279");
 ```
 
@@ -56,6 +56,11 @@ assert_eq!(iter.collect::<String>(), "4172746963686f6b652052756279");
 
 This crate is `no_std` compatible when built without the `std` feature. This
 crate optionally depends on [`alloc`] when the `alloc` feature is enabled.
+
+When this crate depends on `alloc`, it exclusively uses fallible allocation
+APIs. The APIs in this crate will never abort due to allocation failure or
+capacity overflows. Note that writers given to `format_into` and `write_into`
+may have abort on allocation failure behavior.
 
 ## Crate features
 

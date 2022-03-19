@@ -7,7 +7,7 @@
 use rand::{CryptoRng, RngCore};
 use scolapasta_hex as hex;
 
-use crate::RandomBytesError;
+use crate::{Error, RandomBytesError};
 
 /// The UUID format is 16 octets.
 ///
@@ -23,7 +23,7 @@ const OCTETS: usize = 16;
 const ENCODED_LENGTH: usize = 36;
 
 #[inline]
-pub fn v4() -> Result<String, RandomBytesError> {
+pub fn v4() -> Result<String, Error> {
     fn get_random_bytes<T: RngCore + CryptoRng>(mut rng: T, slice: &mut [u8]) -> Result<(), RandomBytesError> {
         rng.try_fill_bytes(slice)?;
         Ok(())
@@ -36,7 +36,9 @@ pub fn v4() -> Result<String, RandomBytesError> {
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
 
-    let mut buf = String::with_capacity(ENCODED_LENGTH);
+    let mut buf = String::new();
+    buf.try_reserve(ENCODED_LENGTH)?;
+
     let mut iter = bytes.iter().copied();
     for byte in iter.by_ref().take(4) {
         let escaped = hex::escape_byte(byte);

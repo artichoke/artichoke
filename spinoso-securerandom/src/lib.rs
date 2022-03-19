@@ -92,6 +92,7 @@
 mod readme {}
 
 use core::fmt;
+use std::collections::TryReserveError;
 use std::error;
 
 use rand::distributions::Alphanumeric;
@@ -109,7 +110,7 @@ const DEFAULT_REQUESTED_BYTES: usize = 16;
 /// - The given byte length is not a valid [`usize`].
 /// - The underlying source of randomness returns an error when generating the
 ///   requested random bytes.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
     /// Error that indicates an argument parsing or value logic error occurred.
     ///
@@ -120,6 +121,15 @@ pub enum Error {
     ///
     /// See [`RandomBytesError`].
     RandomBytes(RandomBytesError),
+    /// Error that indicates an error was received from the memory allocator.
+    ///
+    /// This may mean that too many random bytes were requested or the system is
+    /// out of memory.
+    ///
+    /// See [`TryReserveError`] and [`TryReserveErrorKind`] for more information.
+    ///
+    /// [`TryReserveErrorKind`]: std::collections::TryReserveErrorKind
+    Memory(TryReserveError),
 }
 
 impl From<ArgumentError> for Error {
@@ -143,6 +153,12 @@ impl From<rand::Error> for Error {
     }
 }
 
+impl From<TryReserveError> for Error {
+    fn from(err: TryReserveError) -> Self {
+        Self::Memory(err)
+    }
+}
+
 impl fmt::Display for Error {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -156,6 +172,7 @@ impl error::Error for Error {
         match self {
             Self::Argument(ref err) => Some(err),
             Self::RandomBytes(ref err) => Some(err),
+            Self::Memory(ref err) => Some(err),
         }
     }
 }
@@ -417,6 +434,8 @@ impl SecureRandom {
 ///
 /// If the underlying source of randomness returns an error, return a
 /// [`RandomBytesError`].
+///
+/// If an allocation error occurs, an error is returned.
 #[inline]
 pub fn random_bytes(len: Option<i64>) -> Result<Vec<u8>, Error> {
     fn get_random_bytes<T: RngCore + CryptoRng>(mut rng: T, slice: &mut [u8]) -> Result<(), RandomBytesError> {
@@ -434,7 +453,9 @@ pub fn random_bytes(len: Option<i64>) -> Result<Vec<u8>, Error> {
         None => DEFAULT_REQUESTED_BYTES,
     };
 
-    let mut bytes = vec![0; len];
+    let mut bytes = Vec::new();
+    bytes.try_reserve(len)?;
+    bytes.resize(len, 0);
     get_random_bytes(rand::thread_rng(), &mut bytes)?;
     Ok(bytes)
 }
@@ -587,7 +608,8 @@ pub fn random_number(max: Max) -> Result<Rand, DomainError> {
 #[inline]
 pub fn hex(len: Option<i64>) -> Result<String, Error> {
     let bytes = random_bytes(len)?;
-    Ok(hex::encode(bytes))
+    let s = hex::try_encode(bytes)?;
+    Ok(s)
 }
 
 /// Generate a base64-encoded [`String`] of random bytes.
@@ -681,12 +703,16 @@ pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> 
 ///
 /// If the given length is negative, return an [`ArgumentError`].
 ///
-/// If the underlying source of randomness returns an error, return a
-/// [`RandomBytesError`].
+/// If an allocation error occurs, an error is returned.
 #[inline]
-pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, ArgumentError> {
-    fn get_alphanumeric<T: RngCore + CryptoRng>(rng: T, len: usize) -> Vec<u8> {
-        rng.sample_iter(Alphanumeric).take(len).collect()
+pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, Error> {
+    fn get_alphanumeric<T: RngCore + CryptoRng>(rng: T, len: usize) -> Result<Vec<u8>, TryReserveError> {
+        let mut buf = Vec::new();
+        buf.try_reserve(len)?;
+        for ch in rng.sample_iter(Alphanumeric).take(len) {
+            buf.push(ch);
+        }
+        Ok(buf)
     }
 
     let len = match len.map(usize::try_from) {
@@ -694,12 +720,12 @@ pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, ArgumentError> {
         Some(Ok(len)) => len,
         Some(Err(_)) => {
             let err = ArgumentError::with_message("negative string size (or size too big)");
-            return Err(err);
+            return Err(err.into());
         }
         None => DEFAULT_REQUESTED_BYTES,
     };
 
-    let string = get_alphanumeric(rand::thread_rng(), len);
+    let string = get_alphanumeric(rand::thread_rng(), len)?;
     Ok(string)
 }
 
@@ -721,12 +747,14 @@ pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, ArgumentError> {
 ///
 /// # Errors
 ///
-/// If the underlying source of randomness returns an error, return a
-/// [`RandomBytesError`].
+/// If the underlying source of randomness returns an error, an error is
+/// returned.
+///
+/// If an allocation error occurs, an error is returned.
 ///
 /// [RFC 4122]: https://tools.ietf.org/html/rfc4122#section-4.4
 #[inline]
-pub fn uuid() -> Result<String, RandomBytesError> {
+pub fn uuid() -> Result<String, Error> {
     uuid::v4()
 }
 

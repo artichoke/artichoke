@@ -12,6 +12,7 @@
 
 use std::collections::hash_map::RandomState;
 use std::collections::hash_set::{self, HashSet};
+use std::collections::TryReserveError;
 use std::hash::{BuildHasher, Hash};
 use std::iter::FusedIterator;
 use std::path::{Path, PathBuf};
@@ -380,7 +381,7 @@ where
     /// features.try_reserve(10).expect("why is this OOMing on 10 bytes?");
     /// assert!(features.capacity() >= 10);
     /// ```
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), std::collections::TryReserveError> {
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.features.try_reserve(additional)?;
         self.paths.try_reserve(additional)?;
 

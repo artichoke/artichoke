@@ -34,6 +34,7 @@ extern crate alloc;
 extern crate std;
 
 use alloc::boxed::Box;
+use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
 #[cfg(feature = "casecmp")]
 use core::cmp::Ordering;
@@ -753,7 +754,7 @@ impl String {
     /// assert!(str.capacity() >= 11);
     /// ```
     #[inline]
-    pub fn try_reserve(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+    pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.inner.try_reserve(additional)
     }
 
@@ -809,7 +810,7 @@ impl String {
     /// assert!(str.capacity() >= 11);
     /// ```
     #[inline]
-    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), alloc::collections::TryReserveError> {
+    pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.inner.try_reserve_exact(additional)
     }
 

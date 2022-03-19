@@ -600,7 +600,7 @@ dependencies = [
 
 [[package]]
 name = "scolapasta-hex"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "scolapasta-string-escape"
@@ -688,7 +688,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-securerandom"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64",
  "rand",
