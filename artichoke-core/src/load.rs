@@ -10,6 +10,109 @@ type Path = str;
 
 use crate::file::File;
 
+/// The side effect from a call to [`Kernel#require`].
+///
+/// In Ruby, `require` is stateful. All required sources are tracked in a global
+/// interpreter state accessible as `$"` and `$LOADED_FEATURES`.
+///
+/// The first time a file is required, it is parsed and executed by the
+/// interpreter. If the file executes without raising an error, the file is
+/// successfully required and Rust callers can expect a [`Required::Success`]
+/// variant. Files that are successfully required are added to the interpreter's
+/// set of loaded features.
+///
+/// If the file raises an exception as it is required, Rust callers can expect
+/// an `Err` variant. The file is not added to the set of loaded features.
+///
+/// If the file has previously been required such that [`Required::Success`] has
+/// been returned, all subsequent calls to require the file will return
+/// [`Required::AlreadyRequired`].
+///
+/// See the documentation of [`require_source`] for more details.
+///
+/// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+/// [`require_source`]: LoadSources::require_source
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Required {
+    /// [`Kernel#require`] succeeded at requiring the file.
+    ///
+    /// If this variant is returned, this is the first time the given file has
+    /// been required in the interpreter.
+    ///
+    /// This variant has value `true` when converting to a Boolean as returned
+    /// by `Kernel#require`.
+    ///
+    /// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+    Success,
+    /// [`Kernel#require`] did not require the file because it has already been
+    /// required.
+    ///
+    /// If this variant is returned, this is at least the second time the given
+    /// file has been required. Interpreters guarantee that files are only
+    /// required once. To load a source multiple times, see [`load_source`] and
+    /// [`Kernel#load`].
+    ///
+    /// This variant has value `false` when converting to a Boolean as returned
+    /// by `Kernel#require`.
+    ///
+    /// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+    /// [`load_source`]: LoadSources::load_source
+    /// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
+    AlreadyRequired,
+}
+
+impl From<Required> for bool {
+    /// Convert a [`Required`] enum into a [`bool`] as returned by
+    /// [`Kernel#require`].
+    ///
+    /// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+    fn from(req: Required) -> Self {
+        match req {
+            Required::Success => true,
+            Required::AlreadyRequired => false,
+        }
+    }
+}
+
+/// The side effect from a call to [`Kernel#load`].
+///
+/// In Ruby, `load` is stateless. All sources passed to `load` are loaded for
+/// every method call.
+///
+/// Each time a file is loaded, it is parsed and executed by the
+/// interpreter. If the file executes without raising an error, the file is
+/// successfully loaded and Rust callers can expect a [`Loaded::Success`]
+/// variant.
+///
+/// If the file raises an exception as it is required, Rust callers can expect
+/// an `Err` variant. The file is not added to the set of loaded features.
+///
+/// See the documentation of [`load_source`] for more details.
+///
+/// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
+/// [`load_source`]: LoadSources::load_source
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Loaded {
+    /// [`Kernel#load`] succeeded at loading the file.
+    ///
+    /// This variant has value `true` when converting to a Boolean as returned
+    /// by `Kernel#load`.
+    ///
+    /// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
+    Success,
+}
+
+impl From<Loaded> for bool {
+    /// Convert a [`Loaded`] enum into a [`bool`] as returned by
+    /// [`Kernel#load`].
+    ///
+    /// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
+    fn from(loaded: Loaded) -> Self {
+        let Loaded::Success = loaded;
+        true
+    }
+}
+
 /// Load Ruby sources and Rust extensions into an interpreter.
 #[allow(clippy::module_name_repetitions)]
 pub trait LoadSources {
@@ -110,7 +213,7 @@ pub trait LoadSources {
     /// If `path` does not point to a source file, an error is returned.
     ///
     /// If the source file at `path` has no contents, an error is returned.
-    fn load_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
+    fn load_source<P>(&mut self, path: P) -> Result<Loaded, Self::Error>
     where
         P: AsRef<Path>;
 
@@ -127,6 +230,11 @@ pub trait LoadSources {
     /// is loaded and added to `$LOADED_FEATURES`. This function is equivalent
     /// to `Kernel#require`.
     ///
+    /// Implementations should ensure that this method returns
+    /// [`Ok(Required::Success)`][success] at most once. Subsequent `Ok(_)`
+    /// return values should include [`Required::AlreadyRequired`]. See the
+    /// documentation of [`Required`] for more details.
+    ///
     /// # Errors
     ///
     /// If the underlying file system is inaccessible, an error is returned.
@@ -136,7 +244,9 @@ pub trait LoadSources {
     /// If `path` does not point to a source file, an error is returned.
     ///
     /// If the source file at `path` has no contents, an error is returned.
-    fn require_source<P>(&mut self, path: P) -> Result<bool, Self::Error>
+    ///
+    /// [success]: Required::Success
+    fn require_source<P>(&mut self, path: P) -> Result<Required, Self::Error>
     where
         P: AsRef<Path>;
 

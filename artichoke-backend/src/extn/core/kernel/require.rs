@@ -2,6 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
+use artichoke_core::load::{Loaded, Required};
 use bstr::ByteSlice;
 
 use crate::convert::implicitly_convert_to_string;
@@ -9,7 +10,7 @@ use crate::extn::prelude::*;
 use crate::platform_string::bytes_to_os_str;
 use crate::state::parser::Context;
 
-pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
+pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<Loaded, Error> {
     // Safety:
     //
     // Converting the extracted byte slice to an owned `Vec<u8>` is required to
@@ -42,7 +43,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> 
     Err(LoadError::from(message).into())
 }
 
-pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Error> {
+pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<Required, Error> {
     // Safety:
     //
     // Converting the extracted byte slice to an owned `Vec<u8>` is required to
@@ -76,7 +77,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<bool, Erro
 }
 
 #[allow(clippy::module_name_repetitions)]
-pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: RelativePath) -> Result<bool, Error> {
+pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: RelativePath) -> Result<Required, Error> {
     // Safety:
     //
     // Converting the extracted byte slice to an owned `Vec<u8>` is required to

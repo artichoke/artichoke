@@ -16,7 +16,7 @@ pub fn integer(interp: &mut Artichoke, mut arg: Value, base: Option<Value>) -> R
 
 pub fn load(interp: &mut Artichoke, path: Value) -> Result<Value, Error> {
     let success = kernel::require::load(interp, path)?;
-    Ok(interp.convert(success))
+    Ok(interp.convert(bool::from(success)))
 }
 
 pub fn print<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
@@ -86,11 +86,11 @@ where
 
 pub fn require(interp: &mut Artichoke, path: Value) -> Result<Value, Error> {
     let success = kernel::require::require(interp, path)?;
-    Ok(interp.convert(success))
+    Ok(interp.convert(bool::from(success)))
 }
 
 pub fn require_relative(interp: &mut Artichoke, path: Value) -> Result<Value, Error> {
     let relative_base = RelativePath::try_from_interp(interp)?;
     let success = kernel::require::require_relative(interp, path, relative_base)?;
-    Ok(interp.convert(success))
+    Ok(interp.convert(bool::from(success)))
 }
