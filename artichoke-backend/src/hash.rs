@@ -7,9 +7,9 @@ use crate::Artichoke;
 
 impl Hash for Artichoke {
     type Error = Error;
-    type BuildHasher = RandomState;
+    type GlobalBuildHasher = RandomState;
 
-    fn build_hasher(&mut self) -> Result<&Self::BuildHasher, Self::Error> {
+    fn global_build_hasher(&mut self) -> Result<&Self::GlobalBuildHasher, Self::Error> {
         let state = self.state.as_deref_mut().ok_or_else(InterpreterExtractError::new)?;
         Ok(&state.hash_builder)
     }
