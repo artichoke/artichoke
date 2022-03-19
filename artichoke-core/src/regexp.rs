@@ -1,6 +1,10 @@
 //! Track `Regexp` global state.
 
-/// Track the state of `Regexp` globals and global interpreter state.
+/// Track the state of [`Regexp`] special [global variables] and global
+/// interpreter state.
+///
+/// [`Regexp`]: https://ruby-doc.org/core-2.6.3/Regexp.html
+/// [global variables]: https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
 pub trait Regexp {
     /// Concrete error type for errors encountered when manipulating `Regexp`
     /// state.
@@ -12,6 +16,11 @@ pub trait Regexp {
     /// `Regexp` matching methods for each capturing group in the regular
     /// expression.
     ///
+    /// Per the Ruby documentation:
+    ///
+    /// > `$1`, `$2` and so on contain text matching first, second, etc capture
+    /// > group.
+    ///
     /// # Errors
     ///
     /// If the `Regexp` state is inaccessible, an error is returned.
@@ -22,6 +31,11 @@ pub trait Regexp {
     /// `Regexp` global variables like `$1` and `$7` are defined after certain
     /// `Regexp` matching methods for each capturing group in the regular
     /// expression.
+    ///
+    /// Per the Ruby documentation:
+    ///
+    /// > `$1`, `$2` and so on contain text matching first, second, etc capture
+    /// > group.
     ///
     /// # Errors
     ///
