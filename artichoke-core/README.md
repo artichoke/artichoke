@@ -20,6 +20,11 @@ interpreter agnostic implementations of Ruby Core and Standard Library.
 
 Artichoke Core defines traits for the following interpreter capabilities:
 
+- [`ClassRegistry`][core-class-registry]: Define and store class specs for Ruby
+  `Class`es.
+- [`CoerceToNumeric`][core-coerce-numeric]: Coerce Ruby values to native
+  numerics (floats and integers).
+- [`Debug`][core-debug]: Provide debugging and `Exception` message support.
 - [`DefineConstant`][core-define-constant]: Define global, class, and module
   constants to be arbitrary Ruby [`Value`][core-value]s.
 - [`Eval`][core-eval]: Execute Ruby source code on an interpreter from various
@@ -33,6 +38,8 @@ Artichoke Core defines traits for the following interpreter capabilities:
   the current process.
 - [`LoadSources`][core-load-sources]: [Require][kernel#require] source code from
   interpreter disk or [`File`][core-file] gems.
+- [`ModuleRegistry`][core-module-registry]: Define and store module spec for
+  Ruby `Module`s.
 - [`Parser`][core-parser]: Manipulate the parser state, e.g. setting the current
   filename.
 - [`Prng`][core-prng]: An interpreter-level pseudorandom number generator that
@@ -74,8 +81,14 @@ All features are enabled by default:
 [`random::default`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT
 [regexp-globals]:
   https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
+[core-class-registry]:
+  https://artichoke.github.io/artichoke/artichoke_core/class_registry/trait.ClassRegistry.html
+[core-coerce-numeric]:
+  https://artichoke.github.io/artichoke/artichoke_core/coerce_to_numeric/trait.CoerceToNumeric.html
 [core-convert-module]:
   https://artichoke.github.io/artichoke/artichoke_core/convert/index.html
+[core-debug]:
+  https://artichoke.github.io/artichoke/artichoke_core/debug/trait.Debug.html
 [core-define-constant]:
   https://artichoke.github.io/artichoke/artichoke_core/constant/trait.DefineConstant.html
 [core-value]:
@@ -93,6 +106,8 @@ All features are enabled by default:
   https://artichoke.github.io/artichoke/artichoke_core/load/trait.LoadSources.html
 [core-file]:
   https://artichoke.github.io/artichoke/artichoke_core/file/trait.File.html
+[core-module-registry]:
+  https://artichoke.github.io/artichoke/artichoke_core/module_registry/trait.ModuleRegistry.html
 [core-parser]:
   https://artichoke.github.io/artichoke/artichoke_core/parser/trait.Parser.html
 [core-prng]:

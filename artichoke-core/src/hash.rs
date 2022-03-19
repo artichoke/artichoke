@@ -1,17 +1,31 @@
-//! Build hashers and hash values
+//! Build hashers and hash values.
 
-/// Hashing functions such as building hashers
+use core::hash::BuildHasher;
+
+/// A trait for retrieving an interpreter-global [`BuildHasher`].
+///
+/// The [`BuildHasher`] associated with the interpreter is for creating instances
+/// of [`Hasher`]. A `BuildHasher` is typically used (e.g., by `HashMap`) to
+/// create [`Hasher`]s for each key such that they are hashed independently of
+/// one another, since [`Hasher`]s contain state.
+///
+/// By associating one [`BuildHasher`] with the interpreter, identical Ruby
+/// objects should hash identically, even if the interpreter's [`BuildHasher`]
+/// includes randomness.
+///
+/// [`Hasher`]: core::hash::Hasher
 pub trait Hash {
-    /// Concrete error type for errors encountered when outputting hash errors.
+    /// Concrete error type for errors encountered when retrieving the
+    /// interpreter's global [`BuildHasher`].
     type Error;
 
-    /// Concrete build hasher type.
-    type BuildHasher: core::hash::BuildHasher;
+    /// Concrete [`BuildHasher`] type which is global to the interpreter.
+    type GlobalBuildHasher: BuildHasher;
 
-    /// Build a Hasher
+    /// Retrieve the interpreter's global [`BuildHasher`].
     ///
     /// # Errors
     ///
-    /// If the build hasher is inaccessible, an error is returned.
-    fn build_hasher(&mut self) -> Result<&Self::BuildHasher, Self::Error>;
+    /// If the [`BuildHasher`] is inaccessible, an error is returned.
+    fn global_build_hasher(&mut self) -> Result<&Self::GlobalBuildHasher, Self::Error>;
 }

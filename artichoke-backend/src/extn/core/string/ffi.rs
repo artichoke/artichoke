@@ -539,8 +539,8 @@ unsafe extern "C" fn mrb_str_cat(
 unsafe extern "C" fn mrb_str_hash(mrb: *mut sys::mrb_state, s: sys::mrb_value) -> u32 {
     unwrap_interpreter!(mrb, to => guard, or_else = 0);
     let mut s = Value::from(s);
-    let mut hasher = if let Ok(build_hasher) = guard.build_hasher() {
-        build_hasher.build_hasher()
+    let mut hasher = if let Ok(global_build_hasher) = guard.global_build_hasher() {
+        global_build_hasher.build_hasher()
     } else {
         return 0;
     };

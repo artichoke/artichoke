@@ -819,7 +819,7 @@ pub fn getbyte(interp: &mut Artichoke, mut value: Value, index: Value) -> Result
 
 pub fn hash(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let mut hasher = interp.build_hasher()?.build_hasher();
+    let mut hasher = interp.global_build_hasher()?.build_hasher();
     s.as_slice().hash(&mut hasher);
     #[allow(clippy::cast_possible_wrap)]
     let hash = hasher.finish() as i64;

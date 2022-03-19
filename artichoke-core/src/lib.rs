@@ -11,6 +11,12 @@
 #![warn(unused_qualifications)]
 #![warn(variant_size_differences)]
 #![forbid(unsafe_code)]
+// Enable feature callouts in generated documentation:
+// https://doc.rust-lang.org/beta/unstable-book/language-features/doc-cfg.html
+//
+// This approach is borrowed from tokio.
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_alias))]
 
 //! This crate provides a set of traits that, when implemented, comprise a
 //! complete Ruby interpreter.
@@ -26,28 +32,57 @@
 //!
 //! Artichoke Core defines traits for the following interpreter capabilities:
 //!
-//! - [`DefineConstant`](constant::DefineConstant): Define global, class, and
-//!   module constants to be arbitrary Ruby [`Value`](value::Value)s.
-//! - [`Eval`](eval::Eval): Execute Ruby source code on an interpreter from
+//! - [`ClassRegistry`][core-class-registry]: Define and store class specs for
+//!   Ruby `Class`es.
+//! - [`CoerceToNumeric`][core-coerce-numeric]: Coerce Ruby values to native
+//!   numerics (floats and integers).
+//! - [`Debug`][core-debug]: Provide debugging and `Exception` message support.
+//! - [`DefineConstant`][core-define-constant]: Define global, class, and module
+//!   constants to be arbitrary Ruby [`Value`][core-value]s.
+//! - [`Eval`][core-eval]: Execute Ruby source code on an interpreter from
 //!   various sources.
-//! - [`Globals`](globals::Globals): Get, set, and unset interpreter-level
-//!   global variables.
-//! - [`Hash`](hash::Hash): Hashing functions such as building hashers.
-//! - [`Intern`](intern::Intern): Intern byte strings to a cheap to copy and
-//!   compare symbol type.
-//! - [`Io`](io::Io): External I/O APIs, such as writing to the standard output
+//! - [`Globals`][core-globals]: Get, set, and unset interpreter-level global
+//!   variables.
+//! - [`Hash`][core-hash]: Hashing functions such as building hashers.
+//! - [`Intern`][core-intern]: Intern byte strings to a cheap to copy and compare
+//!   symbol type.
+//! - [`Io`][core-io]: External I/O APIs, such as writing to the standard output
 //!   of the current process.
-//! - [`LoadSources`](load::LoadSources): [Require][Kernel#require] source code
-//!   from interpreter disk or [`File`](file::File) gems.
-//! - [`Parser`](parser::Parser): Manipulate the parser state, e.g. setting the
+//! - [`LoadSources`][core-load-sources]: [Require][kernel#require] source code
+//!   from interpreter disk or [`File`][core-file] gems.
+//! - [`ModuleRegistry`][core-module-registry]: Define and store module spec for
+//!   Ruby `Module`s.
+//! - [`Parser`][core-parser]: Manipulate the parser state, e.g. setting the
 //!   current filename.
-//! - [`Prng`](prng::Prng): An interpreter-level pseudorandom number generator
+//! - [`Prng`][core-prng]: An interpreter-level pseudorandom number generator
 //!   that is the backend for [`Random::DEFAULT`].
-//! - [`Regexp`](regexp::Regexp): Manipulate [`Regexp`] global state.
-//! - [`ReleaseMetadata`](release_metadata::ReleaseMetadata): Enable
-//!   interpreters to describe themselves.
-//! - [`TopSelf`](top_self::TopSelf): Access to the root execution context.
-//! - [`Warn`](warn::Warn): Emit warnings.
+//! - [`Regexp`][core-regexp]: Manipulate [`Regexp`][regexp-globals] global
+//!   state.
+//! - [`ReleaseMetadata`][core-releasemetadata]: Enable interpreters to describe
+//!   themselves.
+//! - [`TopSelf`][core-topself]: Access to the root execution context.
+//! - [`Warn`][core-warn]: Emit warnings.
+//!
+//! [core-class-registry]: class_registry::ClassRegistry
+//! [core-coerce-numeric]: coerce_to_numeric::CoerceToNumeric
+//! [core-convert-module]: convert
+//! [core-debug]: debug::Debug
+//! [core-define-constant]: constant::DefineConstant
+//! [core-value]: value::Value
+//! [core-eval]: eval::Eval
+//! [core-globals]: globals::Globals
+//! [core-hash]: hash::Hash
+//! [core-intern]: intern::Intern
+//! [core-io]: io::Io
+//! [core-load-sources]: load::LoadSources
+//! [core-file]: file::File
+//! [core-module-registry]: module_registry::ModuleRegistry
+//! [core-parser]: parser::Parser
+//! [core-prng]: prng::Prng
+//! [core-regexp]: regexp::Regexp
+//! [core-releasemetadata]: release_metadata::ReleaseMetadata
+//! [core-topself]: top_self::TopSelf
+//! [core-warn]: warn::Warn
 //!
 //! Artichoke Core also describes what capabilities a Ruby
 //! [`Value`](value::Value) must have and how to [convert] between Ruby VM and

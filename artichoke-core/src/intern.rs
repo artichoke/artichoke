@@ -57,13 +57,15 @@ pub trait Intern {
     /// Returns an identifier that enables retrieving the original bytes.
     ///
     /// By default, this method is implemented by delegating to
-    /// [`Intern::intern_bytes`].
+    /// [`intern_bytes`].
     ///
     /// # Errors
     ///
     /// If the symbol store cannot be accessed, an error is returned.
     ///
     /// If the symbol table overflows, an error is returned.
+    ///
+    /// [`intern_bytes`]: Self::intern_bytes
     fn intern_string<T>(&mut self, symbol: T) -> Result<Self::Symbol, Self::Error>
     where
         T: Into<Cow<'static, str>>,
@@ -80,11 +82,13 @@ pub trait Intern {
     /// Returns an identifier that enables retrieving the original bytes.
     ///
     /// By default, this method is implemented by delegating to
-    /// [`Intern::check_interned_bytes`].
+    /// [`check_interned_bytes`].
     ///
     /// # Errors
     ///
     /// If the symbol store cannot be accessed, an error is returned.
+    ///
+    /// [`check_interned_bytes`]: Self::check_interned_bytes
     fn check_interned_string(&self, symbol: &str) -> Result<Option<Self::Symbol>, Self::Error> {
         self.check_interned_bytes(symbol.as_bytes())
     }

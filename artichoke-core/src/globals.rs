@@ -46,8 +46,12 @@ pub trait Globals {
 
     /// Get the Ruby value stored in the global variable pointed to by `name`.
     ///
-    /// Getting a global that is currently unset returns `Ok(None)` even through
-    /// a non-existent global resolves to `nil` in the Ruby VM.
+    /// # Compatibility Notes
+    ///
+    /// Getting a global that is currently may return `Ok(None)` even through
+    /// a non-existent global resolves to `nil` in the Ruby VM. Consult the
+    /// documentation on implementations of this trait for implementation-defined
+    /// behavior.
     ///
     /// # Errors
     ///
