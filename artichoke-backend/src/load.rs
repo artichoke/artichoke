@@ -194,6 +194,8 @@ impl LoadSources for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    use bstr::ByteSlice;
+
     use crate::test::prelude::*;
 
     const NON_IDEMPOTENT_LOAD: &[u8] = br#"
@@ -278,5 +280,24 @@ LoadSources::Counter.instance.inc!
             .try_convert_into::<usize>(&interp)
             .unwrap();
         assert_eq!(count, 13);
+    }
+
+    #[test]
+    fn load_does_not_discover_paths_from_loaded_features() {
+        let mut interp = interpreter().unwrap();
+        interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
+
+        let result = interp.require_source("./counter").unwrap();
+        assert!(result);
+        let count = interp
+            .eval(b"LoadSources::Counter.instance.c")
+            .unwrap()
+            .try_convert_into::<usize>(&interp)
+            .unwrap();
+        assert_eq!(count, 11);
+
+        let exc = interp.load_source("./counter").unwrap_err();
+        assert_eq!(exc.message().as_bstr(), b"cannot load such file".as_bstr());
+        assert_eq!(exc.name(), "LoadError");
     }
 }
