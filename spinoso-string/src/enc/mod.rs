@@ -85,10 +85,28 @@ impl EncodedString {
     #[must_use]
     pub const fn new(buf: Vec<u8>, encoding: Encoding) -> Self {
         match encoding {
-            Encoding::Ascii => Self::Ascii(AsciiString::new(buf)),
-            Encoding::Binary => Self::Binary(BinaryString::new(buf)),
-            Encoding::Utf8 => Self::Utf8(Utf8String::new(buf)),
+            Encoding::Ascii => Self::ascii(buf),
+            Encoding::Binary => Self::binary(buf),
+            Encoding::Utf8 => Self::utf8(buf),
         }
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn ascii(buf: Vec<u8>) -> Self {
+        Self::Ascii(AsciiString::new(buf))
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn binary(buf: Vec<u8>) -> Self {
+        Self::Binary(BinaryString::new(buf))
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn utf8(buf: Vec<u8>) -> Self {
+        Self::Utf8(Utf8String::new(buf))
     }
 }
 
