@@ -106,9 +106,8 @@ impl String {
     #[must_use]
     pub const fn new() -> Self {
         let buf = Vec::new();
-        Self {
-            inner: EncodedString::new(buf, Encoding::Utf8),
-        }
+        let inner = EncodedString::utf8(buf);
+        Self { inner }
     }
 
     /// Constructs a new, empty `String` with the specified capacity.
@@ -157,9 +156,8 @@ impl String {
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         let buf = Vec::with_capacity(capacity);
-        Self {
-            inner: EncodedString::new(buf, Encoding::Utf8),
-        }
+        let inner = EncodedString::utf8(buf);
+        Self { inner }
     }
 
     /// Constructs a new, empty `String` with the specified capacity and
@@ -207,35 +205,36 @@ impl String {
     #[must_use]
     pub fn with_capacity_and_encoding(capacity: usize, encoding: Encoding) -> Self {
         let buf = Vec::with_capacity(capacity);
-        Self {
-            inner: EncodedString::new(buf, encoding),
-        }
+        let inner = EncodedString::new(buf, encoding);
+        Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
-        Self {
-            inner: EncodedString::new(buf, encoding),
-        }
+        let inner = EncodedString::new(buf, encoding);
+        Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn utf8(buf: Vec<u8>) -> Self {
-        Self::with_bytes_and_encoding(buf, Encoding::Utf8)
+        let inner = EncodedString::utf8(buf);
+        Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn ascii(buf: Vec<u8>) -> Self {
-        Self::with_bytes_and_encoding(buf, Encoding::Ascii)
+        let inner = EncodedString::ascii(buf);
+        Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn binary(buf: Vec<u8>) -> Self {
-        Self::with_bytes_and_encoding(buf, Encoding::Binary)
+        let inner = EncodedString::binary(buf);
+        Self { inner }
     }
 }
 
