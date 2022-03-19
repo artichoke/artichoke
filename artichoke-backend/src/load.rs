@@ -191,3 +191,92 @@ impl LoadSources for Artichoke {
         Ok(contents.into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test::prelude::*;
+
+    const NON_IDEMPOTENT_LOAD: &[u8] = br#"
+module LoadSources
+  class Counter
+    attr_reader :c
+
+    def initialize(c)
+      @c = c
+    end
+
+    def inc!
+      @c += 1
+    end
+
+    def self.instance
+      @instance ||= new(10)
+    end
+  end
+end
+
+LoadSources::Counter.instance.inc!
+    "#;
+
+    #[test]
+    fn load_has_no_memory() {
+        let mut interp = interpreter().unwrap();
+        interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
+
+        let result = interp.load_source("./counter.rb").unwrap();
+        assert!(result);
+        let count = interp
+            .eval(b"LoadSources::Counter.instance.c")
+            .unwrap()
+            .try_convert_into::<usize>(&interp)
+            .unwrap();
+        assert_eq!(count, 11);
+
+        // `Kernel#load` has no memory and will always execute
+        let result = interp.load_source("./counter.rb").unwrap();
+        assert!(result);
+        let count = interp
+            .eval(b"LoadSources::Counter.instance.c")
+            .unwrap()
+            .try_convert_into::<usize>(&interp)
+            .unwrap();
+        assert_eq!(count, 12);
+    }
+
+    #[test]
+    fn load_has_no_memory_and_ignores_loaded_features() {
+        let mut interp = interpreter().unwrap();
+        interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
+
+        let result = interp.require_source("./counter.rb").unwrap();
+        assert!(result);
+        let count = interp
+            .eval(b"LoadSources::Counter.instance.c")
+            .unwrap()
+            .try_convert_into::<usize>(&interp)
+            .unwrap();
+        assert_eq!(count, 11);
+
+        let result = interp.require_source("./counter.rb").unwrap();
+        assert!(!result);
+
+        let result = interp.load_source("./counter.rb").unwrap();
+        assert!(result);
+        let count = interp
+            .eval(b"LoadSources::Counter.instance.c")
+            .unwrap()
+            .try_convert_into::<usize>(&interp)
+            .unwrap();
+        assert_eq!(count, 12);
+
+        // `Kernel#load` has no memory and will always execute
+        let result = interp.load_source("./counter.rb").unwrap();
+        assert!(result);
+        let count = interp
+            .eval(b"LoadSources::Counter.instance.c")
+            .unwrap()
+            .try_convert_into::<usize>(&interp)
+            .unwrap();
+        assert_eq!(count, 13);
+    }
+}
