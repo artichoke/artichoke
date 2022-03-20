@@ -436,7 +436,7 @@ checksum = "a86232ab60fa71287d7f2ddae4a7073f6b7aac33631c3015abb556f08c6d0a3e"
 
 [[package]]
 name = "spinoso-array"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "raw-parts",
 ]

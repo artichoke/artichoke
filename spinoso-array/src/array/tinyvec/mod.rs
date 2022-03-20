@@ -5,7 +5,6 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::cmp;
-use core::iter;
 use core::slice::{Iter, IterMut};
 
 use tinyvec::TinyVec;
@@ -15,6 +14,7 @@ use crate::array::INLINE_CAPACITY;
 mod convert;
 mod eq;
 mod impls;
+mod iter;
 
 /// A contiguous growable array type based on
 /// [`TinyVec<[T; INLINE_CAPACITY]>`](TinyVec) that implements the small vector
@@ -899,7 +899,9 @@ where
     #[inline]
     #[must_use]
     pub fn with_len_and_default(len: usize, default: T) -> Self {
-        Self(iter::repeat(default).take(len).collect())
+        let mut buf = TinyVec::new();
+        buf.resize(len, default);
+        Self(buf)
     }
 
     /// Appends the elements of `other` to self.

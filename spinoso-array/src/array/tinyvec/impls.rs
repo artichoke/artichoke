@@ -1,21 +1,8 @@
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
-use core::slice::{Iter, IterMut, SliceIndex};
+use core::slice::SliceIndex;
 
-use tinyvec::TinyVec;
-
-use crate::array::tinyvec::TinyArray;
-use crate::array::INLINE_CAPACITY;
-
-impl<T> AsRef<TinyVec<[T; INLINE_CAPACITY]>> for TinyArray<T>
-where
-    T: Default,
-{
-    #[inline]
-    fn as_ref(&self) -> &TinyVec<[T; INLINE_CAPACITY]> {
-        &self.0
-    }
-}
+use super::TinyArray;
 
 impl<T> AsRef<[T]> for TinyArray<T>
 where
@@ -24,16 +11,6 @@ where
     #[inline]
     fn as_ref(&self) -> &[T] {
         self.0.as_ref()
-    }
-}
-
-impl<T> AsMut<TinyVec<[T; INLINE_CAPACITY]>> for TinyArray<T>
-where
-    T: Default,
-{
-    #[inline]
-    fn as_mut(&mut self) -> &mut TinyVec<[T; INLINE_CAPACITY]> {
-        &mut self.0
     }
 }
 
@@ -130,31 +107,5 @@ where
     #[inline]
     fn index_mut(&mut self, index: I) -> &mut I::Output {
         &mut self.0[index]
-    }
-}
-
-impl<'a, T> IntoIterator for &'a TinyArray<T>
-where
-    T: Default,
-{
-    type Item = &'a T;
-    type IntoIter = Iter<'a, T>;
-
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
-    }
-}
-
-impl<'a, T> IntoIterator for &'a mut TinyArray<T>
-where
-    T: Default,
-{
-    type Item = &'a mut T;
-    type IntoIter = IterMut<'a, T>;
-
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter_mut()
     }
 }

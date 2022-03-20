@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-array = "0.6"
+spinoso-array = "0.8.0"
 ```
 
 Then construct and manipulate an `Array` like this:

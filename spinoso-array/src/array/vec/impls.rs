@@ -1,28 +1,13 @@
-use alloc::vec::Vec;
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
-use core::slice::{Iter, IterMut, SliceIndex};
+use core::slice::SliceIndex;
 
-use crate::array::vec::Array;
-
-impl<T> AsRef<Vec<T>> for Array<T> {
-    #[inline]
-    fn as_ref(&self) -> &Vec<T> {
-        &self.0
-    }
-}
+use super::Array;
 
 impl<T> AsRef<[T]> for Array<T> {
     #[inline]
     fn as_ref(&self) -> &[T] {
         self.0.as_ref()
-    }
-}
-
-impl<T> AsMut<Vec<T>> for Array<T> {
-    #[inline]
-    fn as_mut(&mut self) -> &mut Vec<T> {
-        &mut self.0
     }
 }
 
@@ -99,25 +84,5 @@ where
     #[inline]
     fn index_mut(&mut self, index: I) -> &mut I::Output {
         &mut self.0[index]
-    }
-}
-
-impl<'a, T> IntoIterator for &'a Array<T> {
-    type Item = &'a T;
-    type IntoIter = Iter<'a, T>;
-
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter()
-    }
-}
-
-impl<'a, T> IntoIterator for &'a mut Array<T> {
-    type Item = &'a mut T;
-    type IntoIter = IterMut<'a, T>;
-
-    #[inline]
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.iter_mut()
     }
 }
