@@ -74,8 +74,8 @@ pub fn is_explicit_relative(path: &Path) -> bool {
     //
     // https://github.com/artichoke/artichoke/blob/7c845ddfe709658ad6f66be00b2514af05b2619a/artichoke-backend/vendor/ruby/file.c#L6005-L6011
     match bytes {
-        [b'.', x, ..] if path::is_separator((*x).into()) => true,
         [b'.', b'.', x, ..] if path::is_separator((*x).into()) => true,
+        [b'.', x, ..] if path::is_separator((*x).into()) => true,
         _ => false,
     }
 }
