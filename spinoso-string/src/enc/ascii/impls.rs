@@ -1,7 +1,6 @@
 use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::borrow::Borrow;
 use core::ops::{Deref, DerefMut};
 
 use super::AsciiString;
@@ -117,12 +116,5 @@ impl DerefMut for AsciiString {
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
         self.as_mut_slice()
-    }
-}
-
-impl Borrow<[u8]> for AsciiString {
-    #[inline]
-    fn borrow(&self) -> &[u8] {
-        self.as_slice()
     }
 }

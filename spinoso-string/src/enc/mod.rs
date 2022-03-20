@@ -1,5 +1,6 @@
 use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
+use core::borrow::Borrow;
 use core::cmp::Ordering;
 use core::hash::{Hash, Hasher};
 use core::ops::Range;
@@ -79,6 +80,26 @@ impl PartialOrd for EncodedString {
 impl Ord for EncodedString {
     fn cmp(&self, other: &Self) -> Ordering {
         self.as_slice().cmp(other.as_slice())
+    }
+}
+
+// This impl of `Borrow<[u8]>` is permissible due to the manual implementations
+// of `PartialEq`, `Hash`, and `Ord` above which only rely on the byte slice
+// contents in the underlying typed strings.
+//
+// Per the docs in `std`:
+//
+// > In particular `Eq`, `Ord` and `Hash` must be equivalent for borrowed and
+// > owned values: `x.borrow() == y.borrow()` should give the same result as
+// > `x == y`.
+impl Borrow<[u8]> for EncodedString {
+    #[inline]
+    fn borrow(&self) -> &[u8] {
+        match self {
+            EncodedString::Ascii(inner) => inner.borrow(),
+            EncodedString::Binary(inner) => inner.borrow(),
+            EncodedString::Utf8(inner) => inner.borrow(),
+        }
     }
 }
 

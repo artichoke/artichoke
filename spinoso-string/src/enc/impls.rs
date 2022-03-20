@@ -1,5 +1,4 @@
 use alloc::vec::Vec;
-use core::borrow::Borrow;
 use core::ops::{Deref, DerefMut};
 
 use super::EncodedString;
@@ -103,17 +102,6 @@ impl DerefMut for EncodedString {
             EncodedString::Ascii(inner) => inner.deref_mut(),
             EncodedString::Binary(inner) => inner.deref_mut(),
             EncodedString::Utf8(inner) => inner.deref_mut(),
-        }
-    }
-}
-
-impl Borrow<[u8]> for EncodedString {
-    #[inline]
-    fn borrow(&self) -> &[u8] {
-        match self {
-            EncodedString::Ascii(inner) => inner.borrow(),
-            EncodedString::Binary(inner) => inner.borrow(),
-            EncodedString::Utf8(inner) => inner.borrow(),
         }
     }
 }

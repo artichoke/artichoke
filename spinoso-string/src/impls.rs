@@ -222,6 +222,15 @@ impl DerefMut for String {
     }
 }
 
+// This impl of `Borrow<[u8]>` is permissible due to the behavior of
+// `PartialEq`, `Hash`, and `Ord` impls on `String` which only rely on the byte
+// slice contents in the underlying encoded string.
+//
+// Per the docs in `std`:
+//
+// > In particular `Eq`, `Ord` and `Hash` must be equivalent for borrowed and
+// > owned values: `x.borrow() == y.borrow()` should give the same result as
+// > `x == y`.
 impl Borrow<[u8]> for String {
     #[inline]
     fn borrow(&self) -> &[u8] {
