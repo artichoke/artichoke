@@ -1,61 +1,9 @@
 //use alloc::borrow::Cow;
 use alloc::vec::Vec;
 use core::borrow::{Borrow, BorrowMut};
-#[cfg(feature = "std")]
-use core::fmt;
 use core::ops::{Deref, DerefMut};
-#[cfg(feature = "std")]
-use std::io::{IoSlice, Result, Write};
 
 use super::EncodedString;
-
-#[cfg(feature = "std")]
-impl Write for EncodedString {
-    #[inline]
-    fn write(&mut self, buf: &[u8]) -> Result<usize> {
-        match self {
-            EncodedString::Ascii(inner) => inner.write(buf),
-            EncodedString::Binary(inner) => inner.write(buf),
-            EncodedString::Utf8(inner) => inner.write(buf),
-        }
-    }
-
-    #[inline]
-    fn write_all(&mut self, buf: &[u8]) -> Result<()> {
-        match self {
-            EncodedString::Ascii(inner) => inner.write_all(buf),
-            EncodedString::Binary(inner) => inner.write_all(buf),
-            EncodedString::Utf8(inner) => inner.write_all(buf),
-        }
-    }
-
-    #[inline]
-    fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> Result<()> {
-        match self {
-            EncodedString::Ascii(inner) => inner.write_fmt(fmt),
-            EncodedString::Binary(inner) => inner.write_fmt(fmt),
-            EncodedString::Utf8(inner) => inner.write_fmt(fmt),
-        }
-    }
-
-    #[inline]
-    fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> Result<usize> {
-        match self {
-            EncodedString::Ascii(inner) => inner.write_vectored(bufs),
-            EncodedString::Binary(inner) => inner.write_vectored(bufs),
-            EncodedString::Utf8(inner) => inner.write_vectored(bufs),
-        }
-    }
-
-    #[inline]
-    fn flush(&mut self) -> Result<()> {
-        match self {
-            EncodedString::Ascii(inner) => inner.flush(),
-            EncodedString::Binary(inner) => inner.flush(),
-            EncodedString::Utf8(inner) => inner.flush(),
-        }
-    }
-}
 
 impl Extend<u8> for EncodedString {
     #[inline]
