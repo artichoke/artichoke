@@ -1,6 +1,6 @@
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
-use core::borrow::{Borrow, BorrowMut};
+use core::borrow::Borrow;
 use core::fmt;
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 use core::slice::SliceIndex;
@@ -222,31 +222,19 @@ impl DerefMut for String {
     }
 }
 
+// This impl of `Borrow<[u8]>` is permissible due to the behavior of
+// `PartialEq`, `Hash`, and `Ord` impls on `String` which only rely on the byte
+// slice contents in the underlying encoded string.
+//
+// Per the docs in `std`:
+//
+// > In particular `Eq`, `Ord` and `Hash` must be equivalent for borrowed and
+// > owned values: `x.borrow() == y.borrow()` should give the same result as
+// > `x == y`.
 impl Borrow<[u8]> for String {
     #[inline]
     fn borrow(&self) -> &[u8] {
         self.inner.borrow()
-    }
-}
-
-impl BorrowMut<[u8]> for String {
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut [u8] {
-        self.inner.borrow_mut()
-    }
-}
-
-impl Borrow<Vec<u8>> for String {
-    #[inline]
-    fn borrow(&self) -> &Vec<u8> {
-        self.inner.borrow()
-    }
-}
-
-impl BorrowMut<Vec<u8>> for String {
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut Vec<u8> {
-        self.inner.borrow_mut()
     }
 }
 

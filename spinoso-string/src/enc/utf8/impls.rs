@@ -1,7 +1,6 @@
 use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut};
 
 use super::Utf8String;
@@ -117,33 +116,5 @@ impl DerefMut for Utf8String {
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
         self.as_mut_slice()
-    }
-}
-
-impl Borrow<[u8]> for Utf8String {
-    #[inline]
-    fn borrow(&self) -> &[u8] {
-        self.as_slice()
-    }
-}
-
-impl BorrowMut<[u8]> for Utf8String {
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut [u8] {
-        self.as_mut_slice()
-    }
-}
-
-impl Borrow<Vec<u8>> for Utf8String {
-    #[inline]
-    fn borrow(&self) -> &Vec<u8> {
-        &self.inner
-    }
-}
-
-impl BorrowMut<Vec<u8>> for Utf8String {
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.inner
     }
 }
