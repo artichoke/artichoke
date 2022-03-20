@@ -207,18 +207,16 @@ impl AsMut<Vec<u8>> for String {
 impl Deref for String {
     type Target = [u8];
 
-    #[allow(clippy::explicit_deref_methods)]
     #[inline]
     fn deref(&self) -> &[u8] {
-        self.inner.deref()
+        &*self.inner
     }
 }
 
 impl DerefMut for String {
-    #[allow(clippy::explicit_deref_methods)]
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
-        self.inner.deref_mut()
+        &mut *self.inner
     }
 }
 

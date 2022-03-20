@@ -83,25 +83,23 @@ impl AsMut<Vec<u8>> for EncodedString {
 impl Deref for EncodedString {
     type Target = [u8];
 
-    #[allow(clippy::explicit_deref_methods)]
     #[inline]
     fn deref(&self) -> &[u8] {
         match self {
-            EncodedString::Ascii(inner) => inner.deref(),
-            EncodedString::Binary(inner) => inner.deref(),
-            EncodedString::Utf8(inner) => inner.deref(),
+            EncodedString::Ascii(inner) => &*inner,
+            EncodedString::Binary(inner) => &*inner,
+            EncodedString::Utf8(inner) => &*inner,
         }
     }
 }
 
 impl DerefMut for EncodedString {
-    #[allow(clippy::explicit_deref_methods)]
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
         match self {
-            EncodedString::Ascii(inner) => inner.deref_mut(),
-            EncodedString::Binary(inner) => inner.deref_mut(),
-            EncodedString::Utf8(inner) => inner.deref_mut(),
+            EncodedString::Ascii(inner) => &mut *inner,
+            EncodedString::Binary(inner) => &mut *inner,
+            EncodedString::Utf8(inner) => &mut *inner,
         }
     }
 }

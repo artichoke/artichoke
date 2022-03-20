@@ -37,14 +37,14 @@ impl<T> Deref for Array<T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        self.0.as_slice()
+        &*self.0
     }
 }
 
 impl<T> DerefMut for Array<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.0.as_mut_slice()
+        &mut *self.0
     }
 }
 
