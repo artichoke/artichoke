@@ -4,7 +4,7 @@ use std::path::Path;
 
 #[cfg(feature = "load-path-rubylib-native-file-system-loader")]
 use artichoke_load_path::Rubylib;
-use bstr::ByteSlice;
+use mezzaluna_feature_loader::is_explicit_relative;
 
 use super::{ExtensionHook, Memory, Native};
 use crate::platform_string::os_string_to_bytes;
@@ -211,106 +211,6 @@ impl Hybrid {
             self.memory
                 .mark_required(path)
                 .or_else(|_| self.native.mark_required(path))
-        }
-    }
-}
-
-/// Test for relative paths that start with `.` or `..`.
-fn is_explicit_relative(path: &Path) -> bool {
-    if path.is_absolute() {
-        return false;
-    }
-    let bytes = <[_]>::from_path(path);
-    if cfg!(windows) {
-        matches!(bytes, Some([b'.', b'.', b'/' | b'\\', ..] | [b'.', b'/' | b'\\', ..]))
-    } else {
-        matches!(bytes, Some([b'.', b'.', b'/', ..] | [b'.', b'/', ..]))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::path::Path;
-
-    use super::is_explicit_relative;
-
-    #[test]
-    #[cfg(windows)]
-    fn windows_explicit_relative() {
-        let absolute: &[&Path] = &[
-            Path::new(r"c:\windows"),
-            Path::new(r"c:/windows"),
-            Path::new(r"\\.\COM1"),
-            Path::new(r"\\?\C:\windows"),
-        ];
-        for &path in absolute {
-            assert!(!is_explicit_relative(path));
-        }
-        let relative: &[&Path] = &[
-            Path::new(r"c:temp"),
-            Path::new(r"temp"),
-            Path::new(r"\temp"),
-            Path::new(r"/temp"),
-        ];
-        for &path in relative {
-            assert!(!is_explicit_relative(path));
-        }
-        let explicit_relative: &[&Path] = &[
-            Path::new(r".\windows"),
-            Path::new(r"./windows"),
-            Path::new(r"..\windows"),
-            Path::new(r"../windows"),
-            Path::new(r".\.git"),
-            Path::new(r"./.git"),
-            Path::new(r"..\.git"),
-            Path::new(r"../.git"),
-        ];
-        for &path in explicit_relative {
-            assert!(is_explicit_relative(path));
-        }
-        let not_explicit_relative: &[&Path] = &[
-            Path::new(r"...\windows"),
-            Path::new(r".../windows"),
-            Path::new(r"\windows"),
-            Path::new(r"/windows"),
-        ];
-        for &path in not_explicit_relative {
-            assert!(!is_explicit_relative(path));
-        }
-    }
-
-    #[test]
-    #[cfg(not(windows))]
-    fn not_windows_explicit_relative() {
-        let absolute: &[&Path] = &[Path::new(r"/bin"), Path::new(r"/home/artichoke")];
-        for &path in absolute {
-            assert!(!is_explicit_relative(path));
-        }
-        let relative: &[&Path] = &[Path::new(r"temp"), Path::new(r"temp/../var")];
-        for &path in relative {
-            assert!(!is_explicit_relative(path));
-        }
-        let explicit_relative: &[&Path] = &[
-            Path::new(r"./cache"),
-            Path::new(r"../cache"),
-            Path::new(r"./.git"),
-            Path::new(r"../.git"),
-        ];
-        for &path in explicit_relative {
-            assert!(is_explicit_relative(path));
-        }
-        let not_explicit_relative: &[&Path] = &[
-            Path::new(r".\cache"),
-            Path::new(r"..\cache"),
-            Path::new(r".\.git"),
-            Path::new(r"..\.git"),
-            Path::new(r"...\var"),
-            Path::new(r".../var"),
-            Path::new(r"\var"),
-            Path::new(r"/var"),
-        ];
-        for &path in not_explicit_relative {
-            assert!(!is_explicit_relative(path));
         }
     }
 }
