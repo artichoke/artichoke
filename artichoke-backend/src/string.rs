@@ -6,7 +6,7 @@
 //!
 //! Artichoke aims to support ASCII, UTF-8, maybe UTF-8, and binary encodings.
 
-use std::borrow::{Borrow, BorrowMut, Cow};
+use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
@@ -78,30 +78,6 @@ impl WriteError {
     #[must_use]
     pub fn into_inner(self) -> fmt::Error {
         self.0
-    }
-}
-
-impl AsRef<fmt::Error> for WriteError {
-    fn as_ref(&self) -> &fmt::Error {
-        &self.0
-    }
-}
-
-impl AsMut<fmt::Error> for WriteError {
-    fn as_mut(&mut self) -> &mut fmt::Error {
-        &mut self.0
-    }
-}
-
-impl Borrow<fmt::Error> for WriteError {
-    fn borrow(&self) -> &fmt::Error {
-        &self.0
-    }
-}
-
-impl BorrowMut<fmt::Error> for WriteError {
-    fn borrow_mut(&mut self) -> &mut fmt::Error {
-        &mut self.0
     }
 }
 
