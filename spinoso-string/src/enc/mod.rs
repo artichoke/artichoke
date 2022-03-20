@@ -30,7 +30,7 @@ pub enum EncodedString {
 
 impl Default for EncodedString {
     fn default() -> Self {
-        Self::Utf8(Utf8String::new(Vec::new()))
+        Self::utf8(Vec::new())
     }
 }
 
