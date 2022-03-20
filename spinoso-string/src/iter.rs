@@ -23,7 +23,7 @@ use core::slice;
 /// [`String`]: crate::String
 /// [`iter`]: crate::String::iter
 #[derive(Debug, Clone)]
-pub struct Iter<'a>(pub slice::Iter<'a, u8>);
+pub struct Iter<'a>(pub(crate) slice::Iter<'a, u8>);
 
 impl<'a> Iter<'a> {
     /// Views the underlying data as a subslice of the original data.
@@ -55,7 +55,7 @@ impl<'a> Iter<'a> {
 
 impl<'a> AsRef<[u8]> for Iter<'a> {
     fn as_ref(&self) -> &[u8] {
-        self.0.as_slice()
+        self.as_slice()
     }
 }
 
@@ -125,7 +125,7 @@ impl<'a> ExactSizeIterator for Iter<'a> {}
 /// [`iter_mut`]: crate::String::iter_mut
 #[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
-pub struct IterMut<'a>(pub slice::IterMut<'a, u8>);
+pub struct IterMut<'a>(pub(crate) slice::IterMut<'a, u8>);
 
 impl<'a> IterMut<'a> {
     /// Views the underlying data as a subslice of the original data.
@@ -217,7 +217,7 @@ impl<'a> ExactSizeIterator for IterMut<'a> {}
 /// ```
 #[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
-pub struct IntoIter(pub vec::IntoIter<u8>);
+pub struct IntoIter(pub(crate) vec::IntoIter<u8>);
 
 impl IntoIter {
     /// Returns the remaining bytes of this iterator as a slice.
@@ -265,7 +265,7 @@ impl IntoIter {
 impl AsRef<[u8]> for IntoIter {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        self.0.as_slice()
+        self.as_slice()
     }
 }
 
@@ -335,7 +335,7 @@ impl ExactSizeIterator for IntoIter {}
 /// [`String`]: crate::String
 /// [`bytes`]: crate::String::bytes
 #[derive(Debug, Clone)]
-pub struct Bytes<'a>(pub slice::Iter<'a, u8>);
+pub struct Bytes<'a>(pub(crate) slice::Iter<'a, u8>);
 
 impl<'a> From<&'a [u8]> for Bytes<'a> {
     #[inline]
