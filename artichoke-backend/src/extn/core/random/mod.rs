@@ -192,8 +192,7 @@ impl Random {
         seed as i64
     }
 
-    pub fn fill_bytes<T: AsMut<[u8]>>(&mut self, mut buf: T) {
-        let buf = buf.as_mut();
+    pub fn fill_bytes(&mut self, buf: &mut [u8]) {
         self.0.fill_bytes(buf);
     }
 }
