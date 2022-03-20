@@ -1,8 +1,3 @@
-mod ascii;
-mod binary;
-mod impls;
-mod utf8;
-
 use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
 use core::cmp::Ordering;
@@ -18,6 +13,13 @@ use crate::codepoints::InvalidCodepointError;
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
+
+mod ascii;
+mod binary;
+mod impls;
+#[cfg(feature = "std")]
+mod io;
+mod utf8;
 
 #[derive(Clone)]
 pub enum EncodedString {

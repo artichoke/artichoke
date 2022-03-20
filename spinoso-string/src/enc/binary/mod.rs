@@ -1,6 +1,3 @@
-mod eq;
-mod impls;
-
 use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
 use core::fmt;
@@ -12,6 +9,11 @@ use bstr::{ByteSlice, ByteVec};
 use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
+
+mod eq;
+mod impls;
+#[cfg(feature = "std")]
+mod io;
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
