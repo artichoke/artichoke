@@ -108,13 +108,13 @@ impl Deref for Utf8String {
 
     #[inline]
     fn deref(&self) -> &[u8] {
-        self.as_slice()
+        &*self.inner
     }
 }
 
 impl DerefMut for Utf8String {
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
-        self.as_mut_slice()
+        &mut *self.inner
     }
 }
