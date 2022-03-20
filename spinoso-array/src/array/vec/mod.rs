@@ -12,6 +12,7 @@ pub use raw_parts::RawParts;
 mod convert;
 mod eq;
 mod impls;
+mod iter;
 
 /// A contiguous growable array type based on [`Vec<T>`](Vec).
 ///

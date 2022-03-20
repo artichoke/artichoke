@@ -12,6 +12,7 @@ use crate::array::INLINE_CAPACITY;
 mod convert;
 mod eq;
 mod impls;
+mod iter;
 
 /// A contiguous growable array type based on
 /// [`SmallVec<[T; INLINE_CAPACITY]>`](SmallVec) that implements the small vector
