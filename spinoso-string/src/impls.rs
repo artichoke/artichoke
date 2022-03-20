@@ -1,6 +1,6 @@
 use alloc::borrow::Cow;
 use alloc::vec::Vec;
-use core::borrow::{Borrow, BorrowMut};
+use core::borrow::Borrow;
 use core::fmt;
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 use core::slice::SliceIndex;
@@ -226,27 +226,6 @@ impl Borrow<[u8]> for String {
     #[inline]
     fn borrow(&self) -> &[u8] {
         self.inner.borrow()
-    }
-}
-
-impl BorrowMut<[u8]> for String {
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut [u8] {
-        self.inner.borrow_mut()
-    }
-}
-
-impl Borrow<Vec<u8>> for String {
-    #[inline]
-    fn borrow(&self) -> &Vec<u8> {
-        self.inner.borrow()
-    }
-}
-
-impl BorrowMut<Vec<u8>> for String {
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut Vec<u8> {
-        self.inner.borrow_mut()
     }
 }
 

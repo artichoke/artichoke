@@ -1,6 +1,5 @@
-//use alloc::borrow::Cow;
 use alloc::vec::Vec;
-use core::borrow::{Borrow, BorrowMut};
+use core::borrow::Borrow;
 use core::ops::{Deref, DerefMut};
 
 use super::EncodedString;
@@ -115,39 +114,6 @@ impl Borrow<[u8]> for EncodedString {
             EncodedString::Ascii(inner) => inner.borrow(),
             EncodedString::Binary(inner) => inner.borrow(),
             EncodedString::Utf8(inner) => inner.borrow(),
-        }
-    }
-}
-
-impl BorrowMut<[u8]> for EncodedString {
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut [u8] {
-        match self {
-            EncodedString::Ascii(inner) => inner.borrow_mut(),
-            EncodedString::Binary(inner) => inner.borrow_mut(),
-            EncodedString::Utf8(inner) => inner.borrow_mut(),
-        }
-    }
-}
-
-impl Borrow<Vec<u8>> for EncodedString {
-    #[inline]
-    fn borrow(&self) -> &Vec<u8> {
-        match self {
-            EncodedString::Ascii(inner) => inner.borrow(),
-            EncodedString::Binary(inner) => inner.borrow(),
-            EncodedString::Utf8(inner) => inner.borrow(),
-        }
-    }
-}
-
-impl BorrowMut<Vec<u8>> for EncodedString {
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut Vec<u8> {
-        match self {
-            EncodedString::Ascii(inner) => inner.borrow_mut(),
-            EncodedString::Binary(inner) => inner.borrow_mut(),
-            EncodedString::Utf8(inner) => inner.borrow_mut(),
         }
     }
 }
