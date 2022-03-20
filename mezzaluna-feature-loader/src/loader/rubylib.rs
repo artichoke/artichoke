@@ -151,12 +151,14 @@ impl Rubylib {
         Some(Self { load_paths })
     }
 
-    /// Check whether `path` points to a file in the virtual file system and
-    /// return the absolute path if it exists.
+    /// Check whether `path` points to a file in the backing file system and
+    /// return a file [`Handle`] if it exists.
     ///
     /// Returns [`Some`] if the file system object pointed to by `path` exists.
-    /// If `path` is relative, it is joined to each path in the `RUBYLIB`
-    /// environment variable at the time this loader was initialized.
+    /// This method refuses to resolve absolute paths and will always return
+    /// [`None`] for absolute paths. If `path` is relative, it is joined to each
+    /// path in the `RUBYLIB` environment variable at the time this loader was
+    /// initialized.
     ///
     /// This method is infallible and will return [`None`] for non-existent
     /// paths.

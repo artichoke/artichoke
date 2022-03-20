@@ -33,9 +33,13 @@ mod loader;
 
 #[doc(inline)]
 pub use loaded_features::LoadedFeatures;
+#[cfg(feature = "disk")]
+pub use loader::Disk;
 pub use loader::Loader;
 #[cfg(feature = "rubylib")]
 pub use loader::Rubylib;
+pub use loader::{is_explicit_relative, memory_loader_ruby_load_path};
 #[doc(inline)]
 #[cfg(feature = "disk")]
+#[cfg_attr(docsrs, doc(cfg(feature = "disk")))]
 pub use same_file::Handle;
