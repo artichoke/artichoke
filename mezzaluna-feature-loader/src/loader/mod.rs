@@ -20,6 +20,7 @@ use crate::loaded_features::LoadedFeatures;
 
 /// Directory at which Ruby sources and extensions are stored in the virtual
 /// file system.
+#[must_use]
 pub fn memory_loader_ruby_load_path() -> &'static OsStr {
     if cfg!(windows) {
         OsStr::new("c:/artichoke/virtual_root/src/lib")
@@ -62,7 +63,7 @@ pub fn memory_loader_ruby_load_path() -> &'static OsStr {
 /// ```
 ///
 /// [current working directory]: std::env::current_dir
-#[allow(clippy::match_same_arms)]
+#[must_use]
 pub fn is_explicit_relative(path: &Path) -> bool {
     let bytes = if let Some(bytes) = <[u8]>::from_path(path) {
         bytes
