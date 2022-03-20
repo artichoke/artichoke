@@ -19,11 +19,7 @@
 //!
 //! [`Random`]: https://ruby-doc.org/core-2.6.3/Random.html
 
-use core::ops::{Deref, DerefMut};
-
-use spinoso_random::{
-    ArgumentError as RandomArgumentError, InitializeError, NewSeedError, Random as SpinosoRandom, UrandomError,
-};
+use spinoso_random::{InitializeError, NewSeedError, UrandomError};
 #[doc(inline)]
 pub use spinoso_random::{Max, Rand};
 
@@ -137,60 +133,34 @@ pub fn urandom(size: i64) -> Result<Vec<u8>, Error> {
 }
 
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq)]
-pub struct Random(SpinosoRandom);
-
-impl AsRef<SpinosoRandom> for Random {
-    fn as_ref(&self) -> &SpinosoRandom {
-        &self.0
-    }
-}
-
-impl AsMut<SpinosoRandom> for Random {
-    fn as_mut(&mut self) -> &mut SpinosoRandom {
-        &mut self.0
-    }
-}
-
-impl Deref for Random {
-    type Target = SpinosoRandom;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Random {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+pub struct Random(spinoso_random::Random);
 
 impl Random {
     pub fn new() -> Result<Self, Error> {
-        let random = SpinosoRandom::new()?;
+        let random = spinoso_random::Random::new()?;
         Ok(Self(random))
     }
 
     pub fn with_seed(seed: Option<u64>) -> Result<Self, Error> {
         let random = if let Some(seed) = seed {
             if let Ok(seed) = u32::try_from(seed) {
-                SpinosoRandom::with_seed(seed)
+                spinoso_random::Random::with_seed(seed)
             } else {
                 let seed = u128::from(seed);
                 let seed = seed.to_le_bytes();
-                SpinosoRandom::with_byte_array_seed(seed)
+                spinoso_random::Random::with_byte_array_seed(seed)
             }
         } else {
-            SpinosoRandom::new()?
+            spinoso_random::Random::new()?
         };
         Ok(Self(random))
     }
 
     pub fn with_array_seed(seed: Option<[u32; 4]>) -> Result<Self, Error> {
         let random = if let Some(seed) = seed {
-            SpinosoRandom::with_array_seed(seed)
+            spinoso_random::Random::with_array_seed(seed)
         } else {
-            SpinosoRandom::new()?
+            spinoso_random::Random::new()?
         };
         Ok(Self(random))
     }
@@ -208,7 +178,7 @@ impl Random {
     }
 
     pub fn rand(&mut self, constraint: Max) -> Result<Rand, Error> {
-        let rand = spinoso_random::rand(self, constraint)?;
+        let rand = spinoso_random::rand(&mut self.0, constraint)?;
         Ok(rand)
     }
 
@@ -217,9 +187,14 @@ impl Random {
     #[allow(clippy::cast_possible_wrap)]
     pub fn seed(&self) -> i64 {
         // TODO: return a bignum instead of truncating.
-        let [a, b, _, _] = self.as_ref().seed();
+        let [a, b, _, _] = self.0.seed();
         let seed = u64::from(a) << 32 | u64::from(b);
         seed as i64
+    }
+
+    pub fn fill_bytes<T: AsMut<[u8]>>(&mut self, mut buf: T) {
+        let buf = buf.as_mut();
+        self.0.fill_bytes(buf);
     }
 }
 
@@ -270,8 +245,9 @@ impl ConvertMut<Rand, Value> for Artichoke {
     }
 }
 
-impl From<RandomArgumentError> for Error {
-    fn from(err: RandomArgumentError) -> Self {
+impl From<spinoso_random::ArgumentError> for Error {
+    fn from(err: spinoso_random::ArgumentError) -> Self {
+        // XXX: Should this be an `ArgumentError`?
         let err = RuntimeError::from(err.to_string());
         err.into()
     }
