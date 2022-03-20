@@ -276,7 +276,7 @@ impl<S> LoadedFeatures<S> {
     ///
     /// let s = RandomState::new();
     /// let mut set = LoadedFeatures::with_hasher(s);
-    /// set.insert_in_memory_feature(PathBuf::from("set.rb"));
+    /// set.insert_in_memory_feature(PathBuf::from("/src/set.rb"));
     /// ```
     #[must_use]
     pub fn with_hasher(hasher: S) -> Self {

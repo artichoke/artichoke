@@ -1,6 +1,6 @@
 [package]
 name = "mezzaluna-feature-loader"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.58.1"
@@ -12,11 +12,11 @@ keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
 categories = ["filesystem"]
 
 [dependencies]
-bstr = { version = "0.2.9", optional = true, default-features = false }
+bstr = { version = "0.2.9", default-features = false, features = ["std"] }
 same-file = { version = "1.0.6", optional = true }
 
 [features]
-default = ["rubylib"]
+default = ["disk", "rubylib"]
 disk = ["same-file"]
 rubylib = ["disk"]
 
