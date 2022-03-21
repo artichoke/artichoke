@@ -1,4 +1,9 @@
-//! A set of loaded Ruby source files based on a [`Vec`] and [`HashSet`].
+//! A set to track loaded Ruby source paths based on a [`Vec`] and [`HashSet`].
+//!
+//! Ruby tracks which files and native extensions have been [required] in a
+//! global variable called `$LOADED_FEATURES`, which is aliased to `$"`.
+//! `$LOADED_FEATURES` is an Array of paths which point to these Ruby sources
+//! and native extensions.
 //!
 //! This module exposes an append-only, insertion order-preserving, set-like
 //! container for tracking disk and in-memory Ruby sources as they are
@@ -7,128 +12,21 @@
 //! See [`LoadedFeatures`] for more documentation on how to use the types in
 //! this module.
 //!
+//! [required]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
 //! [`require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
 //! [`require_relative`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require_relative
 
+use core::hash::BuildHasher;
 use std::collections::hash_map::RandomState;
-use std::collections::hash_set::{self, HashSet};
+use std::collections::hash_set::HashSet;
 use std::collections::TryReserveError;
-use std::hash::{BuildHasher, Hash};
-use std::iter::FusedIterator;
-use std::path::{Path, PathBuf};
-use std::slice;
+use std::path::PathBuf;
 
-#[cfg(feature = "disk")]
-use same_file::Handle;
+mod iter;
 
-/// A Ruby source ("feature") that has been loaded into an interpreter.
-///
-/// Features can either be loaded from disk or from memory.
-///
-/// Features are identified by the (potentially relative) path used when loading
-/// the file for the first time. Features loaded from disk are deduplicated
-/// by their real position on the underlying file system (i.e. their device and
-/// inode).
-#[derive(Debug, Hash, PartialEq, Eq)]
-pub struct Feature {
-    inner: FeatureType,
-}
+pub use iter::{Features, Iter};
 
-impl Feature {
-    /// Create a new feature from a file handle and path.
-    #[must_use]
-    #[cfg(feature = "disk")]
-    pub fn disk(handle: Handle, path: PathBuf) -> Self {
-        let disk = disk::Feature::with_handle_and_path(handle, path);
-        let inner = FeatureType::Disk(disk);
-        Self { inner }
-    }
-
-    /// Create a new feature from a virtual in-memory path.
-    #[must_use]
-    pub fn memory(path: PathBuf) -> Self {
-        let memory = memory::Feature::with_path(path);
-        let inner = FeatureType::Memory(memory);
-        Self { inner }
-    }
-
-    /// Get the path associated with this feature.
-    ///
-    /// If a feature is loaded multiple times, the first path used to load it is
-    /// returned.
-    #[must_use]
-    pub fn path(&self) -> &Path {
-        match &self.inner {
-            #[cfg(feature = "disk")]
-            FeatureType::Disk(disk) => disk.path(),
-            FeatureType::Memory(memory) => memory.path(),
-        }
-    }
-}
-
-#[derive(Debug, Hash, PartialEq, Eq)]
-enum FeatureType {
-    #[cfg(feature = "disk")]
-    Disk(disk::Feature),
-    Memory(memory::Feature),
-}
-
-#[cfg(feature = "disk")]
-mod disk {
-    use std::hash::{Hash, Hasher};
-    use std::path::{Path, PathBuf};
-
-    use same_file::Handle;
-
-    #[derive(Debug)]
-    pub struct Feature {
-        handle: Handle,
-        path: PathBuf,
-    }
-
-    impl Feature {
-        pub fn with_handle_and_path(handle: Handle, path: PathBuf) -> Self {
-            Self { handle, path }
-        }
-
-        pub fn path(&self) -> &Path {
-            &*self.path
-        }
-    }
-
-    impl Hash for Feature {
-        fn hash<H: Hasher>(&self, state: &mut H) {
-            self.handle.hash(state);
-        }
-    }
-
-    impl PartialEq for Feature {
-        fn eq(&self, other: &Self) -> bool {
-            self.handle == other.handle
-        }
-    }
-
-    impl Eq for Feature {}
-}
-
-mod memory {
-    use std::path::{Path, PathBuf};
-
-    #[derive(Debug, Hash, PartialEq, Eq)]
-    pub struct Feature {
-        path: PathBuf,
-    }
-
-    impl Feature {
-        pub fn with_path(path: PathBuf) -> Self {
-            Self { path }
-        }
-
-        pub fn path(&self) -> &Path {
-            &*self.path
-        }
-    }
-}
+use crate::Feature;
 
 /// A set of all sources loaded by a Ruby interpreter with [`require`] and
 /// [`require_relative`].
@@ -139,12 +37,29 @@ mod memory {
 /// multiple times.
 ///
 /// Ruby refers to files tracked in this way as _features_. The set of loaded
-/// features are stored in a global variable called `$"` (which is aliased to
-/// `$LOADED_FEATURES`).
+/// features are stored in a global variable called `$LOADED_FEATURES`, which is
+/// aliased to `$"`.
 ///
 /// `$LOADED_FEATURES` is an append only set. Disk-based features are
 /// deduplicated by their real position on the underlying file system (i.e. their
 /// device and inode).
+///
+/// # Examples
+///
+/// ```
+/// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+///
+/// let mut features = LoadedFeatures::new();
+/// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
+/// features.insert(Feature::with_in_memory_path("set.rb".into()));
+/// features.insert(Feature::with_in_memory_path("artichoke.rb".into()));
+///
+/// for f in features.features() {
+///     println!("Loaded feature at: {}", f.path().display());
+/// }
+///
+/// features.shrink_to_fit();
+/// ```
 ///
 /// [`require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
 /// [`require_relative`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require_relative
@@ -170,8 +85,8 @@ impl LoadedFeatures<RandomState> {
     ///
     /// ```
     /// use mezzaluna_feature_loader::LoadedFeatures;
-    /// let features = LoadedFeatures::new();
     ///
+    /// let features = LoadedFeatures::new();
     /// assert!(features.is_empty());
     /// assert_eq!(features.capacity(), 0);
     /// ```
@@ -182,7 +97,7 @@ impl LoadedFeatures<RandomState> {
         Self { features, paths }
     }
 
-    /// Creates and empty `LoadedFeatures` with the specified capacity.
+    /// Creates an empty `LoadedFeatures` with the specified capacity.
     ///
     /// The set of features will be able to hold at least `capacity` elements
     /// without reallocating. If `capacity` is 0, the feature set will not
@@ -192,8 +107,8 @@ impl LoadedFeatures<RandomState> {
     ///
     /// ```
     /// use mezzaluna_feature_loader::LoadedFeatures;
-    /// let features = LoadedFeatures::with_capacity(10);
     ///
+    /// let features = LoadedFeatures::with_capacity(10);
     /// assert!(features.capacity() >= 10);
     /// ```
     #[must_use]
@@ -212,8 +127,8 @@ impl<S> LoadedFeatures<S> {
     ///
     /// ```
     /// use mezzaluna_feature_loader::LoadedFeatures;
-    /// let features = LoadedFeatures::with_capacity(100);
     ///
+    /// let features = LoadedFeatures::with_capacity(100);
     /// assert!(features.capacity() >= 100);
     /// ```
     #[must_use]
@@ -223,6 +138,21 @@ impl<S> LoadedFeatures<S> {
 
     /// An iterator visiting all features in insertion order. The iterator
     /// element type is `&'a Path`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    ///
+    /// let mut features = LoadedFeatures::new();
+    /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// features.insert(Feature::with_in_memory_path("artichoke.rb".into()));
+    ///
+    /// for path in features.iter() {
+    ///     println!("Loaded feature at: {}", path.display());
+    /// }
+    /// ```
     #[must_use]
     pub fn iter(&self) -> Iter<'_> {
         let inner = self.paths.iter();
@@ -231,6 +161,21 @@ impl<S> LoadedFeatures<S> {
 
     /// An iterator visiting all features in arbitrary order. The iterator
     /// element type is `&'a Feature`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    ///
+    /// let mut features = LoadedFeatures::new();
+    /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// features.insert(Feature::with_in_memory_path("artichoke.rb".into()));
+    ///
+    /// for f in features.features() {
+    ///     println!("Loaded feature at: {}", f.path().display());
+    /// }
+    /// ```
     #[must_use]
     pub fn features(&self) -> Features<'_> {
         let inner = self.features.iter();
@@ -238,20 +183,39 @@ impl<S> LoadedFeatures<S> {
     }
 
     /// Returns the number of features in the set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    ///
+    /// let mut features = LoadedFeatures::new();
+    /// assert_eq!(features.len(), 0);
+    ///
+    /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
+    /// assert_eq!(features.len(), 1);
+    /// ```
     #[must_use]
     pub fn len(&self) -> usize {
         self.features.len()
     }
 
     /// Returns true if the set contains no features.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    ///
+    /// let mut features = LoadedFeatures::new();
+    /// assert!(features.is_empty());
+    ///
+    /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
+    /// assert!(!features.is_empty());
+    /// ```
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.features.is_empty()
-    }
-
-    /// Clears the set, removing all values.
-    pub fn clear(&mut self) {
-        self.features.clear();
     }
 
     /// Creates a new empty feature set which will use the given hasher to hash
@@ -271,12 +235,11 @@ impl<S> LoadedFeatures<S> {
     ///
     /// ```
     /// use std::collections::hash_map::RandomState;
-    /// use std::path::PathBuf;
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
     ///
     /// let s = RandomState::new();
     /// let mut set = LoadedFeatures::with_hasher(s);
-    /// set.insert_in_memory_feature(PathBuf::from("/src/set.rb"));
+    /// set.insert(Feature::with_in_memory_path("set.rb".into()));
     /// ```
     #[must_use]
     pub fn with_hasher(hasher: S) -> Self {
@@ -304,12 +267,11 @@ impl<S> LoadedFeatures<S> {
     ///
     /// ```
     /// use std::collections::hash_map::RandomState;
-    /// use std::path::PathBuf;
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
     ///
     /// let s = RandomState::new();
     /// let mut set = LoadedFeatures::with_capacity_and_hasher(10, s);
-    /// set.insert_in_memory_feature(PathBuf::from("set.rb"));
+    /// set.insert(Feature::with_in_memory_path("set.rb".into()));
     /// ```
     #[must_use]
     pub fn with_capacity_and_hasher(capacity: usize, hasher: S) -> Self {
@@ -352,6 +314,7 @@ where
     ///
     /// ```
     /// use mezzaluna_feature_loader::LoadedFeatures;
+    ///
     /// let mut features = LoadedFeatures::new();
     /// features.reserve(10);
     /// assert!(features.capacity() >= 10);
@@ -363,10 +326,9 @@ where
 
     /// Tries to reserve capacity for at least `additional` more elements to be
     /// inserted in the `LoadedFeatures`. The collection may reserve more space
-    /// to avoid frequent reallocations.
-    /// After calling `try_reserve`, capacity will be greater than or equal to
-    /// `self.len() + additional`.
-    /// Does nothing if capacity is already sufficient.
+    /// to avoid frequent reallocations. After calling `try_reserve`, capacity
+    /// will be greater than or equal to `self.len() + additional`. Does nothing
+    /// if capacity is already sufficient.
     ///
     /// # Errors
     ///
@@ -377,8 +339,9 @@ where
     ///
     /// ```
     /// use mezzaluna_feature_loader::LoadedFeatures;
+    ///
     /// let mut features = LoadedFeatures::new();
-    /// features.try_reserve(10).expect("why is this OOMing on 10 bytes?");
+    /// features.try_reserve(10).expect("why is this OOMing on 10 features?");
     /// assert!(features.capacity() >= 10);
     /// ```
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
@@ -395,12 +358,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// use std::path::PathBuf;
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::with_capacity(100);
-    /// features.insert_in_memory_feature(PathBuf::from("set.rb"));
-    /// features.insert_in_memory_feature(PathBuf::from("artichoke.rb"));
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// features.insert(Feature::with_in_memory_path("artichoke.rb".into()));
+    ///
     /// assert!(features.capacity() >= 100);
     /// features.shrink_to_fit();
     /// assert!(features.capacity() >= 2);
@@ -420,12 +383,12 @@ where
     /// # Examples
     ///
     /// ```
-    /// use std::path::PathBuf;
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::with_capacity(100);
-    /// features.insert_in_memory_feature(PathBuf::from("set.rb"));
-    /// features.insert_in_memory_feature(PathBuf::from("artichoke.rb"));
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// features.insert(Feature::with_in_memory_path("artichoke.rb".into()));
+    ///
     /// assert!(features.capacity() >= 100);
     /// features.shrink_to(2);
     /// assert!(features.capacity() >= 2);
@@ -440,6 +403,20 @@ where
     /// Features loaded from disk are compared based on whether they point to
     /// the same file on the underlying file system. Features loaded from memory
     /// are compared by their paths.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    ///
+    /// let mut features = LoadedFeatures::new();
+    /// let feature = Feature::with_in_memory_path("set.rb".into());
+    ///
+    /// assert!(!features.contains(&feature));
+    ///
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// assert!(features.contains(&feature));
+    /// ```
     #[must_use]
     pub fn contains(&self, feature: &Feature) -> bool {
         self.features.contains(feature)
@@ -450,6 +427,18 @@ where
     /// # Panics
     ///
     /// Panics if the given feature is already loaded.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    ///
+    /// let mut features = LoadedFeatures::new();
+    /// let feature = Feature::with_in_memory_path("set.rb".into());
+    /// features.insert(feature);
+    ///
+    /// assert_eq!(features.len(), 1);
+    /// ```
     pub fn insert(&mut self, feature: Feature) {
         let path = feature.path().to_owned();
         let feature_was_not_loaded = self.features.insert(feature);
@@ -460,102 +449,17 @@ where
         );
         self.paths.push(path);
     }
-
-    /// Add a disk feature from its handle loaded from disk and its associated path.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the given feature is already loaded.
-    #[cfg(feature = "disk")]
-    pub fn insert_on_disk_feature(&mut self, handle: Handle, path: PathBuf) {
-        let feature = Feature::disk(handle, path);
-        self.insert(feature);
-    }
-
-    /// Add a memory feature from its associated path.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the given feature is already loaded.
-    pub fn insert_in_memory_feature(&mut self, path: PathBuf) {
-        let feature = Feature::memory(path);
-        self.insert(feature);
-    }
 }
 
-/// An iterator over the feature paths in a `LoadedFeatures`.
-///
-/// This struct is created by the [`iter`] method on [`LoadedFeatures`]. See its
-/// documentation for more.
-///
-/// [`iter`]: LoadedFeatures::iter
-#[derive(Debug, Clone)]
-pub struct Iter<'a> {
-    inner: slice::Iter<'a, PathBuf>,
-}
+#[cfg(test)]
+mod tests {
+    use super::{Feature, LoadedFeatures};
 
-impl<'a> Iterator for Iter<'a> {
-    type Item = &'a Path;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let next = self.inner.next()?;
-        Some(&*next)
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        let nth = self.inner.nth(n)?;
-        Some(&*nth)
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-
-    fn count(self) -> usize {
-        self.inner.count()
-    }
-
-    fn last(self) -> Option<Self::Item> {
-        let last = self.inner.last()?;
-        Some(&*last)
+    #[test]
+    #[should_panic(expected = "duplicate feature inserted at set.rb")]
+    fn duplicate_insert_panics() {
+        let mut features = LoadedFeatures::new();
+        features.insert(Feature::with_in_memory_path("set.rb".into()));
+        features.insert(Feature::with_in_memory_path("set.rb".into()));
     }
 }
-
-impl<'a> ExactSizeIterator for Iter<'a> {
-    fn len(&self) -> usize {
-        self.inner.len()
-    }
-}
-
-impl<'a> FusedIterator for Iter<'a> {}
-
-/// An iterator over the features in a `LoadedFeatures`.
-///
-/// This struct is created by the [`features`] method on [`LoadedFeatures`]. See
-/// its documentation for more.
-///
-/// [`features`]: LoadedFeatures::features
-#[derive(Debug, Clone)]
-pub struct Features<'a> {
-    inner: hash_set::Iter<'a, Feature>,
-}
-
-impl<'a> Iterator for Features<'a> {
-    type Item = &'a Feature;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.inner.next()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.inner.size_hint()
-    }
-}
-
-impl<'a> ExactSizeIterator for Features<'a> {
-    fn len(&self) -> usize {
-        self.inner.len()
-    }
-}
-
-impl<'a> FusedIterator for Features<'a> {}

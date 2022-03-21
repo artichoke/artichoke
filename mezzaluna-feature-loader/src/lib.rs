@@ -3,8 +3,7 @@
 #![warn(clippy::cargo)]
 #![allow(clippy::question_mark)] // https://github.com/rust-lang/rust-clippy/issues/8281
 #![allow(unknown_lints)]
-// TODO: warn on missing docs once crate is API-complete.
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
@@ -28,17 +27,15 @@
 //! set of search paths given by the `RUBYLIB` environment variable on
 //! interpreter boot.
 
+mod feature;
 pub mod loaded_features;
-mod loader;
+pub mod loaders;
 pub mod paths;
 
+pub use feature::Feature;
 #[doc(inline)]
 pub use loaded_features::LoadedFeatures;
-#[cfg(feature = "disk")]
-pub use loader::Disk;
-pub use loader::Loader;
-#[cfg(feature = "rubylib")]
-pub use loader::Rubylib;
+
 #[doc(inline)]
 #[cfg(feature = "disk")]
 #[cfg_attr(docsrs, doc(cfg(feature = "disk")))]

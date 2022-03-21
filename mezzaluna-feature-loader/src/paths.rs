@@ -60,7 +60,7 @@ pub fn memory_loader_ruby_load_path() -> &'static Path {
 /// Explicit relative paths start with `.` or `..` followed immediately by a
 /// directory separator.
 ///
-/// Some loaders have special handling for explicit relative paths where
+/// Some [loaders] have special handling for explicit relative paths where
 /// explicit relative paths are resolved relative to the process's [current
 /// working directory] rather than the load path.
 ///
@@ -99,6 +99,7 @@ pub fn memory_loader_ruby_load_path() -> &'static Path {
 /// }
 /// ```
 ///
+/// [loaders]: crate::loaders
 /// [current working directory]: std::env::current_dir
 /// [reference implementation]: https://github.com/artichoke/ruby/blob/v3_0_2/file.c#L6287-L6293
 #[must_use]
@@ -113,7 +114,7 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 /// Explicit relative paths start with `.` or `..` followed immediately by a
 /// directory separator.
 ///
-/// Some loaders have special handling for explicit relative paths where
+/// Some [loaders] have special handling for explicit relative paths where
 /// explicit relative paths are resolved relative to the process's [current
 /// working directory] rather than the load path.
 ///
@@ -153,6 +154,7 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 /// }
 /// ```
 ///
+/// [loaders]: crate::loaders
 /// [current working directory]: std::env::current_dir
 /// [ruby-string]: https://ruby-doc.org/core-2.6.3/String.html
 /// [reference implementation]: https://github.com/artichoke/ruby/blob/v3_0_2/file.c#L6287-L6293
