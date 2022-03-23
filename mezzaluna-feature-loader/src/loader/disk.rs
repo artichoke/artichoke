@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use same_file::Handle;
 
-use super::is_explicit_relative;
+use crate::paths::is_explicit_relative;
 
 /// A Ruby source code loader that loads sources directly from disk and resolves
 /// relative paths with the Ruby `$LOAD_PATH`.
