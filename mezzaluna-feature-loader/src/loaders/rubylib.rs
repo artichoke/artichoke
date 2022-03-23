@@ -32,7 +32,7 @@ use same_file::Handle;
 /// ```no_run
 /// # use std::ffi::OsStr;
 /// # use std::path::Path;
-/// # use mezzaluna_feature_loader::Rubylib;
+/// # use mezzaluna_feature_loader::loaders::Rubylib;
 /// # fn example() -> Option<()> {
 /// // Grab the load paths from the `RUBYLIB` environment variable. If the
 /// // variable is empty or unset, `None` is returned.

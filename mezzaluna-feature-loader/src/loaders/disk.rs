@@ -26,10 +26,10 @@ use crate::paths::is_explicit_relative;
 /// and behaves similarly to the `RUBYLIB` environment variable in the
 /// [`Rubylib`] loader.
 ///
-/// ```no_run
+/// ```
 /// # use std::ffi::OsStr;
 /// # use std::path::{Path, PathBuf};
-/// # use mezzaluna_feature_loader::Disk;
+/// # use mezzaluna_feature_loader::loaders::Disk;
 /// # fn example() -> Option<()> {
 /// // Search `/home/artichoke/src` first, only attempting to search
 /// // `/usr/share/artichoke` if no file is found in `/home/artichoke/src`.
@@ -199,7 +199,7 @@ impl Disk {
     /// ```
     /// # use std::ffi::OsStr;
     /// # use std::path::{Path, PathBuf};
-    /// # use mezzaluna_feature_loader::Disk;
+    /// # use mezzaluna_feature_loader::loaders::Disk;
     /// # fn example() -> Option<()> {
     /// let loader = Disk::with_load_path_and_cwd(
     ///     vec![PathBuf::from("/home/artichoke/src"), PathBuf::from("/usr/share/artichoke"), PathBuf::from("_lib")],
@@ -228,7 +228,7 @@ impl Disk {
     /// ```
     /// # use std::ffi::OsStr;
     /// # use std::path::{Path, PathBuf};
-    /// # use mezzaluna_feature_loader::Disk;
+    /// # use mezzaluna_feature_loader::loaders::Disk;
     /// # fn example() -> Option<()> {
     /// let mut loader = Disk::with_load_path_and_cwd(
     ///     vec![PathBuf::from("/home/artichoke/src"), PathBuf::from("/usr/share/artichoke"), PathBuf::from("_lib")],
