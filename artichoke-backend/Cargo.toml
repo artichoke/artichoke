@@ -17,7 +17,7 @@ artichoke-load-path = { version = "0.1.0", path = "../artichoke-load-path", defa
 bstr = { version = "0.2.9", default-features = false, features = ["std"] }
 cstr = "0.2.4, < 0.2.10"
 intaglio = "1.4.0"
-mezzaluna-feature-loader = { version = "0.2.0", path = "../mezzaluna-feature-loader", default-features = false }
+mezzaluna-feature-loader = { version = "0.3.0", path = "../mezzaluna-feature-loader", default-features = false }
 onig = { version = "6.3.0", optional = true, default-features = false }
 # Ensure the `regex` minimum version is at least 1.5.5 to pull in a fix for a
 # DoS vulnerability.
