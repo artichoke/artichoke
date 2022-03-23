@@ -35,7 +35,6 @@ pub mod paths;
 pub use feature::Feature;
 #[doc(inline)]
 pub use loaded_features::LoadedFeatures;
-
 #[doc(inline)]
 #[cfg(feature = "disk")]
 #[cfg_attr(docsrs, doc(cfg(feature = "disk")))]

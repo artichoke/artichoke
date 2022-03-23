@@ -26,7 +26,7 @@ use crate::paths::is_explicit_relative;
 /// and behaves similarly to the `RUBYLIB` environment variable in the
 /// [`Rubylib`] loader.
 ///
-/// ```no_run
+/// ```
 /// # use std::ffi::OsStr;
 /// # use std::path::{Path, PathBuf};
 /// # use mezzaluna_feature_loader::loaders::Disk;

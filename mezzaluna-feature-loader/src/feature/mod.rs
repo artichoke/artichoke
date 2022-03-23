@@ -15,18 +15,20 @@ enum FeatureType {
 }
 
 impl FeatureType {
+    #[must_use]
     #[cfg(feature = "disk")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "disk")))]
     pub fn with_handle_and_path(handle: Handle, path: PathBuf) -> Self {
         let inner = disk::Feature::with_handle_and_path(handle, path);
         Self::Disk(inner)
     }
 
+    #[must_use]
     pub fn with_in_memory_path(path: PathBuf) -> Self {
         let inner = memory::Feature::with_path(path);
         Self::Memory(inner)
     }
 
+    #[must_use]
     pub fn path(&self) -> &Path {
         match self {
             #[cfg(feature = "disk")]

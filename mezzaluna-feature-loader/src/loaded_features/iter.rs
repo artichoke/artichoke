@@ -3,7 +3,7 @@ use core::slice;
 use std::collections::hash_set;
 use std::path::{Path, PathBuf};
 
-use super::Feature;
+use crate::Feature;
 
 /// An iterator over the feature paths in a `LoadedFeatures`.
 ///
@@ -71,8 +71,20 @@ impl<'a> Iterator for Features<'a> {
         self.inner.next()
     }
 
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.inner.nth(n)
+    }
+
+    fn count(self) -> usize {
+        self.inner.count()
+    }
+
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.inner.size_hint()
+    }
+
+    fn last(self) -> Option<Self::Item> {
+        self.inner.last()
     }
 }
 
