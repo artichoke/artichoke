@@ -4,6 +4,7 @@ use core::hash::{BuildHasher, Hash, Hasher};
 use core::ptr;
 use core::slice;
 use core::str;
+use std::collections::TryReserveError;
 use std::ffi::{c_void, CStr};
 use std::io::Write as _;
 use std::os::raw::{c_char, c_double, c_int};
@@ -166,52 +167,52 @@ unsafe extern "C" fn mrb_str_aref(
 // ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value, len: sys::mrb_int) -> sys::mrb_value {
+    fn try_resize(s: &mut String, len: usize) -> Result<(), TryReserveError> {
+        match len.checked_sub(s.len()) {
+            Some(0) => {}
+            Some(additional) => s.try_reserve(additional)?,
+            // If the given length is less than the length of the `String`, truncate.
+            None => s.truncate(len),
+        }
+        Ok(())
+    }
+
     unwrap_interpreter!(mrb, to => guard, or_else = s);
     let mut value = s.into();
-    let mut allocation_failure = None;
-    let result = if let Ok(mut string) = String::unbox_from_value(&mut value, &mut guard) {
-        let len = if let Ok(len) = usize::try_from(len) {
-            len
-        } else {
-            return s;
-        };
-        // Safety:
-        //
-        // The string is repacked before any intervening use of the interpreter.
-        // The string is repacked before any intervening mruby heap allocations.
-        let string_mut = string.as_inner_mut();
-
-        match len.checked_sub(string_mut.len()) {
-            Some(0) => return s,
-            Some(additional) => {
-                if let Err(err) = string_mut.try_reserve(additional) {
-                    allocation_failure = Some(err);
-                }
-            }
-            // If the given length is less than the length of the `String`, truncate.
-            None => string_mut.truncate(len),
-        }
-
-        let inner = string.take();
-        let value = String::box_into_value(inner, value, &mut guard).expect("String reboxing should not fail");
-
-        value.inner()
+    let mut string = if let Ok(string) = String::unbox_from_value(&mut value, &mut guard) {
+        string
     } else {
-        s
+        return s;
     };
-    if allocation_failure.is_some() {
+    let len = if let Ok(len) = usize::try_from(len) {
+        len
+    } else {
+        return s;
+    };
+    // Safety:
+    //
+    // The string is repacked before any intervening use of the interpreter.
+    // The string is repacked before any intervening mruby heap allocations.
+    let string_mut = string.as_inner_mut();
+
+    let result = try_resize(string_mut, len);
+
+    let inner = string.take();
+    let value = String::box_into_value(inner, value, &mut guard).expect("String reboxing should not fail");
+
+    match result {
+        Ok(_) => value.inner(),
         // NOTE: Ideally this code would distinguish between a capacity overflow
         // (string too large) vs an out of memory condition (allocation failure).
         // This is not possible on stable Rust since `TryReserveErrorKind` is
         // unstable.
-
-        // NOTE: This code can't use an `Error` unified exception trait object.
-        // Since we're in memory error territory, we're not sure if we can
-        // allocate the `Box` it requires.
-        let err = NoMemoryError::with_message("out of memory");
-        error::raise(guard, err);
-    } else {
-        result
+        Err(_) => {
+            // NOTE: This code can't use an `Error` unified exception trait object.
+            // Since we're in memory error territory, we're not sure if we can
+            // allocate the `Box` it requires.
+            let err = NoMemoryError::with_message("out of memory");
+            error::raise(guard, err);
+        }
     }
 }
 
