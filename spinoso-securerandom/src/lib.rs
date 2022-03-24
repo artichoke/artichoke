@@ -275,7 +275,7 @@ impl ArgumentError {
 /// the requested random bytes.
 ///
 /// This error is typically returned by the operating system.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RandomBytesError {
     _private: (),
 }
@@ -332,7 +332,7 @@ impl From<rand::Error> for RandomBytesError {
 /// used to bound a domain for generating random numbers.
 ///
 /// This error is returned by [`random_number`].
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DomainError {
     _private: (),
 }
