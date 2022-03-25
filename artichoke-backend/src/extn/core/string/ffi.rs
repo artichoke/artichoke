@@ -131,13 +131,16 @@ unsafe extern "C" fn mrb_str_index(
 unsafe extern "C" fn mrb_str_aref(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
-    indx: sys::mrb_int,
+    indx: sys::mrb_value,
     alen: sys::mrb_value,
 ) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
-    let value = s.into();
-    let indx = guard.convert(indx);
-    let alen = Some(alen.into());
+    let value = Value::from(s);
+    let indx = Value::from(indx);
+    let alen = Value::from(alen);
+
+    let alen = if alen.is_unreachable() { None } else { Some(alen) };
+
     let result = trampoline::aref(&mut guard, value, indx, alen);
     match result {
         Ok(value) => value.into(),
