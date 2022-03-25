@@ -459,12 +459,14 @@ unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value
 }
 
 // ```c
-// MRB_API mrb_value mrb_str_to_inum(mrb_state *mrb, mrb_value str, mrb_int base, mrb_bool badcheck)
+// MRB_API mrb_value mrb_str_to_integer(mrb_state *mrb, mrb_value str, mrb_int base, mrb_bool badcheck);
+// /* obsolete: use mrb_str_to_integer() */
+// #define mrb_str_to_inum(mrb, str, base, badcheck) mrb_str_to_integer(mrb, str, base, badcheck)
 // ```
 //
 // This function converts a numeric string to numeric `mrb_value` with the given base.
 #[no_mangle]
-unsafe extern "C" fn mrb_str_to_inum(
+unsafe extern "C" fn mrb_str_to_integer(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
     base: sys::mrb_int,
