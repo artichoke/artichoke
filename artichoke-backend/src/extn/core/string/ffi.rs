@@ -15,6 +15,7 @@ use spinoso_exception::ArgumentError;
 use spinoso_exception::NoMemoryError;
 use spinoso_string::{RawParts, String};
 
+use super::trampoline;
 use crate::convert::BoxUnboxVmValue;
 use crate::error;
 use crate::sys;
@@ -121,6 +122,27 @@ unsafe extern "C" fn mrb_str_index(
         return offset as sys::mrb_int;
     }
     haystack.find(needle).map_or(-1, |pos| pos as sys::mrb_int)
+}
+
+// ```c
+// mrb_value mrb_str_aref(mrb_state *mrb, mrb_value str, mrb_value indx, mrb_value alen)
+// ```
+#[no_mangle]
+unsafe extern "C" fn mrb_str_aref(
+    mrb: *mut sys::mrb_state,
+    s: sys::mrb_value,
+    indx: sys::mrb_int,
+    alen: sys::mrb_value,
+) -> sys::mrb_value {
+    unwrap_interpreter!(mrb, to => guard);
+    let value = s.into();
+    let indx = guard.convert(indx);
+    let alen = Some(alen.into());
+    let result = trampoline::aref(&mut guard, value, indx, alen);
+    match result {
+        Ok(value) => value.into(),
+        Err(_) => Value::nil().into(),
+    }
 }
 
 // ```c
