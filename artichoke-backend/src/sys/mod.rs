@@ -119,7 +119,7 @@ mod tests {
         unsafe {
             let mrb = interp.mrb.as_mut();
             let debug = sys::mrb_sys_state_debug(mrb);
-            assert_eq!(debug, format!("mruby 3.0 (v3.0.0) interpreter at {:p}", &*mrb));
+            assert_eq!(debug, format!("mruby 3.1 (v3.1.0) interpreter at {:p}", &*mrb));
         };
     }
 }
