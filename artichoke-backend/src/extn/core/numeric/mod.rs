@@ -1,7 +1,6 @@
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
-mod ffi;
 pub mod mruby;
 
 #[derive(Debug, Clone, Copy)]
