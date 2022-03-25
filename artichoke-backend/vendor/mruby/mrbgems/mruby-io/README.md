@@ -1,5 +1,4 @@
-mruby-io
-========
+# mruby-io
 
 `IO` and `File` classes for mruby
 
@@ -15,7 +14,7 @@ Add the line below to your build configuration.
 
 ### IO
 
- - https://doc.ruby-lang.org/ja/1.9.3/class/IO.html
+* <https://doc.ruby-lang.org/ja/1.9.3/class/IO.html>
 
 | method                     | mruby-io | memo |
 | -------------------------  | -------- | ---- |
@@ -59,7 +58,7 @@ Add the line below to your build configuration.
 | IO#fileno, IO#to_i         |    o     |      |
 | IO#flush                   |    o     |      |
 | IO#fsync                   |          |      |
-| IO#getbyte                 |          |      |
+| IO#getbyte                 |    o     |      |
 | IO#getc                    |    o     |      |
 | IO#gets                    |    o     |      |
 | IO#internal_encoding       |          |      |
@@ -77,7 +76,7 @@ Add the line below to your build configuration.
 | IO#puts                    |    o     |      |
 | IO#read                    |    o     |      |
 | IO#read_nonblock           |          |      |
-| IO#readbyte                |          |      |
+| IO#readbyte                |    o     |      |
 | IO#readchar                |    o     |      |
 | IO#readline                |    o     |      |
 | IO#readlines               |    o     |      |
@@ -93,14 +92,14 @@ Add the line below to your build configuration.
 | IO#sysseek                 |    o     |      |
 | IO#syswrite                |    o     |      |
 | IO#to_io                   |          |      |
-| IO#ungetbyte               |          |      |
+| IO#ungetbyte               |    o     |      |
 | IO#ungetc                  |    o     |      |
 | IO#write                   |    o     |      |
 | IO#write_nonblock          |          |      |
 
 ### File
 
- - https://doc.ruby-lang.org/ja/1.9.3/class/File.html
+* <https://doc.ruby-lang.org/ja/1.9.3/class/File.html>
 
 | method                      | mruby-io | memo |
 | --------------------------- | -------- | ---- |

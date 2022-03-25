@@ -57,7 +57,8 @@ static mrb_value
 istruct_test_test_receive_direct(mrb_state *mrb, mrb_value self)
 {
   char *ptr;
-  mrb_get_args(mrb, "I", &ptr);
+  struct RClass *klass = mrb_class_get(mrb, "InlineStructTest");
+  mrb_get_args(mrb, "I", &ptr, klass);
   return mrb_bool_value(ptr[0] == 's');
 }
 
@@ -69,7 +70,7 @@ istruct_test_mutate(mrb_state *mrb, mrb_value self)
   return mrb_nil_value();
 }
 
-void mrb_mruby_inline_struct_gem_test(mrb_state *mrb)
+void mrb_mruby_test_inline_struct_gem_test(mrb_state *mrb)
 {
   struct RClass *cls;
 

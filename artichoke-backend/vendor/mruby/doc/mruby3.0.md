@@ -1,5 +1,4 @@
-User visible changes in `mruby3`
-===
+# User visible changes in `mruby3.0`
 
 # Build System
 

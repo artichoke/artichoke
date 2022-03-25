@@ -21,6 +21,8 @@ typedef enum {
   NOEX_RESPONDS  = 0x80
 } mrb_method_flag_t;
 
+mrb_value mrb_proc_local_variables(mrb_state *mrb, const struct RProc *proc);
+
 static mrb_value
 mrb_f_nil(mrb_state *mrb, mrb_value cv)
 {
@@ -133,40 +135,7 @@ mrb_obj_ivar_set(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_local_variables(mrb_state *mrb, mrb_value self)
 {
-  const struct RProc *proc;
-  const mrb_irep *irep;
-  mrb_value vars;
-  size_t i;
-
-  proc = mrb->c->ci[-1].proc;
-
-  if (proc == NULL || MRB_PROC_CFUNC_P(proc)) {
-    return mrb_ary_new(mrb);
-  }
-  vars = mrb_hash_new(mrb);
-  while (proc) {
-    if (MRB_PROC_CFUNC_P(proc)) break;
-    irep = proc->body.irep;
-    if (irep->lv) {
-      for (i = 0; i + 1 < irep->nlocals; ++i) {
-        if (irep->lv[i]) {
-          mrb_sym sym = irep->lv[i];
-          const char *name = mrb_sym_name(mrb, sym);
-          switch (name[0]) {
-          case '*': case '&':
-            break;
-          default:
-            mrb_hash_set(mrb, vars, mrb_symbol_value(sym), mrb_true_value());
-            break;
-          }
-        }
-      }
-    }
-    if (MRB_PROC_SCOPE_P(proc)) break;
-    proc = proc->upper;
-  }
-
-  return mrb_hash_keys(mrb, vars);
+  return mrb_proc_local_variables(mrb, mrb->c->ci[-1].proc);
 }
 
 KHASH_DECLARE(st, mrb_sym, char, FALSE)
@@ -205,41 +174,37 @@ method_entry_loop(mrb_state *mrb, struct RClass *klass, khash_t(st) *set, khash_
 }
 
 static mrb_value
-mrb_class_instance_method_list(mrb_state *mrb, mrb_bool recur, struct RClass *klass, int obj)
+mrb_class_instance_method_list(mrb_state *mrb, mrb_bool recur, struct RClass *klass)
 {
-  khint_t i;
   mrb_value ary;
-  mrb_bool prepended = FALSE;
   struct RClass *oldklass;
   khash_t(st) *set = kh_init(st, mrb);
-  khash_t(st) *undef = (recur ? kh_init(st, mrb) : NULL);
 
-  if (!recur && (klass->flags & MRB_FL_CLASS_IS_PREPENDED)) {
-    MRB_CLASS_ORIGIN(klass);
-    prepended = TRUE;
+  if (!recur) {
+    if (klass->flags & MRB_FL_CLASS_IS_PREPENDED) {
+      MRB_CLASS_ORIGIN(klass);
+    }
+    method_entry_loop(mrb, klass, set, NULL);
   }
+  else {
+    khash_t(st) *undef = kh_init(st, mrb);
 
-  oldklass = 0;
-  while (klass && (klass != oldklass)) {
-    method_entry_loop(mrb, klass, set, undef);
-    if ((klass->tt == MRB_TT_ICLASS && !prepended) ||
-        (klass->tt == MRB_TT_SCLASS)) {
+    oldklass = NULL;
+    while (klass && (klass != oldklass)) {
+      method_entry_loop(mrb, klass, set, undef);
+      oldklass = klass;
+      klass = klass->super;
     }
-    else {
-      if (!recur) break;
-    }
-    oldklass = klass;
-    klass = klass->super;
+    kh_destroy(st, mrb, undef);
   }
 
   ary = mrb_ary_new_capa(mrb, kh_size(set));
-  for (i=0;i<kh_end(set);i++) {
+  for (khint_t i=0; i<kh_end(set); i++) {
     if (kh_exist(set, i)) {
       mrb_ary_push(mrb, ary, mrb_symbol_value(kh_key(set, i)));
     }
   }
   kh_destroy(st, mrb, set);
-  if (undef) kh_destroy(st, mrb, undef);
 
   return ary;
 }
@@ -247,7 +212,7 @@ mrb_class_instance_method_list(mrb_state *mrb, mrb_bool recur, struct RClass *kl
 static mrb_value
 mrb_obj_methods(mrb_state *mrb, mrb_bool recur, mrb_value obj, mrb_method_flag_t flag)
 {
-  return mrb_class_instance_method_list(mrb, recur, mrb_class(mrb, obj), 0);
+  return mrb_class_instance_method_list(mrb, recur, mrb_class(mrb, obj));
 }
 /* 15.3.1.3.31 */
 /*
@@ -607,7 +572,7 @@ mrb_mod_instance_methods(mrb_state *mrb, mrb_value mod)
   struct RClass *c = mrb_class_ptr(mod);
   mrb_bool recur = TRUE;
   mrb_get_args(mrb, "|b", &recur);
-  return mrb_class_instance_method_list(mrb, recur, c, 0);
+  return mrb_class_instance_method_list(mrb, recur, c);
 }
 
 /* 15.2.2.4.41 */

@@ -32,9 +32,7 @@ typedef struct mrb_pool_value {
   union {
     const char *str;
     int32_t i32;
-#if defined(MRB_64BIT) || defined(MRB_INT64)
     int64_t i64;
-#endif
 #ifndef MRB_NO_FLOAT
     mrb_float f;
 #endif
@@ -48,8 +46,8 @@ enum mrb_catch_type {
 
 struct mrb_irep_catch_handler {
   uint8_t type;         /* enum mrb_catch_type */
-  uint8_t begin[4];     /* The starting address to match the hander. Includes this. */
-  uint8_t end[4];       /* The endpoint address that matches the hander. Not Includes this. */
+  uint8_t begin[4];     /* The starting address to match the handler. Includes this. */
+  uint8_t end[4];       /* The endpoint address that matches the handler. Not Includes this. */
   uint8_t target[4];    /* The address to jump to if a match is made. */
 };
 
@@ -125,6 +123,7 @@ struct mrb_insn_data {
   uint16_t a;
   uint16_t b;
   uint16_t c;
+  const mrb_code *addr;
 };
 
 struct mrb_insn_data mrb_decode_insn(const mrb_code *pc);

@@ -7,8 +7,6 @@ MRuby.each_target do
   self.libmruby_objs << objfile(src.ext)
 
   file src => [mrbcfile, __FILE__, *rbfiles] do |t|
-    next # Disabled by Artichoke build
-
     if presym_enabled?
       cdump = true
       suffix = "proc"
@@ -30,7 +28,7 @@ MRuby.each_target do
         f.puts %Q[#include <mruby.h>]
         f.puts %Q[#include <mruby/irep.h>]
       end
-      mrbc.run f, rbfiles, "mrblib_#{suffix}", cdump
+      mrbc.run f, rbfiles, "mrblib_#{suffix}", cdump: cdump, static: true
       f.puts %Q[void]
       f.puts %Q[mrb_init_mrblib(mrb_state *mrb)]
       f.puts %Q[{]

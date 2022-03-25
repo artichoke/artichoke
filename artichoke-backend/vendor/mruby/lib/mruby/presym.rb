@@ -1,7 +1,5 @@
 module MRuby
   class Presym
-    include Rake::DSL
-
     OPERATORS = {
       "!" => "not",
       "%" => "mod",
@@ -101,7 +99,7 @@ module MRuby
     end
 
     def list_path
-      @list_pat ||= "#{@build.build_dir}/presym".freeze
+      @list_path ||= "#{@build.build_dir}/presym".freeze
     end
 
     def header_dir;

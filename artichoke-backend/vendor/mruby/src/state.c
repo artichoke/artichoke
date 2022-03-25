@@ -110,6 +110,12 @@ void
 mrb_irep_incref(mrb_state *mrb, mrb_irep *irep)
 {
   if (irep->flags & MRB_IREP_NO_FREE) return;
+  if (irep->refcnt == UINT16_MAX) {
+    mrb_garbage_collect(mrb);
+    if (irep->refcnt == UINT16_MAX) {
+      mrb_raise(mrb, E_RUNTIME_ERROR, "too many irep references");
+    }
+  }
   irep->refcnt++;
 }
 
