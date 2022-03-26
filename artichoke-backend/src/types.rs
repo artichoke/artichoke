@@ -9,10 +9,10 @@ use crate::sys;
 #[must_use]
 pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
     use sys::mrb_vtype::{
-        MRB_TT_ARRAY, MRB_TT_BREAK, MRB_TT_CLASS, MRB_TT_CPTR, MRB_TT_DATA, MRB_TT_ENV, MRB_TT_EXCEPTION,
-        MRB_TT_FALSE, MRB_TT_FIBER, MRB_TT_FLOAT, MRB_TT_FREE, MRB_TT_HASH, MRB_TT_ICLASS, MRB_TT_INTEGER,
-        MRB_TT_ISTRUCT, MRB_TT_MAXDEFINE, MRB_TT_MODULE, MRB_TT_OBJECT, MRB_TT_PROC, MRB_TT_RANGE, MRB_TT_SCLASS,
-        MRB_TT_STRING, MRB_TT_SYMBOL, MRB_TT_TRUE, MRB_TT_UNDEF,
+        MRB_TT_ARRAY, MRB_TT_BREAK, MRB_TT_CLASS, MRB_TT_COMPLEX, MRB_TT_CPTR, MRB_TT_DATA, MRB_TT_ENV,
+        MRB_TT_EXCEPTION, MRB_TT_FALSE, MRB_TT_FIBER, MRB_TT_FLOAT, MRB_TT_FREE, MRB_TT_HASH, MRB_TT_ICLASS,
+        MRB_TT_INTEGER, MRB_TT_ISTRUCT, MRB_TT_MAXDEFINE, MRB_TT_MODULE, MRB_TT_OBJECT, MRB_TT_PROC, MRB_TT_RANGE,
+        MRB_TT_RATIONAL, MRB_TT_SCLASS, MRB_TT_STRING, MRB_TT_STRUCT, MRB_TT_SYMBOL, MRB_TT_TRUE, MRB_TT_UNDEF,
     };
 
     // Suppress lint to enumerate match arms in the same order they are defined
@@ -79,6 +79,7 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         MRB_TT_DATA => Ruby::Data,
         // NOTE(lopopolo): `Fiber`s are unimplemented in Artichoke.
         MRB_TT_FIBER => Ruby::Fiber,
+        MRB_TT_STRUCT => Ruby::Unreachable,
         // `MRB_TT_ISTRUCT` is an "inline structure", or a `mrb_value` that
         // stores data in a `char*` buffer inside an `mrb_value`. These
         // `mrb_value`s cannot have a finalizer and cannot have instance
@@ -93,6 +94,8 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         // FIXME(lopopolo): The below "unreachable" designation is incorrect.
         // BREAK should be handled by `sys::protect::block_yield`.
         MRB_TT_BREAK => Ruby::Unreachable,
+        MRB_TT_COMPLEX => Ruby::Unreachable,
+        MRB_TT_RATIONAL => Ruby::Unreachable,
         // `MRB_TT_MAXDEFINE` is a marker enum value used by the mruby VM to
         // dynamically check if a type tag is valid using the less than
         // operator. It does not correspond to an instantiated type.
