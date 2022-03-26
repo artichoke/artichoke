@@ -11,6 +11,8 @@
 
 const uint8_t mrblib_irep[] = {0};
 
+const char mrb_digitmap[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+
 // Check whether `mrb_value` is nil, false, or true
 
 MRB_API _Bool
