@@ -184,8 +184,9 @@ mod libs {
             name.starts_with("lib"),
             "Static lib name must be of the format libXXX.a, got {name}"
         );
-        assert!(
-            name.ends_with(".a"),
+        assert_eq!(
+            name.rsplit('.').next().map(|ext| ext.eq_ignore_ascii_case("a")),
+            Some(true),
             "Static lib name must be of the format libXXX.a, got {name}"
         );
         assert!(
