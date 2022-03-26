@@ -24,7 +24,7 @@ mod paths {
     }
 }
 
-mod libmruby {
+mod libs {
     use std::env;
     use std::ffi::OsStr;
     use std::path::PathBuf;
@@ -151,8 +151,7 @@ mod libmruby {
         .into_iter()
     }
 
-    // Build the extension libraries
-    fn staticlib(target: &Triple) {
+    fn mruby_static(target: &Triple) {
         let mut build = cc::Build::new();
         build
             .warnings(false)
@@ -193,7 +192,9 @@ mod libmruby {
         }
 
         build.compile("libmruby.a");
+    }
 
+    fn mrbgems_static(target: &Triple) {
         let mut build = cc::Build::new();
         build
             .warnings(false)
@@ -239,7 +240,9 @@ mod libmruby {
         }
 
         build.compile("libmrbgems.a");
+    }
 
+    fn mrubysys_static(target: &Triple) {
         let mut build = cc::Build::new();
         build
             .warnings(false)
@@ -375,7 +378,9 @@ mod libmruby {
     }
 
     pub fn build(target: &Triple, out_dir: &OsStr) {
-        staticlib(target);
+        mruby_static(target);
+        mrbgems_static(target);
+        mrubysys_static(target);
         bindgen(target, out_dir);
     }
 }
@@ -390,5 +395,5 @@ fn main() {
         )
     });
     let out_dir = env::var_os("OUT_DIR").expect("cargo-provided OUT_DIR env variable not set");
-    libmruby::build(&target, &out_dir);
+    libs::build(&target, &out_dir);
 }
