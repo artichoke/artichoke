@@ -19,8 +19,16 @@ mod paths {
         crate_root().join("vendor").join("mruby")
     }
 
-    pub fn mruby_sys_root() -> PathBuf {
-        crate_root().join("mruby-sys")
+    pub fn mrbgems_root() -> PathBuf {
+        crate_root().join("cext").join("mrbgems")
+    }
+
+    pub fn mrbsys_root() -> PathBuf {
+        crate_root().join("cext").join("mrbsys")
+    }
+
+    pub fn bindgen_header() -> PathBuf {
+        crate_root().join("cext").join("bindgen.h")
     }
 }
 
@@ -35,7 +43,7 @@ mod libs {
 
     use super::paths;
 
-    fn mruby_sources() -> impl Iterator<Item = &'static str> {
+    fn mruby_sources() -> impl Iterator<Item = PathBuf> {
         [
             "src/array.c",
             "src/backtrace.c",
@@ -67,16 +75,18 @@ mod libs {
             "src/vm.c",
         ]
         .into_iter()
+        .map(|source| paths::mruby_root().join(source))
     }
 
-    fn mruby_include_dirs() -> impl Iterator<Item = &'static str> {
+    fn mruby_include_dirs() -> impl Iterator<Item = PathBuf> {
         [
             "include", // mruby core
         ]
         .into_iter()
+        .map(|dir| paths::mruby_root().join(dir))
     }
 
-    fn mrbgems_sources() -> impl Iterator<Item = &'static str> {
+    fn mrbgems_sources() -> impl Iterator<Item = PathBuf> {
         [
             "mrbgems/mruby-compiler/core/codegen.c",
             "mrbgems/mruby-compiler/core/y.tab.c",
@@ -91,9 +101,15 @@ mod libs {
             "mrbgems/mruby-proc-ext/src/proc.c",
         ]
         .into_iter()
+        .map(|source| paths::mruby_root().join(source))
+        .chain(
+            ["src/gem_init.c", "src/mrbgems.c"]
+                .into_iter()
+                .map(|source| paths::mrbgems_root().join(source)),
+        )
     }
 
-    fn mrbgems_include_dirs() -> impl Iterator<Item = &'static str> {
+    fn mrbgems_include_dirs() -> impl Iterator<Item = PathBuf> {
         [
             "mrbgems/mruby-compiler/core",     // Ruby parser and bytecode generation
             "mrbgems/mruby-error/include",     // `mrb_raise`, `mrb_protect`
@@ -107,14 +123,21 @@ mod libs {
             "mrbgems/mruby-proc-ext/include",  // NOTE(GH-32): This gem is required by `mruby-method`.
         ]
         .into_iter()
+        .map(|dir| paths::mruby_root().join(dir))
+        .chain(mruby_include_dirs())
     }
 
-    fn mruby_sys_sources() -> impl Iterator<Item = &'static str> {
-        ["src/gem_init.c", "src/mrbgems.c", "src/mruby-sys/ext.c"].into_iter()
+    fn mrbsys_sources() -> impl Iterator<Item = PathBuf> {
+        ["src/ext.c"]
+            .into_iter()
+            .map(|source| paths::mrbsys_root().join(source))
     }
 
-    fn mruby_sys_include_dirs() -> impl Iterator<Item = &'static str> {
-        ["include"].into_iter()
+    fn mrbsys_include_dirs() -> impl Iterator<Item = PathBuf> {
+        ["include"]
+            .into_iter()
+            .map(|dir| paths::mrbsys_root().join(dir))
+            .chain(mruby_include_dirs())
     }
 
     // From `emsdk/upstream/emscripten/tools/shared.py:emsdk_cflags`:
@@ -151,7 +174,25 @@ mod libs {
         .into_iter()
     }
 
-    fn mruby_static(target: &Triple) {
+    fn staticlib(
+        target: &Triple,
+        name: &str,
+        include_dirs: impl Iterator<Item = PathBuf>,
+        sources: impl Iterator<Item = PathBuf>,
+    ) {
+        assert!(
+            name.starts_with("lib"),
+            "Static lib name must be of the format libXXX.a, got {name}"
+        );
+        assert!(
+            name.ends_with(".a"),
+            "Static lib name must be of the format libXXX.a, got {name}"
+        );
+        assert!(
+            name.len() > 5,
+            "Static lib name must be of the format libXXX.a, got {name}"
+        );
+
         let mut build = cc::Build::new();
         build
             .warnings(false)
@@ -164,14 +205,12 @@ mod libs {
             .define("MRB_NO_STDIO", None)
             .define("MRB_UTF8_STRING", None);
 
-        for source in mruby_sources() {
-            let file = paths::mruby_root().join(source);
-            println!("cargo:rerun-if-changed={}", file.to_str().unwrap());
-            build.file(file);
+        for source in sources {
+            println!("cargo:rerun-if-changed={}", source.to_str().unwrap());
+            build.file(source);
         }
 
-        for dir in mruby_include_dirs() {
-            let include_dir = paths::mruby_root().join(dir);
+        for include_dir in include_dirs {
             build.include(include_dir);
         }
 
@@ -191,103 +230,7 @@ mod libs {
             }
         }
 
-        build.compile("libmruby.a");
-    }
-
-    fn mrbgems_static(target: &Triple) {
-        let mut build = cc::Build::new();
-        build
-            .warnings(false)
-            .define("ARTICHOKE", None)
-            .define("MRB_ARY_NO_EMBED", None)
-            .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
-            .define("MRB_INT64", None)
-            .define("MRB_NO_BOXING", None)
-            .define("MRB_NO_PRESYM", None)
-            .define("MRB_NO_STDIO", None)
-            .define("MRB_UTF8_STRING", None);
-
-        for source in mrbgems_sources() {
-            let file = paths::mruby_root().join(source);
-            println!("cargo:rerun-if-changed={}", file.to_str().unwrap());
-            build.file(file);
-        }
-
-        for dir in mruby_include_dirs() {
-            let include_dir = paths::mruby_root().join(dir);
-            build.include(include_dir);
-        }
-
-        for dir in mrbgems_include_dirs() {
-            let include_dir = paths::mruby_root().join(dir);
-            build.include(include_dir);
-        }
-
-        if let Architecture::Wasm32 = target.architecture {
-            for include_dir in wasm_include_dirs() {
-                build.include(include_dir);
-            }
-            match target.operating_system {
-                OperatingSystem::Emscripten => {
-                    build.define("MRB_API", Some(r#"__attribute__((used))"#));
-                }
-                OperatingSystem::Unknown => {
-                    build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
-                    build.define("MRB_NO_DIRECT_THREADING", None);
-                }
-                _ => {}
-            }
-        }
-
-        build.compile("libmrbgems.a");
-    }
-
-    fn mrubysys_static(target: &Triple) {
-        let mut build = cc::Build::new();
-        build
-            .warnings(false)
-            .define("ARTICHOKE", None)
-            .define("MRB_ARY_NO_EMBED", None)
-            .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
-            .define("MRB_INT64", None)
-            .define("MRB_NO_BOXING", None)
-            .define("MRB_NO_PRESYM", None)
-            .define("MRB_NO_STDIO", None)
-            .define("MRB_UTF8_STRING", None);
-
-        for source in mruby_sys_sources() {
-            let file = paths::mruby_sys_root().join(source);
-            println!("cargo:rerun-if-changed={}", file.to_str().unwrap());
-            build.file(file);
-        }
-
-        for dir in mruby_include_dirs() {
-            let include_dir = paths::mruby_root().join(dir);
-            build.include(include_dir);
-        }
-
-        for dir in mruby_sys_include_dirs() {
-            let include_dir = paths::mruby_sys_root().join(dir);
-            build.include(include_dir);
-        }
-
-        if let Architecture::Wasm32 = target.architecture {
-            for include_dir in wasm_include_dirs() {
-                build.include(include_dir);
-            }
-            match target.operating_system {
-                OperatingSystem::Emscripten => {
-                    build.define("MRB_API", Some(r#"__attribute__((used))"#));
-                }
-                OperatingSystem::Unknown => {
-                    build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
-                    build.define("MRB_NO_DIRECT_THREADING", None);
-                }
-                _ => {}
-            }
-        }
-
-        build.compile("libmrubysys.a");
+        build.compile(name);
     }
 
     fn bindgen(target: &Triple, out_dir: &OsStr) {
@@ -352,12 +295,8 @@ mod libs {
             .arg("--size_t-is-usize")
             .arg("--output")
             .arg(bindings_out_path)
-            .arg(paths::mruby_sys_root().join("include").join("mruby-sys.h"))
+            .arg(paths::bindgen_header())
             .arg("--")
-            .arg("-I")
-            .arg(paths::mruby_root().join("include"))
-            .arg("-I")
-            .arg(paths::mruby_sys_root().join("include"))
             .arg("-DARTICHOKE")
             .arg("-DMRB_ARY_NO_EMBED")
             .arg("-DMRB_GC_TURN_OFF_GENERATIONAL")
@@ -366,6 +305,10 @@ mod libs {
             .arg("-DMRB_NO_PRESYM")
             .arg("-DMRB_NO_STDIO")
             .arg("-DMRB_UTF8_STRING");
+
+        for include_dir in mruby_include_dirs().chain(mrbsys_include_dirs()) {
+            command.arg("-I").arg(include_dir);
+        }
 
         if let Architecture::Wasm32 = target.architecture {
             for include_dir in wasm_include_dirs() {
@@ -378,9 +321,9 @@ mod libs {
     }
 
     pub fn build(target: &Triple, out_dir: &OsStr) {
-        mruby_static(target);
-        mrbgems_static(target);
-        mrubysys_static(target);
+        staticlib(target, "libmruby.a", mruby_include_dirs(), mruby_sources());
+        staticlib(target, "libmrbgems.a", mrbgems_include_dirs(), mrbgems_sources());
+        staticlib(target, "libmrbsys.a", mrbsys_include_dirs(), mrbsys_sources());
         bindgen(target, out_dir);
     }
 }
@@ -388,12 +331,9 @@ mod libs {
 fn main() {
     let target = env::var_os("TARGET").expect("cargo-provided TARGET env variable not set");
     let target = target.to_str().expect("TARGET env variable was not valid UTF-8");
-    let target = target.parse::<Triple>().unwrap_or_else(|err| {
-        panic!(
-            "target-lexicon could not parse build target '{}' with error: {}",
-            target, err
-        )
-    });
+    let target = target
+        .parse::<Triple>()
+        .unwrap_or_else(|err| panic!("target-lexicon could not parse build target '{target}' with error: {err}"));
     let out_dir = env::var_os("OUT_DIR").expect("cargo-provided OUT_DIR env variable not set");
     libs::build(&target, &out_dir);
 }
