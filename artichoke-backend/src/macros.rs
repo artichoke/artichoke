@@ -213,7 +213,7 @@ macro_rules! mrb_get_args {
             opt1.as_mut_ptr(),
             has_opt1.as_mut_ptr(),
         );
-        let has_opt1 = has_opt1.assume_init() != 0;
+        let has_opt1 = has_opt1.assume_init();
         match argc {
             3 => {
                 let req1 = req1.assume_init();
@@ -291,8 +291,8 @@ macro_rules! mrb_get_args {
             opt2.as_mut_ptr(),
             has_opt2.as_mut_ptr(),
         );
-        let has_opt1 = has_opt1.assume_init() != 0;
-        let has_opt2 = has_opt2.assume_init() != 0;
+        let has_opt1 = has_opt1.assume_init();
+        let has_opt2 = has_opt2.assume_init();
         let opt1 = if has_opt1 { Some(opt1.assume_init()) } else { None };
         let opt2 = if has_opt2 { Some(opt2.assume_init()) } else { None };
         let block = block.assume_init();

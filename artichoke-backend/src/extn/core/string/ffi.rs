@@ -270,22 +270,22 @@ unsafe extern "C" fn mrb_str_equal(
     str1: sys::mrb_value,
     str2: sys::mrb_value,
 ) -> sys::mrb_bool {
-    unwrap_interpreter!(mrb, to => guard, or_else = sys::mrb_bool::from(false));
+    unwrap_interpreter!(mrb, to => guard, or_else = false);
     let mut a = Value::from(str1);
     let mut b = Value::from(str2);
 
     let a = if let Ok(a) = String::unbox_from_value(&mut a, &mut guard) {
         a
     } else {
-        return sys::mrb_bool::from(false);
+        return false;
     };
     let b = if let Ok(b) = String::unbox_from_value(&mut b, &mut guard) {
         b
     } else {
-        return sys::mrb_bool::from(false);
+        return false;
     };
 
-    sys::mrb_bool::from(*a == *b)
+    *a == *b
 }
 
 // ```c
@@ -471,8 +471,6 @@ unsafe extern "C" fn mrb_str_to_inum(
     badcheck: sys::mrb_bool,
 ) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
-    let badcheck = badcheck != 0;
-
     let mut s = Value::from(s);
     let s = if let Ok(s) = String::unbox_from_value(&mut s, &mut guard) {
         s
@@ -533,8 +531,6 @@ unsafe extern "C" fn mrb_str_to_inum(
 #[no_mangle]
 unsafe extern "C" fn mrb_str_to_dbl(mrb: *mut sys::mrb_state, s: sys::mrb_value, badcheck: sys::mrb_bool) -> c_double {
     unwrap_interpreter!(mrb, to => guard, or_else = 0.0);
-    let badcheck = badcheck != 0;
-
     let mut s = Value::from(s);
     let s = if let Ok(s) = String::unbox_from_value(&mut s, &mut guard) {
         s
