@@ -157,7 +157,7 @@ Once you [configure a development environment](#setup), run the following to
 lint and format sources:
 
 ```sh
-rake
+bundle exec rake
 ```
 
 Merges will be blocked by CI if there are lint errors.
@@ -166,13 +166,16 @@ Merges will be blocked by CI if there are lint errors.
 
 A PR must have new or existing tests for it to be merged. The [Rust book chapter
 on testing] is a good place to start. If you'd like to see some examples in
-Artichoke, take a look at the `Value` tests in
-[`artichoke-backend/src/value/mod.rs`].
+Artichoke, take a look at:
+
+- `Value` VM integration tests in [`artichoke-backend/src/value.rs`].
+- `spinoso-env` unit tests for the `Memory` backend in
+  [`spinoso-env/src/env/memory.rs`].
 
 To run tests:
 
 ```sh
-rake test
+bundle exec rake test
 ```
 
 If you are only working on one crate, it can speed up iteration time to only
@@ -183,10 +186,11 @@ cargo test -p artichoke-backend
 ```
 
 `cargo test` accepts a filter argument that will limit test execution to tests
-that substring match. For example, to run all of the Ruby/Rust interop tests:
+that substring match. For example, to run all of the Ruby/Rust Boolean
+conversion tests:
 
 ```sh
-cargo test -p artichoke-backend convert
+cargo test -p artichoke-backend convert::boolean
 ```
 
 Tests are run for every PR. All builds must pass before merging a PR.
@@ -232,7 +236,8 @@ Regular dependency bumps are handled by [@dependabot].
 [homebrew]: https://docs.brew.sh/Installation
 [rust book chapter on testing]:
   https://doc.rust-lang.org/book/ch11-00-testing.html
-[`artichoke-backend/src/value/mod.rs`]: artichoke-backend/src/value.rs
+[`artichoke-backend/src/value.rs`]: artichoke-backend/src/value.rs
+[`spinoso-env/src/env/memory.rs`]: spinoso-env/src/env/memory.rs
 [artichoke/artichoke#482]: https://github.com/artichoke/artichoke/pull/482
 [cargo-outdated]: https://github.com/kbknapp/cargo-outdated
 [artichoke/artichoke#548]: https://github.com/artichoke/artichoke/pull/548
