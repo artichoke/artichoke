@@ -60,7 +60,7 @@ impl Disk {
     /// Ruby sources with an empty `$LOAD_PATH`.
     ///
     /// A `Disk` loader with an empty `$LOAD_PATH` can only load sources by
-    /// absolute paths or relatice to the process's [current working directory]
+    /// absolute paths or relative to the process's [current working directory]
     /// if an [explicit relative path] is given.
     ///
     /// The resolved load paths are mutable; `$LOAD_PATH` can be modified at

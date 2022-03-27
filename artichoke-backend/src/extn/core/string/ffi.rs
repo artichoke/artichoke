@@ -20,7 +20,9 @@ use crate::error;
 use crate::sys;
 use crate::value::Value;
 
+// ```c
 // MRB_API mrb_value mrb_str_new_capa(mrb_state *mrb, size_t capa)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
@@ -32,7 +34,9 @@ unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> 
     }
 }
 
+// ```c
 // MRB_API mrb_value mrb_str_new(mrb_state *mrb, const char *p, size_t len)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const c_char, len: usize) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
@@ -50,7 +54,9 @@ unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const c_char, len
     }
 }
 
+// ```c
 // MRB_API mrb_value mrb_str_new_cstr(mrb_state *mrb, const char *p)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new_cstr(mrb: *mut sys::mrb_state, p: *const c_char) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
@@ -64,14 +70,18 @@ unsafe extern "C" fn mrb_str_new_cstr(mrb: *mut sys::mrb_state, p: *const c_char
     }
 }
 
+// ```c
 // MRB_API mrb_value mrb_str_new_static(mrb_state *mrb, const char *p, size_t len)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new_static(mrb: *mut sys::mrb_state, p: *const c_char, len: usize) -> sys::mrb_value {
     // Artichoke doesn't have a static string optimization.
     mrb_str_new(mrb, p, len)
 }
 
+// ```c
 // MRB_API mrb_int mrb_str_index(mrb_state *mrb, mrb_value str, const char *sptr, mrb_int slen, mrb_int offset)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_index(
     mrb: *mut sys::mrb_state,
@@ -113,17 +123,22 @@ unsafe extern "C" fn mrb_str_index(
     haystack.find(needle).map_or(-1, |pos| pos as sys::mrb_int)
 }
 
+// ```c
 // MRB_API mrb_int mrb_str_strlen(mrb_state *mrb, struct RString *s)
+// ```
 //
 // NOTE: Implemented in C in `mruby-sys/src/mruby-sys/ext.c`.
 
+// ```c
 // MRB_API void mrb_str_modify_keep_ascii(mrb_state *mrb, struct RString *s)
-//
 // MRB_API void mrb_str_modify(mrb_state *mrb, struct RString *s)
+// ```
 //
 // NOTE: Implemented in C in `mruby-sys/src/mruby-sys/ext.c`.
 
+// ```c
 // MRB_API mrb_value mrb_str_resize(mrb_state *mrb, mrb_value str, mrb_int len)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value, len: sys::mrb_int) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard, or_else = s);
@@ -175,20 +190,28 @@ unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value,
     }
 }
 
+// ```c
 // MRB_API char* mrb_str_to_cstr(mrb_state *mrb, mrb_value str0)
+// ```
 //
 // NOTE: Not implemented.
 
+// ```c
 // MRB_API void mrb_str_concat(mrb_state *mrb, mrb_value self, mrb_value other)
+// ```
 //
 // NOTE: Implemented in C in `mruby-sys/src/mruby-sys/ext.c`.
 //
+// ```
 // #[no_mangle]
 // unsafe extern "C" mrb_str_concat(mrb: *mut sys::mrb_state, this: sys::mrb_value, other: sys::mrb_value) {
 //     unwrap_interpreter!(mrb, to => guard, or_else = ());
 // }
+// ```
 
+// ```c
 // MRB_API mrb_value mrb_str_plus(mrb_state *mrb, mrb_value a, mrb_value b)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_plus(mrb: *mut sys::mrb_state, a: sys::mrb_value, b: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
@@ -215,7 +238,9 @@ unsafe extern "C" fn mrb_str_plus(mrb: *mut sys::mrb_state, a: sys::mrb_value, b
     s.into()
 }
 
+// ```c
 // MRB_API int mrb_str_cmp(mrb_state *mrb, mrb_value str1, mrb_value str2)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_cmp(mrb: *mut sys::mrb_state, str1: sys::mrb_value, str2: sys::mrb_value) -> c_int {
     unwrap_interpreter!(mrb, to => guard, or_else = -1);
@@ -236,7 +261,9 @@ unsafe extern "C" fn mrb_str_cmp(mrb: *mut sys::mrb_state, str1: sys::mrb_value,
     a.cmp(&*b) as c_int
 }
 
+// ```c
 // MRB_API mrb_bool mrb_str_equal(mrb_state *mrb, mrb_value str1, mrb_value str2)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_equal(
     mrb: *mut sys::mrb_state,
@@ -261,19 +288,25 @@ unsafe extern "C" fn mrb_str_equal(
     (*a == *b) as sys::mrb_bool
 }
 
+// ```c
 // MRB_API const char* mrb_string_value_ptr(mrb_state *mrb, mrb_value str)
+// ```
 //
-// obsolete: use RSTRING_PTR()
+// obsolete: use `RSTRING_PTR()`
 //
 // NOTE: not implemented
 
+// ```c
 // MRB_API mrb_int mrb_string_value_len(mrb_state *mrb, mrb_value ptr)
+// ```
 //
-// obsolete: use RSTRING_LEN()
+// obsolete: use `RSTRING_LEN()`
 //
 // NOTE: not implemented
 
+// ```c
 // MRB_API mrb_value mrb_str_dup(mrb_state *mrb, mrb_value str)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_dup(mrb: *mut sys::mrb_state, s: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
@@ -296,7 +329,9 @@ unsafe extern "C" fn mrb_str_dup(mrb: *mut sys::mrb_state, s: sys::mrb_value) ->
     Value::nil().into()
 }
 
+// ```c
 // MRB_API mrb_value mrb_str_substr(mrb_state *mrb, mrb_value str, mrb_int beg, mrb_int len)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_substr(
     mrb: *mut sys::mrb_state,
@@ -338,7 +373,9 @@ unsafe extern "C" fn mrb_str_substr(
     }
 }
 
+// ```c
 // MRB_API mrb_value mrb_ptr_to_str(mrb_state *mrb, void *p)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_ptr_to_str(mrb: *mut sys::mrb_state, p: *mut c_void) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
@@ -347,13 +384,17 @@ unsafe extern "C" fn mrb_ptr_to_str(mrb: *mut sys::mrb_state, p: *mut c_void) ->
     String::alloc_value(s, &mut guard).unwrap_or_default().into()
 }
 
+// ```c
 // MRB_API mrb_value mrb_cstr_to_inum(mrb_state *mrb, const char *str, mrb_int base, mrb_bool badcheck)
+// ```
 //
 // NOTE: not implemented.
 
+// ```c
 // MRB_API const char* mrb_string_value_cstr(mrb_state *mrb, mrb_value *ptr)
+// ```
 //
-// obsolete: use RSTRING_CSTR() or mrb_string_cstr()
+// obsolete: use `RSTRING_CSTR()` or `mrb_string_cstr()`
 #[no_mangle]
 unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: *mut sys::mrb_value) -> *const c_char {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
@@ -384,7 +425,9 @@ unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: *mut s
     cstr
 }
 
+// ```c
 // MRB_API const char* mrb_string_cstr(mrb_state *mrb, mrb_value str)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value) -> *const c_char {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
@@ -415,9 +458,11 @@ unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value
     cstr
 }
 
+// ```c
 // MRB_API mrb_value mrb_str_to_inum(mrb_state *mrb, mrb_value str, mrb_int base, mrb_bool badcheck)
+// ```
 //
-// This function converts a numeric string to numeric mrb_value with the given base.
+// This function converts a numeric string to numeric `mrb_value` with the given base.
 #[no_mangle]
 #[allow(clippy::cast_sign_loss)]
 #[allow(clippy::cast_possible_truncation)]
@@ -478,11 +523,15 @@ unsafe extern "C" fn mrb_str_to_inum(
     String::alloc_value(int, &mut guard).unwrap_or_default().into()
 }
 
+// ```c
 // MRB_API double mrb_cstr_to_dbl(mrb_state *mrb, const char *s, mrb_bool badcheck)
+// ```
 //
 // NOTE: not implemented
 
+// ```c
 // MRB_API double mrb_str_to_dbl(mrb_state *mrb, mrb_value str, mrb_bool badcheck)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_to_dbl(mrb: *mut sys::mrb_state, s: sys::mrb_value, badcheck: sys::mrb_bool) -> c_double {
     unwrap_interpreter!(mrb, to => guard, or_else = 0.0);
@@ -514,7 +563,9 @@ unsafe extern "C" fn mrb_str_to_dbl(mrb: *mut sys::mrb_state, s: sys::mrb_value,
     }
 }
 
+// ```c
 // MRB_API mrb_value mrb_str_cat(mrb_state *mrb, mrb_value str, const char *ptr, size_t len)
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_cat(
     mrb: *mut sys::mrb_state,
@@ -542,19 +593,23 @@ unsafe extern "C" fn mrb_str_cat(
     }
 }
 
+// ```c
 // MRB_API mrb_value mrb_str_cat_cstr(mrb_state *mrb, mrb_value str, const char *ptr)
-//
 // MRB_API mrb_value mrb_str_cat_str(mrb_state *mrb, mrb_value str, mrb_value str2)
-//
 // MRB_API mrb_value mrb_str_append(mrb_state *mrb, mrb_value str1, mrb_value str2)
+// ```
 //
 // NOTE: Implemented in C in `mruby-sys/src/mruby-sys/ext.c`.
 
+// ```c
 // MRB_API double mrb_float_read(const char *string, char **endPtr)
+// ```
 //
 // NOTE: impl kept in C.
 
+// ```c
 // uint32_t mrb_str_hash(mrb_state *mrb, mrb_value str);
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_hash(mrb: *mut sys::mrb_state, s: sys::mrb_value) -> u32 {
     unwrap_interpreter!(mrb, to => guard, or_else = 0);

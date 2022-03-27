@@ -205,7 +205,7 @@ pub struct ToA {
     /// zone.
     pub isdst: bool,
     /// The timezone used for the source _time_.
-    // TODO: this should be &'static str. Then it can move out of the `chrono`
+    // TODO: this should be `&'static str`. Then it can move out of the `chrono`
     // backend.
     pub zone: Offset,
 }
@@ -384,7 +384,10 @@ mod tests {
         assert_eq!(time.year_day(), 96);
         // TODO: Implement DST and timezone detection. This requires a new release of
         // `chrono-tz`.
+        //
+        // ```
         // assert!(time.is_dst());
+        // ```
         assert_eq!(time.timezone(), None);
     }
 

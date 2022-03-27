@@ -88,8 +88,8 @@ pub fn os_string_to_bytes(value: OsString) -> Result<Vec<u8>, ConvertBytesError>
 /// vector or a byte vector cannot be converted to a [platform string].
 ///
 /// On unix-like platforms, this error is never returned. On Windows platforms,
-/// platform strings can only be converted to byte vectors (and vice versa) when
-/// they contain valid UTF-8 contents.
+/// platform strings can only be converted to byte vectors (and conversely byte
+/// vectors to platform strings) when they contain valid UTF-8 contents.
 ///
 /// This error is returned by [`bytes_to_os_str`], [`os_string_to_bytes`] and
 /// [`os_str_to_bytes`]. See their documentation for more details.

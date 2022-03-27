@@ -130,15 +130,10 @@ impl Integer {
             //         1: from (irb):9:in `chr'
             // RangeError (256 out of char range)
             // ```
-            #[allow(clippy::unnested_or_patterns)]
             match u8::try_from(self.as_i64()) {
-                // Without `Encoding` support, these two arms are the same
-
-                // ASCII encoding - chr[0 - 127]
-                // Binary/ASCII-8BIT encoding - chr[128 - 255]
-
-                // Create a single byte `String` from the character given by `self`.
+                // ASCII encoding - `chr[0 - 127]`
                 Ok(chr @ 0..=127) => Ok(spinoso_string::String::ascii(vec![chr])),
+                // Binary/ASCII-8BIT encoding - `chr[128 - 255]`
                 Ok(chr @ 128..=255) => Ok(spinoso_string::String::binary(vec![chr])),
                 Err(_) => {
                     let mut message = String::new();
