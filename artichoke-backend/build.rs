@@ -27,8 +27,8 @@ mod paths {
         crate_root().join("cext").join("mrbsys")
     }
 
-    pub emscripten_root() -> PathBuf {
-        crate_root().join("vendor").join("emscripten").join(dir)
+    pub fn emscripten_root() -> PathBuf {
+        crate_root().join("vendor").join("emscripten")
     }
 
     pub fn bindgen_header() -> PathBuf {
@@ -92,17 +92,17 @@ mod libs {
 
     fn mrbgems_sources() -> impl Iterator<Item = PathBuf> {
         [
-            "mrbgems/mruby-compiler/core/codegen.c",
-            "mrbgems/mruby-compiler/core/y.tab.c",
-            "mrbgems/mruby-error/src/exception.c",
-            "mrbgems/mruby-eval/src/eval.c",
-            "mrbgems/mruby-metaprog/src/metaprog.c",
-            "mrbgems/mruby-method/src/method.c",
-            "mrbgems/mruby-fiber/src/fiber.c",
-            "mrbgems/mruby-pack/src/pack.c",
-            "mrbgems/mruby-sprintf/src/sprintf.c",
-            "mrbgems/mruby-class-ext/src/class.c",
-            "mrbgems/mruby-proc-ext/src/proc.c",
+            "mrbgems/mruby-class-ext/src/class.c",   // NOTE(GH-32): Pending removal.
+            "mrbgems/mruby-compiler/core/codegen.c", // Ruby parser and bytecode generation
+            "mrbgems/mruby-compiler/core/y.tab.c",   // Ruby parser and bytecode generation
+            "mrbgems/mruby-error/src/exception.c",   // `mrb_raise`, `mrb_protect`
+            "mrbgems/mruby-eval/src/eval.c",         // eval, instance_eval, and friends
+            "mrbgems/mruby-fiber/src/fiber.c",       // Fiber class from core, required by `Enumerator`
+            "mrbgems/mruby-metaprog/src/metaprog.c", // APIs on Kernel and Module for accessing classes and variables
+            "mrbgems/mruby-method/src/method.c",     // `Method`, `UnboundMethod`, and method APIs on Kernel and Module
+            "mrbgems/mruby-pack/src/pack.c",         // Array#pack and String#unpack
+            "mrbgems/mruby-proc-ext/src/proc.c",     // NOTE(GH-32): This gem is required by `mruby-method`.
+            "mrbgems/mruby-sprintf/src/sprintf.c",   // Kernel#sprintf, Kernel#format, String#%
         ]
         .into_iter()
         .map(|source| paths::mruby_root().join(source))
@@ -115,16 +115,16 @@ mod libs {
 
     fn mrbgems_include_dirs() -> impl Iterator<Item = PathBuf> {
         [
+            "mrbgems/mruby-class-ext/include", // NOTE(GH-32): Pending removal.
             "mrbgems/mruby-compiler/core",     // Ruby parser and bytecode generation
             "mrbgems/mruby-error/include",     // `mrb_raise`, `mrb_protect`
             "mrbgems/mruby-eval/include",      // eval, instance_eval, and friends
+            "mrbgems/mruby-fiber/include",     // Fiber class from core, required by `Enumerator`
             "mrbgems/mruby-metaprog/include",  // APIs on Kernel and Module for accessing classes and variables
             "mrbgems/mruby-method/include",    // `Method`, `UnboundMethod`, and method APIs on Kernel and Module
-            "mrbgems/mruby-fiber/include",     // Fiber class from core, required by `Enumerator`
             "mrbgems/mruby-pack/include",      // Array#pack and String#unpack
-            "mrbgems/mruby-sprintf/include",   // Kernel#sprintf, Kernel#format, String#%
-            "mrbgems/mruby-class-ext/include", // NOTE(GH-32): Pending removal.
             "mrbgems/mruby-proc-ext/include",  // NOTE(GH-32): This gem is required by `mruby-method`.
+            "mrbgems/mruby-sprintf/include",   // Kernel#sprintf, Kernel#format, String#%
         ]
         .into_iter()
         .map(|dir| paths::mruby_root().join(dir))
