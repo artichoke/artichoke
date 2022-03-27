@@ -19,4 +19,4 @@ extern crate artichoke_backend;
 mod extension;
 mod gc;
 mod leak;
-mod mruby_3_regression;
+mod mruby_3_0_regression;

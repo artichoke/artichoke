@@ -1,5 +1,6 @@
 use artichoke_backend::prelude::*;
 
+// https://github.com/mruby/mruby/issues/5376
 #[test]
 fn bignum_parses() {
     const CODE: &[u8] = b"def foo; 0x8000_0000_0000_0000; end";
@@ -9,6 +10,7 @@ fn bignum_parses() {
     interp.close();
 }
 
+// https://github.com/mruby/mruby/pull/5375
 #[test]
 fn presym_cmp_method_fallthrough() {
     const CLASS_DEF: &[u8] = b"class A; include Comparable; def <=>(other); 1; end; end";
@@ -20,6 +22,7 @@ fn presym_cmp_method_fallthrough() {
     interp.close();
 }
 
+// https://github.com/mruby/mruby/issues/5382
 #[test]
 fn division_by_signed_zero_gives_negative_infinity() {
     const CODE: &[u8] = b"(1.0/-0.0).infinite? == -1";
