@@ -83,11 +83,12 @@
 //! All features are enabled by default:
 //!
 //! - **system-env** - Enable an `ENV` backend that accesses the host system's
-//!   environment variables via the [`std::env`](module@std::env) module.
+//!   environment variables via the [`std::env`] module.
 //!
 //! [`ENV`]: https://ruby-doc.org/core-2.6.3/ENV.html
 //! [`HashMap`]: std::collections::HashMap
 //! [Rust Standard Library]: std
+//! [`std::env`]: module@std::env
 
 // Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
@@ -348,8 +349,9 @@ impl InvalidError {
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
-        let message: &[u8] = b"Errno::EINVAL";
-        Self(Cow::Borrowed(message))
+        const MESSAGE: &[u8] = b"Errno::EINVAL";
+
+        Self(Cow::Borrowed(MESSAGE))
     }
 
     /// Construct a new, invalid error with a message.
@@ -379,7 +381,7 @@ impl InvalidError {
     #[inline]
     #[must_use]
     pub fn message(&self) -> &[u8] {
-        self.0.as_ref()
+        &*self.0
     }
 
     /// Consume this error and return the inner message.
