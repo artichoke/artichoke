@@ -12,7 +12,7 @@ type Bytes = Vec<u8>;
 ///
 /// `System` is an accessor to the host system's environment variables using the
 /// functions provided by the [Rust Standard Library] in the
-/// [`std::env`](module@env) module.
+/// [`std::env`] module.
 ///
 /// Use of this `ENV` backend allows Ruby code to access and modify the host
 /// system. It is not appropriate to use this backend in embedded or untrusted
@@ -22,26 +22,31 @@ type Bytes = Vec<u8>;
 ///
 /// Fetching an environment variable:
 ///
-/// ```
+/// ```no_run
 /// # use spinoso_env::System;
+/// # fn example() -> Result<(), spinoso_env::Error> {
 /// const ENV: System = System::new();
-/// assert!(matches!(ENV.get(b"PATH"), Ok(Some(_))));
+/// assert!(ENV.get(b"PATH")?.is_some());
+/// # Ok(())
+/// # }
+/// # example().unwrap()
 /// ```
 ///
 /// Setting an environment variable:
 ///
-/// ```
+/// ```no_run
 /// # use spinoso_env::System;
 /// const ENV: System = System::new();
 /// # fn example() -> Result<(), spinoso_env::Error> {
 /// ENV.put(b"ENV_BACKEND", Some(b"spinoso_env::System"))?;
-/// assert_eq!(std::env::var("ENV_BACKEND"), Ok(String::from("spinoso_env::System")));
+/// assert_eq!(std::env::var("ENV_BACKEND").as_deref(), Ok("spinoso_env::System"));
 /// # Ok(())
 /// # }
 /// # example().unwrap()
 /// ```
 ///
 /// [Rust Standard Library]: std
+/// [`std::env`]: module@env
 #[cfg_attr(docsrs, doc(cfg(feature = "system-env")))]
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct System {
@@ -51,8 +56,8 @@ pub struct System {
 impl System {
     /// Constructs a new, default ENV `System` backend.
     ///
-    /// The resulting environment variable accessor has access to the underlying
-    /// host operating system.
+    /// The resulting environment variable accessor has access to the host
+    /// system via platform APIs.
     ///
     /// # Examples
     ///
@@ -74,15 +79,18 @@ impl System {
     ///
     /// # Implementation notes
     ///
-    /// This method accesses the host system's environment using
-    /// [`env::var_os`].
+    /// This method accesses the host system's environment using [`env::var_os`].
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// # use spinoso_env::System;
+    /// # fn example() -> Result<(), spinoso_env::Error> {
     /// const ENV: System = System::new();
-    /// assert!(matches!(ENV.get(b"PATH"), Ok(Some(_))));
+    /// assert!(ENV.get(b"PATH")?.is_some());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
@@ -133,18 +141,18 @@ impl System {
     ///
     /// # Implementation notes
     ///
-    /// This method accesses the host system's environment using
-    /// [`env::set_var`] and [`env::remove_var`].
+    /// This method accesses the host system's environment using [`env::set_var`]
+    /// and [`env::remove_var`].
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// # use spinoso_env::System;
     /// # use std::borrow::Cow;
     /// const ENV: System = System::new();
     /// # fn example() -> Result<(), spinoso_env::Error> {
     /// ENV.put(b"RUBY", Some(b"Artichoke"))?;
-    /// assert_eq!(ENV.get(b"RUBY")?, Some(Cow::Borrowed(&b"Artichoke"[..])));
+    /// assert_eq!(ENV.get(b"RUBY")?.as_deref(), Some(&b"Artichoke"[..]));
     /// ENV.put(b"RUBY", None)?;
     /// assert_eq!(ENV.get(b"RUBY")?, None);
     /// # Ok(())
@@ -221,12 +229,11 @@ impl System {
     ///
     /// # Implementation notes
     ///
-    /// This method accesses the host system's environment using
-    /// [`env::vars_os`].
+    /// This method accesses the host system's environment using [`env::vars_os`].
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// # use spinoso_env::System;
     /// const ENV: System = System::new();
     /// # fn example() -> Result<(), spinoso_env::Error> {

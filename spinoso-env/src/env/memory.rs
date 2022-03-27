@@ -22,7 +22,7 @@ type Bytes = Vec<u8>;
 /// ```
 /// # use spinoso_env::Memory;
 /// let env = Memory::new();
-/// // `Memory` backends start out empty.
+/// // `Memory` backends are initially empty.
 /// assert_eq!(env.get(b"PATH"), Ok(None));
 /// ```
 ///
@@ -30,11 +30,10 @@ type Bytes = Vec<u8>;
 ///
 /// ```
 /// # use spinoso_env::Memory;
-/// # use std::borrow::Cow;
 /// # fn example() -> Result<(), spinoso_env::Error> {
 /// let mut env = Memory::new();
 /// env.put(b"ENV_BACKEND", Some(b"spinoso_env::Memory"))?;
-/// assert_eq!(env.get(b"ENV_BACKEND")?, Some(Cow::Borrowed(&b"spinoso_env::Memory"[..])));
+/// assert_eq!(env.get(b"ENV_BACKEND")?.as_deref(), Some(&b"spinoso_env::Memory"[..]));
 /// # Ok(())
 /// # }
 /// # example().unwrap()
@@ -114,11 +113,12 @@ impl Memory {
     ///
     /// ```
     /// # use spinoso_env::Memory;
-    /// # use std::borrow::Cow;
     /// # fn example() -> Result<(), spinoso_env::Error> {
     /// let mut env = Memory::new();
+    ///
     /// env.put(b"RUBY", Some(b"Artichoke"))?;
-    /// assert_eq!(env.get(b"RUBY")?, Some(Cow::Borrowed(&b"Artichoke"[..])));
+    /// assert_eq!(env.get(b"RUBY")?.as_deref(), Some(&b"Artichoke"[..]));
+    ///
     /// env.put(b"RUBY", None)?;
     /// assert_eq!(env.get(b"RUBY")?, None);
     /// # Ok(())
