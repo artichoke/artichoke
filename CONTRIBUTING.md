@@ -50,10 +50,38 @@ Toolchain requirements are documented in [`BUILD.md`](BUILD.md#c-toolchain).
 
 ### Ruby
 
-Artichoke requires a recent Ruby 2.x and [bundler] 2.x. The
-[`.ruby-version`](.ruby-version) file in this repository specifies Ruby 2.6.3.
+Artichoke requires a recent Ruby and [bundler] for development tasks. The
+[`.ruby-version`](.ruby-version) file in this repository specifies the preferred
+Ruby toolchain.
 
-Toolchain requirements are documented in [`BUILD.md`](BUILD.md#ruby-toolchain).
+Ruby is not required to build Artichoke.
+
+If you use [RVM], you can install Ruby dependencies by running:
+
+```sh
+rvm install "$(cat .ruby-version)"
+gem install bundler
+```
+
+If you use [rbenv] and [ruby-build], you can install Ruby dependencies by
+running:
+
+```sh
+rbenv install "$(cat .ruby-version)"
+gem install bundler
+rbenv rehash
+```
+
+The [`Gemfile`](Gemfile) in Artichoke specifies several dev dependencies. You
+can install these dependencies by running:
+
+```sh
+bundle install
+```
+
+[rvm]: https://rvm.io/
+[rbenv]: https://github.com/rbenv/rbenv
+[ruby-build]: https://github.com/rbenv/ruby-build
 
 Artichoke uses [`rake`](Rakefile) as a task runner. You can see the available
 tasks by running:

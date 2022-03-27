@@ -35,7 +35,7 @@ rustyline = { version = "9.1.2", optional = true, default-features = false }
 termcolor = { version = "1.1.0", optional = true }
 
 [dependencies.artichoke-backend]
-version = "0.7.0"
+version = "0.8.0"
 path = "artichoke-backend"
 default-features = false
 

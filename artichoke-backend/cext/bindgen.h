@@ -32,10 +32,9 @@
 #include <mruby/variable.h>
 #include <mruby/version.h>
 
-#include <mruby-sys/ext.h>
-
+#include <mrbsys/ext.h>
 #ifdef ARTICHOKE
-#include <mruby-sys/artichoke.h>
+#include <mrbsys/artichoke.h>
 #endif
 
 // Expose mrbgems subsystem initializer

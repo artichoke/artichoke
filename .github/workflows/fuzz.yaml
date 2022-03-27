@@ -52,12 +52,6 @@ jobs:
           target: x86_64-unknown-linux-gnu
           override: true
 
-      - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ".ruby-version"
-          bundler-cache: true
-
       - name: Test with leak sanitizer and all features
         run: cargo test --workspace --all-features --target x86_64-unknown-linux-gnu
 

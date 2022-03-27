@@ -23,7 +23,7 @@
 #include <mruby/string.h>
 #include <mruby/value.h>
 
-#include <mruby-sys/ext.h>
+#include <mrbsys/ext.h>
 
 const uint8_t mrblib_irep[] = {0};
 

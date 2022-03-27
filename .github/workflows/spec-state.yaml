@@ -22,9 +22,6 @@ jobs:
       - name: Setup rust-toolchain override
         run: cp artichoke/rust-toolchain rust-toolchain
 
-      - name: Setup .ruby-version override
-        run: cp artichoke/.ruby-version .ruby-version
-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
