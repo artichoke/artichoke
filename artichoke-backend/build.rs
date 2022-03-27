@@ -27,6 +27,10 @@ mod paths {
         crate_root().join("cext").join("mrbsys")
     }
 
+    pub emscripten_root() -> PathBuf {
+        crate_root().join("vendor").join("emscripten").join(dir)
+    }
+
     pub fn bindgen_header() -> PathBuf {
         crate_root().join("cext").join("bindgen.h")
     }
@@ -154,24 +158,19 @@ mod libs {
     // path_from_root('system', 'lib', 'libunwind', 'include'),
     // ```
     fn wasm_include_dirs() -> impl Iterator<Item = PathBuf> {
-        let system = paths::crate_root().join("vendor").join("emscripten").join("system");
         [
-            system.join("include").join("compat"),
-            system.join("include"),
-            system.join("include").join("libc"),
-            system
-                .join("lib")
-                .join("libc")
-                .join("musl")
-                .join("arch")
-                .join("emscripten"),
-            system.join("local").join("include"),
-            system.join("include").join("SSE"),
-            system.join("include").join("neon"),
-            system.join("lib").join("compiler-rt").join("include"),
-            system.join("lib").join("libunwind").join("include"),
+            "system/include/compat",
+            "system/include",
+            "system/include/libc",
+            "system/lib/libc/musl/arch/emscripten",
+            "system/local/include",
+            "system/include/SSE",
+            "system/include/neon",
+            "system/lib/compiler-rt/include",
+            "system/lib/libunwind/include",
         ]
         .into_iter()
+        .map(|dir| paths::emscripten_root().join(dir))
     }
 
     fn staticlib(
