@@ -65,7 +65,7 @@ where
     let exc = exception.as_mrb_value(&mut guard);
 
     // Pull out the raw pointer to the `mrb_state` so we can drop down to raw
-    // MRB_API functions.
+    // `MRB_API` functions.
     let mrb: *mut sys::mrb_state = guard.mrb.as_mut();
 
     // Ensure the Artichoke `State` is moved back into the `mrb_state`.
@@ -82,7 +82,7 @@ where
         // Safety:
         //
         // This line is unreachable because `raise` will unwind the stack with
-        // longjmp when calling either `sys::mrb_exc_raise` in the preceeding
+        // longjmp when calling either `sys::mrb_exc_raise` in the preceding
         // line.
         hint::unreachable_unchecked()
     }
@@ -101,7 +101,7 @@ where
     // Safety:
     //
     // This line is unreachable because `raise` will unwind the stack with
-    // longjmp when calling either `sys::mrb_sys_raise` in the preceeding line.
+    // longjmp when calling either `sys::mrb_sys_raise` in the preceding line.
     hint::unreachable_unchecked()
 }
 

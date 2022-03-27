@@ -17,7 +17,7 @@ macro_rules! emit_fatal_warning {
         //
         // Suppress errors from logging to stderr because this function may being
         // called when there are foreign C frames in the stack and panics are
-        // either UB or will result in an abort.
+        // either undefined behavior or will result in an abort.
         //
         // Ensure the returned error is dropped so we don't leave anything on
         // the stack in the event of a foreign unwind.

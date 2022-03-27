@@ -221,7 +221,7 @@ impl Utf8String {
             Some(idx) => idx,
         };
         let mut slice = &self.inner[consumed..];
-        // TODO: See if we can use `get_unchecked` as implemented in`fn char_len`
+        // TODO: See if we can use `get_unchecked` as implemented in `fn char_len`
         // Count of "characters" remaining until the `index`th character.
         let mut remaining = index - consumed;
         // This loop will terminate when either:
@@ -246,7 +246,7 @@ impl Utf8String {
                 // which means this slice operation will not panic.
                 (None, _) if remaining == 0 => return Some(&slice[..1]),
 
-                // We found a single UTF-8 encoded characterk keep track
+                // We found a single UTF-8 encoded character keep track
                 // of the count and advance the substring to continue
                 // decoding.
                 (Some(_), size) => {
@@ -536,7 +536,7 @@ impl Utf8String {
 // Casing
 impl Utf8String {
     // TODO: Use roe for case changing operations. UTF-8 case changing needs to
-    //       be parameterized on the casefolding strategy to account for e.g.
+    //       be parameterized on the case folding strategy to account for e.g.
     //       Turkic or ASCII-only modes
     #[inline]
     pub fn make_capitalized(&mut self) {
@@ -869,13 +869,16 @@ mod tests {
 
     #[test]
     fn char_len_space_chars() {
-        // Whitespace: all the characters with category Zs, Zl, or Zp (in Unicode
-        // version 8.0.0), plus U+0009 (HT), U+000B (VT), U+000C (FF), U+0085 (NEL),
-        // and U+200B (ZERO WIDTH SPACE), which are in the C categories but are often
+        // Whitespace: all the characters with category `Zs`, `Zl`, or `Zp` (in Unicode
+        // version 8.0.0), plus `U+0009 (HT)`, `U+000B (VT)`, `U+000C (FF)`, `U+0085 (NEL)`,
+        // and `U+200B` (ZERO WIDTH SPACE), which are in the C categories but are often
         // treated as whitespace in some contexts.
+        //
         // This file unfortunately cannot express strings containing
-        // U+0000, U+000A, or U+000D (NUL, LF, CR).
+        // `U+0000`, `U+000A`, or `U+000D` (`NUL`, `LF`, `CR`).
+        //
         // The next line may appear to be blank or mojibake in some viewers.
+        //
         // The next line may be flagged for "trailing whitespace" in some viewers.
         //
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L131
@@ -955,7 +958,7 @@ mod tests {
         // Changes length when case changes
         // https://github.com/minimaxir/big-list-of-naughty-strings/blob/894882e7/blns.txt#L226-L232
         let varying_length = Utf8String::from("zȺȾ");
-        // There doesn't appear to be any RTL scripts that have cases, but might aswell make sure
+        // There doesn't appear to be any RTL scripts that have cases, but might as well make sure
         let rtl = Utf8String::from("مرحبا الخرشوف");
 
         let capitalize: fn(&Utf8String) -> Utf8String = |value: &Utf8String| {

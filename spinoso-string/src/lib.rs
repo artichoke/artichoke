@@ -4,7 +4,7 @@
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
 // TODO: warn on missing docs once crate is API-complete.
-// #![warn(missing_docs)]
+// #![warn(missing_doc)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
@@ -678,7 +678,7 @@ impl String {
     }
 }
 
-// Additional IntoIterator iterator
+// Additional `IntoIterator` iterator
 impl IntoIterator for String {
     type Item = u8;
     type IntoIter = IntoIter;
@@ -734,11 +734,10 @@ impl String {
     }
 
     /// Tries to reserve capacity for at least `additional` more elements to be
-    /// inserted in the `String`. The collection may reserve more space
-    /// to avoid frequent reallocations.
-    /// After calling `try_reserve`, capacity will be greater than or equal to
-    /// `self.len() + additional`.
-    /// Does nothing if capacity is already sufficient.
+    /// inserted in the `String`. The collection may reserve more space to avoid
+    /// frequent reallocations. After calling `try_reserve`, capacity will be
+    /// greater than or equal to `self.len() + additional`. Does nothing if
+    /// capacity is already sufficient.
     ///
     /// # Errors
     ///
@@ -765,11 +764,11 @@ impl String {
     ///
     /// Note that the allocator may give the string more space than it requests.
     /// Therefore, capacity can not be relied upon to be precisely minimal.
-    /// Prefer `reserve` if future insertions are expected.
+    /// Prefer [`reserve`] if future insertions are expected.
     ///
     /// # Panics
     ///
-    /// Panics if the new capacity overflows [`usize`].
+    /// Panics if the new capacity exceeds [`isize::MAX`] bytes.
     ///
     /// # Examples
     ///
@@ -780,21 +779,23 @@ impl String {
     /// s.reserve_exact(10);
     /// assert!(s.capacity() >= 11);
     /// ```
+    ///
+    /// [`reserve`]: Self::reserve
     #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.inner.reserve_exact(additional);
     }
 
     /// Tries to reserve the minimum capacity for exactly `additional`
-    /// elements to be inserted in the `String`.
-    /// After calling `try_reserve_exact`, capacity will be greater
-    /// than or equal to `self.len() + additional` if it returns Ok(()).
-    /// Does nothing if the capacity is already sufficient.
+    /// elements to be inserted in the `String`. After calling
+    /// `try_reserve_exact`, capacity will be greater than or equal to
+    /// `self.len() + additional` if it returns `Ok(())`. Does nothing if the
+    /// capacity is already sufficient.
     ///
     /// Note that the allocator may give the collection more space than
     /// it requests. Therefore, capacity can not be relied upon to be
-    /// precisely minimal.
-    /// Prefer `reserve` if future insertions are expected.
+    /// precisely minimal. Prefer [`try_reserve`] if future insertions are
+    /// expected.
     ///
     /// # Errors
     ///
@@ -809,6 +810,8 @@ impl String {
     /// str.try_reserve_exact(10).expect("why is this OOMing?");
     /// assert!(str.capacity() >= 11);
     /// ```
+    ///
+    /// [`try_reserve`]: Self::try_reserve
     #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
         self.inner.try_reserve_exact(additional)
@@ -1350,7 +1353,7 @@ impl String {
     }
 
     /// Modifies this `String` in-place with the given record separator removed
-    /// from the end of str (if given).
+    /// from the end of `str` (if given).
     ///
     /// If `separator` is [`None`] (i.e. `separator` has not been changed from
     /// the default Ruby record separator), then `chomp` also removes carriage
@@ -1885,7 +1888,7 @@ impl String {
             // => nil
             // ```
             //
-            // attempt to short-circuit with a cheap len retrieval
+            // attempt to short-circuit with a cheap length retrieval
             if start > self.len() || start > self.char_len() {
                 return None;
             }

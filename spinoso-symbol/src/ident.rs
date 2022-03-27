@@ -262,7 +262,7 @@ pub enum IdentifierType {
 impl IdentifierType {
     /// Return a new, default `IdentifierType`.
     ///
-    /// Prefer to use `new()` over `default()` since `new()` is a const fn.
+    /// Prefer to use `new()` over `default()` since `new()` is const.
     ///
     /// # Examples
     ///
@@ -339,7 +339,7 @@ pub struct ParseIdentifierError {
 impl ParseIdentifierError {
     /// Construct a new `ParseIdentifierError`.
     ///
-    /// Prefer to use `new()` over `default()` since `new()` is a const fn.
+    /// Prefer to use `new()` over `default()` since `new()` is const.
     ///
     /// # Examples
     ///

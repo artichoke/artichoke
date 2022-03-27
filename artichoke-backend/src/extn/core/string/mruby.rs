@@ -660,7 +660,7 @@ unsafe extern "C" fn string_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-    // TODO: dup `slf` when slf is a subclass of `String`.
+    // TODO: dup `slf` when self is a subclass of `String`.
     let result = trampoline::to_s(&mut guard, value);
     match result {
         Ok(value) => value.inner(),

@@ -130,7 +130,7 @@ pub struct IterMut<'a>(pub(crate) slice::IterMut<'a, u8>);
 impl<'a> IterMut<'a> {
     /// Views the underlying data as a subslice of the original data.
     ///
-    /// To avoid creating &mut references that alias, this is forced to consume
+    /// To avoid creating `&mut` references that alias, this is forced to consume
     /// the iterator.
     ///
     /// # Examples

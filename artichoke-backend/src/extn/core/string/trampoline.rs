@@ -22,7 +22,7 @@ pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Val
     let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative argument"))?;
 
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // This guard ensures `repeat` below does not panic on usize overflow.
+    // This guard ensures `repeat` below does not panic on `usize` overflow.
     if count.checked_mul(s.len()).is_none() {
         return Err(RangeError::with_message("bignum too big to convert into `long'").into());
     }
@@ -49,7 +49,7 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     // Safety:
     //
-    // The byteslice is immediately used and discarded after extraction. There
+    // The byte slice is immediately used and discarded after extraction. There
     // are no intervening interpreter accesses.
     let other = unsafe { implicitly_convert_to_string(interp, &mut other)? };
     // Safety:
@@ -86,7 +86,7 @@ pub fn equals_equals(interp: &mut Artichoke, mut value: Value, mut other: Value)
     }
     // Safety:
     //
-    // The byteslice is immediately discarded after extraction. There are no
+    // The byte slice is immediately discarded after extraction. There are no
     // intervening interpreter accesses.
     if value.respond_to(interp, "to_str")? {
         let result = other.funcall(interp, "==", &[value], None)?;
@@ -142,7 +142,7 @@ pub fn aref(
         };
         let index = match index {
             None => return Ok(Value::nil()),
-            // Short circuit with `nil` if index > len.
+            // Short circuit with `nil` if `index > len`.
             //
             // ```
             // [3.0.1] > s = "abc"
@@ -153,7 +153,7 @@ pub fn aref(
             // => nil
             // ```
             //
-            // Don't specialize on the case where index == len because the provided
+            // Don't specialize on the case where `index == len` because the provided
             // length can change the result. Even if the length argument is not
             // given, we still need to preserve the encoding of the source string,
             // so fall through to the happy path below.
@@ -437,7 +437,7 @@ pub fn byteslice(
     };
     let index = match index {
         None => return Ok(Value::nil()),
-        // Short circuit with `nil` if index > len.
+        // Short circuit with `nil` if `index > len`.
         //
         // ```
         // [3.0.1] > s = "abc"
@@ -448,7 +448,7 @@ pub fn byteslice(
         // => nil
         // ```
         //
-        // Don't specialize on the case where index == len because the provided
+        // Don't specialize on the case where `index == len` because the provided
         // length can change the result. Even if the length argument is not
         // given, we still need to preserve the encoding of the source string,
         // so fall through to the happy path below.
@@ -591,7 +591,7 @@ pub fn capitalize_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value
     unsafe {
         let string_mut = s.as_inner_mut();
         // `make_capitalized` might reallocate the string and invalidate the
-        // boxed pointer/capa/len.
+        // boxed pointer, capacity, length triple.
         string_mut.make_capitalized();
 
         let s = s.take();
@@ -603,7 +603,7 @@ pub fn casecmp_ascii(interp: &mut Artichoke, mut value: Value, mut other: Value)
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     // Safety:
     //
-    // The byteslice is immediately discarded after extraction. There are no
+    // The byte slice is immediately discarded after extraction. There are no
     // intervening interpreter accesses.
     if let Ok(other) = unsafe { implicitly_convert_to_string(interp, &mut other) } {
         let cmp = s.ascii_casecmp(other) as i64;
@@ -615,7 +615,7 @@ pub fn casecmp_ascii(interp: &mut Artichoke, mut value: Value, mut other: Value)
 
 pub fn casecmp_unicode(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // TODO: this needs to do an implicit conversion, but we need a spinoso string.
+    // TODO: this needs to do an implicit conversion, but we need a Spinoso string.
     if let Ok(other) = unsafe { super::String::unbox_from_value(&mut other, interp) } {
         let eql = *s == *other;
         Ok(interp.convert(eql))
@@ -647,7 +647,7 @@ pub fn center(interp: &mut Artichoke, mut value: Value, width: Value, padstr: Op
     };
     // Safety:
     //
-    // The byteslice is immediately discarded after extraction and turned into
+    // The byte slice is immediately discarded after extraction and turned into
     // an owned value. There are no intervening interpreter accesses.
     let padstr = if let Some(mut padstr) = padstr {
         let padstr = unsafe { implicitly_convert_to_string(interp, &mut padstr)? };
@@ -774,7 +774,7 @@ pub fn downcase_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, 
     unsafe {
         let string_mut = s.as_inner_mut();
         // `make_lowercase` might reallocate the string and invalidate the
-        // boxed pointer/capa/len.
+        // boxed pointer, capacity, length triple.
         string_mut.make_lowercase();
 
         let s = s.take();
@@ -1252,7 +1252,7 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
     };
     let mut slice = s.as_slice();
     let mut squeezed = false;
-    // squeeze preceeding zeros.
+    // squeeze preceding zeros.
     while let Some(&b'0') = slice.get(0) {
         slice = &slice[1..];
         squeezed = true;
@@ -1308,7 +1308,7 @@ pub fn upcase_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Er
     unsafe {
         let string_mut = s.as_inner_mut();
         // `make_uppercase` might reallocate the string and invalidate the
-        // boxed pointer/capa/len.
+        // boxed pointer, capacity, length triple.
         string_mut.make_uppercase();
 
         let s = s.take();

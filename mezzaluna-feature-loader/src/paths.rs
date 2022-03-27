@@ -127,7 +127,7 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 /// # Compatibility
 ///
 /// Since this function operates on bytes, it is guaranteed to give a correct
-/// boolean answer to whether a path is explicit relative on all platforms.
+/// Boolean answer to whether a path is explicit relative on all platforms.
 ///
 /// # Examples
 ///

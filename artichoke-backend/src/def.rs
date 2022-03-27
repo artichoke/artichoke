@@ -55,8 +55,8 @@ where
         //
         // `box_unbox_free::<T>` is only ever called in an FFI context when
         // there are C frames in the stack. Using `eprintln!` or unwrapping the
-        // error from `write!` here is UB and may result in an abort. Instead,
-        // suppress the error.
+        // error from `write!` here is undefined behavior and may result in an
+        // abort. Instead, suppress the error.
         let _ignored = write!(
             io::stderr(),
             "Received null pointer in box_unbox_free::<{}>",
