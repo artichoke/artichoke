@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         // get a Ruby Value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_convert_into::<f64>(&interp);
@@ -44,13 +44,13 @@ mod tests {
 
     quickcheck! {
         fn convert_to_float(f: f64) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.convert_mut(f);
             value.ruby_type() == Ruby::Float
         }
 
         fn float_with_value(f: f64) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.convert_mut(f);
             let inner = value.inner();
             let cdouble = unsafe { sys::mrb_sys_float_to_cdouble(inner) };
@@ -70,7 +70,7 @@ mod tests {
         }
 
         fn roundtrip(f: f64) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.convert_mut(f);
             let value = value.try_convert_into::<f64>(&interp).unwrap();
             if f.is_nan() {
@@ -89,7 +89,7 @@ mod tests {
         }
 
         fn roundtrip_err(b: bool) -> bool {
-            let interp = interpreter().unwrap();
+            let interp = interpreter();
             let value = interp.convert(b);
             let value = value.try_convert_into::<f64>(&interp);
             value.is_err()

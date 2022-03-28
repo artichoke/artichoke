@@ -308,7 +308,7 @@ mod tests {
 
     #[test]
     fn super_class() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let spec = class::Spec::new("RustError", cstr::cstr!("RustError"), None, None).unwrap();
         class::Builder::for_spec(&mut interp, &spec)
             .with_super_class::<StandardError, _>("StandardError")
@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn rclass_for_undef_root_class() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let spec = class::Spec::new("Foo", cstr::cstr!("Foo"), None, None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_none());
@@ -336,7 +336,7 @@ mod tests {
 
     #[test]
     fn rclass_for_undef_nested_class() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let scope = interp.module_spec::<Kernel>().unwrap().unwrap();
         let spec = class::Spec::new("Foo", cstr::cstr!("Foo"), Some(EnclosingRubyScope::module(scope)), None).unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn rclass_for_nested_class() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.eval(b"module Foo; class Bar; end; end").unwrap();
         let spec = module::Spec::new(&mut interp, "Foo", cstr::cstr!("Foo"), None).unwrap();
         let spec = class::Spec::new("Bar", cstr::cstr!("Bar"), Some(EnclosingRubyScope::module(&spec)), None).unwrap();
@@ -355,7 +355,7 @@ mod tests {
 
     #[test]
     fn rclass_for_nested_class_under_class() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.eval(b"class Foo; class Bar; end; end").unwrap();
         let spec = class::Spec::new("Foo", cstr::cstr!("Foo"), None, None).unwrap();
         let spec = class::Spec::new("Bar", cstr::cstr!("Bar"), Some(EnclosingRubyScope::class(&spec)), None).unwrap();

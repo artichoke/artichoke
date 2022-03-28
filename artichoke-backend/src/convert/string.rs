@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         // get a mrb_value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_convert_into_mut::<String>(&mut interp);
@@ -77,7 +77,7 @@ mod tests {
     quickcheck! {
         #[allow(clippy::needless_pass_by_value)]
         fn convert_to_string(s: String) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.try_convert_mut(s.clone()).unwrap();
             let string: Vec<u8> = interp.try_convert_mut(value).unwrap();
             s.as_bytes() == string
@@ -85,7 +85,7 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn string_with_value(s: String) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.try_convert_mut(s.clone()).unwrap();
             value.to_s(&mut interp) == s.as_bytes()
         }
@@ -93,7 +93,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         #[cfg(feature = "core-regexp")]
         fn utf8string_borrowed(string: String) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Borrowed converter
             let value = interp.try_convert_mut(string.as_str()).unwrap();
             let len = value
@@ -126,7 +126,7 @@ mod tests {
         #[allow(clippy::needless_pass_by_value)]
         #[cfg(feature = "core-regexp")]
         fn utf8string_owned(string: String) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Owned converter
             let value = interp.try_convert_mut(string.clone()).unwrap();
             let len = value
@@ -158,14 +158,14 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn roundtrip(s: String) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.try_convert_mut(s.clone()).unwrap();
             let value = value.try_convert_into_mut::<String>(&mut interp).unwrap();
             value == s
         }
 
         fn roundtrip_err(b: bool) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.convert(b);
             let result = value.try_convert_into_mut::<String>(&mut interp);
             result.is_err()

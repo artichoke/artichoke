@@ -115,7 +115,7 @@ mod tests {
     fn interpreter_debug() {
         // Since the introduction of Rust symbol table, `mrb_open` cannot be
         // called without an Artichoke `State`.
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         unsafe {
             let mrb = interp.mrb.as_mut();
             let debug = sys::mrb_sys_state_debug(mrb);

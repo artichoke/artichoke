@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_convert_into_mut::<Vec<u8>>(&mut interp);
@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn convert_with_trailing_nul() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let bytes: &[u8] = &[0];
         let value = interp.try_convert_mut(bytes).unwrap();
         let retrieved_bytes = value.try_convert_into_mut::<&[u8]>(&mut interp).unwrap();
@@ -149,14 +149,14 @@ mod tests {
 
     quickcheck! {
         fn convert_to_vec(bytes: Vec<u8>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.try_convert_mut(bytes).unwrap();
             value.ruby_type() == Ruby::String
         }
 
         #[allow(clippy::needless_pass_by_value)]
         fn byte_string_borrowed(bytes: Vec<u8>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Borrowed converter
             let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
@@ -196,7 +196,7 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn byte_string_owned(bytes: Vec<u8>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Owned converter
             let value = interp.try_convert_mut(bytes.clone()).unwrap();
             let len = value.funcall(&mut interp, "bytesize", &[], None).unwrap();
@@ -236,14 +236,14 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn roundtrip(bytes: Vec<u8>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.try_convert_mut(bytes.as_slice()).unwrap();
             let value = value.try_convert_into_mut::<Vec<u8>>(&mut interp).unwrap();
             value == bytes
         }
 
         fn roundtrip_err(b: bool) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.convert(b);
             let value = value.try_convert_into_mut::<Vec<u8>>(&mut interp);
             value.is_err()

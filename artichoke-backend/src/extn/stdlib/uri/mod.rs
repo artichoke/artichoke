@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn functional() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let result = interp.eval(FUNCTIONAL_TEST);
         unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
         let result = interp.eval(b"spec");

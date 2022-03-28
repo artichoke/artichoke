@@ -199,7 +199,7 @@ mod test {
     // - Require non-existing file raises and returns `nil`.
     #[test]
     fn functional() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.def_file_for_type::<_, MockSourceFile>("file.rb").unwrap();
         let result = interp.eval(b"require 'file'").unwrap();
         let require_result = result.try_convert_into::<bool>(&interp).unwrap();
@@ -225,7 +225,7 @@ mod test {
 
     #[test]
     fn absolute_path() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let (path, require_code) = if cfg!(windows) {
             (
                 "c:/artichoke/virtual_root/src/lib/foo/bar/source.rb",
@@ -247,7 +247,7 @@ mod test {
 
     #[test]
     fn relative_with_dotted_path() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         if cfg!(windows) {
             interp
                 .def_rb_source_file(
@@ -289,7 +289,7 @@ mod test {
 
     #[test]
     fn directory_err() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let err = interp.eval(b"require '/src'").unwrap_err();
         assert_eq!(
             b"cannot load such file -- /src".as_bstr(),
@@ -302,7 +302,7 @@ mod test {
 
     #[test]
     fn path_defined_as_source_then_extension_file() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp
             .def_rb_source_file("foo.rb", &b"module Foo; RUBY = 3; end"[..])
             .unwrap();
@@ -319,7 +319,7 @@ mod test {
 
     #[test]
     fn path_defined_as_extension_file_then_source() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp
             .def_file_for_type::<_, MockExtensionAndSourceFile>("foo.rb")
             .unwrap();

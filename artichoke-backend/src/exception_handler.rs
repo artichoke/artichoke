@@ -180,7 +180,7 @@ mod tests {
 
     #[test]
     fn return_exception() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let err = interp.eval(b"raise ArgumentError.new('waffles')").unwrap_err();
         assert_eq!("ArgumentError", err.name().as_ref());
         assert_eq!(b"waffles".as_bstr(), err.message().as_ref().as_bstr());
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn return_exception_with_no_backtrace() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let err = interp.eval(b"def bad; (; end").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
         assert_eq!(b"syntax error".as_bstr(), err.message().as_ref().as_bstr());
@@ -200,7 +200,7 @@ mod tests {
 
     #[test]
     fn raise_does_not_panic_or_segfault() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.eval(br#"raise 'foo'"#).unwrap_err();
         interp.eval(br#"raise 'foo'"#).unwrap_err();
         interp.eval(br#"eval("raise 'foo'")"#).unwrap_err();

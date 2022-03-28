@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn arena_restore_on_explicit_restore() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let baseline_object_count = interp.live_object_count();
         let mut arena = interp.create_arena_savepoint().unwrap();
         for _ in 0..2000 {
@@ -149,7 +149,7 @@ mod tests {
 
     #[test]
     fn arena_restore_on_drop() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let baseline_object_count = interp.live_object_count();
         {
             let mut arena = interp.create_arena_savepoint().unwrap();
@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn enable_disable_gc() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.disable_gc().unwrap();
         let mut arena = interp.create_arena_savepoint().unwrap();
         arena
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn gc_after_empty_eval() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let baseline_object_count = arena.live_object_count();
         arena.eval(b"").unwrap();
@@ -222,7 +222,7 @@ mod tests {
 
     #[test]
     fn gc_functional_test() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let baseline_object_count = interp.live_object_count();
         let mut initial_arena = interp.create_arena_savepoint().unwrap();
         for _ in 0..2000 {

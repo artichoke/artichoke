@@ -127,7 +127,7 @@ mod tests {
     quickcheck! {
         #[allow(clippy::needless_pass_by_value)]
         fn roundtrip_kv(hash: HashMap<Vec<u8>, Vec<u8>>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.try_convert_mut(hash.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
             let len = len.try_convert_into::<usize>(&interp).unwrap();

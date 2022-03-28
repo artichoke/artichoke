@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn convert_obj_roundtrip() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let spec = class::Spec::new(
             "Container",
             cstr::cstr!("Container"),
@@ -379,7 +379,7 @@ mod tests {
 
     #[test]
     fn convert_obj_not_data() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let spec = class::Spec::new(
             "Container",
