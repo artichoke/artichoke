@@ -523,10 +523,12 @@ pub fn gamma(value: f64) -> Result<f64, DomainError> {
         value if (value - value.floor()).abs() < f64::EPSILON => {
             #[allow(clippy::cast_possible_truncation)]
             let idx = (value as i64).checked_sub(1).map(usize::try_from);
-            let result = match idx {
-                Some(Ok(idx)) if idx < FACTORIAL_TABLE.len() => FACTORIAL_TABLE[idx],
-                _ => libm::tgamma(value),
-            };
+            if let Some(Ok(idx)) = idx {
+                if let Some(&result) = FACTORIAL_TABLE.get(idx) {
+                    return Ok(result);
+                }
+            }
+            let result = libm::tgamma(value);
             Ok(result)
         }
         value => {
