@@ -80,11 +80,10 @@ impl Value {
         Self::default()
     }
 
-    /// The [`sys::mrb_value`] that this [`Value`] wraps.
-    // TODO(GH-251): make `Value::inner` pub(crate).
+    /// Retrieve the inner [`sys::mrb_value`] that this [`Value`] wraps.
     #[inline]
     #[must_use]
-    pub const fn inner(&self) -> sys::mrb_value {
+    pub(crate) const fn inner(&self) -> sys::mrb_value {
         self.0
     }
 

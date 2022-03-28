@@ -30,7 +30,7 @@ unsafe extern "C" fn container_initialize(mrb: *mut sys::mrb_state, slf: sys::mr
     let container = Container(inner);
     let result = Container::box_into_value(container, slf, &mut guard);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => value.into(),
         Err(exception) => error::raise(guard, exception),
     }
 }
