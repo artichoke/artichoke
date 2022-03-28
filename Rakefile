@@ -182,7 +182,7 @@ namespace :release do
     f.include('**/vendor/*.md')
   end
 
-  link_check_files.each do |markdown|
+  link_check_files.uniq.sort.each do |markdown|
     desc 'Check for broken links in markdown files'
     task markdown_link_check: markdown do
       command = ['npx', 'markdown-link-check', '--config', '.github/markdown-link-check.json', markdown]
