@@ -61,9 +61,13 @@ impl Drop for AutoDropArtichoke {
 //
 // See https://github.com/artichoke/artichoke/issues/930 for rationale of this
 // constructor.
-pub fn interpreter() -> Result<AutoDropArtichoke, Error> {
-    let interp = crate::interpreter()?;
-    Ok(AutoDropArtichoke(Some(interp)))
+//
+// This function unwraps internally and does not return error since every test
+// that uses this function must unwrap. Unwrapping internally makes grep code
+// analysis that looks for `unwrap` and `expect` a bit easier.
+pub fn interpreter() -> AutoDropArtichoke {
+    let interp = crate::interpreter().unwrap_or_else(|err| panic!("Artichoke failed to initialize in tests: {err}"));
+    AutoDropArtichoke(Some(interp))
 }
 
 /// Unwrap a result returned from the VM or panic.
