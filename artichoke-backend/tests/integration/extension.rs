@@ -15,7 +15,7 @@ unsafe extern "C" fn container_initialize(mrb: *mut sys::mrb_state, slf: sys::mr
     let inner = inner.try_convert_into::<i64>(&guard).unwrap_or_default();
     let container = Box::new(Container(inner));
     let result = Box::<Container>::box_into_value(container, slf, &mut guard).unwrap_or_default();
-    result.inner()
+    result.into()
 }
 
 unsafe extern "C" fn container_value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
@@ -26,7 +26,7 @@ unsafe extern "C" fn container_value(mrb: *mut sys::mrb_state, slf: sys::mrb_val
     } else {
         Value::nil()
     };
-    result.inner()
+    result.into()
 }
 
 impl File for Container {
