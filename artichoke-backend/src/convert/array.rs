@@ -421,7 +421,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_convert_into_mut::<Vec<Value>>(&mut interp);
@@ -431,7 +431,7 @@ mod tests {
     quickcheck! {
         #[allow(clippy::needless_pass_by_value)]
         fn arr_int_borrowed(arr: Vec<i64>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Borrowed converter
             let value = interp.try_convert_mut(arr.as_slice()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -453,7 +453,7 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn arr_int_owned(arr: Vec<i64>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Owned converter
             let value = interp.try_convert_mut(arr.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -475,7 +475,7 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn arr_utf8_borrowed(arr: Vec<String>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Borrowed converter
             let value = interp.try_convert_mut(arr.as_slice()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -497,7 +497,7 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn arr_utf8_owned(arr: Vec<String>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Owned converter
             let value = interp.try_convert_mut(arr.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -519,7 +519,7 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn arr_nilable_bstr_borrowed(arr: Vec<Option<Vec<u8>>>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Borrowed converter
             let value = interp.try_convert_mut(arr.as_slice()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -541,7 +541,7 @@ mod tests {
 
         #[allow(clippy::needless_pass_by_value)]
         fn arr_nilable_bstr_owned(arr: Vec<Option<Vec<u8>>>) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             // Owned converter
             let value = interp.try_convert_mut(arr.clone()).unwrap();
             let len = value.funcall(&mut interp, "length", &[], None).unwrap();
@@ -562,7 +562,7 @@ mod tests {
         }
 
         fn roundtrip_err(i: i64) -> bool {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let value = interp.convert(i);
             let value = value.try_convert_into_mut::<Vec<Value>>(&mut interp);
             value.is_err()

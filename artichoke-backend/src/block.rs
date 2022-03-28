@@ -193,7 +193,7 @@ mod tests {
     #[test]
     fn yield_arg_is_dead() {
         // construct a dead value
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let mut arena = interp.create_arena_savepoint().unwrap();
 
         let dead = arena.eval(b"'dead'").unwrap();

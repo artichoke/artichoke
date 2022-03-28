@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn root_eval_context() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let result = interp.eval(b"__FILE__").unwrap();
         let result = result.try_convert_into_mut::<&str>(&mut interp).unwrap();
         assert_eq!(result, "(eval)");
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn context_is_restored_after_eval() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let context = Context::new(&b"context.rb"[..]).unwrap();
         interp.push_context(context).unwrap();
         interp.eval(b"15").unwrap();
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn root_context_is_not_pushed_after_eval() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.eval(b"15").unwrap();
         let context = interp.peek_context().unwrap();
         assert!(context.is_none());
@@ -130,7 +130,7 @@ mod tests {
         #[should_panic]
         // this test is known broken
         fn eval_context_is_a_stack() {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             interp.def_file_for_type::<_, NestedEval>("nested_eval.rb").unwrap();
             let code = br#"require 'nested_eval'; NestedEval.file"#;
             let result = interp.eval(code).unwrap();
@@ -141,7 +141,7 @@ mod tests {
 
     #[test]
     fn eval_with_context() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let context = Context::new(b"source.rb".as_ref()).unwrap();
         interp.push_context(context).unwrap();
@@ -167,14 +167,14 @@ mod tests {
 
     #[test]
     fn unparseable_code_returns_err_syntax_error() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let err = interp.eval(b"'a").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
     }
 
     #[test]
     fn interpreter_is_usable_after_syntax_error() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let err = interp.eval(b"'a").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
         // Ensure interpreter is usable after evaling unparseable code
@@ -190,7 +190,7 @@ mod tests {
         } else {
             "/artichoke/virtual_root/src/lib/source.rb"
         };
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
@@ -201,7 +201,7 @@ mod tests {
 
     #[test]
     fn file_not_persistent() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp
             .def_rb_source_file("source.rb", &b"def file; __FILE__; end"[..])
             .unwrap();
@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn return_syntax_error() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp
             .def_rb_source_file("fail.rb", &b"def bad; 'as'.scan(; end"[..])
             .unwrap();

@@ -485,7 +485,7 @@ mod tests {
 
     #[test]
     fn nil_radix_parses_to_none() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(None);
         let result = result.unwrap();
         assert!(result.is_none());
@@ -493,7 +493,7 @@ mod tests {
 
     #[test]
     fn zero_radix_parses_to_none() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let radix = interp.convert(0);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
         let result = result.unwrap();
@@ -505,7 +505,7 @@ mod tests {
 
     #[test]
     fn negative_one_radix_parses_to_none() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let expected = Radix::new(10).unwrap();
         let radix = interp.convert(-1);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
@@ -515,7 +515,7 @@ mod tests {
 
     #[test]
     fn one_radix_has_parse_failure() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let radix = interp.convert(1);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
         assert!(result.is_err());
@@ -528,7 +528,7 @@ mod tests {
 
     #[test]
     fn invalid_radix_has_parse_failure() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let radix = interp.convert(12000);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
         assert!(result.is_err());
@@ -541,7 +541,7 @@ mod tests {
 
     #[test]
     fn invalid_negative_radix_has_parse_failure() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let radix = interp.convert(-12000);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
         assert!(result.is_err());
@@ -562,7 +562,7 @@ mod tests {
 
     #[test]
     fn positive_radix_in_valid_range_is_parsed() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         for r in 2_i32..=36_i32 {
             let radix = interp.convert(r);
             let expected = Radix::new(r.try_into().unwrap()).unwrap();
@@ -574,7 +574,7 @@ mod tests {
 
     #[test]
     fn negative_radix_in_valid_range_is_parsed() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         for r in 2_i32..=36_i32 {
             let radix = interp.convert(-r);
             let expected = Radix::new(r.try_into().unwrap()).unwrap();
@@ -586,7 +586,7 @@ mod tests {
 
     #[test]
     fn int_max_min_do_not_panic() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let radix = interp.convert(i64::MAX);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
         assert!(result.is_err());

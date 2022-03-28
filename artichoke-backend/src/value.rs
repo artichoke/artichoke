@@ -386,7 +386,7 @@ mod tests {
 
     #[test]
     fn to_s_true() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = interp.convert(true);
         let string = value.to_s(&mut interp);
@@ -395,7 +395,7 @@ mod tests {
 
     #[test]
     fn inspect_true() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = interp.convert(true);
         let debug = value.inspect(&mut interp);
@@ -404,7 +404,7 @@ mod tests {
 
     #[test]
     fn to_s_false() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = interp.convert(false);
         let string = value.to_s(&mut interp);
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn inspect_false() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = interp.convert(false);
         let debug = value.inspect(&mut interp);
@@ -422,7 +422,7 @@ mod tests {
 
     #[test]
     fn to_s_nil() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = Value::nil();
         let string = value.to_s(&mut interp);
@@ -431,7 +431,7 @@ mod tests {
 
     #[test]
     fn inspect_nil() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = Value::nil();
         let debug = value.inspect(&mut interp);
@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn to_s_fixnum() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = Convert::<_, Value>::convert(&*interp, 255);
         let string = value.to_s(&mut interp);
@@ -449,7 +449,7 @@ mod tests {
 
     #[test]
     fn inspect_fixnum() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = Convert::<_, Value>::convert(&*interp, 255);
         let debug = value.inspect(&mut interp);
@@ -458,7 +458,7 @@ mod tests {
 
     #[test]
     fn to_s_string() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = interp.try_convert_mut("interstate").unwrap();
         let string = value.to_s(&mut interp);
@@ -467,7 +467,7 @@ mod tests {
 
     #[test]
     fn inspect_string() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = interp.try_convert_mut("interstate").unwrap();
         let debug = value.inspect(&mut interp);
@@ -476,7 +476,7 @@ mod tests {
 
     #[test]
     fn to_s_empty_string() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = interp.try_convert_mut("").unwrap();
         let string = value.to_s(&mut interp);
@@ -485,7 +485,7 @@ mod tests {
 
     #[test]
     fn inspect_empty_string() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let value = interp.try_convert_mut("").unwrap();
         let debug = value.inspect(&mut interp);
@@ -494,7 +494,7 @@ mod tests {
 
     #[test]
     fn is_dead() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let live = arena.eval(b"'dead'").unwrap();
         assert!(!live.is_dead(&mut arena));
@@ -513,7 +513,7 @@ mod tests {
 
     #[test]
     fn funcall_is_dead() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let mut arena = interp.create_arena_savepoint().unwrap();
 
         let dead = arena.eval(b"'dead'").unwrap();
@@ -529,7 +529,7 @@ mod tests {
 
     #[test]
     fn immediate_is_dead() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let mut arena = interp.create_arena_savepoint().unwrap();
         let live = arena.eval(b"27").unwrap();
         assert!(!live.is_dead(&mut arena));
@@ -553,7 +553,7 @@ mod tests {
 
     #[test]
     fn funcall_nil_nil() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let nil = Value::nil();
         let result = nil
@@ -565,7 +565,7 @@ mod tests {
 
     #[test]
     fn funcall_string_nil() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let s = interp.try_convert_mut("foo").unwrap();
         let result = s
@@ -577,7 +577,7 @@ mod tests {
 
     #[test]
     fn funcall_string_split_regexp() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
 
         let s = interp.try_convert_mut("foo").unwrap();
         let delim = interp.try_convert_mut("").unwrap();
@@ -590,7 +590,7 @@ mod tests {
 
     #[test]
     fn funcall_different_types() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let nil = Value::nil();
         let s = interp.try_convert_mut("foo").unwrap();
         let result = nil
@@ -602,7 +602,7 @@ mod tests {
 
     #[test]
     fn funcall_type_error() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let nil = Value::nil();
         let s = interp.try_convert_mut("foo").unwrap();
         let err = s
@@ -618,7 +618,7 @@ mod tests {
 
     #[test]
     fn funcall_method_not_exists() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let nil = Value::nil();
         let s = interp.try_convert_mut("foo").unwrap();
         let err = nil.funcall(&mut interp, "garbage_method_name", &[s], None).unwrap_err();

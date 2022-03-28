@@ -209,7 +209,7 @@ LoadSources::Counter.instance.inc!
 
     #[test]
     fn load_has_no_memory() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
 
         let result = interp.load_source("./counter.rb").unwrap();
@@ -234,7 +234,7 @@ LoadSources::Counter.instance.inc!
 
     #[test]
     fn load_has_no_memory_and_ignores_loaded_features() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
 
         let result = interp.require_source("./counter.rb").unwrap();
@@ -271,7 +271,7 @@ LoadSources::Counter.instance.inc!
 
     #[test]
     fn load_does_not_discover_paths_from_loaded_features() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         interp.def_rb_source_file("counter.rb", NON_IDEMPOTENT_LOAD).unwrap();
 
         let result = interp.require_source("./counter").unwrap();

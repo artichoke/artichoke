@@ -500,7 +500,7 @@ mod tests {
         #[test]
         fn integration_test() {
             // Setup: define module and class hierarchy
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let root = module::Spec::new(&mut interp, "A", cstr::cstr!("A"), None).unwrap();
             let mod_under_root = module::Spec::new(
                 &mut interp,
@@ -584,7 +584,7 @@ mod tests {
 
         #[test]
         fn define_method() {
-            let mut interp = interpreter().unwrap();
+            let mut interp = interpreter();
             let class = class::Spec::new(
                 "DefineMethodTestClass",
                 cstr::cstr!("DefineMethodTestClass"),

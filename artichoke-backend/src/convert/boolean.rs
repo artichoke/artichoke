@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn fail_convert() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         // get a Ruby value that can't be converted to a primitive type.
         let value = interp.eval(b"Object.new").unwrap();
         let result = value.try_convert_into::<bool>(&interp);
@@ -80,13 +80,13 @@ mod tests {
 
     quickcheck! {
         fn convert_to_bool(b: bool) -> bool {
-            let interp = interpreter().unwrap();
+            let interp = interpreter();
             let value = interp.convert(b);
             value.ruby_type() == Ruby::Bool
         }
 
         fn convert_to_nilable_bool(b: Option<bool>) -> bool {
-            let interp = interpreter().unwrap();
+            let interp = interpreter();
             let value = interp.convert(b);
             if b.is_some() {
                 value.ruby_type() == Ruby::Bool
@@ -96,7 +96,7 @@ mod tests {
         }
 
         fn bool_with_value(b: bool) -> bool {
-            let interp = interpreter().unwrap();
+            let interp = interpreter();
             let value = interp.convert(b);
             let value = value.inner();
             if b {
@@ -121,7 +121,7 @@ mod tests {
         }
 
         fn nilable_bool_with_value(b: Option<bool>) -> bool {
-            let interp = interpreter().unwrap();
+            let interp = interpreter();
             let value = interp.convert(b);
             let value = value.inner();
             match b {
@@ -163,21 +163,21 @@ mod tests {
         }
 
         fn roundtrip(b: bool) -> bool {
-            let interp = interpreter().unwrap();
+            let interp = interpreter();
             let value = interp.convert(b);
             let value = value.try_convert_into::<bool>(&interp).unwrap();
             value == b
         }
 
         fn nilable_roundtrip(b: Option<bool>) -> bool {
-            let interp = interpreter().unwrap();
+            let interp = interpreter();
             let value = interp.convert(b);
             let value = value.try_convert_into::<Option<bool>>(&interp).unwrap();
             value == b
         }
 
         fn roundtrip_err(i: i64) -> bool {
-            let interp = interpreter().unwrap();
+            let interp = interpreter();
             let value = interp.convert(i);
             let value = value.try_convert_into::<bool>(&interp);
             value.is_err()

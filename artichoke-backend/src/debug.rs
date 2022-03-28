@@ -36,42 +36,42 @@ mod tests {
 
     #[test]
     fn debug_true_value_as_classlike() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let value = interp.convert(true);
         assert_eq!(interp.inspect_type_name_for_value(value), "true");
     }
 
     #[test]
     fn debug_false_value_as_classlike() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let value = interp.convert(false);
         assert_eq!(interp.inspect_type_name_for_value(value), "false");
     }
 
     #[test]
     fn debug_nil_value_as_classlike() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let value = interp.convert(None::<Value>);
         assert_eq!(interp.inspect_type_name_for_value(value), "nil");
     }
 
     #[test]
     fn debug_fixnum_value_as_classlike() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let value = interp.convert(1_i64);
         assert_eq!(interp.inspect_type_name_for_value(value), "Integer");
     }
 
     #[test]
     fn debug_hash_value_as_classlike() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let value = interp.try_convert_mut(vec![(b"foo".to_vec(), vec![1, 2, 3])]).unwrap();
         assert_eq!(interp.inspect_type_name_for_value(value), "Hash");
     }
 
     #[test]
     fn debug_array_value_as_classlike() {
-        let mut interp = interpreter().unwrap();
+        let mut interp = interpreter();
         let value = interp.try_convert_mut(vec![1_i64]).unwrap();
         assert_eq!(interp.inspect_type_name_for_value(value), "Array");
     }
