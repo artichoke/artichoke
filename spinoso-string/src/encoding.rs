@@ -279,14 +279,20 @@ impl Encoding {
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
+            // ```
             // [2.6.3] > Encoding::UTF_8.name
             // => "UTF-8"
+            // ```
             Self::Utf8 => "UTF-8",
+            // ```
             // [2.6.3] > Encoding::ASCII.name
             // => "US-ASCII"
+            // ```
             Self::Ascii => "US-ASCII",
+            // ```
             // [2.6.3] > Encoding::BINARY.name
             // => "ASCII-8BIT"
+            // ```
             Self::Binary => "ASCII-8BIT",
         }
     }

@@ -179,9 +179,15 @@ mod tests {
 
     #[test]
     fn unpaired_surrogate_relative_bare() {
-        // Created a file named `<unpaired surrogate>.txt`
-        // ([]uint16=`[0xdcc0 0x2e 0x74 0x78 0x74]`) and attempt to read it by
-        // calling `ioutil.ReadDir` and reading all the files that come back.
+        // Created a file named:
+        //
+        // ```
+        // `<unpaired surrogate>.txt`
+        // ([]uint16=`[0xdcc0 0x2e 0x74 0x78 0x74]`)
+        // ```
+        //
+        // and attempt to read it by calling `ioutil.ReadDir` and reading all
+        // the files that come back.
         //
         // See: https://github.com/golang/go/issues/32334#issue-450436484
 

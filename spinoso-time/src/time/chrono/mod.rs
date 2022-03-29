@@ -364,8 +364,11 @@ mod tests {
         assert_eq!(time.year_day(), 96);
         // TODO: Implement DST and timezone detection. This requires a new release of
         // `chrono-tz`.
+        //
+        // ```
         // assert!(time.is_dst());
         // assert_eq!(time.timezone(), Some("PDT"));
+        // ```
     }
 
     #[test]

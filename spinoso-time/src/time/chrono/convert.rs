@@ -100,7 +100,7 @@ mod tests {
     use crate::time::chrono::{Offset, Time};
 
     fn date() -> NaiveDateTime {
-        // Artichoke's birthday, 2019-04-07T01:30Z + .2s
+        // Artichoke's birthday, 2019-04-07T01:30Z + 0.2 seconds
         let time = NaiveDateTime::from_timestamp(1_554_600_621, 0);
         time.with_nanosecond(200_000_000).unwrap()
     }

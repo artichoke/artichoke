@@ -117,7 +117,7 @@ ruby_exception_impl!(RegexpError);
 ruby_exception_impl!(RuntimeError);
 ruby_exception_impl!(FrozenError);
 ruby_exception_impl!(SystemCallError);
-// ruby_exception_impl!(Errno::*);
+// TODO: Implement `Errno` family of exceptions.
 ruby_exception_impl!(ThreadError);
 ruby_exception_impl!(TypeError);
 ruby_exception_impl!(ZeroDivisionError);
