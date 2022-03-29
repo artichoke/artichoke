@@ -4,7 +4,7 @@
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
 // TODO: warn on missing docs once crate is API-complete.
-// #![warn(missing_doc)]
+// #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
