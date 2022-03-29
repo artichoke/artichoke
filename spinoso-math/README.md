@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-math = "0.2"
+spinoso-math = "0.2.0"
 ```
 
 Compute the hypotenuse:
@@ -71,3 +71,4 @@ All features are enabled by default.
 [`core`]: https://doc.rust-lang.org/core/
 [`nan`]: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.NAN
 [`f64`]: https://doc.rust-lang.org/std/primitive.f64.html
+[`libm`]: https://crates.io/crates/libm
