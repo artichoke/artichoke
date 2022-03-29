@@ -56,7 +56,7 @@ $ cargo install --git https://github.com/artichoke/artichoke --branch trunk --lo
 ```
 
 To install via `cargo install` or to checkout and build locally, you'll need
-Rust, clang, and Ruby. [`BUILD.md`](BUILD.md) has more detail on
+Rust and clang. [`BUILD.md`](BUILD.md) has more detail on
 [how to set up the compiler toolchain](BUILD.md#prerequisites).
 
 ### Docker
