@@ -22,6 +22,7 @@
  * initializers).
  */
 
+#include <mruby.h>
 #include <mruby/class.h>
 #include <mruby/common.h>
 #include <mruby/data.h>
