@@ -1,19 +1,3 @@
-// ext is partially derived from mrusty @ 1.0.0
-// <https://github.com/anima-engine/mrusty/tree/v1.0.0>
-//
-// Copyright (C) 2016  Dragoș Tiselice
-// Licensed under the Mozilla Public License 2.0
-
-// ext is partially derived from go-mruby @ cd6a04a
-// <https://github.com/mitchellh/go-mruby/tree/cd6a04a>
-//
-// Copyright (c) 2017 Mitchell Hashimoto
-// Licensed under the MIT License
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 #include <mruby.h>
 #include <mruby/array.h>
 #include <mruby/class.h>
