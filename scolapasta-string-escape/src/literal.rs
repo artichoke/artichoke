@@ -172,7 +172,6 @@ impl Literal {
     /// assert_eq!(Literal::debug_escape(b'a'), "a");
     /// ```
     #[must_use]
-    #[allow(clippy::too_many_lines)]
     pub const fn debug_escape(byte: u8) -> &'static str {
         // Some control character bytes escape to non-hex literals:
         //
@@ -243,281 +242,56 @@ impl Literal {
         // => :"\x1F"
         // [2.6.3] > :"\x20"
         // => :" "
+        // [2.6.3] > '"'.ord
+        // => 34
+        // [2.6.3] > '"'.ord.to_s(16)
+        // => "22"
+        // [2.6.3] > :"\x22"
+        // => :"\""
+        // [2.6.3] > '\\'.ord
+        // => 92
+        // [2.6.3] > '\\'.ord.to_s(16)
+        // => "5c"
+        // [2.6.3] > :"\x5C"
+        // => :"\\"
         // ```
-        match byte {
-            0 => r"\x00",
-            1 => r"\x01",
-            2 => r"\x02",
-            3 => r"\x03",
-            4 => r"\x04",
-            5 => r"\x05",
-            6 => r"\x06",
-            7 => r"\a",
-            8 => r"\b",
-            9 => r"\t",
-            10 => r"\n",
-            11 => r"\v",
-            12 => r"\f",
-            13 => r"\r",
-            14 => r"\x0E",
-            15 => r"\x0F",
-            16 => r"\x10",
-            17 => r"\x11",
-            18 => r"\x12",
-            19 => r"\x13",
-            20 => r"\x14",
-            21 => r"\x15",
-            22 => r"\x16",
-            23 => r"\x17",
-            24 => r"\x18",
-            25 => r"\x19",
-            26 => r"\x1A",
-            27 => r"\e",
-            28 => r"\x1C",
-            29 => r"\x1D",
-            30 => r"\x1E",
-            31 => r"\x1F",
-            32 => " ",
-            33 => "!",
-            // ```
-            // [2.6.3] > '"'.ord
-            // => 34
-            // [2.6.3] > '"'.ord.to_s(16)
-            // => "22"
-            // [2.6.3] > :"\x22"
-            // => :"\""
-            // ```
-            34 => r#"\""#,
-            35 => "#",
-            36 => "$",
-            37 => "%",
-            38 => "&",
-            39 => "'",
-            40 => "(",
-            41 => ")",
-            42 => "*",
-            43 => "+",
-            44 => ",",
-            45 => "-",
-            46 => ".",
-            47 => "/",
-            48 => "0",
-            49 => "1",
-            50 => "2",
-            51 => "3",
-            52 => "4",
-            53 => "5",
-            54 => "6",
-            55 => "7",
-            56 => "8",
-            57 => "9",
-            58 => ":",
-            59 => ";",
-            60 => "<",
-            61 => "=",
-            62 => ">",
-            63 => "?",
-            64 => "@",
-            65 => "A",
-            66 => "B",
-            67 => "C",
-            68 => "D",
-            69 => "E",
-            70 => "F",
-            71 => "G",
-            72 => "H",
-            73 => "I",
-            74 => "J",
-            75 => "K",
-            76 => "L",
-            77 => "M",
-            78 => "N",
-            79 => "O",
-            80 => "P",
-            81 => "Q",
-            82 => "R",
-            83 => "S",
-            84 => "T",
-            85 => "U",
-            86 => "V",
-            87 => "W",
-            88 => "X",
-            89 => "Y",
-            90 => "Z",
-            91 => "[",
-            // ```
-            // [2.6.3] > '\\'.ord
-            // => 92
-            // [2.6.3] > '\\'.ord.to_s(16)
-            // => "5c"
-            // [2.6.3] > :"\x5C"
-            // => :"\\"
-            // ```
-            92 => r"\\",
-            93 => "]",
-            94 => "^",
-            95 => "_",
-            96 => "`",
-            97 => "a",
-            98 => "b",
-            99 => "c",
-            100 => "d",
-            101 => "e",
-            102 => "f",
-            103 => "g",
-            104 => "h",
-            105 => "i",
-            106 => "j",
-            107 => "k",
-            108 => "l",
-            109 => "m",
-            110 => "n",
-            111 => "o",
-            112 => "p",
-            113 => "q",
-            114 => "r",
-            115 => "s",
-            116 => "t",
-            117 => "u",
-            118 => "v",
-            119 => "w",
-            120 => "x",
-            121 => "y",
-            122 => "z",
-            123 => "{",
-            124 => "|",
-            125 => "}",
-            126 => "~",
-            127 => r"\x7F",
-            128 => r"\x80",
-            129 => r"\x81",
-            130 => r"\x82",
-            131 => r"\x83",
-            132 => r"\x84",
-            133 => r"\x85",
-            134 => r"\x86",
-            135 => r"\x87",
-            136 => r"\x88",
-            137 => r"\x89",
-            138 => r"\x8A",
-            139 => r"\x8B",
-            140 => r"\x8C",
-            141 => r"\x8D",
-            142 => r"\x8E",
-            143 => r"\x8F",
-            144 => r"\x90",
-            145 => r"\x91",
-            146 => r"\x92",
-            147 => r"\x93",
-            148 => r"\x94",
-            149 => r"\x95",
-            150 => r"\x96",
-            151 => r"\x97",
-            152 => r"\x98",
-            153 => r"\x99",
-            154 => r"\x9A",
-            155 => r"\x9B",
-            156 => r"\x9C",
-            157 => r"\x9D",
-            158 => r"\x9E",
-            159 => r"\x9F",
-            160 => r"\xA0",
-            161 => r"\xA1",
-            162 => r"\xA2",
-            163 => r"\xA3",
-            164 => r"\xA4",
-            165 => r"\xA5",
-            166 => r"\xA6",
-            167 => r"\xA7",
-            168 => r"\xA8",
-            169 => r"\xA9",
-            170 => r"\xAA",
-            171 => r"\xAB",
-            172 => r"\xAC",
-            173 => r"\xAD",
-            174 => r"\xAE",
-            175 => r"\xAF",
-            176 => r"\xB0",
-            177 => r"\xB1",
-            178 => r"\xB2",
-            179 => r"\xB3",
-            180 => r"\xB4",
-            181 => r"\xB5",
-            182 => r"\xB6",
-            183 => r"\xB7",
-            184 => r"\xB8",
-            185 => r"\xB9",
-            186 => r"\xBA",
-            187 => r"\xBB",
-            188 => r"\xBC",
-            189 => r"\xBD",
-            190 => r"\xBE",
-            191 => r"\xBF",
-            192 => r"\xC0",
-            193 => r"\xC1",
-            194 => r"\xC2",
-            195 => r"\xC3",
-            196 => r"\xC4",
-            197 => r"\xC5",
-            198 => r"\xC6",
-            199 => r"\xC7",
-            200 => r"\xC8",
-            201 => r"\xC9",
-            202 => r"\xCA",
-            203 => r"\xCB",
-            204 => r"\xCC",
-            205 => r"\xCD",
-            206 => r"\xCE",
-            207 => r"\xCF",
-            208 => r"\xD0",
-            209 => r"\xD1",
-            210 => r"\xD2",
-            211 => r"\xD3",
-            212 => r"\xD4",
-            213 => r"\xD5",
-            214 => r"\xD6",
-            215 => r"\xD7",
-            216 => r"\xD8",
-            217 => r"\xD9",
-            218 => r"\xDA",
-            219 => r"\xDB",
-            220 => r"\xDC",
-            221 => r"\xDD",
-            222 => r"\xDE",
-            223 => r"\xDF",
-            224 => r"\xE0",
-            225 => r"\xE1",
-            226 => r"\xE2",
-            227 => r"\xE3",
-            228 => r"\xE4",
-            229 => r"\xE5",
-            230 => r"\xE6",
-            231 => r"\xE7",
-            232 => r"\xE8",
-            233 => r"\xE9",
-            234 => r"\xEA",
-            235 => r"\xEB",
-            236 => r"\xEC",
-            237 => r"\xED",
-            238 => r"\xEE",
-            239 => r"\xEF",
-            240 => r"\xF0",
-            241 => r"\xF1",
-            242 => r"\xF2",
-            243 => r"\xF3",
-            244 => r"\xF4",
-            245 => r"\xF5",
-            246 => r"\xF6",
-            247 => r"\xF7",
-            248 => r"\xF8",
-            249 => r"\xF9",
-            250 => r"\xFA",
-            251 => r"\xFB",
-            252 => r"\xFC",
-            253 => r"\xFD",
-            254 => r"\xFE",
-            255 => r"\xFF",
-        }
+        #[rustfmt::skip]
+        const TABLE: [&str; 256] = [
+            r"\x00", r"\x01", r"\x02", r"\x03", r"\x04", r"\x05", r"\x06",   r"\a",
+              r"\b",   r"\t",   r"\n",   r"\v",   r"\f",   r"\r", r"\x0E", r"\x0F",
+            r"\x10", r"\x11", r"\x12", r"\x13", r"\x14", r"\x15", r"\x16", r"\x17",
+            r"\x18", r"\x19", r"\x1A",   r"\e", r"\x1C", r"\x1D", r"\x1E", r"\x1F",
+                " ",     "!", r#"\""#,    "#",     "$",     "%",     "&",      "'",
+                "(",     ")",     "*",    "+",     ",",     "-",     ".",      "/",
+                "0",     "1",     "2",    "3",     "4",     "5",     "6",      "7",
+                "8",     "9",     ":",    ";",     "<",     "=",     ">",      "?",
+                "@",     "A",     "B",    "C",     "D",     "E",     "F",      "G",
+                "H",     "I",     "J",    "K",     "L",     "M",     "N",      "O",
+                "P",     "Q",     "R",    "S",     "T",     "U",     "V",      "W",
+                "X",     "Y",     "Z",    "[",   r"\\",     "]",     "^",      "_",
+                "`",     "a",     "b",    "c",     "d",     "e",     "f",      "g",
+                "h",     "i",     "j",    "k",     "l",     "m",     "n",      "o",
+                "p",     "q",     "r",    "s",     "t",     "u",     "v",      "w",
+                "x",     "y",     "z",    "{",     "|",     "}",     "~",  r"\x7F",
+            r"\x80", r"\x81", r"\x82", r"\x83", r"\x84", r"\x85", r"\x86", r"\x87",
+            r"\x88", r"\x89", r"\x8A", r"\x8B", r"\x8C", r"\x8D", r"\x8E", r"\x8F",
+            r"\x90", r"\x91", r"\x92", r"\x93", r"\x94", r"\x95", r"\x96", r"\x97",
+            r"\x98", r"\x99", r"\x9A", r"\x9B", r"\x9C", r"\x9D", r"\x9E", r"\x9F",
+            r"\xA0", r"\xA1", r"\xA2", r"\xA3", r"\xA4", r"\xA5", r"\xA6", r"\xA7",
+            r"\xA8", r"\xA9", r"\xAA", r"\xAB", r"\xAC", r"\xAD", r"\xAE", r"\xAF",
+            r"\xB0", r"\xB1", r"\xB2", r"\xB3", r"\xB4", r"\xB5", r"\xB6", r"\xB7",
+            r"\xB8", r"\xB9", r"\xBA", r"\xBB", r"\xBC", r"\xBD", r"\xBE", r"\xBF",
+            r"\xC0", r"\xC1", r"\xC2", r"\xC3", r"\xC4", r"\xC5", r"\xC6", r"\xC7",
+            r"\xC8", r"\xC9", r"\xCA", r"\xCB", r"\xCC", r"\xCD", r"\xCE", r"\xCF",
+            r"\xD0", r"\xD1", r"\xD2", r"\xD3", r"\xD4", r"\xD5", r"\xD6", r"\xD7",
+            r"\xD8", r"\xD9", r"\xDA", r"\xDB", r"\xDC", r"\xDD", r"\xDE", r"\xDF",
+            r"\xE0", r"\xE1", r"\xE2", r"\xE3", r"\xE4", r"\xE5", r"\xE6", r"\xE7",
+            r"\xE8", r"\xE9", r"\xEA", r"\xEB", r"\xEC", r"\xED", r"\xEE", r"\xEF",
+            r"\xF0", r"\xF1", r"\xF2", r"\xF3", r"\xF4", r"\xF5", r"\xF6", r"\xF7",
+            r"\xF8", r"\xF9", r"\xFA", r"\xFB", r"\xFC", r"\xFD", r"\xFE", r"\xFF",
+        ];
+
+        TABLE[byte as usize]
     }
 }
 
@@ -786,10 +560,8 @@ impl FusedIterator for InvalidUtf8ByteSequence {}
 /// Generation:
 ///
 /// ```ruby
-/// (0x00..0xFF).each do |ch|
-///   puts "let iter = Literal::from(0x#{ch.to_s(16).upcase}_u8);"
-///   puts "assert_eq!(iter.collect::<String>(), r#{[ch].pack('c*').inspect});"
-/// end
+/// pairs = (0x00..0xFF).to_a.map {|ch| ["0x#{ch.to_s(16).upcase}_u8", "r#{[ch].pack('c*').inspect}"]}
+/// puts "let test_cases = [#{pairs.map {|a, b| "#{b}"}.join ", "}];"
 /// ```
 #[cfg(test)]
 mod tests {
@@ -798,519 +570,52 @@ mod tests {
     use super::Literal;
 
     #[test]
-    #[allow(clippy::too_many_lines)]
     fn exhaustive() {
-        let iter = Literal::from(0x0_u8);
-        assert_eq!(iter.collect::<String>(), r"\x00");
-        let iter = Literal::from(0x1_u8);
-        assert_eq!(iter.collect::<String>(), r"\x01");
-        let iter = Literal::from(0x2_u8);
-        assert_eq!(iter.collect::<String>(), r"\x02");
-        let iter = Literal::from(0x3_u8);
-        assert_eq!(iter.collect::<String>(), r"\x03");
-        let iter = Literal::from(0x4_u8);
-        assert_eq!(iter.collect::<String>(), r"\x04");
-        let iter = Literal::from(0x5_u8);
-        assert_eq!(iter.collect::<String>(), r"\x05");
-        let iter = Literal::from(0x6_u8);
-        assert_eq!(iter.collect::<String>(), r"\x06");
-        let iter = Literal::from(0x7_u8);
-        assert_eq!(iter.collect::<String>(), r"\a");
-        let iter = Literal::from(0x8_u8);
-        assert_eq!(iter.collect::<String>(), r"\b");
-        let iter = Literal::from(0x9_u8);
-        assert_eq!(iter.collect::<String>(), r"\t");
-        let iter = Literal::from(0xA_u8);
-        assert_eq!(iter.collect::<String>(), r"\n");
-        let iter = Literal::from(0xB_u8);
-        assert_eq!(iter.collect::<String>(), r"\v");
-        let iter = Literal::from(0xC_u8);
-        assert_eq!(iter.collect::<String>(), r"\f");
-        let iter = Literal::from(0xD_u8);
-        assert_eq!(iter.collect::<String>(), r"\r");
-        let iter = Literal::from(0xE_u8);
-        assert_eq!(iter.collect::<String>(), r"\x0E");
-        let iter = Literal::from(0xF_u8);
-        assert_eq!(iter.collect::<String>(), r"\x0F");
-        let iter = Literal::from(0x10_u8);
-        assert_eq!(iter.collect::<String>(), r"\x10");
-        let iter = Literal::from(0x11_u8);
-        assert_eq!(iter.collect::<String>(), r"\x11");
-        let iter = Literal::from(0x12_u8);
-        assert_eq!(iter.collect::<String>(), r"\x12");
-        let iter = Literal::from(0x13_u8);
-        assert_eq!(iter.collect::<String>(), r"\x13");
-        let iter = Literal::from(0x14_u8);
-        assert_eq!(iter.collect::<String>(), r"\x14");
-        let iter = Literal::from(0x15_u8);
-        assert_eq!(iter.collect::<String>(), r"\x15");
-        let iter = Literal::from(0x16_u8);
-        assert_eq!(iter.collect::<String>(), r"\x16");
-        let iter = Literal::from(0x17_u8);
-        assert_eq!(iter.collect::<String>(), r"\x17");
-        let iter = Literal::from(0x18_u8);
-        assert_eq!(iter.collect::<String>(), r"\x18");
-        let iter = Literal::from(0x19_u8);
-        assert_eq!(iter.collect::<String>(), r"\x19");
-        let iter = Literal::from(0x1A_u8);
-        assert_eq!(iter.collect::<String>(), r"\x1A");
-        let iter = Literal::from(0x1B_u8);
-        assert_eq!(iter.collect::<String>(), r"\e");
-        let iter = Literal::from(0x1C_u8);
-        assert_eq!(iter.collect::<String>(), r"\x1C");
-        let iter = Literal::from(0x1D_u8);
-        assert_eq!(iter.collect::<String>(), r"\x1D");
-        let iter = Literal::from(0x1E_u8);
-        assert_eq!(iter.collect::<String>(), r"\x1E");
-        let iter = Literal::from(0x1F_u8);
-        assert_eq!(iter.collect::<String>(), r"\x1F");
-        let iter = Literal::from(0x20_u8);
-        assert_eq!(iter.collect::<String>(), r" ");
-        let iter = Literal::from(0x21_u8);
-        assert_eq!(iter.collect::<String>(), r"!");
-        let iter = Literal::from(0x22_u8);
-        assert_eq!(iter.collect::<String>(), r#"\""#);
-        let iter = Literal::from(0x23_u8);
-        assert_eq!(iter.collect::<String>(), r"#");
-        let iter = Literal::from(0x24_u8);
-        assert_eq!(iter.collect::<String>(), r"$");
-        let iter = Literal::from(0x25_u8);
-        assert_eq!(iter.collect::<String>(), r"%");
-        let iter = Literal::from(0x26_u8);
-        assert_eq!(iter.collect::<String>(), r"&");
-        let iter = Literal::from(0x27_u8);
-        assert_eq!(iter.collect::<String>(), r"'");
-        let iter = Literal::from(0x28_u8);
-        assert_eq!(iter.collect::<String>(), r"(");
-        let iter = Literal::from(0x29_u8);
-        assert_eq!(iter.collect::<String>(), r")");
-        let iter = Literal::from(0x2A_u8);
-        assert_eq!(iter.collect::<String>(), r"*");
-        let iter = Literal::from(0x2B_u8);
-        assert_eq!(iter.collect::<String>(), r"+");
-        let iter = Literal::from(0x2C_u8);
-        assert_eq!(iter.collect::<String>(), r",");
-        let iter = Literal::from(0x2D_u8);
-        assert_eq!(iter.collect::<String>(), r"-");
-        let iter = Literal::from(0x2E_u8);
-        assert_eq!(iter.collect::<String>(), r".");
-        let iter = Literal::from(0x2F_u8);
-        assert_eq!(iter.collect::<String>(), r"/");
-        let iter = Literal::from(0x30_u8);
-        assert_eq!(iter.collect::<String>(), r"0");
-        let iter = Literal::from(0x31_u8);
-        assert_eq!(iter.collect::<String>(), r"1");
-        let iter = Literal::from(0x32_u8);
-        assert_eq!(iter.collect::<String>(), r"2");
-        let iter = Literal::from(0x33_u8);
-        assert_eq!(iter.collect::<String>(), r"3");
-        let iter = Literal::from(0x34_u8);
-        assert_eq!(iter.collect::<String>(), r"4");
-        let iter = Literal::from(0x35_u8);
-        assert_eq!(iter.collect::<String>(), r"5");
-        let iter = Literal::from(0x36_u8);
-        assert_eq!(iter.collect::<String>(), r"6");
-        let iter = Literal::from(0x37_u8);
-        assert_eq!(iter.collect::<String>(), r"7");
-        let iter = Literal::from(0x38_u8);
-        assert_eq!(iter.collect::<String>(), r"8");
-        let iter = Literal::from(0x39_u8);
-        assert_eq!(iter.collect::<String>(), r"9");
-        let iter = Literal::from(0x3A_u8);
-        assert_eq!(iter.collect::<String>(), r":");
-        let iter = Literal::from(0x3B_u8);
-        assert_eq!(iter.collect::<String>(), r";");
-        let iter = Literal::from(0x3C_u8);
-        assert_eq!(iter.collect::<String>(), r"<");
-        let iter = Literal::from(0x3D_u8);
-        assert_eq!(iter.collect::<String>(), r"=");
-        let iter = Literal::from(0x3E_u8);
-        assert_eq!(iter.collect::<String>(), r">");
-        let iter = Literal::from(0x3F_u8);
-        assert_eq!(iter.collect::<String>(), r"?");
-        let iter = Literal::from(0x40_u8);
-        assert_eq!(iter.collect::<String>(), r"@");
-        let iter = Literal::from(0x41_u8);
-        assert_eq!(iter.collect::<String>(), r"A");
-        let iter = Literal::from(0x42_u8);
-        assert_eq!(iter.collect::<String>(), r"B");
-        let iter = Literal::from(0x43_u8);
-        assert_eq!(iter.collect::<String>(), r"C");
-        let iter = Literal::from(0x44_u8);
-        assert_eq!(iter.collect::<String>(), r"D");
-        let iter = Literal::from(0x45_u8);
-        assert_eq!(iter.collect::<String>(), r"E");
-        let iter = Literal::from(0x46_u8);
-        assert_eq!(iter.collect::<String>(), r"F");
-        let iter = Literal::from(0x47_u8);
-        assert_eq!(iter.collect::<String>(), r"G");
-        let iter = Literal::from(0x48_u8);
-        assert_eq!(iter.collect::<String>(), r"H");
-        let iter = Literal::from(0x49_u8);
-        assert_eq!(iter.collect::<String>(), r"I");
-        let iter = Literal::from(0x4A_u8);
-        assert_eq!(iter.collect::<String>(), r"J");
-        let iter = Literal::from(0x4B_u8);
-        assert_eq!(iter.collect::<String>(), r"K");
-        let iter = Literal::from(0x4C_u8);
-        assert_eq!(iter.collect::<String>(), r"L");
-        let iter = Literal::from(0x4D_u8);
-        assert_eq!(iter.collect::<String>(), r"M");
-        let iter = Literal::from(0x4E_u8);
-        assert_eq!(iter.collect::<String>(), r"N");
-        let iter = Literal::from(0x4F_u8);
-        assert_eq!(iter.collect::<String>(), r"O");
-        let iter = Literal::from(0x50_u8);
-        assert_eq!(iter.collect::<String>(), r"P");
-        let iter = Literal::from(0x51_u8);
-        assert_eq!(iter.collect::<String>(), r"Q");
-        let iter = Literal::from(0x52_u8);
-        assert_eq!(iter.collect::<String>(), r"R");
-        let iter = Literal::from(0x53_u8);
-        assert_eq!(iter.collect::<String>(), r"S");
-        let iter = Literal::from(0x54_u8);
-        assert_eq!(iter.collect::<String>(), r"T");
-        let iter = Literal::from(0x55_u8);
-        assert_eq!(iter.collect::<String>(), r"U");
-        let iter = Literal::from(0x56_u8);
-        assert_eq!(iter.collect::<String>(), r"V");
-        let iter = Literal::from(0x57_u8);
-        assert_eq!(iter.collect::<String>(), r"W");
-        let iter = Literal::from(0x58_u8);
-        assert_eq!(iter.collect::<String>(), r"X");
-        let iter = Literal::from(0x59_u8);
-        assert_eq!(iter.collect::<String>(), r"Y");
-        let iter = Literal::from(0x5A_u8);
-        assert_eq!(iter.collect::<String>(), r"Z");
-        let iter = Literal::from(0x5B_u8);
-        assert_eq!(iter.collect::<String>(), r"[");
-        let iter = Literal::from(0x5C_u8);
-        assert_eq!(iter.collect::<String>(), r"\\");
-        let iter = Literal::from(0x5D_u8);
-        assert_eq!(iter.collect::<String>(), r"]");
-        let iter = Literal::from(0x5E_u8);
-        assert_eq!(iter.collect::<String>(), r"^");
-        let iter = Literal::from(0x5F_u8);
-        assert_eq!(iter.collect::<String>(), r"_");
-        let iter = Literal::from(0x60_u8);
-        assert_eq!(iter.collect::<String>(), r"`");
-        let iter = Literal::from(0x61_u8);
-        assert_eq!(iter.collect::<String>(), r"a");
-        let iter = Literal::from(0x62_u8);
-        assert_eq!(iter.collect::<String>(), r"b");
-        let iter = Literal::from(0x63_u8);
-        assert_eq!(iter.collect::<String>(), r"c");
-        let iter = Literal::from(0x64_u8);
-        assert_eq!(iter.collect::<String>(), r"d");
-        let iter = Literal::from(0x65_u8);
-        assert_eq!(iter.collect::<String>(), r"e");
-        let iter = Literal::from(0x66_u8);
-        assert_eq!(iter.collect::<String>(), r"f");
-        let iter = Literal::from(0x67_u8);
-        assert_eq!(iter.collect::<String>(), r"g");
-        let iter = Literal::from(0x68_u8);
-        assert_eq!(iter.collect::<String>(), r"h");
-        let iter = Literal::from(0x69_u8);
-        assert_eq!(iter.collect::<String>(), r"i");
-        let iter = Literal::from(0x6A_u8);
-        assert_eq!(iter.collect::<String>(), r"j");
-        let iter = Literal::from(0x6B_u8);
-        assert_eq!(iter.collect::<String>(), r"k");
-        let iter = Literal::from(0x6C_u8);
-        assert_eq!(iter.collect::<String>(), r"l");
-        let iter = Literal::from(0x6D_u8);
-        assert_eq!(iter.collect::<String>(), r"m");
-        let iter = Literal::from(0x6E_u8);
-        assert_eq!(iter.collect::<String>(), r"n");
-        let iter = Literal::from(0x6F_u8);
-        assert_eq!(iter.collect::<String>(), r"o");
-        let iter = Literal::from(0x70_u8);
-        assert_eq!(iter.collect::<String>(), r"p");
-        let iter = Literal::from(0x71_u8);
-        assert_eq!(iter.collect::<String>(), r"q");
-        let iter = Literal::from(0x72_u8);
-        assert_eq!(iter.collect::<String>(), r"r");
-        let iter = Literal::from(0x73_u8);
-        assert_eq!(iter.collect::<String>(), r"s");
-        let iter = Literal::from(0x74_u8);
-        assert_eq!(iter.collect::<String>(), r"t");
-        let iter = Literal::from(0x75_u8);
-        assert_eq!(iter.collect::<String>(), r"u");
-        let iter = Literal::from(0x76_u8);
-        assert_eq!(iter.collect::<String>(), r"v");
-        let iter = Literal::from(0x77_u8);
-        assert_eq!(iter.collect::<String>(), r"w");
-        let iter = Literal::from(0x78_u8);
-        assert_eq!(iter.collect::<String>(), r"x");
-        let iter = Literal::from(0x79_u8);
-        assert_eq!(iter.collect::<String>(), r"y");
-        let iter = Literal::from(0x7A_u8);
-        assert_eq!(iter.collect::<String>(), r"z");
-        let iter = Literal::from(0x7B_u8);
-        assert_eq!(iter.collect::<String>(), r"{");
-        let iter = Literal::from(0x7C_u8);
-        assert_eq!(iter.collect::<String>(), r"|");
-        let iter = Literal::from(0x7D_u8);
-        assert_eq!(iter.collect::<String>(), r"}");
-        let iter = Literal::from(0x7E_u8);
-        assert_eq!(iter.collect::<String>(), r"~");
-        let iter = Literal::from(0x7F_u8);
-        assert_eq!(iter.collect::<String>(), r"\x7F");
-        let iter = Literal::from(0x80_u8);
-        assert_eq!(iter.collect::<String>(), r"\x80");
-        let iter = Literal::from(0x81_u8);
-        assert_eq!(iter.collect::<String>(), r"\x81");
-        let iter = Literal::from(0x82_u8);
-        assert_eq!(iter.collect::<String>(), r"\x82");
-        let iter = Literal::from(0x83_u8);
-        assert_eq!(iter.collect::<String>(), r"\x83");
-        let iter = Literal::from(0x84_u8);
-        assert_eq!(iter.collect::<String>(), r"\x84");
-        let iter = Literal::from(0x85_u8);
-        assert_eq!(iter.collect::<String>(), r"\x85");
-        let iter = Literal::from(0x86_u8);
-        assert_eq!(iter.collect::<String>(), r"\x86");
-        let iter = Literal::from(0x87_u8);
-        assert_eq!(iter.collect::<String>(), r"\x87");
-        let iter = Literal::from(0x88_u8);
-        assert_eq!(iter.collect::<String>(), r"\x88");
-        let iter = Literal::from(0x89_u8);
-        assert_eq!(iter.collect::<String>(), r"\x89");
-        let iter = Literal::from(0x8A_u8);
-        assert_eq!(iter.collect::<String>(), r"\x8A");
-        let iter = Literal::from(0x8B_u8);
-        assert_eq!(iter.collect::<String>(), r"\x8B");
-        let iter = Literal::from(0x8C_u8);
-        assert_eq!(iter.collect::<String>(), r"\x8C");
-        let iter = Literal::from(0x8D_u8);
-        assert_eq!(iter.collect::<String>(), r"\x8D");
-        let iter = Literal::from(0x8E_u8);
-        assert_eq!(iter.collect::<String>(), r"\x8E");
-        let iter = Literal::from(0x8F_u8);
-        assert_eq!(iter.collect::<String>(), r"\x8F");
-        let iter = Literal::from(0x90_u8);
-        assert_eq!(iter.collect::<String>(), r"\x90");
-        let iter = Literal::from(0x91_u8);
-        assert_eq!(iter.collect::<String>(), r"\x91");
-        let iter = Literal::from(0x92_u8);
-        assert_eq!(iter.collect::<String>(), r"\x92");
-        let iter = Literal::from(0x93_u8);
-        assert_eq!(iter.collect::<String>(), r"\x93");
-        let iter = Literal::from(0x94_u8);
-        assert_eq!(iter.collect::<String>(), r"\x94");
-        let iter = Literal::from(0x95_u8);
-        assert_eq!(iter.collect::<String>(), r"\x95");
-        let iter = Literal::from(0x96_u8);
-        assert_eq!(iter.collect::<String>(), r"\x96");
-        let iter = Literal::from(0x97_u8);
-        assert_eq!(iter.collect::<String>(), r"\x97");
-        let iter = Literal::from(0x98_u8);
-        assert_eq!(iter.collect::<String>(), r"\x98");
-        let iter = Literal::from(0x99_u8);
-        assert_eq!(iter.collect::<String>(), r"\x99");
-        let iter = Literal::from(0x9A_u8);
-        assert_eq!(iter.collect::<String>(), r"\x9A");
-        let iter = Literal::from(0x9B_u8);
-        assert_eq!(iter.collect::<String>(), r"\x9B");
-        let iter = Literal::from(0x9C_u8);
-        assert_eq!(iter.collect::<String>(), r"\x9C");
-        let iter = Literal::from(0x9D_u8);
-        assert_eq!(iter.collect::<String>(), r"\x9D");
-        let iter = Literal::from(0x9E_u8);
-        assert_eq!(iter.collect::<String>(), r"\x9E");
-        let iter = Literal::from(0x9F_u8);
-        assert_eq!(iter.collect::<String>(), r"\x9F");
-        let iter = Literal::from(0xA0_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA0");
-        let iter = Literal::from(0xA1_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA1");
-        let iter = Literal::from(0xA2_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA2");
-        let iter = Literal::from(0xA3_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA3");
-        let iter = Literal::from(0xA4_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA4");
-        let iter = Literal::from(0xA5_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA5");
-        let iter = Literal::from(0xA6_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA6");
-        let iter = Literal::from(0xA7_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA7");
-        let iter = Literal::from(0xA8_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA8");
-        let iter = Literal::from(0xA9_u8);
-        assert_eq!(iter.collect::<String>(), r"\xA9");
-        let iter = Literal::from(0xAA_u8);
-        assert_eq!(iter.collect::<String>(), r"\xAA");
-        let iter = Literal::from(0xAB_u8);
-        assert_eq!(iter.collect::<String>(), r"\xAB");
-        let iter = Literal::from(0xAC_u8);
-        assert_eq!(iter.collect::<String>(), r"\xAC");
-        let iter = Literal::from(0xAD_u8);
-        assert_eq!(iter.collect::<String>(), r"\xAD");
-        let iter = Literal::from(0xAE_u8);
-        assert_eq!(iter.collect::<String>(), r"\xAE");
-        let iter = Literal::from(0xAF_u8);
-        assert_eq!(iter.collect::<String>(), r"\xAF");
-        let iter = Literal::from(0xB0_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB0");
-        let iter = Literal::from(0xB1_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB1");
-        let iter = Literal::from(0xB2_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB2");
-        let iter = Literal::from(0xB3_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB3");
-        let iter = Literal::from(0xB4_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB4");
-        let iter = Literal::from(0xB5_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB5");
-        let iter = Literal::from(0xB6_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB6");
-        let iter = Literal::from(0xB7_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB7");
-        let iter = Literal::from(0xB8_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB8");
-        let iter = Literal::from(0xB9_u8);
-        assert_eq!(iter.collect::<String>(), r"\xB9");
-        let iter = Literal::from(0xBA_u8);
-        assert_eq!(iter.collect::<String>(), r"\xBA");
-        let iter = Literal::from(0xBB_u8);
-        assert_eq!(iter.collect::<String>(), r"\xBB");
-        let iter = Literal::from(0xBC_u8);
-        assert_eq!(iter.collect::<String>(), r"\xBC");
-        let iter = Literal::from(0xBD_u8);
-        assert_eq!(iter.collect::<String>(), r"\xBD");
-        let iter = Literal::from(0xBE_u8);
-        assert_eq!(iter.collect::<String>(), r"\xBE");
-        let iter = Literal::from(0xBF_u8);
-        assert_eq!(iter.collect::<String>(), r"\xBF");
-        let iter = Literal::from(0xC0_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC0");
-        let iter = Literal::from(0xC1_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC1");
-        let iter = Literal::from(0xC2_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC2");
-        let iter = Literal::from(0xC3_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC3");
-        let iter = Literal::from(0xC4_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC4");
-        let iter = Literal::from(0xC5_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC5");
-        let iter = Literal::from(0xC6_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC6");
-        let iter = Literal::from(0xC7_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC7");
-        let iter = Literal::from(0xC8_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC8");
-        let iter = Literal::from(0xC9_u8);
-        assert_eq!(iter.collect::<String>(), r"\xC9");
-        let iter = Literal::from(0xCA_u8);
-        assert_eq!(iter.collect::<String>(), r"\xCA");
-        let iter = Literal::from(0xCB_u8);
-        assert_eq!(iter.collect::<String>(), r"\xCB");
-        let iter = Literal::from(0xCC_u8);
-        assert_eq!(iter.collect::<String>(), r"\xCC");
-        let iter = Literal::from(0xCD_u8);
-        assert_eq!(iter.collect::<String>(), r"\xCD");
-        let iter = Literal::from(0xCE_u8);
-        assert_eq!(iter.collect::<String>(), r"\xCE");
-        let iter = Literal::from(0xCF_u8);
-        assert_eq!(iter.collect::<String>(), r"\xCF");
-        let iter = Literal::from(0xD0_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD0");
-        let iter = Literal::from(0xD1_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD1");
-        let iter = Literal::from(0xD2_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD2");
-        let iter = Literal::from(0xD3_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD3");
-        let iter = Literal::from(0xD4_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD4");
-        let iter = Literal::from(0xD5_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD5");
-        let iter = Literal::from(0xD6_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD6");
-        let iter = Literal::from(0xD7_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD7");
-        let iter = Literal::from(0xD8_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD8");
-        let iter = Literal::from(0xD9_u8);
-        assert_eq!(iter.collect::<String>(), r"\xD9");
-        let iter = Literal::from(0xDA_u8);
-        assert_eq!(iter.collect::<String>(), r"\xDA");
-        let iter = Literal::from(0xDB_u8);
-        assert_eq!(iter.collect::<String>(), r"\xDB");
-        let iter = Literal::from(0xDC_u8);
-        assert_eq!(iter.collect::<String>(), r"\xDC");
-        let iter = Literal::from(0xDD_u8);
-        assert_eq!(iter.collect::<String>(), r"\xDD");
-        let iter = Literal::from(0xDE_u8);
-        assert_eq!(iter.collect::<String>(), r"\xDE");
-        let iter = Literal::from(0xDF_u8);
-        assert_eq!(iter.collect::<String>(), r"\xDF");
-        let iter = Literal::from(0xE0_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE0");
-        let iter = Literal::from(0xE1_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE1");
-        let iter = Literal::from(0xE2_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE2");
-        let iter = Literal::from(0xE3_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE3");
-        let iter = Literal::from(0xE4_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE4");
-        let iter = Literal::from(0xE5_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE5");
-        let iter = Literal::from(0xE6_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE6");
-        let iter = Literal::from(0xE7_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE7");
-        let iter = Literal::from(0xE8_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE8");
-        let iter = Literal::from(0xE9_u8);
-        assert_eq!(iter.collect::<String>(), r"\xE9");
-        let iter = Literal::from(0xEA_u8);
-        assert_eq!(iter.collect::<String>(), r"\xEA");
-        let iter = Literal::from(0xEB_u8);
-        assert_eq!(iter.collect::<String>(), r"\xEB");
-        let iter = Literal::from(0xEC_u8);
-        assert_eq!(iter.collect::<String>(), r"\xEC");
-        let iter = Literal::from(0xED_u8);
-        assert_eq!(iter.collect::<String>(), r"\xED");
-        let iter = Literal::from(0xEE_u8);
-        assert_eq!(iter.collect::<String>(), r"\xEE");
-        let iter = Literal::from(0xEF_u8);
-        assert_eq!(iter.collect::<String>(), r"\xEF");
-        let iter = Literal::from(0xF0_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF0");
-        let iter = Literal::from(0xF1_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF1");
-        let iter = Literal::from(0xF2_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF2");
-        let iter = Literal::from(0xF3_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF3");
-        let iter = Literal::from(0xF4_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF4");
-        let iter = Literal::from(0xF5_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF5");
-        let iter = Literal::from(0xF6_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF6");
-        let iter = Literal::from(0xF7_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF7");
-        let iter = Literal::from(0xF8_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF8");
-        let iter = Literal::from(0xF9_u8);
-        assert_eq!(iter.collect::<String>(), r"\xF9");
-        let iter = Literal::from(0xFA_u8);
-        assert_eq!(iter.collect::<String>(), r"\xFA");
-        let iter = Literal::from(0xFB_u8);
-        assert_eq!(iter.collect::<String>(), r"\xFB");
-        let iter = Literal::from(0xFC_u8);
-        assert_eq!(iter.collect::<String>(), r"\xFC");
-        let iter = Literal::from(0xFD_u8);
-        assert_eq!(iter.collect::<String>(), r"\xFD");
-        let iter = Literal::from(0xFE_u8);
-        assert_eq!(iter.collect::<String>(), r"\xFE");
-        let iter = Literal::from(0xFF_u8);
-        assert_eq!(iter.collect::<String>(), r"\xFF");
+        #[rustfmt::skip]
+        let test_cases = (u8::MIN..=u8::MAX).zip(
+            [
+                r"\x00", r"\x01", r"\x02", r"\x03", r"\x04", r"\x05", r"\x06",   r"\a",
+                  r"\b",   r"\t",   r"\n",   r"\v",   r"\f",   r"\r", r"\x0E", r"\x0F",
+                r"\x10", r"\x11", r"\x12", r"\x13", r"\x14", r"\x15", r"\x16", r"\x17",
+                r"\x18", r"\x19", r"\x1A",   r"\e", r"\x1C", r"\x1D", r"\x1E", r"\x1F",
+                    " ",     "!", r#"\""#,    "#",     "$",     "%",     "&",      "'",
+                    "(",     ")",     "*",    "+",     ",",     "-",     ".",      "/",
+                    "0",     "1",     "2",    "3",     "4",     "5",     "6",      "7",
+                    "8",     "9",     ":",    ";",     "<",     "=",     ">",      "?",
+                    "@",     "A",     "B",    "C",     "D",     "E",     "F",      "G",
+                    "H",     "I",     "J",    "K",     "L",     "M",     "N",      "O",
+                    "P",     "Q",     "R",    "S",     "T",     "U",     "V",      "W",
+                    "X",     "Y",     "Z",    "[",   r"\\",     "]",     "^",      "_",
+                    "`",     "a",     "b",    "c",     "d",     "e",     "f",      "g",
+                    "h",     "i",     "j",    "k",     "l",     "m",     "n",      "o",
+                    "p",     "q",     "r",    "s",     "t",     "u",     "v",      "w",
+                    "x",     "y",     "z",    "{",     "|",     "}",     "~",  r"\x7F",
+                r"\x80", r"\x81", r"\x82", r"\x83", r"\x84", r"\x85", r"\x86", r"\x87",
+                r"\x88", r"\x89", r"\x8A", r"\x8B", r"\x8C", r"\x8D", r"\x8E", r"\x8F",
+                r"\x90", r"\x91", r"\x92", r"\x93", r"\x94", r"\x95", r"\x96", r"\x97",
+                r"\x98", r"\x99", r"\x9A", r"\x9B", r"\x9C", r"\x9D", r"\x9E", r"\x9F",
+                r"\xA0", r"\xA1", r"\xA2", r"\xA3", r"\xA4", r"\xA5", r"\xA6", r"\xA7",
+                r"\xA8", r"\xA9", r"\xAA", r"\xAB", r"\xAC", r"\xAD", r"\xAE", r"\xAF",
+                r"\xB0", r"\xB1", r"\xB2", r"\xB3", r"\xB4", r"\xB5", r"\xB6", r"\xB7",
+                r"\xB8", r"\xB9", r"\xBA", r"\xBB", r"\xBC", r"\xBD", r"\xBE", r"\xBF",
+                r"\xC0", r"\xC1", r"\xC2", r"\xC3", r"\xC4", r"\xC5", r"\xC6", r"\xC7",
+                r"\xC8", r"\xC9", r"\xCA", r"\xCB", r"\xCC", r"\xCD", r"\xCE", r"\xCF",
+                r"\xD0", r"\xD1", r"\xD2", r"\xD3", r"\xD4", r"\xD5", r"\xD6", r"\xD7",
+                r"\xD8", r"\xD9", r"\xDA", r"\xDB", r"\xDC", r"\xDD", r"\xDE", r"\xDF",
+                r"\xE0", r"\xE1", r"\xE2", r"\xE3", r"\xE4", r"\xE5", r"\xE6", r"\xE7",
+                r"\xE8", r"\xE9", r"\xEA", r"\xEB", r"\xEC", r"\xED", r"\xEE", r"\xEF",
+                r"\xF0", r"\xF1", r"\xF2", r"\xF3", r"\xF4", r"\xF5", r"\xF6", r"\xF7",
+                r"\xF8", r"\xF9", r"\xFA", r"\xFB", r"\xFC", r"\xFD", r"\xFE", r"\xFF",
+            ]
+            .into_iter(),
+        );
+        for (byte, literal) in test_cases {
+            let iter = Literal::from(byte);
+            assert_eq!(
+                iter.collect::<String>(),
+                literal,
+                "tested byte {byte}, expected {literal}"
+            );
+        }
     }
 }
