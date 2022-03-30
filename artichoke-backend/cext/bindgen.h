@@ -34,9 +34,4 @@
 #include <mruby/version.h>
 
 #include <mrbsys/ext.h>
-#ifdef ARTICHOKE
-#include <mrbsys/artichoke.h>
-#endif
-
-// Expose mrbgems subsystem initializer
-MRB_API void mrb_init_mrbgems(mrb_state *mrb);
+#include <mrbsys/reexports.h>
