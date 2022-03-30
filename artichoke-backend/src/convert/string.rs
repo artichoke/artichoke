@@ -75,7 +75,6 @@ mod tests {
     }
 
     quickcheck! {
-        #[allow(clippy::needless_pass_by_value)]
         fn convert_to_string(s: String) -> bool {
             let mut interp = interpreter();
             let value = interp.try_convert_mut(s.clone()).unwrap();
@@ -83,14 +82,12 @@ mod tests {
             s.as_bytes() == string
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn string_with_value(s: String) -> bool {
             let mut interp = interpreter();
             let value = interp.try_convert_mut(s.clone()).unwrap();
             value.to_s(&mut interp) == s.as_bytes()
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         #[cfg(feature = "core-regexp")]
         fn utf8string_borrowed(string: String) -> bool {
             let mut interp = interpreter();
@@ -123,7 +120,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         #[cfg(feature = "core-regexp")]
         fn utf8string_owned(string: String) -> bool {
             let mut interp = interpreter();
@@ -156,7 +152,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn roundtrip(s: String) -> bool {
             let mut interp = interpreter();
             let value = interp.try_convert_mut(s.clone()).unwrap();

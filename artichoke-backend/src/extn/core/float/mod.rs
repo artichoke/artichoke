@@ -200,8 +200,8 @@ impl Float {
 
     #[inline]
     #[must_use]
-    #[allow(clippy::cast_possible_truncation)]
     #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn try_into_fixnum(self) -> Option<i64> {
         const FIXABLE_MAX: f64 = 2_i64.pow(f64::MANTISSA_DIGITS) as f64;
         const FIXABLE_MIN: f64 = -(2_i64.pow(f64::MANTISSA_DIGITS)) as f64;

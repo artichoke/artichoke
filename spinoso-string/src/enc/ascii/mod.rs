@@ -323,28 +323,24 @@ mod tests {
     use super::AsciiString;
 
     quickcheck! {
-        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_utf8_contents_ascii_string(contents: String) -> bool {
             let expected = contents.len();
             let s = AsciiString::new(contents.into_bytes());
             s.char_len() == expected
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_utf8_contents_ascii_string(contents: String) -> bool {
             let expected = contents.len();
             let s = AsciiString::new(contents.into_bytes());
             s.len() == expected
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_binary_contents_ascii_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = AsciiString::new(contents);
             s.char_len() == expected
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_binary_contents_ascii_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = AsciiString::new(contents);

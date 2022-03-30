@@ -89,9 +89,9 @@ impl Integer {
         self.0
     }
 
-    #[allow(clippy::cast_precision_loss)]
     #[inline]
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub const fn as_f64(self) -> f64 {
         self.0 as f64
     }

@@ -6,10 +6,14 @@ use crate::sys;
 /// This function collapses some mruby types into a [`Ruby::Unreachable`] type
 /// that force an interaction with the VM to return an error.
 #[allow(non_upper_case_globals)]
-#[allow(clippy::enum_glob_use)]
 #[must_use]
 pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
-    use sys::mrb_vtype::*;
+    use sys::mrb_vtype::{
+        MRB_TT_ARRAY, MRB_TT_BREAK, MRB_TT_CLASS, MRB_TT_CPTR, MRB_TT_DATA, MRB_TT_ENV, MRB_TT_EXCEPTION,
+        MRB_TT_FALSE, MRB_TT_FIBER, MRB_TT_FLOAT, MRB_TT_FREE, MRB_TT_HASH, MRB_TT_ICLASS, MRB_TT_INTEGER,
+        MRB_TT_ISTRUCT, MRB_TT_MAXDEFINE, MRB_TT_MODULE, MRB_TT_OBJECT, MRB_TT_PROC, MRB_TT_RANGE, MRB_TT_SCLASS,
+        MRB_TT_STRING, MRB_TT_SYMBOL, MRB_TT_TRUE, MRB_TT_UNDEF,
+    };
 
     // Suppress lint to enumerate match arms in the same order they are defined
     // in the `sys::mrb_vtype` enum C source.

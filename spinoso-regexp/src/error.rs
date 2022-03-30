@@ -250,9 +250,8 @@ impl RegexpError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub fn message(&self) -> &str {
-        self.0.as_ref()
+        &*self.0
     }
 }
 
@@ -346,8 +345,7 @@ impl SyntaxError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub fn message(&self) -> &str {
-        self.0.as_ref()
+        &*self.0
     }
 }

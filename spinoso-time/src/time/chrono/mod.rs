@@ -131,6 +131,9 @@ impl Time {
         // precision. The 52-bit mantissa in an `f64` allows storing over 142
         // million years of timestamps.
         let sec = self.timestamp as f64;
+        // Both of these lossy casts are guaranteed to not lose precision since
+        // both operands are <= 1e10, which is representable losslessly by
+        // `f64`.
         let nanos_fractional = self.sub_second_nanos as f64 / (NANOS_IN_SECOND as f64);
         sec + nanos_fractional
     }

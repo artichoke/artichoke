@@ -319,17 +319,23 @@ mod tests {
     // `Regexp::EXTENDED`, `Regexp::IGNORECASE`, and `Regexp::MULTILINE`, or-ed
     // together. Otherwise, if options is not `nil` or `false`, the regexp will
     // be case insensitive.
+
     #[test]
-    #[allow(clippy::too_many_lines)]
-    fn parse_options() {
+    fn parse_options_from_option_bool() {
         assert_eq!(Options::from(None), Options::new());
         assert_eq!(Options::from(Some(false)), Options::new());
         assert_eq!(Options::from(Some(true)), Options::with_ignore_case());
+    }
 
+    #[test]
+    fn new_is_ignore_case() {
         let mut opts = Options::new();
         opts.flags |= Flags::IGNORECASE;
         assert_eq!(Options::with_ignore_case(), opts);
+    }
 
+    #[test]
+    fn make_options_extended() {
         let mut opts = Options::new();
         opts.flags |= Flags::EXTENDED;
         assert_eq!(Options::from(Flags::EXTENDED), opts);
@@ -348,7 +354,10 @@ mod tests {
         assert_eq!(opts.ignore_case(), RegexpOption::Disabled);
         assert_eq!(opts.extended(), RegexpOption::Enabled);
         assert_eq!(opts.multiline(), RegexpOption::Disabled);
+    }
 
+    #[test]
+    fn make_options_ignore_case() {
         let mut opts = Options::new();
         opts.flags |= Flags::IGNORECASE;
         assert_eq!(Options::from(Flags::IGNORECASE), opts);
@@ -367,7 +376,10 @@ mod tests {
         assert_eq!(opts.ignore_case(), RegexpOption::Enabled);
         assert_eq!(opts.extended(), RegexpOption::Disabled);
         assert_eq!(opts.multiline(), RegexpOption::Disabled);
+    }
 
+    #[test]
+    fn make_options_multiline() {
         let mut opts = Options::new();
         opts.flags |= Flags::MULTILINE;
         assert_eq!(Options::from(Flags::MULTILINE), opts);
@@ -386,7 +398,10 @@ mod tests {
         assert_eq!(opts.ignore_case(), RegexpOption::Disabled);
         assert_eq!(opts.extended(), RegexpOption::Disabled);
         assert_eq!(opts.multiline(), RegexpOption::Enabled);
+    }
 
+    #[test]
+    fn make_options_extended_ignore_case() {
         let mut opts = Options::new();
         opts.flags |= Flags::EXTENDED | Flags::IGNORECASE;
         assert_ne!(Options::from(Flags::EXTENDED), opts);
@@ -421,7 +436,10 @@ mod tests {
         assert_eq!(opts.ignore_case(), RegexpOption::Enabled);
         assert_eq!(opts.extended(), RegexpOption::Enabled);
         assert_eq!(opts.multiline(), RegexpOption::Disabled);
+    }
 
+    #[test]
+    fn make_options_extended_ignore_case_multiline() {
         let mut opts = Options::new();
         opts.flags |= Flags::EXTENDED | Flags::IGNORECASE | Flags::MULTILINE;
         assert_ne!(Options::from(Flags::EXTENDED), opts);
@@ -463,7 +481,10 @@ mod tests {
         assert_eq!(opts.ignore_case(), RegexpOption::Enabled);
         assert_eq!(opts.extended(), RegexpOption::Enabled);
         assert_eq!(opts.multiline(), RegexpOption::Enabled);
+    }
 
+    #[test]
+    fn make_options_all_opts() {
         // `ALL_REGEXP_OPTS` is equivalent to `EXTENDED | IGNORECASE | MULTILINE` flags.
         let mut opts = Options::new();
         opts.flags |= Flags::ALL_REGEXP_OPTS;
@@ -506,7 +527,10 @@ mod tests {
         assert_eq!(opts.ignore_case(), RegexpOption::Enabled);
         assert_eq!(opts.extended(), RegexpOption::Enabled);
         assert_eq!(opts.multiline(), RegexpOption::Enabled);
+    }
 
+    #[test]
+    fn make_options_flags_all() {
         // Ignore encoding and literal flags.
         let opts = Options::from(Flags::all());
         assert_ne!(Options::from(Flags::EXTENDED), opts);

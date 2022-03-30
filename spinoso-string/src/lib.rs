@@ -1405,12 +1405,14 @@ impl String {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::needless_pass_by_value)]
     pub fn chomp<T: AsRef<[u8]>>(&mut self, separator: Option<T>) -> bool {
         // convert to a concrete type and delegate to a single `chomp` impl
         // to minimize code duplication when monomorphizing.
-        let separator = separator.as_ref().map(AsRef::as_ref);
-        chomp(self, separator)
+        if let Some(sep) = separator {
+            chomp(self, Some(sep.as_ref()))
+        } else {
+            chomp(self, None)
+        }
     }
 
     /// Modifies this `String` in-place and removes the last character.
@@ -2066,7 +2068,6 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
 }
 
 #[cfg(test)]
-#[allow(clippy::invisible_characters)]
 mod tests {
     use crate::center::CenterError;
     use crate::String;

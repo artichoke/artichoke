@@ -132,9 +132,9 @@ pub fn is_fixed_encoding(interp: &mut Artichoke, mut regexp: Value) -> Result<Va
 
 pub fn hash(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
-    let hash = regexp.hash();
     #[allow(clippy::cast_possible_wrap)]
-    Ok(interp.convert(hash as i64))
+    let hash = regexp.hash() as i64;
+    Ok(interp.convert(hash))
 }
 
 pub fn inspect(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {

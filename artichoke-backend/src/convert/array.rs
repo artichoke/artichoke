@@ -429,7 +429,6 @@ mod tests {
     }
 
     quickcheck! {
-        #[allow(clippy::needless_pass_by_value)]
         fn arr_int_borrowed(arr: Vec<i64>) -> bool {
             let mut interp = interpreter();
             // Borrowed converter
@@ -451,7 +450,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn arr_int_owned(arr: Vec<i64>) -> bool {
             let mut interp = interpreter();
             // Owned converter
@@ -473,7 +471,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn arr_utf8_borrowed(arr: Vec<String>) -> bool {
             let mut interp = interpreter();
             // Borrowed converter
@@ -495,7 +492,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn arr_utf8_owned(arr: Vec<String>) -> bool {
             let mut interp = interpreter();
             // Owned converter
@@ -517,7 +513,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn arr_nilable_bstr_borrowed(arr: Vec<Option<Vec<u8>>>) -> bool {
             let mut interp = interpreter();
             // Borrowed converter
@@ -539,7 +534,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn arr_nilable_bstr_owned(arr: Vec<Option<Vec<u8>>>) -> bool {
             let mut interp = interpreter();
             // Owned converter

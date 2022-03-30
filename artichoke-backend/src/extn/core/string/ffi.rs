@@ -464,8 +464,6 @@ unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value
 //
 // This function converts a numeric string to numeric `mrb_value` with the given base.
 #[no_mangle]
-#[allow(clippy::cast_sign_loss)]
-#[allow(clippy::cast_possible_truncation)]
 unsafe extern "C" fn mrb_str_to_inum(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
@@ -510,11 +508,11 @@ unsafe extern "C" fn mrb_str_to_inum(
     let mut x = num;
 
     loop {
-        let m = x % base;
+        let m = u32::try_from(x % base).expect("base must be <= 36, which guarantees the result is in range for u32");
         x /= base;
 
         // will panic if you use a bad radix (< 2 or > 36).
-        result.push(char::from_digit(m as u32, radix).unwrap());
+        result.push(char::from_digit(m, radix).unwrap());
         if x == 0 {
             break;
         }
