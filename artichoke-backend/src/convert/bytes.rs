@@ -154,7 +154,6 @@ mod tests {
             value.ruby_type() == Ruby::String
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn byte_string_borrowed(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter();
             // Borrowed converter
@@ -194,7 +193,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn byte_string_owned(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter();
             // Owned converter
@@ -234,7 +232,6 @@ mod tests {
             true
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn roundtrip(bytes: Vec<u8>) -> bool {
             let mut interp = interpreter();
             let value = interp.try_convert_mut(bytes.as_slice()).unwrap();

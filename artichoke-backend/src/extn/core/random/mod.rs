@@ -65,11 +65,9 @@ impl Seed {
     }
 
     #[must_use]
-    #[allow(clippy::cast_sign_loss)]
-    #[allow(clippy::cast_possible_wrap)]
     pub fn to_mt_seed(self) -> Option<[u32; 4]> {
         if let Self::New(seed) = self {
-            let seed = u128::from(seed as u64);
+            let seed = i128::from(seed);
             let seed = seed.to_le_bytes();
             let seed = spinoso_random::seed_to_key(seed);
             Some(seed)

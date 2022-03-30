@@ -1194,9 +1194,9 @@ pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Val
     // [3.0.2] > s
     // => "\xFFbc"
     // ```
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_sign_loss)]
-    let u8_byte = (i64_byte % 256) as u8;
+    let u8_byte = (i64_byte % 256)
+        .try_into()
+        .expect("taking mod 256 guarantees the resulting i64 is in range for u8");
     // Safety:
     //
     // No need to repack, this is an in-place mutation.

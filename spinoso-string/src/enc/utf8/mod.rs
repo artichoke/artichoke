@@ -661,8 +661,8 @@ impl Utf8String {
     }
 }
 
-#[allow(clippy::invisible_characters)]
 #[cfg(test)]
+#[allow(clippy::invisible_characters)]
 mod tests {
     use alloc::string::String;
     use alloc::vec::Vec;
@@ -676,21 +676,18 @@ mod tests {
     const REPLACEMENT_CHARACTER_BYTES: [u8; 3] = [239, 191, 189];
 
     quickcheck! {
-        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_utf8_contents_utf8_string(contents: String) -> bool {
             let expected = contents.chars().count();
             let s = Utf8String::new(contents.into_bytes());
             s.char_len() == expected
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_utf8_contents_utf8_string(contents: String) -> bool {
             let expected = contents.len();
             let s = Utf8String::new(contents.into_bytes());
             s.len() == expected
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_char_len_binary_contents_utf8_string(contents: Vec<u8>) -> bool {
             if let Ok(utf8_contents) = str::from_utf8(&contents) {
                 let expected = utf8_contents.chars().count();
@@ -703,7 +700,6 @@ mod tests {
             }
         }
 
-        #[allow(clippy::needless_pass_by_value)]
         fn fuzz_len_binary_contents_utf8_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
             let s = Utf8String::new(contents);

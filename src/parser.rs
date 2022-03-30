@@ -122,9 +122,11 @@ impl<'a> Parser<'a> {
     ///
     /// If the underlying parser returns a UTF-8 invalid error message, an error
     /// is returned.
-    #[allow(clippy::enum_glob_use)]
     pub fn parse(&mut self, code: &[u8]) -> Result<State, Error> {
-        use sys::mrb_lex_state_enum::*;
+        use sys::mrb_lex_state_enum::{
+            EXPR_ARG, EXPR_BEG, EXPR_CLASS, EXPR_CMDARG, EXPR_DOT, EXPR_END, EXPR_ENDARG, EXPR_ENDFN, EXPR_FNAME,
+            EXPR_MAX_STATE, EXPR_MID, EXPR_VALUE,
+        };
 
         let len = if let Ok(len) = isize::try_from(code.len()) {
             len
