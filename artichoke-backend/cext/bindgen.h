@@ -1,9 +1,10 @@
 /**
- * mruby-sys is a C extension library written for the artichoke-backend crate.
- * `mruby-sys.h` includes all public headers for mruby. This file is parsed by
- * `bindgen` in `build.rs` to generate Rust bindings for the C functions and
- * types defined in these the mruby and mruby-sys C headers. These bindings are
- * exported in the `artichoke_backend::sys` module.
+ * `bindgen.h` includes all headers for the mruby, mrbgems, and mrbsys C
+ * extensions which are linked to the `artichoke-backend` crate.
+ *
+ * This file is parsed by `bindgen` in `build.rs` to generate Rust bindings for
+ * the C functions and types defined in these the mruby and mrbsys C headers.
+ * These bindings are exported in the `artichoke_backend::sys` module.
  */
 
 #include <mruby.h>
@@ -33,9 +34,4 @@
 #include <mruby/version.h>
 
 #include <mrbsys/ext.h>
-#ifdef ARTICHOKE
-#include <mrbsys/artichoke.h>
-#endif
-
-// Expose mrbgems subsystem initializer
-MRB_API void mrb_init_mrbgems(mrb_state *mrb);
+#include <mrbsys/reexports.h>
