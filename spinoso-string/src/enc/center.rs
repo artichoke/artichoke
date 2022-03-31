@@ -1,8 +1,10 @@
+use core::fmt;
 
 /// Error returned when calling [`AsciiString::center`] with an empty padding
 /// byte string.
 ///
 /// [`AsciiString::center`]: crate::enc::AsciiString::center
+#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ZeroWidthPaddingError {
     _private: (),
 }
@@ -43,7 +45,7 @@ impl ZeroWidthPaddingError {
     }
 }
 
-impl fmt::Display for CenterError {
+impl fmt::Display for ZeroWidthPaddingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.message())
     }

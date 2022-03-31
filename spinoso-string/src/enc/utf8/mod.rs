@@ -19,7 +19,7 @@ mod inspect;
 #[cfg(feature = "std")]
 mod io;
 
-pub use center::Center;
+// pub use center::Center;
 pub use inspect::Inspect;
 
 #[repr(transparent)]
