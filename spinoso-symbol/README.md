@@ -24,31 +24,13 @@ _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
 backbone of Ruby Core in Artichoke.
 
-# Artichoke integration
-
-This crate has an `artichoke` Cargo feature. When this feature is active, this
-crate implements [the `Symbol` API from Ruby Core]. These APIs require resolving
-the underlying bytes associated with the `Symbol` via a type that implements
-`Intern` from `artichoke-core`.
-
-APIs that require this feature to be active are highlighted in the
-documentation.
-
-This crate provides an `AllSymbols` iterator for walking all symbols stored in
-an [`Intern`]er and an extension trait for constructing it which is suitable for
-implementing [`Symbol::all_symbols`] from Ruby Core.
-
-This crate provides an `Inspect` iterator for converting `Symbol` byte content
-to a debug representation suitable for implementing [`Symbol#inspect`] from Ruby
-Core.
-
 ## Usage
 
 Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-symbol = "0.1"
+spinoso-symbol = "0.1.0"
 ```
 
 Most of the functionality in this crate depends on a Ruby interpreter that
@@ -98,6 +80,24 @@ All features are enabled by default.
   `scolapasta-string-escape` dependencies.
 - **std** - Enables a dependency on the Rust Standard Library. Activating this
   feature enables [`std::error::Error`] impls on error types in this crate.
+
+### Artichoke integration
+
+This crate has an `artichoke` Cargo feature. When this feature is active, this
+crate implements [the `Symbol` API from Ruby Core]. These APIs require resolving
+the underlying bytes associated with the `Symbol` via a type that implements
+`Intern` from `artichoke-core`.
+
+APIs that require this feature to be active are highlighted in the
+documentation.
+
+This crate provides an `AllSymbols` iterator for walking all symbols stored in
+an [`Intern`]er and an extension trait for constructing it which is suitable for
+implementing [`Symbol::all_symbols`] from Ruby Core.
+
+This crate provides an `Inspect` iterator for converting `Symbol` byte content
+to a debug representation suitable for implementing [`Symbol#inspect`] from Ruby
+Core.
 
 ## License
 
