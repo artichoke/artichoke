@@ -18,6 +18,22 @@ enum Inner<'a, 'b> {
         s: slice::Iter<'a, u8>,
         right: Take<Cycle<slice::Iter<'b, u8>>>,
     },
+    // TODO: implement UTF-8 padding
+    //
+    // ```
+    // [3.1.1] > s = "12345".force_encoding(Encoding::ASCII)
+    // => "12345"
+    // [3.1.1] > p = "谢谢"
+    // => "谢谢"
+    // [3.1.1] > s.center 10, p
+    // => "谢谢12345谢谢谢"
+    // ```
+    PadUtf8 {
+        partial_mb_char_seq: &'b [u8],
+        left: Take<Cycle<utf8::Chars<'b>>>,
+        s: slice::Iter<'a, u8>,
+        right: Take<Cycle<utf8::Chars<'b>>>,
+    },
 }
 
 impl<'a, 'b> Center<'a, 'b> {
