@@ -31,7 +31,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-random = "0.1"
+spinoso-random = "0.2.0"
 ```
 
 Generate integers:
@@ -78,12 +78,6 @@ All features are enabled by default.
 
 `spinoso-random` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
-`spinoso-random` is a substantially rewritten fork of [`rand_mt`] @
-[`aeb3274a`][rand-mt-forked-at], which is copyright rust-mersenne-twister
-developers and Ryan Lopopolo \<rjl@hyperbo.la\>. `rand_mt` is licensed with
-either the [MIT License][rand-mt-mit] or [Apache 2.0 License][rand-mt-apache].
-`spinoso-random` opts for the MIT license for its fork.
-
 `spinoso-random` is partially derived from [`random.c`] in Ruby @
 [2.6.3][ruby-2.6.3] which is copyright Yukihiro Matsumoto \<matz@netlab.jp\>.
 Ruby is licensed with the [2-clause BSDL License][ruby-license].
@@ -94,13 +88,6 @@ Ruby is licensed with the [2-clause BSDL License][ruby-license].
 [`rand`]: https://crates.io/crates/rand
 [`rand_core`]: https://crates.io/crates/rand_core
 [`std::error::error`]: https://doc.rust-lang.org/std/error/trait.Error.html
-[`rand_mt`]: https://crates.io/crates/rand_mt/3.0.0
-[rand-mt-forked-at]:
-  https://github.com/artichoke/rand_mt/tree/aeb3274a3aa3caa68ba379c141d2c55b1b21828e
-[rand-mt-mit]:
-  https://github.com/artichoke/rand_mt/blob/aeb3274a3aa3caa68ba379c141d2c55b1b21828e/LICENSE-MIT
-[rand-mt-apache]:
-  https://github.com/artichoke/rand_mt/blob/aeb3274a3aa3caa68ba379c141d2c55b1b21828e/LICENSE-APACHE
 [`random.c`]: https://github.com/ruby/ruby/blob/v2_6_3/random.c
 [ruby-2.6.3]: https://github.com/ruby/ruby/tree/v2_6_3
 [ruby-license]: https://github.com/ruby/ruby/blob/v2_6_3/COPYING
