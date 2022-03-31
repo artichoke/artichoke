@@ -26,7 +26,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-exception = "0.1"
+spinoso-exception = "0.1.0"
 ```
 
 Create exceptions and return Ruby errors:
