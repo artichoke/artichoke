@@ -23,7 +23,8 @@ class, it is globally available:
 Time.now
 ```
 
-This implementation of `Time` supports the system clock via the [`chrono`] crate.
+This implementation of `Time` supports the system clock via the [`chrono`]
+crate.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
