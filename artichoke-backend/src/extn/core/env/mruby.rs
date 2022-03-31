@@ -7,7 +7,7 @@ use crate::extn::core::env::{self, trampoline};
 use crate::extn::prelude::*;
 
 const ENVIRON_CSTR: &CStr = cstr::cstr!("Environ");
-static ENV_RUBY_SOURCE: &[u8] = spinoso_env::RUBY_API_POLYFILLS.as_bytes();
+static ENV_RUBY_SOURCE: &[u8] = include_bytes!("env.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<env::Environ>() {
