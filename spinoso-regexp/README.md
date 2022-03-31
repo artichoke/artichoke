@@ -16,7 +16,7 @@ constructor.
 
 `spinoso-regexp` includes several `Regexp` implementations with support for
 multiple underlying regex engines, including the Rust [`regex` crate] and
-[Onigurma].
+[Oniguruma].
 
 [`regex` crate]: https://docs.rs/regex
 [oniguruma]: https://github.com/kkos/oniguruma
@@ -31,7 +31,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-regexp = "0.2"
+spinoso-regexp = "0.2.0"
 ```
 
 ## Crate features

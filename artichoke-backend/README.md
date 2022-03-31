@@ -7,7 +7,18 @@
 [![Backend documentation](https://img.shields.io/badge/docs-artichoke--backend-blue.svg)](https://artichoke.github.io/artichoke/artichoke_backend/)
 
 `artichoke-backend` crate provides a Ruby interpreter. It currently is
-implemented with [mruby] bindings exported by the [`sys`](src/sys) module.
+implemented with [mruby] ABI-compatible bindings, some of which are implemented
+in the vendored mruby C and exported by the [`sys`](src/sys) module, others of
+which are implemented in Rust as `#[no_mangle] unsafe extern "C" fn`.
+
+`artichoke-backend` is slowly [strangling] its embedded mruby interpreter by
+reimplementing (oxidizing) the APIs in Rust with Artichoke-sourced components.
+For example, `Array` is fully implemented in Rust with [`spinoso-array`] and
+[`MRB_API` compatible functions defined in Rust][array-ffi].
+
+[strangling]: https://martinfowler.com/bliki/StranglerFigApplication.html
+[`spinoso-array`]: https://artichoke.github.io/artichoke/spinoso_array/
+[array-ffi]: src/extn/core/array/ffi.rs
 
 ## Execute Ruby Code
 

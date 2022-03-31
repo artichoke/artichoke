@@ -57,6 +57,8 @@ spinoso-array has two backends:
   This Spinoso array type is enabled by default.
 - `SmallArray` is based on [`SmallVec`] and implements the small vector
   optimization – small arrays are stored inline without a heap allocation.
+- `TinyArray` is based on [`TinyVec`] and implements the small vector
+  optimization – small arrays are stored inline without a heap allocation.
 
 ## `no_std`
 
@@ -69,6 +71,9 @@ All features are enabled by default.
 - **small-array** - Enables an additional `SmallArray` array backend based on
   `SmallVec` that implements the small vector optimization. Disabling this
   feature drops the `smallvec` dependency.
+- **tiny-array** - Enables an additional `TinyArray` array backend based on
+  `TinyVec` that implements the small vector optimization. Disabling this
+  feature drops the `tinyvec` dependency.
 
 ## License
 
@@ -78,4 +83,5 @@ All features are enabled by default.
 [artichoke]: https://github.com/artichoke/artichoke
 [`vec`]: https://doc.rust-lang.org/alloc/vec/struct.Vec.html
 [`smallvec`]: https://docs.rs/smallvec/latest/smallvec/struct.SmallVec.html
+[`tinyvec`]: https://docs.rs/tinyvec/latest/tinyvec/enum.TinyVec.html
 [`alloc`]: https://doc.rust-lang.org/alloc/
