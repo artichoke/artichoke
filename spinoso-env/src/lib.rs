@@ -107,25 +107,6 @@ pub use env::memory::Memory;
 #[cfg(feature = "system-env")]
 pub use env::system::System;
 
-/// Ruby implementations of the full [`ENV`] API.
-///
-/// This crate only implements enough of the `ENV` API in native code to glue
-/// the system APIs to the interpreter. [`ENV`] offers a rich, [`Hash`]-like API
-/// on top of the raw names and values.
-///
-/// This constant contains Ruby source code that implements the remainder of
-/// these APIs on top of the core accessors and mutators in this crate.
-///
-/// # Ruby Source
-///
-/// ```ruby
-#[doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/env.rb"))]
-/// ```
-///
-/// [`ENV`]: https://ruby-doc.org/core-2.6.3/ENV.html
-/// [`Hash`]: https://ruby-doc.org/core-2.6.3/Hash.html
-pub const RUBY_API_POLYFILLS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/env.rb"));
-
 /// Sum type of all errors possibly returned from [`get`], [`put`], and
 /// [`to_map`].
 ///
