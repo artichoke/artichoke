@@ -25,7 +25,7 @@ pub fn initialize(
 
 pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error> {
     let pattern_vec;
-    if matches!(pattern.ruby_type(), Ruby::Symbol) {
+    if let Ruby::Symbol = pattern.ruby_type() {
         let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
         pattern_vec = symbol.bytes(interp).to_vec();
     } else {
@@ -73,7 +73,7 @@ pub fn match_(
 ) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let pattern_vec;
-    let pattern = if matches!(pattern.ruby_type(), Ruby::Symbol) {
+    let pattern = if let Ruby::Symbol = pattern.ruby_type() {
         let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
         pattern_vec = symbol.bytes(interp).to_vec();
         Some(pattern_vec.as_slice())
@@ -103,7 +103,7 @@ pub fn case_compare(interp: &mut Artichoke, mut regexp: Value, other: Value) -> 
 pub fn match_operator(interp: &mut Artichoke, mut regexp: Value, mut pattern: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let pattern_vec;
-    let pattern = if matches!(pattern.ruby_type(), Ruby::Symbol) {
+    let pattern = if let Ruby::Symbol = pattern.ruby_type() {
         let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
         pattern_vec = symbol.bytes(interp).to_vec();
         Some(pattern_vec.as_slice())

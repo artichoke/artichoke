@@ -193,7 +193,7 @@ impl Regexp {
 
     pub fn case_compare(&self, interp: &mut Artichoke, mut other: Value) -> Result<bool, Error> {
         let pattern_vec;
-        let pattern = if matches!(other.ruby_type(), Ruby::Symbol) {
+        let pattern = if let Ruby::Symbol = other.ruby_type() {
             let symbol = unsafe { Symbol::unbox_from_value(&mut other, interp)? };
             pattern_vec = symbol.bytes(interp).to_vec();
             pattern_vec.as_slice()

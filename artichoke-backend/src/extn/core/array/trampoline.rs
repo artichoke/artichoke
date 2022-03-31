@@ -188,7 +188,7 @@ pub fn first(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Resu
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     if let Some(num) = num {
         // Hack to detect `BigNum`
-        if matches!(num.ruby_type(), Ruby::Float) {
+        if let Ruby::Float = num.ruby_type() {
             return Err(RangeError::with_message("bignum too big to convert into `long'").into());
         }
         let n = implicitly_convert_to_int(interp, num)?;
@@ -242,7 +242,7 @@ pub fn last(interp: &mut Artichoke, mut ary: Value, num: Option<Value>) -> Resul
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
     if let Some(num) = num {
         // Hack to detect `BigNum`
-        if matches!(num.ruby_type(), Ruby::Float) {
+        if let Ruby::Float = num.ruby_type() {
             return Err(RangeError::with_message("bignum too big to convert into `long'").into());
         }
         let n = implicitly_convert_to_int(interp, num)?;
