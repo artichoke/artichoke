@@ -215,9 +215,9 @@ dependencies = [
 
 [[package]]
 name = "fd-lock"
-version = "3.0.4"
+version = "3.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02ecad9808e0596f8956d14f7fa868f996290bd01c8d7329d6e5bc2bb76adf8f"
+checksum = "46e245f4c8ec30c6415c56cb132c07e69e74f1942f6b4a4061da748b49f486ca"
 dependencies = [
  "cfg-if",
  "rustix",
@@ -265,9 +265,9 @@ checksum = "1feb5417d69513d0a6755444a18a55b2ffff6e0521a2935087e595d6f7cb562d"
 
 [[package]]
 name = "io-lifetimes"
-version = "0.5.3"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec58677acfea8a15352d42fc87d11d63596ade9239e0a7c9352914417515dbe6"
+checksum = "9448015e586b611e5d322f6703812bbca2f1e709d5773ecd38ddb4e3bb649504"
 
 [[package]]
 name = "lazy_static"
@@ -554,9 +554,9 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 
 [[package]]
 name = "rustix"
-version = "0.33.3"
+version = "0.34.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9466f25b92a648960ac1042fd3baa6b0bf285e60f754d7e5070770c813a177a"
+checksum = "cd3cc851a13d30a34cb747ba2a0c5101a4b2e8b1677a29b213ee465365ea495e"
 dependencies = [
  "bitflags",
  "errno",
