@@ -27,7 +27,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal
+          rustup toolchain install --profile minimal 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -131,7 +131,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal
+          rustup toolchain install --profile minimal 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -307,7 +307,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal
+          rustup toolchain install --profile minimal 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -466,7 +466,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal
+          rustup toolchain install --profile minimal 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
