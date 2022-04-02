@@ -27,7 +27,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal 1.58.1
+          rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -65,7 +65,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component clippy 1.58.1
+          rustup toolchain install 1.58.1 --profile minimal --component clippy
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -83,7 +83,7 @@ jobs:
       - name: Install nightly Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component rustfmt nightly
+          rustup toolchain install nightly --profile minimal --component rustfmt
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -131,7 +131,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal 1.58.1
+          rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -164,7 +164,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component clippy 1.58.1
+          rustup toolchain install 1.58.1 --profile minimal --component clippy
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -182,7 +182,7 @@ jobs:
       - name: Install nightly Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component rustfmt nightly
+          rustup toolchain install nightly --profile minimal --component rustfmt
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -230,7 +230,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component clippy 1.58.1
+          rustup toolchain install 1.58.1 --profile minimal --component clippy
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -248,7 +248,7 @@ jobs:
       - name: Install nightly Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component rustfmt nightly
+          rustup toolchain install nightly --profile minimal --component rustfmt
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -307,7 +307,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal 1.58.1
+          rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -466,7 +466,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal 1.58.1
+          rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -481,7 +481,7 @@ jobs:
       - name: Install nightly Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal nightly
+          rustup toolchain install nightly --profile minimal
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
