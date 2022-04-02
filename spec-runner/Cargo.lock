@@ -233,9 +233,9 @@ dependencies = [
 
 [[package]]
 name = "intaglio"
-version = "1.4.2"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1feb5417d69513d0a6755444a18a55b2ffff6e0521a2935087e595d6f7cb562d"
+checksum = "3f2775300b5de0ecd36eca323e7cc20a1f7ccd11798c2fcc32f0d6f382a48586"
 
 [[package]]
 name = "lazy_static"
