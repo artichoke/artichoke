@@ -107,7 +107,6 @@ rake lint:clippy                  # Lint Rust sources with Clippy
 rake lint:clippy:restriction      # Lint Rust sources with Clippy restriction pass (unenforced lints)
 rake lint:rubocop                 # Run RuboCop
 rake lint:rubocop:auto_correct    # Auto-correct RuboCop offenses
-rake pkg:rust_version:sync        # Sync the root rust-toolchain version to all crates
 rake release:markdown_link_check  # Check for broken links in markdown files
 rake sanitizer:leak               # Run Artichoke with LeakSanitizer
 rake spec                         # Run enforced ruby/spec suite
@@ -116,6 +115,9 @@ rake test:all                     # Run all tests
 rake test:fuzz                    # Run fuzz tests (Fuzz the interpreter for crashes with arbitrary input)
 rake test:ui                      # Run ui tests (check exact stdout/stderr of Artichoke binaries)
 rake test:unit                    # Run unit tests
+rake toolchain:sync               # Sync Rust toolchain to all sources
+rake toolchain:sync:ci            # Sync the root rust-toolchain version to CI jobs
+rake toolchain:sync:manifests     # Sync the root rust-toolchain version to all crate manifests
 ```
 
 To lint Ruby sources, Artichoke uses [RuboCop]. RuboCop runs as part of the
