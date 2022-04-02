@@ -65,7 +65,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component clippy
+          rustup toolchain install --profile minimal --component clippy 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -164,7 +164,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component clippy
+          rustup toolchain install --profile minimal --component clippy 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -230,7 +230,7 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install --profile minimal --component clippy
+          rustup toolchain install --profile minimal --component clippy 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
