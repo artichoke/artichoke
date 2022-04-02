@@ -1,23 +1,27 @@
 # Artichoke UI Tests
 
-This cargo workspace is used to run raw io integration tests on the compiled
-binaries (UI) of Artichoke. These UI tests capture and assert stdout/stderr and
+This cargo workspace is used to run raw integration tests to validate the console
+output of Artichoke's compiled binaries. These UI tests capture and assert stdout/stderr and
 the return status after running the Artichoke binaries via the usage of Snapshot
-testing via usage of the [insta crate](https://crates.io/crates/insta)
+testing via usage of the [insta crate].
+
+[insta crate]: https://crates.io/crates/insta
 
 Artichoke encourages unit tests to be written along side the code where it is
 implemented. However, some integration tests can help prevent breaking certain
 input/output where otherwise it would have been hard to detect.
 
 In short, this workspace acts as the last line of defence against breaking
-input/output of Artichoke.
+input/output of Artichoke. They are similar in spirit to [UI tests from rustc].
+
+[ui tests from rustc]: https://rustc-dev-guide.rust-lang.org/tests/ui.html
 
 ## Usage
 
 Run tests from the project root:
 
 ```sh
-rake test:ui
+bundle exec rake test:ui
 ```
 
 The above will build the Artichoke binaries into `../target/debug` which is what
@@ -26,7 +30,9 @@ this workspace will then use to execute the UI Tests.
 ## Writing a test
 
 By convention, all tests in this workspace use
-[insta](https://crates.io/crates/insta) with TOML snapshots.
+[insta] with TOML snapshots.
+
+[insta]: https://crates.io/crates/insta
 
 UI Tests should ideally test:
 
@@ -48,6 +54,6 @@ to remove the associated snapshots
 
 ## Testing harness
 
-Executing the UI Tests involves locating, executing, and serializing of the io and status codes. The testing harness in `src/lib.rs` simplifies this with a `run` function (platform aware), providing an interface which `insta` can use to serialize the results into the snapshots.
+Executing the UI Tests involves locating, executing, and serializing of the io and status codes. The testing harness in [`src/lib.rs`](src/lib.rs) simplifies this with a `run` function (platform aware), providing an interface which `insta` can use to serialize the results into the snapshots.
 
 For consistency, it's best to use the test harness and/or enhance it if further functionality is required.
