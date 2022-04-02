@@ -192,40 +192,45 @@ namespace :release do
   end
 end
 
-namespace :pkg do
-  desc 'Sync the root rust-toolchain version to all crates'
-  task :'rust_version:sync' do
-    rust_version = File.read('rust-toolchain').chomp
-    regexp = /^rust-version = "(.*)"$/
-    next_rust_version = "rust-version = \"#{rust_version}\""
+namespace :toolchain do
+  desc 'Sync Rust toolchain to all sources'
+  task sync: %i[sync:manifests sync:ci]
 
-    pkg_files = FileList.new('*/Cargo.toml').include('Cargo.toml')
+  rust_toolchain = File.read('rust-toolchain').chomp
 
-    failures = pkg_files.map do |file|
-      contents = File.read(file)
+  namespace :sync do
+    desc 'Sync the root rust-toolchain version to all crate manifests'
+    task :manifests do
+      rust_version = File.read('rust-toolchain').chomp
+      regexp = /^rust-version = "(.*)"$/
+      next_rust_version = "rust-version = \"#{rust_toolchain}\""
 
-      if (existing_version = contents.match(regexp))
-        File.write(file, contents.gsub(regexp, next_rust_version)) if existing_version != rust_version
-        next
+      pkg_files = FileList.new('*/Cargo.toml').include('Cargo.toml')
+
+      failures = pkg_files.map do |file|
+        contents = File.read(file)
+
+        if (existing_version = contents.match(regexp))
+          File.write(file, contents.gsub(regexp, next_rust_version)) if existing_version != rust_version
+          next
+        end
+
+        puts "Failed to update #{file}, ensure there is a rust-version specified" if Rake.verbose
+        file
+      end.compact
+
+      raise 'Failed to update some rust-versions' if failures.any?
+    end
+
+    desc 'Sync the root rust-toolchain version to CI jobs'
+    task :ci do
+      workflow_files = FileList.new('.github/workflows/*.yaml')
+
+      workflow_files.each do |file|
+        contents = File.read(file)
+
+        File.write(file, contents.gsub(/(rustup toolchain install .*) \d+\.\d+\.\d+$/, "\\1 #{rust_toolchain}"))
       end
-
-      puts "Failed to update #{file}, ensure there is a rust-version specified" if Rake.verbose
-      file
-    end.compact
-
-    raise 'Failed to update some rust-versions' if failures.any?
-  end
-
-  desc 'Sync the root rust-toolchain version to CI jobs'
-  task :'toolchain:sync' do
-    rust_version = File.read('rust-toolchain').chomp
-
-    workflow_files = FileList.new('.github/workflows/*.yaml')
-
-    failures = workflow_files.map do |file|
-      contents = File.read(file)
-
-      File.write(file, contents.gsub(/(rustup toolchain install .*) \d+\.\d+\.\d+$/, "\\1 #{rust_version}"))
-    end.compact
+    end
   end
 end
