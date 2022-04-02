@@ -12,11 +12,6 @@ updates:
       - lopopolo
     labels:
       - A-deps
-    ignore:
-      - dependency-name: ansi_term
-        versions:
-          - ">= 0.12.a"
-          - "< 0.13"
   - package-ecosystem: bundler
     directory: "/"
     schedule:
