@@ -31,7 +31,7 @@ By convention, all tests in this workspace use
 UI Tests should ideally test:
 
 - pure input/output of the artichoke binaries
-- end user use cases (e.g. not Artchoke internals)
+- end user use cases (e.g. not Artichoke internals)
 - stable features
 
 ### Snapshots
