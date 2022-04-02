@@ -23,17 +23,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          override: true
+      - name: Install nightly Rust toolchain
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install nightly --profile minimal
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
 
       - name: Build Documentation
-        run: cargo doc --workspace
+        run: cargo +nightly doc --workspace
 
       - name: Copy static content
         run: cp --verbose .github/rustdoc/* target/doc/

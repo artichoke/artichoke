@@ -19,13 +19,23 @@ jobs:
         with:
           path: artichoke
 
-      - name: Setup rust-toolchain override
-        run: cp artichoke/rust-toolchain rust-toolchain
-
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install 1.58.1 --profile minimal
+          echo "::endgroup::"
+          echo "::group::set default toolchain"
+          rustup default 1.58.1
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
         with:
