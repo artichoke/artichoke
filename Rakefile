@@ -215,4 +215,17 @@ namespace :pkg do
 
     raise 'Failed to update some rust-versions' if failures.any?
   end
+
+  desc 'Sync the root rust-toolchain version to CI jobs'
+  task :'toolchain:sync' do
+    rust_version = File.read('rust-toolchain').chomp
+
+    workflow_files = FileList.new('.github/workflows/*.yaml')
+
+    failures = workflow_files.map do |file|
+      contents = File.read(file)
+
+      File.write(file, contents.gsub(/(rustup toolchain install .*) \d+\.\d+\.\d+$/, "\\1 #{rust_version}"))
+    end.compact
+  end
 end
