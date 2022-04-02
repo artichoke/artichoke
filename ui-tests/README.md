@@ -3,8 +3,9 @@
 This cargo workspace is used to run raw integration tests to validate the
 console output of Artichoke's compiled binaries. These UI tests capture and
 assert stdout/stderr and the return status after running the Artichoke binaries
-via the usage of Snapshot testing via usage of the [insta crate].
+with [snapshot testing] via usage of the [insta crate].
 
+[snapshot testing]: https://insta.rs/#hello-snapshot-testing
 [insta crate]: https://crates.io/crates/insta
 
 Artichoke encourages unit tests to be written along side the code where it is
