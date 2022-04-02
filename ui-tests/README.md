@@ -1,9 +1,9 @@
 # Artichoke UI Tests
 
-This cargo workspace is used to run raw integration tests to validate the console
-output of Artichoke's compiled binaries. These UI tests capture and assert stdout/stderr and
-the return status after running the Artichoke binaries via the usage of Snapshot
-testing via usage of the [insta crate].
+This cargo workspace is used to run raw integration tests to validate the
+console output of Artichoke's compiled binaries. These UI tests capture and
+assert stdout/stderr and the return status after running the Artichoke binaries
+via the usage of Snapshot testing via usage of the [insta crate].
 
 [insta crate]: https://crates.io/crates/insta
 
@@ -29,8 +29,7 @@ this workspace will then use to execute the UI Tests.
 
 ## Writing a test
 
-By convention, all tests in this workspace use
-[insta] with TOML snapshots.
+By convention, all tests in this workspace use [insta] with TOML snapshots.
 
 [insta]: https://crates.io/crates/insta
 
@@ -43,8 +42,8 @@ UI Tests should ideally test:
 ### Snapshots
 
 As per insta guidelines, it's recommended to fix run new tests, and let them
-fail. Insta will create new snapshots in `tests/fixutres` with a
-`.new` extension. When satisifed with the snapshots, the `.new` extension can be
+fail. Insta will create new snapshots in `tests/fixutres` with a `.new`
+extension. When satisifed with the snapshots, the `.new` extension can be
 removed, and the snapshot committed along with the test(s).
 
 `cargo insta review` can be used to help the review of the `.new` files.
@@ -54,6 +53,10 @@ to remove the associated snapshots
 
 ## Testing harness
 
-Executing the UI Tests involves locating, executing, and serializing of the io and status codes. The testing harness in [`src/lib.rs`](src/lib.rs) simplifies this with a `run` function (platform aware), providing an interface which `insta` can use to serialize the results into the snapshots.
+Executing the UI Tests involves locating, executing, and serializing of the io
+and status codes. The testing harness in [`src/lib.rs`](src/lib.rs) simplifies
+this with a `run` function (platform aware), providing an interface which
+`insta` can use to serialize the results into the snapshots.
 
-For consistency, it's best to use the test harness and/or enhance it if further functionality is required.
+For consistency, it's best to use the test harness and/or enhance it if further
+functionality is required.
