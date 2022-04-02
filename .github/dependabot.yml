@@ -1,6 +1,14 @@
 ---
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    assignees:
+      - lopopolo
+    labels:
+      - A-deps
   - package-ecosystem: cargo
     directory: "/"
     schedule:
