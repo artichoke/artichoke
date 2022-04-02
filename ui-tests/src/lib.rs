@@ -23,8 +23,7 @@ impl CommandOutput {
     }
 
     fn with_args(&mut self, call_args: &[&str]) -> &mut Self {
-        self.call_args
-            .append(&mut (*call_args).iter().map(|x| x.to_string()).collect());
+        self.call_args.extend(call_args.iter().copied().map(str::to_string));
         self
     }
 
