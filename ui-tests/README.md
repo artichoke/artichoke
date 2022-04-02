@@ -48,9 +48,6 @@ to remove the associated snapshots
 
 ## Testing harness
 
-`src/lib.rs` provides a `run` function which:
+Executing the UI Tests involves locating, executing, and serializing of the io and status codes. The testing harness in `src/lib.rs` simplifies this with a `run` function (platform aware), providing an interface which `insta` can use to serialize the results into the snapshots.
 
-- executes artichoke binary based on the current platform
-- captures the output of the binary execution
-- provides an interface to serialize the execution and it's results
-- ... which can then be used to test the snapshot with `insta`
+For consistency, it's best to use the test harness and/or enhance it if further functionality is required.
