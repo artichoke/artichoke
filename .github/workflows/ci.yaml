@@ -25,9 +25,19 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
         with:
@@ -53,28 +63,48 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          components: clippy
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal --component clippy
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
+          echo "::group::clippy version"
+          cargo clippy --version
+          echo "::endgroup::"
 
       - name: Install nightly Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          components: rustfmt
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal --component rustfmt nightly
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc +nightly -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo +nightly version --verbose
+          echo "::endgroup::"
+          echo "::group::rustfmt version"
+          rustfmt +nightly -Vv
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
 
       - name: Check artichoke formatting
-        run: cargo +nightly fmt -- --check --color=auto
+        run: cargo +nightly fmt --check
 
       - name: Lint artichoke with Clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --all-features --all-targets
+        run: cargo clippy --workspace --all-features --all-targets
 
       - name: Check artichoke with locked Cargo.lock
         run: cargo check --locked --all-targets --profile=test
@@ -99,9 +129,19 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
         with:
@@ -122,24 +162,47 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          components: clippy
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal --component clippy
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
+          echo "::group::clippy version"
+          cargo clippy --version
+          echo "::endgroup::"
 
       - name: Install nightly Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          components: rustfmt
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal --component rustfmt nightly
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc +nightly -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo +nightly version --verbose
+          echo "::endgroup::"
+          echo "::group::rustfmt version"
+          rustfmt +nightly -Vv
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
         with:
           working-directory: "spec-runner"
 
       - name: Check spec-runner formatting
-        run: cargo +nightly fmt -- --check --color=auto
+        run: cargo +nightly fmt --check
         working-directory: "spec-runner"
 
       - name: Check spec-runner with locked Cargo.lock
@@ -165,17 +228,40 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          components: clippy
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal --component clippy
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
+          echo "::group::clippy version"
+          cargo clippy --version
+          echo "::endgroup::"
 
       - name: Install nightly Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
-          components: rustfmt
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal --component rustfmt nightly
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc +nightly -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo +nightly version --verbose
+          echo "::endgroup::"
+          echo "::group::rustfmt version"
+          rustfmt +nightly -Vv
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
         with:
@@ -186,7 +272,7 @@ jobs:
           working-directory: "ui-tests"
 
       - name: Check ui-tests formatting
-        run: cargo +nightly fmt -- --check --color=auto
+        run: cargo +nightly fmt --check
         working-directory: "ui-tests"
 
       - name: Check ui-tests with locked Cargo.lock
@@ -219,9 +305,19 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
 
@@ -368,16 +464,34 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          components: rustfmt, clippy
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
 
-      - name: Install Rust nightly toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          profile: minimal
+      - name: Install nightly Rust toolchain
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install --profile minimal nightly
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc +nightly -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo +nightly version --verbose
+          echo "::endgroup::"
 
       - uses: Swatinem/rust-cache@v1
 
