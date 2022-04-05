@@ -1,3 +1,4 @@
+use alloc::string::String;
 use alloc::vec::Vec;
 
 use super::Utf8String;
@@ -38,13 +39,13 @@ impl PartialEq<Utf8String> for &[u8] {
     }
 }
 
-impl PartialEq<alloc::string::String> for Utf8String {
-    fn eq(&self, other: &alloc::string::String) -> bool {
+impl PartialEq<String> for Utf8String {
+    fn eq(&self, other: &String) -> bool {
         **self == *other.as_bytes()
     }
 }
 
-impl PartialEq<Utf8String> for alloc::string::String {
+impl PartialEq<Utf8String> for String {
     fn eq(&self, other: &Utf8String) -> bool {
         *self.as_bytes() == **other
     }

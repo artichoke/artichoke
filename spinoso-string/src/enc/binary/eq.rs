@@ -1,3 +1,4 @@
+use alloc::string::String;
 use alloc::vec::Vec;
 
 use super::BinaryString;
@@ -38,13 +39,13 @@ impl PartialEq<BinaryString> for &[u8] {
     }
 }
 
-impl PartialEq<alloc::string::String> for BinaryString {
-    fn eq(&self, other: &alloc::string::String) -> bool {
+impl PartialEq<String> for BinaryString {
+    fn eq(&self, other: &String) -> bool {
         **self == *other.as_bytes()
     }
 }
 
-impl PartialEq<BinaryString> for alloc::string::String {
+impl PartialEq<BinaryString> for String {
     fn eq(&self, other: &BinaryString) -> bool {
         *self.as_bytes() == **other
     }
