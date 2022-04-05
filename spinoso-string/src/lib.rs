@@ -1603,7 +1603,7 @@ impl String {
     /// [`String#inspect`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-inspect:
     #[inline]
     pub fn inspect(&self) -> Inspect<'_> {
-        Inspect::from(self.inner.inspect())
+        Inspect::new(self.inner.inspect())
     }
 
     /// Returns the Integer ordinal of a one-character string.

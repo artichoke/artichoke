@@ -69,12 +69,6 @@ use crate::enc;
 #[must_use = "this `Inspect` is an `Iterator`, which should be consumed if constructed"]
 pub struct Inspect<'a>(enc::Inspect<'a>);
 
-impl<'a> From<enc::Inspect<'a>> for Inspect<'a> {
-    fn from(value: enc::Inspect<'a>) -> Self {
-        Self(value)
-    }
-}
-
 impl<'a> Iterator for Inspect<'a> {
     type Item = char;
 
@@ -86,6 +80,10 @@ impl<'a> Iterator for Inspect<'a> {
 impl<'a> FusedIterator for Inspect<'a> {}
 
 impl<'a> Inspect<'a> {
+    pub(crate) fn new(value: enc::Inspect<'a>) -> Self {
+        Self(value)
+    }
+
     /// Write an `Inspect` iterator into the given destination using the debug
     /// representation of the byte buffer associated with a source `String`.
     ///
