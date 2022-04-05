@@ -40,7 +40,7 @@ impl<'a> Default for State<'a> {
     /// This constructor produces inspect contents like `""`.
     #[inline]
     fn default() -> Self {
-        Self::Ascii(Default::default())
+        Self::Ascii(ascii::Inspect::default())
     }
 }
 
