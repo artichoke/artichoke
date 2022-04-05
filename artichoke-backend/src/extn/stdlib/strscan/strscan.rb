@@ -113,23 +113,34 @@ class StringScanner
   def inspect
     return "#<#{self.class.name} fin>" if eos?
 
-    charpos = @string.byteslice(0, @pos).length
+    result = +"#<#{self.class.name}"
+    result << " #{@pos}/#{@string.bytesize}"
+    result << " "
 
-    before = @string.byteslice(0, @pos)
-    prior = before.length - 5
-    prior = 0 if prior.negative?
-
-    before = before[prior, 5]
-    if before.length.positive? && before.length < 5
-      before = " #{before.inspect}"
-    elsif !before.empty?
-      before = " \"...#{before.inspect[1..-1]}"
+    slice_begin = @pos - 5
+    slice_begin = 0 if slice_begin.negative?
+    if slice_begin < @pos
+      len = @pos - slice_begin
+      previous = @string.byteslice(slice_begin, len)
+      previous = "...#{previous}" if @pos > 5
+      result << previous.b.inspect
+      result << " "
     end
 
-    after = @string.byteslice(@pos, 5)
-    after = "#{after.inspect[0..-2]}...\"" unless after&.empty?
+    result << "@ "
 
-    "#<#{self.class.name} #{charpos}/#{@string.length}#{before} @ #{after}>"
+    slice_end = @pos + 5
+    slice_end = @string.bytesize if slice_end > @string.bytesize
+    if @pos < slice_end
+      len = slice_end - @pos
+      following = @string.byteslice(@pos, len)
+      following = "#{following}..." if @string.bytesize - @pos > 5
+      result << following.b.inspect
+    end
+
+    result << ">"
+
+    result
   end
 
   def match?(pattern)
