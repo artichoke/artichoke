@@ -207,6 +207,11 @@ mod libs {
 
         for source in sources {
             println!("cargo:rerun-if-changed={}", source.to_str().unwrap());
+            // relative paths ensure that `cc` will preserve directory hierarchy
+            // which allows C sources with the same file name to be built.
+            let source = source
+                .strip_prefix(paths::crate_root())
+                .expect("All C sources are found within the crate root");
             build.file(source);
         }
 
@@ -321,9 +326,14 @@ mod libs {
     }
 
     pub fn build(target: &Triple, out_dir: &OsStr) {
-        staticlib(target, "libmruby.a", mruby_include_dirs(), mruby_sources());
-        staticlib(target, "libmrbgems.a", mrbgems_include_dirs(), mrbgems_sources());
-        staticlib(target, "libmrbsys.a", mrbsys_include_dirs(), mrbsys_sources());
+        staticlib(
+            target,
+            "libartichokemruby.a",
+            mruby_include_dirs()
+                .chain(mrbgems_include_dirs())
+                .chain(mrbsys_include_dirs()),
+            mruby_sources().chain(mrbgems_sources()).chain(mrbsys_sources()),
+        );
         bindgen(target, out_dir);
     }
 }
