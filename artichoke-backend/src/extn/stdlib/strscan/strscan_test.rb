@@ -35,6 +35,8 @@ def spec
   test_skip_until
   test_unscan
   test_values_at
+  test_gh_1630_functional
+  test_inspect_emoji_partial
 
   true
 end
@@ -346,6 +348,42 @@ def test_values_at
   raise unless s.values_at(0, -1, 5, 2) == ['Fri Dec 12 ', '12', nil, 'Dec']
   raise unless s.scan(/(\w+) (\w+) (\d+) /).nil?
   raise unless s.values_at(0, -1, 5, 2).nil?
+end
+
+# https://github.com/artichoke/artichoke/pull/1630#issuecomment-1004481741
+def test_gh_1630_functional
+  s = StringScanner.new('💎')
+  raise unless s.inspect == '#<StringScanner 0/4 @ "\xF0\x9F\x92\x8E">'
+  raise unless s.get_byte == "\xF0"
+  raise unless s.rest == "\x9F\x92\x8E"
+  raise unless s.inspect == '#<StringScanner 1/4 "\xF0" @ "\x9F\x92\x8E">'
+end
+
+def test_inspect_emoji_partial
+  s = StringScanner.new('abc💎xyz')
+  raise unless s.inspect == '#<StringScanner 0/10 @ "abc\xF0\x9F...">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 1/10 "a" @ "bc\xF0\x9F\x92...">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 2/10 "ab" @ "c\xF0\x9F\x92\x8E...">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 3/10 "abc" @ "\xF0\x9F\x92\x8Ex...">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 4/10 "abc\xF0" @ "\x9F\x92\x8Exy...">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 5/10 "abc\xF0\x9F" @ "\x92\x8Exyz">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 6/10 "...bc\xF0\x9F\x92" @ "\x8Exyz">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 7/10 "...c\xF0\x9F\x92\x8E" @ "xyz">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 8/10 "...\xF0\x9F\x92\x8Ex" @ "yz">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner 9/10 "...\x9F\x92\x8Exy" @ "z">'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner fin>'
+  s.get_byte
+  raise unless s.inspect == '#<StringScanner fin>'
 end
 
 spec if $PROGRAM_NAME == __FILE__
