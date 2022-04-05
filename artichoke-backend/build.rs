@@ -77,6 +77,8 @@ mod libs {
             "src/variable.c",
             "src/version.c",
             "src/vm.c",
+            "mrbgems/mruby-compiler/core/codegen.c", // Ruby parser and bytecode generation
+            "mrbgems/mruby-compiler/core/y.tab.c",   // Ruby parser and bytecode generation
         ]
         .into_iter()
         .map(|source| paths::mruby_root().join(source))
@@ -84,7 +86,8 @@ mod libs {
 
     fn mruby_include_dirs() -> impl Iterator<Item = PathBuf> {
         [
-            "include", // mruby core
+            "include",                     // mruby core
+            "mrbgems/mruby-compiler/core", // Ruby parser and bytecode generation
         ]
         .into_iter()
         .map(|dir| paths::mruby_root().join(dir))
@@ -93,8 +96,6 @@ mod libs {
     fn mrbgems_sources() -> impl Iterator<Item = PathBuf> {
         [
             "mrbgems/mruby-class-ext/src/class.c",   // NOTE(GH-32): Pending removal.
-            "mrbgems/mruby-compiler/core/codegen.c", // Ruby parser and bytecode generation
-            "mrbgems/mruby-compiler/core/y.tab.c",   // Ruby parser and bytecode generation
             "mrbgems/mruby-error/src/exception.c",   // `mrb_raise`, `mrb_protect`
             "mrbgems/mruby-eval/src/eval.c",         // eval, instance_eval, and friends
             "mrbgems/mruby-fiber/src/fiber.c",       // Fiber class from core, required by `Enumerator`
@@ -116,7 +117,6 @@ mod libs {
     fn mrbgems_include_dirs() -> impl Iterator<Item = PathBuf> {
         [
             "mrbgems/mruby-class-ext/include", // NOTE(GH-32): Pending removal.
-            "mrbgems/mruby-compiler/core",     // Ruby parser and bytecode generation
             "mrbgems/mruby-error/include",     // `mrb_raise`, `mrb_protect`
             "mrbgems/mruby-eval/include",      // eval, instance_eval, and friends
             "mrbgems/mruby-fiber/include",     // Fiber class from core, required by `Enumerator`
