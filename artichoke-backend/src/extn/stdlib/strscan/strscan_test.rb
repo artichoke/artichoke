@@ -362,26 +362,37 @@ end
 def test_inspect_emoji_partial
   s = StringScanner.new('abc💎xyz')
   raise unless s.inspect == '#<StringScanner 0/10 @ "abc\xF0\x9F...">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 1/10 "a" @ "bc\xF0\x9F\x92...">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 2/10 "ab" @ "c\xF0\x9F\x92\x8E...">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 3/10 "abc" @ "\xF0\x9F\x92\x8Ex...">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 4/10 "abc\xF0" @ "\x9F\x92\x8Exy...">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 5/10 "abc\xF0\x9F" @ "\x92\x8Exyz">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 6/10 "...bc\xF0\x9F\x92" @ "\x8Exyz">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 7/10 "...c\xF0\x9F\x92\x8E" @ "xyz">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 8/10 "...\xF0\x9F\x92\x8Ex" @ "yz">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner 9/10 "...\x9F\x92\x8Exy" @ "z">'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner fin>'
+
   s.get_byte
   raise unless s.inspect == '#<StringScanner fin>'
 end

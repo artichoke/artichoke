@@ -115,7 +115,7 @@ class StringScanner
 
     result = +"#<#{self.class.name}"
     result << " #{@pos}/#{@string.bytesize}"
-    result << " "
+    result << ' '
 
     slice_begin = @pos - 5
     slice_begin = 0 if slice_begin.negative?
@@ -124,10 +124,10 @@ class StringScanner
       previous = @string.byteslice(slice_begin, len)
       previous = "...#{previous}" if @pos > 5
       result << previous.b.inspect
-      result << " "
+      result << ' '
     end
 
-    result << "@ "
+    result << '@ '
 
     slice_end = @pos + 5
     slice_end = @string.bytesize if slice_end > @string.bytesize
@@ -138,7 +138,7 @@ class StringScanner
       result << following.b.inspect
     end
 
-    result << ">"
+    result << '>'
 
     result
   end
