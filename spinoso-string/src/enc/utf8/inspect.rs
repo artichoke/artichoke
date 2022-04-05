@@ -67,7 +67,8 @@ impl<'a> Iterator for Inspect<'a> {
                 // While not an invalid byte, we rely on the documented
                 // behavior of `InvalidUtf8ByteSequence` to always escape
                 // any bytes given to it.
-                self.byte_literal = InvalidUtf8ByteSequence::try_from(ascii_byte).unwrap();
+                self.byte_literal =
+                    InvalidUtf8ByteSequence::try_from(ascii_byte).expect("ASCII char should have byte slice length 1");
                 self.bytes = remainder;
                 return self.byte_literal.next();
             }
@@ -81,7 +82,8 @@ impl<'a> Iterator for Inspect<'a> {
                 // This conversion is safe to unwrap due to the documented
                 // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
                 // which indicate that `size` is always in the range of 0..=3.
-                self.byte_literal = InvalidUtf8ByteSequence::try_from(invalid_utf8_bytes).unwrap();
+                self.byte_literal = InvalidUtf8ByteSequence::try_from(invalid_utf8_bytes)
+                    .expect("Invalid UTF-8 byte sequence should be at most 3 bytes long");
                 self.bytes = remainder;
                 return self.byte_literal.next();
             }
