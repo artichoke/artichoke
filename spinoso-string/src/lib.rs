@@ -1596,10 +1596,14 @@ impl String {
     /// This function can be used to implement the Ruby method
     /// [`String#inspect`].
     ///
+    /// This iterator is encoding-aware. This iterator may yield different
+    /// `char`s for the same underlying byte contents depending on the string's
+    /// encoding.
+    ///
     /// [`String#inspect`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-inspect:
     #[inline]
     pub fn inspect(&self) -> Inspect<'_> {
-        Inspect::from(self.as_slice())
+        Inspect::new(self.inner.inspect())
     }
 
     /// Returns the Integer ordinal of a one-character string.
