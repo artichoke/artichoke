@@ -18,9 +18,12 @@ use crate::ord::OrdError;
 mod ascii;
 mod binary;
 mod impls;
+mod inspect;
 #[cfg(feature = "std")]
 mod io;
 mod utf8;
+
+pub use inspect::Inspect;
 
 #[derive(Clone)]
 pub enum EncodedString {
@@ -302,6 +305,15 @@ impl EncodedString {
             EncodedString::Ascii(inner) => inner.bytes(),
             EncodedString::Binary(inner) => inner.bytes(),
             EncodedString::Utf8(inner) => inner.bytes(),
+        }
+    }
+
+    #[inline]
+    pub fn inspect(&self) -> Inspect<'_> {
+        match self {
+            EncodedString::Ascii(inner) => inner.into(),
+            EncodedString::Binary(inner) => inner.into(),
+            EncodedString::Utf8(inner) => inner.into(),
         }
     }
 

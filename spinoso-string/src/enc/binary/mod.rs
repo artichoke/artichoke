@@ -12,8 +12,11 @@ use crate::ord::OrdError;
 
 mod eq;
 mod impls;
+mod inspect;
 #[cfg(feature = "std")]
 mod io;
+
+pub use inspect::Inspect;
 
 #[allow(clippy::module_name_repetitions)]
 #[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
