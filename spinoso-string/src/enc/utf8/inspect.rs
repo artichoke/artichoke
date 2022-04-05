@@ -88,10 +88,7 @@ impl<'a> Iterator for Inspect<'a> {
                 return self.byte_literal.next();
             }
         };
-        if let Some(ch) = self.flags.emit_trailing_quote() {
-            return Some(ch);
-        }
-        None
+        self.flags.emit_trailing_quote()
     }
 }
 
