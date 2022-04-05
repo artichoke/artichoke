@@ -5,37 +5,23 @@ use scolapasta_string_escape::{is_ascii_char_with_escape, InvalidUtf8ByteSequenc
 use super::Utf8String;
 use crate::inspect::Flags;
 
-#[derive(Default, Debug, Clone)]
-#[must_use = "this `Inspect` is an `Iterator`, which should be consumed if constructed"]
-pub struct Inspect<'a>(State<'a>);
-
-impl<'a> From<&'a Utf8String> for Inspect<'a> {
-    #[inline]
-    fn from(value: &'a Utf8String) -> Self {
-        Self(State::new(value.as_slice()))
-    }
-}
-
-impl<'a> Iterator for Inspect<'a> {
-    type Item = char;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
-    }
-}
-
-impl<'a> FusedIterator for Inspect<'a> {}
-
 #[derive(Debug, Clone)]
-#[must_use = "this `State` is an `Iterator`, which should be consumed if constructed"]
-struct State<'a> {
+#[must_use = "this `Inspect` is an `Iterator`, which should be consumed if constructed"]
+pub struct Inspect<'a> {
     flags: Flags,
     byte_literal: InvalidUtf8ByteSequence,
     bytes: &'a [u8],
 }
 
-impl<'a> State<'a> {
-    /// Construct a `State` for the given byte slice.
+impl<'a> From<&'a Utf8String> for Inspect<'a> {
+    #[inline]
+    fn from(value: &'a Utf8String) -> Self {
+        Self::new(value.as_slice())
+    }
+}
+
+impl<'a> Inspect<'a> {
+    /// Construct a UTF-8 `Inspect` for the given byte slice.
     ///
     /// This constructor produces inspect contents like `"fred"`.
     #[inline]
@@ -48,8 +34,9 @@ impl<'a> State<'a> {
     }
 }
 
-impl<'a> Default for State<'a> {
-    /// Construct a `State` that will render debug output for the empty slice.
+impl<'a> Default for Inspect<'a> {
+    /// Construct an `Inspect` that will render debug output for the empty
+    /// slice.
     ///
     /// This constructor produces inspect contents like `""`.
     #[inline]
@@ -58,7 +45,7 @@ impl<'a> Default for State<'a> {
     }
 }
 
-impl<'a> Iterator for State<'a> {
+impl<'a> Iterator for Inspect<'a> {
     type Item = char;
 
     #[inline]
@@ -106,7 +93,7 @@ impl<'a> Iterator for State<'a> {
     }
 }
 
-impl<'a> FusedIterator for State<'a> {}
+impl<'a> FusedIterator for Inspect<'a> {}
 
 #[cfg(test)]
 mod tests {

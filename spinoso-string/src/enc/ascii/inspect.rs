@@ -37,7 +37,8 @@ impl<'a> Inspect<'a> {
 }
 
 impl<'a> Default for Inspect<'a> {
-    /// Construct a `State` that will render debug output for the empty slice.
+    /// Construct an `Inspect` that will render debug output for the empty
+    /// slice.
     ///
     /// This constructor produces inspect contents like `""`.
     #[inline]
