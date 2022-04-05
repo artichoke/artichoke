@@ -60,7 +60,7 @@ def test_strscan
 end
 
 def test_shift
-  s = StringScanner.new('Fri Dec 12 1975 14:39')
+  s = StringScanner.new(+'Fri Dec 12 1975 14:39')
   s.scan(/Fri /)
   s << ' +1000 GMT'
   raise unless s.string == 'Fri Dec 12 1975 14:39 +1000 GMT'
