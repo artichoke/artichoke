@@ -7,37 +7,23 @@ use scolapasta_string_escape::Literal;
 use super::BinaryString;
 use crate::inspect::Flags;
 
-#[derive(Default, Debug, Clone)]
-#[must_use = "this `Inspect` is an `Iterator`, which should be consumed if constructed"]
-pub struct Inspect<'a>(State<'a>);
-
-impl<'a> From<&'a BinaryString> for Inspect<'a> {
-    #[inline]
-    fn from(value: &'a BinaryString) -> Self {
-        Self(State::new(value.as_slice()))
-    }
-}
-
-impl<'a> Iterator for Inspect<'a> {
-    type Item = char;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
-    }
-}
-
-impl<'a> FusedIterator for Inspect<'a> {}
-
 #[derive(Debug, Clone)]
-#[must_use = "this `State` is an `Iterator`, which should be consumed if constructed"]
-struct State<'a> {
+#[must_use = "this `Inspect` is an `Iterator`, which should be consumed if constructed"]
+pub struct Inspect<'a> {
     flags: Flags,
     literal: Chars<'static>,
     bytes: slice::Iter<'a, u8>,
 }
 
-impl<'a> State<'a> {
-    /// Construct a `State` for the given byte slice.
+impl<'a> From<&'a BinaryString> for Inspect<'a> {
+    #[inline]
+    fn from(value: &'a BinaryString) -> Self {
+        Self::new(value.as_slice())
+    }
+}
+
+impl<'a> Inspect<'a> {
+    /// Construct a binary `Inspect` for the given byte slice.
     ///
     /// This constructor produces inspect contents like `"fred"`.
     #[inline]
@@ -50,7 +36,7 @@ impl<'a> State<'a> {
     }
 }
 
-impl<'a> Default for State<'a> {
+impl<'a> Default for Inspect<'a> {
     /// Construct a `State` that will render debug output for the empty slice.
     ///
     /// This constructor produces inspect contents like `""`.
@@ -60,7 +46,7 @@ impl<'a> Default for State<'a> {
     }
 }
 
-impl<'a> Iterator for State<'a> {
+impl<'a> Iterator for Inspect<'a> {
     type Item = char;
 
     #[inline]
@@ -81,7 +67,7 @@ impl<'a> Iterator for State<'a> {
     }
 }
 
-impl<'a> FusedIterator for State<'a> {}
+impl<'a> FusedIterator for Inspect<'a> {}
 
 #[cfg(test)]
 mod tests {
