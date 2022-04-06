@@ -1186,7 +1186,7 @@ impl String {
         self.inner.is_ascii_only()
     }
 
-    /// Change the [encoding] of this `String` to [`Encoding::Binary`].
+    /// Return a newly encoded `String` with [`Encoding::Binary`] [encoding].
     ///
     /// This function can be used to implement the Ruby method [`String#b`].
     ///
@@ -1195,18 +1195,18 @@ impl String {
     /// ```
     /// use spinoso_string::{Encoding, String};
     ///
-    /// let mut s = String::utf8(b"xyz".to_vec());
+    /// let s = String::utf8(b"xyz".to_vec());
     /// assert_eq!(s.encoding(), Encoding::Utf8);
-    /// s.make_binary();
-    /// assert_eq!(s.encoding(), Encoding::Binary);
+    /// let b = s.to_binary();
+    /// assert_eq!(b.encoding(), Encoding::Binary);
     /// ```
     ///
     /// [encoding]: crate::Encoding
     /// [`String#b`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-b
     #[inline]
-    pub fn make_binary(&mut self) {
-        let old = self.inner.as_slice().to_vec();
-        self.inner = EncodedString::new(old, Encoding::Binary);
+    #[must_use]
+    pub fn to_binary(&self) -> Self {
+        String::binary(self.inner.as_slice().to_vec())
     }
 
     /// Returns the length of this `String` in bytes.
