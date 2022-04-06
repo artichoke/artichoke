@@ -22,6 +22,7 @@ jobs:
           echo "::endgroup::"
           echo "::group::set default toolchain"
           rustup default 1.58.1
+          rm -rf rust-toolchain
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv

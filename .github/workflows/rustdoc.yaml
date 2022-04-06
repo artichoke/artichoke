@@ -30,6 +30,7 @@ jobs:
           echo "::endgroup::"
           echo "::group::set default toolchain"
           rustup default nightly
+          rm -rf rust-toolchain
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -44,7 +45,7 @@ jobs:
       - uses: Swatinem/rust-cache@v1
 
       - name: Build Documentation
-        run: cargo +nightly doc --workspace
+        run: cargo doc --workspace
 
       - name: Copy static content
         run: cp --verbose .github/rustdoc/* target/doc/
