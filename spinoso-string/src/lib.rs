@@ -1199,7 +1199,7 @@ impl String {
     /// assert_eq!(s.encoding(), Encoding::Utf8);
     /// let b = s.to_binary();
     /// assert_eq!(b.encoding(), Encoding::Binary);
-    /// assert_eq!(s.as_slice(), b.as_slice())
+    /// assert_eq!(s.as_slice(), b.as_slice());
     /// ```
     ///
     /// [`String#b`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-b
