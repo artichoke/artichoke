@@ -78,25 +78,25 @@ impl Utf8String {
     #[inline]
     #[must_use]
     pub fn iter(&self) -> Iter<'_> {
-        Iter(self.inner.iter())
+        Iter::from_slice(&self.inner)
     }
 
     #[inline]
     #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_> {
-        IterMut(self.inner.iter_mut())
+        IterMut::from_mut_slice(&mut self.inner)
     }
 
     #[inline]
     #[must_use]
     pub fn bytes(&self) -> Bytes<'_> {
-        Bytes(self.inner.iter())
+        Bytes::from_slice(&self.inner)
     }
 
     #[inline]
     #[must_use]
     pub fn into_iter(self) -> IntoIter {
-        IntoIter(self.inner.into_iter())
+        IntoIter::from_vec(self.inner)
     }
 }
 
