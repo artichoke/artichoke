@@ -1186,7 +1186,7 @@ impl String {
         self.inner.is_ascii_only()
     }
 
-    /// Return a newly encoded `String` with [`Encoding::Binary`] [encoding].
+    /// Return a newly encoded `String` with [`Encoding::Binary`] encoding.
     ///
     /// This function can be used to implement the Ruby method [`String#b`].
     ///
@@ -1199,9 +1199,9 @@ impl String {
     /// assert_eq!(s.encoding(), Encoding::Utf8);
     /// let b = s.to_binary();
     /// assert_eq!(b.encoding(), Encoding::Binary);
+    /// assert_eq!(s.as_slice(), b.as_slice())
     /// ```
     ///
-    /// [encoding]: crate::Encoding
     /// [`String#b`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-b
     #[inline]
     #[must_use]
