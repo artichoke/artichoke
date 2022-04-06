@@ -29,8 +29,8 @@ jobs:
           rustup toolchain install nightly --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rustup default nightly
           rm -rf rust-toolchain
+          rustup default nightly
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv

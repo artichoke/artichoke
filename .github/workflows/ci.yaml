@@ -30,8 +30,8 @@ jobs:
           rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rustup default 1.58.1
           rm -rf rust-toolchain
+          rustup default 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -72,8 +72,8 @@ jobs:
           rustup toolchain install 1.58.1 --profile minimal --component clippy
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rustup default 1.58.1
           rm -rf rust-toolchain
+          rustup default 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -142,8 +142,8 @@ jobs:
           rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rustup default 1.58.1
           rm -rf rust-toolchain
+          rustup default 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -179,8 +179,8 @@ jobs:
           rustup toolchain install 1.58.1 --profile minimal --component clippy
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rustup default 1.58.1
           rm -rf rust-toolchain
+          rustup default 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -249,8 +249,8 @@ jobs:
           rustup toolchain install 1.58.1 --profile minimal --component clippy
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rustup default 1.58.1
           rm -rf rust-toolchain
+          rustup default 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -330,8 +330,8 @@ jobs:
           rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rustup default 1.58.1
           rm -rf rust-toolchain
+          rustup default 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
@@ -493,8 +493,8 @@ jobs:
           rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rustup default 1.58.1
           rm -rf rust-toolchain
+          rustup default 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv
