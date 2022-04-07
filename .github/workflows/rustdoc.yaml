@@ -47,6 +47,10 @@ jobs:
       - name: Build Documentation
         run: cargo doc --workspace
 
+      # https://github.com/artichoke/artichoke/issues/1826
+      - name: Purge sources from out dir
+        run: find . -path './target/doc/*/target/debug/build/*' | xargs rm -rf
+
       - name: Copy static content
         run: cp --verbose .github/rustdoc/* target/doc/
 
@@ -59,3 +63,6 @@ jobs:
           publish_branch: gh-pages
           user_name: artichoke-ci
           user_email: ci@artichokeruby.org
+          # only have the most recent docs in the `gh-pages` branch
+          # https://github.com/artichoke/artichoke/issues/1826
+          force_orphan: true
