@@ -373,9 +373,7 @@ pub fn is_ascii_only(interp: &mut Artichoke, mut value: Value) -> Result<Value, 
 
 pub fn b(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let mut dup = s.clone();
-    dup.make_binary();
-    super::String::alloc_value(dup, interp)
+    super::String::alloc_value(s.to_binary(), interp)
 }
 
 pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
