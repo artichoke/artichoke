@@ -41,6 +41,7 @@ jobs:
           rustup toolchain install stable --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
+          rm -rf rust-toolchain
           rustup default stable
           echo "::endgroup::"
           echo "::group::rustup version"

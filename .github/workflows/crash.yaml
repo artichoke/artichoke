@@ -21,6 +21,7 @@ jobs:
           rustup toolchain install 1.58.1 --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
+          rm -rf rust-toolchain
           rustup default 1.58.1
           echo "::endgroup::"
           echo "::group::rustup version"
