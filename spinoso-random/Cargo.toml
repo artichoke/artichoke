@@ -3,7 +3,7 @@ name = "spinoso-random"
 version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
-rust-version = "1.59.0"
+rust-version = "1.60.0"
 description = """
 Implementation of Ruby Random Core class.
 """
