@@ -109,6 +109,7 @@ mod readme {}
 #[doc(hidden)]
 pub mod macros;
 
+#[allow(unused_macros)]
 macro_rules! const_assert {
     ($x:expr $(,)?) => {
         #[allow(unknown_lints, clippy::eq_op)]
