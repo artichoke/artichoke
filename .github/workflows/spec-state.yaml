@@ -22,11 +22,11 @@ jobs:
       - name: Install Rust toolchain
         run: |
           echo "::group::rustup toolchain install"
-          rustup toolchain install 1.58.1 --profile minimal
+          rustup toolchain install 1.59.0 --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
           rm -rf rust-toolchain
-          rustup default 1.58.1
+          rustup default 1.59.0
           echo "::endgroup::"
           echo "::group::rustup version"
           rustup -Vv

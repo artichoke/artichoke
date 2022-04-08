@@ -24,17 +24,16 @@ pub fn initialize(
 }
 
 pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error> {
-    let pattern_vec;
-    if let Ruby::Symbol = pattern.ruby_type() {
+    let pattern_vec = if let Ruby::Symbol = pattern.ruby_type() {
         let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
-        pattern_vec = symbol.bytes(interp).to_vec();
+        symbol.bytes(interp).to_vec()
     } else {
         // Safety:
         //
         // Convert the bytes to an owned vec to prevent the underlying `RString`
         // backing `pattern` from being freed during a garbage collection.
-        pattern_vec = unsafe { implicitly_convert_to_string(interp, &mut pattern)?.to_vec() };
-    }
+        unsafe { implicitly_convert_to_string(interp, &mut pattern)?.to_vec() }
+    };
     let pattern = Regexp::escape(&pattern_vec)?;
     interp.try_convert_mut(pattern)
 }

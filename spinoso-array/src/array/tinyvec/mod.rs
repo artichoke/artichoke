@@ -665,7 +665,7 @@ where
     #[inline]
     #[must_use]
     pub fn drop_n(&self, n: usize) -> &[T] {
-        self.0.get(n..).unwrap_or_else(|| &[])
+        self.0.get(n..).unwrap_or_default()
     }
 
     /// Removes the last element from the vector and returns it, or [`None`] if

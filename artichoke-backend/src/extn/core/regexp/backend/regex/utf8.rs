@@ -130,7 +130,7 @@ impl RegexpType for Utf8 {
         // fallible call in `format_unicode_debug_into` is to `write!` which
         // never `panic!`s for a `String` formatter, which we are using here.
         let _ = format_unicode_debug_into(&mut pattern, self.source.pattern());
-        debug.push_str(pattern.replace("/", r"\/").as_str());
+        debug.push_str(pattern.replace('/', r"\/").as_str());
         debug.push('/');
         debug.push_str(self.source.options().as_display_modifier());
         debug.push_str(self.encoding.as_modifier_str());
@@ -154,7 +154,7 @@ impl RegexpType for Utf8 {
         let mut inspect = Vec::with_capacity(self.source.pattern().len() + 2 + 4);
         inspect.push(b'/');
         if let Ok(pat) = str::from_utf8(self.source.pattern()) {
-            inspect.extend_from_slice(pat.replace("/", r"\/").as_bytes());
+            inspect.extend_from_slice(pat.replace('/', r"\/").as_bytes());
         } else {
             inspect.extend_from_slice(self.source.pattern());
         }

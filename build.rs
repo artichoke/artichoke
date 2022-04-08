@@ -55,10 +55,7 @@ pub fn build_release_metadata(target: &Triple) {
     emit("RUBY_PLATFORM", platform);
     emit("RUBY_COPYRIGHT", copyright);
     emit("RUBY_DESCRIPTION", description);
-    emit(
-        "ARTICHOKE_COMPILER_VERSION",
-        compiler_version().unwrap_or_else(String::new),
-    );
+    emit("ARTICHOKE_COMPILER_VERSION", compiler_version().unwrap_or_default());
 }
 
 fn emit<T>(env: &str, value: T)
