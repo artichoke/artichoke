@@ -183,8 +183,9 @@ impl From<Symbol> for u64 {
 impl From<Symbol> for usize {
     #[inline]
     fn from(sym: Symbol) -> Self {
-        // This conversion relies on `size_of::<usize>() >= size_of::<u32>()`,
-        // which is ensured with a const assertion in `lib.rs`.
+        // Ensure this cast is lossless.
+        const_assert!(usize::BITS >= u32::BITS);
+
         sym.id() as usize
     }
 }

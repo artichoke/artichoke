@@ -84,7 +84,6 @@ extern crate std;
 
 use core::borrow::Borrow;
 use core::fmt;
-use core::mem::size_of;
 use core::num::TryFromIntError;
 
 #[cfg(feature = "artichoke")]
@@ -94,12 +93,19 @@ use artichoke_core::intern::Intern;
 #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
 pub use focaccia::{CaseFold, NoSuchCaseFoldingScheme};
 
-// Spinoso symbol assumes symbols are `u32` and requires `usize` to be at least
-// as big as `u32`.
-//
-// This const-evaluated expression will fail to compile if this invariant does
-// not hold.
-const _: () = [()][!(size_of::<usize>() >= size_of::<u32>()) as usize];
+macro_rules! const_assert {
+    ($x:expr $(,)?) => {
+        #[allow(unknown_lints, clippy::eq_op)]
+        const _: [(); 0 - !{
+            const ASSERT: bool = $x;
+            ASSERT
+        } as usize] = [];
+    };
+}
+
+// spinoso-symbol assumes symbols are `u32` and requires `usize` to be at least
+// as big as `u32` for lossless conversions.
+const_assert!(usize::BITS >= u32::BITS);
 
 #[cfg(feature = "artichoke")]
 mod all_symbols;

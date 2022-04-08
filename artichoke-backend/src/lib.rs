@@ -109,6 +109,16 @@ mod readme {}
 #[doc(hidden)]
 pub mod macros;
 
+macro_rules! const_assert {
+    ($x:expr $(,)?) => {
+        #[allow(unknown_lints, clippy::eq_op)]
+        const _: [(); 0 - !{
+            const ASSERT: bool = $x;
+            ASSERT
+        } as usize] = [];
+    };
+}
+
 mod artichoke;
 pub mod block;
 pub mod class;
