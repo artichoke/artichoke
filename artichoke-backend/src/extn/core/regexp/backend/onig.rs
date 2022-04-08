@@ -1,4 +1,3 @@
-use core::mem::size_of;
 use std::collections::HashMap;
 use std::fmt;
 use std::num::NonZeroUsize;
@@ -14,10 +13,7 @@ use crate::extn::prelude::*;
 
 // The Oniguruma `Regexp` backend requires that `u32` can be widened to `usize`
 // losslessly.
-//
-// This const-evaluated expression ensures that `usize` is always at least as
-// wide as `usize`.
-const _: () = [()][!(size_of::<usize>() >= size_of::<u32>()) as usize];
+const_assert!(usize::BITS >= u32::BITS);
 
 #[derive(Debug, Clone)]
 pub struct Onig {
