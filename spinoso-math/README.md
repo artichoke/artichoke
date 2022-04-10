@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-math = "0.2.0"
+spinoso-math = "0.3.0"
 ```
 
 Compute the hypotenuse:

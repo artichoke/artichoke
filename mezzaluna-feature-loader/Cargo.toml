@@ -1,6 +1,6 @@
 [package]
 name = "mezzaluna-feature-loader"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.60.0"
@@ -16,8 +16,8 @@ same-file = { version = "1.0.6", optional = true }
 
 [features]
 default = ["disk", "rubylib"]
-disk = ["same-file"]
 rubylib = ["disk"]
+disk = ["dep:same-file"]
 
 [package.metadata.docs.rs]
 all-features = true

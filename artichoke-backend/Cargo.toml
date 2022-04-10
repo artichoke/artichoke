@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-backend"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.60.0"
@@ -17,7 +17,7 @@ artichoke-load-path = { version = "0.1.0", path = "../artichoke-load-path", defa
 bstr = { version = "0.2.9", default-features = false, features = ["std"] }
 cstr = "0.2.10"
 intaglio = { version = "1.6.0", default-features = false, features = ["bytes"] }
-mezzaluna-feature-loader = { version = "0.4.0", path = "../mezzaluna-feature-loader", default-features = false }
+mezzaluna-feature-loader = { version = "0.5.0", path = "../mezzaluna-feature-loader", default-features = false }
 onig = { version = "6.3.0", optional = true, default-features = false }
 qed = "1.0.0"
 # Ensure the `regex` minimum version is at least 1.5.5 to pull in a fix for a
@@ -27,15 +27,15 @@ qed = "1.0.0"
 # https://github.com/artichoke/artichoke/pull/1729
 regex = "1.5.5"
 scolapasta-string-escape = { version = "0.2.0", path = "../scolapasta-string-escape", default-features = false }
-spinoso-array = { version = "0.8.0", path = "../spinoso-array", default-features = false }
+spinoso-array = { version = "0.9.0", path = "../spinoso-array", default-features = false }
 spinoso-env = { version = "0.2.0", path = "../spinoso-env", optional = true, default-features = false }
 spinoso-exception = { version = "0.1.0", path = "../spinoso-exception" }
-spinoso-math = { version = "0.2.0", path = "../spinoso-math", optional = true, default-features = false }
+spinoso-math = { version = "0.3.0", path = "../spinoso-math", optional = true, default-features = false }
 spinoso-random = { version = "0.2.0", path = "../spinoso-random", optional = true }
-spinoso-regexp = { version = "0.2.0", path = "../spinoso-regexp", optional = true, default-features = false }
+spinoso-regexp = { version = "0.3.0", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", optional = true }
 spinoso-string = { version = "0.16.0", path = "../spinoso-string" }
-spinoso-symbol = { version = "0.1.0", path = "../spinoso-symbol" }
+spinoso-symbol = { version = "0.2.0", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.2.0", path = "../spinoso-time", optional = true }
 
 [dev-dependencies]
@@ -60,14 +60,14 @@ core-full = [
   "core-regexp-oniguruma",
   "core-time",
 ]
-core-env = ["spinoso-env"]
-core-env-system = ["core-env", "spinoso-env/system-env"]
-core-math = ["spinoso-math"]
-core-math-full = ["core-math", "spinoso-math/full"]
-core-random = ["spinoso-random"]
-core-regexp = ["spinoso-regexp"]
-core-regexp-oniguruma = ["core-regexp", "spinoso-regexp/oniguruma", "onig"]
-core-time = ["spinoso-time"]
+core-env = ["dep:spinoso-env"]
+core-env-system = ["core-env", "spinoso-env?/system-env"]
+core-math = ["dep:spinoso-math"]
+core-math-full = ["core-math", "spinoso-math?/full"]
+core-random = ["dep:spinoso-random"]
+core-regexp = ["dep:spinoso-regexp"]
+core-regexp-oniguruma = ["core-regexp", "spinoso-regexp?/oniguruma", "dep:onig"]
+core-time = ["dep:spinoso-time"]
 
 load-path-native-file-system-loader = ["artichoke-load-path/native-file-system-loader"]
 load-path-rubylib-native-file-system-loader = ["load-path-native-file-system-loader", "artichoke-load-path/rubylib-native-file-system-loader"]
@@ -99,7 +99,7 @@ stdlib-forwardable = []
 stdlib-json = []
 stdlib-monitor = []
 stdlib-ostruct = []
-stdlib-securerandom = ["spinoso-securerandom"]
+stdlib-securerandom = ["dep:spinoso-securerandom"]
 stdlib-set = []
 stdlib-shellwords = []
 stdlib-strscan = []

@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-regexp"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.60.0"
@@ -27,7 +27,7 @@ scolapasta-string-escape = { version = "0.2.0", path = "../scolapasta-string-esc
 
 [features]
 default = ["oniguruma", "regex-full"]
-oniguruma = ["onig"]
+oniguruma = ["dep:onig"]
 regex-full = ["regex-perf", "regex-unicode"]
 regex-perf = ["regex/perf"]
 regex-unicode = ["regex/unicode"]

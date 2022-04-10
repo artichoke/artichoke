@@ -28,7 +28,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-backend"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "artichoke-core",
  "artichoke-load-path",
@@ -222,7 +222,7 @@ checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
 
 [[package]]
 name = "mezzaluna-feature-loader"
-version = "0.4.0"
+version = "0.5.0"
 
 [[package]]
 name = "num-integer"
@@ -448,7 +448,7 @@ checksum = "7bd3e3206899af3f8b12af284fafc038cc1dc2b41d1b89dd17297221c5d225de"
 
 [[package]]
 name = "spinoso-array"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "raw-parts",
 ]
@@ -470,7 +470,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-math"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "libm",
 ]
@@ -488,7 +488,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-regexp"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bitflags",
  "bstr",
@@ -520,7 +520,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-symbol"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "artichoke-core",
  "bstr",
