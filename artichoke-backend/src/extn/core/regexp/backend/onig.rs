@@ -11,10 +11,6 @@ use crate::extn::core::matchdata::MatchData;
 use crate::extn::core::regexp::{self, Config, Encoding, Regexp, RegexpType, Scan, Source};
 use crate::extn::prelude::*;
 
-// The Oniguruma `Regexp` backend requires that `u32` can be widened to `usize`
-// losslessly.
-const_assert!(usize::BITS >= u32::BITS);
-
 #[derive(Debug, Clone)]
 pub struct Onig {
     source: Source,
@@ -81,7 +77,7 @@ impl RegexpType for Onig {
             }
             let mut indexes = Vec::with_capacity(group_indexes.len());
             for &index in group_indexes {
-                indexes.push(index as usize);
+                indexes.push(qed::lossless_cast_u32_to_usize!(index));
             }
             result = Some(indexes);
             false
@@ -334,7 +330,7 @@ impl RegexpType for Onig {
         self.regex.foreach_name(|group, group_indexes| {
             let mut converted = Vec::with_capacity(group_indexes.len());
             for &index in group_indexes {
-                converted.push(index as usize);
+                converted.push(qed::lossless_cast_u32_to_usize!(index));
             }
             map.push((group.into(), converted));
             true
@@ -349,7 +345,7 @@ impl RegexpType for Onig {
             let mut map = HashMap::with_capacity(captures.len());
             self.regex.foreach_name(|group, group_indexes| {
                 for &index in group_indexes.iter().rev() {
-                    if let Some(capture) = captures.at(index as usize) {
+                    if let Some(capture) = captures.at(qed::lossless_cast_u32_to_usize!(index)) {
                         map.insert(group.into(), Some(capture.into()));
                         return true;
                     }
