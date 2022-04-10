@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-backend"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.60.0"
@@ -60,14 +60,14 @@ core-full = [
   "core-regexp-oniguruma",
   "core-time",
 ]
-core-env = ["spinoso-env"]
-core-env-system = ["core-env", "spinoso-env/system-env"]
-core-math = ["spinoso-math"]
-core-math-full = ["core-math", "spinoso-math/full"]
-core-random = ["spinoso-random"]
-core-regexp = ["spinoso-regexp"]
-core-regexp-oniguruma = ["core-regexp", "spinoso-regexp/oniguruma", "onig"]
-core-time = ["spinoso-time"]
+core-env = ["dep:spinoso-env"]
+core-env-system = ["core-env", "spinoso-env?/system-env"]
+core-math = ["dep:spinoso-math"]
+core-math-full = ["core-math", "spinoso-math?/full"]
+core-random = ["dep:spinoso-random"]
+core-regexp = ["dep:spinoso-regexp"]
+core-regexp-oniguruma = ["core-regexp", "spinoso-regexp?/oniguruma", "dep:onig"]
+core-time = ["dep:spinoso-time"]
 
 load-path-native-file-system-loader = ["artichoke-load-path/native-file-system-loader"]
 load-path-rubylib-native-file-system-loader = ["load-path-native-file-system-loader", "artichoke-load-path/rubylib-native-file-system-loader"]
@@ -99,7 +99,7 @@ stdlib-forwardable = []
 stdlib-json = []
 stdlib-monitor = []
 stdlib-ostruct = []
-stdlib-securerandom = ["spinoso-securerandom"]
+stdlib-securerandom = ["dep:spinoso-securerandom"]
 stdlib-set = []
 stdlib-shellwords = []
 stdlib-strscan = []
