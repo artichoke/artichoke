@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-symbol"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.60.0"
@@ -30,16 +30,17 @@ default = ["artichoke", "std"]
 # on `bstr`.
 #
 # When this feature is enabled, several types are re-exported from `focaccia`.
-artichoke = ["artichoke-core", "focaccia", "inspect"]
+artichoke = ["dep:artichoke-core", "dep:focaccia", "inspect"]
 # Implement an iterator for printing debug output of a byte string associated
 # with a `Symbol` that is suitable for implementing `Symbol#inspect`.
-inspect = ["ident-parser", "scolapasta-string-escape"]
+inspect = ["ident-parser", "dep:scolapasta-string-escape"]
 # Add a parser for valid Ruby identifiers.
-ident-parser = ["bstr"]
+ident-parser = ["dep:bstr"]
 # By default, `spinoso-symbol` is `no_std`. This feature enables
-# `std::error::Error` impls. This feature activates `focaccia/std` to enable
-# `Error` impls on the re-exported error structs.
-std = ["focaccia/std"]
+# `std::error::Error` impls. This feature activates `focaccia/std` if the
+# `focaccia` feature is enabled to enable `Error` impls on the re-exported error
+# structs.
+std = ["focaccia?/std"]
 
 [package.metadata.docs.rs]
 all-features = true
