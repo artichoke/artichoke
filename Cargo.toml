@@ -85,9 +85,9 @@ default = [
 ]
 # Enable a CLI frontend for Artichoke, including a `ruby`-equivalent CLI and
 # REPL.
-cli = ["backtrace", "clap", "log", "rustyline"]
+cli = ["backtrace", "dep:clap", "dep:log", "dep:rustyline"]
 # Enable a module for formtting backtraces from Ruby exceptions.
-backtrace = ["termcolor"]
+backtrace = ["dep:termcolor"]
 # Enable all features of Ruby Core, Standard Library, and the underlying VM.
 kitchen-sink = [
   "core-full",
