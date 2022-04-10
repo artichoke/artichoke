@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-math"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.60.0"
@@ -20,7 +20,7 @@ libm = { version = "0.2.2", optional = true }
 default = ["full"]
 # Implement the full Ruby `Math` API by including external crates for missing
 # `std` APIs.
-full = ["libm"]
+full = ["dep:libm"]
 
 [package.metadata.docs.rs]
 all-features = true
