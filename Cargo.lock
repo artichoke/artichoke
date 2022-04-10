@@ -16,12 +16,12 @@ name = "artichoke"
 version = "0.1.0-pre.0"
 dependencies = [
  "artichoke-backend",
- "chrono",
  "clap",
  "log",
  "rustyline",
  "target-lexicon",
  "termcolor",
+ "tz-rs",
 ]
 
 [[package]]
@@ -166,6 +166,12 @@ dependencies = [
  "str-buf",
  "winapi",
 ]
+
+[[package]]
+name = "const_fn"
+version = "0.4.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fbdcdcb6d86f71c5e97409ad45898af11cbc995b4ee8112d59095a28d376c935"
 
 [[package]]
 name = "cstr"
@@ -781,6 +787,15 @@ name = "tinyvec_macros"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
+
+[[package]]
+name = "tz-rs"
+version = "0.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0dea8928b9414243f87c1a67ea86b5598d02e916d65d0006847ba06b3f3e4878"
+dependencies = [
+ "const_fn",
+]
 
 [[package]]
 name = "uncased"

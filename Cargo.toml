@@ -40,7 +40,7 @@ path = "artichoke-backend"
 default-features = false
 
 [build-dependencies]
-chrono = { version = "0.4.19", default-features = false, features = ["clock"] }
+tz-rs = "0.6.7"
 target-lexicon = "0.12.3"
 
 [[bin]]

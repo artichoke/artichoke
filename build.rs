@@ -8,8 +8,8 @@ use std::fmt;
 use std::process::Command;
 use std::str::{self, FromStr};
 
-use chrono::prelude::*;
 use target_lexicon::Triple;
+use tz::UtcDateTime;
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Date {
@@ -18,12 +18,12 @@ struct Date {
     pub day: u32,
 }
 
-impl From<DateTime<Utc>> for Date {
-    fn from(date: DateTime<Utc>) -> Self {
+impl From<UtcDateTime> for Date {
+    fn from(date: UtcDateTime) -> Self {
         Self {
             year: date.year(),
-            month: date.month(),
-            day: date.day(),
+            month: date.month().into(),
+            day: date.month_day().into(),
         }
     }
 }
@@ -76,7 +76,9 @@ fn birthdate() -> Date {
     // 2019-04-06 18:30:21 -0700
     // ```
     let time = 1_554_600_621;
-    Utc.timestamp(time, 0).into()
+    UtcDateTime::from_timespec(time, 0)
+        .expect("Could not construct datetime from birthdate")
+        .into()
 }
 
 fn build_date() -> Date {
@@ -85,16 +87,18 @@ fn build_date() -> Date {
     //
     // https://reproducible-builds.org/docs/source-date-epoch/
     println!("cargo:rerun-if-env-changed=SOURCE_DATE_EPOCH");
-    if let Some(timestamp) = env::var_os("SOURCE_DATE_EPOCH") {
-        let epoch = timestamp
+    let datetime = if let Some(timestamp) = env::var_os("SOURCE_DATE_EPOCH") {
+        let seconds_since_epoch = timestamp
             .into_string()
             .expect("SOURCE_DATE_EPOCH was not valid UTF-8")
             .parse::<i64>()
             .expect("SOURCE_DATE_EPOCH was not a valid integer");
-        Date::from(Utc.timestamp(epoch, 0))
+        UtcDateTime::from_timespec(seconds_since_epoch, 0)
+            .expect("Could not construct datetime from SOURCE_DATE_EPOCH")
     } else {
-        Date::from(Utc::now())
-    }
+        UtcDateTime::now().expect("Could not retreive current timestamp")
+    };
+    datetime.into()
 }
 
 fn revision_count() -> Option<usize> {
