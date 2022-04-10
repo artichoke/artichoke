@@ -32,7 +32,7 @@ spinoso-env = { version = "0.2.0", path = "../spinoso-env", optional = true, def
 spinoso-exception = { version = "0.1.0", path = "../spinoso-exception" }
 spinoso-math = { version = "0.3.0", path = "../spinoso-math", optional = true, default-features = false }
 spinoso-random = { version = "0.2.0", path = "../spinoso-random", optional = true }
-spinoso-regexp = { version = "0.2.0", path = "../spinoso-regexp", optional = true, default-features = false }
+spinoso-regexp = { version = "0.3.0", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", optional = true }
 spinoso-string = { version = "0.16.0", path = "../spinoso-string" }
 spinoso-symbol = { version = "0.1.0", path = "../spinoso-symbol" }
