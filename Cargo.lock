@@ -36,6 +36,7 @@ dependencies = [
  "intaglio",
  "mezzaluna-feature-loader",
  "onig",
+ "qed",
  "quickcheck",
  "regex",
  "scolapasta-string-escape",
@@ -466,6 +467,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "qed"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fbbd924aa2c7424dd5427a41c7981e0b076d41ea299626bfc01fba52f9bb459"
+
+[[package]]
 name = "quickcheck"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -715,6 +722,7 @@ dependencies = [
  "artichoke-core",
  "bstr",
  "focaccia",
+ "qed",
  "scolapasta-string-escape",
 ]
 
