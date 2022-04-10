@@ -211,7 +211,7 @@ impl From<&Symbol> for u64 {
 impl From<&Symbol> for usize {
     #[inline]
     fn from(sym: &Symbol) -> Self {
-        sym.id() as usize
+        (*sym).into()
     }
 }
 
