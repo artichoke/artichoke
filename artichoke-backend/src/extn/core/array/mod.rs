@@ -324,12 +324,6 @@ impl BoxUnboxVmValue for Array {
     }
 }
 
-impl<'a> AsRef<Array> for UnboxedValueGuard<'a, Array> {
-    fn as_ref(&self) -> &Array {
-        self.as_inner_ref()
-    }
-}
-
 impl<'a> Deref for UnboxedValueGuard<'a, Array> {
     type Target = Array;
 

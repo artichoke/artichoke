@@ -15,7 +15,7 @@ pub fn initialize(interp: &mut Artichoke, seed: Option<Value>, into: Value) -> R
 pub fn equal(interp: &mut Artichoke, mut rand: Value, mut other: Value) -> Result<Value, Error> {
     let random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
     let other = unsafe { Rng::unbox_from_value(&mut other, interp)? };
-    let eql = random.as_ref() == other.as_ref();
+    let eql = *random == *other;
     Ok(interp.convert(eql))
 }
 
@@ -41,7 +41,7 @@ pub fn rand(interp: &mut Artichoke, mut rand: Value, max: Option<Value>) -> Resu
 
 pub fn seed(interp: &mut Artichoke, mut rand: Value) -> Result<Value, Error> {
     let random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
-    let seed = match random.as_ref() {
+    let seed = match &*random {
         Rng::Global => interp.prng()?.seed(),
         Rng::Value(random) => random.seed(),
     };

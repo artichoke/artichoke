@@ -94,18 +94,6 @@ impl<T> HeapAllocated<T> {
     }
 }
 
-impl<'a, T> AsRef<T> for UnboxedValueGuard<'a, HeapAllocated<T>> {
-    fn as_ref(&self) -> &T {
-        self.guarded.deref().0.as_ref()
-    }
-}
-
-impl<'a, T> AsMut<T> for UnboxedValueGuard<'a, HeapAllocated<T>> {
-    fn as_mut(&mut self) -> &mut T {
-        self.guarded.deref_mut().0.as_mut()
-    }
-}
-
 impl<'a, T> Deref for UnboxedValueGuard<'a, HeapAllocated<T>> {
     type Target = T;
 

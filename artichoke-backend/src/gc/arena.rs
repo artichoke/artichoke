@@ -131,20 +131,6 @@ impl<'a> ArenaIndex<'a> {
     }
 }
 
-impl<'a> AsRef<Artichoke> for ArenaIndex<'a> {
-    #[inline]
-    fn as_ref(&self) -> &Artichoke {
-        &*self.interp
-    }
-}
-
-impl<'a> AsMut<Artichoke> for ArenaIndex<'a> {
-    #[inline]
-    fn as_mut(&mut self) -> &mut Artichoke {
-        self.interp
-    }
-}
-
 impl<'a> Deref for ArenaIndex<'a> {
     type Target = Artichoke;
 
