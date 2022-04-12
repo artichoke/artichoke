@@ -190,20 +190,6 @@ impl AsMut<[u8]> for String {
     }
 }
 
-impl AsRef<Vec<u8>> for String {
-    #[inline]
-    fn as_ref(&self) -> &Vec<u8> {
-        self.inner.as_ref()
-    }
-}
-
-impl AsMut<Vec<u8>> for String {
-    #[inline]
-    fn as_mut(&mut self) -> &mut Vec<u8> {
-        self.inner.as_mut()
-    }
-}
-
 impl Deref for String {
     type Target = [u8];
 

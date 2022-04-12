@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 
 use super::EncodedString;
@@ -50,28 +49,6 @@ impl AsRef<[u8]> for EncodedString {
 impl AsMut<[u8]> for EncodedString {
     #[inline]
     fn as_mut(&mut self) -> &mut [u8] {
-        match self {
-            EncodedString::Ascii(inner) => inner.as_mut(),
-            EncodedString::Binary(inner) => inner.as_mut(),
-            EncodedString::Utf8(inner) => inner.as_mut(),
-        }
-    }
-}
-
-impl AsRef<Vec<u8>> for EncodedString {
-    #[inline]
-    fn as_ref(&self) -> &Vec<u8> {
-        match self {
-            EncodedString::Ascii(inner) => inner.as_ref(),
-            EncodedString::Binary(inner) => inner.as_ref(),
-            EncodedString::Utf8(inner) => inner.as_ref(),
-        }
-    }
-}
-
-impl AsMut<Vec<u8>> for EncodedString {
-    #[inline]
-    fn as_mut(&mut self) -> &mut Vec<u8> {
         match self {
             EncodedString::Ascii(inner) => inner.as_mut(),
             EncodedString::Binary(inner) => inner.as_mut(),

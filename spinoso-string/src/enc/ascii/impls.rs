@@ -89,20 +89,6 @@ impl AsMut<[u8]> for AsciiString {
     }
 }
 
-impl AsRef<Vec<u8>> for AsciiString {
-    #[inline]
-    fn as_ref(&self) -> &Vec<u8> {
-        &self.inner
-    }
-}
-
-impl AsMut<Vec<u8>> for AsciiString {
-    #[inline]
-    fn as_mut(&mut self) -> &mut Vec<u8> {
-        &mut self.inner
-    }
-}
-
 impl Deref for AsciiString {
     type Target = [u8];
 
