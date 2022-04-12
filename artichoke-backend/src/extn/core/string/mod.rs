@@ -139,12 +139,6 @@ impl BoxUnboxVmValue for String {
     }
 }
 
-impl<'a> AsRef<String> for UnboxedValueGuard<'a, String> {
-    fn as_ref(&self) -> &String {
-        self.as_inner_ref()
-    }
-}
-
 impl<'a> Deref for UnboxedValueGuard<'a, String> {
     type Target = String;
 
