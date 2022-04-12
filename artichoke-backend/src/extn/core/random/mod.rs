@@ -19,9 +19,11 @@
 //!
 //! [`Random`]: https://ruby-doc.org/core-2.6.3/Random.html
 
+use core::mem;
+
 use spinoso_random::{InitializeError, NewSeedError, UrandomError};
 #[doc(inline)]
-pub use spinoso_random::{Max, Rand};
+pub use spinoso_random::{Max, Rand, Random};
 
 use crate::convert::{implicitly_convert_to_int, HeapAllocatedData};
 use crate::extn::prelude::*;
@@ -32,7 +34,7 @@ pub mod trampoline;
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 enum Rng {
     Global,
-    Value(Box<Random>),
+    Instance(Box<Random>),
 }
 
 impl HeapAllocatedData for Rng {
@@ -65,6 +67,22 @@ impl Seed {
     }
 
     #[must_use]
+    #[allow(clippy::cast_sign_loss)]
+    #[allow(clippy::cast_possible_wrap)]
+    pub fn from_mt_seed_lossy(seed: [u32; 4]) -> Self {
+        qed::const_assert_eq!(mem::size_of::<[u32; 4]>(), mem::size_of::<i128>());
+        let seed = unsafe { mem::transmute::<_, i128>(seed) };
+
+        // TODO: return a bignum instead of truncating.
+        let seed_bytes = seed.to_ne_bytes();
+        let mut buf = [0_u8; mem::size_of::<i64>()];
+        buf.copy_from_slice(&seed_bytes[..mem::size_of::<i64>()]);
+        let seed = i64::from_ne_bytes(buf);
+
+        Self::New(seed)
+    }
+
+    #[must_use]
     pub fn to_mt_seed(self) -> Option<[u32; 4]> {
         if let Self::New(seed) = self {
             let seed = i128::from(seed);
@@ -73,6 +91,17 @@ impl Seed {
             Some(seed)
         } else {
             None
+        }
+    }
+}
+
+impl TryConvert<Seed, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert(&self, seed: Seed) -> Result<Value, Self::Error> {
+        match seed {
+            Seed::None => Ok(Value::nil()),
+            Seed::New(seed) => self.try_convert(seed),
         }
     }
 }
@@ -96,102 +125,6 @@ impl TryConvertMut<Option<Value>, Seed> for Artichoke {
         } else {
             Ok(Seed::None)
         }
-    }
-}
-
-#[allow(clippy::cast_sign_loss)]
-#[allow(clippy::cast_possible_wrap)]
-pub fn new_seed() -> Result<i64, Error> {
-    // TODO: return a bignum instead of truncating.
-    let [a, b, _, _] = spinoso_random::new_seed()?;
-    let seed = u64::from(a) << 32 | u64::from(b);
-    let seed = seed as i64;
-    Ok(seed)
-}
-
-pub fn srand(interp: &mut Artichoke, seed: Seed) -> Result<i64, Error> {
-    let old_seed = interp.prng()?.seed();
-    let new_random = Random::with_array_seed(seed.to_mt_seed())?;
-    // "Reseed" by replacing the RNG with a newly seeded one.
-    let prng = interp.prng_mut()?;
-    *prng = new_random;
-    Ok(old_seed)
-}
-
-pub fn urandom(size: i64) -> Result<Vec<u8>, Error> {
-    match usize::try_from(size) {
-        Ok(0) => Ok(Vec::new()),
-        Ok(len) => {
-            let mut buf = vec![0; len];
-            spinoso_random::urandom(&mut buf)?;
-            Ok(buf)
-        }
-        Err(_) => Err(ArgumentError::with_message("negative string size (or size too big)").into()),
-    }
-}
-
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq)]
-pub struct Random(spinoso_random::Random);
-
-impl Random {
-    pub fn new() -> Result<Self, Error> {
-        let random = spinoso_random::Random::new()?;
-        Ok(Self(random))
-    }
-
-    pub fn with_seed(seed: Option<u64>) -> Result<Self, Error> {
-        let random = if let Some(seed) = seed {
-            if let Ok(seed) = u32::try_from(seed) {
-                spinoso_random::Random::with_seed(seed)
-            } else {
-                let seed = u128::from(seed);
-                let seed = seed.to_le_bytes();
-                spinoso_random::Random::with_byte_array_seed(seed)
-            }
-        } else {
-            spinoso_random::Random::new()?
-        };
-        Ok(Self(random))
-    }
-
-    pub fn with_array_seed(seed: Option<[u32; 4]>) -> Result<Self, Error> {
-        let random = if let Some(seed) = seed {
-            spinoso_random::Random::with_array_seed(seed)
-        } else {
-            spinoso_random::Random::new()?
-        };
-        Ok(Self(random))
-    }
-
-    pub fn bytes(&mut self, size: i64) -> Result<Vec<u8>, Error> {
-        match usize::try_from(size) {
-            Ok(0) => Ok(Vec::new()),
-            Ok(len) => {
-                let mut buf = vec![0; len];
-                self.fill_bytes(&mut buf);
-                Ok(buf)
-            }
-            Err(_) => Err(ArgumentError::with_message("negative string size (or size too big)").into()),
-        }
-    }
-
-    pub fn rand(&mut self, constraint: Max) -> Result<Rand, Error> {
-        let rand = spinoso_random::rand(&mut self.0, constraint)?;
-        Ok(rand)
-    }
-
-    #[must_use]
-    #[allow(clippy::cast_sign_loss)]
-    #[allow(clippy::cast_possible_wrap)]
-    pub fn seed(&self) -> i64 {
-        // TODO: return a bignum instead of truncating.
-        let [a, b, _, _] = self.0.seed();
-        let seed = u64::from(a) << 32 | u64::from(b);
-        seed as i64
-    }
-
-    pub fn fill_bytes(&mut self, buf: &mut [u8]) {
-        self.0.fill_bytes(buf);
     }
 }
 
