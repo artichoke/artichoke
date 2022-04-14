@@ -3,7 +3,7 @@ use std::ffi::CStr;
 use crate::extn::core::float::Float;
 use crate::extn::prelude::*;
 
-const FLOAT_CSTR: &CStr = cstr::cstr!("Float");
+const FLOAT_CSTR: &CStr = qed::const_cstr_from_str!("Float\0");
 static FLOAT_RUBY_SOURCE: &[u8] = include_bytes!("float.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const HASH_CSTR: &CStr = cstr::cstr!("Hash");
+const HASH_CSTR: &CStr = qed::const_cstr_from_str!("Hash\0");
 static HASH_RUBY_SOURCE: &[u8] = include_bytes!("hash.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

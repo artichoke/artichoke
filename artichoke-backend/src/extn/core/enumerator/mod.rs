@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const ENUMERATOR_CSTR: &CStr = cstr::cstr!("Enumerator");
+const ENUMERATOR_CSTR: &CStr = qed::const_cstr_from_str!("Enumerator\0");
 static ENUMERATOR_RUBY_SOURCE: &[u8] = include_bytes!("enumerator.rb");
 static ENUMERATOR_LAZY_RUBY_SOURCE: &[u8] = include_bytes!("lazy.rb");
 

@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const BASE64_CSTR: &CStr = cstr::cstr!("Base64");
+const BASE64_CSTR: &CStr = qed::const_cstr_from_str!("Base64\0");
 static BASE64_RUBY_SOURCE: &[u8] = include_bytes!("vendor/base64.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const METHOD_CSTR: &CStr = cstr::cstr!("Method");
+const METHOD_CSTR: &CStr = qed::const_cstr_from_str!("Method\0");
 static METHOD_RUBY_SOURCE: &[u8] = include_bytes!("method.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

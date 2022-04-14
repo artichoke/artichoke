@@ -43,8 +43,8 @@ impl From<Box<dyn RubyException>> for Error {
     }
 }
 
-static RUNTIME_ERROR_CSTR: &CStr = cstr::cstr!("RuntimeError");
-static UNABLE_TO_RAISE_MESSAGE: &CStr = cstr::cstr!("Unable to raise exception");
+static RUNTIME_ERROR_CSTR: &CStr = qed::const_cstr_from_str!("RuntimeError\0");
+static UNABLE_TO_RAISE_MESSAGE: &CStr = qed::const_cstr_from_str!("Unable to raise exception\0");
 
 /// Raise implementation for [`RubyException`] boxed trait objects.
 ///

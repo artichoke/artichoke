@@ -335,7 +335,7 @@ mod tests {
         let mut interp = interpreter();
         let spec = class::Spec::new(
             "Container",
-            cstr::cstr!("Container"),
+            qed::const_cstr_from_str!("Container\0"),
             None,
             Some(def::box_unbox_free::<Container>),
         )
@@ -371,7 +371,7 @@ mod tests {
 
         let spec = class::Spec::new(
             "Container",
-            cstr::cstr!("Container"),
+            qed::const_cstr_from_str!("Container\0"),
             None,
             Some(def::box_unbox_free::<Container>),
         )
@@ -386,7 +386,7 @@ mod tests {
 
         let spec = class::Spec::new(
             "Flag",
-            cstr::cstr!("Flag"),
+            qed::const_cstr_from_str!("Flag\0"),
             None,
             Some(def::box_unbox_free::<Box<Flag>>),
         )

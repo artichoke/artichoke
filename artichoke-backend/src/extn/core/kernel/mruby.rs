@@ -4,7 +4,7 @@ use crate::extn::core::artichoke;
 use crate::extn::core::kernel::{self, trampoline};
 use crate::extn::prelude::*;
 
-const KERNEL_CSTR: &CStr = cstr::cstr!("Kernel");
+const KERNEL_CSTR: &CStr = qed::const_cstr_from_str!("Kernel\0");
 static KERNEL_RUBY_SOURCE: &[u8] = include_bytes!("kernel.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

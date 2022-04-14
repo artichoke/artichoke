@@ -3,7 +3,7 @@ use std::ffi::CStr;
 use crate::extn::core::array::{trampoline, Array};
 use crate::extn::prelude::*;
 
-const ARRAY_CSTR: &CStr = cstr::cstr!("Array");
+const ARRAY_CSTR: &CStr = qed::const_cstr_from_str!("Array\0");
 static ARRAY_RUBY_SOURCE: &[u8] = include_bytes!("array.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

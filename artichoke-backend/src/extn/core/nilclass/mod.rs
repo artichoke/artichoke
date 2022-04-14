@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const NIL_CLASS_CSTR: &CStr = cstr::cstr!("NilClass");
+const NIL_CLASS_CSTR: &CStr = qed::const_cstr_from_str!("NilClass\0");
 static NIL_CLASS_RUBY_SOURCE: &[u8] = include_bytes!("nilclass.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

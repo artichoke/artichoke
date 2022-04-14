@@ -29,7 +29,6 @@ dependencies = [
  "artichoke-load-path",
  "bstr",
  "cc",
- "cstr",
  "intaglio",
  "mezzaluna-feature-loader",
  "onig",
@@ -174,16 +173,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59a6001667ab124aebae2a495118e11d30984c3a653e99d86d58971708cf5e4b"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "cstr"
-version = "0.2.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a60f0dd132e4b67f20fd764d4835d968f666ff1a2f59e432983d168b98424deb"
-dependencies = [
- "proc-macro2",
- "quote",
 ]
 
 [[package]]
@@ -399,9 +388,9 @@ dependencies = [
 
 [[package]]
 name = "qed"
-version = "1.1.0"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b62dbf3e332c995ddbea9dc87b890cb314786c558063345fcf531204609c0288"
+checksum = "940b9f1cc9787670fa0fcd4d2837e81a9e3fc289c50938b10e368f92c103d677"
 
 [[package]]
 name = "quote"

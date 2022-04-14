@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const MONITOR_CSTR: &CStr = cstr::cstr!("Monitor");
+const MONITOR_CSTR: &CStr = qed::const_cstr_from_str!("Monitor\0");
 static MONITOR_RUBY_SOURCE: &[u8] = include_bytes!("vendor/monitor.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

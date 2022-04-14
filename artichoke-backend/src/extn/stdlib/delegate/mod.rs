@@ -2,8 +2,8 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const DELEGATOR_CSTR: &CStr = cstr::cstr!("Delegator");
-const SIMPLE_DELEGATOR_CSTR: &CStr = cstr::cstr!("SimpleDelegator");
+const DELEGATOR_CSTR: &CStr = qed::const_cstr_from_str!("Delegator\0");
+const SIMPLE_DELEGATOR_CSTR: &CStr = qed::const_cstr_from_str!("SimpleDelegator\0");
 static DELEGATE_RUBY_SOURCE: &[u8] = include_bytes!("vendor/delegate.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

@@ -3,7 +3,7 @@ use std::ffi::CStr;
 use crate::extn::core::matchdata::{self, trampoline};
 use crate::extn::prelude::*;
 
-const MATCH_DATA_CSTR: &CStr = cstr::cstr!("MatchData");
+const MATCH_DATA_CSTR: &CStr = qed::const_cstr_from_str!("MatchData\0");
 static MATCH_DATA_RUBY_SOURCE: &[u8] = include_bytes!("matchdata.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
