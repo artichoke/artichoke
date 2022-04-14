@@ -19,7 +19,6 @@ dependencies = [
  "clap",
  "log",
  "rustyline",
- "target-lexicon",
  "termcolor",
  "tz-rs",
 ]
@@ -49,7 +48,6 @@ dependencies = [
  "spinoso-string",
  "spinoso-symbol",
  "spinoso-time",
- "target-lexicon",
 ]
 
 [[package]]
@@ -716,12 +714,6 @@ name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
-
-[[package]]
-name = "target-lexicon"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7fa7e55043acb85fca6b3c01485a2eeb6b69c5d21002e273c79e465f43b7ac1"
 
 [[package]]
 name = "termcolor"

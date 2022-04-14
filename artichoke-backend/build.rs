@@ -4,8 +4,6 @@
 
 use std::env;
 
-use target_lexicon::Triple;
-
 mod paths {
     use std::env;
     use std::path::PathBuf;
@@ -43,9 +41,8 @@ mod libs {
     use std::process::{Command, ExitStatus, Stdio};
     use std::str;
 
-    use target_lexicon::{Architecture, OperatingSystem, Triple};
-
     use super::paths;
+    use crate::Wasm;
 
     fn mruby_sources() -> impl Iterator<Item = PathBuf> {
         [
@@ -174,7 +171,7 @@ mod libs {
     }
 
     fn staticlib(
-        target: &Triple,
+        wasm: Option<Wasm>,
         name: &str,
         include_dirs: impl Iterator<Item = PathBuf>,
         sources: impl Iterator<Item = PathBuf>,
@@ -219,28 +216,29 @@ mod libs {
             build.include(include_dir);
         }
 
-        if let Architecture::Wasm32 = target.architecture {
-            for include_dir in wasm_include_dirs() {
-                build.include(include_dir);
-            }
-            match target.operating_system {
-                OperatingSystem::Emscripten => {
-                    build.define("MRB_API", Some(r#"__attribute__((used))"#));
+        match wasm {
+            Some(Wasm::Emscripten) => {
+                for include_dir in wasm_include_dirs() {
+                    build.include(include_dir);
                 }
-                OperatingSystem::Unknown => {
-                    build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
-                    build.define("MRB_NO_DIRECT_THREADING", None);
-                }
-                _ => {}
+                build.define("MRB_API", Some(r#"__attribute__((used))"#));
             }
+            Some(Wasm::Unknown) => {
+                for include_dir in wasm_include_dirs() {
+                    build.include(include_dir);
+                }
+                build.define("MRB_API", Some(r#"__attribute__((visibility("default")))"#));
+                build.define("MRB_NO_DIRECT_THREADING", None);
+            }
+            None => {}
         }
 
         build.compile(name);
     }
 
-    fn bindgen(target: &Triple, out_dir: &OsStr) {
+    fn bindgen(wasm: Option<Wasm>, out_dir: &OsStr) {
         // Try to use an existing global install of bindgen
-        let status = invoke_bindgen(target, out_dir, OsStr::new("bindgen"));
+        let status = invoke_bindgen(wasm, out_dir, OsStr::new("bindgen"));
         if matches!(status, Some(status) if status.success()) {
             return;
         }
@@ -262,14 +260,14 @@ mod libs {
         assert!(status.success(), "cargo install bindgen failed");
 
         let status = invoke_bindgen(
-            target,
+            wasm,
             out_dir,
             bindgen_install_dir.join("bin").join("bindgen").as_os_str(),
         );
         assert!(status.unwrap().success(), "bindgen failed");
     }
 
-    pub fn invoke_bindgen(target: &Triple, out_dir: &OsStr, bindgen_executable: &OsStr) -> Option<ExitStatus> {
+    pub fn invoke_bindgen(wasm: Option<Wasm>, out_dir: &OsStr, bindgen_executable: &OsStr) -> Option<ExitStatus> {
         let bindings_out_path = PathBuf::from(out_dir).join("ffi.rs");
         let mut command = Command::new(bindgen_executable);
         command
@@ -315,7 +313,7 @@ mod libs {
             command.arg("-I").arg(include_dir);
         }
 
-        if let Architecture::Wasm32 = target.architecture {
+        if wasm.is_some() {
             for include_dir in wasm_include_dirs() {
                 command.arg("-I").arg(include_dir);
             }
@@ -325,25 +323,45 @@ mod libs {
         command.status().ok()
     }
 
-    pub fn build(target: &Triple, out_dir: &OsStr) {
+    pub fn build(wasm: Option<Wasm>, out_dir: &OsStr) {
         staticlib(
-            target,
+            wasm,
             "libartichokemruby.a",
             mruby_include_dirs()
                 .chain(mrbgems_include_dirs())
                 .chain(mrbsys_include_dirs()),
             mruby_sources().chain(mrbgems_sources()).chain(mrbsys_sources()),
         );
-        bindgen(target, out_dir);
+        bindgen(wasm, out_dir);
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Wasm {
+    Emscripten,
+    Unknown,
+}
+
+impl Wasm {
+    #[must_use]
+    pub fn from_env() -> Option<Self> {
+        // Ref: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
+        let arch =
+            env::var_os("CARGO_CFG_TARGET_ARCH").expect("cargo-provided CARGO_CFG_TARGET_ARCH env variable not set");
+        if !matches!(arch.to_str(), Some(arch) if arch == "wasm32") {
+            return None;
+        }
+        let os = env::var_os("CARGO_CFG_TARGET_OS").expect("cargo-provided CARGO_CFG_TARGET_OS env variable not set");
+        match os.to_str() {
+            Some("emscripten") => Some(Self::Emscripten),
+            Some("unknown") => Some(Self::Unknown),
+            Some(_) | None => None,
+        }
     }
 }
 
 fn main() {
-    let target = env::var_os("TARGET").expect("cargo-provided TARGET env variable not set");
-    let target = target.to_str().expect("TARGET env variable was not valid UTF-8");
-    let target = target
-        .parse::<Triple>()
-        .unwrap_or_else(|err| panic!("target-lexicon could not parse build target '{target}' with error: {err}"));
+    let wasm = Wasm::from_env();
     let out_dir = env::var_os("OUT_DIR").expect("cargo-provided OUT_DIR env variable not set");
-    libs::build(&target, &out_dir);
+    libs::build(wasm, &out_dir);
 }
