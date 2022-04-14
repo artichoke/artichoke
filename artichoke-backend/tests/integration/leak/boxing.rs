@@ -43,7 +43,7 @@ impl File for Container {
     fn require(interp: &mut Artichoke) -> Result<(), Self::Error> {
         let spec = class::Spec::new(
             "Container",
-            cstr::cstr!("Container"),
+            qed::const_cstr_from_str!("Container\0"),
             None,
             Some(def::box_unbox_free::<Self>),
         )?;

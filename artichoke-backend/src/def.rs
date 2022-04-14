@@ -501,19 +501,19 @@ mod tests {
         fn integration_test() {
             // Setup: define module and class hierarchy
             let mut interp = interpreter();
-            let root = module::Spec::new(&mut interp, "A", cstr::cstr!("A"), None).unwrap();
+            let root = module::Spec::new(&mut interp, "A", qed::const_cstr_from_str!("A\0"), None).unwrap();
             let mod_under_root = module::Spec::new(
                 &mut interp,
                 "B",
-                cstr::cstr!("B"),
+                qed::const_cstr_from_str!("B\0"),
                 Some(EnclosingRubyScope::module(&root)),
             )
             .unwrap();
             let cls_under_root =
-                class::Spec::new("C", cstr::cstr!("C"), Some(EnclosingRubyScope::module(&root)), None).unwrap();
+                class::Spec::new("C", qed::const_cstr_from_str!("C\0"), Some(EnclosingRubyScope::module(&root)), None).unwrap();
             let cls_under_mod = class::Spec::new(
                 "D",
-                cstr::cstr!("D"),
+                qed::const_cstr_from_str!("D\0"),
                 Some(EnclosingRubyScope::module(&mod_under_root)),
                 None,
             )
@@ -521,13 +521,13 @@ mod tests {
             let mod_under_cls = module::Spec::new(
                 &mut interp,
                 "E",
-                cstr::cstr!("E"),
+                qed::const_cstr_from_str!("E\0"),
                 Some(EnclosingRubyScope::class(&cls_under_root)),
             )
             .unwrap();
             let cls_under_cls = class::Spec::new(
                 "F",
-                cstr::cstr!("F"),
+                qed::const_cstr_from_str!("F\0"),
                 Some(EnclosingRubyScope::class(&cls_under_root)),
                 None,
             )
@@ -587,7 +587,7 @@ mod tests {
             let mut interp = interpreter();
             let class = class::Spec::new(
                 "DefineMethodTestClass",
-                cstr::cstr!("DefineMethodTestClass"),
+                qed::const_cstr_from_str!("DefineMethodTestClass\0"),
                 None,
                 None,
             )
@@ -603,7 +603,7 @@ mod tests {
             let module = module::Spec::new(
                 &mut interp,
                 "DefineMethodTestModule",
-                cstr::cstr!("DefineMethodTestModule"),
+                qed::const_cstr_from_str!("DefineMethodTestModule\0"),
                 None,
             )
             .unwrap();

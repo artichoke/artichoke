@@ -3,7 +3,7 @@ use std::ffi::CStr;
 use crate::extn::core::string::{self, trampoline};
 use crate::extn::prelude::*;
 
-const STRING_CSTR: &CStr = cstr::cstr!("String");
+const STRING_CSTR: &CStr = qed::const_cstr_from_str!("String\0");
 static STRING_RUBY_SOURCE: &[u8] = include_bytes!("string.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

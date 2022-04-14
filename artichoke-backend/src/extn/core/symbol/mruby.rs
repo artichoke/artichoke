@@ -3,7 +3,7 @@ use std::ffi::CStr;
 use crate::extn::core::symbol::{self, trampoline};
 use crate::extn::prelude::*;
 
-const SYMBOL_CSTR: &CStr = cstr::cstr!("Symbol");
+const SYMBOL_CSTR: &CStr = qed::const_cstr_from_str!("Symbol\0");
 static SYMBOL_RUBY_SOURCE: &[u8] = include_bytes!("symbol.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const WARNING_CSTR: &CStr = cstr::cstr!("Warning");
+const WARNING_CSTR: &CStr = qed::const_cstr_from_str!("Warning\0");
 static WARNING_RUBY_SOURCE: &[u8] = include_bytes!("warning.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

@@ -6,7 +6,7 @@ use crate::extn::core::artichoke;
 use crate::extn::core::env::{self, trampoline};
 use crate::extn::prelude::*;
 
-const ENVIRON_CSTR: &CStr = cstr::cstr!("Environ");
+const ENVIRON_CSTR: &CStr = qed::const_cstr_from_str!("Environ\0");
 static ENV_RUBY_SOURCE: &[u8] = include_bytes!("env.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

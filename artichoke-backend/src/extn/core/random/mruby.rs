@@ -5,7 +5,7 @@ use std::ffi::CStr;
 use super::{trampoline, Rng};
 use crate::extn::prelude::*;
 
-const RANDOM_CSTR: &CStr = cstr::cstr!("Random");
+const RANDOM_CSTR: &CStr = qed::const_cstr_from_str!("Random\0");
 static RANDOM_RUBY_SOURCE: &[u8] = include_bytes!("random.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

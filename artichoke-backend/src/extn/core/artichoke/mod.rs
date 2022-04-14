@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const ARTICHOKE_CSTR: &CStr = cstr::cstr!("Artichoke");
+const ARTICHOKE_CSTR: &CStr = qed::const_cstr_from_str!("Artichoke\0");
 
 pub fn init(interp: &mut crate::Artichoke) -> InitializeResult<()> {
     if interp.is_module_defined::<Artichoke>() {

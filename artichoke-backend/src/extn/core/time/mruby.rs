@@ -5,7 +5,7 @@ use std::ffi::CStr;
 use crate::extn::core::time::{self, trampoline};
 use crate::extn::prelude::*;
 
-const TIME_CSTR: &CStr = cstr::cstr!("Time");
+const TIME_CSTR: &CStr = qed::const_cstr_from_str!("Time\0");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     if interp.is_class_defined::<time::Time>() {

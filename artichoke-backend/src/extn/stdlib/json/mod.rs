@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const JSON_CSTR: &CStr = cstr::cstr!("JSON");
+const JSON_CSTR: &CStr = qed::const_cstr_from_str!("JSON\0");
 static JSON_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json.rb");
 static JSON_COMMON_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json/common.rb");
 static JSON_GENERIC_OBJECT_RUBY_SOURCE: &[u8] = include_bytes!("vendor/json/generic_object.rb");

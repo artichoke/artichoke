@@ -2,8 +2,8 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const THREAD_CSTR: &CStr = cstr::cstr!("Thread");
-const MUTEX_CSTR: &CStr = cstr::cstr!("Mutex");
+const THREAD_CSTR: &CStr = qed::const_cstr_from_str!("Thread\0");
+const MUTEX_CSTR: &CStr = qed::const_cstr_from_str!("Mutex\0");
 static THREAD_RUBY_SOURCE: &[u8] = include_bytes!("thread.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

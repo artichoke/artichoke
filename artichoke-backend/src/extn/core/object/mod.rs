@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const OBJECT_CSTR: &CStr = cstr::cstr!("Object");
+const OBJECT_CSTR: &CStr = qed::const_cstr_from_str!("Object\0");
 static OBJECT_RUBY_SOURCE: &[u8] = include_bytes!("object.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

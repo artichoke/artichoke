@@ -2,8 +2,8 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const SET_CSTR: &CStr = cstr::cstr!("Set");
-const SORTED_SET_CSTR: &CStr = cstr::cstr!("SortedSet");
+const SET_CSTR: &CStr = qed::const_cstr_from_str!("Set\0");
+const SORTED_SET_CSTR: &CStr = qed::const_cstr_from_str!("SortedSet\0");
 static SET_RUBY_SOURCE: &[u8] = include_bytes!("vendor/set.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

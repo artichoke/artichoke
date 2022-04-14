@@ -4,7 +4,7 @@ use crate::extn::core::integer::trampoline;
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
-const INTEGER_CSTR: &CStr = cstr::cstr!("Integer");
+const INTEGER_CSTR: &CStr = qed::const_cstr_from_str!("Integer\0");
 static INTEGER_RUBY_SOURCE: &[u8] = include_bytes!("integer.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

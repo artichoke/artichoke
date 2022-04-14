@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const STRING_SCANNER_CSTR: &CStr = cstr::cstr!("StringScanner");
+const STRING_SCANNER_CSTR: &CStr = qed::const_cstr_from_str!("StringScanner\0");
 static STRING_SCANNER_RUBY_SOURCE: &[u8] = include_bytes!("strscan.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

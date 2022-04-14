@@ -5,7 +5,7 @@ use std::ffi::CStr;
 use crate::extn::prelude::*;
 use crate::extn::stdlib::securerandom::{self, trampoline};
 
-const SECURE_RANDOM_CSTR: &CStr = cstr::cstr!("SecureRandom");
+const SECURE_RANDOM_CSTR: &CStr = qed::const_cstr_from_str!("SecureRandom\0");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     interp.def_file_for_type::<_, SecureRandomFile>("securerandom.rb")?;

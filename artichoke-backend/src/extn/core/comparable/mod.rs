@@ -2,7 +2,7 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const COMPARABLE_CSTR: &CStr = cstr::cstr!("Comparable");
+const COMPARABLE_CSTR: &CStr = qed::const_cstr_from_str!("Comparable\0");
 static COMPARABLE_RUBY_SOURCE: &[u8] = include_bytes!("comparable.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {

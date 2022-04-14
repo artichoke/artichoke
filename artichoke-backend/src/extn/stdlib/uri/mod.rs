@@ -2,9 +2,9 @@ use std::ffi::CStr;
 
 use crate::extn::prelude::*;
 
-const IP_SOCKET_CSTR: &CStr = cstr::cstr!("IPSocket");
-const IP_ADDR_CSTR: &CStr = cstr::cstr!("IPAddr");
-const URI_CSTR: &CStr = cstr::cstr!("URI");
+const IP_SOCKET_CSTR: &CStr = qed::const_cstr_from_str!("IPSocket\0");
+const IP_ADDR_CSTR: &CStr = qed::const_cstr_from_str!("IPAddr\0");
+const URI_CSTR: &CStr = qed::const_cstr_from_str!("URI\0");
 
 static URI_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri.rb");
 static URI_COMMON_RUBY_SOURCE: &[u8] = include_bytes!("vendor/uri/common.rb");
