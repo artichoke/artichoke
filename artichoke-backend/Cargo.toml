@@ -42,7 +42,6 @@ quickcheck = { version = "1.0.3", default-features = false }
 
 [build-dependencies]
 cc = "1.0.72"
-target-lexicon = "0.12.3"
 
 [features]
 default = [

@@ -41,7 +41,6 @@ default-features = false
 
 [build-dependencies]
 tz-rs = { version = "0.6.9", default-features = false }
-target-lexicon = "0.12.3"
 
 [[bin]]
 name = "airb"

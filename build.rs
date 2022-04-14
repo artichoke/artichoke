@@ -6,9 +6,8 @@ use std::env;
 use std::ffi::OsString;
 use std::fmt;
 use std::process::Command;
-use std::str::{self, FromStr};
+use std::str;
 
-use target_lexicon::Triple;
 use tz::UtcDateTime;
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -34,7 +33,7 @@ impl fmt::Display for Date {
     }
 }
 
-pub fn build_release_metadata(target: &Triple) {
+pub fn build_release_metadata() {
     let version = env::var_os("CARGO_PKG_VERSION").expect("CARGO_PKG_VERSION was not set in build.rs");
     let version = version
         .to_str()
@@ -43,7 +42,7 @@ pub fn build_release_metadata(target: &Triple) {
     let build_date = build_date();
     let release_date = build_date;
     let revision_count = revision_count();
-    let platform = platform(target);
+    let platform = platform();
     let copyright = copyright(birth_date, build_date);
     let description = description(version, release_date, revision_count, platform.as_str());
 
@@ -112,8 +111,12 @@ fn revision_count() -> Option<usize> {
     output.trim().parse::<usize>().ok()
 }
 
-fn platform(target: &Triple) -> String {
-    target.to_string()
+fn platform() -> String {
+    env::var_os("TARGET")
+        .expect("cargo-provided TARGET env var not set")
+        .to_str()
+        .expect("cargo-provided TARGET env var was not valid UTF-8")
+        .to_owned()
 }
 
 fn copyright(birth_date: Date, build_date: Date) -> String {
@@ -154,8 +157,5 @@ fn compiler_version() -> Option<String> {
 }
 
 fn main() {
-    let target = env::var_os("TARGET").expect("TARGET not set in build.rs");
-    let target = target.to_str().expect("TARGET was not a valid UTF-8 String");
-    let target = Triple::from_str(target).unwrap_or_else(|_| panic!("Invalid TARGET triple: {}", target));
-    build_release_metadata(&target);
+    build_release_metadata();
 }
