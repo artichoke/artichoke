@@ -40,7 +40,7 @@ path = "artichoke-backend"
 default-features = false
 
 [build-dependencies]
-tz-rs = "0.6.7"
+tz-rs = { version = "0.6.9", default-features = false }
 target-lexicon = "0.12.3"
 
 [[bin]]
