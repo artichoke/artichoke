@@ -29,7 +29,6 @@ dependencies = [
  "artichoke-load-path",
  "bstr",
  "cc",
- "cstr",
  "intaglio",
  "mezzaluna-feature-loader",
  "onig",
@@ -174,16 +173,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59a6001667ab124aebae2a495118e11d30984c3a653e99d86d58971708cf5e4b"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "cstr"
-version = "0.2.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a60f0dd132e4b67f20fd764d4835d968f666ff1a2f59e432983d168b98424deb"
-dependencies = [
- "proc-macro2",
- "quote",
 ]
 
 [[package]]
