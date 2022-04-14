@@ -509,8 +509,13 @@ mod tests {
                 Some(EnclosingRubyScope::module(&root)),
             )
             .unwrap();
-            let cls_under_root =
-                class::Spec::new("C", qed::const_cstr_from_str!("C\0"), Some(EnclosingRubyScope::module(&root)), None).unwrap();
+            let cls_under_root = class::Spec::new(
+                "C",
+                qed::const_cstr_from_str!("C\0"),
+                Some(EnclosingRubyScope::module(&root)),
+                None,
+            )
+            .unwrap();
             let cls_under_mod = class::Spec::new(
                 "D",
                 qed::const_cstr_from_str!("D\0"),

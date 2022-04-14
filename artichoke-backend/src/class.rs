@@ -338,7 +338,13 @@ mod tests {
     fn rclass_for_undef_nested_class() {
         let mut interp = interpreter();
         let scope = interp.module_spec::<Kernel>().unwrap().unwrap();
-        let spec = class::Spec::new("Foo", qed::const_cstr_from_str!("Foo\0"), Some(EnclosingRubyScope::module(scope)), None).unwrap();
+        let spec = class::Spec::new(
+            "Foo",
+            qed::const_cstr_from_str!("Foo\0"),
+            Some(EnclosingRubyScope::module(scope)),
+            None,
+        )
+        .unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_none());
     }
@@ -348,7 +354,13 @@ mod tests {
         let mut interp = interpreter();
         interp.eval(b"module Foo; class Bar; end; end").unwrap();
         let spec = module::Spec::new(&mut interp, "Foo", qed::const_cstr_from_str!("Foo\0"), None).unwrap();
-        let spec = class::Spec::new("Bar", qed::const_cstr_from_str!("Bar\0"), Some(EnclosingRubyScope::module(&spec)), None).unwrap();
+        let spec = class::Spec::new(
+            "Bar",
+            qed::const_cstr_from_str!("Bar\0"),
+            Some(EnclosingRubyScope::module(&spec)),
+            None,
+        )
+        .unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }
@@ -358,7 +370,13 @@ mod tests {
         let mut interp = interpreter();
         interp.eval(b"class Foo; class Bar; end; end").unwrap();
         let spec = class::Spec::new("Foo", qed::const_cstr_from_str!("Foo\0"), None, None).unwrap();
-        let spec = class::Spec::new("Bar", qed::const_cstr_from_str!("Bar\0"), Some(EnclosingRubyScope::class(&spec)), None).unwrap();
+        let spec = class::Spec::new(
+            "Bar",
+            qed::const_cstr_from_str!("Bar\0"),
+            Some(EnclosingRubyScope::class(&spec)),
+            None,
+        )
+        .unwrap();
         let rclass = unsafe { interp.with_ffi_boundary(|mrb| spec.rclass().resolve(mrb)) }.unwrap();
         assert!(rclass.is_some());
     }
