@@ -70,7 +70,7 @@ impl Seed {
     #[allow(clippy::cast_sign_loss)]
     #[allow(clippy::cast_possible_wrap)]
     pub fn from_mt_seed_lossy(seed: [u32; 4]) -> Self {
-        qed::const_assert_eq!(mem::size_of::<[u32; 4]>(), mem::size_of::<i128>());
+        qed::const_assert_size_eq!([u32; 4], i128);
         let seed = unsafe { mem::transmute::<_, i128>(seed) };
 
         // TODO: return a bignum instead of truncating.

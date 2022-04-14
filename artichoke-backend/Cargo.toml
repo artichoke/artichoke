@@ -19,7 +19,7 @@ cstr = "0.2.10"
 intaglio = { version = "1.6.0", default-features = false, features = ["bytes"] }
 mezzaluna-feature-loader = { version = "0.5.0", path = "../mezzaluna-feature-loader", default-features = false }
 onig = { version = "6.3.0", optional = true, default-features = false }
-qed = "1.0.0"
+qed = "1.1.0"
 # Ensure the `regex` minimum version is at least 1.5.5 to pull in a fix for a
 # DoS vulnerability.
 #
