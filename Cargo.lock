@@ -580,7 +580,7 @@ version = "0.2.0"
 
 [[package]]
 name = "scolapasta-string-escape"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bstr",
 ]
@@ -686,7 +686,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-symbol"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "artichoke-core",
  "bstr",

@@ -25,7 +25,7 @@ qed = "1.3.0"
 # See: CVE-2022-24713
 # https://github.com/artichoke/artichoke/pull/1729
 regex = "1.5.5"
-scolapasta-string-escape = { version = "0.2.0", path = "../scolapasta-string-escape", default-features = false }
+scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
 spinoso-array = { version = "0.9.0", path = "../spinoso-array", default-features = false }
 spinoso-env = { version = "0.2.0", path = "../spinoso-env", optional = true, default-features = false }
 spinoso-exception = { version = "0.1.0", path = "../spinoso-exception" }
@@ -34,7 +34,7 @@ spinoso-random = { version = "0.2.0", path = "../spinoso-random", optional = tru
 spinoso-regexp = { version = "0.3.0", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", optional = true }
 spinoso-string = { version = "0.17.0", path = "../spinoso-string" }
-spinoso-symbol = { version = "0.2.0", path = "../spinoso-symbol" }
+spinoso-symbol = { version = "0.3.0", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.2.0", path = "../spinoso-time", optional = true }
 
 [dev-dependencies]

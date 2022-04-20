@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-symbol = "0.2.0"
+spinoso-symbol = "0.3.0"
 ```
 
 Most of the functionality in this crate depends on a Ruby interpreter that

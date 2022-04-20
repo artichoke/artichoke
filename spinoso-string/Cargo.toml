@@ -18,7 +18,7 @@ bstr = { version = "0.2.9", default-features = false, features = ["std"] }
 bytecount = "0.6.2"
 focaccia = { version = "1.1.0", optional = true, default-features = false }
 raw-parts = "1.1.1"
-scolapasta-string-escape = { version = "0.2.0", path = "../scolapasta-string-escape", default-features = false }
+scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
 simdutf8 = { version = "0.1.4", default-features = false }
 
 [dev-dependencies]

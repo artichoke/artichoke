@@ -3,7 +3,7 @@ use core::iter::FusedIterator;
 use core::slice;
 use core::str;
 
-/// Returns whether a [`char`] is ASCII and has a literal escape code.
+/// Returns whether the given [`char`] has an ASCII literal escape code.
 ///
 /// Control characters in the range `0x00..=0x1F`, `"`, `\` and `DEL` have
 /// non-trivial escapes.
@@ -12,26 +12,31 @@ use core::str;
 ///
 /// ```
 /// # use core::char::REPLACEMENT_CHARACTER;
-/// # use scolapasta_string_escape::is_ascii_char_with_escape;
-/// assert!(is_ascii_char_with_escape('\x00'));
-/// assert!(is_ascii_char_with_escape('"'));
-/// assert!(is_ascii_char_with_escape('\\'));
+/// # use scolapasta_string_escape::ascii_char_with_escape;
+/// assert_eq!(ascii_char_with_escape('\x00'), Some(r"\x00"));
+/// assert_eq!(ascii_char_with_escape('\n'), Some(r"\n"));
+/// assert_eq!(ascii_char_with_escape('"'), Some(r#"\""#));
+/// assert_eq!(ascii_char_with_escape('\\'), Some("\\"));
 ///
-/// assert!(!is_ascii_char_with_escape('a'));
-/// assert!(!is_ascii_char_with_escape('Z'));
-/// assert!(!is_ascii_char_with_escape(';'));
-/// assert!(!is_ascii_char_with_escape('💎'));
-/// assert!(!is_ascii_char_with_escape(REPLACEMENT_CHARACTER));
+/// assert_eq!(ascii_char_with_escape('a'), None);
+/// assert_eq!(ascii_char_with_escape('Z'), None);
+/// assert_eq!(ascii_char_with_escape(';'), None);
+/// assert_eq!(ascii_char_with_escape('💎'), None);
+/// assert_eq!(ascii_char_with_escape(REPLACEMENT_CHARACTER), None);
 /// ```
 #[inline]
 #[must_use]
-pub const fn is_ascii_char_with_escape(ch: char) -> bool {
+pub const fn ascii_char_with_escape(ch: char) -> Option<&'static str> {
     if !ch.is_ascii() {
-        return false;
+        return None;
     }
     let [ascii_byte, ..] = (ch as u32).to_le_bytes();
     let escape = Literal::debug_escape(ascii_byte);
-    escape.len() > 1
+    if escape.len() > 1 {
+        Some(escape)
+    } else {
+        None
+    }
 }
 
 /// Iterator of Ruby debug escape sequences for a byte.
