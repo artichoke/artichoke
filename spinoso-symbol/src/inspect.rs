@@ -313,9 +313,8 @@ impl<'a> Iterator for State<'a> {
                 if let Some([head, tail @ ..]) = ascii_char_with_escape(ch).map(str::as_bytes) {
                     self.escaped_bytes = tail;
                     return Some(char::from(*head));
-                } else {
-                    return Some(ch);
                 }
+                return Some(ch);
             }
             None if size == 0 => {}
             None => {
