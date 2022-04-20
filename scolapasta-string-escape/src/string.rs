@@ -1,6 +1,6 @@
 use core::fmt::{self, Write};
 
-use crate::literal::{is_ascii_char_with_escape, Literal};
+use crate::literal::{ascii_char_with_escape, Literal};
 
 /// Write a UTF-8 debug representation of a byte slice into the given writer.
 ///
@@ -36,13 +36,11 @@ where
     let mut message = message.as_ref();
     while !message.is_empty() {
         let (ch, size) = bstr::decode_utf8(message);
-        match ch {
-            Some(ch) if is_ascii_char_with_escape(ch) => {
-                let [ascii_byte, _, _, _] = u32::from(ch).to_le_bytes();
-                let escaped = Literal::debug_escape(ascii_byte);
+        match ch.map(|ch| ascii_char_with_escape(ch).ok_or(ch)) {
+            Some(Ok(escaped)) => {
                 dest.write_str(escaped)?;
             }
-            Some(ch) => {
+            Some(Err(ch)) => {
                 let enc = ch.encode_utf8(&mut buf);
                 dest.write_str(enc)?;
             }

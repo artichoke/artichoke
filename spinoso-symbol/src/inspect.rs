@@ -1,7 +1,7 @@
 use core::fmt;
 use core::iter::FusedIterator;
 
-use scolapasta_string_escape::{is_ascii_char_with_escape, InvalidUtf8ByteSequence};
+use scolapasta_string_escape::{ascii_char_with_escape, InvalidUtf8ByteSequence};
 
 use crate::ident::IdentifierType;
 
@@ -81,12 +81,6 @@ impl<'a> Iterator for Inspect<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
-    }
-}
-
-impl<'a> DoubleEndedIterator for Inspect<'a> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        self.0.next_back()
     }
 }
 
@@ -246,9 +240,9 @@ impl Flags {
 #[must_use = "this `State` is an `Iterator`, which should be consumed if constructed"]
 struct State<'a> {
     flags: Flags,
+    escaped_bytes: &'static [u8],
     forward_byte_literal: InvalidUtf8ByteSequence,
     bytes: &'a [u8],
-    reverse_byte_literal: InvalidUtf8ByteSequence,
 }
 
 impl<'a> State<'a> {
@@ -260,9 +254,9 @@ impl<'a> State<'a> {
     fn ident(bytes: &'a [u8]) -> Self {
         Self {
             flags: Flags::IDENT,
+            escaped_bytes: &[],
             forward_byte_literal: InvalidUtf8ByteSequence::new(),
             bytes,
-            reverse_byte_literal: InvalidUtf8ByteSequence::new(),
         }
     }
 
@@ -273,9 +267,9 @@ impl<'a> State<'a> {
     fn quoted(bytes: &'a [u8]) -> Self {
         Self {
             flags: Flags::QUOTED,
+            escaped_bytes: &[],
             forward_byte_literal: InvalidUtf8ByteSequence::new(),
             bytes,
-            reverse_byte_literal: InvalidUtf8ByteSequence::new(),
         }
     }
 }
@@ -301,6 +295,10 @@ impl<'a> Iterator for State<'a> {
         if let Some(ch) = self.flags.emit_leading_quote() {
             return Some(ch);
         }
+        if let Some((&head, tail)) = self.escaped_bytes.split_first() {
+            self.escaped_bytes = tail;
+            return Some(head.into());
+        }
         if let Some(ch) = self.forward_byte_literal.next() {
             return Some(ch);
         }
@@ -310,21 +308,12 @@ impl<'a> Iterator for State<'a> {
                 self.bytes = &self.bytes[size..];
                 return ch;
             }
-            Some(ch) if is_ascii_char_with_escape(ch) => {
-                let (ascii_byte, remainder) = self.bytes.split_at(size);
-                // This conversion is safe to unwrap due to the documented
-                // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
-                // which indicate that `size` is always in the range of 0..=3.
-                //
-                // While not an invalid byte, we rely on the documented
-                // behavior of `InvalidUtf8ByteSequence` to always escape
-                // any bytes given to it.
-                self.forward_byte_literal = InvalidUtf8ByteSequence::try_from(ascii_byte).unwrap();
-                self.bytes = remainder;
-                return self.forward_byte_literal.next();
-            }
             Some(ch) => {
                 self.bytes = &self.bytes[size..];
+                if let Some([head, tail @ ..]) = ascii_char_with_escape(ch).map(str::as_bytes) {
+                    self.escaped_bytes = tail;
+                    return Some(char::from(*head));
+                }
                 return Some(ch);
             }
             None if size == 0 => {}
@@ -338,65 +327,7 @@ impl<'a> Iterator for State<'a> {
                 return self.forward_byte_literal.next();
             }
         };
-        if let Some(ch) = self.reverse_byte_literal.next() {
-            return Some(ch);
-        }
         if let Some(ch) = self.flags.emit_trailing_quote() {
-            return Some(ch);
-        }
-        None
-    }
-}
-
-impl<'a> DoubleEndedIterator for State<'a> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        if let Some(ch) = self.flags.emit_trailing_quote() {
-            return Some(ch);
-        }
-        if let Some(ch) = self.reverse_byte_literal.next_back() {
-            return Some(ch);
-        }
-        let (ch, size) = bstr::decode_last_utf8(self.bytes);
-        match ch {
-            Some('"' | '\\') if self.flags.is_ident() => {
-                self.bytes = &self.bytes[..self.bytes.len() - size];
-                return ch;
-            }
-            Some(ch) if is_ascii_char_with_escape(ch) => {
-                let (remainder, ascii_byte) = self.bytes.split_at(self.bytes.len() - size);
-                // This conversion is safe to unwrap due to the documented
-                // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
-                // which indicate that `size` is always in the range of 0..=3.
-                //
-                // While not an invalid byte, we rely on the documented
-                // behavior of `InvalidUtf8ByteSequence` to always escape
-                // any bytes given to it.
-                self.reverse_byte_literal = InvalidUtf8ByteSequence::try_from(ascii_byte).unwrap();
-                self.bytes = remainder;
-                return self.reverse_byte_literal.next_back();
-            }
-            Some(ch) => {
-                self.bytes = &self.bytes[..self.bytes.len() - size];
-                return Some(ch);
-            }
-            None if size == 0 => {}
-            None => {
-                let (remainder, invalid_utf8_bytes) = self.bytes.split_at(self.bytes.len() - size);
-                // This conversion is safe to unwrap due to the documented
-                // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
-                // which indicate that `size` is always in the range of 0..=3.
-                self.reverse_byte_literal = InvalidUtf8ByteSequence::try_from(invalid_utf8_bytes).unwrap();
-                self.bytes = remainder;
-                return self.reverse_byte_literal.next_back();
-            }
-        };
-        if let Some(ch) = self.forward_byte_literal.next_back() {
-            return Some(ch);
-        }
-        if let Some(ch) = self.flags.emit_leading_quote() {
-            return Some(ch);
-        }
-        if let Some(ch) = self.flags.emit_leading_colon() {
             return Some(ch);
         }
         None
@@ -419,53 +350,10 @@ mod tests {
     }
 
     #[test]
-    fn empty_backwards() {
-        let mut inspect = Inspect::from("");
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some(':'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-
-        let mut inspect = Inspect::from("");
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-
-        let mut inspect = Inspect::from("");
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-
-        let mut inspect = Inspect::from("");
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-    }
-
-    #[test]
     fn fred() {
         let inspect = Inspect::from("fred");
         let debug = inspect.collect::<String>();
         assert_eq!(debug, ":fred");
-    }
-
-    #[test]
-    fn fred_backwards() {
-        let mut inspect = Inspect::from("fred");
-        assert_eq!(inspect.next_back(), Some('d'));
-        assert_eq!(inspect.next_back(), Some('e'));
-        assert_eq!(inspect.next_back(), Some('r'));
-        assert_eq!(inspect.next_back(), Some('f'));
-        assert_eq!(inspect.next_back(), Some(':'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
     }
 
     #[test]
@@ -481,33 +369,6 @@ mod tests {
     }
 
     #[test]
-    fn invalid_utf8_backwards() {
-        let mut inspect = Inspect::from(&b"invalid-\xFF-utf8"[..]);
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('8'));
-        assert_eq!(inspect.next_back(), Some('f'));
-        assert_eq!(inspect.next_back(), Some('t'));
-        assert_eq!(inspect.next_back(), Some('u'));
-        assert_eq!(inspect.next_back(), Some('-'));
-        assert_eq!(inspect.next_back(), Some('F'));
-        assert_eq!(inspect.next_back(), Some('F'));
-        assert_eq!(inspect.next_back(), Some('x'));
-        assert_eq!(inspect.next_back(), Some('\\'));
-        assert_eq!(inspect.next_back(), Some('-'));
-        assert_eq!(inspect.next_back(), Some('d'));
-        assert_eq!(inspect.next_back(), Some('i'));
-        assert_eq!(inspect.next_back(), Some('l'));
-        assert_eq!(inspect.next_back(), Some('a'));
-        assert_eq!(inspect.next_back(), Some('v'));
-        assert_eq!(inspect.next_back(), Some('n'));
-        assert_eq!(inspect.next_back(), Some('i'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some(':'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
-    }
-
-    #[test]
     fn quoted() {
         let mut inspect = Inspect::from(r#"a"b"#);
         assert_eq!(inspect.next(), Some(':'));
@@ -519,77 +380,6 @@ mod tests {
         assert_eq!(inspect.next(), Some('"'));
 
         assert_eq!(Inspect::from(r#"a"b"#).collect::<String>(), r#":"a\"b""#);
-    }
-
-    #[test]
-    fn quote_backwards() {
-        let mut inspect = Inspect::from(r#"a"b"#);
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('b'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('\\'));
-        assert_eq!(inspect.next_back(), Some('a'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some(':'));
-        assert_eq!(inspect.next_back(), None);
-    }
-
-    #[test]
-    fn quote_double_ended() {
-        let mut inspect = Inspect::from(r#"a"b"#);
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next(), Some('a'));
-        assert_eq!(inspect.next(), Some('\\'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('b'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next(), None);
-
-        let mut inspect = Inspect::from(r#"a"b"#);
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next(), Some('a'));
-        assert_eq!(inspect.next(), Some('\\'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('b'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), None);
-
-        let mut inspect = Inspect::from(r#"a"b"#);
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('b'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next(), Some('a'));
-        assert_eq!(inspect.next(), Some('\\'));
-        assert_eq!(inspect.next(), None);
-
-        let mut inspect = Inspect::from(r#"a"b"#);
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('b'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next(), Some('a'));
-        assert_eq!(inspect.next(), Some('\\'));
-        assert_eq!(inspect.next_back(), None);
-
-        let mut inspect = Inspect::from(r#"a"b"#);
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('b'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next_back(), Some('\\'));
-
-        let mut inspect = Inspect::from(r#"a"b"#);
-        assert_eq!(inspect.next(), Some(':'));
-        assert_eq!(inspect.next(), Some('"'));
-        assert_eq!(inspect.next(), Some('a'));
-        assert_eq!(inspect.next(), Some('\\'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next(), Some('"'));
     }
 
     #[test]
@@ -617,20 +407,6 @@ mod tests {
     fn escape_slash() {
         assert_eq!(Inspect::from("\\").collect::<String>(), r#":"\\""#);
         assert_eq!(Inspect::from("foo\\bar").collect::<String>(), r#":"foo\\bar""#);
-    }
-
-    #[test]
-    fn escape_slash_backwards() {
-        let mut inspect = Inspect::from("a\\b");
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some('b'));
-        assert_eq!(inspect.next_back(), Some('\\'));
-        assert_eq!(inspect.next_back(), Some('\\'));
-        assert_eq!(inspect.next_back(), Some('a'));
-        assert_eq!(inspect.next_back(), Some('"'));
-        assert_eq!(inspect.next_back(), Some(':'));
-        assert_eq!(inspect.next_back(), None);
-        assert_eq!(inspect.next(), None);
     }
 
     #[test]

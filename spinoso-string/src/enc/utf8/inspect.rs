@@ -1,6 +1,6 @@
 use core::iter::FusedIterator;
 
-use scolapasta_string_escape::{is_ascii_char_with_escape, InvalidUtf8ByteSequence};
+use scolapasta_string_escape::{ascii_char_with_escape, InvalidUtf8ByteSequence};
 
 use super::Utf8String;
 use crate::inspect::Flags;
@@ -9,6 +9,7 @@ use crate::inspect::Flags;
 #[must_use = "this `Inspect` is an `Iterator`, which should be consumed if constructed"]
 pub struct Inspect<'a> {
     flags: Flags,
+    escaped_bytes: &'static [u8],
     byte_literal: InvalidUtf8ByteSequence,
     bytes: &'a [u8],
 }
@@ -28,6 +29,7 @@ impl<'a> Inspect<'a> {
     fn new(bytes: &'a [u8]) -> Self {
         Self {
             flags: Flags::DEFAULT,
+            escaped_bytes: &[],
             byte_literal: InvalidUtf8ByteSequence::new(),
             bytes,
         }
@@ -53,26 +55,25 @@ impl<'a> Iterator for Inspect<'a> {
         if let Some(ch) = self.flags.emit_leading_quote() {
             return Some(ch);
         }
+        if let Some((&head, tail)) = self.escaped_bytes.split_first() {
+            self.escaped_bytes = tail;
+            return Some(head.into());
+        }
         if let Some(ch) = self.byte_literal.next() {
             return Some(ch);
         }
         let (ch, size) = bstr::decode_utf8(self.bytes);
-        match ch {
-            Some(ch) if is_ascii_char_with_escape(ch) => {
-                let (ascii_byte, remainder) = self.bytes.split_at(size);
-                // This conversion is safe to unwrap due to the documented
-                // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
-                // which indicate that `size` is always in the range of 0..=3.
-                //
-                // While not an invalid byte, we rely on the documented
-                // behavior of `InvalidUtf8ByteSequence` to always escape
-                // any bytes given to it.
-                self.byte_literal =
-                    InvalidUtf8ByteSequence::try_from(ascii_byte).expect("ASCII char should have byte slice length 1");
-                self.bytes = remainder;
-                return self.byte_literal.next();
+        match ch.map(|ch| {
+            ascii_char_with_escape(ch)
+                .and_then(|esc| esc.as_bytes().split_first())
+                .ok_or(ch)
+        }) {
+            Some(Ok((&head, tail))) => {
+                self.escaped_bytes = tail;
+                self.bytes = &self.bytes[size..];
+                return Some(head.into());
             }
-            Some(ch) => {
+            Some(Err(ch)) => {
                 self.bytes = &self.bytes[size..];
                 return Some(ch);
             }
