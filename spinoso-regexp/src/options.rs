@@ -117,7 +117,7 @@ impl From<i64> for Options {
     ///
     /// [`try_from_int`]: Self::try_from_int
     fn from(flags: i64) -> Self {
-        let [byte, _, _, _, _, _, _, _] = flags.to_le_bytes();
+        let [byte, ..] = flags.to_le_bytes();
         Self::from(byte)
     }
 }

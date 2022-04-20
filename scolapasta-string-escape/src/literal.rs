@@ -29,7 +29,7 @@ pub const fn is_ascii_char_with_escape(ch: char) -> bool {
     if !ch.is_ascii() {
         return false;
     }
-    let [ascii_byte, _, _, _] = (ch as u32).to_le_bytes();
+    let [ascii_byte, ..] = (ch as u32).to_le_bytes();
     let escape = Literal::debug_escape(ascii_byte);
     escape.len() > 1
 }

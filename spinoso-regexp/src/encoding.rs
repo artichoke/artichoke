@@ -98,7 +98,7 @@ impl TryFrom<i64> for Encoding {
     type Error = InvalidEncodingError;
 
     fn try_from(flags: i64) -> Result<Self, Self::Error> {
-        let [byte, _, _, _, _, _, _, _] = flags.to_le_bytes();
+        let [byte, ..] = flags.to_le_bytes();
         Self::try_from(byte)
     }
 }

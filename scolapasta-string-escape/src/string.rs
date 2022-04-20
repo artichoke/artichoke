@@ -38,7 +38,7 @@ where
         let (ch, size) = bstr::decode_utf8(message);
         match ch {
             Some(ch) if is_ascii_char_with_escape(ch) => {
-                let [ascii_byte, _, _, _] = u32::from(ch).to_le_bytes();
+                let [ascii_byte, ..] = u32::from(ch).to_le_bytes();
                 let escaped = Literal::debug_escape(ascii_byte);
                 dest.write_str(escaped)?;
             }
