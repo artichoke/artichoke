@@ -13,10 +13,10 @@ use core::str;
 /// ```
 /// # use core::char::REPLACEMENT_CHARACTER;
 /// # use scolapasta_string_escape::ascii_char_with_escape;
-/// assert_eq!(ascii_char_with_escape('\x00'), Some(r"\x00"));
+/// assert_eq!(ascii_char_with_escape('\0'), Some(r"\x00"));
 /// assert_eq!(ascii_char_with_escape('\n'), Some(r"\n"));
 /// assert_eq!(ascii_char_with_escape('"'), Some(r#"\""#));
-/// assert_eq!(ascii_char_with_escape('\\'), Some("\\"));
+/// assert_eq!(ascii_char_with_escape('\\'), Some(r"\\"));
 ///
 /// assert_eq!(ascii_char_with_escape('a'), None);
 /// assert_eq!(ascii_char_with_escape('Z'), None);
