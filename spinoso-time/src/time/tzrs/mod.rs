@@ -1,8 +1,28 @@
+use core::time::Duration;
+
+pub type OffsetSeconds = i32;
+
+// EPOCH is considered to be half of u64 enabling i63 seconds of domain for time to be registered
+const EPOCH = Duration::new(0x1 << 63, 0);
+
+// Offsets come in two different types. Utc which is a representation of Universal Co-ordinated
+// Time, and a Tz which represents a timezone.
+// UTC is not a timezone, and is thus not represented in `tzdb` which provides timezone
+// information - thus UTC offsets are represented in seconds.
+pub enum Offset {
+    Utc(OffsetSeconds),
+    Tz(Tz),
+}
 
 // Time#[-|+|hash]
 #[derive(Add,Sub,Default,Clone,Eq,PartialEq,Hash)]
 pub struct Time {
+    // Timestamps extend the standard Rust core::time::Duration, which uses a u64 for the number of
+    // seconds, and u32 for the sub part seconds. EPOCH is considered `0x1 << 63` which enables i63
+    // number of seconds to be registered (which ruby requires)
+    timestamp: Duration,
 
+    offset: Offset,
 }
 
 // constructors
