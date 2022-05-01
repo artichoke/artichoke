@@ -16,6 +16,8 @@ categories = ["date-and-time"]
 [dependencies]
 chrono = { version = "0.4.19", default-features = false, features = ["clock"] }
 chrono-tz = { version = "0.6.0", default-features = false }
+tz-rs = { version = "0.6.9" }
+tzdb = { version = "0.2.2", default-features = false, features = ["local"] }
 
 [package.metadata.docs.rs]
 all-features = true
