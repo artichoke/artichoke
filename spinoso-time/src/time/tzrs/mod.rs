@@ -1,40 +1,138 @@
-use core::time::Duration;
+use tz::datetime::DateTime;
+use tz::error::TzError;
 use tz::timezone::{TimeZone, TimeZoneRef};
+use tzdb::local_tz;
 
-mod offset;
-mod to_a;
 mod math;
+mod to_a;
 
-pub use offset::Offset;
 pub use to_a::ToA;
 
-// Time#[-|+|hash]
-#[derive(Default,Clone,Eq,PartialEq,Hash)]
+/// A wrapper around tz_rs::Datetime which contains everything needed for date creation and
+/// conversion to match the ruby spec. Seconds and Subseconds are stored independently as i64 and
+/// u32 respectively, which gives enough granularity to meet the ruby [`Time`] spec.
+///
+/// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Time {
-    // Timestamps extend the standard Rust core::time::Duration, which uses a u64 for the number of
-    // seconds, and u32 for the sub part seconds. EPOCH is considered `0x1 << 63` which enables i63
-    // number of seconds to be registered (which ruby requires)
-    timestamp: Duration,
-
-    offset: Offset,
+    inner: DateTime,
 }
 
 // constructors
 impl Time {
-    // Time#now
-    pub fn now() -> Self {
-        todo!()
+    /// Returns a new Time from the given values in the provided TimeZone.
+    ///
+    /// Can be used to implment ruby [`Time#new`]
+    ///
+    /// Note: During DST transitions, a specific time can be ambiguous. This method will always pick the earliest date.
+    ///
+    /// # Examples
+    /// ```
+    /// use spinoso_time::Time;
+    /// use tzdb::time_zone::pacific::AUCKLAND;
+    /// let time = Time::new(2022, 9, 25, 1, 30, 0, 0, AUCKLAND);
+    /// ```
+    ///
+    /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
+    pub fn new(
+        year: i32,
+        month: u8,
+        day: u8,
+        hour: u8,
+        minute: u8,
+        second: u8,
+        nanoseconds: u32,
+        tz: TimeZoneRef<'static>,
+    ) -> Result<Self, TzError> {
+        let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz)?;
+        let dt = found_date_times
+            .earliest()
+            .expect("Failed to find a matching DateTime for this timezone");
+        Ok(Self { inner: dt })
     }
 
-    // Time#new
-    // Also called form From<ToA>?
-    pub fn new() -> Self {
-        todo!()
+    /// Returns a Time based on the provided values in the local timezone
+    ///
+    /// Can be used to implement ruby [`Time#local`], [`Time#mktime`]
+    ///
+    /// [`Time#local`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-local
+    /// [`Time#mktime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-mktime
+    pub fn local(
+        year: i32,
+        month: u8,
+        month_day: u8,
+        hour: u8,
+        minute: u8,
+        second: u8,
+        nanoseconds: u32,
+    ) -> Result<Self, TzError> {
+        let tz = local_tz().expect("Could not find the local timezone");
+        Time::new(year, month, month_day, hour, minute, second, nanoseconds, tz)
     }
 
-    // Time#at
-    pub fn at() -> Self {
-        todo!()
+    /// Returns a Time based on the provided values in UTC
+    ///
+    /// Can be used to implement ruby [`Time#utc`], [`Time#gm`]
+    ///
+    /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-utc
+    /// [`Time#gm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-gm
+    pub fn utc(
+        year: i32,
+        month: u8,
+        month_day: u8,
+        hour: u8,
+        minute: u8,
+        second: u8,
+        nanoseconds: u32,
+    ) -> Result<Self, TzError> {
+        Time::new(
+            year,
+            month,
+            month_day,
+            hour,
+            minute,
+            second,
+            nanoseconds,
+            TimeZoneRef::utc(),
+        )
+    }
+
+    /// Returns a Time with the current time in the System Timezone
+    ///
+    /// Can be used to implement ruby [`Time#now`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::now().ok();
+    /// ```
+    ///
+    /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
+    pub fn now() -> Result<Self, TzError> {
+        let tz = local_tz().expect("Could not find the local timezone");
+        let now = DateTime::now(tz)?;
+        Ok(Self { inner: now })
+    }
+
+    /// Returns a Time in the given timezone with the number of seconds and nano_seconds since the Epoch in the specified timezone
+    ///
+    /// Can be used to implement ruby [`Time#at`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// use tzdb::time_zone::UTC;
+    /// let time = Time::with_timezone(0, 0, UTC).ok();
+    /// assert!(time.expect("").to_int() == 0);
+    /// ```
+    ///
+    /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
+    pub fn with_timezone(seconds: i64, nano_seconds: u32, tz: TimeZoneRef<'static>) -> Result<Self, TzError> {
+        Ok(Self {
+            inner: DateTime::from_timespec(seconds, nano_seconds, tz)?,
+        })
     }
 }
 
