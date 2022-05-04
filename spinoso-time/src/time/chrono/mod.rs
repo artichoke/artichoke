@@ -3,11 +3,12 @@ use core::hash::{Hash, Hasher};
 
 use chrono::prelude::*;
 
-use crate::{ComponentOutOfRangeError, NANOS_IN_SECOND};
+use crate::NANOS_IN_SECOND;
 
 mod build;
 mod convert;
 mod date;
+mod error;
 mod math;
 mod offset;
 mod ops;
@@ -16,6 +17,7 @@ mod time;
 mod timezone;
 mod weekday;
 
+pub use error::ComponentOutOfRangeError;
 pub use offset::Offset;
 
 /// Implementation of Ruby [`Time`], a timezone-aware datetime, based on
