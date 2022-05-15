@@ -7,6 +7,8 @@ mod to_a;
 
 pub use to_a::ToA;
 
+use crate::NANOS_IN_SECOND;
+
 /// A wrapper around tz_rs::Datetime which contains everything needed for date creation and
 /// conversion to match the ruby spec. Seconds and Subseconds are stored independently as i64 and
 /// u32 respectively, which gives enough granularity to meet the ruby [`Time`] spec.
@@ -128,19 +130,62 @@ impl From<ToA> for Time {
 
 // Core
 impl Time {
-    // Time#[to_i|tv_sec]
+    /// Returns the number of seconds as a signed integer since the Epoch.
+    ///
+    /// This function can be used to implement the ruby methods [`Time#to_i`] and [`Time#tv_sec`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let t = Time::utc(1970, 1, 1, 0, 1, 0, 0);
+    /// assert_eq!(t.to_int(), 60)
+    /// ```
+    ///
+    /// [`Time#to_i`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_i
+    /// [`Time#tv_sec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_sec
     pub fn to_int(&self) -> i64 {
-        todo!()
+        self.inner.unix_time()
     }
 
-    // Time#to_f
+    /// Returns the number of seconds since the Epoch with fractional nanos included at IEEE
+    /// 754-2008 accuracy.
+    ///
+    /// This function can be used to implement the ruby method [`Time#to_f``]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(1970, 1, 1, 0, 1, 0, 1000);
+    /// assert_eq!(now.to_float(), 60.000001)
+    /// ```
+    ///
+    /// [`Time#to_f`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_f
     pub fn to_float(&self) -> f64 {
-        todo!()
+        let sec = self.to_int() as f64;
+        let nanos_fractional = (self.inner.nanoseconds() as f64) / (NANOS_IN_SECOND as f64);
+        sec + nanos_fractional
     }
 
-    // Time#to_r
-    pub fn to_rational(&self) -> String {
-        todo!()
+    /// Returns the numerator and denominator for the number of nano seconds of the Time struct
+    /// unsimplified.
+    ///
+    /// This can be used to implement [`Time#to_r`] since this gives the two parts needed for a
+    /// rational. Note: This function is not enough to implement the full `to_r` since the number
+    /// of seconds should be added to the numerator.
+    ///
+    /// #Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let t = Time::utc(1970, 1, 1, 0, 0, 1, 1000);
+    /// assert_eq!(t.subsec_fractional(), (1000, 1000000000));
+    /// ```
+    ///
+    /// [`Time#to_r`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_r
+    pub fn subsec_fractional(&self) -> (u32, u32) {
+        (self.inner.nanoseconds(), NANOS_IN_SECOND)
     }
 }
 
