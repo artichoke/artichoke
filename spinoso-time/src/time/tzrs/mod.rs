@@ -1,5 +1,4 @@
 use tz::datetime::DateTime;
-use tz::error::TzError;
 use tz::timezone::{TimeZone, TimeZoneRef};
 use tzdb::local_tz;
 
@@ -30,7 +29,7 @@ impl Time {
     /// ```
     /// use spinoso_time::Time;
     /// use tzdb::time_zone::pacific::AUCKLAND;
-    /// let time = Time::new(2022, 9, 25, 1, 30, 0, 0, AUCKLAND);
+    /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, AUCKLAND);
     /// ```
     ///
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
@@ -43,12 +42,12 @@ impl Time {
         second: u8,
         nanoseconds: u32,
         tz: TimeZoneRef<'static>,
-    ) -> Result<Self, TzError> {
-        let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz)?;
+    ) -> Self {
+        let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz).unwrap();
         let dt = found_date_times
-            .earliest()
-            .expect("Failed to find a matching DateTime for this timezone");
-        Ok(Self { inner: dt })
+            .unique()
+            .expect("Could not find a matching DateTime for this timezone");
+        Self { inner: dt }
     }
 
     /// Returns a Time based on the provided values in the local timezone
@@ -57,15 +56,7 @@ impl Time {
     ///
     /// [`Time#local`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-local
     /// [`Time#mktime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-mktime
-    pub fn local(
-        year: i32,
-        month: u8,
-        month_day: u8,
-        hour: u8,
-        minute: u8,
-        second: u8,
-        nanoseconds: u32,
-    ) -> Result<Self, TzError> {
+    pub fn local(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
         let tz = local_tz().expect("Could not find the local timezone");
         Time::new(year, month, month_day, hour, minute, second, nanoseconds, tz)
     }
@@ -76,15 +67,7 @@ impl Time {
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-utc
     /// [`Time#gm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-gm
-    pub fn utc(
-        year: i32,
-        month: u8,
-        month_day: u8,
-        hour: u8,
-        minute: u8,
-        second: u8,
-        nanoseconds: u32,
-    ) -> Result<Self, TzError> {
+    pub fn utc(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
         Time::new(
             year,
             month,
@@ -105,14 +88,14 @@ impl Time {
     ///
     /// ```
     /// use spinoso_time::Time;
-    /// let now = Time::now().ok();
+    /// let now = Time::now();
     /// ```
     ///
     /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
-    pub fn now() -> Result<Self, TzError> {
-        let tz = local_tz().expect("Could not find the local timezone");
-        let now = DateTime::now(tz)?;
-        Ok(Self { inner: now })
+    pub fn now() -> Self {
+        let tz = local_tz().expect("Could not derive the local time zone");
+        let now = DateTime::now(tz).unwrap();
+        Self { inner: now }
     }
 
     /// Returns a Time in the given timezone with the number of seconds and nano_seconds since the Epoch in the specified timezone
@@ -124,15 +107,15 @@ impl Time {
     /// ```
     /// use spinoso_time::Time;
     /// use tzdb::time_zone::UTC;
-    /// let time = Time::with_timezone(0, 0, UTC).ok();
-    /// assert!(time.expect("").to_int() == 0);
+    /// let t = Time::with_timezone(0, 0, UTC);
+    /// assert_eq!(t.to_int(), 0);
     /// ```
     ///
     /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
-    pub fn with_timezone(seconds: i64, nano_seconds: u32, tz: TimeZoneRef<'static>) -> Result<Self, TzError> {
-        Ok(Self {
-            inner: DateTime::from_timespec(seconds, nano_seconds, tz)?,
-        })
+    pub fn with_timezone(seconds: i64, nano_seconds: u32, tz: TimeZoneRef<'static>) -> Self {
+        Self {
+            inner: DateTime::from_timespec(seconds, nano_seconds, tz).unwrap(),
+        }
     }
 }
 
