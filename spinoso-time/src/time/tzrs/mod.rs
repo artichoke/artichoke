@@ -136,11 +136,11 @@ impl Time {
     }
 }
 
-// Time#[gm|local|mktime|utc|]
+// Time#[gm|local|mktime|utc]
 impl From<ToA> for Time {
-   fn from(to_a: ToA) -> Self {
-       todo!()
-   }
+    fn from(_: ToA) -> Self {
+        todo!()
+    }
 }
 
 // Core
@@ -233,7 +233,7 @@ impl Time {
     }
 
     // Time#[gmt?|utc?]
-    pub fn time_zone(&self) -> TimeZoneRef<'_> {
+    pub fn time_zone<'a>(&self) -> &'a str {
         todo!()
     }
 

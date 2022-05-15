@@ -4,7 +4,7 @@ use crate::Time;
 /// datetime components.
 ///
 /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct ToA {
     /// The second of the minute `0..=59` for the source _time_.
     pub sec: u32,
@@ -62,8 +62,7 @@ impl From<Time> for ToA {
             wday: time.day_of_week(),
             yday: time.day_of_year(),
             isdst: time.is_dst(),
-            zone: todo!(),
+            zone: time.time_zone(),
         }
     }
 }
-
