@@ -1,5 +1,5 @@
 use tz::datetime::DateTime;
-use tz::timezone::{TimeZone, TimeZoneRef};
+use tz::timezone::TimeZoneRef;
 use tzdb::local_tz;
 
 mod math;
@@ -220,10 +220,74 @@ impl Time {
         todo!()
     }
 
-    // Time#getlocal, Time#[getgm|getutc]
-    pub fn in_timezone(&self, tz: TimeZone) -> Self {
-        todo!()
+    /// Returns a new Time object representing _time_ in the provided timezone
+    ///
+    /// Can be used to implement [`Time#getlocal`] with a provided timezone
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// use tz::timezone::TimeZoneRef;
+    /// let utc_time_zone = TimeZoneRef::utc();
+    /// let now = Time::now();
+    /// let now_utc = now.to_timezone(utc_time_zone);
+    /// assert_eq!(now_utc.utc_offset(), 0);
+    /// ```
+    pub fn to_timezone(&self, tz: TimeZoneRef<'static>) -> Self {
+        Self::with_timezone(
+            self.inner.unix_time(),
+            self.inner.nanoseconds(),
+            tz
+        )
     }
+
+    /// Returns a new _time_ in UTC
+    ///
+    /// Can be used to implement [`Time#getutc`] and [`Time#getgm`]
+    ///
+    /// #Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now_local = Time::now();
+    /// let now_utc = now_local.to_utc();
+    /// assert_eq!(now_utc.utc_offset(), 0);
+    /// ```
+    ///
+    /// [`Time#getutc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getutc
+    /// [`Time#getgm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getgm
+    pub fn to_utc(&self) -> Self {
+        self.to_timezone(UTC)
+    }
+
+    /// Returns a new Time object representing _time_ in local time (using the local time zone in
+    /// effect for this process)
+    ///
+    /// Can be used to implement [`Time#getlocal`]
+    ///
+    /// #Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let local_offset = Time::now().utc_offset();
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// let now_local = now_utc.to_local();
+    /// assert_eq!(now_local.utc_offset(), local_offset);
+    /// ```
+    ///
+    /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
+    pub fn to_local(&self) -> Self {
+        let tz = local_time_zone();
+        self.to_timezone(tz)
+    }
+
+    // TODO: Implement based on an Offset struct that takes both strings and i32s
+    // Time#getlocal(offset)
+    //pub fn to_offset(&self, offset: Offset) -> Self {
+        //todo!()
+        //
+    //}
 }
 
 // Mutators
@@ -395,14 +459,78 @@ impl Time {
         self.inner.year()
     }
 
-    // Time#[gmt?|utc?]
-    pub fn time_zone<'a>(&self) -> &'a str {
-        todo!()
+    /// Returns the name of the time zone as a string
+    ///
+    /// Note: UTC is an empty string due to the [`UTC LocaleTimeType`] being constructed with None,
+    /// which is later coerced into an [`empty string`]
+    ///
+    /// # Examples
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// assert_eq!(now_utc.time_zone(), "");
+    /// ```
+    ///
+    /// [`UTC LocalTimeType`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#180
+    /// [`empty string`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#210
+    pub fn time_zone(&self) -> &str {
+        self.inner.local_time_type().time_zone_designation()
     }
 
-    // Time#[isdst|dst?]
+    /// Returns true if the time zone is UTC
+    ///
+    /// Can be used to implement [`Time#utc?`] and [`Time#gmt?`]
+    ///
+    //// # Examples
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// assert!(now_utc.is_utc());
+    /// ```
+    ///
+    /// [`Time#utc?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc-3F
+    /// [`Time#gmt?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmt-3F
+    pub fn is_utc(&self) -> bool {
+        self.time_zone() == ""
+    }
+
+    /// Returns the offset in seconds between the timezone of _time_ and UTC
+    ///
+    /// Can be used to implement [`Time#utc_offset`] and [`Time#gmt_offset`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// assert_eq!(now.utc_offset(), 0);
+    /// ```
+    ///
+    /// [`Time#utc_offset`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc_offset
+    /// [`Time#gmt_offset`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmt_offset
+    pub fn utc_offset(&self) -> i32 {
+        self.inner.local_time_type().ut_offset()
+    }
+
+    /// Returns `true` if _time_ occurs during Daylight Saving Time in its time zone.
+    ///
+    /// Can be used to implement [`Time#dst?`] and [`Time#isdst`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// use tzdb::time_zone::{europe::AMSTERDAM, pacific::AUCKLAND};
+    /// let now_ams = Time::new(2022, 5, 18, 16, 0, 0, 0, AMSTERDAM);
+    /// assert!(now_ams.is_dst());
+    /// let now_auckland = Time::new(2022, 5, 18, 16, 0, 0, 0, AUCKLAND);
+    /// assert!(!now_auckland.is_dst());
+    /// ```
+    ///
+    /// [`Time#dst?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-dst-3F
+    /// [`Time#isdst`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-isdst
     pub fn is_dst(&self) -> bool {
-        todo!()
+        self.inner.local_time_type().is_dst()
     }
 
     // Time#wday
