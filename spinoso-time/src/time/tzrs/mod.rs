@@ -9,6 +9,7 @@ pub use to_a::ToA;
 
 use crate::NANOS_IN_SECOND;
 
+const UTC: TimeZoneRef<'static> = TimeZoneRef::utc();
 /// A wrapper around tz_rs::Datetime which contains everything needed for date creation and
 /// conversion to match the ruby spec. Seconds and Subseconds are stored independently as i64 and
 /// u32 respectively, which gives enough granularity to meet the ruby [`Time`] spec.
@@ -17,6 +18,18 @@ use crate::NANOS_IN_SECOND;
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Time {
     inner: DateTime,
+}
+
+// the local_tz() fn provided by tzdb will attempt to use iana_time_zone::get_timezone() to get the
+// local timezone of the system running this. It's possible that the string returned from
+// iana_time_zone is not recognized by tzdb, so this ensures it always returns something (UTC).
+#[inline]
+#[must_use]
+fn local_time_zone() -> TimeZoneRef<'static> {
+  match local_tz() {
+    Some(tz) => tz,
+    None => UTC,
+  }
 }
 
 // constructors
@@ -59,7 +72,7 @@ impl Time {
     /// [`Time#local`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-local
     /// [`Time#mktime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-mktime
     pub fn local(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
-        let tz = local_tz().expect("Could not find the local timezone");
+        let tz = local_time_zone();
         Time::new(year, month, month_day, hour, minute, second, nanoseconds, tz)
     }
 
@@ -95,7 +108,7 @@ impl Time {
     ///
     /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
     pub fn now() -> Self {
-        let tz = local_tz().expect("Could not derive the local time zone");
+        let tz = local_time_zone();
         let now = DateTime::now(tz).unwrap();
         Self { inner: now }
     }
