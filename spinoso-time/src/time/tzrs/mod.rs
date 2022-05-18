@@ -7,7 +7,7 @@ mod to_a;
 
 pub use to_a::ToA;
 
-use crate::NANOS_IN_SECOND;
+use crate::{NANOS_IN_SECOND, MICROS_IN_NANO};
 
 const UTC: TimeZoneRef<'static> = TimeZoneRef::utc();
 /// A wrapper around tz_rs::Datetime which contains everything needed for date creation and
@@ -240,37 +240,159 @@ impl Time {
 
 // Parts
 impl Time {
-    // Time#[nsec|tv_nsec]
-    pub fn nano_second(&self) -> u64 {
-        todo!()
+    /// Returns the number of nanoseconds for _time_
+    ///
+    /// The lowest digits of to_f and nsec are different because IEEE 754 double is not accurate
+    /// enough to represent the exact number of nanoseconds since the Epoch.
+    ///
+    /// Can be used to implement [`Time#nsec`] and [`Time#tv_nsec`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::{Time, NANOS_IN_SECOND};
+    /// let t = Time::utc(2022, 1, 1, 12, 0, 0, 1);
+    /// let t_float = t.to_float();
+    /// let float_nanos = (t_float - t_float.round()) * NANOS_IN_SECOND as f64;
+    /// assert_ne!(float_nanos, 1f64);
+    /// assert_eq!(t.nanoseconds(), 1);
+    /// ```
+    ///
+    /// [`Time#nsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-nsec
+    /// [`Time#tv_nsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_nsec
+    pub fn nanoseconds(&self) -> u32 {
+        self.inner.nanoseconds()
     }
-    // Time#[usec|tv_usec]
-    pub fn micro_second(&self) -> u64 {
-        todo!()
+
+    /// Returns the number of microseconds for _time_
+    ///
+    /// Can be used to implement [`Time#usec`] and [`Time#tv_usec`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::{Time, MICROS_IN_NANO};
+    /// let t = Time::utc(2022, 1, 1, 12, 0, 0, 1 * MICROS_IN_NANO);
+    /// assert_eq!(t.microseconds(), 1);
+    /// ```
+    ///
+    /// [`Time#usec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-usec
+    /// [`Time#tv_usec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_usec
+    pub fn microseconds(&self) -> u32 {
+        self.inner.nanoseconds() / MICROS_IN_NANO
     }
-    // Time#sec
-    pub fn second(&self) -> u32 {
-        todo!()
+
+    /// Returns the second of the minute (0..60) for _time_
+    ///
+    /// Seconds range from zero to 60 to allow the system to inject [leap seconds].
+    ///
+    /// Can be used to implement [`Time#sec`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// let second_of_minute = now.second();
+    /// assert_eq!(second_of_minute, 56);
+    /// ```
+    ///
+    /// [`Time#sec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sec
+    /// [leap seconds]: https://en.wikipedia.org/wiki/Leap_second
+    pub fn second(&self) -> u8 {
+        self.inner.second()
     }
-    // Time#min
-    pub fn minute(&self) -> u32 {
-        todo!()
+
+    /// Returns the minute of the hour (0..59) for _time_
+    ///
+    /// Can be used to implement [`Time#min`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// let minute_of_hour = now.minute();
+    /// assert_eq!(minute_of_hour, 34);
+    /// ```
+    ///
+    /// [`Time#minute`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-min
+    pub fn minute(&self) -> u8 {
+        self.inner.minute()
     }
-    // Time#hour
-    pub fn hour(&self) -> u32 {
-        todo!()
+
+
+    /// Returns the hour of the day (0..23) for _time_
+    ///
+    /// Can be used to implement [`Time#min`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// let hour_of_day = now.hour();
+    /// assert_eq!(hour_of_day, 12);
+    /// ```
+    ///
+    /// [`Time#hour`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-hour
+    pub fn hour(&self) -> u8 {
+        self.inner.hour()
     }
-    // Time#[m]day
-    pub fn day(&self) -> u32 {
-        todo!()
+
+    /// Returns the day of the month (1..n) for _time_
+    ///
+    /// Can be used to implement [`Time#day`] and [`Time#mday`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// let day_of_month = now.day();
+    /// assert_eq!(day_of_month, 8);
+    /// ```
+    ///
+    /// [`Time#day`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-day
+    /// [`Time#mday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mday
+    pub fn day(&self) -> u8 {
+        self.inner.month_day()
     }
-    // Time#mon[th]
-    pub fn month(&self) -> u32 {
-        todo!()
+
+    /// Returns the month of the year (1..12) for _time_
+    ///
+    /// Can be used to implement [`Time#mon`] and [`Time#month`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// let month_of_year = now.month();
+    /// assert_eq!(month_of_year, 7);
+    /// ```
+    ///
+    /// [`Time#mon`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mon
+    /// [`Time#month`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mon
+    pub fn month(&self) -> u8 {
+        self.inner.month()
     }
-    // Time#year
+
+    /// Returns the year for _time_ (including the century)
+    ///
+    /// Can be used to implement [`Time#year`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// assert_eq!(now.year(), 2022);
+    /// ```
+    ///
+    /// [`Time#year`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-year
     pub fn year(&self) -> i32 {
-        todo!()
+        self.inner.year()
     }
 
     // Time#[gmt?|utc?]
