@@ -109,11 +109,28 @@ class Range
     each.take(n).to_a
   end
 
+  # RuboCop's `Security/CompoundHash` cop would like us to compute the hash code
+  # using an intermediate `Array` rather than combinging things manually with
+  # XOR.
+  #
+  # Using an `Array` to collect the intermediate values to hash doesn't work in
+  # the current implementation of `Array#hash`. The implementation of
+  # `Array#hash` comes from `Kernel#hash` in mruby, which defines the hash code
+  # in terms of object id.
+  #
+  # In this case, we construct a new temporary object every time we compute the
+  # hash for the `Range`, which means the hash code is not stable.
+  #
+  # FIXME: Use an `Array` for determining the hash.
+  # NOTE: See 3186d1edb2dd17edd3a5ff395e838566f5f350b9.
+  #
+  # rubocop:disable Security/CompoundHash
   def hash
     h = first.hash ^ last.hash
     h += 1 if exclude_end?
     h
   end
+  # rubocop:enable Security/CompoundHash
 
   def last(*args)
     return self.end if args.empty?
