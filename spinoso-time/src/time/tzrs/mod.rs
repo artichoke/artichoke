@@ -192,9 +192,9 @@ impl Time {
     /// Returns the numerator and denominator for the number of nano seconds of the Time struct
     /// unsimplified.
     ///
-    /// This can be used to implement [`Time#to_r`] since this gives the two parts needed for a
-    /// rational. Note: This function is not enough to implement the full `to_r` since the number
-    /// of seconds should be added to the numerator.
+    /// This can be used directly to implement [`Time#subsec`].
+    ///
+    /// This function can be used in combination with [`to_int`] to implement [`Time#to_r`].
     ///
     /// #Examples
     ///
@@ -204,6 +204,8 @@ impl Time {
     /// assert_eq!(t.subsec_fractional(), (1000, 1000000000));
     /// ```
     ///
+    /// [`Time#subsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-subsec
+    /// [`to_int`]: struct.Time.html#method.to_int
     /// [`Time#to_r`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_r
     pub fn subsec_fractional(&self) -> (u32, u32) {
         (self.inner.nanoseconds(), NANOS_IN_SECOND)
