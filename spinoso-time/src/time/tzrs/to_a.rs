@@ -1,14 +1,11 @@
-extern crate alloc;
-
-use alloc::vec::Vec;
-
 use crate::Time;
+use super::UtcOffset;
 
 /// Serialized representation of a timestamp using a ten-element array of
 /// datetime components.
 ///
 /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct ToA {
     /// The second of the minute `0..=59` for the source _time_.
     pub sec: u32,
@@ -32,7 +29,7 @@ pub struct ToA {
     /// zone.
     pub isdst: bool,
     /// The timezone used for the source _time_.
-    pub zone: Vec<u8>,
+    pub zone: UtcOffset,
 }
 
 impl ToA {
@@ -46,7 +43,7 @@ impl ToA {
     /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
     #[inline]
     #[must_use]
-    pub fn to_tuple(&self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, Vec<u8>) {
+    pub fn to_tuple(&self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, UtcOffset) {
         (
             self.sec,
             self.min,
@@ -75,7 +72,7 @@ impl From<Time> for ToA {
             wday: time.day_of_week() as u32,
             yday: time.day_of_year() as u32,
             isdst: time.is_dst(),
-            zone: time.time_zone().clone(),
+            zone: UtcOffset::new(time.utc_offset()),
         }
     }
 }

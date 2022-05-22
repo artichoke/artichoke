@@ -9,8 +9,10 @@ use tzdb::time_zone::etc::GMT;
 
 mod math;
 mod to_a;
+mod utc_offset;
 
 pub use to_a::ToA;
+pub use utc_offset::UtcOffset;
 
 use crate::{MICROS_IN_NANO, NANOS_IN_SECOND};
 
@@ -46,9 +48,35 @@ fn local_time_zone() -> TimeZoneRef<'static> {
 
 // constructors
 impl Time {
-    /// Returns a new Time from the given values in the provided TimeZone.
+    /// Returns a new Time in GMT with the provided offset.
     ///
     /// Can be used to implment ruby [`Time#new`]
+    ///
+    /// # Examples
+    /// ```
+    /// use spinoso_time::{Time, UtcOffset};
+    /// let offset = UtcOffset::new(7200);
+    /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, &offset);
+    /// ```
+    ///
+    /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
+    pub fn new(
+        year: i32,
+        month: u8,
+        day: u8,
+        hour: u8,
+        minute: u8,
+        second: u8,
+        nanoseconds: u32,
+        offset: &UtcOffset,
+    ) -> Self {
+        let local_time_type = offset.local_time_type();
+        Self { inner: DateTime::new(year, month, day, hour, minute, second, nanoseconds, local_time_type).unwrap() }
+    }
+
+    /// Returns a new Time from the given values in the provided TimeZone.
+    ///
+    /// Can be used to implment ruby [`Time#new`] (using a [`Timezone`] Object)
     ///
     /// Note: During DST transitions, a specific time can be ambiguous. This method will always pick the earliest date.
     ///
@@ -56,11 +84,12 @@ impl Time {
     /// ```
     /// use spinoso_time::Time;
     /// use tzdb::time_zone::pacific::AUCKLAND;
-    /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, AUCKLAND);
+    /// let t = Time::with_time_zone(2022, 9, 25, 1, 30, 0, 0, AUCKLAND);
     /// ```
     ///
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
-    pub fn new(
+    /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
+    pub fn with_time_zone(
         year: i32,
         month: u8,
         day: u8,
@@ -85,7 +114,7 @@ impl Time {
     /// [`Time#mktime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-mktime
     pub fn local(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
         let tz = local_time_zone();
-        Time::new(year, month, month_day, hour, minute, second, nanoseconds, tz)
+        Time::with_time_zone(year, month, month_day, hour, minute, second, nanoseconds, tz)
     }
 
     /// Returns a Time based on the provided values in UTC
@@ -95,7 +124,7 @@ impl Time {
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-utc
     /// [`Time#gm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-gm
     pub fn utc(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
-        Time::new(
+        Time::with_time_zone(
             year,
             month,
             month_day,
@@ -134,12 +163,12 @@ impl Time {
     /// ```
     /// use spinoso_time::Time;
     /// use tzdb::time_zone::UTC;
-    /// let t = Time::with_timezone(0, 0, UTC);
+    /// let t = Time::with_timespec_and_zone(0, 0, UTC);
     /// assert_eq!(t.to_int(), 0);
     /// ```
     ///
     /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
-    pub fn with_timezone(seconds: i64, nano_seconds: u32, tz: TimeZoneRef<'static>) -> Self {
+    pub fn with_timespec_and_zone(seconds: i64, nano_seconds: u32, tz: TimeZoneRef<'static>) -> Self {
         Self {
             inner: DateTime::from_timespec(seconds, nano_seconds, tz).unwrap(),
         }
@@ -249,7 +278,7 @@ impl Time {
     /// assert_eq!(now_utc.utc_offset(), 0);
     /// ```
     pub fn to_timezone(&self, tz: TimeZoneRef<'static>) -> Self {
-        Self::with_timezone(self.inner.unix_time(), self.inner.nanoseconds(), tz)
+        Self::with_timespec_and_zone(self.inner.unix_time(), self.inner.nanoseconds(), tz)
     }
 
     /// Returns a new _time_ in UTC
@@ -605,9 +634,9 @@ impl Time {
     /// ```
     /// use spinoso_time::Time;
     /// use tzdb::time_zone::{europe::AMSTERDAM, pacific::AUCKLAND};
-    /// let now_ams = Time::new(2022, 5, 18, 16, 0, 0, 0, AMSTERDAM);
+    /// let now_ams = Time::with_time_zone(2022, 5, 18, 16, 0, 0, 0, AMSTERDAM);
     /// assert!(now_ams.is_dst());
-    /// let now_auckland = Time::new(2022, 5, 18, 16, 0, 0, 0, AUCKLAND);
+    /// let now_auckland = Time::with_time_zone(2022, 5, 18, 16, 0, 0, 0, AUCKLAND);
     /// assert!(!now_auckland.is_dst());
     /// ```
     ///

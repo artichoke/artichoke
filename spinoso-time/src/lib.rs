@@ -1,3 +1,4 @@
+#![no_std]
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
@@ -55,7 +56,7 @@ mod time;
 #[cfg(feature = "chrono")]
 pub use time::chrono::{ComponentOutOfRangeError, Offset, Time, ToA};
 #[cfg(feature = "tzrs")]
-pub use time::tzrs::Time;
+pub use time::tzrs::{Time, UtcOffset};
 
 /// Number of nanoseconds in one second.
 #[allow(clippy::cast_possible_truncation)] // 1e9 < u32::MAX
