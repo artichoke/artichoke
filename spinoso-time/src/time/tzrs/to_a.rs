@@ -5,7 +5,7 @@ use crate::Time;
 ///
 /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-pub struct ToA {
+pub struct ToA<'a> {
     /// The second of the minute `0..=59` for the source _time_.
     pub sec: u32,
     /// The minute of the hour `0..=59` for the source _time_.
@@ -28,10 +28,10 @@ pub struct ToA {
     /// zone.
     pub isdst: bool,
     /// The timezone used for the source _time_.
-    pub zone: &'static str,
+    pub zone: &'a str,
 }
 
-impl ToA {
+impl<'a> ToA<'a> {
     /// `ToA` represents ten-element array of values for time:
     ///
     /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
@@ -42,27 +42,27 @@ impl ToA {
     /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
     #[inline]
     #[must_use]
-    pub fn to_tuple(self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, &'static str) {
+    pub fn to_tuple(self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, &'a str) {
         (
             self.sec, self.min, self.hour, self.day, self.month, self.year, self.wday, self.yday, self.isdst,
             self.zone,
         )
     }
 }
-impl From<Time> for ToA {
-    #[inline]
-    fn from(time: Time) -> Self {
-        Self {
-            sec: time.second(),
-            min: time.minute(),
-            hour: time.hour(),
-            day: time.day(),
-            month: time.month(),
-            year: time.year(),
-            wday: time.day_of_week(),
-            yday: time.day_of_year(),
-            isdst: time.is_dst(),
-            zone: time.time_zone(),
-        }
-    }
-}
+//impl From<Time> for ToA<'_> {
+    //#[inline]
+    //fn from(time: Time) -> Self {
+        //Self {
+            //sec: time.second() as u32,
+            //min: time.minute() as u32,
+            //hour: time.hour() as u32,
+            //day: time.day() as u32,
+            //month: time.month() as u32,
+            //year: time.year(),
+            //wday: time.day_of_week(),
+            //yday: time.day_of_year(),
+            //isdst: time.is_dst(),
+            //zone: time.time_zone(),
+        //}
+    //}
+//}

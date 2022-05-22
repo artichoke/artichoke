@@ -143,8 +143,8 @@ impl Time {
 }
 
 // Time#[gm|local|mktime|utc]
-impl From<ToA> for Time {
-    fn from(_: ToA) -> Self {
+impl From<ToA<'_>> for Time {
+    fn from(_: ToA<'_>) -> Self {
         todo!()
     }
 }
