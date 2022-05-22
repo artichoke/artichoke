@@ -110,9 +110,9 @@ class Range
   end
 
   def hash
-    suffix = 0
-    suffix = 1 if exclude_end?
-    [first, last, suffix].hash
+    h = first.hash ^ last.hash
+    h += 1 if exclude_end?
+    h
   end
 
   def last(*args)
