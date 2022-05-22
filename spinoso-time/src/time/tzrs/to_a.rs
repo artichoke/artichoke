@@ -8,23 +8,23 @@ use super::UtcOffset;
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct ToA {
     /// The second of the minute `0..=59` for the source _time_.
-    pub sec: u32,
+    pub sec: u8,
     /// The minute of the hour `0..=59` for the source _time_.
-    pub min: u32,
+    pub min: u8,
     /// The hour of the day `0..=23` for the source _time_.
-    pub hour: u32,
+    pub hour: u8,
     /// The day of the month `1..=n` for the source _time_.
-    pub day: u32,
+    pub day: u8,
     /// The month of the year `1..=12` for the source _time_.
-    pub month: u32,
+    pub month: u8,
     /// The year (including the century) for the source _time_.
     pub year: i32,
     /// An integer representing the day of the week, `0..=6`, with Sunday == 0
     /// for the source _time_.
-    pub wday: u32,
+    pub wday: u8,
     /// An integer representing the day of the year, `1..=366` for the source
     /// _time_.
-    pub yday: u32,
+    pub yday: u16,
     /// Whether the source _time_ occurs during Daylight Saving Time in its time
     /// zone.
     pub isdst: bool,
@@ -43,7 +43,7 @@ impl ToA {
     /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
     #[inline]
     #[must_use]
-    pub fn to_tuple(&self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, UtcOffset) {
+    pub fn to_tuple(&self) -> (u8, u8, u8, u8, u8, i32, u8, u16, bool, UtcOffset) {
         (
             self.sec,
             self.min,
@@ -63,14 +63,14 @@ impl From<Time> for ToA {
     #[inline]
     fn from(time: Time) -> Self {
         Self {
-            sec: time.second() as u32,
-            min: time.minute() as u32,
-            hour: time.hour() as u32,
-            day: time.day() as u32,
-            month: time.month() as u32,
+            sec: time.second(),
+            min: time.minute(),
+            hour: time.hour(),
+            day: time.day(),
+            month: time.month(),
             year: time.year(),
-            wday: time.day_of_week() as u32,
-            yday: time.day_of_year() as u32,
+            wday: time.day_of_week(),
+            yday: time.day_of_year(),
             isdst: time.is_dst(),
             zone: UtcOffset::new(time.utc_offset()),
         }
