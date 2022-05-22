@@ -16,4 +16,8 @@
 //! [Unix timestamp]: https://en.wikipedia.org/wiki/Unix_time
 //! [timezone offset]: self::chrono::Offset
 
+
+#[cfg(feature = "chrono")]
 pub mod chrono;
+#[cfg(feature = "tzrs")]
+pub mod tzrs;
