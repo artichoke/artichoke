@@ -20,9 +20,11 @@ pub struct Time {
     inner: DateTime,
 }
 
-// the local_tz() fn provided by tzdb will attempt to use iana_time_zone::get_timezone() to get the
-// local timezone of the system running this. It's possible that the string returned from
+// tz-rs doesn't supply any methods for getting the local timezone of the system. tzdb however
+// provides local_tz() which will attempt to use iana_time_zone::get_timezone() to get the
+// local timezone of the system running this. it's possible that the string returned from
 // iana_time_zone is not recognized by tzdb, so this ensures it always returns something (UTC).
+// TODO: MRI uses a blank tz (0 offset), not UTC
 #[inline]
 #[must_use]
 fn local_time_zone() -> TimeZoneRef<'static> {
