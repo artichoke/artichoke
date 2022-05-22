@@ -1,14 +1,14 @@
 use tz::datetime::DateTime;
-use tz::timezone::{TimeZoneRef, LocalTimeType};
+use tz::timezone::{LocalTimeType, TimeZoneRef};
 use tzdb::local_tz;
-use tzdb::time_zone::etc::{GMT};
+use tzdb::time_zone::etc::GMT;
 
 mod math;
 mod to_a;
 
 pub use to_a::ToA;
 
-use crate::{NANOS_IN_SECOND, MICROS_IN_NANO};
+use crate::{MICROS_IN_NANO, NANOS_IN_SECOND};
 
 const UTC: TimeZoneRef<'static> = TimeZoneRef::utc();
 /// A wrapper around [`tz::datetime::Datetime`] which contains everything needed for date creation and
@@ -34,10 +34,10 @@ pub struct Time {
 #[inline]
 #[must_use]
 fn local_time_zone() -> TimeZoneRef<'static> {
-  match local_tz() {
-    Some(tz) => tz,
-    None => GMT,
-  }
+    match local_tz() {
+        Some(tz) => tz,
+        None => GMT,
+    }
 }
 
 // constructors
@@ -245,11 +245,7 @@ impl Time {
     /// assert_eq!(now_utc.utc_offset(), 0);
     /// ```
     pub fn to_timezone(&self, tz: TimeZoneRef<'static>) -> Self {
-        Self::with_timezone(
-            self.inner.unix_time(),
-            self.inner.nanoseconds(),
-            tz
-        )
+        Self::with_timezone(self.inner.unix_time(), self.inner.nanoseconds(), tz)
     }
 
     /// Returns a new _time_ in UTC
@@ -295,8 +291,7 @@ impl Time {
     // TODO: Implement based on an Offset struct that takes both strings and i32s
     // Time#getlocal(offset)
     //pub fn to_offset(&self, offset: Offset) -> Self {
-        //todo!()
-        //
+    //todo!()
     //}
 }
 
@@ -380,11 +375,7 @@ impl Time {
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     pub fn set_offset_from_utc(&mut self, offset: i32) {
         let local_time_type = LocalTimeType::new(offset, false, Some(b"GMT")).unwrap();
-        self.inner = DateTime::from_timespec_and_local(
-            self.to_int(),
-            self.nanoseconds(),
-            local_time_type
-        ).unwrap()
+        self.inner = DateTime::from_timespec_and_local(self.to_int(), self.nanoseconds(), local_time_type).unwrap()
     }
 
     pub fn round(&mut self, digits: u32) {
@@ -474,7 +465,6 @@ impl Time {
     pub fn minute(&self) -> u8 {
         self.inner.minute()
     }
-
 
     /// Returns the hour of the day (0..23) for _time_
     ///

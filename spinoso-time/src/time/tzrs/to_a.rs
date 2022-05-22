@@ -50,19 +50,19 @@ impl<'a> ToA<'a> {
     }
 }
 //impl From<Time> for ToA<'_> {
-    //#[inline]
-    //fn from(time: Time) -> Self {
-        //Self {
-            //sec: time.second() as u32,
-            //min: time.minute() as u32,
-            //hour: time.hour() as u32,
-            //day: time.day() as u32,
-            //month: time.month() as u32,
-            //year: time.year(),
-            //wday: time.day_of_week(),
-            //yday: time.day_of_year(),
-            //isdst: time.is_dst(),
-            //zone: time.time_zone(),
-        //}
-    //}
+//#[inline]
+//fn from(time: Time) -> Self {
+//Self {
+//sec: time.second() as u32,
+//min: time.minute() as u32,
+//hour: time.hour() as u32,
+//day: time.day() as u32,
+//month: time.month() as u32,
+//year: time.year(),
+//wday: time.day_of_week(),
+//yday: time.day_of_year(),
+//isdst: time.is_dst(),
+//zone: time.time_zone(),
+//}
+//}
 //}
