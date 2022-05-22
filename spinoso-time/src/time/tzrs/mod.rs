@@ -11,10 +11,11 @@ pub use to_a::ToA;
 use crate::{NANOS_IN_SECOND, MICROS_IN_NANO};
 
 const UTC: TimeZoneRef<'static> = TimeZoneRef::utc();
-/// A wrapper around tz_rs::Datetime which contains everything needed for date creation and
+/// A wrapper around [`tz::datetime::Datetime`] which contains everything needed for date creation and
 /// conversion to match the ruby spec. Seconds and Subseconds are stored independently as i64 and
 /// u32 respectively, which gives enough granularity to meet the ruby [`Time`] spec.
 ///
+/// [`tz::datetime::Datetime`]: https://docs.rs/tz-rs/0.6.9/tz/datetime/struct.DateTime.html
 /// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Time {
