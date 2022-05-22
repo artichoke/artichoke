@@ -1,5 +1,5 @@
+use core::ops::Add;
 use core::time::Duration;
-use std::ops::Add;
 
 use crate::time::tzrs::Time;
 

@@ -1,3 +1,7 @@
+extern crate alloc;
+
+use alloc::vec::Vec;
+
 use tz::datetime::DateTime;
 use tz::timezone::{LocalTimeType, TimeZoneRef};
 use tzdb::local_tz;
@@ -143,8 +147,8 @@ impl Time {
 }
 
 // Time#[gm|local|mktime|utc]
-impl From<ToA<'_>> for Time {
-    fn from(_: ToA<'_>) -> Self {
+impl From<ToA> for Time {
+    fn from(_: ToA) -> Self {
         todo!()
     }
 }
@@ -548,13 +552,13 @@ impl Time {
     /// ```
     /// use spinoso_time::Time;
     /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
-    /// assert_eq!(now_utc.time_zone(), "");
+    /// assert!(now_utc.time_zone().is_empty());
     /// ```
     ///
     /// [`UTC LocalTimeType`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#180
     /// [`empty string`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#210
-    pub fn time_zone(&self) -> &str {
-        self.inner.local_time_type().time_zone_designation()
+    pub fn time_zone(&self) -> Vec<u8> {
+        self.inner.local_time_type().time_zone_designation().as_bytes().to_vec()
     }
 
     /// Returns true if the time zone is UTC
@@ -571,7 +575,7 @@ impl Time {
     /// [`Time#utc?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc-3F
     /// [`Time#gmt?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmt-3F
     pub fn is_utc(&self) -> bool {
-        self.time_zone() == ""
+        self.time_zone().len() == 0
     }
 
     /// Returns the offset in seconds between the timezone of _time_ and UTC

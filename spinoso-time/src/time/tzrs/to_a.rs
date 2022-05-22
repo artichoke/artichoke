@@ -1,11 +1,15 @@
+extern crate alloc;
+
+use alloc::vec::Vec;
+
 use crate::Time;
 
 /// Serialized representation of a timestamp using a ten-element array of
 /// datetime components.
 ///
 /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-pub struct ToA<'a> {
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct ToA {
     /// The second of the minute `0..=59` for the source _time_.
     pub sec: u32,
     /// The minute of the hour `0..=59` for the source _time_.
@@ -28,10 +32,10 @@ pub struct ToA<'a> {
     /// zone.
     pub isdst: bool,
     /// The timezone used for the source _time_.
-    pub zone: &'a str,
+    pub zone: Vec<u8>,
 }
 
-impl<'a> ToA<'a> {
+impl ToA {
     /// `ToA` represents ten-element array of values for time:
     ///
     /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
@@ -42,27 +46,36 @@ impl<'a> ToA<'a> {
     /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
     #[inline]
     #[must_use]
-    pub fn to_tuple(self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, &'a str) {
+    pub fn to_tuple(&self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, Vec<u8>) {
         (
-            self.sec, self.min, self.hour, self.day, self.month, self.year, self.wday, self.yday, self.isdst,
-            self.zone,
+            self.sec,
+            self.min,
+            self.hour,
+            self.day,
+            self.month,
+            self.year,
+            self.wday,
+            self.yday,
+            self.isdst,
+            self.zone.clone(),
         )
     }
 }
-//impl From<Time> for ToA<'_> {
-//#[inline]
-//fn from(time: Time) -> Self {
-//Self {
-//sec: time.second() as u32,
-//min: time.minute() as u32,
-//hour: time.hour() as u32,
-//day: time.day() as u32,
-//month: time.month() as u32,
-//year: time.year(),
-//wday: time.day_of_week(),
-//yday: time.day_of_year(),
-//isdst: time.is_dst(),
-//zone: time.time_zone(),
-//}
-//}
-//}
+
+impl From<Time> for ToA {
+    #[inline]
+    fn from(time: Time) -> Self {
+        Self {
+            sec: time.second() as u32,
+            min: time.minute() as u32,
+            hour: time.hour() as u32,
+            day: time.day() as u32,
+            month: time.month() as u32,
+            year: time.year(),
+            wday: time.day_of_week() as u32,
+            yday: time.day_of_year() as u32,
+            isdst: time.is_dst(),
+            zone: time.time_zone().clone(),
+        }
+    }
+}
