@@ -535,21 +535,37 @@ impl Time {
         self.inner.local_time_type().is_dst()
     }
 
-    // Time#wday
-    // Time#[monday?|tuesday?...]
-    // 0 indexed to Sunday
-    pub fn day_of_week(&self) -> u32 {
-        todo!()
+    /// Returns an integer representing the day of the week, 0..6, with Sunday == 0
+    ///
+    /// Can be used to implement [`Time#wday`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// assert_eq!(now.day_of_week(), 5);
+    /// ```
+    ///
+    /// [`Time#wday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-wday
+    pub fn day_of_week(&self) -> u8 {
+        self.inner.week_day()
     }
 
-    // Time#yday
-    pub fn day_of_year(&self) -> u32 {
-        todo!()
-    }
-
-    // Time#subsec
-    // Good luck!
-    pub fn sub_sec(&self) -> String {
-        todo!()
+    /// Returns an integer representing the day of the year, 1..366.
+    ///
+    /// Can be used to implement [`Time#yday`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// assert_eq!(now.day_of_year(), 188);
+    /// ```
+    ///
+    /// [`Time#yday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-yday
+    pub fn day_of_year(&self) -> u16 {
+        self.inner.year_day()
     }
 }
