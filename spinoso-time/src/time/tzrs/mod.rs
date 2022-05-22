@@ -1,6 +1,7 @@
 use tz::datetime::DateTime;
 use tz::timezone::TimeZoneRef;
 use tzdb::local_tz;
+use tzdb::time_zone::etc::{GMT};
 
 mod math;
 mod to_a;
@@ -20,17 +21,21 @@ pub struct Time {
     inner: DateTime,
 }
 
-// tz-rs doesn't supply any methods for getting the local timezone of the system. tzdb however
-// provides local_tz() which will attempt to use iana_time_zone::get_timezone() to get the
-// local timezone of the system running this. it's possible that the string returned from
-// iana_time_zone is not recognized by tzdb, so this ensures it always returns something (UTC).
-// TODO: MRI uses a blank tz (0 offset), not UTC
+/// tzdb provides [`local_tz`] to get the local system timezone. If this ever fails, we can
+/// assume `GMT`. `GMT` is used instead of `UTC` since it has a [`time_zone_designation`] - which
+/// if it is an empty string, then it is considered to be a UTC time.
+///
+/// Note: this matches MRI Ruby implmentation. Where `TZ="" ruby -e "puts Time::now"` will return a
+/// new _time_ with 0 offset from UTC, but still still report as a non utc time.
+///
+/// [`local_tz`]: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html
+/// [`time_zone_designation`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.LocalTimeType.html#method.time_zone_designation
 #[inline]
 #[must_use]
 fn local_time_zone() -> TimeZoneRef<'static> {
   match local_tz() {
     Some(tz) => tz,
-    None => UTC,
+    None => GMT,
   }
 }
 
