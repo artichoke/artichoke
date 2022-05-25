@@ -287,18 +287,29 @@ impl Time {
 
 // Conversions
 impl Time {
-     #[inline]
-    #[must_use]
-   // Time#[asctime|ctime]
-    pub fn to_string(&self) -> String {
-        todo!()
-    }
-
-    // Time#strftime
-    // Time#[to_s|inspect] uses "%Y-%m-%d %H:%M:%S UTC
+    /// Returns a conanocial string representation of _time_
+    ///
+    /// Can be used to implement [`Time#asctime`], [`#Time#ctime`], [`Time#to_s`] and
+    /// [`Time#inspect`]
+    ///
+    /// # Examples
+    /// TODO
+    ///
+    /// [`Time#asctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-asctime
+    /// [`Time#ctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-ctime
     #[inline]
     #[must_use]
-    pub fn strftime(&self, _format: &str) -> &str {
+    pub fn to_string(&self) -> String {
+        self.strftime("%Y-%m-%d %H:%M:%S %z")
+    }
+
+    /// Formats _time_ according to the directives in the given format string.
+    ///
+    /// Can be used to implement [`Time#strftime`]
+    /// [`Time#stftime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-strftime
+    #[inline]
+    #[must_use]
+    pub fn strftime(&self, _format: &str) -> String {
         todo!()
     }
 
@@ -420,10 +431,7 @@ impl Time {
     /// Converts _time_ to the provided time zone, modifying the receiver
     ///
     /// # Examples
-    ///
-    /// ```
-    /// assert!(false)
-    /// ```
+    /// TODO
     #[inline]
     #[must_use]
     pub fn set_timezone(&mut self, tz: TimeZoneRef<'static>) {
