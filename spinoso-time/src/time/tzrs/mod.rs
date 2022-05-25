@@ -491,12 +491,6 @@ impl Time {
         let local_time_type = offset.local_time_type();
         self.inner = DateTime::from_timespec_and_local(self.to_int(), self.nanoseconds(), local_time_type).unwrap()
     }
-
-    #[inline]
-    #[must_use]
-    pub fn round(&mut self, _digits: u32) {
-        todo!()
-    }
 }
 
 // Parts
