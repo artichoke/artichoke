@@ -61,6 +61,7 @@ impl ToA {
 
 impl From<Time> for ToA {
     #[inline]
+    #[must_use]
     fn from(time: Time) -> Self {
         Self {
             sec: time.second(),

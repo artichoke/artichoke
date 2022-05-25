@@ -23,6 +23,7 @@ const UTC: TimeZoneRef<'static> = TimeZoneRef::utc();
 ///
 /// [`tz::datetime::Datetime`]: https://docs.rs/tz-rs/0.6.9/tz/datetime/struct.DateTime.html
 /// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Time {
     inner: DateTime,
@@ -60,6 +61,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
+    #[inline]
+    #[must_use]
     pub fn new(
         year: i32,
         month: u8,
@@ -71,7 +74,9 @@ impl Time {
         offset: &UtcOffset,
     ) -> Self {
         let local_time_type = offset.local_time_type();
-        Self { inner: DateTime::new(year, month, day, hour, minute, second, nanoseconds, local_time_type).unwrap() }
+        Self {
+            inner: DateTime::new(year, month, day, hour, minute, second, nanoseconds, local_time_type).unwrap(),
+        }
     }
 
     /// Returns a new Time from the given values in the provided TimeZone.
@@ -89,6 +94,8 @@ impl Time {
     ///
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
+    #[inline]
+    #[must_use]
     pub fn with_time_zone(
         year: i32,
         month: u8,
@@ -112,6 +119,8 @@ impl Time {
     ///
     /// [`Time#local`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-local
     /// [`Time#mktime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-mktime
+    #[inline]
+    #[must_use]
     pub fn local(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
         let tz = local_time_zone();
         Time::with_time_zone(year, month, month_day, hour, minute, second, nanoseconds, tz)
@@ -123,6 +132,8 @@ impl Time {
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-utc
     /// [`Time#gm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-gm
+    #[inline]
+    #[must_use]
     pub fn utc(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
         Time::with_time_zone(
             year,
@@ -148,6 +159,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
+    #[inline]
+    #[must_use]
     pub fn now() -> Self {
         let tz = local_time_zone();
         let now = DateTime::now(tz).unwrap();
@@ -168,6 +181,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
+    #[inline]
+    #[must_use]
     pub fn with_timespec_and_zone(seconds: i64, nano_seconds: u32, tz: TimeZoneRef<'static>) -> Self {
         Self {
             inner: DateTime::from_timespec(seconds, nano_seconds, tz).unwrap(),
@@ -192,6 +207,8 @@ impl From<ToA> for Time {
     /// assert_eq!(now.second(), from_to_a.second());
     /// assert_ne!(now.nanoseconds(), from_to_a.nanoseconds());
     /// ```
+    #[inline]
+    #[must_use]
     fn from(to_a: ToA) -> Self {
         Self::new(
             to_a.year, to_a.month, to_a.day, to_a.hour, to_a.min, to_a.sec, 0, &to_a.zone,
@@ -215,6 +232,8 @@ impl Time {
     ///
     /// [`Time#to_i`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_i
     /// [`Time#tv_sec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_sec
+    #[inline]
+    #[must_use]
     pub fn to_int(&self) -> i64 {
         self.inner.unix_time()
     }
@@ -233,6 +252,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#to_f`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_f
+    #[inline]
+    #[must_use]
     pub fn to_float(&self) -> f64 {
         let sec = self.to_int() as f64;
         let nanos_fractional = (self.inner.nanoseconds() as f64) / (NANOS_IN_SECOND as f64);
@@ -257,6 +278,8 @@ impl Time {
     /// [`Time#subsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-subsec
     /// [`to_int`]: struct.Time.html#method.to_int
     /// [`Time#to_r`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_r
+    #[inline]
+    #[must_use]
     pub fn subsec_fractional(&self) -> (u32, u32) {
         (self.inner.nanoseconds(), NANOS_IN_SECOND)
     }
@@ -264,14 +287,18 @@ impl Time {
 
 // Conversions
 impl Time {
-    // Time#[asctime|ctime]
+     #[inline]
+    #[must_use]
+   // Time#[asctime|ctime]
     pub fn to_string(&self) -> String {
         todo!()
     }
 
     // Time#strftime
     // Time#[to_s|inspect] uses "%Y-%m-%d %H:%M:%S UTC
-    pub fn strftime(&self, format: String) -> String {
+    #[inline]
+    #[must_use]
+    pub fn strftime(&self, _format: &str) -> &str {
         todo!()
     }
 
@@ -296,6 +323,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#to_a`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_a
+    #[inline]
+    #[must_use]
     pub fn to_array(self) -> ToA {
         ToA::from(self)
     }
@@ -314,6 +343,8 @@ impl Time {
     /// let now_utc = now.to_timezone(utc_time_zone);
     /// assert_eq!(now_utc.utc_offset(), 0);
     /// ```
+    #[inline]
+    #[must_use]
     pub fn to_timezone(&self, tz: TimeZoneRef<'static>) -> Self {
         Self::with_timespec_and_zone(self.inner.unix_time(), self.inner.nanoseconds(), tz)
     }
@@ -333,6 +364,8 @@ impl Time {
     ///
     /// [`Time#getutc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getutc
     /// [`Time#getgm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getgm
+    #[inline]
+    #[must_use]
     pub fn to_utc(&self) -> Self {
         self.to_timezone(UTC)
     }
@@ -353,6 +386,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
+    #[inline]
+    #[must_use]
     pub fn to_local(&self) -> Self {
         let tz = local_time_zone();
         self.to_timezone(tz)
@@ -374,6 +409,8 @@ impl Time {
     /// ```
     /// assert!(false)
     /// ```
+    #[inline]
+    #[must_use]
     pub fn set_timezone(&mut self, tz: TimeZoneRef<'static>) {
         // TODO: ProjectionErrors from project() are propogated from `Time::from_timespec` which
         // generally come from an error on checked_add overflowing the seconds component of the
@@ -401,6 +438,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
+    #[inline]
+    #[must_use]
     pub fn set_local(&mut self) {
         let tz = local_time_zone();
         self.set_timezone(tz)
@@ -423,6 +462,8 @@ impl Time {
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc
     /// [`Time#gmtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmtime
+    #[inline]
+    #[must_use]
     pub fn set_utc(&mut self) {
         self.set_timezone(UTC)
     }
@@ -443,12 +484,16 @@ impl Time {
     /// ```
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
+    #[inline]
+    #[must_use]
     pub fn set_offset_from_utc(&mut self, offset: i32) {
         let local_time_type = LocalTimeType::new(offset, false, Some(b"GMT")).unwrap();
         self.inner = DateTime::from_timespec_and_local(self.to_int(), self.nanoseconds(), local_time_type).unwrap()
     }
 
-    pub fn round(&mut self, digits: u32) {
+    #[inline]
+    #[must_use]
+    pub fn round(&mut self, _digits: u32) {
         todo!()
     }
 }
@@ -475,6 +520,8 @@ impl Time {
     ///
     /// [`Time#nsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-nsec
     /// [`Time#tv_nsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_nsec
+    #[inline]
+    #[must_use]
     pub fn nanoseconds(&self) -> u32 {
         self.inner.nanoseconds()
     }
@@ -493,6 +540,8 @@ impl Time {
     ///
     /// [`Time#usec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-usec
     /// [`Time#tv_usec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_usec
+    #[inline]
+    #[must_use]
     pub fn microseconds(&self) -> u32 {
         self.inner.nanoseconds() / MICROS_IN_NANO
     }
@@ -514,6 +563,8 @@ impl Time {
     ///
     /// [`Time#sec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sec
     /// [leap seconds]: https://en.wikipedia.org/wiki/Leap_second
+    #[inline]
+    #[must_use]
     pub fn second(&self) -> u8 {
         self.inner.second()
     }
@@ -532,6 +583,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#minute`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-min
+    #[inline]
+    #[must_use]
     pub fn minute(&self) -> u8 {
         self.inner.minute()
     }
@@ -550,6 +603,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#hour`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-hour
+    #[inline]
+    #[must_use]
     pub fn hour(&self) -> u8 {
         self.inner.hour()
     }
@@ -569,6 +624,8 @@ impl Time {
     ///
     /// [`Time#day`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-day
     /// [`Time#mday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mday
+    #[inline]
+    #[must_use]
     pub fn day(&self) -> u8 {
         self.inner.month_day()
     }
@@ -588,6 +645,8 @@ impl Time {
     ///
     /// [`Time#mon`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mon
     /// [`Time#month`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mon
+    #[inline]
+    #[must_use]
     pub fn month(&self) -> u8 {
         self.inner.month()
     }
@@ -605,6 +664,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#year`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-year
+    #[inline]
+    #[must_use]
     pub fn year(&self) -> i32 {
         self.inner.year()
     }
@@ -623,6 +684,8 @@ impl Time {
     ///
     /// [`UTC LocalTimeType`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#180
     /// [`empty string`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#210
+    #[inline]
+    #[must_use]
     pub fn time_zone(&self) -> Vec<u8> {
         self.inner.local_time_type().time_zone_designation().as_bytes().to_vec()
     }
@@ -640,6 +703,8 @@ impl Time {
     ///
     /// [`Time#utc?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc-3F
     /// [`Time#gmt?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmt-3F
+    #[inline]
+    #[must_use]
     pub fn is_utc(&self) -> bool {
         self.time_zone().len() == 0
     }
@@ -658,6 +723,8 @@ impl Time {
     ///
     /// [`Time#utc_offset`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc_offset
     /// [`Time#gmt_offset`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmt_offset
+    #[inline]
+    #[must_use]
     pub fn utc_offset(&self) -> i32 {
         self.inner.local_time_type().ut_offset()
     }
@@ -679,6 +746,8 @@ impl Time {
     ///
     /// [`Time#dst?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-dst-3F
     /// [`Time#isdst`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-isdst
+    #[inline]
+    #[must_use]
     pub fn is_dst(&self) -> bool {
         self.inner.local_time_type().is_dst()
     }
@@ -696,6 +765,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#wday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-wday
+    #[inline]
+    #[must_use]
     pub fn day_of_week(&self) -> u8 {
         self.inner.week_day()
     }
@@ -713,6 +784,8 @@ impl Time {
     /// ```
     ///
     /// [`Time#yday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-yday
+    #[inline]
+    #[must_use]
     pub fn day_of_year(&self) -> u16 {
         self.inner.year_day()
     }

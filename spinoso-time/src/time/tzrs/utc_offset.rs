@@ -1,6 +1,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+
 use tz::timezone::LocalTimeType;
 
 /// Represents the number of seconds offset from UTC
@@ -12,30 +13,29 @@ pub struct UtcOffset {
 }
 
 impl UtcOffset {
+    #[inline]
+    #[must_use]
     pub fn new(offset: i32) -> Self {
-        Self {
-            inner: offset
-        }
+        Self { inner: offset }
     }
 
+    #[inline]
+    #[must_use]
     pub fn local_time_type(&self) -> LocalTimeType {
-        LocalTimeType::new(
-            self.inner,
-            false,
-            Some(b"GMT"),
-        ).unwrap()
-
-
+        LocalTimeType::new(self.inner, false, Some(b"GMT")).unwrap()
     }
 
+    #[inline]
+    #[must_use]
     pub fn to_string(&self) -> Vec<u8> {
         Vec::new()
     }
-
 }
 
 impl From<&str> for UtcOffset {
-  fn from(_: &str) -> Self {
-    Self { inner: 7200 }
-  }
+    #[inline]
+    #[must_use]
+    fn from(_: &str) -> Self {
+        Self { inner: 7200 }
+    }
 }
