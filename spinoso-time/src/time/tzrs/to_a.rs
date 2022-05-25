@@ -1,5 +1,5 @@
-use crate::Time;
 use super::UtcOffset;
+use crate::Time;
 
 /// Serialized representation of a timestamp using a ten-element array of
 /// datetime components.

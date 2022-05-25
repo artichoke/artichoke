@@ -177,8 +177,25 @@ impl Time {
 
 // Time#[gm|local|mktime|utc]
 impl From<ToA> for Time {
-    fn from(_: ToA) -> Self {
-        todo!()
+    /// Create a new Time object base on a ToA
+    ///
+    /// Note: This converting from a Time object to a ToA and back again is lossy since ToA does
+    /// not store nanoseconds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::local(2022, 7, 8, 12, 34, 56, 1000);
+    /// let to_a = now.to_array();
+    /// let from_to_a = Time::from(to_a);
+    /// assert_eq!(now.second(), from_to_a.second());
+    /// assert_ne!(now.nanoseconds(), from_to_a.nanoseconds());
+    /// ```
+    fn from(to_a: ToA) -> Self {
+        Self::new(
+            to_a.year, to_a.month, to_a.day, to_a.hour, to_a.min, to_a.sec, 0, &to_a.zone,
+        )
     }
 }
 
@@ -258,9 +275,29 @@ impl Time {
         todo!()
     }
 
-    // Time#to_a
-    pub fn to_array(&self) -> ToA {
-        todo!()
+    /// Serialize a `Time` into its components as a [`ToA`].
+    ///
+    /// `ToA` stores a `Time` as a ten-element struct of time components: [sec,
+    /// min, hour, day, month, year, wday, yday, isdst, zone].
+    ///
+    /// The ordering of the properties is important for the Ruby [`Time#to_a`]
+    /// API, and is accessible with the [`ToA::to_tuple`] method.
+    ///
+    /// Can be used to implement [`Time#to_a`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_time::Time;
+    /// let now = Time::now();
+    /// let to_array = now.to_array();
+    /// assert_eq!(to_array.sec, now.second());
+    /// assert_eq!(to_array.wday, now.day_of_week());
+    /// ```
+    ///
+    /// [`Time#to_a`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_a
+    pub fn to_array(self) -> ToA {
+        ToA::from(self)
     }
 
     /// Returns a new Time object representing _time_ in the provided timezone
