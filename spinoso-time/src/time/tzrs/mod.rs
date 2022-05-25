@@ -3,7 +3,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use tz::datetime::DateTime;
-use tz::timezone::{LocalTimeType, TimeZoneRef};
+use tz::timezone::TimeZoneRef;
 use tzdb::local_tz;
 use tzdb::time_zone::etc::GMT;
 
@@ -475,10 +475,11 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::{Time, UtcOffset};
     /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
     /// assert!(now.is_utc());
-    /// now.set_offset_from_utc(3600);
+    /// let offset = UtcOffset::from(3600);
+    /// now.set_offset_from_utc(offset);
     /// assert!(!now.is_utc());
     /// assert_eq!(now.utc_offset(), 3600);
     /// ```
@@ -486,8 +487,8 @@ impl Time {
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     #[inline]
     #[must_use]
-    pub fn set_offset_from_utc(&mut self, offset: i32) {
-        let local_time_type = LocalTimeType::new(offset, false, Some(b"GMT")).unwrap();
+    pub fn set_offset_from_utc(&mut self, offset: UtcOffset) {
+        let local_time_type = offset.local_time_type();
         self.inner = DateTime::from_timespec_and_local(self.to_int(), self.nanoseconds(), local_time_type).unwrap()
     }
 
