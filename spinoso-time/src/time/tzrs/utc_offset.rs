@@ -84,7 +84,6 @@ impl From<i32> for UtcOffset {
     fn from(seconds: i32) -> Self {
         Self::new(seconds, false)
     }
-
 }
 
 #[cfg(test)]

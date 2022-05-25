@@ -393,11 +393,26 @@ impl Time {
         self.to_timezone(tz)
     }
 
-    // TODO: Implement based on an Offset struct that takes both strings and i32s
-    // Time#getlocal(offset)
-    //pub fn to_offset(&self, offset: Offset) -> Self {
-    //todo!()
-    //}
+    /// Returns a new Time object representing _time_ based on the provided offset
+    ///
+    /// Can be used to implement [`Time#getlocal`] with a string/number parameter
+    ///
+    /// #Examples
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let local_offset = Time::now().utc_offset();
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// let now_local = now_utc.to_local();
+    /// assert_eq!(now_local.utc_offset(), local_offset);
+    /// ```
+    ///
+    /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
+    pub fn to_offset(&self, offset: UtcOffset) -> Self {
+        let local_time_type = offset.local_time_type();
+        let dt = DateTime::from_timespec_and_local(self.to_int(), self.nanoseconds(), local_time_type);
+        Self { inner: dt.unwrap() }
+    }
 }
 
 // Mutators
