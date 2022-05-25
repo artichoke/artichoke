@@ -4,21 +4,15 @@ use tz::timezone::LocalTimeType;
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct UtcOffset {
     inner: i32,
+    is_utc: bool,
 }
 
 impl UtcOffset {
-    /// Returns a new UtcOffset where offset is the number of seconds from UTC
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use spinoso_time::UtcOffset;
-    /// let offset = UtcOffset::new(3600);
-    /// ```
+    /// Build a UtcOffset base on seconds offset from UTC
     #[inline]
     #[must_use]
-    pub fn new(offset: i32) -> Self {
-        Self { inner: offset }
+    fn new(offset: i32, is_utc: bool) -> Self {
+        Self { inner: offset, is_utc }
     }
 
     /// Returns a tz-rs [`LocalTimeType`] which can be used to generate/project a new Datetime based on
@@ -28,7 +22,7 @@ impl UtcOffset {
     ///
     /// ```
     /// use spinoso_time::UtcOffset;
-    /// let offset = UtcOffset::new(3600);
+    /// let offset = UtcOffset::from(3600);
     /// let local_time_type = offset.local_time_type();
     /// assert_eq!("GMT", local_time_type.time_zone_designation());
     /// assert_eq!(3600, local_time_type.ut_offset());
@@ -48,7 +42,7 @@ impl UtcOffset {
     ///
     /// ```
     /// use spinoso_time::UtcOffset;
-    /// let offset = UtcOffset::new(3600);
+    /// let offset = UtcOffset::from(3600);
     /// assert_eq!("+01:00", offset.to_string());
     /// ```
     #[inline]
@@ -83,14 +77,37 @@ impl From<&str> for UtcOffset {
     }
 }
 
+impl From<i32> for UtcOffset {
+    /// Construct a UtcOffset with the offset in second from UTC
+    #[inline]
+    #[must_use]
+    fn from(seconds: i32) -> Self {
+        Self::new(seconds, false)
+    }
+
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn utc_offset_formatting() {
-        assert_eq!("-02:02", UtcOffset::new(-7320).to_string());
-        assert_eq!("+00:00", UtcOffset::new(0).to_string());
-        assert_eq!("+00:00", UtcOffset::new(59).to_string());
+        assert_eq!("-02:02", UtcOffset::from(-7320).to_string());
+        assert_eq!("+00:00", UtcOffset::from(0).to_string());
+        assert_eq!("+00:00", UtcOffset::from(59).to_string());
+    }
+
+    #[test]
+    fn zero_is_not_utc() {
+        let offset = UtcOffset::from(0);
+        assert_eq!("+00:00", offset.to_string());
+    }
+
+    //#[test]
+    fn z_is_utc() {
+        // TODO: Z is a special case
+        let offset = UtcOffset::from("Z");
+        assert_eq!("UTC", offset.to_string());
     }
 }

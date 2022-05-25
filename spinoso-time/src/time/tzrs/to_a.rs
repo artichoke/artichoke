@@ -73,7 +73,7 @@ impl From<Time> for ToA {
             wday: time.day_of_week(),
             yday: time.day_of_year(),
             isdst: time.is_dst(),
-            zone: UtcOffset::new(time.utc_offset()),
+            zone: UtcOffset::from(time.utc_offset()),
         }
     }
 }

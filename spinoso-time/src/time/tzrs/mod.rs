@@ -56,7 +56,7 @@ impl Time {
     /// # Examples
     /// ```
     /// use spinoso_time::{Time, UtcOffset};
-    /// let offset = UtcOffset::new(7200);
+    /// let offset = UtcOffset::from(7200);
     /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, &offset);
     /// ```
     ///
