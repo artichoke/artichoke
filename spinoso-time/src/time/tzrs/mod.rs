@@ -244,14 +244,30 @@ impl Time {
     /// [`Time#inspect`]
     ///
     /// # Examples
-    /// TODO
+    ///
+    /// ```
+    /// use spinoso_time::Time;
+    /// let now = Time::utc(2022, 05, 26, 13, 16, 22, 0);
+    /// assert_eq!(now.to_string(), "2022-05-26 13:16:22 UTC");
+    /// ```
     ///
     /// [`Time#asctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-asctime
     /// [`Time#ctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-ctime
     #[inline]
     #[must_use]
     pub fn to_string(&self) -> String {
-        self.strftime("%Y-%m-%d %H:%M:%S %z")
+        // TODO: future
+        //self.strftime("%Y-%m-%d %H:%M:%S %z")
+        format!(
+            "{:0>4}-{:0>2}-{:0>2} {:0>2}:{:0>2}:{:0>2} {}",
+            self.year(),
+            self.month(),
+            self.day(),
+            self.hour(),
+            self.minute(),
+            self.second(),
+            self.time_zone()
+        )
     }
 
     /// Formats _time_ according to the directives in the given format string.
