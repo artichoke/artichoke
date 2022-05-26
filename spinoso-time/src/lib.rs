@@ -48,6 +48,10 @@
 #[doc = include_str!("../README.md")]
 mod readme {}
 
+#[cfg(feature = "tzrs")]
+#[macro_use]
+extern crate lazy_static;
+
 use core::time::Duration;
 
 mod time;

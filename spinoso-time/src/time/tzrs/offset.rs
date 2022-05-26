@@ -1,6 +1,10 @@
+use regex::Regex;
 use tz::timezone::{LocalTimeType, TimeZoneRef};
 use tzdb::local_tz;
 use tzdb::time_zone::etc::GMT;
+
+const SECONDS_IN_MINUTE: i32 = 60;
+const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
 
 /// tzdb provides [`local_tz`] to get the local system timezone. If this ever fails, we can
 /// assume `GMT`. `GMT` is used instead of `UTC` since it has a [`time_zone_designation`] - which
@@ -99,8 +103,52 @@ impl From<&str> for Offset {
     /// [accepted MRI values]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     #[inline]
     #[must_use]
-    fn from(_: &str) -> Self {
-        todo!()
+    fn from(input: &str) -> Self {
+        match input {
+            "A" => Self::fixed(1),
+            "B" => Self::fixed(2),
+            "C" => Self::fixed(3),
+            "D" => Self::fixed(4),
+            "E" => Self::fixed(5),
+            "F" => Self::fixed(6),
+            "G" => Self::fixed(7),
+            "H" => Self::fixed(8),
+            "I" => Self::fixed(9),
+            "K" => Self::fixed(10),
+            "L" => Self::fixed(11),
+            "M" => Self::fixed(12),
+            "N" => Self::fixed(-1),
+            "O" => Self::fixed(-2),
+            "P" => Self::fixed(-3),
+            "Q" => Self::fixed(-4),
+            "R" => Self::fixed(-5),
+            "S" => Self::fixed(-6),
+            "T" => Self::fixed(-7),
+            "U" => Self::fixed(-8),
+            "V" => Self::fixed(-9),
+            "W" => Self::fixed(-10),
+            "X" => Self::fixed(-11),
+            "Y" => Self::fixed(-12),
+            "Z" => Self::utc(),
+            _ => {
+                lazy_static! {
+                    static ref HH_MM_MATCHER: Regex = Regex::new(r"^([\-\+]{1})(\d{2}):(\d{2})$").unwrap();
+                }
+                if HH_MM_MATCHER.is_match(input) {
+                    let caps = HH_MM_MATCHER.captures(input).unwrap();
+
+                    let sign = if caps.get(1).unwrap().as_str() == "+" { 1 } else { -1 };
+                    let hours = caps.get(2).unwrap().as_str().parse::<i32>().unwrap();
+                    let minutes = caps.get(3).unwrap().as_str().parse::<i32>().unwrap();
+
+                    let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
+                    Self::fixed(offset_seconds)
+                } else {
+                    // TODO: ArgumentError
+                    Self::utc()
+                }
+            }
+        }
     }
 }
 
@@ -126,16 +174,35 @@ impl From<i32> for Offset {
 mod tests {
     use super::*;
 
+    fn offset_seconds_from_fixed_offset(input: &str) -> i32 {
+        let offset = Offset::from(input);
+        let local_time_type = offset.time_zone_ref().local_time_types()[0];
+        local_time_type.ut_offset()
+    }
+
     #[test]
-    fn zero_is_not_utc() {
+    fn fixed_zero_is_not_utc() {
         let offset = Offset::from(0);
         assert!(matches!(offset, Offset::Fixed(_)));
     }
 
-    //#[test]
-    //fn z_is_utc() {
-    // TODO: Z is a special case
-    //let offset = Offset::from("Z");
-    //assert_eq!("UTC", offset.to_string());
-    //}
+    #[test]
+    fn z_is_utc() {
+        let offset = Offset::from("Z");
+        assert!(matches!(offset, Offset::Utc));
+    }
+
+    #[test]
+    fn from_str_hh_mm() {
+        assert_eq!(0, offset_seconds_from_fixed_offset("+00:00"));
+        assert_eq!(0, offset_seconds_from_fixed_offset("-00:00"));
+        assert_eq!(60, offset_seconds_from_fixed_offset("+00:01"));
+        assert_eq!(-60, offset_seconds_from_fixed_offset("-00:01"));
+        assert_eq!(3600, offset_seconds_from_fixed_offset("+01:00"));
+        assert_eq!(-3600, offset_seconds_from_fixed_offset("-01:00"));
+        assert_eq!(7320, offset_seconds_from_fixed_offset("+02:02"));
+        assert_eq!(-7320, offset_seconds_from_fixed_offset("-02:02"));
+        assert_eq!(362340, offset_seconds_from_fixed_offset("+99:99"));
+        assert_eq!(-362340, offset_seconds_from_fixed_offset("-99:99"));
+    }
 }
