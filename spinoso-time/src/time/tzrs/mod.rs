@@ -1,22 +1,14 @@
-extern crate alloc;
-
-use alloc::vec::Vec;
-
 use tz::datetime::DateTime;
-use tz::timezone::TimeZoneRef;
-use tzdb::local_tz;
-use tzdb::time_zone::etc::GMT;
 
 mod math;
+mod offset;
 mod to_a;
-mod utc_offset;
 
+pub use offset::Offset;
 pub use to_a::ToA;
-pub use utc_offset::UtcOffset;
 
 use crate::{MICROS_IN_NANO, NANOS_IN_SECOND};
 
-const UTC: TimeZoneRef<'static> = TimeZoneRef::utc();
 /// A wrapper around [`tz::datetime::Datetime`] which contains everything needed for date creation and
 /// conversion to match the ruby spec. Seconds and Subseconds are stored independently as i64 and
 /// u32 respectively, which gives enough granularity to meet the ruby [`Time`] spec.
@@ -26,41 +18,30 @@ const UTC: TimeZoneRef<'static> = TimeZoneRef::utc();
 #[must_use]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Time {
+    /// A wrapper around [`tz::datetime::Datetime`] to provide date and time formatting
     inner: DateTime,
-}
-
-/// tzdb provides [`local_tz`] to get the local system timezone. If this ever fails, we can
-/// assume `GMT`. `GMT` is used instead of `UTC` since it has a [`time_zone_designation`] - which
-/// if it is an empty string, then it is considered to be a UTC time.
-///
-/// Note: this matches MRI Ruby implmentation. Where `TZ="" ruby -e "puts Time::now"` will return a
-/// new _time_ with 0 offset from UTC, but still still report as a non utc time.
-///
-/// [`local_tz`]: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html
-/// [`time_zone_designation`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.LocalTimeType.html#method.time_zone_designation
-#[inline]
-#[must_use]
-fn local_time_zone() -> TimeZoneRef<'static> {
-    match local_tz() {
-        Some(tz) => tz,
-        None => GMT,
-    }
+    /// The offset to used for the provided _time_
+    offset: Offset,
 }
 
 // constructors
 impl Time {
-    /// Returns a new Time in GMT with the provided offset.
+    /// Returns a new Time from the given values in the provided TimeZone.
     ///
-    /// Can be used to implment ruby [`Time#new`]
+    /// Can be used to implment ruby [`Time#new`] (using a [`Timezone`] Object)
+    ///
+    /// Note: During DST transitions, a specific time can be ambiguous. This method will always pick the earliest date.
     ///
     /// # Examples
     /// ```
-    /// use spinoso_time::{Time, UtcOffset};
-    /// let offset = UtcOffset::from(7200);
-    /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, &offset);
+    /// use spinoso_time::{Time, Offset};
+    /// use tzdb::time_zone::pacific::AUCKLAND;
+    /// let offset = Offset::tz(AUCKLAND);
+    /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, offset);
     /// ```
     ///
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
+    /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
     #[inline]
     #[must_use]
     pub fn new(
@@ -71,46 +52,14 @@ impl Time {
         minute: u8,
         second: u8,
         nanoseconds: u32,
-        offset: &UtcOffset,
+        offset: Offset,
     ) -> Self {
-        let local_time_type = offset.local_time_type();
-        Self {
-            inner: DateTime::new(year, month, day, hour, minute, second, nanoseconds, local_time_type).unwrap(),
-        }
-    }
-
-    /// Returns a new Time from the given values in the provided TimeZone.
-    ///
-    /// Can be used to implment ruby [`Time#new`] (using a [`Timezone`] Object)
-    ///
-    /// Note: During DST transitions, a specific time can be ambiguous. This method will always pick the earliest date.
-    ///
-    /// # Examples
-    /// ```
-    /// use spinoso_time::Time;
-    /// use tzdb::time_zone::pacific::AUCKLAND;
-    /// let t = Time::with_time_zone(2022, 9, 25, 1, 30, 0, 0, AUCKLAND);
-    /// ```
-    ///
-    /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
-    /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
-    #[inline]
-    #[must_use]
-    pub fn with_time_zone(
-        year: i32,
-        month: u8,
-        day: u8,
-        hour: u8,
-        minute: u8,
-        second: u8,
-        nanoseconds: u32,
-        tz: TimeZoneRef<'static>,
-    ) -> Self {
+        let tz = offset.time_zone_ref();
         let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz).unwrap();
         let dt = found_date_times
             .unique()
             .expect("Could not find a matching DateTime for this timezone");
-        Self { inner: dt }
+        Self { inner: dt, offset }
     }
 
     /// Returns a Time based on the provided values in the local timezone
@@ -122,8 +71,16 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn local(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
-        let tz = local_time_zone();
-        Time::with_time_zone(year, month, month_day, hour, minute, second, nanoseconds, tz)
+        Time::new(
+            year,
+            month,
+            month_day,
+            hour,
+            minute,
+            second,
+            nanoseconds,
+            Offset::local(),
+        )
     }
 
     /// Returns a Time based on the provided values in UTC
@@ -135,16 +92,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn utc(year: i32, month: u8, month_day: u8, hour: u8, minute: u8, second: u8, nanoseconds: u32) -> Self {
-        Time::with_time_zone(
-            year,
-            month,
-            month_day,
-            hour,
-            minute,
-            second,
-            nanoseconds,
-            TimeZoneRef::utc(),
-        )
+        Time::new(year, month, month_day, hour, minute, second, nanoseconds, Offset::utc())
     }
 
     /// Returns a Time with the current time in the System Timezone
@@ -162,9 +110,10 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn now() -> Self {
-        let tz = local_time_zone();
-        let now = DateTime::now(tz).unwrap();
-        Self { inner: now }
+        let offset = Offset::local();
+        let time_zone_ref = offset.time_zone_ref();
+        let now = DateTime::now(time_zone_ref).unwrap();
+        Self { inner: now, offset }
     }
 
     /// Returns a Time in the given timezone with the number of seconds and nano_seconds since the Epoch in the specified timezone
@@ -174,18 +123,20 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
-    /// use tzdb::time_zone::UTC;
-    /// let t = Time::with_timespec_and_zone(0, 0, UTC);
+    /// use spinoso_time::{Time, Offset};
+    /// let offset = Offset::utc();
+    /// let t = Time::with_timespec_and_offset(0, 0, offset);
     /// assert_eq!(t.to_int(), 0);
     /// ```
     ///
     /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
     #[inline]
     #[must_use]
-    pub fn with_timespec_and_zone(seconds: i64, nano_seconds: u32, tz: TimeZoneRef<'static>) -> Self {
+    pub fn with_timespec_and_offset(seconds: i64, nano_seconds: u32, offset: Offset) -> Self {
+        let time_zone_ref = offset.time_zone_ref();
         Self {
-            inner: DateTime::from_timespec(seconds, nano_seconds, tz).unwrap(),
+            inner: DateTime::from_timespec(seconds, nano_seconds, time_zone_ref).unwrap(),
+            offset,
         }
     }
 }
@@ -211,7 +162,7 @@ impl From<ToA> for Time {
     #[must_use]
     fn from(to_a: ToA) -> Self {
         Self::new(
-            to_a.year, to_a.month, to_a.day, to_a.hour, to_a.min, to_a.sec, 0, &to_a.zone,
+            to_a.year, to_a.month, to_a.day, to_a.hour, to_a.min, to_a.sec, 0, to_a.zone,
         )
     }
 }
@@ -339,25 +290,25 @@ impl Time {
     pub fn to_array(self) -> ToA {
         ToA::from(self)
     }
-
-    /// Returns a new Time object representing _time_ in the provided timezone
+    /// Returns a new Time object representing _time_ based on the provided offset
     ///
-    /// Can be used to implement [`Time#getlocal`] with a provided timezone
+    /// Can be used to implement [`Time#getlocal`] with a string/number parameter
     ///
-    /// # Examples
+    /// #Examples
     ///
     /// ```
     /// use spinoso_time::Time;
-    /// use tz::timezone::TimeZoneRef;
-    /// let utc_time_zone = TimeZoneRef::utc();
-    /// let now = Time::now();
-    /// let now_utc = now.to_timezone(utc_time_zone);
-    /// assert_eq!(now_utc.utc_offset(), 0);
+    /// let local_offset = Time::now().utc_offset();
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
+    /// let now_local = now_utc.to_local();
+    /// assert_eq!(now_local.utc_offset(), local_offset);
     /// ```
+    ///
+    /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
     #[inline]
     #[must_use]
-    pub fn to_timezone(&self, tz: TimeZoneRef<'static>) -> Self {
-        Self::with_timespec_and_zone(self.inner.unix_time(), self.inner.nanoseconds(), tz)
+    pub fn to_offset(&self, offset: Offset) -> Self {
+        Self::with_timespec_and_offset(self.inner.unix_time(), self.inner.nanoseconds(), offset)
     }
 
     /// Returns a new _time_ in UTC
@@ -378,7 +329,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn to_utc(&self) -> Self {
-        self.to_timezone(UTC)
+        self.to_offset(Offset::utc())
     }
 
     /// Returns a new Time object representing _time_ in local time (using the local time zone in
@@ -400,29 +351,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn to_local(&self) -> Self {
-        let tz = local_time_zone();
-        self.to_timezone(tz)
-    }
-
-    /// Returns a new Time object representing _time_ based on the provided offset
-    ///
-    /// Can be used to implement [`Time#getlocal`] with a string/number parameter
-    ///
-    /// #Examples
-    ///
-    /// ```
-    /// use spinoso_time::Time;
-    /// let local_offset = Time::now().utc_offset();
-    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
-    /// let now_local = now_utc.to_local();
-    /// assert_eq!(now_local.utc_offset(), local_offset);
-    /// ```
-    ///
-    /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
-    pub fn to_offset(&self, offset: UtcOffset) -> Self {
-        let local_time_type = offset.local_time_type();
-        let dt = DateTime::from_timespec_and_local(self.to_int(), self.nanoseconds(), local_time_type);
-        Self { inner: dt.unwrap() }
+        self.to_offset(Offset::local())
     }
 }
 
@@ -434,14 +363,16 @@ impl Time {
     /// TODO
     #[inline]
     #[must_use]
-    pub fn set_timezone(&mut self, tz: TimeZoneRef<'static>) {
+    pub fn set_offset(&mut self, offset: Offset) {
         // TODO: ProjectionErrors from project() are propogated from `Time::from_timespec` which
         // generally come from an error on checked_add overflowing the seconds component of the
         // unix time. Need to decide how to handle these kinds of errors (e.g. panic?)
-        match self.inner.project(tz) {
+        let time_zone_ref = offset.time_zone_ref();
+        match self.inner.project(time_zone_ref) {
             Ok(time) => self.inner = time,
             Err(_) => (),
         }
+        self.offset = offset;
     }
 
     /// Converts _time_ to local time (using the local time zone in effective at the creation time
@@ -464,8 +395,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn set_local(&mut self) {
-        let tz = local_time_zone();
-        self.set_timezone(tz)
+        self.set_offset(Offset::local())
     }
 
     /// Converts _time_ to UTC (GMT), modifying the receiver
@@ -488,7 +418,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn set_utc(&mut self) {
-        self.set_timezone(UTC)
+        self.set_offset(Offset::utc())
     }
 
     /// Converts _time_ to the GMT time zone with the provided offset
@@ -498,10 +428,10 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::{Time, UtcOffset};
+    /// use spinoso_time::{Time, Offset};
     /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
     /// assert!(now.is_utc());
-    /// let offset = UtcOffset::from(3600);
+    /// let offset = Offset::from(3600);
     /// now.set_offset_from_utc(offset);
     /// assert!(!now.is_utc());
     /// assert_eq!(now.utc_offset(), 3600);
@@ -510,9 +440,10 @@ impl Time {
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     #[inline]
     #[must_use]
-    pub fn set_offset_from_utc(&mut self, offset: UtcOffset) {
-        let local_time_type = offset.local_time_type();
-        self.inner = DateTime::from_timespec_and_local(self.to_int(), self.nanoseconds(), local_time_type).unwrap()
+    pub fn set_offset_from_utc(&mut self, offset: Offset) {
+        let time_zone_ref = offset.time_zone_ref();
+        self.inner = DateTime::from_timespec(self.to_int(), self.nanoseconds(), time_zone_ref).unwrap();
+        self.offset = offset;
     }
 }
 
@@ -697,15 +628,29 @@ impl Time {
     /// ```
     /// use spinoso_time::Time;
     /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
-    /// assert!(now_utc.time_zone().is_empty());
+    /// assert_eq!("UTC", now_utc.time_zone());
     /// ```
     ///
     /// [`UTC LocalTimeType`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#180
     /// [`empty string`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#210
     #[inline]
     #[must_use]
-    pub fn time_zone(&self) -> Vec<u8> {
-        self.inner.local_time_type().time_zone_designation().as_bytes().to_vec()
+    pub fn time_zone(&self) -> String {
+        match self.offset {
+            Offset::Utc => "UTC".to_string(),
+            Offset::Fixed(_) => {
+                let ut_offset = self.inner.local_time_type().ut_offset();
+                let flag = if ut_offset < 0 { '-' } else { '+' };
+                let minutes = ut_offset.abs() / 60;
+
+                let offset_hours = minutes / 60;
+                let offset_minutes = minutes - (offset_hours * 60);
+
+                format!("{}{:0>2}:{:0>2}", flag, offset_hours, offset_minutes)
+            }
+            Offset::Tz(_) => self.inner.local_time_type().time_zone_designation().to_string(),
+        }
+        //self.inner.local_time_type().time_zone_designation().to_string()
     }
 
     /// Returns true if the time zone is UTC
@@ -724,7 +669,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn is_utc(&self) -> bool {
-        self.time_zone().len() == 0
+        Offset::Utc == self.offset
     }
 
     /// Returns the offset in seconds between the timezone of _time_ and UTC
@@ -754,11 +699,11 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::{Time, Offset};
     /// use tzdb::time_zone::{europe::AMSTERDAM, pacific::AUCKLAND};
-    /// let now_ams = Time::with_time_zone(2022, 5, 18, 16, 0, 0, 0, AMSTERDAM);
+    /// let now_ams = Time::new(2022, 5, 18, 16, 0, 0, 0, Offset::from(AMSTERDAM));
     /// assert!(now_ams.is_dst());
-    /// let now_auckland = Time::with_time_zone(2022, 5, 18, 16, 0, 0, 0, AUCKLAND);
+    /// let now_auckland = Time::new(2022, 5, 18, 16, 0, 0, 0, Offset::from(AUCKLAND));
     /// assert!(!now_auckland.is_dst());
     /// ```
     ///
@@ -806,5 +751,22 @@ impl Time {
     #[must_use]
     pub fn day_of_year(&self) -> u16 {
         self.inner.year_day()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn time_with_fixed_offset(offset: i32) -> Time {
+        let offset = Offset::fixed(offset);
+        Time::with_timespec_and_offset(0, 0, offset)
+    }
+
+    #[test]
+    fn time_zone_fixed_offset() {
+        assert_eq!("-02:02", time_with_fixed_offset(-7320).time_zone());
+        assert_eq!("+00:00", time_with_fixed_offset(0).time_zone());
+        assert_eq!("+00:00", time_with_fixed_offset(59).time_zone());
     }
 }

@@ -1,11 +1,11 @@
-use super::UtcOffset;
+use super::Offset;
 use crate::Time;
 
 /// Serialized representation of a timestamp using a ten-element array of
 /// datetime components.
 ///
 /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ToA {
     /// The second of the minute `0..=59` for the source _time_.
     pub sec: u8,
@@ -29,7 +29,7 @@ pub struct ToA {
     /// zone.
     pub isdst: bool,
     /// The timezone used for the source _time_.
-    pub zone: UtcOffset,
+    pub zone: Offset,
 }
 
 impl ToA {
@@ -43,7 +43,7 @@ impl ToA {
     /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
     #[inline]
     #[must_use]
-    pub fn to_tuple(&self) -> (u8, u8, u8, u8, u8, i32, u8, u16, bool, UtcOffset) {
+    pub fn to_tuple(&self) -> (u8, u8, u8, u8, u8, i32, u8, u16, bool, Offset) {
         (
             self.sec,
             self.min,
@@ -73,7 +73,7 @@ impl From<Time> for ToA {
             wday: time.day_of_week(),
             yday: time.day_of_year(),
             isdst: time.is_dst(),
-            zone: UtcOffset::from(time.utc_offset()),
+            zone: Offset::from(time.utc_offset()),
         }
     }
 }

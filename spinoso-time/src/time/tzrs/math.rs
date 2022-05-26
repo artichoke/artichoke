@@ -61,7 +61,10 @@ impl Time {
                 }
 
                 let dt = DateTime::from_timespec_and_local(unix_time, new_nanos, local_time_type);
-                Self { inner: dt.unwrap() }
+                Self {
+                    inner: dt.unwrap(),
+                    offset: self.offset.clone(),
+                }
             }
         }
     }

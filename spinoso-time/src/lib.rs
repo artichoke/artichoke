@@ -55,7 +55,7 @@ mod time;
 #[cfg(feature = "chrono")]
 pub use time::chrono::{ComponentOutOfRangeError, Offset, Time, ToA};
 #[cfg(feature = "tzrs")]
-pub use time::tzrs::{Time, UtcOffset};
+pub use time::tzrs::{Offset, Time};
 
 /// Number of nanoseconds in one second.
 #[allow(clippy::cast_possible_truncation)] // 1e9 < u32::MAX
