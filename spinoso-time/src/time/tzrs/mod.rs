@@ -10,16 +10,15 @@ pub use to_a::ToA;
 
 use crate::{MICROS_IN_NANO, NANOS_IN_SECOND};
 
-/// A wrapper around [`tz::datetime::Datetime`] which contains everything needed for date creation and
+/// A wrapper around [`tz::datetime::DateTime`] which contains everything needed for date creation and
 /// conversion to match the ruby spec. Seconds and Subseconds are stored independently as i64 and
 /// u32 respectively, which gives enough granularity to meet the ruby [`Time`] spec.
 ///
-/// [`tz::datetime::Datetime`]: https://docs.rs/tz-rs/0.6.9/tz/datetime/struct.DateTime.html
 /// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 #[must_use]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Time {
-    /// A wrapper around [`tz::datetime::Datetime`] to provide date and time formatting
+    /// A wrapper around [`tz::datetime::DateTime`] to provide date and time formatting
     inner: DateTime,
     /// The offset to used for the provided _time_
     offset: Offset,
@@ -109,7 +108,6 @@ impl Time {
     }
 }
 
-// Time#[gm|local|mktime|utc]
 impl From<ToA> for Time {
     /// Create a new Time object base on a ToA
     ///
@@ -241,6 +239,7 @@ impl Time {
     /// Formats _time_ according to the directives in the given format string.
     ///
     /// Can be used to implement [`Time#strftime`]
+    ///
     /// [`Time#stftime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-strftime
     #[inline]
     #[must_use]

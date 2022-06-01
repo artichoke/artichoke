@@ -94,7 +94,7 @@ impl From<&str> for Offset {
     ///
     /// Accepts:
     ///
-    /// - [+/-]HH[:]MM
+    /// - `[+/-]HH[:]MM`
     /// - A-I representing +01:00 to +09:00
     /// - K-M representing +10:00 to +12:00
     /// - N-Y representing -01:00 to -12:00
@@ -153,7 +153,6 @@ impl From<&str> for Offset {
 }
 
 impl From<TimeZoneRef<'static>> for Offset {
-    /// Construct a Offset with the offset in second from UTC
     #[inline]
     #[must_use]
     fn from(tz: TimeZoneRef<'static>) -> Self {
@@ -162,7 +161,7 @@ impl From<TimeZoneRef<'static>> for Offset {
 }
 
 impl From<i32> for Offset {
-    /// Construct a Offset with the offset in second from UTC
+    /// Construct a Offset with the offset in seconds from UTC
     #[inline]
     #[must_use]
     fn from(seconds: i32) -> Self {
