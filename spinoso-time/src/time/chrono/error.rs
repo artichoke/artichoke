@@ -48,6 +48,9 @@ use std::error::Error;
 /// let time = Time::try_from(to_a);
 /// assert_eq!(time, Err(ComponentOutOfRangeError::Time));
 /// ```
+///
+/// [`Time`]: [`time::chrono::Time`]
+/// [`ToA`]: [`time::chrono::ToA`]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ComponentOutOfRangeError {
     /// Date component (year, month, day) out of range.

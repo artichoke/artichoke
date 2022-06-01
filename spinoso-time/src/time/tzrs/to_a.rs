@@ -1,5 +1,4 @@
-use super::Offset;
-use crate::Time;
+use super::{Offset, Time};
 
 /// Serialized representation of a timestamp using a ten-element array of
 /// datetime components.

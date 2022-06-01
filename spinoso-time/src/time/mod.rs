@@ -16,7 +16,10 @@
 //! [Unix timestamp]: https://en.wikipedia.org/wiki/Unix_time
 //! [timezone offset]: self::chrono::Offset
 
+/// A Time struct backed by the `chrono` rust crate
 #[cfg(feature = "chrono")]
 pub mod chrono;
+
+/// A Time struct backed by the `tzrs` rust crate
 #[cfg(feature = "tzrs")]
 pub mod tzrs;

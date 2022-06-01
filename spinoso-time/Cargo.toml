@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-time"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.60.0"
@@ -14,11 +14,11 @@ keywords = ["artichoke", "date", "datetime", "spinoso", "time"]
 categories = ["date-and-time"]
 
 [features]
-default = ["chrono"]
 chrono = ["dep:chrono", "dep:chrono-tz"]
 tzrs = ["dep:lazy_static", "dep:regex", "dep:tz-rs", "dep:tzdb"]
 
 [dependencies]
+cfg-if = { version = "1.0.0" }
 chrono = { version = "0.4.19", default-features = false, features = ["clock"], optional = true }
 chrono-tz = { version = "0.6.0", default-features = false, optional = true }
 lazy_static = { version = "1.4.0", optional = true }
