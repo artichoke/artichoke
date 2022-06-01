@@ -452,8 +452,12 @@ jobs:
         run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "spinoso-time"
 
-      - name: Check spinoso-time with all features
-        run: cargo check --verbose --all-features --all-targets --profile=test
+      - name: Check spinoso-time with chrono feature
+        run: cargo check --verbose --features "chrono" --all-targets --profile=test
+        working-directory: "spinoso-time"
+
+      - name: Check spinoso-time with tzrs feature
+        run: cargo check --verbose --features "tzrs" --all-targets --profile=test
         working-directory: "spinoso-time"
 
       - name: Compile scolapasta-hex with no default features
