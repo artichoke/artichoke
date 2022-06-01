@@ -1,18 +1,23 @@
 //! Implementations of Ruby [`Time`], a timezone-aware datetime.
 //!
-//! This module contains implementations of a timestamp storage struct and
+//! These modules contain implementations of a timestamp storage struct and
 //! associated datetime operations that view that timestamp through the lens of
 //! a timezone offset. These timestamps can be used to implement the Ruby `Time`
 //! core class.
 //!
-//! [`Time`](self::chrono::Time) is based on the [`chrono`] crate.
+//! There are two independent mutually exclusive backends which can be selected by specifying the
+//! `chrono` or `tzrs` feature.
 //!
-//! The chrono backend stores datetimes as a `i64` [Unix timestamp], subsecond
+//! [`chrono::Time`](self::chrono::Time) is based on the [`chrono`] crate.
+//! [`tzrs::Time`](self::tzrs::Time) is based on the [`tz-rs`] crate.
+//!
+//! Both backends store datetimes as a `i64` [Unix timestamp], subsecond
 //! nanoseconds as a `u32`, and a [timezone offset] which can be one of several
 //! types.
 //!
 //! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 //! [`chrono`]: ::chrono
+//! [`chrono`]: ::tz-rs
 //! [Unix timestamp]: https://en.wikipedia.org/wiki/Unix_time
 //! [timezone offset]: self::chrono::Offset
 
@@ -20,6 +25,6 @@
 #[cfg(feature = "chrono")]
 pub mod chrono;
 
-/// A Time struct backed by the `tzrs` rust crate
+/// A Time struct backed by the `tz-rs` rust crate
 #[cfg(feature = "tzrs")]
 pub mod tzrs;

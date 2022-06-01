@@ -33,15 +33,22 @@
 //! Time.now
 //! ```
 //!
-//! This implementation of `Time` supports the system clock via the
-//! [`chrono`] crate.
+//! This implementation of `Time` is dependant on the selected feature. The `chrono` feature uses the [`chrono`] crate, and the `tzrs` feature uses the [`tzdb`] for getting the local timezone information, and combines with the [`tz-rs`] crate to generate the time.
 //!
 //! # Crate features
+//!
+//! This crate supports two backends which are mutually exclusive to each other. These backends can
+//! be selected using the following features:
+//!
+//! - `chrono` which is backed by the [`chrono`] crate
+//! - `tzrs` which is backed by the [`tz-rs`] crate
 //!
 //! This crate requires [`std`], the Rust Standard Library.
 //!
 //! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 //! [`chrono`]: https://crates.io/crates/chrono
+//! [`tz-rs`]: https://crates.io/crates/tz-rs
+//! [`tzdb`]: https://crates.io/crates/tzdb
 
 // Ensure code blocks in `README.md` compile
 #[cfg(doctest)]
