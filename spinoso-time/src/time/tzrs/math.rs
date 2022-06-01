@@ -284,19 +284,19 @@ mod tests {
 
     #[test]
     fn rounding() {
-        let dt = Time::utc(2010, 3, 30, 5, 43, 25, 123456789);
+        let dt = Time::utc(2010, 3, 30, 5, 43, 25, 123_456_789);
         assert_eq!(0, dt.round(0).nanoseconds());
-        assert_eq!(100000000, dt.round(1).nanoseconds());
-        assert_eq!(120000000, dt.round(2).nanoseconds());
-        assert_eq!(123000000, dt.round(3).nanoseconds());
-        assert_eq!(123500000, dt.round(4).nanoseconds());
-        assert_eq!(123460000, dt.round(5).nanoseconds());
-        assert_eq!(123457000, dt.round(6).nanoseconds());
-        assert_eq!(123456800, dt.round(7).nanoseconds());
-        assert_eq!(123456790, dt.round(8).nanoseconds());
-        assert_eq!(123456789, dt.round(9).nanoseconds());
-        assert_eq!(123456789, dt.round(10).nanoseconds());
-        assert_eq!(123456789, dt.round(11).nanoseconds());
+        assert_eq!(100_000_000, dt.round(1).nanoseconds());
+        assert_eq!(120_000_000, dt.round(2).nanoseconds());
+        assert_eq!(123_000_000, dt.round(3).nanoseconds());
+        assert_eq!(123_500_000, dt.round(4).nanoseconds());
+        assert_eq!(123_460_000, dt.round(5).nanoseconds());
+        assert_eq!(123_457_000, dt.round(6).nanoseconds());
+        assert_eq!(123_456_800, dt.round(7).nanoseconds());
+        assert_eq!(123_456_790, dt.round(8).nanoseconds());
+        assert_eq!(123_456_789, dt.round(9).nanoseconds());
+        assert_eq!(123_456_789, dt.round(10).nanoseconds());
+        assert_eq!(123_456_789, dt.round(11).nanoseconds());
     }
 
     #[test]

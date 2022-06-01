@@ -201,7 +201,7 @@ mod tests {
         assert_eq!(-3600, offset_seconds_from_fixed_offset("-01:00"));
         assert_eq!(7320, offset_seconds_from_fixed_offset("+02:02"));
         assert_eq!(-7320, offset_seconds_from_fixed_offset("-02:02"));
-        assert_eq!(362340, offset_seconds_from_fixed_offset("+99:99"));
-        assert_eq!(-362340, offset_seconds_from_fixed_offset("-99:99"));
+        assert_eq!(362_340, offset_seconds_from_fixed_offset("+99:99"));
+        assert_eq!(-362_340, offset_seconds_from_fixed_offset("-99:99"));
     }
 }
