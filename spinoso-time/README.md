@@ -23,7 +23,10 @@ class, it is globally available:
 Time.now
 ```
 
-This implementation of `Time` is dependant on the selected feature. The `chrono` feature uses the [`chrono`] crate, and the `tzrs` feature uses the [`tzdb`] for getting the local timezone information, and combines with the [`tz-rs`] crate to generate the time.
+This implementation of `Time` is dependant on the selected feature. The `chrono`
+feature uses the [`chrono`] crate, and the `tzrs` feature uses the [`tzdb`] for
+getting the local timezone information, and combines with the [`tz-rs`] crate to
+generate the time.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
@@ -49,6 +52,23 @@ let utc = now.to_utc();
 assert!(utc.is_utc());
 // Extract the Unix timestamp.
 let timestamp = utc.to_int();
+```
+
+## Testing and docs generation
+
+Due to the backends being mutually exclusive, the tests need to be specified
+with the relevant feature flag:
+
+```sh
+cargo +nightly test --features "chrono"
+cargo +nightly test --features "tzrs"
+```
+
+Additionally, docs can be generated with all included features by specifying
+`--all-features`:
+
+```sh
+cargo +nightly doc --all-features
 ```
 
 ## License
