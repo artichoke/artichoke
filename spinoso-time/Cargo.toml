@@ -16,11 +16,13 @@ categories = ["date-and-time"]
 [features]
 default = ["chrono"]
 chrono = ["dep:chrono", "dep:chrono-tz"]
-tzrs = ["dep:tz-rs", "dep:tzdb"]
+tzrs = ["dep:lazy_static", "dep:regex", "dep:tz-rs", "dep:tzdb"]
 
 [dependencies]
 chrono = { version = "0.4.19", default-features = false, features = ["clock"], optional = true }
 chrono-tz = { version = "0.6.0", default-features = false, optional = true }
+lazy_static = { version = "1.4.0", optional = true }
+regex =  { version = "0.2", optional = true }
 tz-rs = { version = "0.6.9", optional = true }
 tzdb = { version = "0.2.2", default-features = false, features = ["local"], optional = true }
 
