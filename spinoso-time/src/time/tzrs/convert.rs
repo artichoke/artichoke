@@ -1,7 +1,8 @@
+use core::fmt::{Display, Formatter, Result};
+
 use super::{Time, ToA};
 
-// Conversions
-impl Time {
+impl Display for Time {
     /// Returns a conanocial string representation of _time_
     ///
     /// Can be used to implement [`Time#asctime`], [`#Time#ctime`], [`Time#to_s`] and
@@ -17,12 +18,11 @@ impl Time {
     ///
     /// [`Time#asctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-asctime
     /// [`Time#ctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-ctime
-    #[inline]
-    #[must_use]
-    pub fn to_string(&self) -> String {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         // TODO: future
         //self.strftime("%Y-%m-%d %H:%M:%S %z")
-        format!(
+        write!(
+            f,
             "{:0>4}-{:0>2}-{:0>2} {:0>2}:{:0>2}:{:0>2} {}",
             self.year(),
             self.month(),
@@ -33,17 +33,20 @@ impl Time {
             self.time_zone()
         )
     }
+}
 
+// Conversions
+impl Time {
     /// Formats _time_ according to the directives in the given format string.
     ///
     /// Can be used to implement [`Time#strftime`]
     ///
     /// [`Time#stftime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-strftime
-    #[inline]
-    #[must_use]
-    pub fn strftime(&self, _format: &str) -> String {
-        todo!()
-    }
+    //#[inline]
+    //#[must_use]
+    //pub fn strftime(&self, _format: &str) -> String {
+    //todo!()
+    //}
 
     /// Serialize a `Time` into its components as a [`ToA`].
     ///
