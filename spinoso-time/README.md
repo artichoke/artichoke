@@ -43,8 +43,10 @@ spinoso-time = { version = "0.3.0", features = ["chrono"] }
 
 ## Examples
 
+Assuming feature `chrono` is selected:
+
 ```rust
-use spinoso_time::Time;
+use spinoso_time::chrono::Time;
 // Get a local time set to the current time.
 let now = Time::now();
 // Convert the local time to UTC.
