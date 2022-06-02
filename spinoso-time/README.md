@@ -43,8 +43,10 @@ spinoso-time = { version = "0.3.0", features = ["chrono"] }
 
 ## Examples
 
+Assuming feature `chrono` is selected:
+
 ```rust
-use spinoso_time::Time;
+use spinoso_time::chrono::Time;
 // Get a local time set to the current time.
 let now = Time::now();
 // Convert the local time to UTC.
@@ -52,23 +54,6 @@ let utc = now.to_utc();
 assert!(utc.is_utc());
 // Extract the Unix timestamp.
 let timestamp = utc.to_int();
-```
-
-## Testing and docs generation
-
-Due to the backends being mutually exclusive, the tests need to be specified
-with the relevant feature flag:
-
-```sh
-cargo +nightly test --features "chrono"
-cargo +nightly test --features "tzrs"
-```
-
-Additionally, docs can be generated with all included features by specifying
-`--all-features`:
-
-```sh
-cargo +nightly doc --all-features
 ```
 
 ## License

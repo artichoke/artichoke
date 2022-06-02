@@ -768,7 +768,6 @@ dependencies = [
 name = "spinoso-time"
 version = "0.3.0"
 dependencies = [
- "cfg-if",
  "chrono",
  "chrono-tz",
  "lazy_static",

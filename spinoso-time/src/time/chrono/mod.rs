@@ -40,7 +40,7 @@ pub use offset::Offset;
 /// # Examples
 ///
 /// ```
-/// # use spinoso_time::Time;
+/// # use spinoso_time::chrono::Time;
 /// // Create a Time to the current system clock with local offset
 /// let time = Time::now();
 /// assert!(!time.is_utc());
@@ -48,7 +48,7 @@ pub use offset::Offset;
 /// ```
 ///
 /// ```
-/// # use spinoso_time::Time;
+/// # use spinoso_time::chrono::Time;
 /// let time = Time::now();
 /// let one_hour_ago: Time = time - (60 * 60);
 /// assert_eq!(time.to_int() - 3600, one_hour_ago.to_int());
@@ -113,7 +113,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let now_f = now.to_float();
     /// let now_i = now.to_int();
@@ -146,7 +146,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let now_f = now.to_float();
     /// let now_i = now.to_int();
@@ -169,7 +169,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let to_a = now.to_a();
     /// assert_eq!(to_a.sec, now.second());

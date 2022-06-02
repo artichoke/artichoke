@@ -10,7 +10,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let hour_of_day = now.hour();
     /// ```
@@ -50,7 +50,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let minute_of_hour = now.minute();
     /// ```
@@ -93,7 +93,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let second_of_minute = now.second();
     /// if second_of_minute >= 60 {
@@ -148,7 +148,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let usec_since_last_second = now.second();
     /// if usec_since_last_second >= 1_000_000 {
@@ -171,7 +171,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let nsec_since_last_second = now.nanosecond();
     /// ```
@@ -203,7 +203,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let time = Time::now();
     /// let (sub_second_units, units_per_second) = time.subsec();
     /// ```

@@ -21,7 +21,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let local_time = Time::now();
     /// assert!(!local_time.is_utc());
     /// let utc_time = local_time.to_utc();
@@ -40,7 +40,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let local_time = Time::now();
     /// assert!(!local_time.is_utc());
     ///
@@ -70,7 +70,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let local_time = Time::now();
     /// assert!(!local_time.is_utc());
     ///

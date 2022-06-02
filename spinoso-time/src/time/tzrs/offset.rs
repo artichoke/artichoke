@@ -70,7 +70,7 @@ impl<'a> Offset {
     /// This can be combined with [`tzdb`] to generate offsets based on predefined iana time zones
     ///
     /// ```
-    /// use spinoso_time::Offset;
+    /// use spinoso_time::tzrs::Offset;
     /// use tzdb::time_zone::pacific::AUCKLAND;
     /// let offset = Offset::tz(AUCKLAND);
     /// ```

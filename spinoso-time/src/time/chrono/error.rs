@@ -12,7 +12,7 @@ use std::error::Error;
 /// Invalid date component:
 ///
 /// ```
-/// # use spinoso_time::{Offset, Time, ToA, ComponentOutOfRangeError};
+/// # use spinoso_time::chrono::{Offset, Time, ToA, ComponentOutOfRangeError};
 /// let to_a = ToA {
 ///     sec: 21,
 ///     min: 3,
@@ -32,7 +32,7 @@ use std::error::Error;
 /// Invalid time component:
 ///
 /// ```
-/// # use spinoso_time::{Offset, Time, ToA, ComponentOutOfRangeError};
+/// # use spinoso_time::chrono::{Offset, Time, ToA, ComponentOutOfRangeError};
 /// let to_a = ToA {
 ///     sec: 301,
 ///     min: 3,

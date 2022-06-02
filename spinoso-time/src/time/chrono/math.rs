@@ -10,7 +10,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let next = now.succ();
     /// assert_eq!(now.to_int() + 1, next.to_int());
