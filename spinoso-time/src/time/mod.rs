@@ -12,14 +12,13 @@
 //! `tzrs` is based on the [`tz-rs`] crate.
 //!
 //! Both backends store datetimes as a `i64` [Unix timestamp], subsecond
-//! nanoseconds as a `u32`, and a [timezone offset] which can be one of several
+//! nanoseconds as a `u32`, and a timezone offset which can be one of several
 //! types.
 //!
 //! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
-//! [`chrono`]: ::chrono
-//! [`chrono`]: ::tz-rs
+//! [`chrono`]: https://crates.io/crates/chrono
+//! [`tzrs`]: https://crates.io/crates/tz-rs
 //! [Unix timestamp]: https://en.wikipedia.org/wiki/Unix_time
-//! [timezone offset]: self::chrono::Offset
 
 /// A Time struct backed by the `chrono` rust crate
 #[cfg(feature = "chrono")]
