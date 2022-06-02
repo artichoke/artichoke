@@ -61,7 +61,12 @@ impl<'a> Offset {
     #[inline]
     #[must_use]
     pub fn fixed(offset: i32) -> Self {
-        let local_time_type = LocalTimeType::new(offset, false, Some(b"GMT")).expect("Couldn't create fixed offset");
+        let sign = if offset.is_negative() { '-' } else { '+' };
+        let hours = offset / 3600;
+        let minutes = (offset / 60) % 60;
+        let offset_name = format!("GMT {}{}{}", sign, hours, minutes);
+        let local_time_type =
+            LocalTimeType::new(offset, false, Some(offset_name.as_bytes())).expect("Couldn't create fixed offset");
         Self::Fixed([local_time_type])
     }
 
