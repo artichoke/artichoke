@@ -1,3 +1,6 @@
+use core::cmp::Ordering;
+use core::hash::{Hash, Hasher};
+
 use tz::datetime::DateTime;
 
 mod build;
@@ -19,12 +22,39 @@ use crate::NANOS_IN_SECOND;
 ///
 /// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 #[must_use]
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone)]
 pub struct Time {
     /// A wrapper around [`tz::datetime::DateTime`] to provide date and time formatting
     inner: DateTime,
     /// The offset to used for the provided _time_
     offset: Offset,
+}
+
+impl Hash for Time {
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_i128(self.inner.total_nanoseconds());
+    }
+}
+
+impl PartialEq for Time {
+    fn eq(&self, other: &Time) -> bool {
+        self.inner.total_nanoseconds() == other.inner.total_nanoseconds()
+    }
+}
+
+impl Eq for Time {}
+
+impl PartialOrd for Time {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Time {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.inner.total_nanoseconds().cmp(&other.inner.total_nanoseconds())
+    }
 }
 
 // constructors
