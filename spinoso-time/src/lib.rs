@@ -58,11 +58,10 @@ use core::time::Duration;
 
 mod time;
 
-#[cfg(feature = "tzrs")]
-pub use time::tzrs;
-
 #[cfg(feature = "chrono")]
 pub use time::chrono;
+#[cfg(feature = "tzrs")]
+pub use time::tzrs;
 
 /// Number of nanoseconds in one second.
 #[allow(clippy::cast_possible_truncation)] // 1e9 < u32::MAX

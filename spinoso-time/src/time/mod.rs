@@ -5,11 +5,11 @@
 //! a timezone offset. These timestamps can be used to implement the Ruby `Time`
 //! core class.
 //!
-//! There are two independent mutually exclusive backends which can be selected by specifying the
+//! There are two independent backends which can be selected by specifying the
 //! `chrono` or `tzrs` feature.
 //!
-//! [`chrono::Time`](self::chrono::Time) is based on the [`chrono`] crate.
-//! [`tzrs::Time`](self::tzrs::Time) is based on the [`tz-rs`] crate.
+//! `chrono` is based on the [`chrono`] crate.
+//! `tzrs` is based on the [`tz-rs`] crate.
 //!
 //! Both backends store datetimes as a `i64` [Unix timestamp], subsecond
 //! nanoseconds as a `u32`, and a [timezone offset] which can be one of several
