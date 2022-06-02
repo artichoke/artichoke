@@ -10,7 +10,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::tzrs::Time;
     /// let now = Time::utc(2022, 05, 26, 13, 16, 22, 0);
     /// assert_eq!(now.to_string(), "2022-05-26 13:16:22 UTC");
     /// ```
@@ -58,7 +58,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::tzrs::Time;
     /// let now = Time::now();
     /// let to_array = now.to_array();
     /// assert_eq!(to_array.sec, now.second());

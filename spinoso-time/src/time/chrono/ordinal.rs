@@ -11,7 +11,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let ordinal = now.year_day();
     /// assert!(ordinal > 0);

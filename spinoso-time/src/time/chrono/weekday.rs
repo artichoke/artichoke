@@ -10,7 +10,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// match now {
     ///     time if time.is_sunday() => assert_eq!(time.weekday(), 0),
@@ -60,7 +60,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// if now.is_sunday() {
     ///     // go grocery shopping
@@ -104,7 +104,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// if now.is_monday() {
     ///     // go to work
@@ -148,7 +148,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// if now.is_tuesday() {
     ///     // go to the gym
@@ -192,7 +192,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// if now.is_wednesday() {
     ///     // hump day!
@@ -236,7 +236,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// if now.is_thursday() {
     ///     // Chinese food delivery for dinner
@@ -280,7 +280,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// if now.is_friday() {
     ///     // TGIF
@@ -325,7 +325,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// if now.is_saturday() {
     ///     // hike at the lake

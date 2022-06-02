@@ -14,7 +14,7 @@ impl Time {
     ///
     /// # Examples
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::tzrs::Time;
     /// let now = Time::local(2010, 3, 30, 5, 43, 25, 123456789);
     /// let rounded = now.round(5);
     /// assert_eq!(now.utc_offset(), rounded.utc_offset());

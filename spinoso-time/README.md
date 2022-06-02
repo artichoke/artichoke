@@ -54,23 +54,6 @@ assert!(utc.is_utc());
 let timestamp = utc.to_int();
 ```
 
-## Testing and docs generation
-
-Due to the backends being mutually exclusive, the tests need to be specified
-with the relevant feature flag:
-
-```sh
-cargo +nightly test --features "chrono"
-cargo +nightly test --features "tzrs"
-```
-
-Additionally, docs can be generated with all included features by specifying
-`--all-features`:
-
-```sh
-cargo +nightly doc --all-features
-```
-
 ## License
 
 `spinoso-time` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.

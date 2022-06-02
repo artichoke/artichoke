@@ -63,27 +63,11 @@ use core::time::Duration;
 
 mod time;
 
-cfg_if::cfg_if! {
-    // Docs with all features makes nice docs for all sub modules. Since the modules chrono and
-    // tzrs are mututally exclusive however, the test runs are done independently, and the
-    // `--all-features` flag cannot be used. This works around that issue
-    if #[cfg(any(all(doc, feature = "tzrs", feature = "chrono"), feature = "cargo-clippy"))] {
-        pub use time::{tzrs,chrono};
-        // TODO this is needed due to artichoke-backend needing at least one implementation of
-        // `Time` during clippy parsing
-        pub use time::chrono::Time;
-    } else if #[cfg(all(doc, feature = "tzrs"))] {
-        pub use time::tzrs;
-    } else if #[cfg(all(doc, feature = "chrono"))] {
-        pub use time::chrono;
-    } else if #[cfg(all(feature = "chrono", feature = "tzrs"))] {
-        compile_error!{"spinoso_time does not support both tzrs and chrono features being enabled at the same time"}
-    } else if #[cfg(feature = "chrono")] {
-        pub use time::chrono::{ComponentOutOfRangeError, Offset, Time, ToA};
-    } else if #[cfg(feature = "tzrs")] {
-        pub use time::tzrs::{Offset, Time, ToA};
-    }
-}
+#[cfg(feature = "tzrs")]
+pub use time::tzrs;
+
+#[cfg(feature = "chrono")]
+pub use time::chrono;
 
 /// Number of nanoseconds in one second.
 #[allow(clippy::cast_possible_truncation)] // 1e9 < u32::MAX

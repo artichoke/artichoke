@@ -9,7 +9,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let year = now.year();
     /// ```
@@ -49,7 +49,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let minute_of_hour = now.minute();
     /// ```
@@ -89,7 +89,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::Time;
+    /// # use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// let day_of_month = now.day();
     /// ```

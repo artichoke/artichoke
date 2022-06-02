@@ -11,7 +11,7 @@ impl Time {
     /// #Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::tzrs::Time;
     /// let local_offset = Time::now().utc_offset();
     /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
     /// let now_local = now_utc.to_local();
@@ -31,7 +31,7 @@ impl Time {
     /// #Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::tzrs::Time;
     /// let now_local = Time::now();
     /// let now_utc = now_local.to_utc();
     /// assert_eq!(now_utc.utc_offset(), 0);
@@ -52,7 +52,7 @@ impl Time {
     /// #Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::tzrs::Time;
     /// let local_offset = Time::now().utc_offset();
     /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0);
     /// let now_local = now_utc.to_local();
@@ -92,7 +92,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::tzrs::Time;
     /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
     /// let now_utc_unix = now.to_int();
     /// now.set_local();
@@ -113,7 +113,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::tzrs::Time;
     /// let mut now = Time::local(2022, 7, 8, 12, 34, 56, 0);
     /// let now_local_unix = now.to_int();
     /// now.set_local();
@@ -135,7 +135,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::{Time, Offset};
+    /// use spinoso_time::tzrs::{Time, Offset};
     /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0);
     /// assert!(now.is_utc());
     /// let offset = Offset::from(3600);
