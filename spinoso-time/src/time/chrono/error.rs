@@ -52,6 +52,7 @@ use std::error::Error;
 /// [`Time`]: [`time::chrono::Time`]
 /// [`ToA`]: [`time::chrono::ToA`]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(clippy::module_name_repetitions)]
 pub enum ComponentOutOfRangeError {
     /// Date component (year, month, day) out of range.
     Date,
