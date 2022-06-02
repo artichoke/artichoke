@@ -22,29 +22,31 @@ impl Time {
     /// ```
     ///
     /// [`Time#round`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-round
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
     #[inline]
-    #[must_use]
     pub fn round(&self, digits: u32) -> Self {
         match digits {
-            9..=u32::MAX => self.clone(),
+            9..=u32::MAX => *self,
             digits => {
-                let local_time_type = self.inner.local_time_type().clone();
+                let local_time_type = *self.inner.local_time_type();
                 let mut unix_time = self.to_int();
-                let nanos = self.nanoseconds() as f64 / NANOS_IN_SECOND as f64;
+                let nanos = f64::from(self.nanoseconds()) / f64::from(NANOS_IN_SECOND);
 
-                let exponent_shift = 10_u32.pow(digits) as f64;
+                let exponent_shift = f64::from(10_u32.pow(digits));
 
                 let rounded_nanos = (nanos * exponent_shift).round() / exponent_shift;
-                let mut new_nanos = (rounded_nanos * NANOS_IN_SECOND as f64) as u32;
+                let mut new_nanos = (rounded_nanos * f64::from(NANOS_IN_SECOND)) as u32;
                 if new_nanos >= NANOS_IN_SECOND {
                     unix_time += 1;
                     new_nanos -= NANOS_IN_SECOND;
                 }
 
-                let dt = DateTime::from_timespec_and_local(unix_time, new_nanos, local_time_type);
+                let dt = DateTime::from_timespec_and_local(unix_time, new_nanos, local_time_type)
+                    .expect("Could not round the datetime");
                 Self {
-                    inner: dt.unwrap(),
-                    offset: self.offset.clone(),
+                    inner: dt,
+                    offset: self.offset,
                 }
             }
         }
@@ -311,7 +313,7 @@ mod tests {
 
     #[test]
     fn add_int_to_time() {
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt + 1;
         assert_eq!(dt.to_int() + 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -330,7 +332,7 @@ mod tests {
 
     #[test]
     fn add_subsec_float_to_time() {
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt + 0.2;
         assert_eq!(dt.to_int(), succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -346,7 +348,7 @@ mod tests {
             assert!(700_000_000 - succ.nanoseconds() < 50);
         }
 
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt + 0.7;
         assert_eq!(dt.to_int() + 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -365,7 +367,7 @@ mod tests {
 
     #[test]
     fn add_float_to_time() {
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt + 1.2;
         assert_eq!(dt.to_int() + 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -381,7 +383,7 @@ mod tests {
             assert!(700_000_000 - succ.nanoseconds() < 50);
         }
 
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt + 1.7;
         assert_eq!(dt.to_int() + 2, succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -400,7 +402,7 @@ mod tests {
 
     #[test]
     fn sub_int_to_time() {
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt - 1;
         assert_eq!(dt.to_int() - 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -419,7 +421,7 @@ mod tests {
 
     #[test]
     fn sub_subsec_float_to_time() {
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt - 0.2;
         assert_eq!(dt.to_int(), succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -435,7 +437,7 @@ mod tests {
             assert!(300_000_000 - succ.nanoseconds() < 50);
         }
 
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt - 0.7;
         assert_eq!(dt.to_int() - 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -454,7 +456,7 @@ mod tests {
 
     #[test]
     fn sub_float_to_time() {
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt - 1.2;
         assert_eq!(dt.to_int() - 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
@@ -470,7 +472,7 @@ mod tests {
             assert!(300_000_000 - succ.nanoseconds() < 50);
         }
 
-        let dt = Time::from(datetime());
+        let dt = datetime();
         let succ: Time = dt - 1.7;
         assert_eq!(dt.to_int() - 2, succ.to_int());
         assert_eq!(dt.year(), succ.year());

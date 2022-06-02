@@ -38,8 +38,10 @@ pub enum Offset {
     Tz(TimeZoneRef<'static>),
 }
 
-impl Offset {
+impl<'a> Offset {
     /// Generate a UTC based offset
+    #[inline]
+    #[must_use]
     pub fn utc() -> Self {
         Self::Utc
     }
@@ -49,13 +51,17 @@ impl Offset {
     /// Detection is done by [`tzdb::local_tz`], and if it fails will return a GMT timezone
     ///
     /// [`tzdb::local_tz`]: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html
+    #[inline]
+    #[must_use]
     pub fn local() -> Self {
         Self::Tz(local_time_zone())
     }
 
     /// Generate an offset with a number of seconds from UTC.
+    #[inline]
+    #[must_use]
     pub fn fixed(offset: i32) -> Self {
-        let local_time_type = LocalTimeType::new(offset, false, Some(b"GMT")).unwrap();
+        let local_time_type = LocalTimeType::new(offset, false, Some(b"GMT")).expect("Couldn't create fixed offset");
         Self::Fixed([local_time_type])
     }
 
@@ -71,12 +77,16 @@ impl Offset {
     ///
     /// [`tz:timezone::TimeZoneRef`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.TimeZoneRef.html
     /// [`tzdb`]: https://docs.rs/tzdb/latest/tzdb/index.html
+    #[inline]
+    #[must_use]
     pub fn tz(tz: TimeZoneRef<'static>) -> Self {
         Self::Tz(tz)
     }
 
     /// Returns a `TimeZoneRef` which can be used to generate and project _time_.
-    pub fn time_zone_ref<'a>(&'a self) -> TimeZoneRef<'a> {
+    #[inline]
+    #[must_use]
+    pub fn time_zone_ref(&'a self) -> TimeZoneRef<'a> {
         match self {
             Self::Utc => TimeZoneRef::utc(),
             Self::Fixed(local_time_types) => match TimeZoneRef::new(&[], local_time_types, &[], &None) {

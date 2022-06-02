@@ -6,7 +6,7 @@ use crate::MICROS_IN_NANO;
 impl Time {
     /// Returns the number of nanoseconds for _time_
     ///
-    /// The lowest digits of to_f and nsec are different because IEEE 754 double is not accurate
+    /// The lowest digits of `to_f` and nsec are different because IEEE 754 double is not accurate
     /// enough to represent the exact number of nanoseconds since the Epoch.
     ///
     /// Can be used to implement [`Time#nsec`] and [`Time#tv_nsec`]

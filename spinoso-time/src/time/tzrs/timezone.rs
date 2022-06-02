@@ -20,7 +20,6 @@ impl Time {
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
     #[inline]
-    #[must_use]
     pub fn to_offset(&self, offset: Offset) -> Self {
         Self::with_timespec_and_offset(self.inner.unix_time(), self.inner.nanoseconds(), offset)
     }
@@ -41,7 +40,6 @@ impl Time {
     /// [`Time#getutc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getutc
     /// [`Time#getgm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getgm
     #[inline]
-    #[must_use]
     pub fn to_utc(&self) -> Self {
         self.to_offset(Offset::utc())
     }
@@ -63,7 +61,6 @@ impl Time {
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
     #[inline]
-    #[must_use]
     pub fn to_local(&self) -> Self {
         self.to_offset(Offset::local())
     }
@@ -76,15 +73,13 @@ impl Time {
     /// # Examples
     /// TODO
     #[inline]
-    #[must_use]
     pub fn set_offset(&mut self, offset: Offset) {
         // TODO: ProjectionErrors from project() are propogated from `Time::from_timespec` which
         // generally come from an error on checked_add overflowing the seconds component of the
         // unix time. Need to decide how to handle these kinds of errors (e.g. panic?)
         let time_zone_ref = offset.time_zone_ref();
-        match self.inner.project(time_zone_ref) {
-            Ok(time) => self.inner = time,
-            Err(_) => (),
+        if let Ok(time) = self.inner.project(time_zone_ref) {
+            self.inner = time;
         }
         self.offset = offset;
     }
@@ -107,9 +102,8 @@ impl Time {
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     #[inline]
-    #[must_use]
     pub fn set_local(&mut self) {
-        self.set_offset(Offset::local())
+        self.set_offset(Offset::local());
     }
 
     /// Converts _time_ to UTC (GMT), modifying the receiver
@@ -130,9 +124,8 @@ impl Time {
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc
     /// [`Time#gmtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmtime
     #[inline]
-    #[must_use]
     pub fn set_utc(&mut self) {
-        self.set_offset(Offset::utc())
+        self.set_offset(Offset::utc());
     }
 
     /// Converts _time_ to the GMT time zone with the provided offset
@@ -153,10 +146,10 @@ impl Time {
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     #[inline]
-    #[must_use]
     pub fn set_offset_from_utc(&mut self, offset: Offset) {
         let time_zone_ref = offset.time_zone_ref();
-        self.inner = DateTime::from_timespec(self.to_int(), self.nanoseconds(), time_zone_ref).unwrap();
+        self.inner = DateTime::from_timespec(self.to_int(), self.nanoseconds(), time_zone_ref)
+            .expect("Could not find a matching DateTime");
         self.offset = offset;
     }
 }

@@ -29,7 +29,7 @@ pub struct Time {
 
 // constructors
 impl Time {
-    /// Returns a new Time from the given values in the provided TimeZone.
+    /// Returns a new Time from the given values in the provided `offset`.
     ///
     /// Can be used to implment ruby [`Time#new`] (using a [`Timezone`] Object)
     ///
@@ -46,7 +46,7 @@ impl Time {
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
     #[inline]
-    #[must_use]
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         year: i32,
         month: u8,
@@ -58,7 +58,8 @@ impl Time {
         offset: Offset,
     ) -> Self {
         let tz = offset.time_zone_ref();
-        let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz).unwrap();
+        let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz)
+            .expect("Could not find a matching DateTime for this timezone");
         let dt = found_date_times
             .unique()
             .expect("Could not find a matching DateTime for this timezone");
@@ -78,15 +79,14 @@ impl Time {
     ///
     /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
     #[inline]
-    #[must_use]
     pub fn now() -> Self {
         let offset = Offset::local();
         let time_zone_ref = offset.time_zone_ref();
-        let now = DateTime::now(time_zone_ref).unwrap();
+        let now = DateTime::now(time_zone_ref).expect("Unable to find now");
         Self { inner: now, offset }
     }
 
-    /// Returns a Time in the given timezone with the number of seconds and nano_seconds since the Epoch in the specified timezone
+    /// Returns a Time in the given timezone with the number of `seconds` and `nanoseconds` since the Epoch in the specified timezone
     ///
     /// Can be used to implement ruby [`Time#at`]
     ///
@@ -101,20 +101,17 @@ impl Time {
     ///
     /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
     #[inline]
-    #[must_use]
-    pub fn with_timespec_and_offset(seconds: i64, nano_seconds: u32, offset: Offset) -> Self {
+    pub fn with_timespec_and_offset(seconds: i64, nanoseconds: u32, offset: Offset) -> Self {
         let time_zone_ref = offset.time_zone_ref();
-        Self {
-            inner: DateTime::from_timespec(seconds, nano_seconds, time_zone_ref).unwrap(),
-            offset,
-        }
+        let dt = DateTime::from_timespec(seconds, nanoseconds, time_zone_ref).expect("Could not create datetime");
+        Self { inner: dt, offset }
     }
 }
 
 impl From<ToA> for Time {
-    /// Create a new Time object base on a ToA
+    /// Create a new Time object base on a `ToA`
     ///
-    /// Note: This converting from a Time object to a ToA and back again is lossy since ToA does
+    /// Note: This converting from a Time object to a `ToA` and back again is lossy since `ToA` does
     /// not store nanoseconds.
     ///
     /// # Examples
@@ -128,7 +125,6 @@ impl From<ToA> for Time {
     /// assert_ne!(now.nanoseconds(), from_to_a.nanoseconds());
     /// ```
     #[inline]
-    #[must_use]
     fn from(to_a: ToA) -> Self {
         Self::new(
             to_a.year, to_a.month, to_a.day, to_a.hour, to_a.min, to_a.sec, 0, to_a.zone,
@@ -161,7 +157,7 @@ impl Time {
     /// Returns the number of seconds since the Epoch with fractional nanos included at IEEE
     /// 754-2008 accuracy.
     ///
-    /// This function can be used to implement the ruby method [`Time#to_f``]
+    /// This function can be used to implement the ruby method [`Time#to_f`]
     ///
     /// # Examples
     ///
@@ -175,8 +171,11 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn to_float(&self) -> f64 {
+        // A f64 mantissa is only 52 bits wide, so putting 64 bits in there will result in a
+        // rounding issues, however this is expected in the Ruby spec.
+        #[allow(clippy::cast_precision_loss)]
         let sec = self.to_int() as f64;
-        let nanos_fractional = (self.inner.nanoseconds() as f64) / (NANOS_IN_SECOND as f64);
+        let nanos_fractional = f64::from(self.inner.nanoseconds()) / f64::from(NANOS_IN_SECOND);
         sec + nanos_fractional
     }
 

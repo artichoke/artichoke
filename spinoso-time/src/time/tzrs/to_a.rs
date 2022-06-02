@@ -44,16 +44,8 @@ impl ToA {
     #[must_use]
     pub fn to_tuple(&self) -> (u8, u8, u8, u8, u8, i32, u8, u16, bool, Offset) {
         (
-            self.sec,
-            self.min,
-            self.hour,
-            self.day,
-            self.month,
-            self.year,
-            self.wday,
-            self.yday,
-            self.isdst,
-            self.zone.clone(),
+            self.sec, self.min, self.hour, self.day, self.month, self.year, self.wday, self.yday, self.isdst,
+            self.zone,
         )
     }
 }
