@@ -1,10 +1,10 @@
-use super::{Offset, Time};
+use super::Time;
 
 /// Serialized representation of a timestamp using a ten-element array of
 /// datetime components.
 ///
 /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToA {
     /// The second of the minute `0..=59` for the source _time_.
     pub sec: u8,
@@ -28,7 +28,7 @@ pub struct ToA {
     /// zone.
     pub isdst: bool,
     /// The timezone used for the source _time_.
-    pub zone: Offset,
+    pub zone: String,
 }
 
 impl ToA {
@@ -42,10 +42,18 @@ impl ToA {
     /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
     #[inline]
     #[must_use]
-    pub fn to_tuple(&self) -> (u8, u8, u8, u8, u8, i32, u8, u16, bool, Offset) {
+    pub fn to_tuple(&self) -> (u8, u8, u8, u8, u8, i32, u8, u16, bool, String) {
         (
-            self.sec, self.min, self.hour, self.day, self.month, self.year, self.wday, self.yday, self.isdst,
-            self.zone,
+            self.sec,
+            self.min,
+            self.hour,
+            self.day,
+            self.month,
+            self.year,
+            self.wday,
+            self.yday,
+            self.isdst,
+            self.zone.clone(),
         )
     }
 }
@@ -64,7 +72,7 @@ impl From<Time> for ToA {
             wday: time.day_of_week(),
             yday: time.day_of_year(),
             isdst: time.is_dst(),
-            zone: Offset::from(time.utc_offset()),
+            zone: String::from(time.time_zone()),
         }
     }
 }

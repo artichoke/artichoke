@@ -157,7 +157,14 @@ impl From<ToA> for Time {
     #[inline]
     fn from(to_a: ToA) -> Self {
         Self::new(
-            to_a.year, to_a.month, to_a.day, to_a.hour, to_a.min, to_a.sec, 0, to_a.zone,
+            to_a.year,
+            to_a.month,
+            to_a.day,
+            to_a.hour,
+            to_a.min,
+            to_a.sec,
+            0,
+            Offset::from(to_a.zone),
         )
     }
 }
@@ -245,8 +252,8 @@ mod tests {
 
     #[test]
     fn time_zone_fixed_offset() {
-        assert_eq!("-02:02", time_with_fixed_offset(-7320).time_zone());
-        assert_eq!("+00:00", time_with_fixed_offset(0).time_zone());
-        assert_eq!("+00:00", time_with_fixed_offset(59).time_zone());
+        assert_eq!("-0202", time_with_fixed_offset(-7320).time_zone());
+        assert_eq!("+0000", time_with_fixed_offset(0).time_zone());
+        assert_eq!("+0000", time_with_fixed_offset(59).time_zone());
     }
 }

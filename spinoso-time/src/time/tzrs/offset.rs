@@ -24,6 +24,20 @@ fn local_time_zone() -> TimeZoneRef<'static> {
     }
 }
 
+/// Generates a [+/-]HHMM timezone format from a given number of seconds
+/// Note: the actual seconds element is effectively ignored here
+#[inline]
+#[must_use]
+fn offset_hhmm_from_seconds(seconds: i32) -> String {
+    let flag = if seconds < 0 { '-' } else { '+' };
+    let minutes = seconds.abs() / 60;
+
+    let offset_hours = minutes / 60;
+    let offset_minutes = minutes - (offset_hours * 60);
+
+    format!("{}{:0>2}{:0>2}", flag, offset_hours, offset_minutes)
+}
+
 /// Represents the number of seconds offset from UTC
 #[allow(variant_size_differences)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -61,10 +75,7 @@ impl<'a> Offset {
     #[inline]
     #[must_use]
     pub fn fixed(offset: i32) -> Self {
-        let sign = if offset.is_negative() { '-' } else { '+' };
-        let hours = offset / 3600;
-        let minutes = (offset / 60) % 60;
-        let offset_name = format!("GMT {}{}{}", sign, hours, minutes);
+        let offset_name = offset_hhmm_from_seconds(offset);
         let local_time_type =
             LocalTimeType::new(offset, false, Some(offset_name.as_bytes())).expect("Couldn't create fixed offset");
         Self::Fixed([local_time_type])
@@ -147,7 +158,7 @@ impl From<&str> for Offset {
             "Z" => Self::utc(),
             _ => {
                 lazy_static! {
-                    static ref HH_MM_MATCHER: Regex = Regex::new(r"^([\-\+]{1})(\d{2}):(\d{2})$").unwrap();
+                    static ref HH_MM_MATCHER: Regex = Regex::new(r"^([\-\+]{1})(\d{2})(\d{2})$").unwrap();
                 }
                 if HH_MM_MATCHER.is_match(input) {
                     let caps = HH_MM_MATCHER.captures(input).unwrap();
@@ -164,6 +175,12 @@ impl From<&str> for Offset {
                 }
             }
         }
+    }
+}
+
+impl From<String> for Offset {
+    fn from(input: String) -> Self {
+        Offset::from(input.as_str())
     }
 }
 
@@ -194,6 +211,14 @@ mod tests {
         local_time_type.ut_offset()
     }
 
+    fn offset_name(offset: &Offset) -> &str {
+        match offset {
+            Offset::Utc => "UTC",
+            Offset::Fixed(ltt) => ltt[0].time_zone_designation(),
+            Offset::Tz(_) => "Ambiguous timezone name",
+        }
+    }
+
     #[test]
     fn fixed_zero_is_not_utc() {
         let offset = Offset::from(0);
@@ -208,15 +233,41 @@ mod tests {
 
     #[test]
     fn from_str_hh_mm() {
-        assert_eq!(0, offset_seconds_from_fixed_offset("+00:00"));
-        assert_eq!(0, offset_seconds_from_fixed_offset("-00:00"));
-        assert_eq!(60, offset_seconds_from_fixed_offset("+00:01"));
-        assert_eq!(-60, offset_seconds_from_fixed_offset("-00:01"));
-        assert_eq!(3600, offset_seconds_from_fixed_offset("+01:00"));
-        assert_eq!(-3600, offset_seconds_from_fixed_offset("-01:00"));
-        assert_eq!(7320, offset_seconds_from_fixed_offset("+02:02"));
-        assert_eq!(-7320, offset_seconds_from_fixed_offset("-02:02"));
-        assert_eq!(362_340, offset_seconds_from_fixed_offset("+99:99"));
-        assert_eq!(-362_340, offset_seconds_from_fixed_offset("-99:99"));
+        assert_eq!(0, offset_seconds_from_fixed_offset("+0000"));
+        assert_eq!(0, offset_seconds_from_fixed_offset("-0000"));
+        assert_eq!(60, offset_seconds_from_fixed_offset("+0001"));
+        assert_eq!(-60, offset_seconds_from_fixed_offset("-0001"));
+        assert_eq!(3600, offset_seconds_from_fixed_offset("+0100"));
+        assert_eq!(-3600, offset_seconds_from_fixed_offset("-0100"));
+        assert_eq!(7320, offset_seconds_from_fixed_offset("+0202"));
+        assert_eq!(-7320, offset_seconds_from_fixed_offset("-0202"));
+        assert_eq!(362_340, offset_seconds_from_fixed_offset("+9999"));
+        assert_eq!(-362_340, offset_seconds_from_fixed_offset("-9999"));
+        assert_eq!(3660, offset_seconds_from_fixed_offset("+0061"));
+    }
+
+    #[test]
+    fn from_str_hh_mm_strange() {
+        assert_eq!(3660, offset_seconds_from_fixed_offset("+0061"));
+    }
+
+    #[test]
+    fn fixed_time_zone_designation() {
+        assert_eq!("+0000", offset_name(&Offset::from(0)));
+        assert_eq!("+0000", offset_name(&Offset::from(59)));
+        assert_eq!("+0001", offset_name(&Offset::from(60)));
+        assert_eq!("-0001", offset_name(&Offset::from(-60)));
+        assert_eq!("+0100", offset_name(&Offset::from(3600)));
+        assert_eq!("-0100", offset_name(&Offset::from(-3600)));
+        assert_eq!("+0202", offset_name(&Offset::from(7320)));
+        assert_eq!("-0202", offset_name(&Offset::from(-7320)));
+        assert_eq!("+9959", offset_name(&Offset::from(359_940)));
+        assert_eq!("-9959", offset_name(&Offset::from(-359_940)));
+
+        // Unexpected cases
+        assert_eq!("-0000", offset_name(&Offset::from(-59)));
+
+        // FIXME: Should error instead
+        assert_eq!("+10000", offset_name(&Offset::from(360_000)));
     }
 }

@@ -190,22 +190,11 @@ impl Time {
     /// [`empty string`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#210
     #[inline]
     #[must_use]
-    pub fn time_zone(&self) -> String {
+    pub fn time_zone(&self) -> &str {
         match self.offset {
-            Offset::Utc => "UTC".to_string(),
-            Offset::Fixed(_) => {
-                let ut_offset = self.inner.local_time_type().ut_offset();
-                let flag = if ut_offset < 0 { '-' } else { '+' };
-                let minutes = ut_offset.abs() / 60;
-
-                let offset_hours = minutes / 60;
-                let offset_minutes = minutes - (offset_hours * 60);
-
-                format!("{}{:0>2}:{:0>2}", flag, offset_hours, offset_minutes)
-            }
-            Offset::Tz(_) => self.inner.local_time_type().time_zone_designation().to_string(),
+            Offset::Utc => "UTC",
+            _ => self.inner.local_time_type().time_zone_designation(),
         }
-        //self.inner.local_time_type().time_zone_designation().to_string()
     }
 
     /// Returns true if the time zone is UTC
@@ -324,6 +313,7 @@ mod tests {
         assert_eq!(56, dt.second());
         assert_eq!(1910, dt.nanoseconds());
         assert_eq!(1, dt.microseconds());
+        assert_eq!("UTC", dt.time_zone());
         assert!(dt.is_utc());
     }
 }
