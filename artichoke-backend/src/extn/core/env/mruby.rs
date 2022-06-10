@@ -37,7 +37,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-unsafe extern "C" fn env_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn env_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
@@ -48,7 +48,7 @@ unsafe extern "C" fn env_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_valu
     }
 }
 
-unsafe extern "C" fn env_element_reference(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn env_element_reference(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let name = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let obj = Value::from(slf);
@@ -60,7 +60,7 @@ unsafe extern "C" fn env_element_reference(mrb: *mut sys::mrb_state, slf: sys::m
     }
 }
 
-unsafe extern "C" fn env_element_assignment(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn env_element_assignment(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let (name, value) = mrb_get_args!(mrb, required = 2);
     unwrap_interpreter!(mrb, to => guard);
     let obj = Value::from(slf);
@@ -73,7 +73,7 @@ unsafe extern "C" fn env_element_assignment(mrb: *mut sys::mrb_state, slf: sys::
     }
 }
 
-unsafe extern "C" fn env_to_h(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn env_to_h(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
     let obj = Value::from(slf);

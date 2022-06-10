@@ -42,7 +42,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-unsafe extern "C" fn kernel_integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn kernel_integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let (arg, base) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let arg = Value::from(arg);
@@ -54,7 +54,7 @@ unsafe extern "C" fn kernel_integer(mrb: *mut sys::mrb_state, _slf: sys::mrb_val
     }
 }
 
-unsafe extern "C" fn kernel_load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn kernel_load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let file = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let file = Value::from(file);
@@ -65,7 +65,7 @@ unsafe extern "C" fn kernel_load(mrb: *mut sys::mrb_state, _slf: sys::mrb_value)
     }
 }
 
-unsafe extern "C" fn kernel_p(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn kernel_p(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -76,7 +76,7 @@ unsafe extern "C" fn kernel_p(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) ->
     }
 }
 
-unsafe extern "C" fn kernel_print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn kernel_print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -87,7 +87,7 @@ unsafe extern "C" fn kernel_print(mrb: *mut sys::mrb_state, _slf: sys::mrb_value
     }
 }
 
-unsafe extern "C" fn kernel_puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn kernel_puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let args = args.iter().copied().map(Value::from);
@@ -98,7 +98,7 @@ unsafe extern "C" fn kernel_puts(mrb: *mut sys::mrb_state, _slf: sys::mrb_value)
     }
 }
 
-unsafe extern "C" fn kernel_require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn kernel_require(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let file = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let file = Value::from(file);
@@ -109,7 +109,7 @@ unsafe extern "C" fn kernel_require(mrb: *mut sys::mrb_state, _slf: sys::mrb_val
     }
 }
 
-unsafe extern "C" fn kernel_require_relative(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn kernel_require_relative(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let file = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let file = Value::from(file);
