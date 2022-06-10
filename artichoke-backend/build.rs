@@ -95,7 +95,6 @@ mod libs {
             "mrbgems/mruby-class-ext/src/class.c",   // NOTE(GH-32): Pending removal.
             "mrbgems/mruby-compiler/core/codegen.c", // Ruby parser and bytecode generation
             "mrbgems/mruby-compiler/core/y.tab.c",   // Ruby parser and bytecode generation
-            "mrbgems/mruby-error/src/exception.c",   // `mrb_raise`, `mrb_protect`
             "mrbgems/mruby-eval/src/eval.c",         // eval, instance_eval, and friends
             "mrbgems/mruby-fiber/src/fiber.c",       // Fiber class from core, required by `Enumerator`
             "mrbgems/mruby-metaprog/src/metaprog.c", // APIs on Kernel and Module for accessing classes and variables
@@ -117,7 +116,6 @@ mod libs {
         [
             "mrbgems/mruby-class-ext/include", // NOTE(GH-32): Pending removal.
             "mrbgems/mruby-compiler/core",     // Ruby parser and bytecode generation
-            "mrbgems/mruby-error/include",     // `mrb_raise`, `mrb_protect`
             "mrbgems/mruby-eval/include",      // eval, instance_eval, and friends
             "mrbgems/mruby-fiber/include",     // Fiber class from core, required by `Enumerator`
             "mrbgems/mruby-metaprog/include",  // APIs on Kernel and Module for accessing classes and variables

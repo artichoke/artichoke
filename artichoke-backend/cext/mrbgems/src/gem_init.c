@@ -4,8 +4,6 @@
 extern "C" {
 #endif
 
-void artichoke_mrbgem_mruby_error_gem_init(mrb_state *);
-void artichoke_mrbgem_mruby_error_gem_final(mrb_state *);
 void artichoke_mrbgem_mruby_eval_gem_init(mrb_state *);
 void artichoke_mrbgem_mruby_eval_gem_final(mrb_state *);
 void artichoke_mrbgem_mruby_metaprog_gem_init(mrb_state *);
@@ -37,13 +35,11 @@ mrb_final_mrbgems(mrb_state *mrb)
   artichoke_mrbgem_mruby_proc_ext_gem_final(mrb);
   artichoke_mrbgem_mruby_metaprog_gem_final(mrb);
   artichoke_mrbgem_mruby_eval_gem_final(mrb);
-  artichoke_mrbgem_mruby_error_gem_final(mrb);
 }
 
 void
 mrb_init_mrbgems(mrb_state *mrb)
 {
-  artichoke_mrbgem_mruby_error_gem_init(mrb);
   artichoke_mrbgem_mruby_eval_gem_init(mrb);
   artichoke_mrbgem_mruby_metaprog_gem_init(mrb);
   artichoke_mrbgem_mruby_proc_ext_gem_init(mrb);
