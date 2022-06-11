@@ -22,7 +22,7 @@ unsafe impl Send for ExceptionPayload {}
 #[no_mangle]
 unsafe extern "C-unwind" fn exc_throw(mrb: *mut sys::mrb_state, exc: sys::mrb_value) -> ! {
     let _ = mrb;
-    panic::panic_any(ExceptionPayload { inner: exc });
+    panic::resume_unwind(Box::new(ExceptionPayload { inner: exc }));
 }
 
 // ```c
@@ -57,12 +57,7 @@ unsafe fn mrb_protect_inner(
         .map_err(|err| Fatal::from(err.to_string()))?;
     let body = body.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
 
-    //let hook = panic::take_hook();
-    //panic::set_hook(Box::new(|_| {}));
-
     let result = arena.with_ffi_boundary(|mrb| panic::catch_unwind(panic::AssertUnwindSafe(|| body(mrb, data))));
-
-    //panic::set_hook(hook);
     arena.restore();
 
     match result {
