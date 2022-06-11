@@ -52,10 +52,11 @@ unsafe fn mrb_protect_inner(
     if !state.is_null() {
         *state = false.into();
     }
+
+    let body = body.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
     let mut arena = interp
         .create_arena_savepoint()
         .map_err(|err| Fatal::from(err.to_string()))?;
-    let body = body.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
 
     let result = arena.with_ffi_boundary(|mrb| panic::catch_unwind(panic::AssertUnwindSafe(|| body(mrb, data))));
     arena.restore();
@@ -80,5 +81,57 @@ unsafe fn mrb_protect_inner(
             }
             Err(err.into())
         }
+    }
+}
+
+// ```c
+// MRB_API mrb_value
+// mrb_ensure(mrb_state *mrb, mrb_func_t body, mrb_value b_data, mrb_func_t ensure, mrb_value e_data)
+// ```
+#[no_mangle]
+unsafe extern "C-unwind" fn mrb_ensure(
+    mrb: *mut sys::mrb_state,
+    body: sys::mrb_func_t,
+    body_data: sys::mrb_value,
+    ensure: sys::mrb_func_t,
+    ensure_data: sys::mrb_value,
+) -> sys::mrb_value {
+    unwrap_interpreter!(mrb, to => guard);
+    match mrb_ensure_inner(&mut guard, body, body_data, ensure, ensure_data) {
+        Ok(value) => value,
+        Err(exc) => exc.as_mrb_value(&mut guard).unwrap_or_default(),
+    }
+}
+
+unsafe fn mrb_ensure_inner(
+    interp: &mut Artichoke,
+    body: sys::mrb_func_t,
+    body_data: sys::mrb_value,
+    ensure: sys::mrb_func_t,
+    ensure_data: sys::mrb_value,
+) -> Result<sys::mrb_value, Error> {
+    let body = body.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
+    let ensure = ensure.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
+    let mut arena = interp
+        .create_arena_savepoint()
+        .map_err(|err| Fatal::from(err.to_string()))?;
+
+    let result = arena.with_ffi_boundary(|mrb| panic::catch_unwind(panic::AssertUnwindSafe(|| body(mrb, body_data))));
+
+    match result {
+        Ok(Ok(value)) => {
+            let _ = arena.with_ffi_boundary(|mrb| ensure(mrb, ensure_data))?;
+            arena.restore();
+            Ok(interp.protect(value.into()).into())
+        }
+        Ok(Err(err)) => {
+            let exc = err
+                .downcast::<ExceptionPayload>()
+                .map_err(|_| Fatal::with_message("unexpected panic payload in mrb_protect"))?;
+            let _ = arena.with_ffi_boundary(|mrb| ensure(mrb, ensure_data))?;
+            arena.restore();
+            panic::resume_unwind(exc);
+        }
+        Err(err) => Err(err.into()),
     }
 }
