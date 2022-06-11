@@ -37,6 +37,7 @@ mod paths {
 mod libs {
     use std::env;
     use std::ffi::OsStr;
+    use std::fs;
     use std::path::PathBuf;
     use std::process::{Command, Stdio};
     use std::str;
@@ -297,7 +298,7 @@ mod libs {
             .arg("--no-doc-comments")
             .arg("--size_t-is-usize")
             .arg("--output")
-            .arg(bindings_out_path)
+            .arg(&bindings_out_path)
             .arg(paths::bindgen_header())
             .arg("--")
             .arg("-DARTICHOKE")
@@ -322,6 +323,15 @@ mod libs {
 
         let status = command.status().unwrap();
         assert!(status.success(), "bindgen failed");
+
+        let bindings = fs::read_to_string(&bindings_out_path).unwrap();
+        fs::write(
+            bindings_out_path,
+            bindings
+                .replace(r#"unsafe extern "C" fn"#, r#"unsafe extern "C-unwind" fn"#)
+                .replace(r#"extern "C" {"#, r#"extern "C-unwind" {"#),
+        )
+        .unwrap();
     }
 
     pub fn build(wasm: Option<Wasm>, out_dir: &OsStr) {
