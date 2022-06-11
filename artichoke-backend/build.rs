@@ -30,7 +30,7 @@ mod paths {
     }
 
     pub fn bindgen_header() -> PathBuf {
-        crate_root().join("cext").join("bindgen.h")
+        crate_root().join("cext").join("bindgen.hpp")
     }
 }
 
@@ -180,6 +180,10 @@ mod libs {
         let mut build = cc::Build::new();
         build
             .warnings(false)
+            .cpp(true)
+            .flag("-std=c++17")
+            .flag("-x")
+            .flag("c++")
             .define("ARTICHOKE", None)
             .define("MRB_ARY_NO_EMBED", None)
             .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
@@ -187,6 +191,7 @@ mod libs {
             .define("MRB_NO_BOXING", None)
             .define("MRB_NO_PRESYM", None)
             .define("MRB_NO_STDIO", None)
+            .define("MRB_USE_CXX_EXCEPTION", None)
             .define("MRB_UTF8_STRING", None);
 
         for source in sources {
@@ -301,6 +306,7 @@ mod libs {
             .arg(&bindings_out_path)
             .arg(paths::bindgen_header())
             .arg("--")
+            .arg("-std=c++17")
             .arg("-DARTICHOKE")
             .arg("-DMRB_ARY_NO_EMBED")
             .arg("-DMRB_GC_TURN_OFF_GENERATIONAL")
@@ -308,6 +314,7 @@ mod libs {
             .arg("-DMRB_NO_BOXING")
             .arg("-DMRB_NO_PRESYM")
             .arg("-DMRB_NO_STDIO")
+            .arg("-DMRB_USE_CXX_EXCEPTION")
             .arg("-DMRB_UTF8_STRING");
 
         for include_dir in mruby_include_dirs().chain(mrbsys_include_dirs()) {
