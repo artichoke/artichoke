@@ -217,6 +217,7 @@ mrb_exc_set(mrb_state *mrb, mrb_value exc)
   }
 }
 
+#ifndef ARTICHOKE
 static mrb_noreturn void
 exc_throw(mrb_state *mrb, mrb_value exc)
 {
@@ -226,6 +227,9 @@ exc_throw(mrb_state *mrb, mrb_value exc)
   }
   MRB_THROW(mrb->jmp);
 }
+#else
+mrb_noreturn void exc_throw(mrb_state *mrb, mrb_value exc);
+#endif
 
 MRB_API mrb_noreturn void
 mrb_exc_raise(mrb_state *mrb, mrb_value exc)
