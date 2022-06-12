@@ -142,6 +142,7 @@ mod parser;
 mod platform_string;
 #[cfg(feature = "core-random")]
 mod prng;
+mod raise;
 mod regexp;
 pub mod release_metadata;
 pub mod state;
