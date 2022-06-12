@@ -6,15 +6,26 @@ use spinoso_exception::Fatal;
 use crate::error::{Error, RubyException};
 use crate::gc::MrbGarbageCollection;
 use crate::sys;
+use crate::value::Value;
 use crate::Artichoke;
 
+/// Panic payload for unwinding an mruby interpreter with an `Exception` `mrb_value`.
 struct ExceptionPayload {
-    inner: sys::mrb_value,
+    inner: Value,
 }
 
-// mruby is single threaded.
+// SAFETY:
+//
+// - mruby is single threaded and cannot be `Send`.
+// - This struct is used directly in `std::panic::resume_unwind` and is not used
+//   by `std::thread::JoinHandle::join`.
+// - This struct is not publicly exported, so it cannot be downcast to outside
+//   of a single threaded panic context.
 unsafe impl Send for ExceptionPayload {}
 
+// NOTE: this `no_mangle` function overrides a `static` function in
+// `exception.c` which is disabled via `#ifndef ARTICHOKE`.
+//
 // ```c
 // static mrb_noreturn void
 // exc_throw(mrb_state *mrb, mrb_value exc)
@@ -22,7 +33,9 @@ unsafe impl Send for ExceptionPayload {}
 #[no_mangle]
 unsafe extern "C-unwind" fn exc_throw(mrb: *mut sys::mrb_state, exc: sys::mrb_value) -> ! {
     let _ = mrb;
-    panic::resume_unwind(Box::new(ExceptionPayload { inner: exc }));
+    panic::resume_unwind(Box::new(ExceptionPayload {
+        inner: Value::from(exc),
+    }));
 }
 
 // ```c
@@ -38,7 +51,7 @@ unsafe extern "C-unwind" fn mrb_protect(
 ) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     match mrb_protect_inner(&mut guard, body, data, state) {
-        Ok(value) => value,
+        Ok(value) => value.inner(),
         Err(exc) => exc.as_mrb_value(&mut guard).unwrap_or_default(),
     }
 }
@@ -48,32 +61,41 @@ unsafe fn mrb_protect_inner(
     body: sys::mrb_func_t,
     data: sys::mrb_value,
     state: *mut sys::mrb_bool,
-) -> Result<sys::mrb_value, Error> {
+) -> Result<Value, Error> {
     if !state.is_null() {
         *state = false.into();
     }
 
     let body = body.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
-    let mut arena = interp
-        .create_arena_savepoint()
-        .map_err(|err| Fatal::from(err.to_string()))?;
 
-    let result = arena.with_ffi_boundary(|mrb| panic::catch_unwind(panic::AssertUnwindSafe(|| body(mrb, data))));
-    arena.restore();
+    let result = {
+        let mut arena = interp.create_arena_savepoint()?;
+        arena.with_ffi_boundary(|mrb| {
+            panic::catch_unwind(panic::AssertUnwindSafe(|| {
+                let result = body(mrb, data);
+                Value::from(result)
+            }))
+        })
+    };
 
     match result {
-        Ok(Ok(value)) => Ok(interp.protect(value.into()).into()),
-        Ok(Err(err)) => {
+        Ok(Ok(value)) => Ok(interp.protect(value)),
+        Ok(Err(payload)) => {
             if !state.is_null() {
                 *state = true.into();
             }
             let mrb = interp.mrb.as_ptr();
             (*mrb).exc = ptr::null_mut();
 
-            let exc = err
-                .downcast::<ExceptionPayload>()
-                .map_err(|_| Fatal::with_message("unexpected panic payload in mrb_protect"))?;
-            Ok(exc.inner)
+            let exc = if let Ok(payload) = payload.downcast::<ExceptionPayload>() {
+                payload.inner
+            } else {
+                // Something other than `mrb_raise` resulted in a `panic!`. This
+                // is likely due to a programming error in Rust code, so propagate
+                // the panic so we can crash the process.
+                panic::resume_unwind(payload);
+            };
+            Ok(exc)
         }
         Err(err) => {
             if !state.is_null() {
@@ -98,7 +120,7 @@ unsafe extern "C-unwind" fn mrb_ensure(
 ) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     match mrb_ensure_inner(&mut guard, body, body_data, ensure, ensure_data) {
-        Ok(value) => value,
+        Ok(value) => value.inner(),
         Err(exc) => exc.as_mrb_value(&mut guard).unwrap_or_default(),
     }
 }
@@ -109,28 +131,36 @@ unsafe fn mrb_ensure_inner(
     body_data: sys::mrb_value,
     ensure: sys::mrb_func_t,
     ensure_data: sys::mrb_value,
-) -> Result<sys::mrb_value, Error> {
+) -> Result<Value, Error> {
     let body = body.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
     let ensure = ensure.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
-    let mut arena = interp
-        .create_arena_savepoint()
-        .map_err(|err| Fatal::from(err.to_string()))?;
 
-    let result = arena.with_ffi_boundary(|mrb| panic::catch_unwind(panic::AssertUnwindSafe(|| body(mrb, body_data))));
+    let mut arena = interp.create_arena_savepoint()?;
+
+    let result = arena.with_ffi_boundary(|mrb| {
+        panic::catch_unwind(panic::AssertUnwindSafe(|| {
+            let result = body(mrb, body_data);
+            Value::from(result)
+        }))
+    });
 
     match result {
         Ok(Ok(value)) => {
             let _ = arena.with_ffi_boundary(|mrb| ensure(mrb, ensure_data))?;
             arena.restore();
-            Ok(interp.protect(value.into()).into())
+            Ok(interp.protect(value))
         }
-        Ok(Err(err)) => {
-            let exc = err
-                .downcast::<ExceptionPayload>()
-                .map_err(|_| Fatal::with_message("unexpected panic payload in mrb_protect"))?;
+        Ok(Err(payload)) => {
+            if payload.downcast::<ExceptionPayload>().is_err() {
+                // Something other than `mrb_raise` resulted in a `panic!`. This
+                // is likely due to a programming error in Rust code, so propagate
+                // the panic so we can crash the process.
+                panic::resume_unwind(payload);
+            };
             let _ = arena.with_ffi_boundary(|mrb| ensure(mrb, ensure_data))?;
             arena.restore();
-            panic::resume_unwind(exc);
+            // `mrb_ensure` continues to unwind if an `Exception` was triggered.
+            panic::resume_unwind(payload);
         }
         Err(err) => Err(err.into()),
     }
