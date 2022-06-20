@@ -1,4 +1,5 @@
 use alloc::vec;
+use alloc::vec::Vec;
 use core::iter::FusedIterator;
 use core::slice;
 
@@ -23,9 +24,15 @@ use core::slice;
 /// [`String`]: crate::String
 /// [`iter`]: crate::String::iter
 #[derive(Debug, Clone)]
-pub struct Iter<'a>(pub(crate) slice::Iter<'a, u8>);
+pub struct Iter<'a>(slice::Iter<'a, u8>);
 
 impl<'a> Iter<'a> {
+    #[inline]
+    #[must_use]
+    pub(crate) fn from_slice(slice: &'a [u8]) -> Self {
+        Self(slice.iter())
+    }
+
     /// Views the underlying data as a subslice of the original data.
     ///
     /// This has the same lifetime as the original slice, and so the iterator
@@ -125,9 +132,15 @@ impl<'a> ExactSizeIterator for Iter<'a> {}
 /// [`iter_mut`]: crate::String::iter_mut
 #[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
-pub struct IterMut<'a>(pub(crate) slice::IterMut<'a, u8>);
+pub struct IterMut<'a>(slice::IterMut<'a, u8>);
 
 impl<'a> IterMut<'a> {
+    #[inline]
+    #[must_use]
+    pub(crate) fn from_mut_slice(slice: &'a mut [u8]) -> Self {
+        Self(slice.iter_mut())
+    }
+
     /// Views the underlying data as a subslice of the original data.
     ///
     /// To avoid creating `&mut` references that alias, this is forced to consume
@@ -217,9 +230,15 @@ impl<'a> ExactSizeIterator for IterMut<'a> {}
 /// ```
 #[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
-pub struct IntoIter(pub(crate) vec::IntoIter<u8>);
+pub struct IntoIter(vec::IntoIter<u8>);
 
 impl IntoIter {
+    #[inline]
+    #[must_use]
+    pub(crate) fn from_vec(buf: Vec<u8>) -> Self {
+        Self(buf.into_iter())
+    }
+
     /// Returns the remaining bytes of this iterator as a slice.
     ///
     /// # Examples
@@ -335,7 +354,7 @@ impl ExactSizeIterator for IntoIter {}
 /// [`String`]: crate::String
 /// [`bytes`]: crate::String::bytes
 #[derive(Debug, Clone)]
-pub struct Bytes<'a>(pub(crate) slice::Iter<'a, u8>);
+pub struct Bytes<'a>(slice::Iter<'a, u8>);
 
 impl<'a> From<&'a [u8]> for Bytes<'a> {
     #[inline]
@@ -345,6 +364,12 @@ impl<'a> From<&'a [u8]> for Bytes<'a> {
 }
 
 impl<'a> Bytes<'a> {
+    #[inline]
+    #[must_use]
+    pub(crate) fn from_slice(slice: &'a [u8]) -> Self {
+        Self(slice.iter())
+    }
+
     /// Views the underlying data as a subslice of the original data.
     ///
     /// This has the same lifetime as the original slice, and so the iterator
