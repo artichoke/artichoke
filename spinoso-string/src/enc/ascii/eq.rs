@@ -1,3 +1,4 @@
+use alloc::string::String;
 use alloc::vec::Vec;
 
 use super::AsciiString;
@@ -38,13 +39,13 @@ impl PartialEq<AsciiString> for &[u8] {
     }
 }
 
-impl PartialEq<alloc::string::String> for AsciiString {
-    fn eq(&self, other: &alloc::string::String) -> bool {
+impl PartialEq<String> for AsciiString {
+    fn eq(&self, other: &String) -> bool {
         **self == *other.as_bytes()
     }
 }
 
-impl PartialEq<AsciiString> for alloc::string::String {
+impl PartialEq<AsciiString> for String {
     fn eq(&self, other: &AsciiString) -> bool {
         *self.as_bytes() == **other
     }
