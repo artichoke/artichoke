@@ -143,28 +143,13 @@ mod libs {
             .chain(mruby_include_dirs())
     }
 
-    // From `emsdk/upstream/emscripten/tools/shared.py:emsdk_cflags`:
-    //
-    // ``python
-    // path_from_root('system', 'include', 'compat'),
-    // path_from_root('system', 'include'),
-    // path_from_root('system', 'include', 'libc'),
-    // path_from_root('system', 'lib', 'libc', 'musl', 'arch', 'emscripten'),
-    // path_from_root('system', 'local', 'include'),
-    // path_from_root('system', 'include', 'SSE'),
-    // path_from_root('system', 'include', 'neon'),
-    // path_from_root('system', 'lib', 'compiler-rt', 'include'),
-    // path_from_root('system', 'lib', 'libunwind', 'include'),
-    // ```
+    // From `emsdk/upstream/emscripten/tools/system_libs.py` in emsdk 3.1.12:
     fn wasm_include_dirs() -> impl Iterator<Item = PathBuf> {
         [
             "system/include/compat",
             "system/include",
-            "system/include/libc",
+            "system/lib/libc/musl/include",
             "system/lib/libc/musl/arch/emscripten",
-            "system/local/include",
-            "system/include/SSE",
-            "system/include/neon",
             "system/lib/compiler-rt/include",
             "system/lib/libunwind/include",
         ]
