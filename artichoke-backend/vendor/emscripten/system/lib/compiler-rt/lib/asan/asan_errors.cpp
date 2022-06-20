@@ -46,10 +46,9 @@ void ErrorDeadlySignal::Print() {
 void ErrorDoubleFree::Print() {
   Decorator d;
   Printf("%s", d.Error());
-  Report(
-      "ERROR: AddressSanitizer: attempting %s on %p in thread %s:\n",
-      scariness.GetDescription(), addr_description.addr,
-      AsanThreadIdAndName(tid).c_str());
+  Report("ERROR: AddressSanitizer: attempting %s on %p in thread %s:\n",
+         scariness.GetDescription(), (void *)addr_description.addr,
+         AsanThreadIdAndName(tid).c_str());
   Printf("%s", d.Default());
   scariness.Print();
   GET_STACK_TRACE_FATAL(second_free_stack->trace[0],
@@ -62,10 +61,9 @@ void ErrorDoubleFree::Print() {
 void ErrorNewDeleteTypeMismatch::Print() {
   Decorator d;
   Printf("%s", d.Error());
-  Report(
-      "ERROR: AddressSanitizer: %s on %p in thread %s:\n",
-      scariness.GetDescription(), addr_description.addr,
-      AsanThreadIdAndName(tid).c_str());
+  Report("ERROR: AddressSanitizer: %s on %p in thread %s:\n",
+         scariness.GetDescription(), (void *)addr_description.addr,
+         AsanThreadIdAndName(tid).c_str());
   Printf("%s  object passed to delete has wrong type:\n", d.Default());
   if (delete_size != 0) {
     Printf(
@@ -106,7 +104,7 @@ void ErrorFreeNotMalloced::Print() {
   Report(
       "ERROR: AddressSanitizer: attempting free on address "
       "which was not malloc()-ed: %p in thread %s\n",
-      addr_description.Address(), AsanThreadIdAndName(tid).c_str());
+      (void *)addr_description.Address(), AsanThreadIdAndName(tid).c_str());
   Printf("%s", d.Default());
   CHECK_GT(free_stack->size, 0);
   scariness.Print();
@@ -126,7 +124,7 @@ void ErrorAllocTypeMismatch::Print() {
   Printf("%s", d.Error());
   Report("ERROR: AddressSanitizer: %s (%s vs %s) on %p\n",
          scariness.GetDescription(), alloc_names[alloc_type],
-         dealloc_names[dealloc_type], addr_description.Address());
+         dealloc_names[dealloc_type], (void *)addr_description.Address());
   Printf("%s", d.Default());
   CHECK_GT(dealloc_stack->size, 0);
   scariness.Print();
@@ -145,7 +143,7 @@ void ErrorMallocUsableSizeNotOwned::Print() {
   Report(
       "ERROR: AddressSanitizer: attempting to call malloc_usable_size() for "
       "pointer which is not owned: %p\n",
-      addr_description.Address());
+      (void *)addr_description.Address());
   Printf("%s", d.Default());
   stack->Print();
   addr_description.Print();
@@ -158,7 +156,7 @@ void ErrorSanitizerGetAllocatedSizeNotOwned::Print() {
   Report(
       "ERROR: AddressSanitizer: attempting to call "
       "__sanitizer_get_allocated_size() for pointer which is not owned: %p\n",
-      addr_description.Address());
+      (void *)addr_description.Address());
   Printf("%s", d.Default());
   stack->Print();
   addr_description.Print();
@@ -298,9 +296,10 @@ void ErrorStringFunctionMemoryRangesOverlap::Print() {
   Report(
       "ERROR: AddressSanitizer: %s: memory ranges [%p,%p) and [%p, %p) "
       "overlap\n",
-      bug_type, addr1_description.Address(),
-      addr1_description.Address() + length1, addr2_description.Address(),
-      addr2_description.Address() + length2);
+      bug_type, (void *)addr1_description.Address(),
+      (void *)(addr1_description.Address() + length1),
+      (void *)addr2_description.Address(),
+      (void *)(addr2_description.Address() + length2));
   Printf("%s", d.Default());
   scariness.Print();
   stack->Print();
@@ -329,10 +328,10 @@ void ErrorBadParamsToAnnotateContiguousContainer::Print() {
       "      end     : %p\n"
       "      old_mid : %p\n"
       "      new_mid : %p\n",
-      beg, end, old_mid, new_mid);
-  uptr granularity = SHADOW_GRANULARITY;
+      (void *)beg, (void *)end, (void *)old_mid, (void *)new_mid);
+  uptr granularity = ASAN_SHADOW_GRANULARITY;
   if (!IsAligned(beg, granularity))
-    Report("ERROR: beg is not aligned by %d\n", granularity);
+    Report("ERROR: beg is not aligned by %zu\n", granularity);
   stack->Print();
   ReportErrorSummary(scariness.GetDescription(), stack);
 }
@@ -341,9 +340,10 @@ void ErrorODRViolation::Print() {
   Decorator d;
   Printf("%s", d.Error());
   Report("ERROR: AddressSanitizer: %s (%p):\n", scariness.GetDescription(),
-         global1.beg);
+         (void *)global1.beg);
   Printf("%s", d.Default());
-  InternalScopedString g1_loc(256), g2_loc(256);
+  InternalScopedString g1_loc;
+  InternalScopedString g2_loc;
   PrintGlobalLocation(&g1_loc, global1);
   PrintGlobalLocation(&g2_loc, global2);
   Printf("  [1] size=%zd '%s' %s\n", global1.size,
@@ -360,7 +360,7 @@ void ErrorODRViolation::Print() {
   Report(
       "HINT: if you don't care about these errors you may set "
       "ASAN_OPTIONS=detect_odr_violation=0\n");
-  InternalScopedString error_msg(256);
+  InternalScopedString error_msg;
   error_msg.append("%s: global '%s' at %s", scariness.GetDescription(),
                    MaybeDemangleGlobalName(global1.name), g1_loc.data());
   ReportErrorSummary(error_msg.data());
@@ -370,7 +370,8 @@ void ErrorInvalidPointerPair::Print() {
   Decorator d;
   Printf("%s", d.Error());
   Report("ERROR: AddressSanitizer: %s: %p %p\n", scariness.GetDescription(),
-         addr1_description.Address(), addr2_description.Address());
+         (void *)addr1_description.Address(),
+         (void *)addr2_description.Address());
   Printf("%s", d.Default());
   GET_STACK_TRACE_FATAL(pc, bp);
   stack.Print();
@@ -409,7 +410,8 @@ ErrorGeneric::ErrorGeneric(u32 tid, uptr pc_, uptr bp_, uptr sp_, uptr addr,
     if (AddrIsInMem(addr)) {
       u8 *shadow_addr = (u8 *)MemToShadow(addr);
       // If we are accessing 16 bytes, look at the second shadow byte.
-      if (*shadow_addr == 0 && access_size > SHADOW_GRANULARITY) shadow_addr++;
+      if (*shadow_addr == 0 && access_size > ASAN_SHADOW_GRANULARITY)
+        shadow_addr++;
       // If we are in the partial right redzone, look at the next shadow byte.
       if (*shadow_addr > 0 && *shadow_addr < 128) shadow_addr++;
       bool far_from_bounds = false;
@@ -511,10 +513,11 @@ static void PrintLegend(InternalScopedString *str) {
   str->append(
       "Shadow byte legend (one shadow byte represents %d "
       "application bytes):\n",
-      (int)SHADOW_GRANULARITY);
+      (int)ASAN_SHADOW_GRANULARITY);
   PrintShadowByte(str, "  Addressable:           ", 0);
   str->append("  Partially addressable: ");
-  for (u8 i = 1; i < SHADOW_GRANULARITY; i++) PrintShadowByte(str, "", i, " ");
+  for (u8 i = 1; i < ASAN_SHADOW_GRANULARITY; i++)
+    PrintShadowByte(str, "", i, " ");
   str->append("\n");
   PrintShadowByte(str, "  Heap left redzone:       ",
                   kAsanHeapLeftRedzoneMagic);
@@ -543,13 +546,13 @@ static void PrintLegend(InternalScopedString *str) {
   PrintShadowByte(str, "  ASan internal:           ", kAsanInternalHeapMagic);
   PrintShadowByte(str, "  Left alloca redzone:     ", kAsanAllocaLeftMagic);
   PrintShadowByte(str, "  Right alloca redzone:    ", kAsanAllocaRightMagic);
-  PrintShadowByte(str, "  Shadow gap:              ", kAsanShadowGap);
 }
 
 static void PrintShadowBytes(InternalScopedString *str, const char *before,
                              u8 *bytes, u8 *guilty, uptr n) {
   Decorator d;
-  if (before) str->append("%s%p:", before, bytes);
+  if (before)
+    str->append("%s%p:", before, (void *)bytes);
   for (uptr i = 0; i < n; i++) {
     u8 *p = bytes + i;
     const char *before =
@@ -565,7 +568,7 @@ static void PrintShadowMemoryForAddress(uptr addr) {
   uptr shadow_addr = MemToShadow(addr);
   const uptr n_bytes_per_row = 16;
   uptr aligned_shadow = shadow_addr & ~(n_bytes_per_row - 1);
-  InternalScopedString str(4096 * 8);
+  InternalScopedString str;
   str.append("Shadow bytes around the buggy address:\n");
   for (int i = -5; i <= 5; i++) {
     uptr row_shadow_addr = aligned_shadow + i * n_bytes_per_row;
@@ -586,7 +589,7 @@ void ErrorGeneric::Print() {
   Printf("%s", d.Error());
   uptr addr = addr_description.Address();
   Report("ERROR: AddressSanitizer: %s on address %p at pc %p bp %p sp %p\n",
-         bug_descr, (void *)addr, pc, bp, sp);
+         bug_descr, (void *)addr, (void *)pc, (void *)bp, (void *)sp);
   Printf("%s", d.Default());
 
   Printf("%s%s of size %zu at %p thread %s%s\n", d.Access(),

@@ -18,6 +18,7 @@
 #include "sanitizer_common/sanitizer_common.h"
 #include "sanitizer_common/sanitizer_internal_defs.h"
 #include "sanitizer_common/sanitizer_platform.h"
+#include "sanitizer_common/sanitizer_stackdepot.h"
 #include "sanitizer_common/sanitizer_stoptheworld.h"
 #include "sanitizer_common/sanitizer_symbolizer.h"
 
@@ -29,26 +30,30 @@
 // To enable LeakSanitizer on a new architecture, one needs to implement the
 // internal_clone function as well as (probably) adjust the TLS machinery for
 // the new architecture inside the sanitizer library.
-#if (SANITIZER_LINUX && !SANITIZER_ANDROID || SANITIZER_MAC) && \
-    (SANITIZER_WORDSIZE == 64) &&                               \
-    (defined(__x86_64__) || defined(__mips64) || defined(__aarch64__) || \
-     defined(__powerpc64__))
-#define CAN_SANITIZE_LEAKS 1
-#elif defined(__i386__) && \
-    (SANITIZER_LINUX && !SANITIZER_ANDROID || SANITIZER_MAC)
-#define CAN_SANITIZE_LEAKS 1
-#elif defined(__arm__) && \
-    SANITIZER_LINUX && !SANITIZER_ANDROID
-#define CAN_SANITIZE_LEAKS 1
-#elif SANITIZER_EMSCRIPTEN
-#define CAN_SANITIZE_LEAKS 1
+// Exclude leak-detection on arm32 for Android because `__aeabi_read_tp`
+// is missing. This caused a link error.
+#if SANITIZER_ANDROID && (__ANDROID_API__ < 28 || defined(__arm__))
+#  define CAN_SANITIZE_LEAKS 0
+#elif (SANITIZER_LINUX || SANITIZER_MAC) && (SANITIZER_WORDSIZE == 64) && \
+    (defined(__x86_64__) || defined(__mips64) || defined(__aarch64__) ||  \
+     defined(__powerpc64__) || defined(__s390x__))
+#  define CAN_SANITIZE_LEAKS 1
+#elif defined(__i386__) && (SANITIZER_LINUX || SANITIZER_MAC)
+#  define CAN_SANITIZE_LEAKS 1
+#elif defined(__arm__) && SANITIZER_LINUX
+#  define CAN_SANITIZE_LEAKS 1
+#elif SANITIZER_RISCV64 && SANITIZER_LINUX
+#  define CAN_SANITIZE_LEAKS 1
+#elif SANITIZER_NETBSD || SANITIZER_FUCHSIA || SANITIZER_EMSCRIPTEN
+#  define CAN_SANITIZE_LEAKS 1
 #else
-#define CAN_SANITIZE_LEAKS 0
+#  define CAN_SANITIZE_LEAKS 0
 #endif
 
 namespace __sanitizer {
 class FlagParser;
 class ThreadRegistry;
+class ThreadContextBase;
 struct DTLS;
 }
 
@@ -61,8 +66,6 @@ enum ChunkTag {
   kReachable = 2,
   kIgnored = 3
 };
-
-const u32 kInvalidTid = (u32) -1;
 
 struct Flags {
 #define LSAN_FLAG(Type, Name, DefaultValue, Description) Type Name;
@@ -78,6 +81,15 @@ struct Flags {
 extern Flags lsan_flags;
 inline Flags *flags() { return &lsan_flags; }
 void RegisterLsanFlags(FlagParser *parser, Flags *f);
+
+struct LeakedChunk {
+  uptr chunk;
+  u32 stack_trace_id;
+  uptr leaked_size;
+  ChunkTag tag;
+};
+
+using LeakedChunks = InternalMmapVector<LeakedChunk>;
 
 struct Leak {
   u32 id;
@@ -98,12 +110,12 @@ struct LeakedObject {
 class LeakReport {
  public:
   LeakReport() {}
-  void AddLeakedChunk(uptr chunk, u32 stack_trace_id, uptr leaked_size,
-                      ChunkTag tag);
+  void AddLeakedChunks(const LeakedChunks &chunks);
   void ReportTopLeaks(uptr max_leaks);
   void PrintSummary();
-  void ApplySuppressions();
+  uptr ApplySuppressions();
   uptr UnsuppressedLeakCount();
+  uptr IndirectUnsuppressedLeakCount();
 
  private:
   void PrintReportForLeak(uptr index);
@@ -126,12 +138,25 @@ struct RootRegion {
   uptr size;
 };
 
-InternalMmapVector<RootRegion> const *GetRootRegions();
+// LockStuffAndStopTheWorld can start to use Scan* calls to collect into
+// this Frontier vector before the StopTheWorldCallback actually runs.
+// This is used when the OS has a unified callback API for suspending
+// threads and enumerating roots.
+struct CheckForLeaksParam {
+  Frontier frontier;
+  LeakedChunks leaks;
+  bool success = false;
+};
+
+InternalMmapVectorNoCtor<RootRegion> const *GetRootRegions();
 void ScanRootRegion(Frontier *frontier, RootRegion const &region,
                     uptr region_begin, uptr region_end, bool is_readable);
+void ForEachExtraStackRangeCb(uptr begin, uptr end, void* arg);
+void GetAdditionalThreadContextPtrs(ThreadContextBase *tctx, void *ptrs);
 // Run stoptheworld while holding any platform-specific locks, as well as the
 // allocator and thread registry locks.
-void LockStuffAndStopTheWorld(StopTheWorldCallback callback, void* argument);
+void LockStuffAndStopTheWorld(StopTheWorldCallback callback,
+                              CheckForLeaksParam* argument);
 
 void ScanRangeForPointers(uptr begin, uptr end,
                           Frontier *frontier,
@@ -205,12 +230,29 @@ void UnlockAllocator();
 // Returns true if [addr, addr + sizeof(void *)) is poisoned.
 bool WordIsPoisoned(uptr addr);
 // Wrappers for ThreadRegistry access.
-void LockThreadRegistry();
-void UnlockThreadRegistry();
+void LockThreadRegistry() SANITIZER_NO_THREAD_SAFETY_ANALYSIS;
+void UnlockThreadRegistry() SANITIZER_NO_THREAD_SAFETY_ANALYSIS;
+
+struct ScopedStopTheWorldLock {
+  ScopedStopTheWorldLock() {
+    LockThreadRegistry();
+    LockAllocator();
+  }
+
+  ~ScopedStopTheWorldLock() {
+    UnlockAllocator();
+    UnlockThreadRegistry();
+  }
+
+  ScopedStopTheWorldLock &operator=(const ScopedStopTheWorldLock &) = delete;
+  ScopedStopTheWorldLock(const ScopedStopTheWorldLock &) = delete;
+};
+
 ThreadRegistry *GetThreadRegistryLocked();
 bool GetThreadRangesLocked(tid_t os_id, uptr *stack_begin, uptr *stack_end,
                            uptr *tls_begin, uptr *tls_end, uptr *cache_begin,
                            uptr *cache_end, DTLS **dtls);
+void GetAllThreadAllocatorCachesLocked(InternalMmapVector<uptr> *caches);
 void ForEachExtraStackRange(tid_t os_id, RangeIteratorCallback callback,
                             void *arg);
 // Scans thread data (stacks and TLS) for heap pointers.
@@ -266,6 +308,13 @@ int __lsan_is_turned_off();
 
 SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE
 const char *__lsan_default_suppressions();
+
+SANITIZER_INTERFACE_ATTRIBUTE
+void __lsan_register_root_region(const void *p, __lsan::uptr size);
+
+SANITIZER_INTERFACE_ATTRIBUTE
+void __lsan_unregister_root_region(const void *p, __lsan::uptr size);
+
 }  // extern "C"
 
 #endif  // LSAN_COMMON_H

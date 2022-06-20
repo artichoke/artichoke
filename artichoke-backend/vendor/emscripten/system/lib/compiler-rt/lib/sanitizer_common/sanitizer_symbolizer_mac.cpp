@@ -32,8 +32,15 @@ bool DlAddrSymbolizer::SymbolizePC(uptr addr, SymbolizedStack *stack) {
   int result = dladdr((const void *)addr, &info);
   if (!result) return false;
 
-  CHECK(addr >= reinterpret_cast<uptr>(info.dli_saddr));
-  stack->info.function_offset = addr - reinterpret_cast<uptr>(info.dli_saddr);
+  // Compute offset if possible. `dladdr()` doesn't always ensure that `addr >=
+  // sym_addr` so only compute the offset when this holds. Failure to find the
+  // function offset is not treated as a failure because it might still be
+  // possible to get the symbol name.
+  uptr sym_addr = reinterpret_cast<uptr>(info.dli_saddr);
+  if (addr >= sym_addr) {
+    stack->info.function_offset = addr - sym_addr;
+  }
+
   const char *demangled = DemangleSwiftAndCXX(info.dli_sname);
   if (!demangled) return false;
   stack->info.function = internal_strdup(demangled);
@@ -50,17 +57,19 @@ bool DlAddrSymbolizer::SymbolizeData(uptr addr, DataInfo *datainfo) {
   return true;
 }
 
-class AtosSymbolizerProcess : public SymbolizerProcess {
+class AtosSymbolizerProcess final : public SymbolizerProcess {
  public:
-  explicit AtosSymbolizerProcess(const char *path, pid_t parent_pid)
+  explicit AtosSymbolizerProcess(const char *path)
       : SymbolizerProcess(path, /*use_posix_spawn*/ true) {
-    // Put the string command line argument in the object so that it outlives
-    // the call to GetArgV.
-    internal_snprintf(pid_str_, sizeof(pid_str_), "%d", parent_pid);
+    pid_str_[0] = '\0';
   }
 
  private:
   bool StartSymbolizerSubprocess() override {
+    // Put the string command line argument in the object so that it outlives
+    // the call to GetArgV.
+    internal_snprintf(pid_str_, sizeof(pid_str_), "%d", (int)internal_getpid());
+
     // Configure sandbox before starting atos process.
     return SymbolizerProcess::StartSymbolizerSubprocess();
   }
@@ -75,17 +84,20 @@ class AtosSymbolizerProcess : public SymbolizerProcess {
     argv[i++] = path_to_binary;
     argv[i++] = "-p";
     argv[i++] = &pid_str_[0];
-    if (GetMacosVersion() == MACOS_VERSION_MAVERICKS) {
+    if (GetMacosAlignedVersion() == MacosVersion(10, 9)) {
       // On Mavericks atos prints a deprecation warning which we suppress by
       // passing -d. The warning isn't present on other OSX versions, even the
       // newer ones.
       argv[i++] = "-d";
     }
     argv[i++] = nullptr;
+    CHECK_LE(i, kArgVMax);
   }
 
   char pid_str_[16];
 };
+
+#undef K_ATOS_ENV_VAR
 
 static bool ParseCommandOutput(const char *str, uptr addr, char **out_name,
                                char **out_module, char **out_file, uptr *line,
@@ -138,7 +150,7 @@ static bool ParseCommandOutput(const char *str, uptr addr, char **out_name,
 }
 
 AtosSymbolizer::AtosSymbolizer(const char *path, LowLevelAllocator *allocator)
-    : process_(new(*allocator) AtosSymbolizerProcess(path, getpid())) {}
+    : process_(new (*allocator) AtosSymbolizerProcess(path)) {}
 
 bool AtosSymbolizer::SymbolizePC(uptr addr, SymbolizedStack *stack) {
   if (!process_) return false;
@@ -165,10 +177,10 @@ bool AtosSymbolizer::SymbolizePC(uptr addr, SymbolizedStack *stack) {
       start_address = reinterpret_cast<uptr>(info.dli_saddr);
   }
 
-  // Only assig to `function_offset` if we were able to get the function's
-  // start address.
-  if (start_address != AddressInfo::kUnknown) {
-    CHECK(addr >= start_address);
+  // Only assign to `function_offset` if we were able to get the function's
+  // start address and we got a sensible `start_address` (dladdr doesn't always
+  // ensure that `addr >= sym_addr`).
+  if (start_address != AddressInfo::kUnknown && addr >= start_address) {
     stack->info.function_offset = addr - start_address;
   }
   return true;

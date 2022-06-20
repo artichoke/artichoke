@@ -20,7 +20,7 @@
 // seee eeee eeee mmmm mmmm mmmm mmmm mmmm | mmmm mmmm mmmm mmmm mmmm mmmm mmmm
 // mmmm
 
-#ifndef __SOFT_FP__
+#ifndef __SOFTFP__
 // Support for systems that have hardware floating-point; we'll set the inexact
 // flag as a side-effect of this computation.
 
@@ -87,7 +87,7 @@ COMPILER_RT_ABI double __floatdidf(di_int a) {
   }
   double_bits fb;
   fb.u.s.high = ((su_int)s & 0x80000000) |        // sign
-                ((e + 1023) << 20) |              // exponent
+                ((su_int)(e + 1023) << 20) |      // exponent
                 ((su_int)(a >> 32) & 0x000FFFFF); // mantissa-high
   fb.u.s.low = (su_int)a;                         // mantissa-low
   return fb.f;
@@ -100,4 +100,8 @@ AEABI_RTABI double __aeabi_l2d(di_int a) { return __floatdidf(a); }
 #else
 COMPILER_RT_ALIAS(__floatdidf, __aeabi_l2d)
 #endif
+#endif
+
+#if defined(__MINGW32__) && defined(__arm__)
+COMPILER_RT_ALIAS(__floatdidf, __i64tod)
 #endif

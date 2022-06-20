@@ -28,7 +28,7 @@ typedef struct {
   // Enable sandbox support in sanitizer coverage.
   int coverage_sandboxed;
   // File descriptor to write coverage data to. If -1 is passed, a file will
-  // be pre-opened by __sanitizer_sandobx_on_notify(). This field has no
+  // be pre-opened by __sanitizer_sandbox_on_notify(). This field has no
   // effect if coverage_sandboxed == 0.
   intptr_t coverage_fd;
   // If non-zero, split the coverage data into well-formed blocks. This is
@@ -43,6 +43,9 @@ void __sanitizer_set_report_path(const char *path);
 // Tell the tools to write their reports to the provided file descriptor
 // (casted to void *).
 void __sanitizer_set_report_fd(void *fd);
+// Get the current full report file path, if a path was specified by
+// an earlier call to __sanitizer_set_report_path. Returns null otherwise.
+const char *__sanitizer_get_report_path();
 
 // Notify the tools that the sandbox is going to be turned on. The reserved
 // parameter will be used in the future to hold a structure with functions
@@ -208,6 +211,15 @@ void __sanitizer_symbolize_pc(void *pc, const char *fmt, char *out_buf,
 // Same as __sanitizer_symbolize_pc, but for data section (i.e. globals).
 void __sanitizer_symbolize_global(void *data_ptr, const char *fmt,
                                   char *out_buf, size_t out_buf_size);
+// Determine the return address.
+#if !defined(_MSC_VER) || defined(__clang__)
+#define __sanitizer_return_address()                                           \
+  __builtin_extract_return_addr(__builtin_return_address(0))
+#else
+extern "C" void *_ReturnAddress(void);
+#pragma intrinsic(_ReturnAddress)
+#define __sanitizer_return_address() _ReturnAddress()
+#endif
 
 /// Sets the callback to be called immediately before death on error.
 ///
@@ -320,7 +332,7 @@ void __sanitizer_print_memory_profile(size_t top_percent,
 /// signal callback runs during the switch, it will not benefit from stack
 /// use-after-return detection.
 ///
-/// \param fake_stack_save [out] Fake stack save location.
+/// \param[out] fake_stack_save Fake stack save location.
 /// \param bottom Bottom address of stack.
 /// \param size Size of stack in bytes.
 void __sanitizer_start_switch_fiber(void **fake_stack_save,
@@ -335,8 +347,8 @@ void __sanitizer_start_switch_fiber(void **fake_stack_save,
 /// <c>__sanitizer_start_switch_fiber()</c>.
 ///
 /// \param fake_stack_save Fake stack save location.
-/// \param bottom_old [out] Bottom address of old stack.
-/// \param size_old [out] Size of old stack in bytes.
+/// \param[out] bottom_old Bottom address of old stack.
+/// \param[out] size_old Size of old stack in bytes.
 void __sanitizer_finish_switch_fiber(void *fake_stack_save,
                                      const void **bottom_old,
                                      size_t *size_old);

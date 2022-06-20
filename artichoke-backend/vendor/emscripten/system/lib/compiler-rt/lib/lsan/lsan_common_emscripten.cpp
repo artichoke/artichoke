@@ -102,7 +102,8 @@ void HandleLeaks() {
   if (common_flags()->exitcode) Die();
 }
 
-void LockStuffAndStopTheWorld(StopTheWorldCallback callback, void *argument) {
+void LockStuffAndStopTheWorld(StopTheWorldCallback callback,
+                              CheckForLeaksParam *argument) {
   // Currently, on Emscripten this does nothing and just calls the callback.
   // This works fine on a single-threaded environment.
   LockThreadRegistry();
@@ -133,26 +134,33 @@ static void ProcessThreadsCallback(ThreadContextBase *tctx, void *arg) {
                                             &tls_begin, &tls_end,
                                             &cache_begin, &cache_end, &dtls);
   if (!thread_found) {
-    LOG_THREADS("Thread %d not found in registry.\n", os_id);
+    LOG_THREADS("Thread %llu not found in registry.\n", os_id);
     return;
   }
 
   if (flags()->use_stacks) {
-    LOG_THREADS("Stack at %p-%p.\n", stack_begin, stack_end);
+    LOG_THREADS("Stack at %p-%p.\n", (void*)stack_begin, (void*)stack_end);
 
     // We can't get the SP for other threads to narrow down the range, but we
     // we can for the current thread.
     if (tctx->tid == GetCurrentThread()) {
       uptr sp = (uptr) __builtin_frame_address(0);
-      CHECK(stack_begin <= sp && sp < stack_end);
-      stack_begin = sp;
+      if (sp < stack_begin || sp >= stack_end) {
+        // SP is outside the recorded stack range (e.g. the thread is running a
+        // signal handler on alternate stack, or swapcontext was used).
+        // Again, consider the entire stack range to be reachable.
+        LOG_THREADS("WARNING: stack pointer not in stack range.\n");
+      } else {
+        // Shrink the stack range to ignore out-of-scope values.
+        stack_begin = sp;
+      }
     }
 
     ScanRangeForPointers(stack_begin, stack_end, frontier, "STACK", kReachable);
   }
 
   if (flags()->use_tls && tls_begin) {
-    LOG_THREADS("TLS at %p-%p.\n", tls_begin, tls_end);
+    LOG_THREADS("TLS at %p-%p.\n", (void*)tls_begin, (void*)tls_end);
     // If the tls and cache ranges don't overlap, scan full tls range,
     // otherwise, only scan the non-overlapping portions
     if (cache_begin == cache_end || tls_end < cache_begin ||
@@ -176,11 +184,4 @@ void ProcessThreads(SuspendedThreadsList const &suspended_threads,
 
 } // namespace __lsan
 
-extern "C" void __lsan_disable_in_this_thread() {
-  __lsan::DisableInThisThread();
-}
-
-extern "C" void __lsan_enable_in_this_thread() {
-  __lsan::EnableInThisThread();
-}
 #endif // CAN_SANITIZE_LEAKS && SANITIZER_EMSCRIPTEN

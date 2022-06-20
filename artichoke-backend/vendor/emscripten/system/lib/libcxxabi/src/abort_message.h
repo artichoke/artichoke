@@ -1,4 +1,4 @@
-//===-------------------------- abort_message.h-----------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -11,16 +11,7 @@
 
 #include "cxxabi.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-_LIBCXXABI_HIDDEN _LIBCXXABI_NORETURN void
+extern "C" _LIBCXXABI_HIDDEN _LIBCXXABI_NORETURN void
 abort_message(const char *format, ...) __attribute__((format(printf, 1, 2)));
 
-#ifdef __cplusplus
-}
 #endif
-
-#endif
-

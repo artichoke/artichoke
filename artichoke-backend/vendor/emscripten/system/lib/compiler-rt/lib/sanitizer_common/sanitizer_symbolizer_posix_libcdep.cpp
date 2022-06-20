@@ -78,13 +78,6 @@ static void InitializeSwiftDemangler() {
 // Attempts to demangle a Swift name. The demangler will return nullptr if a
 // non-Swift name is passed in.
 const char *DemangleSwift(const char *name) {
-  if (!name) return nullptr;
-
-  // Check if we are dealing with a Swift mangled name first.
-  if (name[0] != '_' || name[1] != 'T') {
-    return nullptr;
-  }
-
   if (swift_demangle_f)
     return swift_demangle_f(name, internal_strlen(name), 0, 0, 0);
 
@@ -151,9 +144,19 @@ bool SymbolizerProcess::StartSymbolizerSubprocess() {
   GetArgV(path_, argv);
   pid_t pid;
 
+  // Report how symbolizer is being launched for debugging purposes.
+  if (Verbosity() >= 3) {
+    // Only use `Report` for first line so subsequent prints don't get prefixed
+    // with current PID.
+    Report("Launching Symbolizer process: ");
+    for (unsigned index = 0; index < kArgVMax && argv[index]; ++index)
+      Printf("%s ", argv[index]);
+    Printf("\n");
+  }
+
   if (use_posix_spawn_) {
 #if SANITIZER_MAC
-    fd_t fd = internal_spawn(argv, &pid);
+    fd_t fd = internal_spawn(argv, const_cast<const char **>(GetEnvP()), &pid);
     if (fd == kInvalidFd) {
       Report("WARNING: failed to spawn external symbolizer (errno: %d)\n",
              errno);
@@ -173,7 +176,7 @@ bool SymbolizerProcess::StartSymbolizerSubprocess() {
       return false;
     }
 
-    pid = StartSubprocess(path_, argv, /* stdin */ outfd[0],
+    pid = StartSubprocess(path_, argv, GetEnvP(), /* stdin */ outfd[0],
                           /* stdout */ infd[1]);
     if (pid < 0) {
       internal_close(infd[0]);
@@ -198,7 +201,7 @@ bool SymbolizerProcess::StartSymbolizerSubprocess() {
   return true;
 }
 
-class Addr2LineProcess : public SymbolizerProcess {
+class Addr2LineProcess final : public SymbolizerProcess {
  public:
   Addr2LineProcess(const char *path, const char *module_name)
       : SymbolizerProcess(path), module_name_(internal_strdup(module_name)) {}
@@ -210,9 +213,14 @@ class Addr2LineProcess : public SymbolizerProcess {
                const char *(&argv)[kArgVMax]) const override {
     int i = 0;
     argv[i++] = path_to_binary;
-    argv[i++] = "-iCfe";
+    if (common_flags()->demangle)
+      argv[i++] = "-C";
+    if (common_flags()->symbolize_inline_frames)
+      argv[i++] = "-i";
+    argv[i++] = "-fe";
     argv[i++] = module_name_;
     argv[i++] = nullptr;
+    CHECK_LE(i, kArgVMax);
   }
 
   bool ReachedEndOfOutput(const char *buffer, uptr length) const override;
@@ -258,7 +266,7 @@ bool Addr2LineProcess::ReachedEndOfOutput(const char *buffer,
                           output_terminator_, kTerminatorLen);
 }
 
-class Addr2LinePool : public SymbolizerTool {
+class Addr2LinePool final : public SymbolizerTool {
  public:
   explicit Addr2LinePool(const char *addr2line_path,
                          LowLevelAllocator *allocator)
@@ -309,35 +317,42 @@ class Addr2LinePool : public SymbolizerTool {
       FIRST_32_SECOND_64(UINT32_MAX, UINT64_MAX);
 };
 
-#if SANITIZER_SUPPORTS_WEAK_HOOKS
+#  if SANITIZER_SUPPORTS_WEAK_HOOKS
 extern "C" {
-SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE
-bool __sanitizer_symbolize_code(const char *ModuleName, u64 ModuleOffset,
-                                char *Buffer, int MaxLength);
-SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE
-bool __sanitizer_symbolize_data(const char *ModuleName, u64 ModuleOffset,
-                                char *Buffer, int MaxLength);
-SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE
-void __sanitizer_symbolize_flush();
-SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE
-int __sanitizer_symbolize_demangle(const char *Name, char *Buffer,
-                                   int MaxLength);
+SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE bool
+__sanitizer_symbolize_code(const char *ModuleName, u64 ModuleOffset,
+                           char *Buffer, int MaxLength);
+SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE bool
+__sanitizer_symbolize_data(const char *ModuleName, u64 ModuleOffset,
+                           char *Buffer, int MaxLength);
+SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE void
+__sanitizer_symbolize_flush();
+SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE int
+__sanitizer_symbolize_demangle(const char *Name, char *Buffer, int MaxLength);
+SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE bool
+__sanitizer_symbolize_set_demangle(bool Demangle);
+SANITIZER_INTERFACE_ATTRIBUTE SANITIZER_WEAK_ATTRIBUTE bool
+__sanitizer_symbolize_set_inline_frames(bool InlineFrames);
 }  // extern "C"
 
-class InternalSymbolizer : public SymbolizerTool {
+class InternalSymbolizer final : public SymbolizerTool {
  public:
   static InternalSymbolizer *get(LowLevelAllocator *alloc) {
-    if (__sanitizer_symbolize_code != 0 &&
-        __sanitizer_symbolize_data != 0) {
-      return new(*alloc) InternalSymbolizer();
-    }
+    if (__sanitizer_symbolize_set_demangle)
+      CHECK(__sanitizer_symbolize_set_demangle(common_flags()->demangle));
+    if (__sanitizer_symbolize_set_inline_frames)
+      CHECK(__sanitizer_symbolize_set_inline_frames(
+          common_flags()->symbolize_inline_frames));
+    if (__sanitizer_symbolize_code && __sanitizer_symbolize_data)
+      return new (*alloc) InternalSymbolizer();
     return 0;
   }
 
   bool SymbolizePC(uptr addr, SymbolizedStack *stack) override {
     bool result = __sanitizer_symbolize_code(
         stack->info.module, stack->info.module_offset, buffer_, kBufferSize);
-    if (result) ParseSymbolizePCOutput(buffer_, stack);
+    if (result)
+      ParseSymbolizePCOutput(buffer_, stack);
     return result;
   }
 
@@ -360,7 +375,7 @@ class InternalSymbolizer : public SymbolizerTool {
     if (__sanitizer_symbolize_demangle) {
       for (uptr res_length = 1024;
            res_length <= InternalSizeClassMap::kMaxSize;) {
-        char *res_buff = static_cast<char*>(InternalAlloc(res_length));
+        char *res_buff = static_cast<char *>(InternalAlloc(res_length));
         uptr req_length =
             __sanitizer_symbolize_demangle(name, res_buff, res_length);
         if (req_length > res_length) {
@@ -375,19 +390,19 @@ class InternalSymbolizer : public SymbolizerTool {
   }
 
  private:
-  InternalSymbolizer() { }
+  InternalSymbolizer() {}
 
   static const int kBufferSize = 16 * 1024;
   char buffer_[kBufferSize];
 };
-#else  // SANITIZER_SUPPORTS_WEAK_HOOKS
+#  else  // SANITIZER_SUPPORTS_WEAK_HOOKS
 
-class InternalSymbolizer : public SymbolizerTool {
+class InternalSymbolizer final : public SymbolizerTool {
  public:
   static InternalSymbolizer *get(LowLevelAllocator *alloc) { return 0; }
 };
 
-#endif  // SANITIZER_SUPPORTS_WEAK_HOOKS
+#  endif  // SANITIZER_SUPPORTS_WEAK_HOOKS
 
 const char *Symbolizer::PlatformDemangle(const char *name) {
   return DemangleSwiftAndCXX(name);
@@ -395,11 +410,20 @@ const char *Symbolizer::PlatformDemangle(const char *name) {
 
 static SymbolizerTool *ChooseExternalSymbolizer(LowLevelAllocator *allocator) {
   const char *path = common_flags()->external_symbolizer_path;
+
+  if (path && internal_strchr(path, '%')) {
+    char *new_path = (char *)InternalAlloc(kMaxPathLength);
+    SubstituteForFlagValue(path, new_path, kMaxPathLength);
+    path = new_path;
+  }
+
   const char *binary_name = path ? StripModuleName(path) : "";
+  static const char kLLVMSymbolizerPrefix[] = "llvm-symbolizer";
   if (path && path[0] == '\0') {
     VReport(2, "External symbolizer is explicitly disabled.\n");
     return nullptr;
-  } else if (!internal_strcmp(binary_name, "llvm-symbolizer")) {
+  } else if (!internal_strncmp(binary_name, kLLVMSymbolizerPrefix,
+                               internal_strlen(kLLVMSymbolizerPrefix))) {
     VReport(2, "Using llvm-symbolizer at user-specified path: %s\n", path);
     return new(*allocator) LLVMSymbolizer(path, allocator);
   } else if (!internal_strcmp(binary_name, "atos")) {
