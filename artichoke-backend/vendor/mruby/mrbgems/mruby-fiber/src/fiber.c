@@ -7,7 +7,8 @@
 
 #define FIBER_STACK_INIT_SIZE 64
 #define FIBER_CI_INIT_SIZE 8
-#define CI_ACC_RESUMED -3
+/* copied from vm.c */
+#define CINFO_RESUMED 3
 
 /*
  *  call-seq:
@@ -94,7 +95,6 @@ fiber_init(mrb_state *mrb, mrb_value self)
   c->stbase = (mrb_value *)mrb_malloc(mrb, slen*sizeof(mrb_value));
   c->stend = c->stbase + slen;
 
-#ifdef MRB_NAN_BOXING
   {
     mrb_value *p = c->stbase;
     mrb_value *pend = c->stend;
@@ -104,9 +104,6 @@ fiber_init(mrb_state *mrb, mrb_value self)
       p++;
     }
   }
-#else
-  memset(c->stbase, 0, slen * sizeof(mrb_value));
-#endif
 
   /* copy receiver from a block */
   c->stbase[0] = mrb->c->ci->stack[0];
@@ -160,7 +157,7 @@ fiber_check_cfunc(mrb_state *mrb, struct mrb_context *c)
   mrb_callinfo *ci;
 
   for (ci = c->ci; ci >= c->cibase; ci--) {
-    if (ci->acc < 0) {
+    if (ci->cci > 0) {
       mrb_raise(mrb, E_FIBER_ERROR, "can't cross C function boundary");
     }
   }
@@ -211,22 +208,29 @@ fiber_switch(mrb_state *mrb, mrb_value self, mrb_int len, const mrb_value *a, mr
     if (!c->ci->proc) {
       mrb_raise(mrb, E_FIBER_ERROR, "double resume (current)");
     }
-    mrb_stack_extend(mrb, len+2); /* for receiver and (optional) block */
-    b = c->stbase+1;
-    e = b + len;
-    while (b<e) {
-      *b++ = *a++;
-    }
     if (vmexec) {
       c->ci--;                    /* pop dummy callinfo */
     }
-    c->cibase->argc = (int)len;
+    if (len >= 15) {
+      mrb_stack_extend(mrb, 3);   /* for receiver, args and (optional) block */
+      c->stbase[1] = mrb_ary_new_from_values(mrb, len, a);
+      len = 15;
+    }
+    else {
+      mrb_stack_extend(mrb, len+2); /* for receiver and (optional) block */
+      b = c->stbase+1;
+      e = b + len;
+      while (b<e) {
+        *b++ = *a++;
+      }
+    }
+    c->cibase->n = len;
     value = c->stbase[0] = MRB_PROC_ENV(c->cibase->proc)->stack[0];
   }
   else {
     value = fiber_result(mrb, a, len);
     if (vmexec) {
-      c->ci->stack[c->ci[1].acc] = value;
+      c->ci[1].stack[0] = value;
     }
   }
 
@@ -264,7 +268,7 @@ fiber_resume(mrb_state *mrb, mrb_value self)
   mrb_bool vmexec = FALSE;
 
   mrb_get_args(mrb, "*!", &a, &len);
-  if (mrb->c->ci->acc < 0) {
+  if (mrb->c->ci->cci > 0) {
     vmexec = TRUE;
   }
   return fiber_switch(mrb, self, len, a, TRUE, vmexec);
@@ -357,7 +361,7 @@ mrb_fiber_yield(mrb_state *mrb, mrb_int len, const mrb_value *a)
   c->prev = NULL;
   if (c->vmexec) {
     c->vmexec = FALSE;
-    mrb->c->ci->acc = CI_ACC_RESUMED;
+    mrb->c->ci->cci = CINFO_RESUMED;
     c->ci--;                    /* pop callinfo for yield */
   }
   MARK_CONTEXT_MODIFY(mrb->c);
@@ -397,7 +401,7 @@ static mrb_value
 fiber_current(mrb_state *mrb, mrb_value self)
 {
   if (!mrb->c->fib) {
-    struct RFiber *f = (struct RFiber*)mrb_obj_alloc(mrb, MRB_TT_FIBER, mrb_class_ptr(self));
+    struct RFiber *f = MRB_OBJ_ALLOC(mrb, MRB_TT_FIBER, mrb_class_ptr(self));
 
     f->cxt = mrb->c;
     mrb->c->fib = f;

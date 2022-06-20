@@ -41,16 +41,16 @@ where
     let data = Box::new(data);
     let data = Box::into_raw(data);
     let data = sys::mrb_sys_cptr_value(mrb, data.cast::<c_void>());
-    let mut state = 0;
+    let mut state = false;
 
     let value = sys::mrb_protect(mrb, Some(T::run), data, &mut state);
     if let Some(exc) = NonNull::new((*mrb).exc) {
         (*mrb).exc = ptr::null_mut();
         Err(sys::mrb_sys_obj_value(exc.cast::<c_void>().as_ptr()))
-    } else if state == 0 {
-        Ok(value)
-    } else {
+    } else if state {
         Err(value)
+    } else {
+        Ok(value)
     }
 }
 
@@ -168,7 +168,7 @@ impl Protect for IsRange {
         let Self { value, len } = *Box::from_raw(ptr.cast::<Self>());
         let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let mut range_len = mem::MaybeUninit::<sys::mrb_int>::uninit();
-        let check_range = sys::mrb_range_beg_len(mrb, value, start.as_mut_ptr(), range_len.as_mut_ptr(), len, 0_u8);
+        let check_range = sys::mrb_range_beg_len(mrb, value, start.as_mut_ptr(), range_len.as_mut_ptr(), len, false);
         if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
             let start = start.assume_init();
             let range_len = range_len.assume_init();

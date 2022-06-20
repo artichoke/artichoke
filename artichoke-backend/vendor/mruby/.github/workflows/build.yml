@@ -3,38 +3,14 @@ name: Build & Test
 on: [push, pull_request]
 
 jobs:
-  Check-Skip:
-    if: |
-      !contains(github.event.head_commit.message, '[ci skip]') &&
-      !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[skip gha]')
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo not skip
-
-  Ubuntu-1604:
-    needs: Check-Skip
-    runs-on: ubuntu-16.04
-    env:
-      MRUBY_CONFIG: ci/gcc-clang
-      CC: gcc
-    steps:
-      - uses: actions/checkout@v2
-      - name: Ruby version
-        run: ruby -v
-      - name: Compiler version
-        run: ${{ env.CC }} --version
-      - name: Build and test
-        run: rake -m test:build && rake test:run
-
   Ubuntu-1804-gcc:
-    needs: Check-Skip
     runs-on: ubuntu-18.04
+    timeout-minutes: 10
     env:
       MRUBY_CONFIG: ci/gcc-clang
       CC: gcc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
       - name: Ruby version
         run: ruby -v
       - name: Compiler version
@@ -43,13 +19,43 @@ jobs:
         run: rake -m test:build && rake test:run
 
   Ubuntu-1804-clang:
-    needs: Check-Skip
     runs-on: ubuntu-18.04
+    timeout-minutes: 10
     env:
       MRUBY_CONFIG: ci/gcc-clang
       CC: clang
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
+      - name: Ruby version
+        run: ruby -v
+      - name: Compiler version
+        run: ${{ env.CC }} --version
+      - name: Build and test
+        run: rake -m test:build && rake test:run
+
+  Ubuntu-2004-gcc:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    env:
+      MRUBY_CONFIG: ci/gcc-clang
+      CC: gcc
+    steps:
+      - uses: actions/checkout@v2.4.0
+      - name: Ruby version
+        run: ruby -v
+      - name: Compiler version
+        run: ${{ env.CC }} --version
+      - name: Build and test
+        run: rake -m test:build && rake test:run
+
+  Ubuntu-2004-clang:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 10
+    env:
+      MRUBY_CONFIG: ci/gcc-clang
+      CC: clang
+    steps:
+      - uses: actions/checkout@v2.4.0
       - name: Ruby version
         run: ruby -v
       - name: Compiler version
@@ -58,13 +64,13 @@ jobs:
         run: rake -m test:build && rake test:run
 
   macOS:
-    needs: Check-Skip
     runs-on: macos-latest
+    timeout-minutes: 10
     env:
       MRUBY_CONFIG: ci/gcc-clang
       CC: clang
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
       - name: Ruby version
         run: ruby -v
       - name: Compiler version
@@ -73,13 +79,13 @@ jobs:
         run: rake -m test:build && rake test:run
 
   Windows-MinGW:
-    needs: Check-Skip
     runs-on: windows-latest
+    timeout-minutes: 10
     env:
       MRUBY_CONFIG: ci/gcc-clang
       CC: gcc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
       - name: Ruby version
         run: ruby -v
       - name: Compiler version
@@ -88,8 +94,8 @@ jobs:
         run: rake -m test:build && rake test:run
 
   Windows-Cygwin:
-    needs: Check-Skip
     runs-on: windows-latest
+    timeout-minutes: 15
     env:
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true
       MRUBY_CONFIG: ci/gcc-clang
@@ -99,8 +105,8 @@ jobs:
       package-dir: C:\cygwin-package
       cache-version: v1
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v2.4.0
+      - uses: actions/cache@v2.1.7
         with:
           path: ${{ env.package-dir }}
           key: ${{ runner.os }}-cygwin-${{ env.cache-version }}
@@ -134,12 +140,12 @@ jobs:
         run: echo '::set-env name=PATH::C:\windows\System32'
 
   Windows-VC:
-    needs: Check-Skip
     runs-on: windows-latest
+    timeout-minutes: 10
     env:
       MRUBY_CONFIG: ci/msvc
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.4.0
       - name: Ruby version
         run: ruby -v
       - name: Build and test

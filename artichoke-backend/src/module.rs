@@ -136,15 +136,15 @@ impl Rclass {
             let mut scope = scope.rclass(mrb)?;
             let is_defined_under =
                 sys::mrb_const_defined_at(mrb, sys::mrb_sys_obj_value(scope.cast::<c_void>().as_mut()), self.sym);
-            if is_defined_under == 0 {
-                // Enclosing scope exists.
-                // Module is not defined under the enclosing scope.
-                None
-            } else {
+            if is_defined_under {
                 // Enclosing scope exists.
                 // Module is defined under the enclosing scope.
                 let module = sys::mrb_module_get_under(mrb, scope.as_mut(), module_name);
                 NonNull::new(module)
+            } else {
+                // Enclosing scope exists.
+                // Module is not defined under the enclosing scope.
+                None
             }
         } else {
             let is_defined = sys::mrb_const_defined_at(
@@ -152,13 +152,13 @@ impl Rclass {
                 sys::mrb_sys_obj_value((*mrb).object_class.cast::<c_void>()),
                 self.sym,
             );
-            if is_defined == 0 {
-                // Class does not exist in root scope.
-                None
-            } else {
+            if is_defined {
                 // Module exists in root scope.
                 let module = sys::mrb_module_get(mrb, module_name);
                 NonNull::new(module)
+            } else {
+                // Class does not exist in root scope.
+                None
             }
         }
     }

@@ -71,7 +71,7 @@ module MRuby
 
     include Rake::DSL
     include LoadGems
-    attr_accessor :name, :bins, :exts, :file_separator, :build_dir, :gem_clone_dir
+    attr_accessor :name, :bins, :exts, :file_separator, :build_dir, :gem_clone_dir, :defines
     attr_reader :products, :libmruby_core_objs, :libmruby_objs, :gems, :toolchains, :presym, :mrbc_build, :gem_dir_to_repo_url
 
     alias libmruby libmruby_objs
@@ -97,6 +97,7 @@ module MRuby
         @file_separator = '/'
         @build_dir = "#{build_dir}/#{@name}"
         @gem_clone_dir = "#{build_dir}/repos/#{@name}"
+        @defines = []
         @cc = Command::Compiler.new(self, %w(.c), label: "CC")
         @cxx = Command::Compiler.new(self, %w(.cc .cxx .cpp), label: "CXX")
         @objc = Command::Compiler.new(self, %w(.m), label: "OBJC")
@@ -131,15 +132,18 @@ module MRuby
       end
 
       MRuby::Build.current = current
-      current.instance_eval(&block)
-      if current.libmruby_enabled? && !current.mrbcfile_external?
-        if current.presym_enabled?
-          current.create_mrbc_build if current.host? || current.gems["mruby-bin-mrbc"]
-        elsif current.host?
-          current.build_mrbc_exec
+      begin
+        current.instance_eval(&block)
+      ensure
+        if current.libmruby_enabled? && !current.mrbcfile_external?
+          if current.presym_enabled?
+            current.create_mrbc_build if current.host? || current.gems["mruby-bin-mrbc"]
+          elsif current.host?
+            current.build_mrbc_exec
+          end
         end
+        current.presym = Presym.new(current) if current.presym_enabled?
       end
-      current.presym = Presym.new(current) if current.presym_enabled?
     end
 
     def libmruby_enabled?
@@ -248,7 +252,7 @@ module MRuby
           end
         end
       else
-        cxx_src = "#{build_dir}/#{src.relative_path})".ext << "-cxx.cxx"
+        cxx_src = "#{build_dir}/#{src.relative_path.to_s.remove_leading_parents}".ext << "-cxx.cxx"
         obj = cxx_src.ext(@exts.object)
       end
 
@@ -320,12 +324,16 @@ EOS
       return @mrbcfile if @mrbcfile
 
       gem_name = "mruby-bin-mrbc"
-      gem = @gems[gem_name]
-      gem ||= (host = MRuby.targets["host"]) && host.gems[gem_name]
-      unless gem
-        fail "external mrbc or mruby-bin-mrbc gem in current('#{@name}') or 'host' build is required"
+      if (gem = @gems[gem_name])
+        @mrbcfile = exefile("#{gem.build.build_dir}/bin/mrbc")
+      elsif !host? && (host = MRuby.targets["host"])
+        if (gem = host.gems[gem_name])
+          @mrbcfile = exefile("#{gem.build.build_dir}/bin/mrbc")
+        elsif host.mrbcfile_external?
+          @mrbcfile = host.mrbcfile
+        end
       end
-      @mrbcfile = exefile("#{gem.build.build_dir}/bin/mrbc")
+      @mrbcfile || fail("external mrbc or mruby-bin-mrbc gem in current('#{@name}') or 'host' build is required")
     end
 
     def mrbcfile=(path)
@@ -344,14 +352,8 @@ EOS
     end
 
     def define_rules
-      use_mrdb = @gems["mruby-bin-debugger"]
       compilers.each do |compiler|
-        if respond_to?(:enable_gems?) && enable_gems?
-          compiler.defines -= %w(MRB_NO_GEMS)
-        else
-          compiler.defines += %w(MRB_NO_GEMS)
-        end
-        compiler.defines |= %w(MRB_USE_DEBUG_HOOK) if use_mrdb
+        compiler.defines << "MRB_NO_GEMS" unless enable_gems? && libmruby_enabled?
       end
       [@cc, *(@cxx if cxx_exception_enabled?)].each do |compiler|
         compiler.define_rules(@build_dir, MRUBY_ROOT, @exts.object)
@@ -537,6 +539,23 @@ EOS
       else
         @test_runner.run(mrbtest)
       end
+    end
+
+    def run_bintest
+      puts ">>> Bintest #{name} <<<"
+      targets = @gems.select { |v| File.directory? "#{v.dir}/bintest" }.map { |v| filename v.dir }
+      targets << filename(".") if File.directory? "./bintest"
+      mrbc = @gems["mruby-bin-mrbc"] ? exefile("#{@build_dir}/bin/mrbc") : mrbcfile
+
+      emulator = @test_runner.command
+      emulator = @test_runner.shellquote(emulator) if emulator
+
+      env = {
+        "BUILD_DIR" => @build_dir,
+        "MRBCFILE" => mrbc,
+        "EMULATOR" => @test_runner.emulator,
+      }
+      sh env, "ruby test/bintest.rb#{verbose_flag} #{targets.join ' '}"
     end
 
     protected

@@ -7,12 +7,12 @@ is being used to bootstrap Artichoke.
 
 artichoke-backend [vendors](mruby) a [fork of mruby][mruby-fork].
 
-This fork is based on [mruby 3.0.0][mruby-forked-from] and [includes some
+This fork is based on [mruby 3.1.0][mruby-forked-from] and [includes some
 patches][mruby-patches].
 
 [mruby]: https://github.com/mruby/mruby
 [mruby-fork]: https://github.com/artichoke/mruby/tree/artichoke-vendor
-[mruby-forked-from]: https://github.com/mruby/mruby/tree/3.0.0
+[mruby-forked-from]: https://github.com/mruby/mruby/tree/3.1.0
 [mruby-patches]:
   https://github.com/artichoke/mruby/compare/artichoke-mruby-branched-from-upstream...artichoke:artichoke-vendor?expand=1
 

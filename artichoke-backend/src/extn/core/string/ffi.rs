@@ -15,6 +15,7 @@ use spinoso_exception::ArgumentError;
 use spinoso_exception::NoMemoryError;
 use spinoso_string::{RawParts, String};
 
+use super::trampoline;
 use crate::convert::BoxUnboxVmValue;
 use crate::error;
 use crate::sys;
@@ -121,6 +122,30 @@ unsafe extern "C" fn mrb_str_index(
         return offset as sys::mrb_int;
     }
     haystack.find(needle).map_or(-1, |pos| pos as sys::mrb_int)
+}
+
+// ```c
+// mrb_value mrb_str_aref(mrb_state *mrb, mrb_value str, mrb_value indx, mrb_value alen)
+// ```
+#[no_mangle]
+unsafe extern "C" fn mrb_str_aref(
+    mrb: *mut sys::mrb_state,
+    s: sys::mrb_value,
+    indx: sys::mrb_value,
+    alen: sys::mrb_value,
+) -> sys::mrb_value {
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(s);
+    let indx = Value::from(indx);
+    let alen = Value::from(alen);
+
+    let alen = if alen.is_unreachable() { None } else { Some(alen) };
+
+    let result = trampoline::aref(&mut guard, value, indx, alen);
+    match result {
+        Ok(value) => value.into(),
+        Err(_) => Value::nil().into(),
+    }
 }
 
 // ```c
@@ -270,22 +295,22 @@ unsafe extern "C" fn mrb_str_equal(
     str1: sys::mrb_value,
     str2: sys::mrb_value,
 ) -> sys::mrb_bool {
-    unwrap_interpreter!(mrb, to => guard, or_else = sys::mrb_bool::from(false));
+    unwrap_interpreter!(mrb, to => guard, or_else = false);
     let mut a = Value::from(str1);
     let mut b = Value::from(str2);
 
     let a = if let Ok(a) = String::unbox_from_value(&mut a, &mut guard) {
         a
     } else {
-        return sys::mrb_bool::from(false);
+        return false;
     };
     let b = if let Ok(b) = String::unbox_from_value(&mut b, &mut guard) {
         b
     } else {
-        return sys::mrb_bool::from(false);
+        return false;
     };
 
-    sys::mrb_bool::from(*a == *b)
+    *a == *b
 }
 
 // ```c
@@ -459,20 +484,20 @@ unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value
 }
 
 // ```c
-// MRB_API mrb_value mrb_str_to_inum(mrb_state *mrb, mrb_value str, mrb_int base, mrb_bool badcheck)
+// MRB_API mrb_value mrb_str_to_integer(mrb_state *mrb, mrb_value str, mrb_int base, mrb_bool badcheck);
+// /* obsolete: use mrb_str_to_integer() */
+// #define mrb_str_to_inum(mrb, str, base, badcheck) mrb_str_to_integer(mrb, str, base, badcheck)
 // ```
 //
 // This function converts a numeric string to numeric `mrb_value` with the given base.
 #[no_mangle]
-unsafe extern "C" fn mrb_str_to_inum(
+unsafe extern "C" fn mrb_str_to_integer(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
     base: sys::mrb_int,
     badcheck: sys::mrb_bool,
 ) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
-    let badcheck = badcheck != 0;
-
     let mut s = Value::from(s);
     let s = if let Ok(s) = String::unbox_from_value(&mut s, &mut guard) {
         s
@@ -533,8 +558,6 @@ unsafe extern "C" fn mrb_str_to_inum(
 #[no_mangle]
 unsafe extern "C" fn mrb_str_to_dbl(mrb: *mut sys::mrb_state, s: sys::mrb_value, badcheck: sys::mrb_bool) -> c_double {
     unwrap_interpreter!(mrb, to => guard, or_else = 0.0);
-    let badcheck = badcheck != 0;
-
     let mut s = Value::from(s);
     let s = if let Ok(s) = String::unbox_from_value(&mut s, &mut guard) {
         s

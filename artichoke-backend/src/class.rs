@@ -176,25 +176,25 @@ impl Rclass {
             // short circuit if enclosing scope does not exist.
             let mut scope = scope.rclass(mrb)?;
             let is_defined_under = sys::mrb_class_defined_under(mrb, scope.as_mut(), class_name);
-            if is_defined_under == 0 {
-                // Enclosing scope exists.
-                // Class is not defined under the enclosing scope.
-                None
-            } else {
+            if is_defined_under {
                 // Enclosing scope exists.
                 // Class is defined under the enclosing scope.
                 let class = sys::mrb_class_get_under(mrb, scope.as_mut(), class_name);
                 NonNull::new(class)
+            } else {
+                // Enclosing scope exists.
+                // Class is not defined under the enclosing scope.
+                None
             }
         } else {
             let is_defined = sys::mrb_class_defined(mrb, class_name);
-            if is_defined == 0 {
-                // Class does not exist in root scope.
-                None
-            } else {
+            if is_defined {
                 // Class exists in root scope.
                 let class = sys::mrb_class_get(mrb, class_name);
                 NonNull::new(class)
+            } else {
+                // Class does not exist in root scope.
+                None
             }
         }
     }

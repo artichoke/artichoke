@@ -14,10 +14,13 @@
 #include <mruby/variable.h>
 #include "mrdberror.h"
 #include "apibreak.h"
+#include "apistring.h"
 
 #define MAX_BREAKPOINTNO (MAX_BREAKPOINT * 1024)
 #define MRB_DEBUG_BP_FILE_OK   (0x0001)
 #define MRB_DEBUG_BP_LINENO_OK (0x0002)
+
+uint32_t mrb_packed_int_decode(uint8_t *p, uint8_t **newpos);
 
 static uint16_t
 check_lineno(mrb_irep_debug_info_file *info_file, uint16_t lineno)
@@ -25,19 +28,35 @@ check_lineno(mrb_irep_debug_info_file *info_file, uint16_t lineno)
   uint32_t count = info_file->line_entry_count;
   uint16_t l_idx;
 
-  if (info_file->line_type == mrb_debug_line_ary) {
+  switch (info_file->line_type) {
+  case mrb_debug_line_ary:
     for (l_idx = 0; l_idx < count; ++l_idx) {
       if (lineno == info_file->lines.ary[l_idx]) {
         return lineno;
       }
     }
-  }
-  else {
+    break;
+
+  case mrb_debug_line_flat_map:
     for (l_idx = 0; l_idx < count; ++l_idx) {
       if (lineno == info_file->lines.flat_map[l_idx].line) {
         return lineno;
       }
     }
+    break;
+
+  case mrb_debug_line_packed_map:
+    {
+      uint8_t *p = info_file->lines.packed_map;
+      uint8_t *pend = p + count;
+      uint32_t line = 0;
+      while (p < pend) {
+        mrb_packed_int_decode(p, &p);
+        line += mrb_packed_int_decode(p, &p);
+        if (line == lineno) return lineno;
+      }
+    }
+    break;
   }
 
   return 0;
@@ -173,7 +192,6 @@ mrb_debug_set_break_line(mrb_state *mrb, mrb_debug_context *dbg, const char *fil
   int32_t index;
   char* set_file;
   uint16_t result;
-  size_t len;
 
   if ((mrb == NULL)||(dbg == NULL)||(file == NULL)) {
     return MRB_DEBUG_INVALID_ARGUMENT;
@@ -187,7 +205,7 @@ mrb_debug_set_break_line(mrb_state *mrb, mrb_debug_context *dbg, const char *fil
     return MRB_DEBUG_BREAK_NO_OVER;
   }
 
-  /* file and lineno check (line type mrb_debug_line_ary only.) */
+  /* file and lineno check. */
   result = check_file_lineno(mrb, dbg->root_irep, file, lineno);
   if (result == 0) {
     return MRB_DEBUG_BREAK_INVALID_FILE;
@@ -196,8 +214,7 @@ mrb_debug_set_break_line(mrb_state *mrb, mrb_debug_context *dbg, const char *fil
     return MRB_DEBUG_BREAK_INVALID_LINENO;
   }
 
-  len = strlen(file) + 1;
-  set_file = (char*)mrb_malloc(mrb, len);
+  set_file = mrdb_strdup(mrb, file);
 
   index = dbg->bpnum;
   dbg->bp[index].bpno = dbg->next_bpno;
@@ -206,8 +223,6 @@ mrb_debug_set_break_line(mrb_state *mrb, mrb_debug_context *dbg, const char *fil
   dbg->bp[index].type = MRB_DEBUG_BPTYPE_LINE;
   dbg->bp[index].point.linepoint.lineno = lineno;
   dbg->bpnum++;
-
-  strncpy(set_file, file, len);
 
   dbg->bp[index].point.linepoint.file = set_file;
 
@@ -220,7 +235,6 @@ mrb_debug_set_break_method(mrb_state *mrb, mrb_debug_context *dbg, const char *c
   int32_t index;
   char* set_class;
   char* set_method;
-  size_t len;
 
   if ((mrb == NULL) || (dbg == NULL) || (method_name == NULL)) {
     return MRB_DEBUG_INVALID_ARGUMENT;
@@ -235,18 +249,16 @@ mrb_debug_set_break_method(mrb_state *mrb, mrb_debug_context *dbg, const char *c
   }
 
   if (class_name != NULL) {
-    len = strlen(class_name) + 1;
-    set_class = (char*)mrb_malloc(mrb, len);
-    strncpy(set_class, class_name, len);
+    set_class = mrdb_strdup(mrb, class_name);
   }
   else {
     set_class = NULL;
   }
 
-  len = strlen(method_name) + 1;
-  set_method = (char*)mrb_malloc(mrb, len);
-
-  strncpy(set_method, method_name, len);
+  set_method = mrdb_strdup(mrb, method_name);
+  if (set_method == NULL) {
+    mrb_free(mrb, set_class);
+  }
 
   index = dbg->bpnum;
   dbg->bp[index].bpno = dbg->next_bpno;
@@ -332,10 +344,10 @@ mrb_debug_delete_break(mrb_state *mrb, mrb_debug_context *dbg, uint32_t bpno)
 
   for(i = index ; i < dbg->bpnum; i++) {
     if ((i + 1) == dbg->bpnum) {
-      memset(&dbg->bp[i], 0, sizeof(mrb_debug_breakpoint));
+      dbg->bp[i] = (mrb_debug_breakpoint){0};
     }
     else {
-      memcpy(&dbg->bp[i], &dbg->bp[i + 1], sizeof(mrb_debug_breakpoint));
+      dbg->bp[i] = dbg->bp[i + 1];
     }
   }
 

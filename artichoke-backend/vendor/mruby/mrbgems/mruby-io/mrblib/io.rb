@@ -26,11 +26,11 @@ class IO
     end
   end
 
-  def self.popen(command, mode = 'r', opts={}, &block)
+  def self.popen(command, mode = 'r', **opts, &block)
     if !self.respond_to?(:_popen)
       raise NotImplementedError, "popen is not supported on this platform"
     end
-    io = self._popen(command, mode, opts)
+    io = self._popen(command, mode, **opts)
     return io unless block
 
     begin
@@ -61,39 +61,14 @@ class IO
     end
   end
 
-  def self.read(path, length=nil, offset=nil, opt=nil)
-    if not opt.nil?        # 4 arguments
-      offset ||= 0
-    elsif not offset.nil?  # 3 arguments
-      if offset.is_a? Hash
-        opt = offset
-        offset = 0
-      else
-        opt = {}
-      end
-    elsif not length.nil?  # 2 arguments
-      if length.is_a? Hash
-        opt = length
-        offset = 0
-        length = nil
-      else
-        offset = 0
-        opt = {}
-      end
-    else                   # only 1 argument
-      opt = {}
-      offset = 0
-      length = nil
-    end
-
+  def self.read(path, length=nil, offset=0, mode: "r")
     str = ""
     fd = -1
     io = nil
     begin
       if path[0] == "|"
-        io = IO.popen(path[1..-1], (opt[:mode] || "r"))
+        io = IO.popen(path[1..-1], mode)
       else
-        mode = opt[:mode] || "r"
         fd = IO.sysopen(path, mode)
         io = IO.open(fd, mode)
       end
@@ -184,6 +159,17 @@ class IO
     nil
   end
 
+  def ungetbyte(c)
+    if c.is_a? String
+      c = c.getbyte(0)
+    else
+      c &= 0xff
+    end
+    s = " "
+    s.setbyte(0,c)
+    ungetc s
+  end
+
   def read(length = nil, outbuf = "")
     unless length.nil?
       unless length.is_a? Integer
@@ -198,7 +184,7 @@ class IO
     end
 
     array = []
-    while 1
+    while true
       begin
         _read_buf
       rescue EOFError
@@ -245,7 +231,7 @@ class IO
     end
 
     array = []
-    while 1
+    while true
       begin
         _read_buf
       rescue EOFError
@@ -290,10 +276,19 @@ class IO
     begin
       readchar
     rescue EOFError
-      c = @buf[0]
-      @buf[0,1]="" if c
       nil
     end
+  end
+
+  def readbyte
+    _read_buf
+    IO._bufread(@buf, 1).getbyte(0)
+  end
+
+  def getbyte
+    readbyte
+  rescue EOFError
+    nil
   end
 
   # 15.2.20.5.3
@@ -310,8 +305,8 @@ class IO
   def each_byte(&block)
     return to_enum(:each_byte) unless block
 
-    while char = self.getc
-      block.call(char)
+    while byte = self.getbyte
+      block.call(byte)
     end
     self
   end
@@ -319,7 +314,14 @@ class IO
   # 15.2.20.5.5
   alias each_line each
 
-  alias each_char each_byte
+  def each_char(&block)
+    return to_enum(:each_char) unless block
+
+    while char = self.getc
+      block.call(char)
+    end
+    self
+  end
 
   def readlines
     ary = []
@@ -333,9 +335,14 @@ class IO
     i = 0
     len = args.size
     while i < len
-      s = args[i].to_s
-      write s
-      write "\n" if (s[-1] != "\n")
+      s = args[i]
+      if s.kind_of?(Array)
+        puts(*s)
+      else
+        s = s.to_s
+        write s
+        write "\n" if (s[-1] != "\n")
+      end
       i += 1
     end
     write "\n" if len == 0

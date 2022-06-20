@@ -4,6 +4,12 @@
 # ISO 15.2.13
 class Hash
   ##
+  # Hash is enumerable
+  #
+  # ISO 15.2.13.3
+  include Enumerable
+
+  ##
   #  Equality---Two hashes are equal if they each contain the same number
   #  of keys and if each key-value pair is equal to (according to
   #  <code>Object#==</code>) the corresponding elements in the other
@@ -183,7 +189,7 @@ class Hash
   end
   ##
   # Return the contents of this hash as a string.
- #
+  #
   # ISO 15.2.13.4.30 (x)
   def inspect
     self._inspect({})
@@ -296,12 +302,4 @@ class Hash
     }
     h
   end
-end
-
-##
-# Hash is enumerable
-#
-# ISO 15.2.13.3
-class Hash
-  include Enumerable
 end

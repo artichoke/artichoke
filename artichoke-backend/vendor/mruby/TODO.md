@@ -1,17 +1,14 @@
-Thing to Do in the future
-===
+# Thing to Do in the future
 
-# After mruby 3.0
+# After mruby 3.1
 
-* replace `fp_fmt.c` by `float_format` (https://github.com/dhylands/format-float.git)
 * multi-precision integer
-* WORD_BOXING: Pack some floats in `mrb_value`
-* NAN_BOXING: Allow `MRB_INT64` along with NaN boxing
-* keyword arguments a la Ruby3.0 (using `OP_SENDVK`)
-* parser and code generator independent from `mrb_state` (mmruby?)
+* parser and code generator independent from `mrb_state` (picoruby?)
+* variable sized AST node
+* iv/hash entry cache
+* more peephole optimization (if possible)
 
-# Things to do (Things that are not done yet)
+# Things to do (Things we need to consider)
 
 * `begin ... end while cond` to behave as CRuby
 * special variables ($1,$2..)
-* super in aliased methods

@@ -22,7 +22,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-backend"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "artichoke-core",
  "artichoke-load-path",

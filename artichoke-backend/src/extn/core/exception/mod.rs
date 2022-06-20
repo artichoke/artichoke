@@ -162,8 +162,8 @@ mod tests {
         let err = interp.eval(b"Run.run").unwrap_err();
         assert_eq!("RuntimeError", err.name().as_ref());
         assert_eq!(b"something went wrong".as_bstr(), err.message().as_ref().as_bstr());
-        let expected_backtrace = b"(eval):1".to_vec();
+        let expected_backtrace = b"(eval):1:in run\n(eval):1".to_vec();
         let actual_backtrace = bstr::join("\n", err.vm_backtrace(&mut interp).unwrap());
-        assert_eq!(expected_backtrace, actual_backtrace);
+        assert_eq!(expected_backtrace.as_bstr(), actual_backtrace.as_bstr());
     }
 }

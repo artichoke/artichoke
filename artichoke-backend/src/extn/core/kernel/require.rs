@@ -218,7 +218,7 @@ mod test {
             b"cannot load such file -- non-existent-source".as_bstr(),
             err.message().as_ref().as_bstr()
         );
-        let expected_backtrace = b"(eval):1".to_vec();
+        let expected_backtrace = b"(eval):1:in require\n(eval):1".to_vec();
         let actual_backtrace = bstr::join("\n", err.vm_backtrace(&mut interp).unwrap());
         assert_eq!(expected_backtrace.as_bstr(), actual_backtrace.as_bstr());
     }
@@ -295,7 +295,7 @@ mod test {
             b"cannot load such file -- /src".as_bstr(),
             err.message().as_ref().as_bstr()
         );
-        let expected_backtrace = b"(eval):1".to_vec();
+        let expected_backtrace = b"(eval):1:in require\n(eval):1".to_vec();
         let actual_backtrace = bstr::join("\n", err.vm_backtrace(&mut interp).unwrap());
         assert_eq!(expected_backtrace.as_bstr(), actual_backtrace.as_bstr());
     }
