@@ -24,7 +24,7 @@ COMPILER_RT_ABI float __floatundisf(du_int a) {
     return 0.0F;
   const unsigned N = sizeof(du_int) * CHAR_BIT;
   int sd = N - __builtin_clzll(a); // number of significant digits
-  int e = sd - 1;                  // 8 exponent
+  si_int e = sd - 1;               // 8 exponent
   if (sd > FLT_MANT_DIG) {
     //  start:  0000000000000000000001xxxxxxxxxxxxxxxxxxxxxxPQxxxxxxxxxxxxxxxxxx
     //  finish: 000000000000000000000000000000000000001xxxxxxxxxxxxxxxxxxxxxxPQR
@@ -69,4 +69,8 @@ AEABI_RTABI float __aeabi_ul2f(du_int a) { return __floatundisf(a); }
 #else
 COMPILER_RT_ALIAS(__floatundisf, __aeabi_ul2f)
 #endif
+#endif
+
+#if defined(__MINGW32__) && defined(__arm__)
+COMPILER_RT_ALIAS(__floatundisf, __u64tos)
 #endif

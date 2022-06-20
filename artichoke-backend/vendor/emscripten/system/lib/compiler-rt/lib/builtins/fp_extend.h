@@ -21,7 +21,7 @@ typedef float src_t;
 typedef uint32_t src_rep_t;
 #define SRC_REP_C UINT32_C
 static const int srcSigBits = 23;
-#define src_rep_t_clz __builtin_clz
+#define src_rep_t_clz clzsi
 
 #elif defined SRC_DOUBLE
 typedef double src_t;
@@ -33,14 +33,18 @@ static __inline int src_rep_t_clz(src_rep_t a) {
   return __builtin_clzl(a);
 #else
   if (a & REP_C(0xffffffff00000000))
-    return __builtin_clz(a >> 32);
+    return clzsi(a >> 32);
   else
-    return 32 + __builtin_clz(a & REP_C(0xffffffff));
+    return 32 + clzsi(a & REP_C(0xffffffff));
 #endif
 }
 
 #elif defined SRC_HALF
+#ifdef COMPILER_RT_HAS_FLOAT16
+typedef _Float16 src_t;
+#else
 typedef uint16_t src_t;
+#endif
 typedef uint16_t src_rep_t;
 #define SRC_REP_C UINT16_C
 static const int srcSigBits = 10;

@@ -35,9 +35,9 @@ class CombinedAllocator {
     secondary_.InitLinkerInitialized();
   }
 
-  void Init(s32 release_to_os_interval_ms) {
+  void Init(s32 release_to_os_interval_ms, uptr heap_start = 0) {
     stats_.Init();
-    primary_.Init(release_to_os_interval_ms);
+    primary_.Init(release_to_os_interval_ms, heap_start);
     secondary_.Init();
   }
 
@@ -112,15 +112,13 @@ class CombinedAllocator {
     return new_p;
   }
 
-  bool PointerIsMine(void *p) {
+  bool PointerIsMine(const void *p) const {
     if (primary_.PointerIsMine(p))
       return true;
     return secondary_.PointerIsMine(p);
   }
 
-  bool FromPrimary(void *p) {
-    return primary_.PointerIsMine(p);
-  }
+  bool FromPrimary(const void *p) const { return primary_.PointerIsMine(p); }
 
   void *GetMetaData(const void *p) {
     if (primary_.PointerIsMine(p))
@@ -177,12 +175,12 @@ class CombinedAllocator {
 
   // ForceLock() and ForceUnlock() are needed to implement Darwin malloc zone
   // introspection API.
-  void ForceLock() {
+  void ForceLock() SANITIZER_NO_THREAD_SAFETY_ANALYSIS {
     primary_.ForceLock();
     secondary_.ForceLock();
   }
 
-  void ForceUnlock() {
+  void ForceUnlock() SANITIZER_NO_THREAD_SAFETY_ANALYSIS {
     secondary_.ForceUnlock();
     primary_.ForceUnlock();
   }

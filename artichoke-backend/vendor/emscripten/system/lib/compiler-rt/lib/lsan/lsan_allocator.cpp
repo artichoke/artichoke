@@ -27,11 +27,11 @@ extern "C" void *memset(void *ptr, int value, uptr num);
 
 namespace __lsan {
 #if defined(__i386__) || defined(__arm__) || defined(__wasm32__)
-static const uptr kMaxAllowedMallocSize = 1UL << 30;
-#elif defined(__mips64) || defined(__aarch64__)
-static const uptr kMaxAllowedMallocSize = 4UL << 30;
+static const uptr kMaxAllowedMallocSize = 1ULL << 30;
+#elif defined(__mips64) || defined(__aarch64__) || defined(__wasm64__)
+static const uptr kMaxAllowedMallocSize = 4ULL << 30;
 #else
-static const uptr kMaxAllowedMallocSize = 8UL << 30;
+static const uptr kMaxAllowedMallocSize = 8ULL << 30;
 #endif
 
 static Allocator allocator;
@@ -88,6 +88,11 @@ void *Allocate(const StackTrace &stack, uptr size, uptr alignment,
     size = 1;
   if (size > max_malloc_size)
     return ReportAllocationSizeTooBig(size, stack);
+  if (UNLIKELY(IsRssLimitExceeded())) {
+    if (AllocatorMayReturnNull())
+      return nullptr;
+    ReportRssLimitExceeded(&stack);
+  }
   void *p = allocator.Allocate(GetAllocatorCache(), size, alignment);
   if (UNLIKELY(!p)) {
     SetAllocatorOutOfMemory();
@@ -123,14 +128,18 @@ void Deallocate(void *p) {
 
 void *Reallocate(const StackTrace &stack, void *p, uptr new_size,
                  uptr alignment) {
-  RegisterDeallocation(p);
   if (new_size > max_malloc_size) {
-    allocator.Deallocate(GetAllocatorCache(), p);
-    return ReportAllocationSizeTooBig(new_size, stack);
+    ReportAllocationSizeTooBig(new_size, stack);
+    return nullptr;
   }
-  p = allocator.Reallocate(GetAllocatorCache(), p, new_size, alignment);
-  RegisterAllocation(stack, p, new_size);
-  return p;
+  RegisterDeallocation(p);
+  void *new_p =
+      allocator.Reallocate(GetAllocatorCache(), p, new_size, alignment);
+  if (new_p)
+    RegisterAllocation(stack, new_p, new_size);
+  else if (new_size != 0)
+    RegisterAllocation(stack, p, new_size);
+  return new_p;
 }
 
 void GetAllocatorCacheRange(uptr *begin, uptr *end) {
@@ -309,6 +318,16 @@ IgnoreObjectResult IgnoreObjectLocked(const void *p) {
     return kIgnoreObjectInvalid;
   }
 }
+
+void GetAdditionalThreadContextPtrs(ThreadContextBase *tctx, void *ptrs) {
+  // This function can be used to treat memory reachable from `tctx` as live.
+  // This is useful for threads that have been created but not yet started.
+
+  // This is currently a no-op because the LSan `pthread_create()` interceptor
+  // blocks until the child thread starts which keeps the thread's `arg` pointer
+  // live.
+}
+
 } // namespace __lsan
 
 using namespace __lsan;

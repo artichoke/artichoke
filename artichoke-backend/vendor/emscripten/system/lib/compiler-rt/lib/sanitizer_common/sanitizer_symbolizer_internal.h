@@ -21,7 +21,7 @@ namespace __sanitizer {
 
 // Parsing helpers, 'str' is searched for delimiter(s) and a string or uptr
 // is extracted. When extracting a string, a newly allocated (using
-// InternalAlloc) and null-terminataed buffer is returned. They return a pointer
+// InternalAlloc) and null-terminated buffer is returned. They return a pointer
 // to the next characted after the found delimiter.
 const char *ExtractToken(const char *str, const char *delims, char **result);
 const char *ExtractInt(const char *str, const char *delims, int *result);
@@ -69,6 +69,9 @@ class SymbolizerTool {
   virtual const char *Demangle(const char *name) {
     return nullptr;
   }
+
+ protected:
+  ~SymbolizerTool() {}
 };
 
 // SymbolizerProcess encapsulates communication between the tool and
@@ -80,12 +83,16 @@ class SymbolizerProcess {
   const char *SendCommand(const char *command);
 
  protected:
+  ~SymbolizerProcess() {}
+
   /// The maximum number of arguments required to invoke a tool process.
-  static const unsigned kArgVMax = 6;
+  static const unsigned kArgVMax = 16;
 
   // Customizable by subclasses.
   virtual bool StartSymbolizerSubprocess();
   virtual bool ReadFromSymbolizer(char *buffer, uptr max_length);
+  // Return the environment to run the symbolizer in.
+  virtual char **GetEnvP() { return GetEnviron(); }
 
  private:
   virtual bool ReachedEndOfOutput(const char *buffer, uptr length) const {
@@ -121,7 +128,7 @@ class LLVMSymbolizerProcess;
 
 // This tool invokes llvm-symbolizer in a subprocess. It should be as portable
 // as the llvm-symbolizer tool is.
-class LLVMSymbolizer : public SymbolizerTool {
+class LLVMSymbolizer final : public SymbolizerTool {
  public:
   explicit LLVMSymbolizer(const char *path, LowLevelAllocator *allocator);
 

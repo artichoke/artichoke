@@ -18,8 +18,8 @@
 // (currently, 32 bits and internal allocator).
 class LargeMmapAllocatorPtrArrayStatic {
  public:
-  INLINE void *Init() { return &p_[0]; }
-  INLINE void EnsureSpace(uptr n) { CHECK_LT(n, kMaxNumChunks); }
+  inline void *Init() { return &p_[0]; }
+  inline void EnsureSpace(uptr n) { CHECK_LT(n, kMaxNumChunks); }
  private:
   static const int kMaxNumChunks = 1 << 15;
   uptr p_[kMaxNumChunks];
@@ -31,14 +31,14 @@ class LargeMmapAllocatorPtrArrayStatic {
 // same functionality in Fuchsia case, which does not support MAP_NORESERVE.
 class LargeMmapAllocatorPtrArrayDynamic {
  public:
-  INLINE void *Init() {
+  inline void *Init() {
     uptr p = address_range_.Init(kMaxNumChunks * sizeof(uptr),
                                  SecondaryAllocatorName);
     CHECK(p);
     return reinterpret_cast<void*>(p);
   }
 
-  INLINE void EnsureSpace(uptr n) {
+  inline void EnsureSpace(uptr n) {
     CHECK_LT(n, kMaxNumChunks);
     DCHECK(n <= n_reserved_);
     if (UNLIKELY(n == n_reserved_)) {
@@ -161,7 +161,7 @@ class LargeMmapAllocator {
     return res;
   }
 
-  bool PointerIsMine(const void *p) {
+  bool PointerIsMine(const void *p) const {
     return GetBlockBegin(p) != nullptr;
   }
 
@@ -179,7 +179,7 @@ class LargeMmapAllocator {
     return GetHeader(p) + 1;
   }
 
-  void *GetBlockBegin(const void *ptr) {
+  void *GetBlockBegin(const void *ptr) const {
     uptr p = reinterpret_cast<uptr>(ptr);
     SpinMutexLock l(&mutex_);
     uptr nearest_chunk = 0;
@@ -267,13 +267,9 @@ class LargeMmapAllocator {
 
   // ForceLock() and ForceUnlock() are needed to implement Darwin malloc zone
   // introspection API.
-  void ForceLock() {
-    mutex_.Lock();
-  }
+  void ForceLock() SANITIZER_ACQUIRE(mutex_) { mutex_.Lock(); }
 
-  void ForceUnlock() {
-    mutex_.Unlock();
-  }
+  void ForceUnlock() SANITIZER_RELEASE(mutex_) { mutex_.Unlock(); }
 
   // Iterate over all existing chunks.
   // The allocator must be locked when calling this function.
@@ -305,7 +301,7 @@ class LargeMmapAllocator {
     return GetHeader(reinterpret_cast<uptr>(p));
   }
 
-  void *GetUser(const Header *h) {
+  void *GetUser(const Header *h) const {
     CHECK(IsAligned((uptr)h, page_size_));
     return reinterpret_cast<void*>(reinterpret_cast<uptr>(h) + page_size_);
   }
@@ -322,5 +318,5 @@ class LargeMmapAllocator {
   struct Stats {
     uptr n_allocs, n_frees, currently_allocated, max_allocated, by_size_log[64];
   } stats;
-  StaticSpinMutex mutex_;
+  mutable StaticSpinMutex mutex_;
 };

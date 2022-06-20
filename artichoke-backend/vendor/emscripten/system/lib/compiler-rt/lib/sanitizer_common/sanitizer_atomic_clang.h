@@ -34,16 +34,16 @@ namespace __sanitizer {
 // See http://www.cl.cam.ac.uk/~pes20/cpp/cpp0xmappings.html
 // for mappings of the memory model to different processors.
 
-INLINE void atomic_signal_fence(memory_order) {
+inline void atomic_signal_fence(memory_order) {
   __asm__ __volatile__("" ::: "memory");
 }
 
-INLINE void atomic_thread_fence(memory_order) {
+inline void atomic_thread_fence(memory_order) {
   __sync_synchronize();
 }
 
 template<typename T>
-INLINE typename T::Type atomic_fetch_add(volatile T *a,
+inline typename T::Type atomic_fetch_add(volatile T *a,
     typename T::Type v, memory_order mo) {
   (void)mo;
   DCHECK(!((uptr)a % sizeof(*a)));
@@ -51,7 +51,7 @@ INLINE typename T::Type atomic_fetch_add(volatile T *a,
 }
 
 template<typename T>
-INLINE typename T::Type atomic_fetch_sub(volatile T *a,
+inline typename T::Type atomic_fetch_sub(volatile T *a,
     typename T::Type v, memory_order mo) {
   (void)mo;
   DCHECK(!((uptr)a % sizeof(*a)));
@@ -59,7 +59,7 @@ INLINE typename T::Type atomic_fetch_sub(volatile T *a,
 }
 
 template<typename T>
-INLINE typename T::Type atomic_exchange(volatile T *a,
+inline typename T::Type atomic_exchange(volatile T *a,
     typename T::Type v, memory_order mo) {
   DCHECK(!((uptr)a % sizeof(*a)));
   if (mo & (memory_order_release | memory_order_acq_rel | memory_order_seq_cst))
@@ -71,20 +71,19 @@ INLINE typename T::Type atomic_exchange(volatile T *a,
 }
 
 template <typename T>
-INLINE bool atomic_compare_exchange_strong(volatile T *a, typename T::Type *cmp,
+inline bool atomic_compare_exchange_strong(volatile T *a, typename T::Type *cmp,
                                            typename T::Type xchg,
                                            memory_order mo) {
-  typedef typename T::Type Type;
-  Type cmpv = *cmp;
-  Type prev;
-  prev = __sync_val_compare_and_swap(&a->val_dont_use, cmpv, xchg);
-  if (prev == cmpv) return true;
-  *cmp = prev;
-  return false;
+  // Transitioned from __sync_val_compare_and_swap to support targets like
+  // SPARC V8 that cannot inline atomic cmpxchg.  __atomic_compare_exchange
+  // can then be resolved from libatomic.  __ATOMIC_SEQ_CST is used to best
+  // match the __sync builtin memory order.
+  return __atomic_compare_exchange(&a->val_dont_use, cmp, &xchg, false,
+                                   __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 template<typename T>
-INLINE bool atomic_compare_exchange_weak(volatile T *a,
+inline bool atomic_compare_exchange_weak(volatile T *a,
                                          typename T::Type *cmp,
                                          typename T::Type xchg,
                                          memory_order mo) {
