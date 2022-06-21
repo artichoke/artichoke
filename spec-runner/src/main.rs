@@ -139,10 +139,7 @@ pub fn main() {
     let quiet = *matches.get_one::<bool>("quiet").expect("defaulted by clap");
 
     let args = if let Some(config) = matches.get_one::<PathBuf>("config").cloned() {
-        Args {
-            config: config.into(),
-            formatter,
-        }
+        Args { config, formatter }
     } else {
         // Suppress all errors at this point (e.g. from a broken pipe) since
         // we're exiting with an error code anyway.
