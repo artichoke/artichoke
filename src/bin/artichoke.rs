@@ -138,6 +138,7 @@ fn parse_args() -> Result<Args> {
 fn command() -> Command<'static> {
     Command::new("artichoke")
         .about("Artichoke is a Ruby made with Rust.")
+        .version(env!("CARGO_PKG_VERSION"))
         .arg(
             Arg::new("copyright")
                 .long("copyright")
@@ -164,7 +165,6 @@ fn command() -> Command<'static> {
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(OsString)),
         )
-        .version(env!("CARGO_PKG_VERSION"))
         .trailing_var_arg(true)
 }
 

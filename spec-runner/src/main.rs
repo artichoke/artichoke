@@ -108,6 +108,7 @@ pub fn main() {
 
     let command = Command::new("spec-runner")
         .about("ruby/spec runner for Artichoke.")
+        .version(env!("CARGO_PKG_VERSION"))
         .arg(
             Arg::new("formatter")
                 .long("format")
@@ -127,8 +128,7 @@ pub fn main() {
             Arg::new("config")
                 .value_parser(clap::value_parser!(PathBuf))
                 .help("Path to TOML config file"),
-        )
-        .version(env!("CARGO_PKG_VERSION"));
+        );
 
     let matches = command.get_matches();
 
