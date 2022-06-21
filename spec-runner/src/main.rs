@@ -82,6 +82,7 @@ use std::str;
 
 use artichoke::backtrace;
 use artichoke::prelude::*;
+use clap::builder::ArgAction;
 use clap::{Arg, Command};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
@@ -105,60 +106,41 @@ struct Args {
 pub fn main() {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
 
-    let command = Command::new("spec-runner");
-    let command = command.about("ruby/spec runner for Artichoke.");
-    let command = command.arg(
-        Arg::new("formatter")
-            .long("format")
-            .short('f')
-            .allow_invalid_utf8(true)
-            .takes_value(true)
-            .possible_values(&["artichoke", "summary", "tagger", "yaml"])
-            .default_value("artichoke")
-            .required(false)
-            .help("Choose an output formatter"),
-    );
-    let command = command.arg(
-        Arg::new("quiet")
-            .long("quiet")
-            .short('q')
-            .required(false)
-            .help("Suppress spec failures when exiting"),
-    );
-    let command = command.arg(
-        Arg::new("config")
-            .allow_invalid_utf8(true)
-            .takes_value(true)
-            .required(true)
-            .help("Path to TOML config file"),
-    );
-    let command = command.version(env!("CARGO_PKG_VERSION"));
+    let command = Command::new("spec-runner")
+        .about("ruby/spec runner for Artichoke.")
+        .version(env!("CARGO_PKG_VERSION"))
+        .arg(
+            Arg::new("formatter")
+                .long("format")
+                .short('f')
+                .takes_value(true)
+                .value_parser(["artichoke", "summary", "tagger", "yaml"])
+                .default_value("artichoke")
+                .help("Choose an output formatter"),
+        )
+        .arg(
+            Arg::new("quiet")
+                .long("quiet")
+                .short('q')
+                .action(ArgAction::SetTrue)
+                .help("Suppress spec failures when exiting"),
+        )
+        .arg(
+            Arg::new("config")
+                .value_parser(clap::value_parser!(PathBuf))
+                .help("Path to TOML config file"),
+        );
 
     let matches = command.get_matches();
 
     let formatter = matches
-        .value_of_os("formatter")
-        .expect("formatter has a default value, clap should ensure");
-    let formatter = formatter
-        .to_str()
-        .expect("formatter has possible values, clap should ensure");
-    let formatter = formatter.parse::<Formatter>();
-    let formatter = match formatter {
-        Ok(f) => f,
-        Err(err) => {
-            // Suppress all errors at this point (e.g. from a broken pipe) since
-            // we're exiting with an error code anyway.
-            let _ignored = writeln!(&mut stderr, "{}", err);
-            process::exit(1);
-        }
-    };
-    let quiet = matches.is_present("quiet");
+        .get_one::<String>("formatter")
+        .and_then(|f| f.parse::<Formatter>().ok())
+        .expect("defaulted by clap");
+    let quiet = *matches.get_one::<bool>("quiet").expect("defaulted by clap");
 
-    let args = if let Some(config) = matches.value_of_os("config") {
-        Args {
-            config: config.into(),
-            formatter,
-        }
+    let args = if let Some(config) = matches.get_one::<PathBuf>("config").cloned() {
+        Args { config, formatter }
     } else {
         // Suppress all errors at this point (e.g. from a broken pipe) since
         // we're exiting with an error code anyway.

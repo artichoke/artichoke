@@ -48,6 +48,7 @@ use std::path::PathBuf;
 use std::process;
 
 use artichoke::ruby::{self, Args};
+use clap::builder::ArgAction;
 use clap::{Arg, ArgMatches, Command};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
@@ -84,13 +85,13 @@ fn parse_args() -> Result<Args> {
     let matches = clap_matches(env::args_os())?;
 
     let commands = matches
-        .values_of_os("commands")
+        .get_many::<OsString>("commands")
         .into_iter()
-        .flat_map(|v| v.map(OsString::from))
+        .flat_map(|s| s.map(Clone::clone))
         .collect::<Vec<_>>();
     let mut args = Args::empty()
-        .with_copyright(matches.is_present("copyright"))
-        .with_fixture(matches.value_of_os("fixture").map(PathBuf::from));
+        .with_copyright(*matches.get_one::<bool>("copyright").expect("defaulted by clap"))
+        .with_fixture(matches.get_one::<PathBuf>("fixture").cloned());
 
     // If no `-e` arguments are given, the first positional argument is the
     // `programfile`. All trailing arguments are ARGV to the script.
@@ -109,21 +110,20 @@ fn parse_args() -> Result<Args> {
     // ruby: No such file or directory -- bar.rb (LoadError)
     // ```
     if commands.is_empty() {
-        if let Some(programfile) = matches.value_of_os("programfile") {
-            args = args.with_programfile(Some(PathBuf::from(programfile)));
-            if let Some(argv) = matches.values_of_os("arguments") {
-                let ruby_program_argv = argv.map(OsString::from).collect::<Vec<_>>();
+        if let Some(programfile) = matches.get_one::<PathBuf>("programfile").cloned() {
+            args = args.with_programfile(Some(programfile));
+            if let Some(argv) = matches.get_many::<OsString>("arguments") {
+                let ruby_program_argv = argv.map(Clone::clone).collect::<Vec<_>>();
                 args = args.with_argv(ruby_program_argv);
             }
         }
     } else {
         args = args.with_commands(commands);
-        if let Some(first_arg) = matches.value_of_os("programfile") {
-            if let Some(argv) = matches.values_of_os("arguments") {
-                let ruby_program_argv = [first_arg]
+        if let Some(first_arg) = matches.get_one::<PathBuf>("programfile").cloned() {
+            if let Some(argv) = matches.get_many::<OsString>("arguments") {
+                let ruby_program_argv = [OsString::from(first_arg)]
                     .into_iter()
-                    .chain(argv)
-                    .map(OsString::from)
+                    .chain(argv.map(Clone::clone))
                     .collect::<Vec<_>>();
                 args = args.with_argv(ruby_program_argv);
             } else {
@@ -136,33 +136,36 @@ fn parse_args() -> Result<Args> {
 }
 
 fn command() -> Command<'static> {
-    let command = Command::new("artichoke");
-    let command = command.about("Artichoke is a Ruby made with Rust.");
-    let command = command.arg(
-        Arg::new("copyright")
-            .long("copyright")
-            .takes_value(false)
-            .help("print the copyright"),
-    );
-    let command = command.arg(
-        Arg::new("commands")
-            .short('e')
-            .allow_invalid_utf8(true)
-            .takes_value(true)
-            .multiple_occurrences(true)
-            .help(r"one line of script. Several -e's allowed. Omit [programfile]"),
-    );
-    let command = command.arg(
-        Arg::new("fixture")
-            .long("with-fixture")
-            .allow_invalid_utf8(true)
-            .takes_value(true)
-            .help("file whose contents will be read into the `$fixture` global"),
-    );
-    let command = command.arg(Arg::new("programfile").allow_invalid_utf8(true));
-    let command = command.arg(Arg::new("arguments").multiple_values(true).allow_invalid_utf8(true));
-    let command = command.version(env!("CARGO_PKG_VERSION"));
-    command.trailing_var_arg(true)
+    Command::new("artichoke")
+        .about("Artichoke is a Ruby made with Rust.")
+        .version(env!("CARGO_PKG_VERSION"))
+        .arg(
+            Arg::new("copyright")
+                .long("copyright")
+                .action(ArgAction::SetTrue)
+                .help("print the copyright"),
+        )
+        .arg(
+            Arg::new("commands")
+                .short('e')
+                .action(ArgAction::Append)
+                .value_parser(clap::value_parser!(OsString))
+                .help(r"one line of script. Several -e's allowed. Omit [programfile]"),
+        )
+        .arg(
+            Arg::new("fixture")
+                .long("with-fixture")
+                .takes_value(true)
+                .value_parser(clap::value_parser!(PathBuf))
+                .help("file whose contents will be read into the `$fixture` global"),
+        )
+        .arg(Arg::new("programfile").value_parser(clap::value_parser!(PathBuf)))
+        .arg(
+            Arg::new("arguments")
+                .multiple_values(true)
+                .value_parser(clap::value_parser!(OsString)),
+        )
+        .trailing_var_arg(true)
 }
 
 // NOTE: This routine is plucked from `ripgrep` as of
