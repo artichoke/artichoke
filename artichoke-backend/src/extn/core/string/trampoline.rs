@@ -529,7 +529,7 @@ pub fn byteslice(
         let end = index
             .checked_add(length)
             .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
-        if let Some(slice) = s.get(index..end) {
+        if let Some(slice) = s.get(index..end).or_else(|| s.get(index..)) {
             // Encoding from the source string is preserved.
             //
             // ```
