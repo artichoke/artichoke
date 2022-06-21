@@ -31,21 +31,21 @@ def string_element_reference_regexp
 end
 
 def string_byteslice
-  s = "abcdefghijk"
-  raise unless s.byteslice(0, 1000) == "abcdefghijk"
-  raise unless s.byteslice(5, 1000) == "fghijk"
-  raise unless s.byteslice(20, 1000) == nil
-  raise unless s.byteslice(-5, 1000) == "ghijk"
-  raise unless s.byteslice(-25, 1000) == nil
-  raise unless s.byteslice(-25) == nil
-  raise unless s.byteslice(-5) == "g"
-  raise unless s.byteslice(-5, 10) == "ghijk"
-  raise unless s.byteslice(0) == "a"
-  raise unless s.byteslice(2) == "c"
-  raise unless s.byteslice(0, 5) == "abcde"
-  raise unless s.byteslice(5, 3) == "fgh"
-  raise unless s.byteslice(5, -10) == nil
-  raise unless s.byteslice(5, -2) == nil
+  s = 'abcdefghijk'
+  raise unless s.byteslice(0, 1000) == 'abcdefghijk'
+  raise unless s.byteslice(5, 1000) == 'fghijk'
+  raise unless s.byteslice(20, 1000).nil?
+  raise unless s.byteslice(-5, 1000) == 'ghijk'
+  raise unless s.byteslice(-25, 1000).nil?
+  raise unless s.byteslice(-25).nil?
+  raise unless s.byteslice(-5) == 'g'
+  raise unless s.byteslice(-5, 10) == 'ghijk'
+  raise unless s.byteslice(0) == 'a'
+  raise unless s.byteslice(2) == 'c'
+  raise unless s.byteslice(0, 5) == 'abcde'
+  raise unless s.byteslice(5, 3) == 'fgh'
+  raise unless s.byteslice(5, -10).nil?
+  raise unless s.byteslice(5, -2).nil?
 end
 
 def string_scan
