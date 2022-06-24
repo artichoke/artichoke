@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include <mruby.h>
 #include <mruby/array.h>
 #include <mruby/class.h>
@@ -9,37 +11,41 @@
 
 #include <mrbsys/ext.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 const uint8_t mrblib_irep[] = {0};
 
 const char mrb_digitmap[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 // Check whether `mrb_value` is nil, false, or true
 
-MRB_API _Bool
+MRB_API bool
 mrb_sys_value_is_nil(mrb_value value)
 {
   return mrb_nil_p(value);
 }
 
-MRB_API _Bool
+MRB_API bool
 mrb_sys_value_is_false(mrb_value value)
 {
   return mrb_false_p(value);
 }
 
-MRB_API _Bool
+MRB_API bool
 mrb_sys_value_is_true(mrb_value value)
 {
   return mrb_true_p(value);
 }
 
-MRB_API _Bool
+MRB_API bool
 mrb_sys_range_excl(mrb_state *mrb, mrb_value value)
 {
   return mrb_range_excl_p(mrb, value);
 }
 
-MRB_API _Bool
+MRB_API bool
 mrb_sys_obj_frozen(mrb_state *mrb, mrb_value value)
 {
   (void)(mrb);
@@ -209,9 +215,9 @@ mrb_sys_new_symbol(mrb_sym id)
 // Manage Rust-backed `mrb_value`s
 
 MRB_API void
-mrb_sys_set_instance_tt(struct RClass *class, enum mrb_vtype type)
+mrb_sys_set_instance_tt(struct RClass *klass, enum mrb_vtype type)
 {
-  MRB_SET_INSTANCE_TT(class, type);
+  MRB_SET_INSTANCE_TT(klass, type);
 }
 
 MRB_API void
@@ -223,9 +229,9 @@ mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type)
 // Raise exceptions and debug info
 
 MRB_API mrb_noreturn void
-mrb_sys_raise(struct mrb_state *mrb, const char *eclass, const char *msg)
+mrb_sys_raise(struct mrb_state *mrb, const char *eklass, const char *msg)
 {
-  mrb_raise(mrb, mrb_class_get(mrb, eclass), msg);
+  mrb_raise(mrb, mrb_class_get(mrb, eklass), msg);
 }
 
 MRB_API void
@@ -423,25 +429,25 @@ mrb_sys_gc_arena_restore(mrb_state *mrb, int arena_index)
   mrb_gc_arena_restore(mrb, arena_index);
 }
 
-MRB_API _Bool
+MRB_API bool
 mrb_sys_gc_disable(mrb_state *mrb)
 {
   mrb_gc *gc = &mrb->gc;
-  _Bool was_enabled = !gc->disabled;
+  bool was_enabled = !gc->disabled;
   gc->disabled = 1;
   return was_enabled;
 }
 
-MRB_API _Bool
+MRB_API bool
 mrb_sys_gc_enable(mrb_state *mrb)
 {
   mrb_gc *gc = &mrb->gc;
-  _Bool was_enabled = !gc->disabled;
+  bool was_enabled = !gc->disabled;
   gc->disabled = 0;
   return was_enabled;
 }
 
-MRB_API _Bool
+MRB_API bool
 mrb_sys_value_is_dead(mrb_state *mrb, mrb_value value)
 {
   // immediate values such as Fixnums and Symbols are never garbage
@@ -473,3 +479,7 @@ mrb_sys_safe_gc_mark(mrb_state *mrb, mrb_value value)
     mrb_gc_mark(mrb, mrb_basic_ptr(value));
   }
 }
+
+#ifdef __cplusplus
+}  /* extern "C" { */
+#endif
