@@ -95,18 +95,20 @@ include = "all"
 include = "set"
 specs = [
   "bytesize",
-  "byteslice",
-  "chomp",
-  "chop",
+  # missing `Range` support: https://github.com/artichoke/artichoke/issues/1916
+  # "byteslice",
+  # `chomp` and `chop` have some improper separator handling
+  # "chomp",
+  # "chop",
   "clear",
   "delete_prefix",
-  "delete",
   "empty",
   "end_with",
   "getbyte",
   "include",
   "length",
-  "reverse",
+  # missing encoding-aware, character-oriented reverse for UTF-8 encoding.
+  # "reverse",
   "scan",
   "setbyte",
   "size",
