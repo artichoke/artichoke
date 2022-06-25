@@ -381,7 +381,7 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete
   def delete(*args)
-    args.inject(self) { |string, pattern| string.tr(pattern, '') }
+    args.inject(self) { |string, pattern| Artichoke::String.implicit_conversion(string).tr(pattern, '') }
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete-21
