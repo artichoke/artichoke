@@ -295,7 +295,16 @@ unsafe extern "C" fn string_chomp(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     let separator = separator.map(Value::from);
     let result = trampoline::chomp(&mut guard, value, separator);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let rclass = sys::mrb_sys_class_of_value(mrb, slf);
+            let value = value.inner();
+            let target_rbasic = value.value.p.cast::<sys::RBasic>();
+
+            // Copy `RClass` from source class to newly allocated `Array`.
+            (*target_rbasic).c = rclass;
+
+            value
+        }
         Err(exception) => error::raise(guard, exception),
     }
 }
@@ -318,7 +327,16 @@ unsafe extern "C" fn string_chop(mrb: *mut sys::mrb_state, slf: sys::mrb_value) 
     let value = Value::from(slf);
     let result = trampoline::chop(&mut guard, value);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) => {
+            let rclass = sys::mrb_sys_class_of_value(mrb, slf);
+            let value = value.inner();
+            let target_rbasic = value.value.p.cast::<sys::RBasic>();
+
+            // Copy `RClass` from source class to newly allocated `Array`.
+            (*target_rbasic).c = rclass;
+
+            value
+        }
         Err(exception) => error::raise(guard, exception),
     }
 }
