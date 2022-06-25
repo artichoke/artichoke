@@ -99,6 +99,7 @@ class Encoding
   Shift_JIS = new('Shift_JIS')
   SHIFT_JIS = Shift_JIS
   UTF_8 = new('UTF-8')
+  UTF_32BE = new('UTF-32BE')
 
   def self.default_external
     UTF_8
