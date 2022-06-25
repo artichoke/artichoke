@@ -4,12 +4,13 @@ use crate::MICROS_IN_NANO;
 
 // Parts
 impl Time {
-    /// Returns the number of nanoseconds for _time_
+    /// Returns the number of nanoseconds for _time_.
     ///
-    /// The lowest digits of `to_f` and nsec are different because IEEE 754 double is not accurate
-    /// enough to represent the exact number of nanoseconds since the Epoch.
+    /// The lowest digits of `to_f` and nsec are different because IEEE 754
+    /// double is not accurate enough to represent the exact number of
+    /// nanoseconds since the Epoch.
     ///
-    /// Can be used to implement [`Time#nsec`] and [`Time#tv_nsec`]
+    /// Can be used to implement [`Time#nsec`] and [`Time#tv_nsec`].
     ///
     /// # Examples
     ///
@@ -30,7 +31,7 @@ impl Time {
         self.inner.nanoseconds()
     }
 
-    /// Returns the number of microseconds for _time_
+    /// Returns the number of microseconds for _time_.
     ///
     /// Can be used to implement [`Time#usec`] and [`Time#tv_usec`]
     ///
@@ -50,11 +51,12 @@ impl Time {
         self.inner.nanoseconds() / MICROS_IN_NANO
     }
 
-    /// Returns the second of the minute (0..60) for _time_
+    /// Returns the second of the minute (0..60) for _time_.
     ///
-    /// Seconds range from zero to 60 to allow the system to inject [leap seconds].
+    /// Seconds range from zero to 60 to allow the system to inject [leap
+    /// seconds].
     ///
-    /// Can be used to implement [`Time#sec`]
+    /// Can be used to implement [`Time#sec`].
     ///
     /// # Examples
     ///
@@ -73,9 +75,9 @@ impl Time {
         self.inner.second()
     }
 
-    /// Returns the minute of the hour (0..59) for _time_
+    /// Returns the minute of the hour (0..59) for _time_.
     ///
-    /// Can be used to implement [`Time#min`]
+    /// Can be used to implement [`Time#min`].
     ///
     /// # Examples
     ///
@@ -93,9 +95,9 @@ impl Time {
         self.inner.minute()
     }
 
-    /// Returns the hour of the day (0..23) for _time_
+    /// Returns the hour of the day (0..23) for _time_.
     ///
-    /// Can be used to implement [`Time#min`]
+    /// Can be used to implement [`Time#min`].
     ///
     /// # Examples
     ///
@@ -113,9 +115,9 @@ impl Time {
         self.inner.hour()
     }
 
-    /// Returns the day of the month (1..n) for _time_
+    /// Returns the day of the month (1..n) for _time_.
     ///
-    /// Can be used to implement [`Time#day`] and [`Time#mday`]
+    /// Can be used to implement [`Time#day`] and [`Time#mday`].
     ///
     /// # Examples
     ///
@@ -134,9 +136,9 @@ impl Time {
         self.inner.month_day()
     }
 
-    /// Returns the month of the year (1..12) for _time_
+    /// Returns the month of the year (1..12) for _time_.
     ///
-    /// Can be used to implement [`Time#mon`] and [`Time#month`]
+    /// Can be used to implement [`Time#mon`] and [`Time#month`].
     ///
     /// # Examples
     ///
@@ -155,9 +157,9 @@ impl Time {
         self.inner.month()
     }
 
-    /// Returns the year for _time_ (including the century)
+    /// Returns the year for _time_ (including the century).
     ///
-    /// Can be used to implement [`Time#year`]
+    /// Can be used to implement [`Time#year`].
     ///
     /// # Examples
     ///
@@ -174,10 +176,10 @@ impl Time {
         self.inner.year()
     }
 
-    /// Returns the name of the time zone as a string
+    /// Returns the name of the time zone as a string.
     ///
-    /// Note: UTC is an empty string due to the [`UTC LocaleTimeType`] being constructed with None,
-    /// which is later coerced into an [`empty string`]
+    /// Note: UTC is an empty string due to the [`UTC LocaleTimeType`] being
+    /// constructed with None, which is later coerced into an [`empty string`].
     ///
     /// # Examples
     /// ```
@@ -197,9 +199,9 @@ impl Time {
         }
     }
 
-    /// Returns true if the time zone is UTC
+    /// Returns true if the time zone is UTC.
     ///
-    /// Can be used to implement [`Time#utc?`] and [`Time#gmt?`]
+    /// Can be used to implement [`Time#utc?`] and [`Time#gmt?`].
     ///
     //// # Examples
     /// ```
@@ -216,9 +218,9 @@ impl Time {
         Offset::Utc == self.offset
     }
 
-    /// Returns the offset in seconds between the timezone of _time_ and UTC
+    /// Returns the offset in seconds between the timezone of _time_ and UTC.
     ///
-    /// Can be used to implement [`Time#utc_offset`] and [`Time#gmt_offset`]
+    /// Can be used to implement [`Time#utc_offset`] and [`Time#gmt_offset`].
     ///
     /// # Examples
     ///
@@ -236,9 +238,10 @@ impl Time {
         self.inner.local_time_type().ut_offset()
     }
 
-    /// Returns `true` if _time_ occurs during Daylight Saving Time in its time zone.
+    /// Returns `true` if _time_ occurs during Daylight Saving Time in its time
+    /// zone.
     ///
-    /// Can be used to implement [`Time#dst?`] and [`Time#isdst`]
+    /// Can be used to implement [`Time#dst?`] and [`Time#isdst`].
     ///
     /// # Examples
     ///
@@ -259,9 +262,10 @@ impl Time {
         self.inner.local_time_type().is_dst()
     }
 
-    /// Returns an integer representing the day of the week, 0..6, with Sunday == 0
+    /// Returns an integer representing the day of the week, 0..6, with Sunday
+    /// == 0.
     ///
-    /// Can be used to implement [`Time#wday`]
+    /// Can be used to implement [`Time#wday`].
     ///
     /// # Examples
     ///
@@ -280,7 +284,7 @@ impl Time {
 
     /// Returns an integer representing the day of the year, 1..366.
     ///
-    /// Can be used to implement [`Time#yday`]
+    /// Can be used to implement [`Time#yday`].
     ///
     /// # Examples
     ///

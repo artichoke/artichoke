@@ -5,8 +5,8 @@ use super::{Time, ToA};
 impl Display for Time {
     /// Returns a conanocial string representation of _time_
     ///
-    /// Can be used to implement [`Time#asctime`], [`#Time#ctime`], [`Time#to_s`] and
-    /// [`Time#inspect`]
+    /// Can be used to implement [`Time#asctime`], [`#Time#ctime`],
+    /// [`Time#to_s`] and [`Time#inspect`]
     ///
     /// # Examples
     ///

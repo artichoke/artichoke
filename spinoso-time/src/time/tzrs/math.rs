@@ -7,8 +7,9 @@ use crate::time::tzrs::Time;
 use crate::NANOS_IN_SECOND;
 
 impl Time {
-    /// Rounds sub seconds to a given precision in decimal digits (0 digits by default). It returns
-    /// a new Time object. `ndigits` should be zero or a positive integer.
+    /// Rounds sub seconds to a given precision in decimal digits (0 digits by
+    /// default). It returns a new Time object. `ndigits` should be zero or a
+    /// positive integer.
     ///
     /// Can be used to implement [`Time#round`]
     ///

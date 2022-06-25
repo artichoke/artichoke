@@ -7,12 +7,14 @@ use std::str;
 const SECONDS_IN_MINUTE: i32 = 60;
 const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
 
-/// tzdb provides [`local_tz`] to get the local system timezone. If this ever fails, we can
-/// assume `GMT`. `GMT` is used instead of `UTC` since it has a [`time_zone_designation`] - which
-/// if it is an empty string, then it is considered to be a UTC time.
+/// tzdb provides [`local_tz`] to get the local system timezone. If this ever
+/// fails, we can assume `GMT`. `GMT` is used instead of `UTC` since it has a
+/// [`time_zone_designation`] - which if it is an empty string, then it is
+/// considered to be a UTC time.
 ///
-/// Note: this matches MRI Ruby implmentation. Where `TZ="" ruby -e "puts Time::now"` will return a
-/// new _time_ with 0 offset from UTC, but still still report as a non utc time.
+/// Note: this matches MRI Ruby implmentation. Where `TZ="" ruby -e "puts
+/// Time::now"` will return a new _time_ with 0 offset from UTC, but still still
+/// report as a non utc time.
 ///
 /// [`local_tz`]: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html
 /// [`time_zone_designation`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.LocalTimeType.html#method.time_zone_designation
@@ -61,9 +63,10 @@ impl<'a> Offset {
         Self::Utc
     }
 
-    /// Generate an offset based on the detected local time zone of the system
+    /// Generate an offset based on the detected local time zone of the system.
     ///
-    /// Detection is done by [`tzdb::local_tz`], and if it fails will return a GMT timezone
+    /// Detection is done by [`tzdb::local_tz`], and if it fails will return a
+    /// GMT timezone.
     ///
     /// [`tzdb::local_tz`]: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html
     #[inline]
@@ -82,9 +85,10 @@ impl<'a> Offset {
         Self::Fixed([local_time_type])
     }
 
-    /// Generate an offset based on a provided [`tz::timezone::TimeZoneRef`]
+    /// Generate an offset based on a provided [`tz::timezone::TimeZoneRef`].
     ///
-    /// This can be combined with [`tzdb`] to generate offsets based on predefined iana time zones
+    /// This can be combined with [`tzdb`] to generate offsets based on
+    /// predefined iana time zones.
     ///
     /// ```
     /// use spinoso_time::tzrs::Offset;
@@ -100,7 +104,8 @@ impl<'a> Offset {
         Self::Tz(tz)
     }
 
-    /// Returns a `TimeZoneRef` which can be used to generate and project _time_.
+    /// Returns a `TimeZoneRef` which can be used to generate and project
+    /// _time_.
     #[inline]
     #[must_use]
     pub fn time_zone_ref(&'a self) -> TimeZoneRef<'a> {
@@ -117,7 +122,7 @@ impl<'a> Offset {
 }
 
 impl From<&str> for Offset {
-    /// Construct a Offset based on the [accepted MRI values]
+    /// Construct a Offset based on the [accepted MRI values].
     ///
     /// Accepts:
     ///

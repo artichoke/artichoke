@@ -16,17 +16,19 @@ pub use to_a::ToA;
 
 use crate::NANOS_IN_SECOND;
 
-/// A wrapper around [`tz::datetime::DateTime`] which contains everything needed for date creation and
-/// conversion to match the ruby spec. Seconds and Subseconds are stored independently as i64 and
-/// u32 respectively, which gives enough granularity to meet the ruby [`Time`] spec.
+/// A wrapper around [`tz::datetime::DateTime`] which contains everything needed
+/// for date creation and conversion to match the ruby spec. Seconds and
+/// Subseconds are stored independently as i64 and u32 respectively, which gives
+/// enough granularity to meet the ruby [`Time`] spec.
 ///
 /// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 #[must_use]
 #[derive(Debug, Copy, Clone)]
 pub struct Time {
-    /// A wrapper around [`tz::datetime::DateTime`] to provide date and time formatting
+    /// A wrapper around [`tz::datetime::DateTime`] to provide date and time
+    /// formatting.
     inner: DateTime,
-    /// The offset to used for the provided _time_
+    /// The offset to used for the provided _time_.
     offset: Offset,
 }
 
@@ -61,9 +63,10 @@ impl Ord for Time {
 impl Time {
     /// Returns a new Time from the given values in the provided `offset`.
     ///
-    /// Can be used to implment ruby [`Time#new`] (using a [`Timezone`] Object)
+    /// Can be used to implment ruby [`Time#new`] (using a [`Timezone`] Object).
     ///
-    /// Note: During DST transitions, a specific time can be ambiguous. This method will always pick the earliest date.
+    /// Note: During DST transitions, a specific time can be ambiguous. This
+    /// method will always pick the earliest date.
     ///
     /// # Examples
     /// ```
@@ -96,7 +99,7 @@ impl Time {
         Self { inner: dt, offset }
     }
 
-    /// Returns a Time with the current time in the System Timezone
+    /// Returns a Time with the current time in the System Timezone.
     ///
     /// Can be used to implement ruby [`Time#now`]
     ///
@@ -116,7 +119,8 @@ impl Time {
         Self { inner: now, offset }
     }
 
-    /// Returns a Time in the given timezone with the number of `seconds` and `nanoseconds` since the Epoch in the specified timezone
+    /// Returns a Time in the given timezone with the number of `seconds` and
+    /// `nanoseconds` since the Epoch in the specified timezone.
     ///
     /// Can be used to implement ruby [`Time#at`]
     ///
@@ -141,8 +145,8 @@ impl Time {
 impl From<ToA> for Time {
     /// Create a new Time object base on a `ToA`
     ///
-    /// Note: This converting from a Time object to a `ToA` and back again is lossy since `ToA` does
-    /// not store nanoseconds.
+    /// Note: This converting from a Time object to a `ToA` and back again is
+    /// lossy since `ToA` does not store nanoseconds.
     ///
     /// # Examples
     ///
@@ -191,8 +195,8 @@ impl Time {
         self.inner.unix_time()
     }
 
-    /// Returns the number of seconds since the Epoch with fractional nanos included at IEEE
-    /// 754-2008 accuracy.
+    /// Returns the number of seconds since the Epoch with fractional nanos
+    /// included at IEEE 754-2008 accuracy.
     ///
     /// This function can be used to implement the ruby method [`Time#to_f`]
     ///
@@ -208,20 +212,22 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn to_float(&self) -> f64 {
-        // A f64 mantissa is only 52 bits wide, so putting 64 bits in there will result in a
-        // rounding issues, however this is expected in the Ruby spec.
+        // A f64 mantissa is only 52 bits wide, so putting 64 bits in there will
+        // result in a rounding issues, however this is expected in the Ruby
+        // spec.
         #[allow(clippy::cast_precision_loss)]
         let sec = self.to_int() as f64;
         let nanos_fractional = f64::from(self.inner.nanoseconds()) / f64::from(NANOS_IN_SECOND);
         sec + nanos_fractional
     }
 
-    /// Returns the numerator and denominator for the number of nano seconds of the Time struct
-    /// unsimplified.
+    /// Returns the numerator and denominator for the number of nano seconds of
+    /// the Time struct unsimplified.
     ///
     /// This can be used directly to implement [`Time#subsec`].
     ///
-    /// This function can be used in combination with [`to_int`] to implement [`Time#to_r`].
+    /// This function can be used in combination with [`to_int`] to implement
+    /// [`Time#to_r`].
     ///
     /// #Examples
     ///

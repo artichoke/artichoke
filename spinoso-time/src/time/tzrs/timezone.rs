@@ -4,9 +4,11 @@ use super::{Offset, Time};
 
 // Timezone conversions (returns new Time)
 impl Time {
-    /// Returns a new Time object representing _time_ based on the provided offset
+    /// Returns a new Time object representing _time_ based on the provided
+    /// offset.
     ///
-    /// Can be used to implement [`Time#getlocal`] with a string/number parameter
+    /// Can be used to implement [`Time#getlocal`] with a string/number
+    /// parameter.
     ///
     /// #Examples
     ///
@@ -24,9 +26,9 @@ impl Time {
         Self::with_timespec_and_offset(self.inner.unix_time(), self.inner.nanoseconds(), offset)
     }
 
-    /// Returns a new _time_ in UTC
+    /// Returns a new _time_ in UTC.
     ///
-    /// Can be used to implement [`Time#getutc`] and [`Time#getgm`]
+    /// Can be used to implement [`Time#getutc`] and [`Time#getgm`].
     ///
     /// #Examples
     ///
@@ -44,10 +46,10 @@ impl Time {
         self.to_offset(Offset::utc())
     }
 
-    /// Returns a new Time object representing _time_ in local time (using the local time zone in
-    /// effect for this process)
+    /// Returns a new Time object representing _time_ in local time (using the
+    /// local time zone in effect for this process).
     ///
-    /// Can be used to implement [`Time#getlocal`]
+    /// Can be used to implement [`Time#getlocal`].
     ///
     /// #Examples
     ///
@@ -68,7 +70,7 @@ impl Time {
 
 // Timezone mutations
 impl Time {
-    /// Converts _time_ to the provided time zone, modifying the receiver
+    /// Converts _time_ to the provided time zone, modifying the receiver.
     ///
     /// # Examples
     /// TODO
@@ -85,9 +87,9 @@ impl Time {
     }
 
     /// Converts _time_ to local time (using the local time zone in effective at the creation time
-    /// of _time_) modifying the receiver
+    /// of _time_) modifying the receiver.
     ///
-    /// Can be used to implement [`Time#localtime`] without a parameter
+    /// Can be used to implement [`Time#localtime`] without a parameter.
     ///
     /// # Examples
     ///
@@ -106,9 +108,9 @@ impl Time {
         self.set_offset(Offset::local());
     }
 
-    /// Converts _time_ to UTC (GMT), modifying the receiver
+    /// Converts _time_ to UTC (GMT), modifying the receiver.
     ///
-    /// Can be used to implement [`Time#utc`] and [`Time#gmtime`]
+    /// Can be used to implement [`Time#utc`] and [`Time#gmtime`].
     ///
     /// # Examples
     ///
@@ -128,9 +130,9 @@ impl Time {
         self.set_offset(Offset::utc());
     }
 
-    /// Converts _time_ to the GMT time zone with the provided offset
+    /// Converts _time_ to the GMT time zone with the provided offset.
     ///
-    /// Can be used to implement [`Time#localtime`] with an offset parameter
+    /// Can be used to implement [`Time#localtime`] with an offset parameter.
     ///
     /// # Examples
     ///
