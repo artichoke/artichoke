@@ -14,6 +14,7 @@ keywords = ["artichoke", "date", "datetime", "spinoso", "time"]
 categories = ["date-and-time"]
 
 [features]
+default = ["chrono", "tzrs"]
 chrono = ["dep:chrono", "dep:chrono-tz"]
 tzrs = ["dep:lazy_static", "dep:regex", "dep:tz-rs", "dep:tzdb"]
 
