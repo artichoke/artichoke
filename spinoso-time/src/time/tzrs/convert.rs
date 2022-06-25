@@ -42,11 +42,11 @@ impl Time {
     /// Can be used to implement [`Time#strftime`]
     ///
     /// [`Time#stftime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-strftime
-    //#[inline]
-    //#[must_use]
-    //pub fn strftime(&self, _format: &str) -> String {
-    //todo!()
-    //}
+    #[inline]
+    #[must_use]
+    pub fn strftime(&self, _format: &str) -> String {
+      todo!("Not implemented. See https://github.com/artichoke/artichoke/issues/1914")
+    }
 
     /// Serialize a `Time` into its components as a [`ToA`].
     ///
