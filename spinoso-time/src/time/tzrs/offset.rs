@@ -165,7 +165,7 @@ impl From<&str> for Offset {
             "Z" | "UTC" => Self::utc(),
             _ => {
                 lazy_static! {
-                    static ref HH_MM_MATCHER: Regex = Regex::new(r"^([\-\+]{1})(\d{2})(\d{2})$").unwrap();
+                    static ref HH_MM_MATCHER: Regex = Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").unwrap();
                 }
                 if HH_MM_MATCHER.is_match(input) {
                     let caps = HH_MM_MATCHER.captures(input).unwrap();
