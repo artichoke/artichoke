@@ -50,6 +50,11 @@
 //! [`tz-rs`]: https://crates.io/crates/tz-rs
 //! [`tzdb`]: https://crates.io/crates/tzdb
 
+// Ensure code blocks in `README.md` compile
+#[cfg(all(doctest, feature = "chrono"))]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 #[cfg(feature = "tzrs")]
 #[macro_use]
 extern crate lazy_static;
