@@ -93,7 +93,27 @@ include = "all"
 
 [specs.core.string]
 include = "set"
-specs = ["scan", "tr", "tr_s"]
+specs = [
+  "bytesize",
+  "byteslice",
+  "chomp",
+  "chop",
+  "clear",
+  "delete_prefix",
+  "delete",
+  "empty",
+  "end_with",
+  "getbyte",
+  "include",
+  "length",
+  "reverse",
+  "scan",
+  "setbyte",
+  "size",
+  "start_with",
+  "tr",
+  "tr_s",
+]
 
 [specs.core.symbol]
 include = "all"
