@@ -45,7 +45,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn strftime(&self, _format: &str) -> String {
-      todo!("Not implemented. See https://github.com/artichoke/artichoke/issues/1914")
+        todo!("Not implemented. See https://github.com/artichoke/artichoke/issues/1914")
     }
 
     /// Serialize a `Time` into its components as a [`ToA`].
