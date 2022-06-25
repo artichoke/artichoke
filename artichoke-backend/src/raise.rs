@@ -39,6 +39,13 @@ unsafe extern "C-unwind" fn exc_throw(mrb: *mut sys::mrb_state, exc: sys::mrb_va
 }
 
 // ```c
+// typedef mrb_value mrb_protect_error_func(mrb_state *mrb, void *userdata);
+// MRB_API mrb_value mrb_protect_error(mrb_state *mrb, mrb_protect_error_func *body, void *userdata, mrb_bool *error);
+// ```
+//
+// NOTE: This remains implemented in mruby in `vm.c`.
+
+// ```c
 // MRB_API mrb_value
 // mrb_protect(mrb_state *mrb, mrb_func_t body, mrb_value data, mrb_bool *state)
 // ```
