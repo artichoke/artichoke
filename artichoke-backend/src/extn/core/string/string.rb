@@ -62,8 +62,8 @@ module Artichoke
 
     def self.implicit_conversion(target)
       return target if target.is_a?(::String)
-      raise TypeError, "no implicit conversion of nil into String" if target.nil?
-      raise TypeError, "no implicit conversion of Symbol into String" if target.is_a?(Symbol)
+      raise TypeError, 'no implicit conversion of nil into String' if target.nil?
+      raise TypeError, 'no implicit conversion of Symbol into String' if target.is_a?(Symbol)
 
       converted = target.to_str
       return converted if converted.is_a?(::String)
@@ -399,7 +399,8 @@ class String
 
     if start_with?(prefix)
       slice = self[prefix.length..-1]
-      return slice if self.class == String
+      return slice if instance_of?(String)
+
       return self.class.new(slice)
     end
     dup
@@ -420,7 +421,8 @@ class String
 
     if end_with?(suffix)
       slice = self[0...-suffix.length]
-      return slice if self.class == String
+      return slice if instance_of?(String)
+
       return self.class.new(slice)
     end
     dup
@@ -581,7 +583,7 @@ class String
         m = suffix.match(self)
         next if m.nil?
 
-        return true if m.end(0) == self.length
+        return true if m.end(0) == length
       else
         suffix = Artichoke::String.implicit_conversion(suffix)
         return true if suffix.empty?
