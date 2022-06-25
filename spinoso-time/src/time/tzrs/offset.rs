@@ -2,6 +2,7 @@ use regex::Regex;
 use tz::timezone::{LocalTimeType, TimeZoneRef};
 use tzdb::local_tz;
 use tzdb::time_zone::etc::GMT;
+use std::str;
 
 const SECONDS_IN_MINUTE: i32 = 60;
 const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
@@ -131,31 +132,31 @@ impl From<&str> for Offset {
     #[must_use]
     fn from(input: &str) -> Self {
         match input {
-            "A" => Self::fixed(1),
-            "B" => Self::fixed(2),
-            "C" => Self::fixed(3),
-            "D" => Self::fixed(4),
-            "E" => Self::fixed(5),
-            "F" => Self::fixed(6),
-            "G" => Self::fixed(7),
-            "H" => Self::fixed(8),
-            "I" => Self::fixed(9),
-            "K" => Self::fixed(10),
-            "L" => Self::fixed(11),
-            "M" => Self::fixed(12),
-            "N" => Self::fixed(-1),
-            "O" => Self::fixed(-2),
-            "P" => Self::fixed(-3),
-            "Q" => Self::fixed(-4),
-            "R" => Self::fixed(-5),
-            "S" => Self::fixed(-6),
-            "T" => Self::fixed(-7),
-            "U" => Self::fixed(-8),
-            "V" => Self::fixed(-9),
-            "W" => Self::fixed(-10),
-            "X" => Self::fixed(-11),
-            "Y" => Self::fixed(-12),
-            "Z" => Self::utc(),
+            "A" => Self::fixed(1 * SECONDS_IN_HOUR),
+            "B" => Self::fixed(2 * SECONDS_IN_HOUR),
+            "C" => Self::fixed(3 * SECONDS_IN_HOUR),
+            "D" => Self::fixed(4 * SECONDS_IN_HOUR),
+            "E" => Self::fixed(5 * SECONDS_IN_HOUR),
+            "F" => Self::fixed(6 * SECONDS_IN_HOUR),
+            "G" => Self::fixed(7 * SECONDS_IN_HOUR),
+            "H" => Self::fixed(8 * SECONDS_IN_HOUR),
+            "I" => Self::fixed(9 * SECONDS_IN_HOUR),
+            "K" => Self::fixed(10 * SECONDS_IN_HOUR),
+            "L" => Self::fixed(11 * SECONDS_IN_HOUR),
+            "M" => Self::fixed(12 * SECONDS_IN_HOUR),
+            "N" => Self::fixed(-1 * SECONDS_IN_HOUR),
+            "O" => Self::fixed(-2 * SECONDS_IN_HOUR),
+            "P" => Self::fixed(-3 * SECONDS_IN_HOUR),
+            "Q" => Self::fixed(-4 * SECONDS_IN_HOUR),
+            "R" => Self::fixed(-5 * SECONDS_IN_HOUR),
+            "S" => Self::fixed(-6 * SECONDS_IN_HOUR),
+            "T" => Self::fixed(-7 * SECONDS_IN_HOUR),
+            "U" => Self::fixed(-8 * SECONDS_IN_HOUR),
+            "V" => Self::fixed(-9 * SECONDS_IN_HOUR),
+            "W" => Self::fixed(-10 * SECONDS_IN_HOUR),
+            "X" => Self::fixed(-11 * SECONDS_IN_HOUR),
+            "Y" => Self::fixed(-12 * SECONDS_IN_HOUR),
+            "Z" | "UTC" => Self::utc(),
             _ => {
                 lazy_static! {
                     static ref HH_MM_MATCHER: Regex = Regex::new(r"^([\-\+]{1})(\d{2})(\d{2})$").unwrap();
