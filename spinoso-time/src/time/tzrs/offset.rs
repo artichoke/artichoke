@@ -1,5 +1,6 @@
 use std::str;
 
+use once_cell::sync::Lazy;
 use regex::Regex;
 use tz::timezone::{LocalTimeType, TimeZoneRef};
 use tzdb::local_tz;
@@ -164,9 +165,8 @@ impl From<&str> for Offset {
             "Y" => Self::fixed(-12 * SECONDS_IN_HOUR),
             "Z" | "UTC" => Self::utc(),
             _ => {
-                lazy_static! {
-                    static ref HH_MM_MATCHER: Regex = Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").unwrap();
-                }
+                static HH_MM_MATCHER: Lazy<Regex> =
+                    Lazy::new(|| Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").unwrap());
                 if HH_MM_MATCHER.is_match(input) {
                     let caps = HH_MM_MATCHER.captures(input).unwrap();
 
