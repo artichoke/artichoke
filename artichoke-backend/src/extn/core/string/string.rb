@@ -1231,7 +1231,7 @@ class String
   #
   # NOTE: Implemented in native code.
   #
-  # def upccase!; end
+  # def upcase!; end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-upto
   def upto(max, exclusive = false, &block) # rubocop:disable Style/OptionalBooleanParameter
