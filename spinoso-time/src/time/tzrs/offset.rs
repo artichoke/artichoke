@@ -138,7 +138,7 @@ impl From<&str> for Offset {
     #[must_use]
     fn from(input: &str) -> Self {
         match input {
-            "A" => Self::fixed(1 * SECONDS_IN_HOUR),
+            "A" => Self::fixed(SECONDS_IN_HOUR),
             "B" => Self::fixed(2 * SECONDS_IN_HOUR),
             "C" => Self::fixed(3 * SECONDS_IN_HOUR),
             "D" => Self::fixed(4 * SECONDS_IN_HOUR),
@@ -150,7 +150,7 @@ impl From<&str> for Offset {
             "K" => Self::fixed(10 * SECONDS_IN_HOUR),
             "L" => Self::fixed(11 * SECONDS_IN_HOUR),
             "M" => Self::fixed(12 * SECONDS_IN_HOUR),
-            "N" => Self::fixed(-1 * SECONDS_IN_HOUR),
+            "N" => Self::fixed(-SECONDS_IN_HOUR),
             "O" => Self::fixed(-2 * SECONDS_IN_HOUR),
             "P" => Self::fixed(-3 * SECONDS_IN_HOUR),
             "Q" => Self::fixed(-4 * SECONDS_IN_HOUR),
