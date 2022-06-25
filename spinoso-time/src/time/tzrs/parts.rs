@@ -282,6 +282,139 @@ impl Time {
         self.inner.week_day()
     }
 
+    /// Returns `true` if _time_ represents Sunday.
+    ///
+    /// Can be used to implement [`Time#sunday?`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::tzrs::Time;
+    /// let now = Time::utc(1970, 1, 4, 0, 0, 0, 0);
+    /// assert!(now.is_sunday());
+    /// ```
+    ///
+    /// [`Time#sunday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sunday-3F
+    #[inline]
+    #[must_use]
+    pub fn is_sunday(&self) -> bool {
+        self.day_of_week() == 0
+    }
+
+    /// Returns `true` if _time_ represents Monday.
+    ///
+    /// Can be used to implement [`Time#monday?`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::tzrs::Time;
+    /// let now = Time::utc(1970, 1, 5, 0, 0, 0, 0);
+    /// assert!(now.is_monday());
+    /// ```
+    ///
+    /// [`Time#monday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sunday-3F
+    #[inline]
+    #[must_use]
+    pub fn is_monday(&self) -> bool {
+        self.day_of_week() == 1
+    }
+
+    /// Returns `true` if _time_ represents Tuesday.
+    ///
+    /// Can be used to implement [`Time#tuesday?`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::tzrs::Time;
+    /// let now = Time::utc(1970, 1, 6, 0, 0, 0, 0);
+    /// assert!(now.is_tuesday());
+    /// ```
+    ///
+    /// [`Time#tuesday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sunday-3F
+    #[inline]
+    #[must_use]
+    pub fn is_tuesday(&self) -> bool {
+        self.day_of_week() == 2
+    }
+
+    /// Returns `true` if _time_ represents Wednesday.
+    ///
+    /// Can be used to implement [`Time#wednesday?`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::tzrs::Time;
+    /// let now = Time::utc(1970, 1, 7, 0, 0, 0, 0);
+    /// assert!(now.is_wednesday());
+    /// ```
+    ///
+    /// [`Time#wednesday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-wednesday-3F
+    #[inline]
+    #[must_use]
+    pub fn is_wednesday(&self) -> bool {
+        self.day_of_week() == 3
+    }
+
+    /// Returns `true` if _time_ represents Thursday.
+    ///
+    /// Can be used to implement [`Time#thursday?`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::tzrs::Time;
+    /// let now = Time::utc(1970, 1, 1, 0, 0, 0, 0);
+    /// assert!(now.is_thursday());
+    /// ```
+    ///
+    /// [`Time#thursday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-thursday-3F
+    #[inline]
+    #[must_use]
+    pub fn is_thursday(&self) -> bool {
+        self.day_of_week() == 4
+    }
+
+    /// Returns `true` if _time_ represents Friday.
+    ///
+    /// Can be used to implement [`Time#friday?`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::tzrs::Time;
+    /// let now = Time::utc(1970, 1, 2, 0, 0, 0, 0);
+    /// assert!(now.is_friday());
+    /// ```
+    ///
+    /// [`Time#friday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-friday-3F
+    #[inline]
+    #[must_use]
+    pub fn is_friday(&self) -> bool {
+        self.day_of_week() == 5
+    }
+
+    /// Returns `true` if _time_ represents Saturday.
+    ///
+    /// Can be used to implement [`Time#saturday?`]
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_time::tzrs::Time;
+    /// let now = Time::utc(1970, 1, 3, 0, 0, 0, 0);
+    /// assert!(now.is_saturday());
+    /// ```
+    ///
+    /// [`Time#saturday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-saturday-3F
+    #[inline]
+    #[must_use]
+    pub fn is_saturday(&self) -> bool {
+        self.day_of_week() == 6
+    }
+
     /// Returns an integer representing the day of the year, 1..366.
     ///
     /// Can be used to implement [`Time#yday`].
