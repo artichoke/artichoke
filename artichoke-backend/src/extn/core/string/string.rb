@@ -394,9 +394,14 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_prefix
   def delete_prefix(prefix)
-    raise TypeError, "no implicit conversion of #{prefix.class} into String" unless prefix.is_a?(String)
-    return self[prefix.length..-1] if start_with?(prefix)
+    prefix = Artichoke::String.implicit_conversion(prefix)
+    return dup if prefix.empty?
 
+    if start_with?(prefix)
+      slice = self[prefix.length..-1]
+      return slice if self.class == String
+      return self.class.new(slice)
+    end
     dup
   end
 
@@ -410,10 +415,14 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_suffix
   def delete_suffix(suffix)
-    raise TypeError, "no implicit conversion of #{suffix.class} into String" unless suffix.is_a?(String)
+    suffix = Artichoke::String.implicit_conversion(suffix)
+    return dup if suffix.empty?
 
-    return self[0..-suffix.length] if end_with?(suffix)
-
+    if end_with?(suffix)
+      slice = self[0...-suffix.length]
+      return slice if self.class == String
+      return self.class.new(slice)
+    end
     dup
   end
 
