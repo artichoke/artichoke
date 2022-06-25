@@ -59,6 +59,25 @@ module Artichoke
       end
       result
     end
+
+    def self.implicit_conversion(target)
+      return target if target.is_a?(::String)
+      raise TypeError, 'no implicit conversion of nil into String' if target.nil?
+      raise TypeError, 'no implicit conversion of Symbol into String' if target.is_a?(Symbol)
+
+      converted = target.to_str
+      return converted if converted.is_a?(::String)
+
+      inspect_name = target.class.name
+      inspect_name = target.inspect if target.is_a?(TrueClass) || target.is_a?(FalseClass) || target.nil?
+      message = "can't convert #{inspect_name} to String (#{inspect_name}#to_str gives #{converted.class})"
+      raise TypeError, message
+    rescue NoMethodError
+      inspect_name = target.class.name
+      inspect_name = target.inspect if target.is_a?(TrueClass) || target.is_a?(FalseClass) || target.nil?
+      message = "no implicit conversion of #{inspect_name} into String"
+      raise TypeError, message
+    end
   end
 end
 
@@ -80,6 +99,7 @@ class Encoding
   Shift_JIS = new('Shift_JIS')
   SHIFT_JIS = Shift_JIS
   UTF_8 = new('UTF-8')
+  UTF_32BE = new('UTF-32BE')
 
   def self.default_external
     UTF_8
@@ -361,40 +381,57 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete
   def delete(*args)
-    args.inject(self) { |string, pattern| string.tr(pattern, '') }
+    args.inject(self) { |string, pattern| Artichoke::String.implicit_conversion(string).tr(pattern, '') }
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete-21
   def delete!(*args)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = delete(*args)
     replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_prefix
   def delete_prefix(prefix)
-    raise TypeError, "no implicit conversion of #{prefix.class} into String" unless prefix.is_a?(String)
-    return self[prefix.length..-1] if start_with?(prefix)
+    prefix = Artichoke::String.implicit_conversion(prefix)
+    return dup if prefix.empty?
 
+    if start_with?(prefix)
+      slice = self[prefix.length..-1]
+      return slice if instance_of?(String)
+
+      return self.class.new(slice)
+    end
     dup
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_prefix-21
   def delete_prefix!(prefix)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = delete_prefix(prefix)
     replace(replaced) unless self == replaced
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_suffix
   def delete_suffix(suffix)
-    raise TypeError, "no implicit conversion of #{suffix.class} into String" unless suffix.is_a?(String)
+    suffix = Artichoke::String.implicit_conversion(suffix)
+    return dup if suffix.empty?
 
-    return self[0..-suffix.length] if end_with?(suffix)
+    if end_with?(suffix)
+      slice = self[0...-suffix.length]
+      return slice if instance_of?(String)
 
+      return self.class.new(slice)
+    end
     dup
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_suffix-21
   def delete_suffix!(prefix)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = delete_suffix(prefix)
     replace(replaced) unless self == replaced
   end
@@ -538,7 +575,20 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-end_with-3F
   def end_with?(*suffixes)
     suffixes.each do |suffix|
-      return true if self[-suffix.length..-1] == suffix
+      case suffix
+      when String
+        return true if suffix.empty?
+        return true if self[-suffix.length..-1] == suffix
+      when Regexp
+        m = suffix.match(self)
+        next if m.nil?
+
+        return true if m.end(0) == length
+      else
+        suffix = Artichoke::String.implicit_conversion(suffix)
+        return true if suffix.empty?
+        return true if self[-suffix.length..-1] == suffix
+      end
     end
     false
   end
@@ -610,6 +660,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-gsub-21
   def gsub!(pattern, replacement = nil, &blk)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = gsub(pattern, replacement, &blk)
     replace(replaced) unless self == replaced
   end
@@ -709,6 +761,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-lstrip-21
   def lstrip!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = lstrip
     replace(replaced) unless self == replaced
   end
@@ -736,6 +790,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-next-21
   def next!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     raise NotImplementedError
   end
   alias succ! next!
@@ -829,6 +885,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-rstrip-21
   def rstrip!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = rstrip
     replace(replaced) unless self == replaced
   end
@@ -847,6 +905,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-scrub-21
   def scrub!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     # TODO: This is a stub. Implement scrub! correctly.
     self
   end
@@ -966,6 +1026,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-squeeze-21
   def squeeze!(*other_str)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = squeeze(*other_str)
     replace(replaced) unless self == replaced
   end
@@ -973,7 +1035,18 @@ class String
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-start_with-3F
   def start_with?(*prefixes)
     prefixes.each do |prefix|
-      return true if self[0...prefix.length] == prefix
+      case prefix
+      when String
+        return true if self[0...prefix.length] == prefix
+      when Regexp
+        m = prefix.match(self)
+        next if m.nil?
+
+        return true if m.begin(0).zero?
+      else
+        prefix = Artichoke::String.implicit_conversion(prefix)
+        return true if self[0...prefix.length] == prefix
+      end
     end
     false
   end
@@ -987,6 +1060,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-strip-21
   def strip!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = strip
     replace(replaced) unless self == replaced
   end
@@ -1019,6 +1094,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-sub-21
   def sub!(pattern, replacement = nil, &blk)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = sub(pattern, replacement, &blk)
     replace(replaced) unless self == replaced
   end
@@ -1035,6 +1112,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-swapcase-21
   def swapcase!(*_args)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     raise NotImplementedError
   end
 
@@ -1091,7 +1170,7 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-tr-21
   def tr!(from_str, to_str)
-    raise FrozenError if frozen?
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
 
     replaced = tr(from_str, to_str)
     replace(replaced) unless self == replaced
@@ -1104,7 +1183,7 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-tr_s-21
   def tr_s!(from_str, to_str)
-    raise FrozenError if frozen?
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
 
     replaced = tr_s(from_str, to_str)
     replace(replaced) unless self == replaced
@@ -1122,6 +1201,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-unicode_normalize-21
   def unicode_normalize!(_form = :nfc)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     raise NotImplementedError
   end
 
@@ -1152,7 +1233,7 @@ class String
   #
   # NOTE: Implemented in native code.
   #
-  # def upccase!; end
+  # def upcase!; end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-upto
   def upto(max, exclusive = false, &block) # rubocop:disable Style/OptionalBooleanParameter
