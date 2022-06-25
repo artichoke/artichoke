@@ -109,7 +109,7 @@ impl<'a> Offset {
     /// _time_.
     #[inline]
     #[must_use]
-    pub fn time_zone_ref(&'a self) -> TimeZoneRef<'a> {
+    pub fn time_zone_ref(&self) -> TimeZoneRef<'_> {
         match self {
             Self::Utc => TimeZoneRef::utc(),
             Self::Fixed(local_time_types) => match TimeZoneRef::new(&[], local_time_types, &[], &None) {
