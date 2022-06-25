@@ -59,6 +59,25 @@ module Artichoke
       end
       result
     end
+
+    def self.implicit_conversion(target)
+      return target if target.is_a?(::String)
+      raise TypeError, "no implicit conversion of nil into String" if target.nil?
+      raise TypeError, "no implicit conversion of Symbol into String" if target.is_a?(Symbol)
+
+      converted = target.to_str
+      return converted if converted.is_a?(::String)
+
+      inspect_name = target.class.name
+      inspect_name = target.inspect if target.is_a?(TrueClass) || target.is_a?(FalseClass) || target.nil?
+      message = "can't convert #{inspect_name} to String (#{inspect_name}#to_str gives #{converted.class})"
+      raise TypeError, message
+    rescue NoMethodError
+      inspect_name = target.class.name
+      inspect_name = target.inspect if target.is_a?(TrueClass) || target.is_a?(FalseClass) || target.nil?
+      message = "no implicit conversion of #{inspect_name} into String"
+      raise TypeError, message
+    end
   end
 end
 
