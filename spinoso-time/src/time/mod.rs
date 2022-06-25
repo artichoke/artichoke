@@ -1,6 +1,6 @@
 //! Implementations of Ruby [`Time`], a timezone-aware datetime.
 //!
-//! These modules contain implementations of a timestamp storage struct and
+//! This module contains implementations of a timestamp storage struct and
 //! associated datetime operations that view that timestamp through the lens of
 //! a timezone offset. These timestamps can be used to implement the Ruby `Time`
 //! core class.
