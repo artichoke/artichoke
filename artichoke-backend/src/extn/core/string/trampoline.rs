@@ -8,6 +8,7 @@ use artichoke_core::value::Value as _;
 use bstr::ByteSlice;
 
 use crate::convert::implicitly_convert_to_int;
+use crate::convert::implicitly_convert_to_nilable_string;
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::core::array::Array;
 #[cfg(feature = "core-regexp")]
@@ -689,8 +690,11 @@ pub fn chomp(interp: &mut Artichoke, mut value: Value, separator: Option<Value>)
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let mut dup = s.clone();
     if let Some(mut separator) = separator {
-        let sep = unsafe { implicitly_convert_to_string(interp, &mut separator)? };
-        let _ = dup.chomp(Some(sep));
+        if let Some(sep) = unsafe { implicitly_convert_to_nilable_string(interp, &mut separator)? } {
+            let _ = dup.chomp(Some(sep));
+        } else {
+            return interp.try_convert_mut("");
+        }
     } else {
         let _ = dup.chomp(None::<&[u8]>);
     }
@@ -711,8 +715,11 @@ pub fn chomp_bang(interp: &mut Artichoke, mut value: Value, separator: Option<Va
     unsafe {
         let string_mut = s.as_inner_mut();
         let modified = if let Some(mut separator) = separator {
-            let sep = implicitly_convert_to_string(interp, &mut separator)?;
-            string_mut.chomp(Some(sep))
+            if let Some(sep) = implicitly_convert_to_nilable_string(interp, &mut separator)? {
+                string_mut.chomp(Some(sep))
+            } else {
+                return Ok(Value::nil());
+            }
         } else {
             string_mut.chomp(None::<&[u8]>)
         };
@@ -721,7 +728,7 @@ pub fn chomp_bang(interp: &mut Artichoke, mut value: Value, separator: Option<Va
             return super::String::box_into_value(s, value, interp);
         }
     }
-    Ok(value)
+    Ok(Value::nil())
 }
 
 pub fn chop(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
