@@ -386,6 +386,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete-21
   def delete!(*args)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = delete(*args)
     replace(replaced) unless self == replaced
   end
@@ -400,6 +402,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_prefix-21
   def delete_prefix!(prefix)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = delete_prefix(prefix)
     replace(replaced) unless self == replaced
   end
@@ -415,6 +419,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-delete_suffix-21
   def delete_suffix!(prefix)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = delete_suffix(prefix)
     replace(replaced) unless self == replaced
   end
@@ -630,6 +636,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-gsub-21
   def gsub!(pattern, replacement = nil, &blk)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = gsub(pattern, replacement, &blk)
     replace(replaced) unless self == replaced
   end
@@ -729,6 +737,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-lstrip-21
   def lstrip!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = lstrip
     replace(replaced) unless self == replaced
   end
@@ -756,6 +766,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-next-21
   def next!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     raise NotImplementedError
   end
   alias succ! next!
@@ -849,6 +861,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-rstrip-21
   def rstrip!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = rstrip
     replace(replaced) unless self == replaced
   end
@@ -867,6 +881,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-scrub-21
   def scrub!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     # TODO: This is a stub. Implement scrub! correctly.
     self
   end
@@ -986,6 +1002,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-squeeze-21
   def squeeze!(*other_str)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = squeeze(*other_str)
     replace(replaced) unless self == replaced
   end
@@ -1007,6 +1025,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-strip-21
   def strip!
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = strip
     replace(replaced) unless self == replaced
   end
@@ -1039,6 +1059,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-sub-21
   def sub!(pattern, replacement = nil, &blk)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     replaced = sub(pattern, replacement, &blk)
     replace(replaced) unless self == replaced
   end
@@ -1055,6 +1077,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-swapcase-21
   def swapcase!(*_args)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     raise NotImplementedError
   end
 
@@ -1111,7 +1135,7 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-tr-21
   def tr!(from_str, to_str)
-    raise FrozenError if frozen?
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
 
     replaced = tr(from_str, to_str)
     replace(replaced) unless self == replaced
@@ -1124,7 +1148,7 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-tr_s-21
   def tr_s!(from_str, to_str)
-    raise FrozenError if frozen?
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
 
     replaced = tr_s(from_str, to_str)
     replace(replaced) unless self == replaced
@@ -1142,6 +1166,8 @@ class String
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-unicode_normalize-21
   def unicode_normalize!(_form = :nfc)
+    raise FrozenError, "can't modify frozen String: #{inspect}" if frozen?
+
     raise NotImplementedError
   end
 

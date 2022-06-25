@@ -4,6 +4,7 @@ use core::hash::{BuildHasher, Hash, Hasher};
 use core::str;
 
 use artichoke_core::hash::Hash as _;
+use artichoke_core::value::Value as _;
 use bstr::ByteSlice;
 
 use crate::convert::implicitly_convert_to_int;
@@ -361,6 +362,15 @@ pub fn aref(
 }
 
 pub fn aset(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    if value.is_frozen(interp) {
+        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+        let message = "can't modify frozen String: "
+            .chars()
+            .chain(s.inspect())
+            .collect::<super::String>();
+        return Err(FrozenError::from(message.into_vec()).into());
+    }
+
     let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     Err(NotImplementedError::new().into())
 }
@@ -580,6 +590,15 @@ pub fn capitalize(interp: &mut Artichoke, mut value: Value) -> Result<Value, Err
 }
 
 pub fn capitalize_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    if value.is_frozen(interp) {
+        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+        let message = "can't modify frozen String: "
+            .chars()
+            .chain(s.inspect())
+            .collect::<super::String>();
+        return Err(FrozenError::from(message.into_vec()).into());
+    }
+
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     // Safety:
     //
@@ -679,6 +698,15 @@ pub fn chomp(interp: &mut Artichoke, mut value: Value, separator: Option<Value>)
 }
 
 pub fn chomp_bang(interp: &mut Artichoke, mut value: Value, separator: Option<Value>) -> Result<Value, Error> {
+    if value.is_frozen(interp) {
+        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+        let message = "can't modify frozen String: "
+            .chars()
+            .chain(s.inspect())
+            .collect::<super::String>();
+        return Err(FrozenError::from(message.into_vec()).into());
+    }
+
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     unsafe {
         let string_mut = s.as_inner_mut();
@@ -704,6 +732,15 @@ pub fn chop(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 }
 
 pub fn chop_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    if value.is_frozen(interp) {
+        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+        let message = "can't modify frozen String: "
+            .chars()
+            .chain(s.inspect())
+            .collect::<super::String>();
+        return Err(FrozenError::from(message.into_vec()).into());
+    }
+
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     if s.is_empty() {
         return Ok(Value::nil());
@@ -726,6 +763,15 @@ pub fn chr(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 }
 
 pub fn clear(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    if value.is_frozen(interp) {
+        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+        let message = "can't modify frozen String: "
+            .chars()
+            .chain(s.inspect())
+            .collect::<super::String>();
+        return Err(FrozenError::from(message.into_vec()).into());
+    }
+
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     // Safety:
     //
@@ -983,6 +1029,15 @@ pub fn reverse(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error>
 }
 
 pub fn reverse_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    if value.is_frozen(interp) {
+        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+        let message = "can't modify frozen String: "
+            .chars()
+            .chain(s.inspect())
+            .collect::<super::String>();
+        return Err(FrozenError::from(message.into_vec()).into());
+    }
+
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     // Safety:
     //
@@ -1146,8 +1201,19 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
 }
 
 pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Value) -> Result<Value, Error> {
-    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let index = implicitly_convert_to_int(interp, index)?;
+    let i64_byte = implicitly_convert_to_int(interp, byte)?;
+
+    if value.is_frozen(interp) {
+        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+        let message = "can't modify frozen String: "
+            .chars()
+            .chain(s.inspect())
+            .collect::<super::String>();
+        return Err(FrozenError::from(message.into_vec()).into());
+    }
+
+    let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let index = if let Ok(index) = usize::try_from(index) {
         index
     } else {
@@ -1165,7 +1231,6 @@ pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Val
             return Err(IndexError::from(message).into());
         }
     };
-    let i64_byte = implicitly_convert_to_int(interp, byte)?;
     // Wrapping when negative is intentional
     //
     // ```
