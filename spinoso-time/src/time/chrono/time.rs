@@ -179,8 +179,8 @@ impl Time {
     /// # Implementation notes
     ///
     /// The IEEE 754 double is not accurate enough to represent the exact number
-    /// of nanoseconds since the Unix Epoch. [`nanosecond`](Self::nanosecond) is
-    /// more accurate than [`to_float`](Self::to_float).
+    /// of nanoseconds since the Unix Epoch. [`nanoseconds`](Self::nanoseconds)
+    /// is more accurate than [`to_float`](Self::to_float).
     ///
     /// [leap seconds]: https://en.wikipedia.org/wiki/Leap_second
     #[inline]
