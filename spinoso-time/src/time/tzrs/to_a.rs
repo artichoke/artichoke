@@ -31,33 +31,6 @@ pub struct ToA {
     pub zone: String,
 }
 
-impl ToA {
-    /// `ToA` represents ten-element array of values for time:
-    ///
-    /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-    pub const ELEMENTS: usize = 10;
-
-    /// A ten-element array of values for time:
-    ///
-    /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-    #[inline]
-    #[must_use]
-    pub fn to_tuple(&self) -> (u8, u8, u8, u8, u8, i32, u8, u16, bool, String) {
-        (
-            self.sec,
-            self.min,
-            self.hour,
-            self.day,
-            self.month,
-            self.year,
-            self.wday,
-            self.yday,
-            self.isdst,
-            self.zone.clone(),
-        )
-    }
-}
-
 impl From<Time> for ToA {
     #[inline]
     #[must_use]

@@ -58,7 +58,7 @@ impl Time {
     /// min, hour, day, month, year, wday, yday, isdst, zone].
     ///
     /// The ordering of the properties is important for the Ruby [`Time#to_a`]
-    /// API, and is accessible with the [`ToA::to_tuple`] method.
+    /// API.
     ///
     /// Can be used to implement [`Time#to_a`]
     ///
