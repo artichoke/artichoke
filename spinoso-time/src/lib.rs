@@ -43,6 +43,12 @@
 //! - `chrono` which is backed by the [`chrono`] crate
 //! - `tzrs` which is backed by the [`tz-rs`] crate
 //!
+//! Additional features
+//!
+//! - `tzrs-local` (_enabled by default, implicitly enables `tzrs`_)
+//!
+//!   This enables the detection of the system timezone. If disabled, defaults to GMT (not UTC)
+//!
 //! This crate requires [`std`], the Rust Standard Library.
 //!
 //! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html

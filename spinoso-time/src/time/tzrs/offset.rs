@@ -3,6 +3,7 @@ use std::str;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tz::timezone::{LocalTimeType, TimeZoneRef};
+#[cfg(feature = "tzrs-local")]
 use tzdb::local_tz;
 use tzdb::time_zone::etc::GMT;
 
@@ -20,6 +21,7 @@ const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
 ///
 /// [`local_tz`]: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html
 /// [`time_zone_designation`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.LocalTimeType.html#method.time_zone_designation
+#[cfg(feature = "tzrs-local")]
 #[inline]
 #[must_use]
 fn local_time_zone() -> TimeZoneRef<'static> {
@@ -27,6 +29,13 @@ fn local_time_zone() -> TimeZoneRef<'static> {
         Some(tz) => tz,
         None => GMT,
     }
+}
+
+#[cfg(not(feature = "tzrs-local"))]
+#[inline]
+#[must_use]
+fn local_time_zone() -> TimeZoneRef<'static> {
+    GMT
 }
 
 /// Generates a [+/-]HHMM timezone format from a given number of seconds
