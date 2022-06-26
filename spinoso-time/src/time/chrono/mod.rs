@@ -52,7 +52,7 @@ pub use offset::Offset;
 /// let time = Time::now();
 /// let one_hour_ago: Time = time - (60 * 60);
 /// assert_eq!(time.to_int() - 3600, one_hour_ago.to_int());
-/// assert_eq!(time.nanosecond(), one_hour_ago.nanosecond());
+/// assert_eq!(time.nanoseconds(), one_hour_ago.nanoseconds());
 /// ```
 ///
 /// # Implementation notes
@@ -284,7 +284,7 @@ mod leap_second {
         assert!(datetime.nanosecond() > NANOS_IN_SECOND);
         let time = Time::from(datetime);
         assert_eq!(time.second(), 60);
-        assert_eq!(time.nanosecond(), 500_000_000);
+        assert_eq!(time.nanoseconds(), 500_000_000);
         let ToA {
             sec,
             min,
@@ -328,8 +328,8 @@ mod tests {
         assert_eq!(time.hour(), 1);
         assert_eq!(time.minute(), 30);
         assert_eq!(time.second(), 21);
-        assert_eq!(time.microsecond(), 0);
-        assert_eq!(time.nanosecond(), 0);
+        assert_eq!(time.microseconds(), 0);
+        assert_eq!(time.nanoseconds(), 0);
         assert_eq!(time.weekday(), 0);
         assert_eq!(time.year_day(), 97);
         assert!(!time.is_dst());
@@ -345,8 +345,8 @@ mod tests {
         assert_eq!(time.hour(), 18);
         assert_eq!(time.minute(), 30);
         assert_eq!(time.second(), 21);
-        assert_eq!(time.microsecond(), 0);
-        assert_eq!(time.nanosecond(), 0);
+        assert_eq!(time.microseconds(), 0);
+        assert_eq!(time.nanoseconds(), 0);
         assert_eq!(time.weekday(), 6);
         assert_eq!(time.year_day(), 96);
         // TODO: Implement DST and timezone detection. This requires a new release of
@@ -368,8 +368,8 @@ mod tests {
         assert_eq!(time.hour(), 18);
         assert_eq!(time.minute(), 30);
         assert_eq!(time.second(), 21);
-        assert_eq!(time.microsecond(), 0);
-        assert_eq!(time.nanosecond(), 0);
+        assert_eq!(time.microseconds(), 0);
+        assert_eq!(time.nanoseconds(), 0);
         assert_eq!(time.weekday(), 6);
         assert_eq!(time.year_day(), 96);
         // TODO: Implement DST and timezone detection. This requires a new release of

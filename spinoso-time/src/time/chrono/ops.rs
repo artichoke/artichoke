@@ -347,10 +347,10 @@ mod tests {
         assert_ne!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 0);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 500_000_000 {
-            assert!(succ.nanosecond() - 500_000_000 < 50);
+        if succ.nanoseconds() > 500_000_000 {
+            assert!(succ.nanoseconds() - 500_000_000 < 50);
         } else {
-            assert!(500_000_000 - succ.nanosecond() < 50);
+            assert!(500_000_000 - succ.nanoseconds() < 50);
         }
     }
 
@@ -367,10 +367,10 @@ mod tests {
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 59);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 700_000_000 {
-            assert!(succ.nanosecond() - 700_000_000 < 50);
+        if succ.nanoseconds() > 700_000_000 {
+            assert!(succ.nanoseconds() - 700_000_000 < 50);
         } else {
-            assert!(700_000_000 - succ.nanosecond() < 50);
+            assert!(700_000_000 - succ.nanoseconds() < 50);
         }
 
         let dt = Time::from(datetime());
@@ -384,10 +384,10 @@ mod tests {
         assert_ne!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 0);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 200_000_000 {
-            assert!(succ.nanosecond() - 200_000_000 < 50);
+        if succ.nanoseconds() > 200_000_000 {
+            assert!(succ.nanoseconds() - 200_000_000 < 50);
         } else {
-            assert!(200_000_000 - succ.nanosecond() < 50);
+            assert!(200_000_000 - succ.nanoseconds() < 50);
         }
     }
 
@@ -404,10 +404,10 @@ mod tests {
         assert_ne!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 0);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 700_000_000 {
-            assert!(succ.nanosecond() - 700_000_000 < 50);
+        if succ.nanoseconds() > 700_000_000 {
+            assert!(succ.nanoseconds() - 700_000_000 < 50);
         } else {
-            assert!(700_000_000 - succ.nanosecond() < 50);
+            assert!(700_000_000 - succ.nanoseconds() < 50);
         }
 
         let dt = Time::from(datetime());
@@ -421,10 +421,10 @@ mod tests {
         assert_ne!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 1);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 200_000_000 {
-            assert!(succ.nanosecond() - 200_000_000 < 50);
+        if succ.nanoseconds() > 200_000_000 {
+            assert!(succ.nanoseconds() - 200_000_000 < 50);
         } else {
-            assert!(200_000_000 - succ.nanosecond() < 50);
+            assert!(200_000_000 - succ.nanoseconds() < 50);
         }
     }
 
@@ -441,10 +441,10 @@ mod tests {
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 58);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 500_000_000 {
-            assert!(succ.nanosecond() - 500_000_000 < 50);
+        if succ.nanoseconds() > 500_000_000 {
+            assert!(succ.nanoseconds() - 500_000_000 < 50);
         } else {
-            assert!(500_000_000 - succ.nanosecond() < 50);
+            assert!(500_000_000 - succ.nanoseconds() < 50);
         }
     }
 
@@ -461,10 +461,10 @@ mod tests {
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 59);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 300_000_000 {
-            assert!(succ.nanosecond() - 300_000_000 < 50);
+        if succ.nanoseconds() > 300_000_000 {
+            assert!(succ.nanoseconds() - 300_000_000 < 50);
         } else {
-            assert!(300_000_000 - succ.nanosecond() < 50);
+            assert!(300_000_000 - succ.nanoseconds() < 50);
         }
 
         let dt = Time::from(datetime());
@@ -478,10 +478,10 @@ mod tests {
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 58);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 800_000_000 {
-            assert!(succ.nanosecond() - 800_000_000 < 50);
+        if succ.nanoseconds() > 800_000_000 {
+            assert!(succ.nanoseconds() - 800_000_000 < 50);
         } else {
-            assert!(800_000_000 - succ.nanosecond() < 50);
+            assert!(800_000_000 - succ.nanoseconds() < 50);
         }
     }
 
@@ -498,10 +498,10 @@ mod tests {
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 58);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 300_000_000 {
-            assert!(succ.nanosecond() - 300_000_000 < 50);
+        if succ.nanoseconds() > 300_000_000 {
+            assert!(succ.nanoseconds() - 300_000_000 < 50);
         } else {
-            assert!(300_000_000 - succ.nanosecond() < 50);
+            assert!(300_000_000 - succ.nanoseconds() < 50);
         }
 
         let dt = Time::from(datetime());
@@ -515,10 +515,10 @@ mod tests {
         assert_eq!(dt.minute(), succ.minute());
         assert_eq!(succ.second(), 57);
         // handle in-exactitude of float arithmetic
-        if succ.nanosecond() > 800_000_000 {
-            assert!(succ.nanosecond() - 800_000_000 < 50);
+        if succ.nanoseconds() > 800_000_000 {
+            assert!(succ.nanoseconds() - 800_000_000 < 50);
         } else {
-            assert!(800_000_000 - succ.nanosecond() < 50);
+            assert!(800_000_000 - succ.nanoseconds() < 50);
         }
     }
 }
