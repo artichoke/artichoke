@@ -33,7 +33,7 @@ impl Time {
 
     /// Returns the number of microseconds for _time_.
     ///
-    /// Can be used to implement [`Time#usec`] and [`Time#tv_usec`]
+    /// Can be used to implement [`Time#usec`] and [`Time#tv_usec`].
     ///
     /// # Examples
     ///
@@ -178,8 +178,9 @@ impl Time {
 
     /// Returns the name of the time zone as a string.
     ///
-    /// Note: UTC is an empty string due to the [`UTC LocaleTimeType`] being
-    /// constructed with None, which is later coerced into an [`empty string`].
+    /// **Note**: For some offset variants, UTC may return an empty string from
+    /// this method due to the [UTC `LocaleTimeType`][tzrs-utc] being constructed
+    /// with [`None`], which is later coerced into an [empty string].
     ///
     /// # Examples
     /// ```
@@ -188,8 +189,8 @@ impl Time {
     /// assert_eq!("UTC", now_utc.time_zone());
     /// ```
     ///
-    /// [`UTC LocalTimeType`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#180
-    /// [`empty string`]: https://docs.rs/tz-rs/0.6.9/src/tz/timezone/mod.rs.html#210
+    /// [tzrs-utc]: https://docs.rs/tz-rs/0.6.10/src/tz/timezone/mod.rs.html#180
+    /// [empty string]: https://docs.rs/tz-rs/0.6.10/src/tz/timezone/mod.rs.html#210
     #[inline]
     #[must_use]
     pub fn time_zone(&self) -> &str {
@@ -284,7 +285,7 @@ impl Time {
 
     /// Returns `true` if _time_ represents Sunday.
     ///
-    /// Can be used to implement [`Time#sunday?`]
+    /// Can be used to implement [`Time#sunday?`].
     ///
     /// # Examples
     ///
@@ -303,7 +304,7 @@ impl Time {
 
     /// Returns `true` if _time_ represents Monday.
     ///
-    /// Can be used to implement [`Time#monday?`]
+    /// Can be used to implement [`Time#monday?`].
     ///
     /// # Examples
     ///
@@ -322,7 +323,7 @@ impl Time {
 
     /// Returns `true` if _time_ represents Tuesday.
     ///
-    /// Can be used to implement [`Time#tuesday?`]
+    /// Can be used to implement [`Time#tuesday?`].
     ///
     /// # Examples
     ///
@@ -341,7 +342,7 @@ impl Time {
 
     /// Returns `true` if _time_ represents Wednesday.
     ///
-    /// Can be used to implement [`Time#wednesday?`]
+    /// Can be used to implement [`Time#wednesday?`].
     ///
     /// # Examples
     ///
@@ -360,7 +361,7 @@ impl Time {
 
     /// Returns `true` if _time_ represents Thursday.
     ///
-    /// Can be used to implement [`Time#thursday?`]
+    /// Can be used to implement [`Time#thursday?`].
     ///
     /// # Examples
     ///
@@ -379,7 +380,7 @@ impl Time {
 
     /// Returns `true` if _time_ represents Friday.
     ///
-    /// Can be used to implement [`Time#friday?`]
+    /// Can be used to implement [`Time#friday?`].
     ///
     /// # Examples
     ///
@@ -398,7 +399,7 @@ impl Time {
 
     /// Returns `true` if _time_ represents Saturday.
     ///
-    /// Can be used to implement [`Time#saturday?`]
+    /// Can be used to implement [`Time#saturday?`].
     ///
     /// # Examples
     ///

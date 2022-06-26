@@ -4,7 +4,7 @@ use crate::NANOS_IN_SECOND;
 impl Time {
     /// Returns a new Time object, one second later than time.
     ///
-    /// This method should log a deprecation warning if [`Time::nanosecond`] is
+    /// This method should log a deprecation warning if [`Time::nanoseconds`] is
     /// non-zero.
     ///
     /// # Examples

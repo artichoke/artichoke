@@ -2,9 +2,9 @@ use super::Offset;
 use super::Time;
 
 impl Time {
-    /// Returns a Time based on the provided values in the local timezone
+    /// Returns a Time based on the provided values in the local timezone.
     ///
-    /// Can be used to implement ruby [`Time#local`], [`Time#mktime`]
+    /// Can be used to implement Ruby [`Time#local`], [`Time#mktime`].
     ///
     /// [`Time#local`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-local
     /// [`Time#mktime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-mktime
@@ -22,9 +22,9 @@ impl Time {
         )
     }
 
-    /// Returns a Time based on the provided values in UTC
+    /// Returns a Time based on the provided values in UTC.
     ///
-    /// Can be used to implement ruby [`Time#utc`], [`Time#gm`]
+    /// Can be used to implement Ruby [`Time#utc`], [`Time#gm`].
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-utc
     /// [`Time#gm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-gm

@@ -359,14 +359,14 @@ pub fn is_saturday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Err
 
 pub fn microsecond(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let microsecond = time.microsecond();
+    let microsecond = time.microseconds();
     let result = interp.convert(microsecond);
     Ok(result)
 }
 
 pub fn nanosecond(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let nanosecond = time.nanosecond();
+    let nanosecond = time.nanoseconds();
     let result = interp.convert(nanosecond);
     Ok(result)
 }

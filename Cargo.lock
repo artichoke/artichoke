@@ -747,11 +747,10 @@ dependencies = [
 
 [[package]]
 name = "spinoso-time"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "chrono",
  "chrono-tz",
- "const_fn",
  "once_cell",
  "regex",
  "tz-rs",
@@ -802,9 +801,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tz-rs"
-version = "0.6.9"
+version = "0.6.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed700577df0503a291cb0eec06edeb4da3debd33d49cffa81c720112a6e51ca6"
+checksum = "1f3e4cde225c596cb96495478b4afbdc2d23e20218a18afbf64603a320a2c02b"
 dependencies = [
  "const_fn",
 ]
