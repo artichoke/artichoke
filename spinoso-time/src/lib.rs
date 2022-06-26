@@ -33,21 +33,30 @@
 //! Time.now
 //! ```
 //!
-//! This implementation of `Time` is dependant on the selected feature. The `chrono` feature uses the [`chrono`] crate, and the `tzrs` feature uses the [`tzdb`] for getting the local timezone information, and combines with the [`tz-rs`] crate to generate the time.
+//! This implementation of `Time` is dependent on the selected feature. The
+//! **chrono** feature uses the [`chrono`] crate, and the **tzrs** feature uses
+//! the [`tzdb`] crate for getting the local timezone information, and combines
+//! with the [`tz-rs`] crate to generate the time.
 //!
 //! # Crate features
 //!
-//! This crate supports two backends which are mutually exclusive to each other. These backends can
-//! be selected using the following features:
+//! This crate supports two backends which are independent of each other. The
+//! availability of different backends is controlled by Cargo features, all of
+//! which are enabled by default:
 //!
-//! - `chrono` which is backed by the [`chrono`] crate
-//! - `tzrs` which is backed by the [`tz-rs`] crate
+//! - **chrono**: Enable a `Time` backend which is implemented with the
+//!   [`chrono`] crate.
+//! - **tzrs**: Enable a `Time` backend wich is implemented by the [`tz-rs`] and
+//!   [`tzdb`] crates.
 //!
-//! Additional features
+//! ## Additional features
 //!
-//! - `tzrs-local` (_enabled by default, implicitly enables `tzrs`_)
+//! - **tzrs-local**: Enable the detection of the system timezone with the
+//!   **tzrs** backend. This feature is enabled by default. Enabling this
+//!   feature also activates the **tzrs** feature.
 //!
-//!   This enables the detection of the system timezone. If disabled, defaults to GMT (not UTC)
+//!   If the **tzrs-local** feature is disabled, the local timezone is defaulted
+//!   to GMT (not UTC).
 //!
 //! This crate requires [`std`], the Rust Standard Library.
 //!
