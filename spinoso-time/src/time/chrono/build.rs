@@ -19,7 +19,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::chrono::Time;
     /// let now = Time::new();
     /// ```
     #[inline]
@@ -35,7 +35,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::chrono::Time;
     /// let now = Time::now();
     /// ```
     #[inline]
@@ -58,7 +58,7 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::Time;
+    /// use spinoso_time::chrono::Time;
     /// let epoch = Time::at(0, 0);
     /// let epoch_plus_1_nano = Time::at(0, 1);
     /// ```

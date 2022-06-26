@@ -23,8 +23,10 @@ class, it is globally available:
 Time.now
 ```
 
-This implementation of `Time` supports the system clock via the [`chrono`]
-crate.
+This implementation of `Time` is dependant on the selected feature. The `chrono`
+feature uses the [`chrono`] crate, and the `tzrs` feature uses the [`tzdb`] for
+getting the local timezone information, and combines with the [`tz-rs`] crate to
+generate the time.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
@@ -36,13 +38,15 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-time = "0.2.0"
+spinoso-time = { version = "0.3.0", features = ["chrono"] }
 ```
 
 ## Examples
 
+Assuming feature `chrono` is selected:
+
 ```rust
-use spinoso_time::Time;
+use spinoso_time::chrono::Time;
 // Get a local time set to the current time.
 let now = Time::now();
 // Convert the local time to UTC.
@@ -58,3 +62,5 @@ let timestamp = utc.to_int();
 
 [`time`]: https://ruby-doc.org/core-2.6.3/Time.html
 [`chrono`]: https://crates.io/crates/chrono
+[`tz-rs`]: https://crates.io/crates/tz-rs
+[`tzdb`]: https://crates.io/crates/tzdb

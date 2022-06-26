@@ -33,28 +33,42 @@
 //! Time.now
 //! ```
 //!
-//! This implementation of `Time` supports the system clock via the
-//! [`chrono`] crate.
+//! This implementation of `Time` is dependant on the selected feature. The `chrono` feature uses the [`chrono`] crate, and the `tzrs` feature uses the [`tzdb`] for getting the local timezone information, and combines with the [`tz-rs`] crate to generate the time.
 //!
 //! # Crate features
+//!
+//! This crate supports two backends which are mutually exclusive to each other. These backends can
+//! be selected using the following features:
+//!
+//! - `chrono` which is backed by the [`chrono`] crate
+//! - `tzrs` which is backed by the [`tz-rs`] crate
+//!
+//! Additional features
+//!
+//! - `tzrs-local` (_enabled by default, implicitly enables `tzrs`_)
+//!
+//!   This enables the detection of the system timezone. If disabled, defaults to GMT (not UTC)
 //!
 //! This crate requires [`std`], the Rust Standard Library.
 //!
 //! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 //! [`chrono`]: https://crates.io/crates/chrono
+//! [`tz-rs`]: https://crates.io/crates/tz-rs
+//! [`tzdb`]: https://crates.io/crates/tzdb
 
 // Ensure code blocks in `README.md` compile
-#[cfg(doctest)]
+#[cfg(all(doctest, feature = "chrono"))]
 #[doc = include_str!("../README.md")]
 mod readme {}
 
-use core::fmt;
 use core::time::Duration;
-use std::error::Error;
 
 mod time;
 
-pub use time::chrono::{Offset, Time, ToA};
+#[cfg(feature = "chrono")]
+pub use time::chrono;
+#[cfg(feature = "tzrs")]
+pub use time::tzrs;
 
 /// Number of nanoseconds in one second.
 #[allow(clippy::cast_possible_truncation)] // 1e9 < u32::MAX
@@ -63,69 +77,3 @@ pub const NANOS_IN_SECOND: u32 = Duration::from_secs(1).as_nanos() as u32;
 /// Number of microseconds in one nanosecond.
 #[allow(clippy::cast_possible_truncation)] // 1000 < u32::MAX
 pub const MICROS_IN_NANO: u32 = Duration::from_micros(1).as_nanos() as u32;
-
-/// Error returned when constructing a [`Time`] from a [`ToA`].
-///
-/// This error is returned when a time component in the `ToA` exceeds the maximum
-/// permissible value for a datetime. For example, invalid values include a
-/// datetime 5000 days or 301 seconds.
-///
-/// # Examples
-///
-/// Invalid date component:
-///
-/// ```
-/// # use spinoso_time::{Offset, Time, ToA, ComponentOutOfRangeError};
-/// let to_a = ToA {
-///     sec: 21,
-///     min: 3,
-///     hour: 23,
-///     day: 5000,
-///     month: 4,
-///     year: 2020,
-///     wday: 0,
-///     yday: 96,
-///     isdst: true,
-///     zone: Offset::Local,
-/// };
-/// let time = Time::try_from(to_a);
-/// assert_eq!(time, Err(ComponentOutOfRangeError::Date));
-/// ```
-///
-/// Invalid time component:
-///
-/// ```
-/// # use spinoso_time::{Offset, Time, ToA, ComponentOutOfRangeError};
-/// let to_a = ToA {
-///     sec: 301,
-///     min: 3,
-///     hour: 23,
-///     day: 5,
-///     month: 4,
-///     year: 2020,
-///     wday: 0,
-///     yday: 96,
-///     isdst: true,
-///     zone: Offset::Local,
-/// };
-/// let time = Time::try_from(to_a);
-/// assert_eq!(time, Err(ComponentOutOfRangeError::Time));
-/// ```
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum ComponentOutOfRangeError {
-    /// Date component (year, month, day) out of range.
-    Date,
-    /// Time component (hour, minute, second) out of range.
-    Time,
-}
-
-impl fmt::Display for ComponentOutOfRangeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Date => f.write_str("Date component (year, month, day) out of range"),
-            Self::Time => f.write_str("Time component (hour, minute, second) out of range"),
-        }
-    }
-}
-
-impl Error for ComponentOutOfRangeError {}

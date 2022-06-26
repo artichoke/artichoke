@@ -35,7 +35,7 @@ spinoso-regexp = { version = "0.3.0", path = "../spinoso-regexp", optional = tru
 spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", optional = true }
 spinoso-string = { version = "0.18.0", path = "../spinoso-string" }
 spinoso-symbol = { version = "0.3.0", path = "../spinoso-symbol" }
-spinoso-time = { version = "0.2.0", path = "../spinoso-time", optional = true }
+spinoso-time = { version = "0.3.0", path = "../spinoso-time", features = ["chrono"], default-features = false, optional = true }
 
 [dev-dependencies]
 quickcheck = { version = "1.0.3", default-features = false }
