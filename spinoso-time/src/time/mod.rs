@@ -6,10 +6,10 @@
 //! core class.
 //!
 //! There are two independent backends which can be selected by specifying the
-//! `chrono` or `tzrs` feature.
+//! `chrono` or `tzrs` feature:
 //!
-//! `chrono` is based on the [`chrono`] crate.
-//! `tzrs` is based on the [`tz-rs`] crate.
+//! - `chrono` is based on the [`chrono`] crate.
+//! - `tzrs` is based on the [`tz-rs`] crate.
 //!
 //! Both backends store datetimes as a `i64` [Unix timestamp], subsecond
 //! nanoseconds as a `u32`, and a timezone offset which can be one of several
