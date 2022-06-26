@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use core::fmt;
 use core::mem::size_of;
 
@@ -58,7 +59,7 @@ const DEFAULT_SEED: u32 = 5489_u32;
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Random {
     mt: Mt,
-    seed: [u32; 4],
+    seed: Vec<u32>,
 }
 
 impl Default for Random {
@@ -89,6 +90,13 @@ impl From<[u32; DEFAULT_SEED_CNT]> for Random {
     #[inline]
     fn from(seed: [u32; DEFAULT_SEED_CNT]) -> Self {
         Self::with_array_seed(seed)
+    }
+}
+
+impl From<&[u32]> for Random {
+    #[inline]
+    fn from(seed: &[u32]) -> Self {
+        Self::with_array_seed(seed.iter().copied())
     }
 }
 
@@ -130,7 +138,10 @@ impl Random {
     pub fn new() -> Result<Self, InitializeError> {
         if let Ok(seed) = new_seed() {
             let mt = Mt::new_with_key(seed.iter().copied());
-            Ok(Self { mt, seed })
+            Ok(Self {
+                mt,
+                seed: seed.to_vec(),
+            })
         } else {
             Err(InitializeError::new())
         }
@@ -152,7 +163,10 @@ impl Random {
         let mt = Mt::new(seed);
         let seed = u128::from(seed).to_le_bytes();
         let seed = seed_to_key(seed);
-        Self { mt, seed }
+        Self {
+            mt,
+            seed: seed.to_vec(),
+        }
     }
 
     /// Create a new random number generator using the given seed.
@@ -167,9 +181,17 @@ impl Random {
     /// ```
     #[inline]
     #[must_use]
-    pub fn with_array_seed(seed: [u32; DEFAULT_SEED_CNT]) -> Self {
-        let mt = Mt::new_with_key(seed.iter().copied());
-        Self { mt, seed }
+    pub fn with_array_seed<T>(seed: T) -> Self
+    where
+        T: IntoIterator<Item = u32>,
+        T::IntoIter: Clone,
+    {
+        let iter = seed.into_iter();
+        let mt = Mt::new_with_key(iter.clone());
+        Self {
+            mt,
+            seed: iter.collect(),
+        }
     }
 
     /// Create a new random number generator using the given seed.
@@ -187,7 +209,10 @@ impl Random {
     pub fn with_byte_array_seed(seed: [u8; DEFAULT_SEED_BYTES]) -> Self {
         let seed = seed_to_key(seed);
         let mt = Mt::new_with_key(seed.iter().copied());
-        Self { mt, seed }
+        Self {
+            mt,
+            seed: seed.to_vec(),
+        }
     }
 
     /// Generate next `u32` output.
@@ -281,8 +306,8 @@ impl Random {
     /// ```
     #[inline]
     #[must_use]
-    pub const fn seed(&self) -> [u32; 4] {
-        self.seed
+    pub fn seed(&self) -> &[u32] {
+        &self.seed
     }
 }
 

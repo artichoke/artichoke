@@ -21,7 +21,10 @@ impl SeedableRng for Random {
     fn from_seed(seed: Self::Seed) -> Self {
         let seed = seed_to_key(seed);
         let mt = Mt::new_with_key(seed.iter().copied());
-        Self { mt, seed }
+        Self {
+            mt,
+            seed: seed.to_vec(),
+        }
     }
 }
 

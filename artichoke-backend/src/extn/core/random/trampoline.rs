@@ -54,6 +54,9 @@ pub fn seed(interp: &mut Artichoke, mut rand: Value) -> Result<Value, Error> {
         Rng::Global => interp.prng()?.seed(),
         Rng::Instance(random) => random.seed(),
     };
+    let seed = seed
+        .try_into()
+        .map_err(|_| Fatal::with_message("Got random seed larger than i128"))?;
     interp.try_convert(Seed::from_mt_seed_lossy(seed))
 }
 
@@ -65,7 +68,12 @@ pub fn new_seed(interp: &mut Artichoke) -> Result<Value, Error> {
 
 pub fn srand(interp: &mut Artichoke, seed: Option<Value>) -> Result<Value, Error> {
     let seed: Seed = interp.try_convert_mut(seed)?;
-    let old_seed = Seed::from_mt_seed_lossy(interp.prng()?.seed());
+    let old_seed = interp
+        .prng()?
+        .seed()
+        .try_into()
+        .map_err(|_| Fatal::with_message("Got random seed larger than i128"))?;
+    let old_seed = Seed::from_mt_seed_lossy(old_seed);
 
     let new_random = if let Some(seed) = seed.to_mt_seed() {
         Random::with_array_seed(seed)

@@ -94,6 +94,8 @@
 #[doc = include_str!("../README.md")]
 mod readme {}
 
+extern crate alloc;
+
 #[cfg(any(feature = "std", test, doctest))]
 extern crate std;
 
