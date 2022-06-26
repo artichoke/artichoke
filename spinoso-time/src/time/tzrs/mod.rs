@@ -16,14 +16,44 @@ pub use to_a::ToA;
 
 use crate::NANOS_IN_SECOND;
 
-/// A wrapper around [`tz::datetime::DateTime`] which contains everything needed
-/// for date creation and conversion to match the ruby spec. Seconds and
-/// Subseconds are stored independently as i64 and u32 respectively, which gives
-/// enough granularity to meet the ruby [`Time`] spec.
+/// Implementation of Ruby [`Time`], a timezone-aware datetime, based on
+/// [`tz-rs`] and [`tzdb`].
+///
+/// `Time` is represented as:
+///
+/// - a 64-bit signed integer of seconds since January 1, 1970 UTC (a Unix
+///   timestamp).
+/// - an unsigned 32-bit integer of nanoseconds since the timestamp.
+/// - An offset from UTC. See [`Offset`] for the types of supported offsets.
+///
+/// This data structure allows representing roughly 584 billion years. Unlike
+/// MRI, there is no promotion to `Bignum` or `Rational`. The maximum
+/// granularity of a `Time` object is nanoseconds.
+///
+/// `Time` objects are immutable. Date/time value manipulation always returns a
+/// new `Time` object.
+///
+/// # Examples
+///
+/// ```
+/// # use spinoso_time::tzrs::Time;
+/// // Create a Time to the current system clock with local offset
+/// let time = Time::now();
+/// assert!(!time.is_utc());
+/// println!("{}", time.is_sunday());
+/// ```
+///
+/// ```
+/// # use spinoso_time::tzrs::Time;
+/// let time = Time::now();
+/// let one_hour_ago: Time = time - (60 * 60);
+/// assert_eq!(time.to_int() - 3600, one_hour_ago.to_int());
+/// assert_eq!(time.nanosecond(), one_hour_ago.nanosecond());
+/// ```
 ///
 /// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 #[must_use]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Time {
     /// A wrapper around [`tz::datetime::DateTime`] to provide date and time
     /// formatting.
@@ -35,6 +65,22 @@ pub struct Time {
 impl Hash for Time {
     #[inline]
     fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash is only based on the nanos since epoch:
+        //
+        // ```console
+        // [3.1.2] > t = Time.now
+        // => 2022-06-26 14:41:03.192545 -0700
+        // [3.1.2] > t.zone
+        // => "PDT"
+        // [3.1.2] > t.hash
+        // => 3894887943343456722
+        // [3.1.2] > u = t.utc
+        // => 2022-06-26 21:41:03.192545 UTC
+        // [3.1.2] > u.zone
+        // => "UTC"
+        // [3.1.2] > u.hash
+        // => 3894887943343456722
+        // ```
         state.write_i128(self.inner.total_nanoseconds());
     }
 }
