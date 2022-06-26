@@ -59,16 +59,22 @@ fn offset_hhmm_from_seconds(seconds: i32) -> String {
     format!("{}{:0>2}{:0>2}", flag, offset_hours, offset_minutes)
 }
 
-/// Represents the number of seconds offset from UTC.
+/// Represents the number of seconds offset from UTC
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Offset {
+    pub(crate) inner: OffsetType,
+}
+
+/// Represents the type of offset from UTC
 #[allow(variant_size_differences)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum Offset {
-    /// UTC offset, zero offset, Zulu time.
+pub(crate) enum OffsetType {
+    /// UTC offset, zero offset, Zulu time
     Utc,
     /// Fixed offset from UTC.
     ///
     /// **Note**: A fixed offset of 0 is different from UTC time.
-    Fixed([LocalTimeType; 1]),
+    Fixed(LocalTimeType),
     /// A time zone based offset.
     Tz(TimeZoneRef<'static>),
 }
@@ -78,7 +84,7 @@ impl<'a> Offset {
     #[inline]
     #[must_use]
     pub fn utc() -> Self {
-        Self::Utc
+        Self { inner: OffsetType::Utc }
     }
 
     /// Generate an offset based on the detected local time zone of the system.
@@ -90,7 +96,9 @@ impl<'a> Offset {
     #[inline]
     #[must_use]
     pub fn local() -> Self {
-        Self::Tz(local_time_zone())
+        Self {
+            inner: OffsetType::Tz(local_time_zone()),
+        }
     }
 
     /// Generate an offset with a number of seconds from UTC.
@@ -100,7 +108,9 @@ impl<'a> Offset {
         let offset_name = offset_hhmm_from_seconds(offset);
         let local_time_type =
             LocalTimeType::new(offset, false, Some(offset_name.as_bytes())).expect("Couldn't create fixed offset");
-        Self::Fixed([local_time_type])
+        Self {
+            inner: OffsetType::Fixed(local_time_type),
+        }
     }
 
     /// Generate an offset based on a provided [`tz::timezone::TimeZoneRef`].
@@ -108,30 +118,31 @@ impl<'a> Offset {
     /// This can be combined with [`tzdb`] to generate offsets based on
     /// predefined IANA time zones.
     ///
-    /// ```
-    /// use spinoso_time::tzrs::Offset;
-    /// use tzdb::time_zone::pacific::AUCKLAND;
-    /// let offset = Offset::tz(AUCKLAND);
-    /// ```
+    /// [`tz:timezone::TimeZoneRef`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.TimeZoneRef.html
+    /// [`tzdb`]: https://docs.rs/tzdb/latest/tzdb/index.html
     #[inline]
     #[must_use]
-    pub fn tz(tz: TimeZoneRef<'static>) -> Self {
-        Self::Tz(tz)
+    pub(crate) fn tz(tz: TimeZoneRef<'static>) -> Self {
+        Self {
+            inner: OffsetType::Tz(tz),
+        }
     }
 
     /// Returns a `TimeZoneRef` which can be used to generate and project
     /// _time_.
     #[inline]
     #[must_use]
-    pub fn time_zone_ref(&self) -> TimeZoneRef<'_> {
-        match self {
-            Self::Utc => TimeZoneRef::utc(),
-            Self::Fixed(local_time_types) => match TimeZoneRef::new(&[], local_time_types, &[], &None) {
-                Ok(tz) => tz,
-                Err(_) => GMT,
-            },
+    pub(crate) fn time_zone_ref(&self) -> TimeZoneRef<'_> {
+        match self.inner {
+            OffsetType::Utc => TimeZoneRef::utc(),
+            OffsetType::Fixed(ref local_time_type) => {
+                match TimeZoneRef::new(&[], std::slice::from_ref(local_time_type), &[], &None) {
+                    Ok(tz) => tz,
+                    Err(_) => GMT,
+                }
+            }
 
-            Self::Tz(zone) => *zone,
+            OffsetType::Tz(zone) => zone,
         }
     }
 }
@@ -250,30 +261,30 @@ mod tests {
     }
 
     fn offset_name(offset: &Offset) -> &str {
-        match offset {
-            Offset::Utc => "UTC",
-            Offset::Fixed(ltt) => ltt[0].time_zone_designation(),
-            Offset::Tz(_) => "Ambiguous timezone name",
+        match offset.inner {
+            OffsetType::Utc => "UTC",
+            OffsetType::Fixed(ref ltt) => ltt.time_zone_designation(),
+            OffsetType::Tz(_) => "Ambiguous timezone name",
         }
     }
 
     #[test]
     fn fixed_zero_is_not_utc() {
         let offset = Offset::from(0);
-        assert!(matches!(offset, Offset::Fixed(_)));
+        assert!(matches!(offset.inner, OffsetType::Fixed(_)));
     }
 
     #[test]
     fn z_is_utc() {
         let offset = Offset::from("Z");
-        assert!(matches!(offset, Offset::Utc));
+        assert!(matches!(offset.inner, OffsetType::Utc));
     }
 
     #[test]
     fn from_binary_string() {
         let tz: &[u8] = b"Z";
         let offset = Offset::from(tz);
-        assert!(matches!(offset, Offset::Utc));
+        assert!(matches!(offset.inner, OffsetType::Utc));
     }
 
     #[test]
