@@ -46,11 +46,12 @@ use crate::NANOS_IN_SECOND;
 /// ```
 /// # use spinoso_time::tzrs::Time;
 /// let time = Time::now();
-/// let one_hour_ago: Time = time - (60 * 60);
+/// let one_hour_ago: Time = time - (60_u32 * 60);
 /// assert_eq!(time.to_int() - 3600, one_hour_ago.to_int());
-/// assert_eq!(time.nanosecond(), one_hour_ago.nanosecond());
+/// assert_eq!(time.nanoseconds(), one_hour_ago.nanoseconds());
 /// ```
 ///
+/// [`tz-rs`]: tz
 /// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
 #[must_use]
 #[derive(Debug, Clone, Copy)]
