@@ -185,6 +185,13 @@ impl From<&str> for Offset {
     }
 }
 
+impl From<&[u8]> for Offset {
+    fn from(input: &[u8]) -> Self {
+        let input = str::from_utf8(input).expect("Invalid UTF8");
+        Offset::from(input)
+    }
+}
+
 impl From<String> for Offset {
     fn from(input: String) -> Self {
         Offset::from(input.as_str())
@@ -235,6 +242,13 @@ mod tests {
     #[test]
     fn z_is_utc() {
         let offset = Offset::from("Z");
+        assert!(matches!(offset, Offset::Utc));
+    }
+
+    #[test]
+    fn from_binary_string() {
+        let tz: &[u8] = b"Z";
+        let offset = Offset::from(tz);
         assert!(matches!(offset, Offset::Utc));
     }
 
