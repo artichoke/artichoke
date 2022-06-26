@@ -804,13 +804,14 @@ dependencies = [
 
 [[package]]
 name = "tzdb"
-version = "0.2.2"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc0437e776b6817d971b5bea211775117a7e04533a3763ecb0b6e3aad7a2e105"
+checksum = "64e2d9fac3d6b0f652729fe3ac37c2c581a52037114690dd5e39dfafdfb22b25"
 dependencies = [
  "byte-slice-cast",
  "iana-time-zone",
  "phf",
+ "phf_shared",
  "tz-rs",
 ]
 
