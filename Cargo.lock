@@ -648,7 +648,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-random"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "getrandom",
  "libm",

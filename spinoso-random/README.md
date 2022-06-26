@@ -31,7 +31,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-random = "0.2.0"
+spinoso-random = "0.3.0"
 ```
 
 Generate integers:
@@ -60,7 +60,7 @@ fn example() -> Result<(), Error> {
 ## `no_std`
 
 This crate is `no_std` compatible when built without the `std` feature. This
-crate does not depend on [`alloc`].
+crate depends on [`alloc`].
 
 ## Crate features
 

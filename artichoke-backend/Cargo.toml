@@ -30,7 +30,7 @@ spinoso-array = { version = "0.9.0", path = "../spinoso-array", default-features
 spinoso-env = { version = "0.2.0", path = "../spinoso-env", optional = true, default-features = false }
 spinoso-exception = { version = "0.1.0", path = "../spinoso-exception" }
 spinoso-math = { version = "0.3.0", path = "../spinoso-math", optional = true, default-features = false }
-spinoso-random = { version = "0.2.0", path = "../spinoso-random", optional = true }
+spinoso-random = { version = "0.3.0", path = "../spinoso-random", optional = true }
 spinoso-regexp = { version = "0.3.0", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", optional = true }
 spinoso-string = { version = "0.18.0", path = "../spinoso-string" }
