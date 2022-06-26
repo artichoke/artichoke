@@ -164,7 +164,7 @@ impl Time {
     /// min, hour, day, month, year, wday, yday, isdst, zone].
     ///
     /// The ordering of the properties is important for the Ruby [`Time#to_a`]
-    /// API, and is accessible with the [`ToA::to_tuple`] method.
+    /// API.
     ///
     /// # Examples
     ///
@@ -215,24 +215,6 @@ pub struct ToA {
     pub zone: Offset,
 }
 
-impl ToA {
-    /// `ToA` represents ten-element array of values for time:
-    ///
-    /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-    pub const ELEMENTS: usize = 10;
-
-    /// A ten-element array of values for time:
-    ///
-    /// [sec, min, hour, day, month, year, wday, yday, isdst, zone]
-    #[inline]
-    #[must_use]
-    pub fn to_tuple(self) -> (u32, u32, u32, u32, u32, i32, u32, u32, bool, Offset) {
-        (
-            self.sec, self.min, self.hour, self.day, self.month, self.year, self.wday, self.yday, self.isdst,
-            self.zone,
-        )
-    }
-}
 impl From<Time> for ToA {
     #[inline]
     fn from(time: Time) -> Self {
