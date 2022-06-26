@@ -17,13 +17,20 @@ const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
 ///
 /// Note: this matches MRI Ruby implmentation. Where `TZ="" ruby -e "puts
 /// Time::now"` will return a new _time_ with 0 offset from UTC, but still still
-/// report as a non utc time.
+/// report as a non UTC time:
 ///
-/// [`local_tz`]: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html
-/// [`time_zone_designation`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.LocalTimeType.html#method.time_zone_designation
-#[cfg(feature = "tzrs-local")]
+/// ```console
+/// $ TZ="" ruby -e 'puts RUBY_VERSION' -e 't = Time.now' -e 'puts t' -e 'puts t.utc?'
+/// 3.1.2
+/// 2022-06-26 22:22:25 +0000
+/// false
+/// ```
+///
+/// [`local_tz`]: tzdb::local_tz
+/// [`time_zone_designation`]: tz::timezone::LocalTimeType::time_zone_designation
 #[inline]
 #[must_use]
+#[cfg(feature = "tzrs-local")]
 fn local_time_zone() -> TimeZoneRef<'static> {
     match local_tz() {
         Some(tz) => tz,
@@ -31,9 +38,9 @@ fn local_time_zone() -> TimeZoneRef<'static> {
     }
 }
 
-#[cfg(not(feature = "tzrs-local"))]
 #[inline]
 #[must_use]
+#[cfg(not(feature = "tzrs-local"))]
 fn local_time_zone() -> TimeZoneRef<'static> {
     GMT
 }
@@ -52,22 +59,22 @@ fn offset_hhmm_from_seconds(seconds: i32) -> String {
     format!("{}{:0>2}{:0>2}", flag, offset_hours, offset_minutes)
 }
 
-/// Represents the number of seconds offset from UTC
+/// Represents the number of seconds offset from UTC.
 #[allow(variant_size_differences)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Offset {
-    /// UTC offset, zero offset, Zulu time
+    /// UTC offset, zero offset, Zulu time.
     Utc,
-    /// Fixed offset from UTC
+    /// Fixed offset from UTC.
     ///
-    /// Note: A fixed offset of 0 is different from UTC time
+    /// **Note**: A fixed offset of 0 is different from UTC time.
     Fixed([LocalTimeType; 1]),
-    /// A time zone based offset
+    /// A time zone based offset.
     Tz(TimeZoneRef<'static>),
 }
 
 impl<'a> Offset {
-    /// Generate a UTC based offset
+    /// Generate a UTC based offset.
     #[inline]
     #[must_use]
     pub fn utc() -> Self {
@@ -99,16 +106,13 @@ impl<'a> Offset {
     /// Generate an offset based on a provided [`tz::timezone::TimeZoneRef`].
     ///
     /// This can be combined with [`tzdb`] to generate offsets based on
-    /// predefined iana time zones.
+    /// predefined IANA time zones.
     ///
     /// ```
     /// use spinoso_time::tzrs::Offset;
     /// use tzdb::time_zone::pacific::AUCKLAND;
     /// let offset = Offset::tz(AUCKLAND);
     /// ```
-    ///
-    /// [`tz:timezone::TimeZoneRef`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.TimeZoneRef.html
-    /// [`tzdb`]: https://docs.rs/tzdb/latest/tzdb/index.html
     #[inline]
     #[must_use]
     pub fn tz(tz: TimeZoneRef<'static>) -> Self {
@@ -138,15 +142,18 @@ impl From<&str> for Offset {
     /// Accepts:
     ///
     /// - `[+/-]HH[:]MM`
-    /// - A-I representing +01:00 to +09:00
-    /// - K-M representing +10:00 to +12:00
-    /// - N-Y representing -01:00 to -12:00
-    /// - Z representing 0 offset
+    /// - A-I representing +01:00 to +09:00.
+    /// - K-M representing +10:00 to +12:00.
+    /// - N-Y representing -01:00 to -12:00.
+    /// - Z representing UTC/Zulu time (0 offset).
     ///
     /// [accepted MRI values]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     #[inline]
     #[must_use]
     fn from(input: &str) -> Self {
+        static HH_MM_MATCHER: Lazy<Regex> =
+            Lazy::new(|| Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").expect("Regex should be valid"));
+
         match input {
             "A" => Self::fixed(SECONDS_IN_HOUR),
             "B" => Self::fixed(2 * SECONDS_IN_HOUR),
@@ -172,10 +179,18 @@ impl From<&str> for Offset {
             "W" => Self::fixed(-10 * SECONDS_IN_HOUR),
             "X" => Self::fixed(-11 * SECONDS_IN_HOUR),
             "Y" => Self::fixed(-12 * SECONDS_IN_HOUR),
+            // ```console
+            // [3.1.2] > Time.new(2022, 6, 26, 13, 57, 6, 'Z')
+            // => 2022-06-26 13:57:06 UTC
+            // [3.1.2] > Time.new(2022, 6, 26, 13, 57, 6, 'Z').utc?
+            // => true
+            // [3.1.2] > Time.new(2022, 6, 26, 13, 57, 6, 'UTC')
+            // => 2022-06-26 13:57:06 UTC
+            // [3.1.2] > Time.new(2022, 6, 26, 13, 57, 6, 'UTC').utc?
+            // => true
+            // ```
             "Z" | "UTC" => Self::utc(),
             _ => {
-                static HH_MM_MATCHER: Lazy<Regex> =
-                    Lazy::new(|| Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").unwrap());
                 if HH_MM_MATCHER.is_match(input) {
                     let caps = HH_MM_MATCHER.captures(input).unwrap();
 
