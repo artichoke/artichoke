@@ -30,9 +30,6 @@ use crate::NANOS_IN_SECOND;
 /// MRI, there is no promotion to `Bignum` or `Rational`. The maximum
 /// granularity of a `Time` object is nanoseconds.
 ///
-/// `Time` objects are immutable. Date/time value manipulation always returns a
-/// new `Time` object.
-///
 /// # Examples
 ///
 /// ```
@@ -110,12 +107,14 @@ impl Ord for Time {
 impl Time {
     /// Returns a new Time from the given values in the provided `offset`.
     ///
-    /// Can be used to implment ruby [`Time#new`] (using a [`Timezone`] Object).
+    /// Can be used to implment the Ruby method [`Time#new`] (using a
+    /// [`Timezone`] Object).
     ///
-    /// Note: During DST transitions, a specific time can be ambiguous. This
+    /// **Note**: During DST transitions, a specific time can be ambiguous. This
     /// method will always pick the earliest date.
     ///
     /// # Examples
+    ///
     /// ```
     /// use spinoso_time::tzrs::{Time, Offset};
     /// use tzdb::time_zone::pacific::AUCKLAND;
@@ -148,7 +147,7 @@ impl Time {
 
     /// Returns a Time with the current time in the System Timezone.
     ///
-    /// Can be used to implement ruby [`Time#now`]
+    /// Can be used to implement the Ruby method [`Time#now`].
     ///
     /// # Examples
     ///
@@ -169,7 +168,7 @@ impl Time {
     /// Returns a Time in the given timezone with the number of `seconds` and
     /// `nanoseconds` since the Epoch in the specified timezone.
     ///
-    /// Can be used to implement ruby [`Time#at`]
+    /// Can be used to implement the Ruby method [`Time#at`].
     ///
     /// # Examples
     ///
@@ -192,8 +191,8 @@ impl Time {
 impl From<ToA> for Time {
     /// Create a new Time object base on a `ToA`
     ///
-    /// Note: This converting from a Time object to a `ToA` and back again is
-    /// lossy since `ToA` does not store nanoseconds.
+    /// **Note**: This converting from a Time object to a `ToA` and back again
+    /// is lossy since `ToA` does not store nanoseconds.
     ///
     /// # Examples
     ///
@@ -224,7 +223,8 @@ impl From<ToA> for Time {
 impl Time {
     /// Returns the number of seconds as a signed integer since the Epoch.
     ///
-    /// This function can be used to implement the ruby methods [`Time#to_i`] and [`Time#tv_sec`]
+    /// This function can be used to implement the Ruby methods [`Time#to_i`]
+    /// and [`Time#tv_sec`].
     ///
     /// # Examples
     ///
@@ -245,7 +245,7 @@ impl Time {
     /// Returns the number of seconds since the Epoch with fractional nanos
     /// included at IEEE 754-2008 accuracy.
     ///
-    /// This function can be used to implement the ruby method [`Time#to_f`]
+    /// This function can be used to implement the Ruby method [`Time#to_f`].
     ///
     /// # Examples
     ///

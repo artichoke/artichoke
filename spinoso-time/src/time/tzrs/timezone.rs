@@ -10,7 +10,7 @@ impl Time {
     /// Can be used to implement [`Time#getlocal`] with a string/number
     /// parameter.
     ///
-    /// #Examples
+    /// # Examples
     ///
     /// ```
     /// use spinoso_time::tzrs::Time;
@@ -30,7 +30,7 @@ impl Time {
     ///
     /// Can be used to implement [`Time#getutc`] and [`Time#getgm`].
     ///
-    /// #Examples
+    /// # Examples
     ///
     /// ```
     /// use spinoso_time::tzrs::Time;
@@ -51,7 +51,7 @@ impl Time {
     ///
     /// Can be used to implement [`Time#getlocal`].
     ///
-    /// #Examples
+    /// # Examples
     ///
     /// ```
     /// use spinoso_time::tzrs::Time;
