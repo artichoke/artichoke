@@ -58,12 +58,11 @@ impl Time {
 
                 let truncated = u64::from(nanos) / truncating_divisor;
                 let mut new_nanos = if truncated % 10 >= 5 {
-                    (truncated / 10) + 1
+                    ((truncated / 10) + 1) * rounding_multiple
                 } else {
-                    truncated / 10
+                    (truncated / 10) * rounding_multiple
                 }
-                .checked_mul(rounding_multiple)
-                .and_then(|nanos| nanos.try_into().ok())
+                .try_into()
                 .expect("new nanos are a truncated version of input which is in bounds for u32");
 
                 if new_nanos >= NANOS_IN_SECOND {
