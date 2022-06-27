@@ -20,10 +20,10 @@
 //! [`tzrs`]: https://crates.io/crates/tz-rs
 //! [Unix timestamp]: https://en.wikipedia.org/wiki/Unix_time
 
-/// A Time struct backed by the `chrono` rust crate
+/// A Time struct backed by the [`chrono`](::chrono) crate.
 #[cfg(feature = "chrono")]
 pub mod chrono;
 
-/// A Time struct backed by the `tz-rs` rust crate
+/// A Time struct backed by the [`tz-rs`](tz) crate.
 #[cfg(feature = "tzrs")]
 pub mod tzrs;
