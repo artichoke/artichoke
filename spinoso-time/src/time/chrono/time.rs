@@ -2,7 +2,7 @@ use chrono::prelude::*;
 use chrono_tz::Tz;
 
 use crate::time::chrono::{Offset, Time};
-use crate::NANOS_IN_SECOND;
+use crate::{MICROS_IN_NANO, NANOS_IN_SECOND};
 
 impl Time {
     /// Returns the hour of the day `0..=23` for _time_.
@@ -160,7 +160,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub const fn microseconds(self) -> u32 {
-        self.sub_second_nanos / 1_000
+        self.sub_second_nanos / MICROS_IN_NANO
     }
 
     /// Returns the number of nanoseconds for _time_.
