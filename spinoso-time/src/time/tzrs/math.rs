@@ -29,15 +29,43 @@ impl Time {
     pub fn round(&self, digits: u32) -> Self {
         match digits {
             9..=u32::MAX => *self,
+            // Does integer truncation with round up at 5.
+            //
+            // ``console
+            // [3.1.2] > t = Time.at(Time.new(2010, 3, 30, 5, 43, 25).to_i, 123_456_789, :nsec)
+            // => 2010-03-30 05:43:25.123456789 -0700
+            // [3.1.2] > (0..9).each {|d| u = t.round(d); puts "#{d}: #{u.nsec}" }
+            // 0: 0
+            // 1: 100000000
+            // 2: 120000000
+            // 3: 123000000
+            // 4: 123500000
+            // 5: 123460000
+            // 6: 123457000
+            // 7: 123456800
+            // 8: 123456790
+            // 9: 123456789
+            // ```
             digits => {
                 let local_time_type = *self.inner.local_time_type();
                 let mut unix_time = self.to_int();
-                let nanos = f64::from(self.nanoseconds()) / f64::from(NANOS_IN_SECOND);
+                let nanos = self.nanoseconds();
 
-                let exponent_shift = f64::from(10_u32.pow(digits));
+                // `digits` is guaranteed to be at most `8` so these subtractions
+                // can never underflow.
+                let truncating_divisor = 10_u64.pow(9 - digits - 1);
+                let rounding_multiple = 10_u64.pow(9 - digits);
 
-                let rounded_nanos = (nanos * exponent_shift).round() / exponent_shift;
-                let mut new_nanos = (rounded_nanos * f64::from(NANOS_IN_SECOND)) as u32;
+                let truncated = u64::from(nanos) / truncating_divisor;
+                let mut new_nanos = if truncated % 10 >= 5 {
+                    (truncated / 10) + 1
+                } else {
+                    truncated / 10
+                }
+                .checked_mul(rounding_multiple)
+                .and_then(|nanos| nanos.try_into().ok())
+                .expect("new nanos are a truncated version of input which is in bounds for u32");
+
                 if new_nanos >= NANOS_IN_SECOND {
                     unix_time += 1;
                     new_nanos -= NANOS_IN_SECOND;
