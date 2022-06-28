@@ -107,8 +107,7 @@ specs = [
   "getbyte",
   "include",
   "length",
-  # missing encoding-aware, character-oriented reverse for UTF-8 encoding.
-  # "reverse",
+  "reverse",
   "scan",
   "setbyte",
   "size",
