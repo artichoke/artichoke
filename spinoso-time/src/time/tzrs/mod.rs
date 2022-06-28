@@ -38,19 +38,25 @@ use crate::NANOS_IN_SECOND;
 /// # Examples
 ///
 /// ```
-/// # use spinoso_time::tzrs::Time;
+/// # use spinoso_time::tzrs::{Time, TimeErr};
+/// # fn example() -> Result<(), TimeErr> {
 /// // Create a Time to the current system clock with local offset
-/// let time = Time::now();
+/// let time = Time::now()?;
 /// assert!(!time.is_utc());
 /// println!("{}", time.is_sunday());
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// ```
-/// # use spinoso_time::tzrs::Time;
-/// let time = Time::now();
+/// # use spinoso_time::tzrs::{Time, TimeErr};
+/// # fn example() -> Result<(), TimeErr> {
+/// let time = Time::now()?;
 /// let one_hour_ago: Time = time - (60_u32 * 60);
 /// assert_eq!(time.to_int() - 3600, one_hour_ago.to_int());
 /// assert_eq!(time.nanoseconds(), one_hour_ago.nanoseconds());
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// [`tz-rs`]: tz
@@ -121,9 +127,12 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::{Time, Offset};
-    /// let offset = Offset::from("+1200");
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeErr};
+    /// # fn example() -> Result<(), TimeErr> {
+    /// let offset = Offset::try_from("+1200")?;
     /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, offset);
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// # Errors
@@ -318,7 +327,7 @@ mod tests {
     use super::*;
 
     fn time_with_fixed_offset(offset: i32) -> Time {
-        let offset = Offset::fixed(offset);
+        let offset = Offset::fixed(offset).unwrap();
         Time::with_timespec_and_offset(0, 0, offset).unwrap()
     }
 

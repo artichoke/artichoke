@@ -3,7 +3,7 @@ use std::error;
 
 use tz::error::{DateTimeError, ProjectDateTimeError, TzError};
 
-use super::offset::TzStringError;
+use super::offset::OffsetError;
 
 /// A wrapper around some of the errors provided by `tz-rs`.
 #[derive(Debug)]
@@ -24,7 +24,7 @@ pub enum TimeErr {
     ComponentOutOfRangeError(DateTimeError),
 
     /// The provided time zone string cannot be used
-    TzStringError(TzStringError),
+    OffsetError(OffsetError),
 }
 
 impl error::Error for TimeErr {}
@@ -34,7 +34,7 @@ impl fmt::Display for TimeErr {
         match self {
             TimeErr::ProjectionError(error) => error.fmt(f),
             TimeErr::ComponentOutOfRangeError(error) => error.fmt(f),
-            TimeErr::TzStringError(error) => error.fmt(f),
+            TimeErr::OffsetError(error) => error.fmt(f),
         }
     }
 }
@@ -51,9 +51,9 @@ impl From<DateTimeError> for TimeErr {
     }
 }
 
-impl From<TzStringError> for TimeErr {
-    fn from(err: TzStringError) -> Self {
-        Self::TzStringError(err)
+impl From<OffsetError> for TimeErr {
+    fn from(err: OffsetError) -> Self {
+        Self::OffsetError(err)
     }
 }
 

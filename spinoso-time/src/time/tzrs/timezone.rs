@@ -91,11 +91,14 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::{Time, Offset};
-    /// let mut now = Time::utc(2022, 6, 8, 12, 0, 0, 0).unwrap();
-    /// let gmt_plus_one = Offset::from(3600);
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeErr};
+    /// # fn example() -> Result<(), TimeErr> {
+    /// let mut now = Time::utc(2022, 6, 8, 12, 0, 0, 0)?;
+    /// let gmt_plus_one = Offset::try_from(3600)?;
     /// now.set_offset(gmt_plus_one);
     /// assert_eq!(13, now.hour());
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// # Errors
@@ -177,13 +180,16 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::{Time, Offset};
-    /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeErr};
+    /// # fn example() -> Result<(), TimeErr> {
+    /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// assert!(now.is_utc());
-    /// let offset = Offset::from(3600);
+    /// let offset = Offset::try_from(3600)?;
     /// now.set_offset_from_utc(offset);
     /// assert!(!now.is_utc());
     /// assert_eq!(now.utc_offset(), 3600);
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// # Errors
