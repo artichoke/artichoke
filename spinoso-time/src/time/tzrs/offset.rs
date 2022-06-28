@@ -1,3 +1,4 @@
+use std::slice;
 use std::str;
 
 use once_cell::sync::Lazy;
@@ -59,13 +60,13 @@ fn offset_hhmm_from_seconds(seconds: i32) -> String {
     format!("{}{:0>2}{:0>2}", flag, offset_hours, offset_minutes)
 }
 
-/// Represents the number of seconds offset from UTC
+/// Represents the number of seconds offset from UTC.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Offset {
     pub(crate) inner: OffsetType,
 }
 
-/// Represents the type of offset from UTC
+/// Represents the type of offset from UTC.
 #[allow(variant_size_differences)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub(crate) enum OffsetType {
@@ -117,9 +118,6 @@ impl<'a> Offset {
     ///
     /// This can be combined with [`tzdb`] to generate offsets based on
     /// predefined IANA time zones.
-    ///
-    /// [`tz:timezone::TimeZoneRef`]: https://docs.rs/tz-rs/0.6.9/tz/timezone/struct.TimeZoneRef.html
-    /// [`tzdb`]: https://docs.rs/tzdb/latest/tzdb/index.html
     #[inline]
     #[must_use]
     pub(crate) fn tz(tz: TimeZoneRef<'static>) -> Self {
@@ -136,7 +134,7 @@ impl<'a> Offset {
         match self.inner {
             OffsetType::Utc => TimeZoneRef::utc(),
             OffsetType::Fixed(ref local_time_type) => {
-                match TimeZoneRef::new(&[], std::slice::from_ref(local_time_type), &[], &None) {
+                match TimeZoneRef::new(&[], slice::from_ref(local_time_type), &[], &None) {
                     Ok(tz) => tz,
                     Err(_) => GMT,
                 }
