@@ -8,6 +8,7 @@ def spec
   string_byteslice
   string_scan
   string_unary_minus
+  string_reverse
   string_tr
 
   true
@@ -60,6 +61,10 @@ def string_unary_minus
   s = -'abababa'
   raise unless s.frozen?
   raise unless s.itself == 'abababa'
+end
+
+def string_reverse
+  raise unless '再见'.reverse == '见再'
 end
 
 def string_tr

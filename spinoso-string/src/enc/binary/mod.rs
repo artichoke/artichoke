@@ -315,6 +315,11 @@ impl BinaryString {
     pub fn ends_with(&self, slice: &[u8]) -> bool {
         self.inner.ends_with(slice)
     }
+
+    #[inline]
+    pub fn reverse(&mut self) {
+        self.inner.reverse();
+    }
 }
 
 #[cfg(test)]
