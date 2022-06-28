@@ -563,4 +563,13 @@ impl EncodedString {
             EncodedString::Utf8(inner) => inner.ends_with(slice),
         }
     }
+
+    #[inline]
+    pub fn reverse(&mut self) {
+        match self {
+            EncodedString::Ascii(inner) => inner.reverse(),
+            EncodedString::Binary(inner) => inner.reverse(),
+            EncodedString::Utf8(inner) => inner.reverse(),
+        }
+    }
 }

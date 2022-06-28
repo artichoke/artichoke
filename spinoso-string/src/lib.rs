@@ -2017,6 +2017,31 @@ impl String {
     pub fn is_valid_encoding(&self) -> bool {
         self.inner.is_valid_encoding()
     }
+
+    /// Reverse the characters in the string.
+    ///
+    /// This function is encoding-aware. For `String`s with [UTF-8 encoding],
+    /// multi-byte Unicode characters are reversed treated as one element.
+    /// For `String`s with [ASCII encoding] or [binary encoding], this
+    /// function is equivalent to reversing the underlying byte slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::utf8("再见".as_bytes().to_vec());
+    /// s.reverse();
+    /// assert_eq!(s, "见再");
+    /// ```
+    ///
+    /// [UTF-8 encoding]: crate::Encoding::Utf8
+    /// [ASCII encoding]: crate::Encoding::Ascii
+    /// [binary encoding]: crate::Encoding::Binary
+    #[inline]
+    pub fn reverse(&mut self) {
+        self.inner.reverse();
+    }
 }
 
 #[must_use]

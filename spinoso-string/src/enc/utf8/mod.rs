@@ -6,6 +6,7 @@ use core::slice::SliceIndex;
 
 use bstr::{ByteSlice, ByteVec};
 
+use crate::chars::ConventionallyUtf8;
 use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
@@ -662,6 +663,20 @@ impl Utf8String {
     #[must_use]
     pub fn ends_with(&self, slice: &[u8]) -> bool {
         self.inner.ends_with(slice)
+    }
+
+    #[inline]
+    pub fn reverse(&mut self) {
+        if self.is_ascii() {
+            self.inner.reverse();
+            return;
+        }
+        let chars = ConventionallyUtf8::from(&self.inner[..]);
+        let mut replacement = Vec::with_capacity(self.inner.len());
+        for bytes in chars {
+            replacement.splice(0..0, bytes.iter().copied());
+        }
+        self.inner = replacement;
     }
 }
 
