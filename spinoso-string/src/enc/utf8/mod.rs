@@ -671,10 +671,12 @@ impl Utf8String {
             self.inner.reverse();
             return;
         }
-        let chars = ConventionallyUtf8::from(&self.inner[..]);
+        // FIXME: this allocation can go away if `ConventionallyUtf8` impls
+        // `DoubleEndedIterator`.
+        let chars = ConventionallyUtf8::from(&self.inner[..]).collect::<Vec<_>>();
         let mut replacement = Vec::with_capacity(self.inner.len());
-        for bytes in chars {
-            replacement.splice(0..0, bytes.iter().copied());
+        for &bytes in chars.iter().rev() {
+            replacement.extend_from_slice(bytes);
         }
         self.inner = replacement;
     }
