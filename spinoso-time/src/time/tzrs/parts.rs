@@ -218,7 +218,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn is_utc(&self) -> bool {
-        OffsetType::Utc == self.offset.inner
+        matches!(self.offset.inner, OffsetType::Utc)
     }
 
     /// Returns the offset in seconds between the timezone of _time_ and UTC.
