@@ -64,7 +64,7 @@ def string_unary_minus
 end
 
 def string_reverse
-  raise unless "再见".reverse == "见再"
+  raise unless '再见'.reverse == '见再'
 end
 
 def string_tr
