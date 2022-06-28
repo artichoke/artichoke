@@ -63,13 +63,13 @@ fn offset_hhmm_from_seconds(seconds: i32) -> String {
 /// Represents the number of seconds offset from UTC.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Offset {
-    pub(crate) inner: OffsetType,
+    inner: OffsetType,
 }
 
 /// Represents the type of offset from UTC.
 #[allow(variant_size_differences)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(crate) enum OffsetType {
+enum OffsetType {
     /// UTC offset, zero offset, Zulu time
     Utc,
     /// Fixed offset from UTC.
@@ -120,10 +120,17 @@ impl<'a> Offset {
     /// predefined IANA time zones.
     #[inline]
     #[must_use]
-    pub(crate) fn tz(tz: TimeZoneRef<'static>) -> Self {
+    fn tz(tz: TimeZoneRef<'static>) -> Self {
         Self {
             inner: OffsetType::Tz(tz),
         }
+    }
+
+    /// Returns whether this offset is UTC.
+    #[inline]
+    #[must_use]
+    pub fn is_utc(&self) -> bool {
+        matches!(self.inner, OffsetType::Utc)
     }
 
     /// Returns a `TimeZoneRef` which can be used to generate and project
@@ -269,20 +276,26 @@ mod tests {
     #[test]
     fn fixed_zero_is_not_utc() {
         let offset = Offset::from(0);
-        assert!(matches!(offset.inner, OffsetType::Fixed(_)));
+        assert!(!offset.is_utc());
+    }
+
+    #[test]
+    fn utc_is_utc() {
+        let offset = Offset::utc();
+        assert!(offset.is_utc());
     }
 
     #[test]
     fn z_is_utc() {
         let offset = Offset::from("Z");
-        assert!(matches!(offset.inner, OffsetType::Utc));
+        assert!(offset.is_utc());
     }
 
     #[test]
     fn from_binary_string() {
         let tz: &[u8] = b"Z";
         let offset = Offset::from(tz);
-        assert!(matches!(offset.inner, OffsetType::Utc));
+        assert!(offset.is_utc());
     }
 
     #[test]
