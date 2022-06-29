@@ -7,7 +7,7 @@ use super::offset::OffsetError;
 
 /// A wrapper around some of the errors provided by `tz-rs`.
 #[derive(Debug)]
-pub enum TimeErr {
+pub enum TimeError {
     /// Created when trying to create a DateTime, however the projection to a unix timestamp wasn't
     /// achieveable. Generally thrown when exceeding the range of integers (e.g. `> i64::Max`).
     ///
@@ -27,37 +27,37 @@ pub enum TimeErr {
     OffsetError(OffsetError),
 }
 
-impl error::Error for TimeErr {}
+impl error::Error for TimeError {}
 
-impl fmt::Display for TimeErr {
+impl fmt::Display for TimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TimeErr::ProjectionError(error) => error.fmt(f),
-            TimeErr::ComponentOutOfRangeError(error) => error.fmt(f),
-            TimeErr::OffsetError(error) => error.fmt(f),
+            TimeError::ProjectionError(error) => error.fmt(f),
+            TimeError::ComponentOutOfRangeError(error) => error.fmt(f),
+            TimeError::OffsetError(error) => error.fmt(f),
         }
     }
 }
 
-impl From<ProjectDateTimeError> for TimeErr {
+impl From<ProjectDateTimeError> for TimeError {
     fn from(err: ProjectDateTimeError) -> Self {
         Self::ProjectionError(err)
     }
 }
 
-impl From<DateTimeError> for TimeErr {
+impl From<DateTimeError> for TimeError {
     fn from(err: DateTimeError) -> Self {
         Self::ComponentOutOfRangeError(err)
     }
 }
 
-impl From<OffsetError> for TimeErr {
+impl From<OffsetError> for TimeError {
     fn from(err: OffsetError) -> Self {
         Self::OffsetError(err)
     }
 }
 
-impl From<TzError> for TimeErr {
+impl From<TzError> for TimeError {
     fn from(error: TzError) -> Self {
         match error {
             // These two are generally recoverable within the usable of `spinoso_time`

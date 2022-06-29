@@ -295,8 +295,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, TimeErr};
-    /// # fn example() -> Result<(), TimeErr> {
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// use spinoso_time::tzrs::Time;
     /// let now = Time::utc(1970, 1, 4, 0, 0, 0, 0)?;
     /// assert!(now.is_sunday());
@@ -319,8 +319,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, TimeErr};
-    /// # fn example() -> Result<(), TimeErr> {
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// use spinoso_time::tzrs::Time;
     /// let now = Time::utc(1970, 1, 5, 0, 0, 0, 0)?;
     /// assert!(now.is_monday());
@@ -343,8 +343,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, TimeErr};
-    /// # fn example() -> Result<(), TimeErr> {
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// use spinoso_time::tzrs::Time;
     /// let now = Time::utc(1970, 1, 6, 0, 0, 0, 0)?;
     /// assert!(now.is_tuesday());
@@ -367,8 +367,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, TimeErr};
-    /// # fn example() -> Result<(), TimeErr> {
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// use spinoso_time::tzrs::Time;
     /// let now = Time::utc(1970, 1, 7, 0, 0, 0, 0)?;
     /// assert!(now.is_wednesday());
@@ -391,8 +391,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, TimeErr};
-    /// # fn example() -> Result<(), TimeErr> {
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// use spinoso_time::tzrs::Time;
     /// let now = Time::utc(1970, 1, 1, 0, 0, 0, 0)?;
     /// assert!(now.is_thursday());
@@ -415,8 +415,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, TimeErr};
-    /// # fn example() -> Result<(), TimeErr> {
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// let now = Time::utc(1970, 1, 2, 0, 0, 0, 0)?;
     /// assert!(now.is_friday());
     /// # Ok(())
@@ -438,8 +438,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, TimeErr};
-    /// # fn example() -> Result<(), TimeErr> {
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// use spinoso_time::tzrs::Time;
     /// let now = Time::utc(1970, 1, 3, 0, 0, 0, 0)?;
     /// assert!(now.is_saturday());

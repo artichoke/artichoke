@@ -12,12 +12,12 @@ mod parts;
 mod timezone;
 mod to_a;
 
-pub use error::TimeErr;
+pub use error::TimeError;
 pub use offset::Offset;
 pub use to_a::ToA;
 
-/// Alias for [`std::result::Result`] with the unified `TimeErr`
-pub type Result<T> = std::result::Result<T, TimeErr>;
+/// Alias for [`std::result::Result`] with the unified `TimeError`
+pub type Result<T> = std::result::Result<T, TimeError>;
 
 use crate::NANOS_IN_SECOND;
 
@@ -38,8 +38,8 @@ use crate::NANOS_IN_SECOND;
 /// # Examples
 ///
 /// ```
-/// # use spinoso_time::tzrs::{Time, TimeErr};
-/// # fn example() -> Result<(), TimeErr> {
+/// # use spinoso_time::tzrs::{Time, TimeError};
+/// # fn example() -> Result<(), TimeError> {
 /// // Create a Time to the current system clock with local offset
 /// let time = Time::now()?;
 /// assert!(!time.is_utc());
@@ -49,8 +49,8 @@ use crate::NANOS_IN_SECOND;
 /// ```
 ///
 /// ```
-/// # use spinoso_time::tzrs::{Time, TimeErr};
-/// # fn example() -> Result<(), TimeErr> {
+/// # use spinoso_time::tzrs::{Time, TimeError};
+/// # fn example() -> Result<(), TimeError> {
 /// let time = Time::now()?;
 /// let one_hour_ago: Time = time - (60_u32 * 60);
 /// assert_eq!(time.to_int() - 3600, one_hour_ago.to_int());
@@ -127,8 +127,8 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, Offset, TimeErr};
-    /// # fn example() -> Result<(), TimeErr> {
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// let offset = Offset::try_from("+1200")?;
     /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, offset);
     /// # Ok(())
@@ -137,7 +137,7 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeErr`], generally when provided values are out of range
+    /// Can produce a [`TimeError`], generally when provided values are out of range
     ///
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
@@ -174,7 +174,7 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeErr`], however these should never been seen in regular usage
+    /// Can produce a [`TimeError`], however these should never been seen in regular usage
     ///
     /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
     #[inline]
@@ -201,7 +201,7 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeErr`], however these should not be seen during regular usage
+    /// Can produce a [`TimeError`], however these should not be seen during regular usage
     ///
     /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
     #[inline]
@@ -213,7 +213,7 @@ impl Time {
 }
 
 impl TryFrom<ToA> for Time {
-    type Error = TimeErr;
+    type Error = TimeError;
 
     /// Create a new Time object base on a `ToA`
     ///
@@ -233,7 +233,7 @@ impl TryFrom<ToA> for Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeErr`], generally when provided values are out of range
+    /// Can produce a [`TimeError`], generally when provided values are out of range
     #[inline]
     fn try_from(to_a: ToA) -> Result<Self> {
         let offset = match Offset::try_from(to_a.zone) {
