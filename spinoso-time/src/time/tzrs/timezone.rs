@@ -1,6 +1,6 @@
 use tz::datetime::DateTime;
 
-use super::{Offset, Result, Time, TimeError};
+use super::{Offset, Result, Time};
 
 // Timezone conversions (returns new Time)
 impl Time {
@@ -122,14 +122,10 @@ impl Time {
     pub fn set_offset(&mut self, offset: Offset) -> Result<()> {
         let time_zone_ref = offset.time_zone_ref();
 
-        match self.inner.project(time_zone_ref) {
-            Ok(time) => {
-                self.inner = time;
-                self.offset = offset;
-                Ok(())
-            }
-            Err(error) => Err(TimeError::from(error)),
-        }
+        let time = self.inner.project(time_zone_ref)?;
+        self.inner = time;
+        self.offset = offset;
+        Ok(())
     }
 
     /// Converts _time_ to local time (using the local time zone in effective at
