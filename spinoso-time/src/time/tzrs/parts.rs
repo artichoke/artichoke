@@ -1,4 +1,3 @@
-use super::Offset;
 use super::Time;
 use crate::MICROS_IN_NANO;
 
@@ -194,9 +193,15 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn time_zone(&self) -> &str {
-        match self.offset {
-            Offset::Utc => "UTC",
-            _ => self.inner.local_time_type().time_zone_designation(),
+        // We can usually get the name from wrapped DateTime, however UTC is a
+        // special case which is an empty string, thus the OffsetType is safer.
+        //
+        // Note: The offset cannot be relied upon for the timezone name, as it
+        // may contain many options (e.g. CEST/CET)
+        if self.offset.is_utc() {
+            "UTC"
+        } else {
+            self.inner.local_time_type().time_zone_designation()
         }
     }
 
@@ -216,7 +221,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn is_utc(&self) -> bool {
-        Offset::Utc == self.offset
+        self.offset.is_utc()
     }
 
     /// Returns the offset in seconds between the timezone of _time_ and UTC.

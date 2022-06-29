@@ -117,8 +117,7 @@ impl Time {
     ///
     /// ```
     /// use spinoso_time::tzrs::{Time, Offset};
-    /// use tzdb::time_zone::pacific::AUCKLAND;
-    /// let offset = Offset::tz(AUCKLAND);
+    /// let offset = Offset::from("+1200");
     /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, offset);
     /// ```
     ///
