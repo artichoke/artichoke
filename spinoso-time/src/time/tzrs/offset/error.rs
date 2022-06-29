@@ -3,7 +3,7 @@ use std::error;
 use std::str::Utf8Error;
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OffsetError {
     TzStringError(TzStringError),
     OutOfRangeError(OutOfRangeError),
@@ -21,12 +21,12 @@ impl fmt::Display for OffsetError {
 }
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TzStringError(pub(crate) String);
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TzStringError;
 
 impl fmt::Display for TzStringError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        f.write_str(&self.0)
+        write!(f, "expected [+/-]HH[:]MM, A..K, J..Z for utc_offset")
     }
 }
 impl error::Error for TzStringError {}
@@ -57,6 +57,6 @@ impl From<OutOfRangeError> for OffsetError {
 
 impl From<Utf8Error> for OffsetError {
     fn from(_: Utf8Error) -> Self {
-        Self::TzStringError(TzStringError("timezone contains invalid UTF8".to_string()))
+        Self::TzStringError(TzStringError)
     }
 }

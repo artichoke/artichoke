@@ -121,8 +121,11 @@ impl Offset {
         }
 
         let offset_name = offset_hhmm_from_seconds(offset);
-        let local_time_type =
-            LocalTimeType::new(offset, false, Some(offset_name.as_bytes())).expect("Couldn't create fixed offset");
+        // creation of the LocalTimeType is never expected to fail, since the
+        // bounds we are more restrictive of the values than the struct itself.
+        let local_time_type = LocalTimeType::new(offset, false, Some(offset_name.as_bytes()))
+            .expect("Failed to LocalTimeType for fixed offset");
+
         Ok(Self {
             inner: OffsetType::Fixed(local_time_type),
         })
@@ -235,7 +238,7 @@ impl TryFrom<&str> for Offset {
                     let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
                     Ok(Self::fixed(offset_seconds)?)
                 } else {
-                    Err(TzStringError(format!("invalid timezone {}", input)).into())
+                    Err(TzStringError.into())
                 }
             }
         }
@@ -278,7 +281,7 @@ impl TryFrom<i32> for Offset {
 
 #[cfg(test)]
 mod tests {
-    use super::error::{OffsetError, OutOfRangeError};
+    use super::error::{OffsetError, OutOfRangeError, TzStringError};
     use super::*;
 
     fn offset_seconds_from_fixed_offset(input: &str) -> Result<i32, OffsetError> {
