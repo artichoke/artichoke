@@ -343,13 +343,9 @@ To pull and run an image, run:
 $ docker run -it docker.io/artichokeruby/artichoke airb
 ```
 
-Currently supported Docker platforms are:
+Currently supported Docker platforms are listed at:
 
-- `ubuntu` - canonical mainline image, tagged with `latest`, `ubuntu-nightly`,
-  and `ubuntu18.04-nightly`.
-- `debian-slim` - Debian 10 (Buster) slim image, tagged `slim-nightly` and
-  `slim-buster-nightly`.
-- `alpine` - Alpine 3 image, tagged with `alpine-nightly` and `alpine3-nightly`.
+- <https://github.com/artichoke/docker-artichoke-nightly/blob/trunk/README.md#platforms>
 
 [artichoke/docker-artichoke-nightly]:
   https://github.com/artichoke/docker-artichoke-nightly
