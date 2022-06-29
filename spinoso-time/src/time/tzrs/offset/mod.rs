@@ -383,6 +383,20 @@ mod tests {
     }
 
     #[test]
+    fn from_str_invalid_fixed_strings() {
+        let invalid_fixed_strings = [
+            "+01:010", "+010:10", "+010:010", "0110", "01:10", "01-10", "+01-10", "+01::10",
+        ];
+
+        for invalid_string in invalid_fixed_strings {
+            assert_eq!(
+                Err(OffsetError::TzStringError(TzStringError)),
+                Offset::try_from(invalid_string)
+            );
+        }
+    }
+
+    #[test]
     fn fixed_time_zone_designation() {
         assert_eq!("+0000", fixed_offset_name(0).unwrap());
         assert_eq!("+0000", fixed_offset_name(59).unwrap());
