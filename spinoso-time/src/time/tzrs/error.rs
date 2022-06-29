@@ -6,6 +6,7 @@ use tz::error::{DateTimeError, ProjectDateTimeError, TzError};
 use super::offset::OffsetError;
 
 /// A wrapper around some of the errors provided by `tz-rs`.
+#[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub enum TimeError {
     /// Created when trying to create a DateTime, however the projection to a
@@ -28,16 +29,34 @@ pub enum TimeError {
 
     /// The provided time zone string cannot be used.
     OffsetError(OffsetError),
+
+    /// A rescuable error originally from the tz-rs library.
+    UnknownTzError(TzError),
+
+    /// An rescuable unknown error (instead of panicing)
+    Unknown,
 }
 
-impl error::Error for TimeError {}
+impl error::Error for TimeError {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        match self {
+            Self::ProjectionError(ref err) => Some(err),
+            Self::ComponentOutOfRangeError(ref err) => Some(err),
+            Self::OffsetError(ref err) => Some(err),
+            Self::UnknownTzError(ref err) => Some(err),
+            Self::Unknown => None,
+        }
+    }
+}
 
 impl fmt::Display for TimeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            TimeError::ProjectionError(error) => error.fmt(f),
-            TimeError::ComponentOutOfRangeError(error) => error.fmt(f),
-            TimeError::OffsetError(error) => error.fmt(f),
+            Self::ProjectionError(error) => error.fmt(f),
+            Self::ComponentOutOfRangeError(error) => error.fmt(f),
+            Self::OffsetError(error) => error.fmt(f),
+            Self::UnknownTzError(error) => error.fmt(f),
+            Self::Unknown => write!(f, "An unknown error occurred"),
         }
     }
 }
@@ -62,24 +81,38 @@ impl From<OffsetError> for TimeError {
 
 impl From<TzError> for TimeError {
     fn from(error: TzError) -> Self {
+        // Allowing matching arms due to documentation
+        #[allow(clippy::match_same_arms)]
         match error {
             // These two are generally recoverable within the usable of `spinoso_time`
             // TzError::DateTimeError(error) => Self::from(error),
             TzError::ProjectDateTimeError(error) => Self::from(error),
 
             // The rest will bleed through, but are included here for reference
-            TzError::SystemTimeError(error) => panic!("{}", error), //Occurs when calling system clock
-            TzError::TzFileError(error) => panic!("{}", error),     //Occurs during parsing of TZif files
-            TzError::TzStringError(error) => panic!("{}", error), //Occurs during parsing of TZif files (POSIX string parsing)
-            TzError::OutOfRangeError(error) => panic!("{}", error), //Occurs during int conversion (e.g. i64 => i32)
-            TzError::LocalTimeTypeError(error) => panic!("{}", error), //Occurs during creation of TimeZoneRef
-            TzError::TransitionRuleError(error) => panic!("{}", error), //Occurs during creation of TimeZoneRef
-            TzError::TimeZoneError(error) => panic!("{}", error), //Occurs during creation of TimeZoneRef
-            TzError::FindLocalTimeTypeError(error) => panic!("{}", error), //Wrapped by ProjectDateTimeError
-            TzError::IoError(error) => panic!("{}", error),       //Never explicitly returned
-            TzError::Utf8Error(error) => panic!("{}", error),     //Never explicity returned
-            TzError::TryFromSliceError(error) => panic!("{}", error), //Never explicitly returned
-            _ => panic!("Unhandled error"),
+            // Occurs when calling system clock
+            TzError::SystemTimeError(_) => Self::UnknownTzError(error),
+            // Occurs during parsing of TZif files
+            TzError::TzFileError(_) => Self::UnknownTzError(error),
+            // Occurs during parsing of TZif files (POSIX string parsing)
+            TzError::TzStringError(_) => Self::UnknownTzError(error),
+            // Occurs during int conversion (e.g. i64 => i32)
+            TzError::OutOfRangeError(_) => Self::UnknownTzError(error),
+            // Occurs during creation of TimeZoneRef
+            TzError::LocalTimeTypeError(_) => Self::UnknownTzError(error),
+            // Occurs during creation of TimeZoneRef
+            TzError::TransitionRuleError(_) => Self::UnknownTzError(error),
+            // Occurs during creation of TimeZoneRef
+            TzError::TimeZoneError(_) => Self::UnknownTzError(error),
+            // Wrapped by ProjectDateTimeError
+            TzError::FindLocalTimeTypeError(_) => Self::UnknownTzError(error),
+            // Never explicitly returned
+            TzError::IoError(_) => Self::UnknownTzError(error),
+            // Never explicity returned
+            TzError::Utf8Error(_) => Self::UnknownTzError(error),
+            // Never explicitly returned
+            TzError::TryFromSliceError(_) => Self::UnknownTzError(error),
+            // TzError is non_exhaustive, so the rest are caught as Unknown
+            _ => Self::Unknown,
         }
     }
 }
