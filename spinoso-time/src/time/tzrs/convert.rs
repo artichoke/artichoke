@@ -12,7 +12,7 @@ impl Display for Time {
     ///
     /// ```
     /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 05, 26, 13, 16, 22, 0);
+    /// let now = Time::utc(2022, 05, 26, 13, 16, 22, 0).unwrap();
     /// assert_eq!(now.to_string(), "2022-05-26 13:16:22 UTC");
     /// ```
     ///
@@ -68,7 +68,7 @@ impl Time {
     ///
     /// ```
     /// # use spinoso_time::tzrs::Time;
-    /// let now = Time::now();
+    /// let now = Time::now().unwrap();
     /// let to_array = now.to_array();
     /// assert_eq!(to_array.sec, now.second());
     /// assert_eq!(to_array.wday, now.day_of_week());

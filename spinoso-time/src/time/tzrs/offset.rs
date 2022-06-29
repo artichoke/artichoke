@@ -1,4 +1,6 @@
 use std::slice;
+use core::fmt;
+use std::error;
 use std::str;
 
 use once_cell::sync::Lazy;
@@ -7,6 +9,17 @@ use tz::timezone::{LocalTimeType, TimeZoneRef};
 #[cfg(feature = "tzrs-local")]
 use tzdb::local_tz;
 use tzdb::time_zone::etc::GMT;
+
+#[derive(Debug, Clone)]
+pub struct TzStringError(String);
+
+impl fmt::Display for TzStringError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "invalid timezone {}", self.0)
+    }
+}
+
+impl error::Error for TzStringError {}
 
 const SECONDS_IN_MINUTE: i32 = 60;
 const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
@@ -152,8 +165,10 @@ impl Offset {
     }
 }
 
-impl From<&str> for Offset {
-    /// Construct a Offset based on the [accepted MRI values].
+impl TryFrom<&str> for Offset {
+    type Error = TzStringError;
+
+    /// Construct a Offset based on the [accepted MRI values]
     ///
     /// Accepts:
     ///
@@ -165,36 +180,32 @@ impl From<&str> for Offset {
     ///
     /// [accepted MRI values]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     #[inline]
-    #[must_use]
-    fn from(input: &str) -> Self {
-        static HH_MM_MATCHER: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").expect("Regex should be valid"));
-
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
         match input {
-            "A" => Self::fixed(SECONDS_IN_HOUR),
-            "B" => Self::fixed(2 * SECONDS_IN_HOUR),
-            "C" => Self::fixed(3 * SECONDS_IN_HOUR),
-            "D" => Self::fixed(4 * SECONDS_IN_HOUR),
-            "E" => Self::fixed(5 * SECONDS_IN_HOUR),
-            "F" => Self::fixed(6 * SECONDS_IN_HOUR),
-            "G" => Self::fixed(7 * SECONDS_IN_HOUR),
-            "H" => Self::fixed(8 * SECONDS_IN_HOUR),
-            "I" => Self::fixed(9 * SECONDS_IN_HOUR),
-            "K" => Self::fixed(10 * SECONDS_IN_HOUR),
-            "L" => Self::fixed(11 * SECONDS_IN_HOUR),
-            "M" => Self::fixed(12 * SECONDS_IN_HOUR),
-            "N" => Self::fixed(-SECONDS_IN_HOUR),
-            "O" => Self::fixed(-2 * SECONDS_IN_HOUR),
-            "P" => Self::fixed(-3 * SECONDS_IN_HOUR),
-            "Q" => Self::fixed(-4 * SECONDS_IN_HOUR),
-            "R" => Self::fixed(-5 * SECONDS_IN_HOUR),
-            "S" => Self::fixed(-6 * SECONDS_IN_HOUR),
-            "T" => Self::fixed(-7 * SECONDS_IN_HOUR),
-            "U" => Self::fixed(-8 * SECONDS_IN_HOUR),
-            "V" => Self::fixed(-9 * SECONDS_IN_HOUR),
-            "W" => Self::fixed(-10 * SECONDS_IN_HOUR),
-            "X" => Self::fixed(-11 * SECONDS_IN_HOUR),
-            "Y" => Self::fixed(-12 * SECONDS_IN_HOUR),
+            "A" => Ok(Self::fixed(SECONDS_IN_HOUR)),
+            "B" => Ok(Self::fixed(2 * SECONDS_IN_HOUR)),
+            "C" => Ok(Self::fixed(3 * SECONDS_IN_HOUR)),
+            "D" => Ok(Self::fixed(4 * SECONDS_IN_HOUR)),
+            "E" => Ok(Self::fixed(5 * SECONDS_IN_HOUR)),
+            "F" => Ok(Self::fixed(6 * SECONDS_IN_HOUR)),
+            "G" => Ok(Self::fixed(7 * SECONDS_IN_HOUR)),
+            "H" => Ok(Self::fixed(8 * SECONDS_IN_HOUR)),
+            "I" => Ok(Self::fixed(9 * SECONDS_IN_HOUR)),
+            "K" => Ok(Self::fixed(10 * SECONDS_IN_HOUR)),
+            "L" => Ok(Self::fixed(11 * SECONDS_IN_HOUR)),
+            "M" => Ok(Self::fixed(12 * SECONDS_IN_HOUR)),
+            "N" => Ok(Self::fixed(-SECONDS_IN_HOUR)),
+            "O" => Ok(Self::fixed(-2 * SECONDS_IN_HOUR)),
+            "P" => Ok(Self::fixed(-3 * SECONDS_IN_HOUR)),
+            "Q" => Ok(Self::fixed(-4 * SECONDS_IN_HOUR)),
+            "R" => Ok(Self::fixed(-5 * SECONDS_IN_HOUR)),
+            "S" => Ok(Self::fixed(-6 * SECONDS_IN_HOUR)),
+            "T" => Ok(Self::fixed(-7 * SECONDS_IN_HOUR)),
+            "U" => Ok(Self::fixed(-8 * SECONDS_IN_HOUR)),
+            "V" => Ok(Self::fixed(-9 * SECONDS_IN_HOUR)),
+            "W" => Ok(Self::fixed(-10 * SECONDS_IN_HOUR)),
+            "X" => Ok(Self::fixed(-11 * SECONDS_IN_HOUR)),
+            "Y" => Ok(Self::fixed(-12 * SECONDS_IN_HOUR)),
             // ```console
             // [3.1.2] > Time.new(2022, 6, 26, 13, 57, 6, 'Z')
             // => 2022-06-26 13:57:06 UTC
@@ -205,8 +216,10 @@ impl From<&str> for Offset {
             // [3.1.2] > Time.new(2022, 6, 26, 13, 57, 6, 'UTC').utc?
             // => true
             // ```
-            "Z" | "UTC" => Self::utc(),
+            "Z" | "UTC" => Ok(Self::utc()),
             _ => {
+                static HH_MM_MATCHER: Lazy<Regex> =
+                    Lazy::new(|| Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").unwrap());
                 if HH_MM_MATCHER.is_match(input) {
                     let caps = HH_MM_MATCHER.captures(input).unwrap();
 
@@ -215,26 +228,30 @@ impl From<&str> for Offset {
                     let minutes = caps.get(3).unwrap().as_str().parse::<i32>().unwrap();
 
                     let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
-                    Self::fixed(offset_seconds)
+                    Ok(Self::fixed(offset_seconds))
                 } else {
-                    // TODO: ArgumentError
-                    Self::utc()
+                    Err(TzStringError(input.to_string()))
                 }
             }
         }
     }
 }
 
-impl From<&[u8]> for Offset {
-    fn from(input: &[u8]) -> Self {
-        let input = str::from_utf8(input).expect("Invalid UTF8");
-        Offset::from(input)
+impl TryFrom<&[u8]> for Offset {
+    type Error = TzStringError;
+
+    fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
+        let input =
+            str::from_utf8(input).map_err(|_| TzStringError("Invalid UTF8 timezone designation".to_string()))?;
+        Offset::try_from(input)
     }
 }
 
-impl From<String> for Offset {
-    fn from(input: String) -> Self {
-        Offset::from(input.as_str())
+impl TryFrom<String> for Offset {
+    type Error = TzStringError;
+
+    fn try_from(input: String) -> Result<Self, Self::Error> {
+        Offset::try_from(input.as_str())
     }
 }
 
@@ -260,7 +277,7 @@ mod tests {
     use super::*;
 
     fn offset_seconds_from_fixed_offset(input: &str) -> i32 {
-        let offset = Offset::from(input);
+        let offset = Offset::try_from(input).unwrap();
         let local_time_type = offset.time_zone_ref().local_time_types()[0];
         local_time_type.ut_offset()
     }
@@ -287,14 +304,14 @@ mod tests {
 
     #[test]
     fn z_is_utc() {
-        let offset = Offset::from("Z");
+        let offset = Offset::try_from("Z").unwrap();
         assert!(offset.is_utc());
     }
 
     #[test]
     fn from_binary_string() {
         let tz: &[u8] = b"Z";
-        let offset = Offset::from(tz);
+        let offset = Offset::try_from(tz).unwrap();
         assert!(offset.is_utc());
     }
 
