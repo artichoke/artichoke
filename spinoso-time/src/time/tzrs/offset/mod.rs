@@ -391,7 +391,9 @@ mod tests {
         for invalid_string in invalid_fixed_strings {
             assert_eq!(
                 Err(OffsetError::TzStringError(TzStringError)),
-                Offset::try_from(invalid_string)
+                Offset::try_from(invalid_string),
+                "Expected Offset::TzStringError for {}",
+                invalid_string,
             );
         }
     }
