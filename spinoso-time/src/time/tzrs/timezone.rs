@@ -13,17 +13,21 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let local_offset = Time::now().unwrap().utc_offset();
-    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
-    /// let now_local = now_utc.to_local().unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let local_offset = Time::now()?.utc_offset();
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
+    /// let now_local = now_utc.to_local()?;
     /// assert_eq!(now_local.utc_offset(), local_offset);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing the `unix_time` to
-    /// exceed `i64::MAX`
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
     #[inline]
@@ -38,16 +42,20 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now_local = Time::now().unwrap();
-    /// let now_utc = now_local.to_utc().unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now_local = Time::now()?;
+    /// let now_utc = now_local.to_utc()?;
     /// assert_eq!(now_utc.utc_offset(), 0);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing the `unix_time` to
-    /// exceed `i64::MAX`
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     ///
     /// [`Time#getutc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getutc
@@ -65,17 +73,21 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let local_offset = Time::now().unwrap().utc_offset();
-    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
-    /// let now_local = now_utc.to_local().unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let local_offset = Time::now()?.utc_offset();
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
+    /// let now_local = now_utc.to_local()?;
     /// assert_eq!(now_local.utc_offset(), local_offset);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing the `unix_time` to
-    /// exceed `i64::MAX`
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
     #[inline]
@@ -99,12 +111,13 @@ impl Time {
     /// assert_eq!(13, now.hour());
     /// # Ok(())
     /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing the `unix_time` to
-    /// exceed `i64::MAX`
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     #[inline]
     pub fn set_offset(&mut self, offset: Offset) -> Result<()> {
         let time_zone_ref = offset.time_zone_ref();
@@ -119,26 +132,30 @@ impl Time {
         }
     }
 
-    /// Converts _time_ to local time (using the local time zone in effective at the creation time
-    /// of _time_) modifying the receiver.
+    /// Converts _time_ to local time (using the local time zone in effective at
+    /// the creation time of _time_) modifying the receiver.
     ///
     /// Can be used to implement [`Time#localtime`] without a parameter.
     ///
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// let now_utc_unix = now.to_int();
     /// now.set_local();
     /// let now_local_unix = now.to_int();
     /// assert_eq!(now_utc_unix, now_local_unix);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing the `unix_time` to
-    /// exceed `i64::MAX`
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     #[inline]
@@ -153,18 +170,22 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let mut now = Time::local(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let mut now = Time::local(2022, 7, 8, 12, 34, 56, 0)?;
     /// let now_local_unix = now.to_int();
     /// now.set_local();
     /// let now_utc_unix = now.to_int();
     /// assert_eq!(now_local_unix, now_utc_unix);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing the `unix_time` to
-    /// exceed `i64::MAX`
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc
     /// [`Time#gmtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmtime
@@ -190,12 +211,13 @@ impl Time {
     /// assert_eq!(now.utc_offset(), 3600);
     /// # Ok(())
     /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing the `unix_time` to
-    /// exceed `i64::MAX`
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     #[inline]

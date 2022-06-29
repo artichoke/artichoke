@@ -14,12 +14,16 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::{tzrs::Time, NANOS_IN_SECOND};
-    /// let t = Time::utc(2022, 1, 1, 12, 0, 0, 1).unwrap();
+    /// # use spinoso_time::{NANOS_IN_SECOND, tzrs::{Time, TimeError}};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let t = Time::utc(2022, 1, 1, 12, 0, 0, 1)?;
     /// let t_float = t.to_float();
     /// let float_nanos = (t_float - t_float.round()) * NANOS_IN_SECOND as f64;
     /// assert_ne!(float_nanos, 1f64);
     /// assert_eq!(t.nanoseconds(), 1);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#nsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-nsec
@@ -37,9 +41,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::{tzrs::Time, MICROS_IN_NANO};
-    /// let t = Time::utc(2022, 1, 1, 12, 0, 0, 1 * MICROS_IN_NANO).unwrap();
+    /// # use spinoso_time::{MICROS_IN_NANO, tzrs::{Time, TimeError}};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let t = Time::utc(2022, 1, 1, 12, 0, 0, 1 * MICROS_IN_NANO)?;
     /// assert_eq!(t.microseconds(), 1);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#usec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-usec
@@ -60,10 +68,14 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// let second_of_minute = now.second();
     /// assert_eq!(second_of_minute, 56);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#sec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sec
@@ -81,10 +93,14 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// let minute_of_hour = now.minute();
     /// assert_eq!(minute_of_hour, 34);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#minute`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-min
@@ -101,10 +117,14 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// let hour_of_day = now.hour();
     /// assert_eq!(hour_of_day, 12);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#hour`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-hour
@@ -121,10 +141,14 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// let day_of_month = now.day();
     /// assert_eq!(day_of_month, 8);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#day`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-day
@@ -142,10 +166,14 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// let month_of_year = now.month();
     /// assert_eq!(month_of_year, 7);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#mon`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mon
@@ -163,9 +191,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// assert_eq!(now.year(), 2022);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#year`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-year
@@ -183,9 +215,13 @@ impl Time {
     ///
     /// # Examples
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// assert_eq!("UTC", now_utc.time_zone());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [tzrs-utc]: https://docs.rs/tz-rs/0.6.10/src/tz/timezone/mod.rs.html#180
@@ -211,9 +247,13 @@ impl Time {
     ///
     //// # Examples
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// assert!(now_utc.is_utc());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#utc?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc-3F
@@ -231,9 +271,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// assert_eq!(now.utc_offset(), 0);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#utc_offset`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc_offset
@@ -252,12 +296,16 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::{Time, Offset};
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// use tzdb::time_zone::{europe::AMSTERDAM, pacific::AUCKLAND};
-    /// let now_ams = Time::new(2022, 5, 18, 16, 0, 0, 0, Offset::from(AMSTERDAM)).unwrap();
+    /// let now_ams = Time::new(2022, 5, 18, 16, 0, 0, 0, Offset::from(AMSTERDAM))?;
     /// assert!(now_ams.is_dst());
-    /// let now_auckland = Time::new(2022, 5, 18, 16, 0, 0, 0, Offset::from(AUCKLAND)).unwrap();
+    /// let now_auckland = Time::new(2022, 5, 18, 16, 0, 0, 0, Offset::from(AUCKLAND))?;
     /// assert!(!now_auckland.is_dst());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#dst?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-dst-3F
@@ -276,9 +324,14 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    ///
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// assert_eq!(now.day_of_week(), 5);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#wday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-wday
@@ -462,9 +515,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// assert_eq!(now.day_of_year(), 188);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#yday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-yday

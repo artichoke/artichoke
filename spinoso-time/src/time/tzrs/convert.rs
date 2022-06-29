@@ -11,9 +11,13 @@ impl Display for Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(2022, 05, 26, 13, 16, 22, 0).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(2022, 05, 26, 13, 16, 22, 0)?;
     /// assert_eq!(now.to_string(), "2022-05-26 13:16:22 UTC");
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#asctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-asctime
@@ -67,11 +71,15 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::Time;
-    /// let now = Time::now().unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::now()?;
     /// let to_array = now.to_array();
     /// assert_eq!(to_array.sec, now.second());
     /// assert_eq!(to_array.wday, now.day_of_week());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#to_a`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_a

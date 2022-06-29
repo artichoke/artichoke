@@ -15,11 +15,15 @@ impl Time {
     ///
     /// # Examples
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::local(2010, 3, 30, 5, 43, 25, 123456789).unwrap();
+    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::local(2010, 3, 30, 5, 43, 25, 123456789)?;
     /// let rounded = now.round(5);
     /// assert_eq!(now.utc_offset(), rounded.utc_offset());
     /// assert_eq!(123460000, rounded.nanoseconds());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap()
     /// ```
     ///
     /// [`Time#round`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-round

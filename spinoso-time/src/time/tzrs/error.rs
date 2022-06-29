@@ -8,22 +8,25 @@ use super::offset::OffsetError;
 /// A wrapper around some of the errors provided by `tz-rs`.
 #[derive(Debug)]
 pub enum TimeError {
-    /// Created when trying to create a DateTime, however the projection to a unix timestamp wasn't
-    /// achieveable. Generally thrown when exceeding the range of integers (e.g. `> i64::Max`).
+    /// Created when trying to create a DateTime, however the projection to a
+    /// unix timestamp wasn't achieveable. Generally thrown when exceeding the
+    /// range of integers (e.g. `> i64::Max`).
     ///
     /// Note: This is just a wrapper over [`tz::error::ProjectDateTimeError`].
     ProjectionError(ProjectDateTimeError),
 
-    /// Created when one of the parameters of a Datetime falls outside the allowed ranges (e.g.
-    /// 13th month, 32 day, 24th hour, etc)
+    /// Created when one of the parameters of a Datetime falls outside the
+    /// allowed ranges (e.g. 13th month, 32 day, 24th hour, etc).
     ///
-    /// Note: [`tz::error::DateTimeError`] is only thrown from `tz-rs` when a provided component value is out of range.
+    /// Note: [`tz::error::DateTimeError`] is only thrown from `tz-rs` when a
+    /// provided component value is out of range.
     ///
-    /// Note2: This is different from how MRI ruby is implemented. e.g. Second 60 is valid in MRI, and
-    /// will just add an additional second instead of erroring.
+    /// Note2: This is different from how MRI ruby is implemented. e.g. Second
+    /// 60 is valid in MRI, and will just add an additional second instead of
+    /// erroring.
     ComponentOutOfRangeError(DateTimeError),
 
-    /// The provided time zone string cannot be used
+    /// The provided time zone string cannot be used.
     OffsetError(OffsetError),
 }
 

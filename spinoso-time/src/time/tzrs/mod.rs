@@ -46,6 +46,7 @@ use crate::NANOS_IN_SECOND;
 /// println!("{}", time.is_sunday());
 /// # Ok(())
 /// # }
+/// # example().unwrap();
 /// ```
 ///
 /// ```
@@ -57,6 +58,7 @@ use crate::NANOS_IN_SECOND;
 /// assert_eq!(time.nanoseconds(), one_hour_ago.nanoseconds());
 /// # Ok(())
 /// # }
+/// # example().unwrap();
 /// ```
 ///
 /// [`tz-rs`]: tz
@@ -133,6 +135,7 @@ impl Time {
     /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, offset);
     /// # Ok(())
     /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// # Errors
@@ -168,8 +171,12 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::now().unwrap();
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::now()?;
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// # Errors
@@ -193,10 +200,14 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::{Time, Offset};
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// let offset = Offset::utc();
-    /// let t = Time::with_timespec_and_offset(0, 0, offset).unwrap();
+    /// let t = Time::with_timespec_and_offset(0, 0, offset)?;
     /// assert_eq!(t.to_int(), 0);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// # Errors
@@ -223,12 +234,16 @@ impl TryFrom<ToA> for Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::local(2022, 7, 8, 12, 34, 56, 1000).unwrap();
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::local(2022, 7, 8, 12, 34, 56, 1000)?;
     /// let to_a = now.to_array();
-    /// let from_to_a = Time::try_from(to_a).unwrap();
+    /// let from_to_a = Time::try_from(to_a)?;
     /// assert_eq!(now.second(), from_to_a.second());
     /// assert_ne!(now.nanoseconds(), from_to_a.nanoseconds());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// # Errors
@@ -257,9 +272,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let t = Time::utc(1970, 1, 1, 0, 1, 0, 0).unwrap();
-    /// assert_eq!(t.to_int(), 60)
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let t = Time::utc(1970, 1, 1, 0, 1, 0, 0)?;
+    /// assert_eq!(t.to_int(), 60);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// [`Time#to_i`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_i
@@ -278,9 +297,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(1970, 1, 1, 0, 1, 0, 1000).unwrap();
-    /// assert_eq!(now.to_float(), 60.000001)
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(1970, 1, 1, 0, 1, 0, 1000)?;
+    /// assert_eq!(now.to_float(), 60.000001);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// [`Time#to_f`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_f
@@ -307,9 +330,13 @@ impl Time {
     /// #Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let t = Time::utc(1970, 1, 1, 0, 0, 1, 1000).unwrap();
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let t = Time::utc(1970, 1, 1, 0, 0, 1, 1000)?;
     /// assert_eq!(t.subsec_fractional(), (1000, 1000000000));
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// [`Time#subsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-subsec
