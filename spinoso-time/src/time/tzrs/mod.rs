@@ -251,10 +251,7 @@ impl TryFrom<ToA> for Time {
     /// Can produce a [`TimeError`], generally when provided values are out of range
     #[inline]
     fn try_from(to_a: ToA) -> Result<Self> {
-        let offset = match Offset::try_from(to_a.zone) {
-            Ok(offset) => offset,
-            Err(_) => Offset::utc(),
-        };
+        let offset = Offset::try_from(to_a.zone).unwrap_or_else(|_| Offset::utc());
 
         Self::new(
             to_a.year, to_a.month, to_a.day, to_a.hour, to_a.min, to_a.sec, 0, offset,
