@@ -80,7 +80,7 @@ enum OffsetType {
     Tz(TimeZoneRef<'static>),
 }
 
-impl<'a> Offset {
+impl Offset {
     /// Generate a UTC based offset.
     #[inline]
     #[must_use]

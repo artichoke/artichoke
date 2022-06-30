@@ -237,9 +237,8 @@ pub fn is_require_path(config: &Config, name: &str) -> bool {
         match suite {
             Suite::All(ref all) if all.skip.iter().flatten().any(|name| spec_name.starts_with(name)) => Some(false),
             Suite::All(..) => Some(true),
-            Suite::None => Some(false),
             Suite::Set(ref set) if set.specs.iter().any(|name| spec_name.starts_with(name)) => Some(true),
-            Suite::Set(..) => Some(false),
+            Suite::Set(..) | Suite::None => Some(false),
         }
     }
     // And the convert to the expected `bool`.
