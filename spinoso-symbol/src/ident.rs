@@ -417,6 +417,7 @@ fn parse_ident(name: &[u8], id_type: IdentifierType) -> Option<IdentifierType> {
 }
 
 #[inline]
+#[allow(clippy::match_same_arms)] // for clarity
 fn is_special_global_name(name: &[u8]) -> bool {
     match name {
         [] => false,

@@ -152,7 +152,6 @@ impl<T> Array<T> {
     /// assert_eq!(iterator.next(), None);
     /// ```
     #[inline]
-    #[must_use]
     pub fn iter(&self) -> Iter<'_, T> {
         self.into_iter()
     }
@@ -171,7 +170,6 @@ impl<T> Array<T> {
     /// assert_eq!(ary, &[3, 4, 6]);
     /// ```
     #[inline]
-    #[must_use]
     pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         self.into_iter()
     }

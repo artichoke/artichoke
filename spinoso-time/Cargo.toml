@@ -3,7 +3,7 @@ name = "spinoso-time"
 version = "0.4.1"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
-rust-version = "1.60.0"
+rust-version = "1.62.0"
 description = """
 Datetime handling for Artichoke Ruby
 """
