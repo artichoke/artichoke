@@ -13,7 +13,7 @@ categories = ["development-tools::testing"]
 
 [dependencies]
 artichoke = { version = "0.1.0-pre.0", path = "..", default-features = false, features = ["backtrace", "kitchen-sink"] }
-clap = { version = "3.2.5", default-features = false, features = ["std", "suggestions"] }
+clap = { version = "3.2.8", default-features = false, features = ["std", "suggestions"] }
 rust-embed = "6.3.0"
 serde = { version = "1.0.136", features = ["derive"] }
 termcolor = "1.1.0"
