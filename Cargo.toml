@@ -40,7 +40,7 @@ path = "artichoke-backend"
 default-features = false
 
 [build-dependencies]
-tz-rs = { version = "0.6.9", default-features = false }
+tz-rs = { version = "0.6.11", default-features = false }
 
 [[bin]]
 name = "airb"
