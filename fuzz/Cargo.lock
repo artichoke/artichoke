@@ -508,9 +508,9 @@ dependencies = [
 
 [[package]]
 name = "tz-rs"
-version = "0.6.9"
+version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed700577df0503a291cb0eec06edeb4da3debd33d49cffa81c720112a6e51ca6"
+checksum = "7eb454313e3d79601e2116bb6c7a93ec0eda1dbb52f9204f831f897204182c5f"
 
 [[package]]
 name = "uncased"
