@@ -10,6 +10,7 @@ GEM
     bundler-audit (0.9.1)
       bundler (>= 1.2.0, < 3)
       thor (~> 1.0)
+    json (2.6.2)
     parallel (1.22.1)
     parser (3.1.2.0)
       ast (~> 2.4.1)
@@ -17,7 +18,8 @@ GEM
     rake (13.0.6)
     regexp_parser (2.5.0)
     rexml (3.2.5)
-    rubocop (1.30.0)
+    rubocop (1.31.1)
+      json (~> 2.3)
       parallel (~> 1.10)
       parser (>= 3.1.0.0)
       rainbow (>= 2.2.2, < 4.0)
@@ -32,7 +34,7 @@ GEM
       rubocop (~> 1.0)
     ruby-progressbar (1.11.0)
     thor (1.2.1)
-    unicode-display_width (2.1.0)
+    unicode-display_width (2.2.0)
 
 PLATFORMS
   ruby
@@ -42,7 +44,7 @@ DEPENDENCIES
   bundler-audit (~> 0.9)
   generate_third_party!
   rake (>= 12.3.3)
-  rubocop (~> 1.30)
+  rubocop (~> 1.31)
   rubocop-rake (~> 0.6)
 
 BUNDLED WITH
