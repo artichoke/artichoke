@@ -147,9 +147,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.5"
+version = "3.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d53da17d37dba964b9b3ecb5c5a1f193a2762c700e6829201e645b9381c99dc7"
+checksum = "190814073e85d238f31ff738fcb0bf6910cedeb73376c87cd69291028966fd83"
 dependencies = [
  "bitflags",
  "clap_lex",
@@ -160,9 +160,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.2.2"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5538cd660450ebeb4234cfecf8f2284b844ffc4c50531e66d584ad5b91293613"
+checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
 dependencies = [
  "os_str_bytes",
 ]
@@ -220,9 +220,9 @@ checksum = "db0d4cf898abf0081f964436dc980e96670a0f36863e4b83aaacdb65c9d7ccc3"
 
 [[package]]
 name = "indexmap"
-version = "1.9.0"
+version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c6392766afd7964e2531940894cffe4bd8d7d17dbc3c1c4857040fd4b33bdb3"
+checksum = "10a35a97730320ffe8e2d410b5d3b69279b98d2c14bdb8b70ea89ecf7888d41e"
 dependencies = [
  "autocfg",
  "hashbrown",
@@ -377,9 +377,9 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.39"
+version = "1.0.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c54b25569025b7fc9651de43004ae593a75ad88543b17178aa5e1b9c4f15f56f"
+checksum = "dd96a1e8ed2596c337f8eae5f24924ec83f5ad5ab21ea8e455d3566c69fbcaf7"
 dependencies = [
  "unicode-ident",
 ]
@@ -392,9 +392,9 @@ checksum = "90d0abf294960e1e7e22949cddc9cc2c96a05dc52f5567fd65c2bbd4899ff47e"
 
 [[package]]
 name = "quote"
-version = "1.0.19"
+version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f53dc8cf16a769a6f677e09e7ff2cd4be1ea0f48754aac39520536962011de0d"
+checksum = "3bcdf212e9776fbcb2d23ab029360416bb1706b1aea2d1a5ba002727cbcab804"
 dependencies = [
  "proc-macro2",
 ]
@@ -710,9 +710,9 @@ checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
 
 [[package]]
 name = "tz-rs"
-version = "0.6.9"
+version = "0.6.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed700577df0503a291cb0eec06edeb4da3debd33d49cffa81c720112a6e51ca6"
+checksum = "7eb454313e3d79601e2116bb6c7a93ec0eda1dbb52f9204f831f897204182c5f"
 
 [[package]]
 name = "uncased"
