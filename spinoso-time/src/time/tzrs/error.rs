@@ -3,6 +3,7 @@ use std::error;
 
 use tz::error::{DateTimeError, ProjectDateTimeError, TzError};
 
+use super::math::MathError;
 use super::offset::OffsetError;
 
 /// A wrapper around some of the errors provided by `tz-rs`.
@@ -27,6 +28,9 @@ pub enum TimeError {
     /// erroring.
     ComponentOutOfRangeError(DateTimeError),
 
+    /// Errors relating to addition or subtraction of _time_;
+    MathError(MathError),
+
     /// The provided time zone string cannot be used.
     OffsetError(OffsetError),
 
@@ -42,6 +46,7 @@ impl error::Error for TimeError {
         match self {
             Self::ProjectionError(ref err) => Some(err),
             Self::ComponentOutOfRangeError(ref err) => Some(err),
+            Self::MathError(ref err) => Some(err),
             Self::OffsetError(ref err) => Some(err),
             Self::UnknownTzError(ref err) => Some(err),
             Self::Unknown => None,
@@ -54,6 +59,7 @@ impl fmt::Display for TimeError {
         match self {
             Self::ProjectionError(error) => error.fmt(f),
             Self::ComponentOutOfRangeError(error) => error.fmt(f),
+            Self::MathError(error) => error.fmt(f),
             Self::OffsetError(error) => error.fmt(f),
             Self::UnknownTzError(error) => error.fmt(f),
             Self::Unknown => write!(f, "An unknown error occurred"),
@@ -70,6 +76,12 @@ impl From<ProjectDateTimeError> for TimeError {
 impl From<DateTimeError> for TimeError {
     fn from(err: DateTimeError) -> Self {
         Self::ComponentOutOfRangeError(err)
+    }
+}
+
+impl From<MathError> for TimeError {
+    fn from(err: MathError) -> Self {
+        Self::MathError(err)
     }
 }
 

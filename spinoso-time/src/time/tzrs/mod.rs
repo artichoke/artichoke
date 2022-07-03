@@ -53,7 +53,7 @@ use crate::NANOS_IN_SECOND;
 /// # use spinoso_time::tzrs::{Time, TimeError};
 /// # fn example() -> Result<(), TimeError> {
 /// let time = Time::now()?;
-/// let one_hour_ago: Time = time - (60_u32 * 60);
+/// let one_hour_ago: Time = time.checked_sub_u64(60 * 60)?;
 /// assert_eq!(time.to_int() - 3600, one_hour_ago.to_int());
 /// assert_eq!(time.nanoseconds(), one_hour_ago.nanoseconds());
 /// # Ok(())

@@ -1,10 +1,35 @@
-use core::ops::{Add, Sub};
+use core::fmt;
+use core::num::TryFromIntError;
 use core::time::Duration;
+use std::error;
 
 use tz::datetime::DateTime;
 
-use super::Time;
+use super::{Time, TimeError};
 use crate::NANOS_IN_SECOND;
+
+#[allow(clippy::module_name_repetitions)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MathError {
+    TryFromIntError(TryFromIntError),
+    RangeError,
+}
+
+impl fmt::Display for MathError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        match self {
+            Self::TryFromIntError(error) => write!(f, "Range too large: {}", error),
+            Self::RangeError => write!(f, "Range too large"),
+        }
+    }
+}
+impl error::Error for MathError {}
+
+impl From<TryFromIntError> for MathError {
+    fn from(u: TryFromIntError) -> Self {
+        Self::TryFromIntError(u)
+    }
+}
 
 impl Time {
     /// Rounds sub seconds to a given precision in decimal digits (0 digits by
@@ -86,136 +111,177 @@ impl Time {
     }
 }
 
-impl Add<Duration> for Time {
-    type Output = Self;
-
-    fn add(self, duration: Duration) -> Self::Output {
+// Addition
+impl Time {
+    /// Addition — Adds some duration to _time_ and returns that value as a new
+    /// Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add(self, duration: Duration) -> Result<Self, TimeError> {
         let unix_time = self.inner.unix_time();
         let nanoseconds = self.inner.nanoseconds();
         let offset = self.offset;
 
-        let duration_seconds = i64::try_from(duration.as_secs()).expect("Duration too large");
+        let duration_seconds = i64::try_from(duration.as_secs()).map_err(MathError::TryFromIntError)?;
         let duration_subsecs = duration.subsec_nanos();
 
-        let mut seconds = unix_time.checked_add(duration_seconds).expect("Duration too large");
-        let mut nanoseconds = nanoseconds.checked_add(duration_subsecs).expect("Duration too large");
+        let mut seconds = unix_time.checked_add(duration_seconds).ok_or(MathError::RangeError)?;
+        let mut nanoseconds = nanoseconds.checked_add(duration_subsecs).ok_or(MathError::RangeError)?;
 
         if nanoseconds > NANOS_IN_SECOND {
             seconds += 1;
             nanoseconds -= NANOS_IN_SECOND;
         }
 
-        Self::Output::with_timespec_and_offset(seconds, nanoseconds, offset).unwrap()
+        Self::with_timespec_and_offset(seconds, nanoseconds, offset)
     }
-}
 
-impl Add<i8> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: i8) -> Self::Output {
-        self + i64::from(seconds)
+    /// Addition — Adds some i8 to _time_ and returns that value as a new Time
+    /// object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_i8(&self, seconds: i8) -> Result<Self, TimeError> {
+        self.checked_add_i64(i64::from(seconds))
     }
-}
 
-impl Add<u8> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: u8) -> Self::Output {
-        self + u64::from(seconds)
+    /// Addition — Adds some u8 to _time_ and returns that value as a new Time
+    /// object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_u8(&self, seconds: u8) -> Result<Self, TimeError> {
+        self.checked_add_u64(u64::from(seconds))
     }
-}
 
-impl Add<i16> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: i16) -> Self::Output {
-        self + i64::from(seconds)
+    /// Addition — Adds some i16 to _time_ and returns that value as a new Time
+    /// object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_i16(&self, seconds: i16) -> Result<Self, TimeError> {
+        self.checked_add_i64(i64::from(seconds))
     }
-}
 
-impl Add<u16> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: u16) -> Self::Output {
-        self + u64::from(seconds)
+    /// Addition — Adds some u16 to _time_ and returns that value as a new Time
+    /// object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_u16(&self, seconds: u16) -> Result<Self, TimeError> {
+        self.checked_add_u64(u64::from(seconds))
     }
-}
 
-impl Add<i32> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: i32) -> Self::Output {
-        self + i64::from(seconds)
+    /// Addition — Adds some i32 to _time_ and returns that value as a new Time
+    /// object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_i32(&self, seconds: i32) -> Result<Self, TimeError> {
+        self.checked_add_i64(i64::from(seconds))
     }
-}
 
-impl Add<u32> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: u32) -> Self::Output {
-        self + u64::from(seconds)
+    /// Addition — Adds some u32 to _time_ and returns that value as a new Time
+    /// object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_u32(&self, seconds: u32) -> Result<Self, TimeError> {
+        self.checked_add_u64(u64::from(seconds))
     }
-}
 
-impl Add<i64> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: i64) -> Self::Output {
+    /// Addition — Adds some i64 to _time_ and returns that value as a new Time
+    /// object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_i64(&self, seconds: i64) -> Result<Self, TimeError> {
         if seconds.is_negative() {
             let seconds = seconds
                 .checked_neg()
                 .and_then(|secs| u64::try_from(secs).ok())
                 .expect("Duration too large");
-            self - Duration::from_secs(seconds)
+            self.checked_sub_u64(seconds)
         } else {
             let seconds = u64::try_from(seconds).expect("Duration too large");
-            self + Duration::from_secs(seconds)
+            self.checked_add_u64(seconds)
         }
     }
-}
 
-impl Add<u64> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: u64) -> Self::Output {
+    /// Addition — Adds some u64 to _time_ and returns that value as a new Time
+    /// object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_u64(&self, seconds: u64) -> Result<Self, TimeError> {
         let duration = Duration::from_secs(seconds);
-        self + duration
+        self.checked_add(duration)
     }
-}
 
-impl Add<f32> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: f32) -> Self::Output {
-        self + f64::from(seconds)
+    /// Addition — Adds some f32 fraction seconds to _time_ and returns that
+    /// value as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_f32(&self, seconds: f32) -> Result<Self, TimeError> {
+        self.checked_add_f64(f64::from(seconds))
     }
-}
 
-impl Add<f64> for Time {
-    type Output = Self;
-
-    fn add(self, seconds: f64) -> Self::Output {
+    /// Addition — Adds some f64 fraction seconds to _time_ and returns that
+    /// value as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_add_f64(&self, seconds: f64) -> Result<Self, TimeError> {
         if seconds.is_sign_positive() {
-            self + Duration::from_secs_f64(seconds)
+            self.checked_add(Duration::from_secs_f64(seconds))
         } else {
-            let seconds = -seconds;
-            self - Duration::from_secs_f64(seconds)
+            self.checked_sub(Duration::from_secs_f64(-seconds))
         }
     }
 }
 
-impl Sub<Duration> for Time {
-    type Output = Self;
-
-    fn sub(self, duration: Duration) -> Self::Output {
+// Subtraction
+impl Time {
+    /// Subtration — Subtracts the given duration from _time_ and returns that
+    /// value as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub(self, duration: Duration) -> Result<Self, TimeError> {
         let unix_time = self.inner.unix_time();
         let nanoseconds = self.inner.nanoseconds();
         let offset = self.offset;
 
-        let duration_seconds = i64::try_from(duration.as_secs()).expect("Duration too large");
+        let duration_seconds = i64::try_from(duration.as_secs()).map_err(MathError::TryFromIntError)?;
         let duration_subsecs = duration.subsec_nanos();
 
-        let mut seconds = unix_time.checked_sub(duration_seconds).expect("Duration too large");
+        let mut seconds = unix_time.checked_sub(duration_seconds).ok_or(MathError::RangeError)?;
         let nanoseconds = if let Some(nanos) = nanoseconds.checked_sub(duration_subsecs) {
             nanos
         } else {
@@ -223,88 +289,131 @@ impl Sub<Duration> for Time {
             nanoseconds + NANOS_IN_SECOND - duration_subsecs
         };
 
-        Self::Output::with_timespec_and_offset(seconds, nanoseconds, offset).unwrap()
+        Self::with_timespec_and_offset(seconds, nanoseconds, offset)
     }
-}
 
-impl Sub<i8> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: i8) -> Self::Output {
-        self - i64::from(seconds)
+    /// Subtration — Subtracts the given i8 from _time_ and returns that value
+    /// as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_i8(self, seconds: i8) -> Result<Self, TimeError> {
+        self.checked_sub_i64(i64::from(seconds))
     }
-}
 
-impl Sub<u8> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: u8) -> Self::Output {
-        self - u64::from(seconds)
+    /// Subtration — Subtracts the given u8 from _time_ and returns that value
+    /// as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_u8(self, seconds: u8) -> Result<Self, TimeError> {
+        self.checked_sub_u64(u64::from(seconds))
     }
-}
 
-impl Sub<i16> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: i16) -> Self::Output {
-        self - i64::from(seconds)
+    /// Subtration — Subtracts the given i16 from _time_ and returns that value
+    /// as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_i16(self, seconds: i16) -> Result<Self, TimeError> {
+        self.checked_sub_i64(i64::from(seconds))
     }
-}
 
-impl Sub<u16> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: u16) -> Self::Output {
-        self - u64::from(seconds)
+    /// Subtration — Subtracts the given u16 from _time_ and returns that value
+    /// as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_u16(self, seconds: u16) -> Result<Self, TimeError> {
+        self.checked_sub_u64(u64::from(seconds))
     }
-}
 
-impl Sub<i32> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: i32) -> Self::Output {
-        self - i64::from(seconds)
+    /// Subtration — Subtracts the given i32 from _time_ and returns that value
+    /// as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_i32(self, seconds: i32) -> Result<Self, TimeError> {
+        self.checked_sub_i64(i64::from(seconds))
     }
-}
 
-impl Sub<u32> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: u32) -> Self::Output {
-        self - u64::from(seconds)
+    /// Subtration — Subtracts the given u32 from _time_ and returns that value
+    /// as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_u32(self, seconds: u32) -> Result<Self, TimeError> {
+        self.checked_sub_u64(u64::from(seconds))
     }
-}
 
-impl Sub<i64> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: i64) -> Self::Output {
-        self + -seconds
+    /// Subtration — Subtracts the given i64 from _time_ and returns that value
+    /// as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_i64(self, seconds: i64) -> Result<Self, TimeError> {
+        if seconds.is_negative() {
+            let seconds = seconds
+                .checked_neg()
+                .and_then(|secs| u64::try_from(secs).ok())
+                .expect("Duration too large");
+            self.checked_add_u64(seconds)
+        } else {
+            let seconds = u64::try_from(seconds).expect("Duration too large");
+            self.checked_sub_u64(seconds)
+        }
     }
-}
 
-impl Sub<u64> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: u64) -> Self::Output {
+    /// Subtration — Subtracts the given u64 from _time_ and returns that value
+    /// as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_u64(self, seconds: u64) -> Result<Self, TimeError> {
         let duration = Duration::from_secs(seconds);
-        self - duration
+        self.checked_sub(duration)
     }
-}
 
-impl Sub<f32> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: f32) -> Self::Output {
-        self - f64::from(seconds)
+    /// Subtration — Subtracts the given f32 as fraction seconds from _time_
+    /// and returns that value as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_f32(self, seconds: f32) -> Result<Self, TimeError> {
+        self.checked_sub_f64(f64::from(seconds))
     }
-}
 
-impl Sub<f64> for Time {
-    type Output = Self;
-
-    fn sub(self, seconds: f64) -> Self::Output {
-        self + -seconds
+    /// Subtration — Subtracts the given f64 as fraction seconds from _time_
+    /// and returns that value as a new Time object.
+    ///
+    /// # Errors
+    ///
+    /// If this function attempts to overflow the the number of seconds as an
+    /// i64 then a [`TimeError`] will be returned.
+    pub fn checked_sub_f64(self, seconds: f64) -> Result<Self, TimeError> {
+        if seconds.is_sign_positive() {
+            self.checked_sub(Duration::from_secs_f64(seconds))
+        } else {
+            self.checked_add(Duration::from_secs_f64(-seconds))
+        }
     }
 }
 
@@ -347,7 +456,7 @@ mod tests {
     #[test]
     fn add_int_to_time() {
         let dt = datetime();
-        let succ: Time = dt + 1;
+        let succ: Time = dt.checked_add_u64(1).unwrap();
         assert_eq!(dt.to_int() + 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -366,7 +475,7 @@ mod tests {
     #[test]
     fn add_subsec_float_to_time() {
         let dt = datetime();
-        let succ: Time = dt + 0.2;
+        let succ: Time = dt.checked_add_f64(0.2).unwrap();
         assert_eq!(dt.to_int(), succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -382,7 +491,7 @@ mod tests {
         }
 
         let dt = datetime();
-        let succ: Time = dt + 0.7;
+        let succ: Time = dt.checked_add_f64(0.7).unwrap();
         assert_eq!(dt.to_int() + 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -401,7 +510,7 @@ mod tests {
     #[test]
     fn add_float_to_time() {
         let dt = datetime();
-        let succ: Time = dt + 1.2;
+        let succ: Time = dt.checked_add_f64(1.2).unwrap();
         assert_eq!(dt.to_int() + 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -417,7 +526,7 @@ mod tests {
         }
 
         let dt = datetime();
-        let succ: Time = dt + 1.7;
+        let succ: Time = dt.checked_add_f64(1.7).unwrap();
         assert_eq!(dt.to_int() + 2, succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -436,7 +545,7 @@ mod tests {
     #[test]
     fn sub_int_to_time() {
         let dt = datetime();
-        let succ: Time = dt - 1;
+        let succ: Time = dt.checked_sub_u64(1).unwrap();
         assert_eq!(dt.to_int() - 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -455,7 +564,7 @@ mod tests {
     #[test]
     fn sub_subsec_float_to_time() {
         let dt = datetime();
-        let succ: Time = dt - 0.2;
+        let succ: Time = dt.checked_sub_f64(0.2).unwrap();
         assert_eq!(dt.to_int(), succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -471,7 +580,7 @@ mod tests {
         }
 
         let dt = datetime();
-        let succ: Time = dt - 0.7;
+        let succ: Time = dt.checked_sub_f64(0.7).unwrap();
         assert_eq!(dt.to_int() - 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -490,7 +599,7 @@ mod tests {
     #[test]
     fn sub_float_to_time() {
         let dt = datetime();
-        let succ: Time = dt - 1.2;
+        let succ: Time = dt.checked_sub_f64(1.2).unwrap();
         assert_eq!(dt.to_int() - 1, succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
@@ -506,7 +615,7 @@ mod tests {
         }
 
         let dt = datetime();
-        let succ: Time = dt - 1.7;
+        let succ: Time = dt.checked_sub_f64(1.7).unwrap();
         assert_eq!(dt.to_int() - 2, succ.to_int());
         assert_eq!(dt.year(), succ.year());
         assert_eq!(dt.month(), succ.month());
