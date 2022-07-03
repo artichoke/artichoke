@@ -30,7 +30,10 @@ pub struct TzStringError;
 
 impl fmt::Display for TzStringError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "expected [+/-]HH[:]MM, A..K, J..Z for utc_offset")
+        write!(
+            f,
+            "+HH:MM\", \"-HH:MM\", \"UTC\" or \"A\"..\"I\",\"K\"..\"Z\" expected for utc_offset"
+        )
     }
 }
 impl error::Error for TzStringError {}
