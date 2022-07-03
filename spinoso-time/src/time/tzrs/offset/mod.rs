@@ -10,7 +10,7 @@ use tzdb::time_zone::etc::GMT;
 
 mod error;
 
-pub use error::{OffsetError, OutOfRangeError, TzStringError};
+pub use error::*;
 
 const SECONDS_IN_MINUTE: i32 = 60;
 const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
