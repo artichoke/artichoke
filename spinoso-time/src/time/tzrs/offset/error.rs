@@ -2,10 +2,14 @@ use core::fmt;
 use std::error;
 use std::str::Utf8Error;
 
+/// A Unified Error type from construction and parsing for [`super::Offset`]
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OffsetError {
+    /// Indicates that there was an issue when parsing a string for an offset.
     TzStringError(TzStringError),
+    /// Indicates that a provided values was out of range (e.g. number of
+    /// seconds for a fixed offset).
     OutOfRangeError(OutOfRangeError),
 }
 

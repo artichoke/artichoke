@@ -10,12 +10,16 @@ use tzdb::time_zone::etc::GMT;
 
 mod error;
 
-pub(crate) use error::{OffsetError, OutOfRangeError, TzStringError};
+pub use error::{OffsetError, OutOfRangeError, TzStringError};
 
 const SECONDS_IN_MINUTE: i32 = 60;
 const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
-const MAX_OFFSET_SECONDS: i32 = 24 * 60 * 60 - 1;
-const MIN_OFFSET_SECONDS: i32 = -MAX_OFFSET_SECONDS;
+/// The maximum allowed offset in seconds from UTC in the future for a fixed
+/// offset. This is equal to the number of seconds in 1 day, minus 1
+pub const MAX_OFFSET_SECONDS: i32 = 24 * 60 * 60 - 1;
+/// The maximum allowed offset in seconds from UTC in the past for a fixed
+/// offset. This is equal to the number of seconds in 1 day, minus 1
+pub const MIN_OFFSET_SECONDS: i32 = -MAX_OFFSET_SECONDS;
 
 /// tzdb provides [`local_tz`] to get the local system timezone. If this ever
 /// fails, we can assume `GMT`. `GMT` is used instead of `UTC` since it has a

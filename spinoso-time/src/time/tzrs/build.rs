@@ -7,7 +7,7 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], generally when provided values are out of range
+    /// Can produce a [`super::TimeError`], generally when provided values are out of range
     ///
     /// [`Time#local`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-local
     /// [`Time#mktime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-mktime
@@ -39,7 +39,7 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], generally when provided values are out of range
+    /// Can produce a [`super::TimeError`], generally when provided values are out of range
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-utc
     /// [`Time#gm`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-gm

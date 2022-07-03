@@ -13,7 +13,7 @@ mod timezone;
 mod to_a;
 
 pub use error::TimeError;
-pub use offset::Offset;
+pub use offset::{Offset, OffsetError, MAX_OFFSET_SECONDS, MIN_OFFSET_SECONDS};
 pub use to_a::ToA;
 
 /// Alias for [`std::result::Result`] with the unified `TimeError`

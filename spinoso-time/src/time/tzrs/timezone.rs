@@ -26,8 +26,8 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing
-    /// the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`super::TimeError`], might come as a result of an offset
+    /// causing the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
     #[inline]
@@ -54,8 +54,8 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing
-    /// the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`super::TimeError`], might come as a result of an offset
+    /// causing the `unix_time` to exceed `i64::MAX`.
     ///
     ///
     /// [`Time#getutc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getutc
@@ -86,8 +86,8 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing
-    /// the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`super::TimeError`], might come as a result of an offset
+    /// causing the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-getlocal
     #[inline]
@@ -116,8 +116,8 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing
-    /// the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`super::TimeError`], might come as a result of an offset
+    /// causing the `unix_time` to exceed `i64::MAX`.
     #[inline]
     pub fn set_offset(&mut self, offset: Offset) -> Result<()> {
         let time_zone_ref = offset.time_zone_ref();
@@ -150,8 +150,8 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing
-    /// the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`super::TimeError`], might come as a result of an offset
+    /// causing the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     #[inline]
@@ -180,8 +180,8 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing
-    /// the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`super::TimeError`], might come as a result of an offset
+    /// causing the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc
     /// [`Time#gmtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmtime
@@ -212,8 +212,8 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], might come as a result of an offset causing
-    /// the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`super::TimeError`], might come as a result of an offset
+    /// causing the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-localtime
     #[inline]
