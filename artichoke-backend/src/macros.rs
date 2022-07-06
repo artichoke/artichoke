@@ -85,6 +85,7 @@ pub mod argspec {
     pub const OPT1: &CStr = qed::const_cstr_from_str!("|o\0");
     pub const REQ1_OPT1: &CStr = qed::const_cstr_from_str!("o|o\0");
     pub const REQ1_OPT2: &CStr = qed::const_cstr_from_str!("o|oo\0");
+    pub const REQ1_OPT3: &CStr = qed::const_cstr_from_str!("o|ooo\0");
     pub const REQ1_REQBLOCK: &CStr = qed::const_cstr_from_str!("o&\0");
     pub const REQ1_REQBLOCK_OPT1: &CStr = qed::const_cstr_from_str!("o&|o?\0");
     pub const REQ1_REQBLOCK_OPT2: &CStr = qed::const_cstr_from_str!("o&|o?o?\0");
@@ -179,6 +180,45 @@ macro_rules! mrb_get_args {
             1 => {
                 let req1 = req1.assume_init();
                 (req1, None, None)
+            }
+            _ => unreachable!("mrb_get_args should have raised"),
+        }
+    }};
+    ($mrb:expr, required = 1, optional = 3) => {{
+        let mut req1 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
+        let mut opt1 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
+        let mut opt2 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
+        let mut opt3 = std::mem::MaybeUninit::<$crate::sys::mrb_value>::uninit();
+        let argc = $crate::sys::mrb_get_args(
+            $mrb,
+            $crate::macros::argspec::REQ1_OPT3.as_ptr(),
+            req1.as_mut_ptr(),
+            opt1.as_mut_ptr(),
+            opt2.as_mut_ptr(),
+            opt3.as_mut_ptr(),
+        );
+        match argc {
+            4 => {
+                let req1 = req1.assume_init();
+                let opt1 = opt1.assume_init();
+                let opt2 = opt2.assume_init();
+                let opt3 = opt3.assume_init();
+                (req1, Some(opt1), Some(opt2), Some(opt3))
+            }
+            3 => {
+                let req1 = req1.assume_init();
+                let opt1 = opt1.assume_init();
+                let opt2 = opt2.assume_init();
+                (req1, Some(opt1), Some(opt2), None)
+            }
+            2 => {
+                let req1 = req1.assume_init();
+                let opt1 = opt1.assume_init();
+                (req1, Some(opt1), None, None)
+            }
+            1 => {
+                let req1 = req1.assume_init();
+                (req1, None, None, None)
             }
             _ => unreachable!("mrb_get_args should have raised"),
         }
