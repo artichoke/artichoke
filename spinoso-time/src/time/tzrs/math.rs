@@ -1,35 +1,10 @@
-use core::fmt;
-use core::num::TryFromIntError;
 use core::time::Duration;
-use std::error;
 
 use tz::datetime::DateTime;
 
+use super::error::IntOverflowError;
 use super::{Time, TimeError};
 use crate::NANOS_IN_SECOND;
-
-#[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MathError {
-    TryFromIntError(TryFromIntError),
-    RangeError,
-}
-
-impl fmt::Display for MathError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        match self {
-            Self::TryFromIntError(error) => write!(f, "Range too large: {}", error),
-            Self::RangeError => write!(f, "Range too large"),
-        }
-    }
-}
-impl error::Error for MathError {}
-
-impl From<TryFromIntError> for MathError {
-    fn from(u: TryFromIntError) -> Self {
-        Self::TryFromIntError(u)
-    }
-}
 
 impl Time {
     /// Rounds sub seconds to a given precision in decimal digits (0 digits by
@@ -125,11 +100,11 @@ impl Time {
         let nanoseconds = self.inner.nanoseconds();
         let offset = self.offset;
 
-        let duration_seconds = i64::try_from(duration.as_secs()).map_err(MathError::TryFromIntError)?;
+        let duration_seconds = i64::try_from(duration.as_secs())?;
         let duration_subsecs = duration.subsec_nanos();
 
-        let mut seconds = unix_time.checked_add(duration_seconds).ok_or(MathError::RangeError)?;
-        let mut nanoseconds = nanoseconds.checked_add(duration_subsecs).ok_or(MathError::RangeError)?;
+        let mut seconds = unix_time.checked_add(duration_seconds).ok_or(IntOverflowError)?;
+        let mut nanoseconds = nanoseconds.checked_add(duration_subsecs).ok_or(IntOverflowError)?;
 
         if nanoseconds > NANOS_IN_SECOND {
             seconds += 1;
@@ -278,10 +253,10 @@ impl Time {
         let nanoseconds = self.inner.nanoseconds();
         let offset = self.offset;
 
-        let duration_seconds = i64::try_from(duration.as_secs()).map_err(MathError::TryFromIntError)?;
+        let duration_seconds = i64::try_from(duration.as_secs())?;
         let duration_subsecs = duration.subsec_nanos();
 
-        let mut seconds = unix_time.checked_sub(duration_seconds).ok_or(MathError::RangeError)?;
+        let mut seconds = unix_time.checked_sub(duration_seconds).ok_or(IntOverflowError)?;
         let nanoseconds = if let Some(nanos) = nanoseconds.checked_sub(duration_subsecs) {
             nanos
         } else {

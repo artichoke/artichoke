@@ -1,10 +1,9 @@
 use core::fmt;
+use core::num::TryFromIntError;
 use std::error;
+use std::str::Utf8Error;
 
 use tz::error::{DateTimeError, ProjectDateTimeError, TzError};
-
-use super::math::MathError;
-use super::offset::OffsetError;
 
 /// A wrapper around some of the errors provided by `tz-rs`.
 #[allow(clippy::module_name_repetitions)]
@@ -28,17 +27,35 @@ pub enum TimeError {
     /// erroring.
     ComponentOutOfRangeError(DateTimeError),
 
-    /// Errors relating to addition or subtraction of _time_;
-    MathError(MathError),
-
-    /// The provided time zone string cannot be used.
-    OffsetError(OffsetError),
-
     /// A rescuable error originally from the tz-rs library.
     UnknownTzError(TzError),
 
+    /// Indicates that there was an issue when parsing a string for an offset.
+    TzStringError(TzStringError),
+
+    /// The provided tz offset seconds offset is outside of the allowed range.
+    TzOutOfRangeError(TzOutOfRangeError),
+
+    /// A rescuable Integer overflow error. Caused when trying to exceed the
+    /// bounds of an int.
+    IntOverflowError(IntOverflowError),
+
     /// An rescuable unknown error (instead of panicing)
     Unknown,
+}
+
+impl PartialEq for TimeError {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            Self::ProjectionError(_) => matches!(other, TimeError::ProjectionError(_)),
+            Self::ComponentOutOfRangeError(_) => matches!(other, TimeError::ComponentOutOfRangeError(_)),
+            Self::UnknownTzError(_) => matches!(other, TimeError::UnknownTzError(_)),
+            Self::TzStringError(_) => matches!(other, TimeError::TzStringError(_)),
+            Self::TzOutOfRangeError(_) => matches!(other, TimeError::TzOutOfRangeError(_)),
+            Self::IntOverflowError(_) => matches!(other, TimeError::IntOverflowError(_)),
+            Self::Unknown => matches!(other, TimeError::Unknown),
+        }
+    }
 }
 
 impl error::Error for TimeError {
@@ -46,9 +63,10 @@ impl error::Error for TimeError {
         match self {
             Self::ProjectionError(ref err) => Some(err),
             Self::ComponentOutOfRangeError(ref err) => Some(err),
-            Self::MathError(ref err) => Some(err),
-            Self::OffsetError(ref err) => Some(err),
             Self::UnknownTzError(ref err) => Some(err),
+            Self::TzStringError(ref err) => Some(err),
+            Self::TzOutOfRangeError(ref err) => Some(err),
+            Self::IntOverflowError(ref err) => Some(err),
             Self::Unknown => None,
         }
     }
@@ -59,9 +77,10 @@ impl fmt::Display for TimeError {
         match self {
             Self::ProjectionError(error) => error.fmt(f),
             Self::ComponentOutOfRangeError(error) => error.fmt(f),
-            Self::MathError(error) => error.fmt(f),
-            Self::OffsetError(error) => error.fmt(f),
             Self::UnknownTzError(error) => error.fmt(f),
+            Self::TzStringError(ref error) => error.fmt(f),
+            Self::TzOutOfRangeError(ref error) => error.fmt(f),
+            Self::IntOverflowError(error) => error.fmt(f),
             Self::Unknown => write!(f, "An unknown error occurred"),
         }
     }
@@ -76,18 +95,6 @@ impl From<ProjectDateTimeError> for TimeError {
 impl From<DateTimeError> for TimeError {
     fn from(err: DateTimeError) -> Self {
         Self::ComponentOutOfRangeError(err)
-    }
-}
-
-impl From<MathError> for TimeError {
-    fn from(err: MathError) -> Self {
-        Self::MathError(err)
-    }
-}
-
-impl From<OffsetError> for TimeError {
-    fn from(err: OffsetError) -> Self {
-        Self::OffsetError(err)
     }
 }
 
@@ -126,5 +133,73 @@ impl From<TzError> for TimeError {
             // TzError is non_exhaustive, so the rest are caught as Unknown
             _ => Self::Unknown,
         }
+    }
+}
+
+impl From<TzStringError> for TimeError {
+    fn from(err: TzStringError) -> Self {
+        Self::TzStringError(err)
+    }
+}
+
+impl From<TzOutOfRangeError> for TimeError {
+    fn from(err: TzOutOfRangeError) -> Self {
+        Self::TzOutOfRangeError(err)
+    }
+}
+
+impl From<IntOverflowError> for TimeError {
+    fn from(error: IntOverflowError) -> Self {
+        Self::IntOverflowError(error)
+    }
+}
+
+#[allow(clippy::module_name_repetitions)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TzStringError;
+
+impl fmt::Display for TzStringError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(
+            f,
+            "+HH:MM\", \"-HH:MM\", \"UTC\" or \"A\"..\"I\",\"K\"..\"Z\" expected for utc_offset"
+        )
+    }
+}
+impl error::Error for TzStringError {}
+
+impl From<Utf8Error> for TzStringError {
+    fn from(_: Utf8Error) -> Self {
+        TzStringError
+    }
+}
+
+#[allow(clippy::module_name_repetitions)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TzOutOfRangeError;
+
+impl fmt::Display for TzOutOfRangeError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "utc_offset out of range")
+    }
+}
+
+impl error::Error for TzOutOfRangeError {}
+
+#[allow(clippy::module_name_repetitions)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct IntOverflowError;
+
+impl fmt::Display for IntOverflowError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(f, "out of int range")
+    }
+}
+
+impl error::Error for IntOverflowError {}
+
+impl From<TryFromIntError> for TimeError {
+    fn from(_: TryFromIntError) -> Self {
+        Self::IntOverflowError(IntOverflowError)
     }
 }
