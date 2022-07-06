@@ -192,10 +192,10 @@ impl Time {
             let seconds = seconds
                 .checked_neg()
                 .and_then(|secs| u64::try_from(secs).ok())
-                .expect("Duration too large");
+                .ok_or(IntOverflowError)?;
             self.checked_sub_u64(seconds)
         } else {
-            let seconds = u64::try_from(seconds).expect("Duration too large");
+            let seconds = u64::try_from(seconds).map_err(|_| IntOverflowError)?;
             self.checked_add_u64(seconds)
         }
     }
@@ -345,10 +345,10 @@ impl Time {
             let seconds = seconds
                 .checked_neg()
                 .and_then(|secs| u64::try_from(secs).ok())
-                .expect("Duration too large");
+                .ok_or(IntOverflowError)?;
             self.checked_add_u64(seconds)
         } else {
-            let seconds = u64::try_from(seconds).expect("Duration too large");
+            let seconds = u64::try_from(seconds).map_err(|_| IntOverflowError)?;
             self.checked_sub_u64(seconds)
         }
     }
