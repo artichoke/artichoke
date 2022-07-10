@@ -154,6 +154,11 @@ impl Time {
     /// If this function attempts to overflow the the number of seconds as an
     /// i64 then a [`TimeError`] will be returned.
     pub fn checked_add_f64(&self, seconds: f64) -> Result<Self, TimeError> {
+        // Fail safely during f64 conversion to duration
+        if seconds.is_nan() || seconds.is_infinite() {
+            return Err(TzOutOfRangeError.into());
+        }
+
         if seconds.is_sign_positive() {
             self.checked_add(Duration::from_secs_f64(seconds))
         } else {
@@ -230,6 +235,11 @@ impl Time {
     /// If this function attempts to overflow the the number of seconds as an
     /// i64 then a [`TimeError`] will be returned.
     pub fn checked_sub_f64(self, seconds: f64) -> Result<Self, TimeError> {
+        // Fail safely during f64 conversion to duration
+        if seconds.is_nan() || seconds.is_infinite() {
+            return Err(TzOutOfRangeError.into());
+        }
+
         if seconds.is_sign_positive() {
             self.checked_sub(Duration::from_secs_f64(seconds))
         } else {
