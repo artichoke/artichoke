@@ -140,7 +140,7 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], generally when provided values are out of range
+    /// Can produce a [`TimeError`], generally when provided values are out of range.
     ///
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
@@ -181,7 +181,7 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], however these should never been seen in regular usage
+    /// Can produce a [`TimeError`], however these should never been seen in regular usage.
     ///
     /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
     #[inline]
@@ -212,7 +212,7 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], however these should not be seen during regular usage
+    /// Can produce a [`TimeError`], however these should not be seen during regular usage.
     ///
     /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
     #[inline]
@@ -248,7 +248,7 @@ impl TryFrom<ToA> for Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`TimeError`], generally when provided values are out of range
+    /// Can produce a [`TimeError`], generally when provided values are out of range.
     #[inline]
     fn try_from(to_a: ToA) -> Result<Self> {
         let offset = Offset::try_from(to_a.zone).unwrap_or_else(|_| Offset::utc());

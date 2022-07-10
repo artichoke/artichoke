@@ -2,7 +2,7 @@ use core::time::Duration;
 
 use tz::datetime::DateTime;
 
-use super::error::IntOverflowError;
+use super::error::{IntOverflowError, TzOutOfRangeError};
 use super::{Time, TimeError};
 use crate::NANOS_IN_SECOND;
 
@@ -114,72 +114,6 @@ impl Time {
         Self::with_timespec_and_offset(seconds, nanoseconds, offset)
     }
 
-    /// Addition — Adds some i8 to _time_ and returns that value as a new Time
-    /// object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_add_i8(&self, seconds: i8) -> Result<Self, TimeError> {
-        self.checked_add_i64(i64::from(seconds))
-    }
-
-    /// Addition — Adds some u8 to _time_ and returns that value as a new Time
-    /// object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_add_u8(&self, seconds: u8) -> Result<Self, TimeError> {
-        self.checked_add_u64(u64::from(seconds))
-    }
-
-    /// Addition — Adds some i16 to _time_ and returns that value as a new Time
-    /// object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_add_i16(&self, seconds: i16) -> Result<Self, TimeError> {
-        self.checked_add_i64(i64::from(seconds))
-    }
-
-    /// Addition — Adds some u16 to _time_ and returns that value as a new Time
-    /// object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_add_u16(&self, seconds: u16) -> Result<Self, TimeError> {
-        self.checked_add_u64(u64::from(seconds))
-    }
-
-    /// Addition — Adds some i32 to _time_ and returns that value as a new Time
-    /// object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_add_i32(&self, seconds: i32) -> Result<Self, TimeError> {
-        self.checked_add_i64(i64::from(seconds))
-    }
-
-    /// Addition — Adds some u32 to _time_ and returns that value as a new Time
-    /// object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_add_u32(&self, seconds: u32) -> Result<Self, TimeError> {
-        self.checked_add_u64(u64::from(seconds))
-    }
-
     /// Addition — Adds some i64 to _time_ and returns that value as a new Time
     /// object.
     ///
@@ -212,17 +146,6 @@ impl Time {
         self.checked_add(duration)
     }
 
-    /// Addition — Adds some f32 fraction seconds to _time_ and returns that
-    /// value as a new Time object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_add_f32(&self, seconds: f32) -> Result<Self, TimeError> {
-        self.checked_add_f64(f64::from(seconds))
-    }
-
     /// Addition — Adds some f64 fraction seconds to _time_ and returns that
     /// value as a new Time object.
     ///
@@ -241,7 +164,7 @@ impl Time {
 
 // Subtraction
 impl Time {
-    /// Subtration — Subtracts the given duration from _time_ and returns that
+    /// Subtraction — Subtracts the given duration from _time_ and returns that
     /// value as a new Time object.
     ///
     /// # Errors
@@ -267,73 +190,7 @@ impl Time {
         Self::with_timespec_and_offset(seconds, nanoseconds, offset)
     }
 
-    /// Subtration — Subtracts the given i8 from _time_ and returns that value
-    /// as a new Time object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_sub_i8(self, seconds: i8) -> Result<Self, TimeError> {
-        self.checked_sub_i64(i64::from(seconds))
-    }
-
-    /// Subtration — Subtracts the given u8 from _time_ and returns that value
-    /// as a new Time object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_sub_u8(self, seconds: u8) -> Result<Self, TimeError> {
-        self.checked_sub_u64(u64::from(seconds))
-    }
-
-    /// Subtration — Subtracts the given i16 from _time_ and returns that value
-    /// as a new Time object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_sub_i16(self, seconds: i16) -> Result<Self, TimeError> {
-        self.checked_sub_i64(i64::from(seconds))
-    }
-
-    /// Subtration — Subtracts the given u16 from _time_ and returns that value
-    /// as a new Time object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_sub_u16(self, seconds: u16) -> Result<Self, TimeError> {
-        self.checked_sub_u64(u64::from(seconds))
-    }
-
-    /// Subtration — Subtracts the given i32 from _time_ and returns that value
-    /// as a new Time object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_sub_i32(self, seconds: i32) -> Result<Self, TimeError> {
-        self.checked_sub_i64(i64::from(seconds))
-    }
-
-    /// Subtration — Subtracts the given u32 from _time_ and returns that value
-    /// as a new Time object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_sub_u32(self, seconds: u32) -> Result<Self, TimeError> {
-        self.checked_sub_u64(u64::from(seconds))
-    }
-
-    /// Subtration — Subtracts the given i64 from _time_ and returns that value
+    /// Subtraction — Subtracts the given i64 from _time_ and returns that value
     /// as a new Time object.
     ///
     /// # Errors
@@ -353,7 +210,7 @@ impl Time {
         }
     }
 
-    /// Subtration — Subtracts the given u64 from _time_ and returns that value
+    /// Subtraction — Subtracts the given u64 from _time_ and returns that value
     /// as a new Time object.
     ///
     /// # Errors
@@ -365,18 +222,7 @@ impl Time {
         self.checked_sub(duration)
     }
 
-    /// Subtration — Subtracts the given f32 as fraction seconds from _time_
-    /// and returns that value as a new Time object.
-    ///
-    /// # Errors
-    ///
-    /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
-    pub fn checked_sub_f32(self, seconds: f32) -> Result<Self, TimeError> {
-        self.checked_sub_f64(f64::from(seconds))
-    }
-
-    /// Subtration — Subtracts the given f64 as fraction seconds from _time_
+    /// Subtraction — Subtracts the given f64 as fraction seconds from _time_
     /// and returns that value as a new Time object.
     ///
     /// # Errors

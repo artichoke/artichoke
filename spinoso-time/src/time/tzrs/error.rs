@@ -40,7 +40,7 @@ pub enum TimeError {
     /// bounds of an int.
     IntOverflowError(IntOverflowError),
 
-    /// An rescuable unknown error (instead of panicing)
+    /// An rescuable unknown error (instead of panicking).
     Unknown,
 }
 
@@ -155,15 +155,12 @@ impl From<IntOverflowError> for TimeError {
 }
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzStringError;
 
 impl fmt::Display for TzStringError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(
-            f,
-            "+HH:MM\", \"-HH:MM\", \"UTC\" or \"A\"..\"I\",\"K\"..\"Z\" expected for utc_offset"
-        )
+        f.write_str(r#""+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset"#)
     }
 }
 impl error::Error for TzStringError {}
@@ -175,24 +172,24 @@ impl From<Utf8Error> for TzStringError {
 }
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzOutOfRangeError;
 
 impl fmt::Display for TzOutOfRangeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "utc_offset out of range")
+        f.write_str("utc_offset out of range")
     }
 }
 
 impl error::Error for TzOutOfRangeError {}
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntOverflowError;
 
 impl fmt::Display for IntOverflowError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        write!(f, "out of int range")
+        f.write_str("out of int range")
     }
 }
 

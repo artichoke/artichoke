@@ -115,7 +115,7 @@ impl Offset {
     /// # Errors
     ///
     /// Return a [`TimeError::TzOutOfRangeError`] when outside of range of
-    /// acceptable offset of [`MIN_OFFSET_SECONDS`] to [`MAX_OFFSET_SECONDS`]
+    /// acceptable offset of [`MIN_OFFSET_SECONDS`] to [`MAX_OFFSET_SECONDS`].
     #[inline]
     pub fn fixed(offset: i32) -> Result<Self, TimeError> {
         if !(MIN_OFFSET_SECONDS..=MAX_OFFSET_SECONDS).contains(&offset) {
