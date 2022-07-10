@@ -154,9 +154,15 @@ impl From<IntOverflowError> for TimeError {
     }
 }
 
+/// Error that indicates that the provided string cannot be used in the creation
+/// of a timezone.
+///
+/// This error is returned by [`Offset::try_from`]
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct TzStringError;
+pub struct TzStringError {
+    _private: (),
+}
 
 impl fmt::Display for TzStringError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
@@ -165,15 +171,29 @@ impl fmt::Display for TzStringError {
 }
 impl error::Error for TzStringError {}
 
-impl From<Utf8Error> for TzStringError {
-    fn from(_: Utf8Error) -> Self {
-        TzStringError
+impl TzStringError {
+    // This error is not to be constructed outside of this crate.
+    pub(crate) const fn new() -> Self {
+        Self { _private: () }
     }
 }
 
+impl From<Utf8Error> for TzStringError {
+    fn from(_: Utf8Error) -> Self {
+        TzStringError::new()
+    }
+}
+
+/// Error that indicates that a provided value is outside the allowed range of
+/// values. Generally seen when constructing an offset that is greater than the
+/// allowed range.
+///
+/// This error is returned by [`Offset::try_from`]
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct TzOutOfRangeError;
+pub struct TzOutOfRangeError {
+    _private: (),
+}
 
 impl fmt::Display for TzOutOfRangeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
@@ -183,9 +203,19 @@ impl fmt::Display for TzOutOfRangeError {
 
 impl error::Error for TzOutOfRangeError {}
 
+impl TzOutOfRangeError {
+    // This error is not to be constructed outside of this crate.
+    pub(crate) const fn new() -> Self {
+        Self { _private: () }
+    }
+}
+
+/// Error that indicates a given operation has resulted in an integer overflow.
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct IntOverflowError;
+pub struct IntOverflowError {
+    _private: (),
+}
 
 impl fmt::Display for IntOverflowError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
@@ -195,8 +225,15 @@ impl fmt::Display for IntOverflowError {
 
 impl error::Error for IntOverflowError {}
 
+impl IntOverflowError {
+    // This error is not to be constructed outside of this crate.
+    pub(crate) const fn new() -> Self {
+        Self { _private: () }
+    }
+}
+
 impl From<TryFromIntError> for TimeError {
     fn from(_: TryFromIntError) -> Self {
-        Self::IntOverflowError(IntOverflowError)
+        Self::IntOverflowError(IntOverflowError::new())
     }
 }

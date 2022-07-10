@@ -103,8 +103,10 @@ impl Time {
         let duration_seconds = i64::try_from(duration.as_secs())?;
         let duration_subsecs = duration.subsec_nanos();
 
-        let mut seconds = unix_time.checked_add(duration_seconds).ok_or(IntOverflowError)?;
-        let mut nanoseconds = nanoseconds.checked_add(duration_subsecs).ok_or(IntOverflowError)?;
+        let mut seconds = unix_time.checked_add(duration_seconds).ok_or(IntOverflowError::new())?;
+        let mut nanoseconds = nanoseconds
+            .checked_add(duration_subsecs)
+            .ok_or(IntOverflowError::new())?;
 
         if nanoseconds > NANOS_IN_SECOND {
             seconds += 1;
@@ -126,10 +128,10 @@ impl Time {
             let seconds = seconds
                 .checked_neg()
                 .and_then(|secs| u64::try_from(secs).ok())
-                .ok_or(IntOverflowError)?;
+                .ok_or(IntOverflowError::new())?;
             self.checked_sub_u64(seconds)
         } else {
-            let seconds = u64::try_from(seconds).map_err(|_| IntOverflowError)?;
+            let seconds = u64::try_from(seconds).map_err(|_| IntOverflowError::new())?;
             self.checked_add_u64(seconds)
         }
     }
@@ -156,7 +158,7 @@ impl Time {
     pub fn checked_add_f64(&self, seconds: f64) -> Result<Self, TimeError> {
         // Fail safely during f64 conversion to duration
         if seconds.is_nan() || seconds.is_infinite() {
-            return Err(TzOutOfRangeError.into());
+            return Err(TzOutOfRangeError::new().into());
         }
 
         if seconds.is_sign_positive() {
@@ -184,7 +186,7 @@ impl Time {
         let duration_seconds = i64::try_from(duration.as_secs())?;
         let duration_subsecs = duration.subsec_nanos();
 
-        let mut seconds = unix_time.checked_sub(duration_seconds).ok_or(IntOverflowError)?;
+        let mut seconds = unix_time.checked_sub(duration_seconds).ok_or(IntOverflowError::new())?;
         let nanoseconds = if let Some(nanos) = nanoseconds.checked_sub(duration_subsecs) {
             nanos
         } else {
@@ -207,10 +209,10 @@ impl Time {
             let seconds = seconds
                 .checked_neg()
                 .and_then(|secs| u64::try_from(secs).ok())
-                .ok_or(IntOverflowError)?;
+                .ok_or(IntOverflowError::new())?;
             self.checked_add_u64(seconds)
         } else {
-            let seconds = u64::try_from(seconds).map_err(|_| IntOverflowError)?;
+            let seconds = u64::try_from(seconds).map_err(|_| IntOverflowError::new())?;
             self.checked_sub_u64(seconds)
         }
     }
@@ -237,7 +239,7 @@ impl Time {
     pub fn checked_sub_f64(self, seconds: f64) -> Result<Self, TimeError> {
         // Fail safely during f64 conversion to duration
         if seconds.is_nan() || seconds.is_infinite() {
-            return Err(TzOutOfRangeError.into());
+            return Err(TzOutOfRangeError::new().into());
         }
 
         if seconds.is_sign_positive() {

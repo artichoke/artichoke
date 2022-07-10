@@ -119,7 +119,7 @@ impl Offset {
     #[inline]
     pub fn fixed(offset: i32) -> Result<Self, TimeError> {
         if !(MIN_OFFSET_SECONDS..=MAX_OFFSET_SECONDS).contains(&offset) {
-            return Err(TzOutOfRangeError.into());
+            return Err(TzOutOfRangeError::new().into());
         }
 
         let offset_name = offset_hhmm_from_seconds(offset);
@@ -234,13 +234,13 @@ impl TryFrom<&str> for Offset {
                     let minutes = caps.get(3).unwrap().as_str().parse::<i32>().unwrap();
 
                     if hours > 23 || minutes > 59 {
-                        return Err(TzOutOfRangeError.into());
+                        return Err(TzOutOfRangeError::new().into());
                     }
 
                     let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
                     Ok(Self::fixed(offset_seconds)?)
                 } else {
-                    Err(TzStringError.into())
+                    Err(TzStringError::new().into())
                 }
             }
         }
@@ -251,7 +251,7 @@ impl TryFrom<&[u8]> for Offset {
     type Error = TimeError;
 
     fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
-        let input = str::from_utf8(input).map_err(|_| TzStringError)?;
+        let input = str::from_utf8(input).map_err(|_| TzStringError::new())?;
         Offset::try_from(input)
     }
 }
@@ -284,7 +284,7 @@ impl TryFrom<i32> for Offset {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tzrs::error::{TimeError, TzOutOfRangeError, TzStringError};
+    use crate::tzrs::error::TimeError;
 
     fn offset_seconds_from_fixed_offset(input: &str) -> Result<i32, TimeError> {
         let offset = Offset::try_from(input)?;
@@ -337,22 +337,25 @@ mod tests {
         assert_eq!(Some(7320), offset_seconds_from_fixed_offset("+0202").ok());
         assert_eq!(Some(-7320), offset_seconds_from_fixed_offset("-0202").ok());
 
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            offset_seconds_from_fixed_offset("+2400")
-        );
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            offset_seconds_from_fixed_offset("-2400")
-        );
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            offset_seconds_from_fixed_offset("+0060")
-        );
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            offset_seconds_from_fixed_offset("-0060")
-        );
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+2400").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("-2400").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+0060").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("-0060").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
     }
 
     #[test]
@@ -366,22 +369,25 @@ mod tests {
         assert_eq!(Some(7320), offset_seconds_from_fixed_offset("+02:02").ok());
         assert_eq!(Some(-7320), offset_seconds_from_fixed_offset("-02:02").ok());
 
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            offset_seconds_from_fixed_offset("+2400")
-        );
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            offset_seconds_from_fixed_offset("-2400")
-        );
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            offset_seconds_from_fixed_offset("+0060")
-        );
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            offset_seconds_from_fixed_offset("-0060")
-        );
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+24:00").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("-24:00").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+00:60").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("-00:60").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
     }
 
     #[test]
@@ -391,10 +397,12 @@ mod tests {
         ];
 
         for invalid_string in invalid_fixed_strings {
-            assert_eq!(
-                Err(TimeError::TzStringError(TzStringError)),
-                Offset::try_from(invalid_string),
-                "Expected Offset::TzStringError for {}",
+            assert!(
+                matches!(
+                    Offset::try_from(invalid_string).unwrap_err(),
+                    TimeError::TzStringError(_)
+                ),
+                "Expected TimeError::TzStringError for {}",
                 invalid_string,
             );
         }
@@ -414,14 +422,14 @@ mod tests {
         assert_eq!("+2359", fixed_offset_name(MAX_OFFSET_SECONDS).unwrap());
         assert_eq!("-2359", fixed_offset_name(MIN_OFFSET_SECONDS).unwrap());
 
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            fixed_offset_name(MAX_OFFSET_SECONDS + 1)
-        );
+        assert!(matches!(
+            fixed_offset_name(MAX_OFFSET_SECONDS + 1).unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
 
-        assert_eq!(
-            Err(TimeError::TzOutOfRangeError(TzOutOfRangeError)),
-            fixed_offset_name(MIN_OFFSET_SECONDS - 1)
-        );
+        assert!(matches!(
+            fixed_offset_name(MIN_OFFSET_SECONDS - 1).unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
     }
 }
