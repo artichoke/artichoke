@@ -157,7 +157,7 @@ impl From<IntOverflowError> for TimeError {
 /// Error that indicates that the provided string cannot be used in the creation
 /// of a timezone.
 ///
-/// This error is returned by [`Offset::try_from`]
+/// This error is returned by [`Offset::try_from`].
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzStringError {
@@ -188,7 +188,7 @@ impl From<Utf8Error> for TzStringError {
 /// values. Generally seen when constructing an offset that is greater than the
 /// allowed range.
 ///
-/// This error is returned by [`Offset::try_from`]
+/// This error is returned by [`Offset::try_from`].
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzOutOfRangeError {
