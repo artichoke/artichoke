@@ -5,14 +5,19 @@ use tz::datetime::DateTime;
 
 mod build;
 mod convert;
+mod error;
 mod math;
 mod offset;
 mod parts;
 mod timezone;
 mod to_a;
 
-pub use offset::Offset;
+pub use error::TimeError;
+pub use offset::{Offset, MAX_OFFSET_SECONDS, MIN_OFFSET_SECONDS};
 pub use to_a::ToA;
+
+/// Alias for [`std::result::Result`] with the unified `TimeError`
+pub type Result<T> = std::result::Result<T, TimeError>;
 
 use crate::NANOS_IN_SECOND;
 
@@ -33,19 +38,27 @@ use crate::NANOS_IN_SECOND;
 /// # Examples
 ///
 /// ```
-/// # use spinoso_time::tzrs::Time;
+/// # use spinoso_time::tzrs::{Time, TimeError};
+/// # fn example() -> Result<(), TimeError> {
 /// // Create a Time to the current system clock with local offset
-/// let time = Time::now();
+/// let time = Time::now()?;
 /// assert!(!time.is_utc());
 /// println!("{}", time.is_sunday());
+/// # Ok(())
+/// # }
+/// # example().unwrap();
 /// ```
 ///
 /// ```
-/// # use spinoso_time::tzrs::Time;
-/// let time = Time::now();
-/// let one_hour_ago: Time = time - (60_u32 * 60);
+/// # use spinoso_time::tzrs::{Time, TimeError};
+/// # fn example() -> Result<(), TimeError> {
+/// let time = Time::now()?;
+/// let one_hour_ago: Time = time.checked_sub_u64(60 * 60)?;
 /// assert_eq!(time.to_int() - 3600, one_hour_ago.to_int());
 /// assert_eq!(time.nanoseconds(), one_hour_ago.nanoseconds());
+/// # Ok(())
+/// # }
+/// # example().unwrap();
 /// ```
 ///
 /// [`tz-rs`]: tz
@@ -111,15 +124,23 @@ impl Time {
     /// [`Timezone`] Object).
     ///
     /// **Note**: During DST transitions, a specific time can be ambiguous. This
-    /// method will always pick the earliest date.
+    /// method will always pick the latest date.
     ///
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::{Time, Offset};
-    /// let offset = Offset::from("+1200");
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let offset = Offset::try_from("+1200")?;
     /// let t = Time::new(2022, 9, 25, 1, 30, 0, 0, offset);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Can produce a [`TimeError`], generally when provided values are out of range.
     ///
     /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
@@ -134,14 +155,13 @@ impl Time {
         second: u8,
         nanoseconds: u32,
         offset: Offset,
-    ) -> Self {
+    ) -> Result<Self> {
         let tz = offset.time_zone_ref();
-        let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz)
-            .expect("Could not find a matching DateTime for this timezone");
-        let dt = found_date_times
-            .unique()
-            .expect("Could not find a matching DateTime for this timezone");
-        Self { inner: dt, offset }
+        let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz)?;
+
+        // .latest() will always return Some(DateTime)
+        let dt = found_date_times.latest().expect("No datetime found with this offset");
+        Ok(Self { inner: dt, offset })
     }
 
     /// Returns a Time with the current time in the System Timezone.
@@ -151,17 +171,25 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::now();
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::now()?;
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Can produce a [`TimeError`], however these should never been seen in regular usage.
     ///
     /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
     #[inline]
-    pub fn now() -> Self {
+    pub fn now() -> Result<Self> {
         let offset = Offset::local();
         let time_zone_ref = offset.time_zone_ref();
-        let now = DateTime::now(time_zone_ref).expect("Unable to find now");
-        Self { inner: now, offset }
+        let now = DateTime::now(time_zone_ref)?;
+        Ok(Self { inner: now, offset })
     }
 
     /// Returns a Time in the given timezone with the number of `seconds` and
@@ -172,22 +200,32 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::{Time, Offset};
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
     /// let offset = Offset::utc();
-    /// let t = Time::with_timespec_and_offset(0, 0, offset);
+    /// let t = Time::with_timespec_and_offset(0, 0, offset)?;
     /// assert_eq!(t.to_int(), 0);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Can produce a [`TimeError`], however these should not be seen during regular usage.
     ///
     /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
     #[inline]
-    pub fn with_timespec_and_offset(seconds: i64, nanoseconds: u32, offset: Offset) -> Self {
+    pub fn with_timespec_and_offset(seconds: i64, nanoseconds: u32, offset: Offset) -> Result<Self> {
         let time_zone_ref = offset.time_zone_ref();
-        let dt = DateTime::from_timespec(seconds, nanoseconds, time_zone_ref).expect("Could not create datetime");
-        Self { inner: dt, offset }
+        let dt = DateTime::from_timespec(seconds, nanoseconds, time_zone_ref)?;
+        Ok(Self { inner: dt, offset })
     }
 }
 
-impl From<ToA> for Time {
+impl TryFrom<ToA> for Time {
+    type Error = TimeError;
+
     /// Create a new Time object base on a `ToA`
     ///
     /// **Note**: This converting from a Time object to a `ToA` and back again
@@ -196,24 +234,27 @@ impl From<ToA> for Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::local(2022, 7, 8, 12, 34, 56, 1000);
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::local(2022, 7, 8, 12, 34, 56, 1000)?;
     /// let to_a = now.to_array();
-    /// let from_to_a = Time::from(to_a);
+    /// let from_to_a = Time::try_from(to_a)?;
     /// assert_eq!(now.second(), from_to_a.second());
     /// assert_ne!(now.nanoseconds(), from_to_a.nanoseconds());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Can produce a [`TimeError`], generally when provided values are out of range.
     #[inline]
-    fn from(to_a: ToA) -> Self {
+    fn try_from(to_a: ToA) -> Result<Self> {
+        let offset = Offset::try_from(to_a.zone).unwrap_or_else(|_| Offset::utc());
+
         Self::new(
-            to_a.year,
-            to_a.month,
-            to_a.day,
-            to_a.hour,
-            to_a.min,
-            to_a.sec,
-            0,
-            Offset::from(to_a.zone),
+            to_a.year, to_a.month, to_a.day, to_a.hour, to_a.min, to_a.sec, 0, offset,
         )
     }
 }
@@ -228,9 +269,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let t = Time::utc(1970, 1, 1, 0, 1, 0, 0);
-    /// assert_eq!(t.to_int(), 60)
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let t = Time::utc(1970, 1, 1, 0, 1, 0, 0)?;
+    /// assert_eq!(t.to_int(), 60);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// [`Time#to_i`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_i
@@ -249,9 +294,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let now = Time::utc(1970, 1, 1, 0, 1, 0, 1000);
-    /// assert_eq!(now.to_float(), 60.000001)
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let now = Time::utc(1970, 1, 1, 0, 1, 0, 1000)?;
+    /// assert_eq!(now.to_float(), 60.000001);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// [`Time#to_f`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_f
@@ -278,9 +327,13 @@ impl Time {
     /// #Examples
     ///
     /// ```
-    /// use spinoso_time::tzrs::Time;
-    /// let t = Time::utc(1970, 1, 1, 0, 0, 1, 1000);
+    /// # use spinoso_time::tzrs::{Time, Offset, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let t = Time::utc(1970, 1, 1, 0, 0, 1, 1000)?;
     /// assert_eq!(t.subsec_fractional(), (1000, 1000000000));
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
     /// ```
     ///
     /// [`Time#subsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-subsec
@@ -298,8 +351,8 @@ mod tests {
     use super::*;
 
     fn time_with_fixed_offset(offset: i32) -> Time {
-        let offset = Offset::fixed(offset);
-        Time::with_timespec_and_offset(0, 0, offset)
+        let offset = Offset::fixed(offset).unwrap();
+        Time::with_timespec_and_offset(0, 0, offset).unwrap()
     }
 
     #[test]

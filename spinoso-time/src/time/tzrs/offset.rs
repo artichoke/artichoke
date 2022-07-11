@@ -8,8 +8,16 @@ use tz::timezone::{LocalTimeType, TimeZoneRef};
 use tzdb::local_tz;
 use tzdb::time_zone::etc::GMT;
 
+pub use super::error::{TimeError, TzOutOfRangeError, TzStringError};
+
 const SECONDS_IN_MINUTE: i32 = 60;
 const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
+/// The maximum allowed offset in seconds from UTC in the future for a fixed
+/// offset. This is equal to the number of seconds in 1 day, minus 1
+pub const MAX_OFFSET_SECONDS: i32 = 24 * 60 * 60 - 1;
+/// The maximum allowed offset in seconds from UTC in the past for a fixed
+/// offset. This is equal to the number of seconds in 1 day, minus 1
+pub const MIN_OFFSET_SECONDS: i32 = -MAX_OFFSET_SECONDS;
 
 /// tzdb provides [`local_tz`] to get the local system timezone. If this ever
 /// fails, we can assume `GMT`. `GMT` is used instead of `UTC` since it has a
@@ -103,15 +111,26 @@ impl Offset {
     }
 
     /// Generate an offset with a number of seconds from UTC.
+    ///
+    /// # Errors
+    ///
+    /// Return a [`TimeError::TzOutOfRangeError`] when outside of range of
+    /// acceptable offset of [`MIN_OFFSET_SECONDS`] to [`MAX_OFFSET_SECONDS`].
     #[inline]
-    #[must_use]
-    pub fn fixed(offset: i32) -> Self {
-        let offset_name = offset_hhmm_from_seconds(offset);
-        let local_time_type =
-            LocalTimeType::new(offset, false, Some(offset_name.as_bytes())).expect("Couldn't create fixed offset");
-        Self {
-            inner: OffsetType::Fixed(local_time_type),
+    pub fn fixed(offset: i32) -> Result<Self, TimeError> {
+        if !(MIN_OFFSET_SECONDS..=MAX_OFFSET_SECONDS).contains(&offset) {
+            return Err(TzOutOfRangeError::new().into());
         }
+
+        let offset_name = offset_hhmm_from_seconds(offset);
+        // creation of the LocalTimeType is never expected to fail, since the
+        // bounds we are more restrictive of the values than the struct itself.
+        let local_time_type = LocalTimeType::new(offset, false, Some(offset_name.as_bytes()))
+            .expect("Failed to LocalTimeType for fixed offset");
+
+        Ok(Self {
+            inner: OffsetType::Fixed(local_time_type),
+        })
     }
 
     /// Generate an offset based on a provided [`tz::timezone::TimeZoneRef`].
@@ -152,8 +171,10 @@ impl Offset {
     }
 }
 
-impl From<&str> for Offset {
-    /// Construct a Offset based on the [accepted MRI values].
+impl TryFrom<&str> for Offset {
+    type Error = TimeError;
+
+    /// Construct a Offset based on the [accepted MRI values]
     ///
     /// Accepts:
     ///
@@ -165,36 +186,32 @@ impl From<&str> for Offset {
     ///
     /// [accepted MRI values]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
     #[inline]
-    #[must_use]
-    fn from(input: &str) -> Self {
-        static HH_MM_MATCHER: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").expect("Regex should be valid"));
-
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
         match input {
-            "A" => Self::fixed(SECONDS_IN_HOUR),
-            "B" => Self::fixed(2 * SECONDS_IN_HOUR),
-            "C" => Self::fixed(3 * SECONDS_IN_HOUR),
-            "D" => Self::fixed(4 * SECONDS_IN_HOUR),
-            "E" => Self::fixed(5 * SECONDS_IN_HOUR),
-            "F" => Self::fixed(6 * SECONDS_IN_HOUR),
-            "G" => Self::fixed(7 * SECONDS_IN_HOUR),
-            "H" => Self::fixed(8 * SECONDS_IN_HOUR),
-            "I" => Self::fixed(9 * SECONDS_IN_HOUR),
-            "K" => Self::fixed(10 * SECONDS_IN_HOUR),
-            "L" => Self::fixed(11 * SECONDS_IN_HOUR),
-            "M" => Self::fixed(12 * SECONDS_IN_HOUR),
-            "N" => Self::fixed(-SECONDS_IN_HOUR),
-            "O" => Self::fixed(-2 * SECONDS_IN_HOUR),
-            "P" => Self::fixed(-3 * SECONDS_IN_HOUR),
-            "Q" => Self::fixed(-4 * SECONDS_IN_HOUR),
-            "R" => Self::fixed(-5 * SECONDS_IN_HOUR),
-            "S" => Self::fixed(-6 * SECONDS_IN_HOUR),
-            "T" => Self::fixed(-7 * SECONDS_IN_HOUR),
-            "U" => Self::fixed(-8 * SECONDS_IN_HOUR),
-            "V" => Self::fixed(-9 * SECONDS_IN_HOUR),
-            "W" => Self::fixed(-10 * SECONDS_IN_HOUR),
-            "X" => Self::fixed(-11 * SECONDS_IN_HOUR),
-            "Y" => Self::fixed(-12 * SECONDS_IN_HOUR),
+            "A" => Ok(Self::fixed(SECONDS_IN_HOUR)?),
+            "B" => Ok(Self::fixed(2 * SECONDS_IN_HOUR)?),
+            "C" => Ok(Self::fixed(3 * SECONDS_IN_HOUR)?),
+            "D" => Ok(Self::fixed(4 * SECONDS_IN_HOUR)?),
+            "E" => Ok(Self::fixed(5 * SECONDS_IN_HOUR)?),
+            "F" => Ok(Self::fixed(6 * SECONDS_IN_HOUR)?),
+            "G" => Ok(Self::fixed(7 * SECONDS_IN_HOUR)?),
+            "H" => Ok(Self::fixed(8 * SECONDS_IN_HOUR)?),
+            "I" => Ok(Self::fixed(9 * SECONDS_IN_HOUR)?),
+            "K" => Ok(Self::fixed(10 * SECONDS_IN_HOUR)?),
+            "L" => Ok(Self::fixed(11 * SECONDS_IN_HOUR)?),
+            "M" => Ok(Self::fixed(12 * SECONDS_IN_HOUR)?),
+            "N" => Ok(Self::fixed(-SECONDS_IN_HOUR)?),
+            "O" => Ok(Self::fixed(-2 * SECONDS_IN_HOUR)?),
+            "P" => Ok(Self::fixed(-3 * SECONDS_IN_HOUR)?),
+            "Q" => Ok(Self::fixed(-4 * SECONDS_IN_HOUR)?),
+            "R" => Ok(Self::fixed(-5 * SECONDS_IN_HOUR)?),
+            "S" => Ok(Self::fixed(-6 * SECONDS_IN_HOUR)?),
+            "T" => Ok(Self::fixed(-7 * SECONDS_IN_HOUR)?),
+            "U" => Ok(Self::fixed(-8 * SECONDS_IN_HOUR)?),
+            "V" => Ok(Self::fixed(-9 * SECONDS_IN_HOUR)?),
+            "W" => Ok(Self::fixed(-10 * SECONDS_IN_HOUR)?),
+            "X" => Ok(Self::fixed(-11 * SECONDS_IN_HOUR)?),
+            "Y" => Ok(Self::fixed(-12 * SECONDS_IN_HOUR)?),
             // ```console
             // [3.1.2] > Time.new(2022, 6, 26, 13, 57, 6, 'Z')
             // => 2022-06-26 13:57:06 UTC
@@ -205,8 +222,10 @@ impl From<&str> for Offset {
             // [3.1.2] > Time.new(2022, 6, 26, 13, 57, 6, 'UTC').utc?
             // => true
             // ```
-            "Z" | "UTC" => Self::utc(),
+            "Z" | "UTC" => Ok(Self::utc()),
             _ => {
+                static HH_MM_MATCHER: Lazy<Regex> =
+                    Lazy::new(|| Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").unwrap());
                 if HH_MM_MATCHER.is_match(input) {
                     let caps = HH_MM_MATCHER.captures(input).unwrap();
 
@@ -214,27 +233,34 @@ impl From<&str> for Offset {
                     let hours = caps.get(2).unwrap().as_str().parse::<i32>().unwrap();
                     let minutes = caps.get(3).unwrap().as_str().parse::<i32>().unwrap();
 
+                    if hours > 23 || minutes > 59 {
+                        return Err(TzOutOfRangeError::new().into());
+                    }
+
                     let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
-                    Self::fixed(offset_seconds)
+                    Ok(Self::fixed(offset_seconds)?)
                 } else {
-                    // TODO: ArgumentError
-                    Self::utc()
+                    Err(TzStringError::new().into())
                 }
             }
         }
     }
 }
 
-impl From<&[u8]> for Offset {
-    fn from(input: &[u8]) -> Self {
-        let input = str::from_utf8(input).expect("Invalid UTF8");
-        Offset::from(input)
+impl TryFrom<&[u8]> for Offset {
+    type Error = TimeError;
+
+    fn try_from(input: &[u8]) -> Result<Self, Self::Error> {
+        let input = str::from_utf8(input).map_err(|_| TzStringError::new())?;
+        Offset::try_from(input)
     }
 }
 
-impl From<String> for Offset {
-    fn from(input: String) -> Self {
-        Offset::from(input.as_str())
+impl TryFrom<String> for Offset {
+    type Error = TimeError;
+
+    fn try_from(input: String) -> Result<Self, Self::Error> {
+        Offset::try_from(input.as_str())
     }
 }
 
@@ -246,11 +272,11 @@ impl From<TimeZoneRef<'static>> for Offset {
     }
 }
 
-impl From<i32> for Offset {
+impl TryFrom<i32> for Offset {
+    type Error = TimeError;
     /// Construct a Offset with the offset in seconds from UTC
     #[inline]
-    #[must_use]
-    fn from(seconds: i32) -> Self {
+    fn try_from(seconds: i32) -> Result<Self, Self::Error> {
         Self::fixed(seconds)
     }
 }
@@ -258,24 +284,26 @@ impl From<i32> for Offset {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tzrs::error::TimeError;
 
-    fn offset_seconds_from_fixed_offset(input: &str) -> i32 {
-        let offset = Offset::from(input);
+    fn offset_seconds_from_fixed_offset(input: &str) -> Result<i32, TimeError> {
+        let offset = Offset::try_from(input)?;
         let local_time_type = offset.time_zone_ref().local_time_types()[0];
-        local_time_type.ut_offset()
+        Ok(local_time_type.ut_offset())
     }
 
-    fn offset_name(offset: &Offset) -> &str {
+    fn fixed_offset_name(offset_seconds: i32) -> Result<String, TimeError> {
+        let offset = Offset::fixed(offset_seconds)?;
+
         match offset.inner {
-            OffsetType::Utc => "UTC",
-            OffsetType::Fixed(ref ltt) => ltt.time_zone_designation(),
-            OffsetType::Tz(_) => "Ambiguous timezone name",
+            OffsetType::Fixed(ref local_time_type) => Ok(local_time_type.time_zone_designation().to_string()),
+            _ => unreachable!(),
         }
     }
 
     #[test]
     fn fixed_zero_is_not_utc() {
-        let offset = Offset::from(0);
+        let offset = Offset::try_from(0).unwrap();
         assert!(!offset.is_utc());
     }
 
@@ -287,69 +315,121 @@ mod tests {
 
     #[test]
     fn z_is_utc() {
-        let offset = Offset::from("Z");
+        let offset = Offset::try_from("Z").unwrap();
         assert!(offset.is_utc());
     }
 
     #[test]
     fn from_binary_string() {
         let tz: &[u8] = b"Z";
-        let offset = Offset::from(tz);
+        let offset = Offset::try_from(tz).unwrap();
         assert!(offset.is_utc());
     }
 
     #[test]
     fn from_str_hh_mm() {
-        assert_eq!(0, offset_seconds_from_fixed_offset("+0000"));
-        assert_eq!(0, offset_seconds_from_fixed_offset("-0000"));
-        assert_eq!(60, offset_seconds_from_fixed_offset("+0001"));
-        assert_eq!(-60, offset_seconds_from_fixed_offset("-0001"));
-        assert_eq!(3600, offset_seconds_from_fixed_offset("+0100"));
-        assert_eq!(-3600, offset_seconds_from_fixed_offset("-0100"));
-        assert_eq!(7320, offset_seconds_from_fixed_offset("+0202"));
-        assert_eq!(-7320, offset_seconds_from_fixed_offset("-0202"));
-        assert_eq!(362_340, offset_seconds_from_fixed_offset("+9999"));
-        assert_eq!(-362_340, offset_seconds_from_fixed_offset("-9999"));
-        assert_eq!(3660, offset_seconds_from_fixed_offset("+0061"));
+        assert_eq!(Some(0), offset_seconds_from_fixed_offset("+0000").ok());
+        assert_eq!(Some(0), offset_seconds_from_fixed_offset("-0000").ok());
+        assert_eq!(Some(60), offset_seconds_from_fixed_offset("+0001").ok());
+        assert_eq!(Some(-60), offset_seconds_from_fixed_offset("-0001").ok());
+        assert_eq!(Some(3600), offset_seconds_from_fixed_offset("+0100").ok());
+        assert_eq!(Some(-3600), offset_seconds_from_fixed_offset("-0100").ok());
+        assert_eq!(Some(7320), offset_seconds_from_fixed_offset("+0202").ok());
+        assert_eq!(Some(-7320), offset_seconds_from_fixed_offset("-0202").ok());
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+2400").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("-2400").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+0060").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("-0060").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
     }
 
     #[test]
     fn from_str_hh_colon_mm() {
-        assert_eq!(0, offset_seconds_from_fixed_offset("+00:00"));
-        assert_eq!(0, offset_seconds_from_fixed_offset("-00:00"));
-        assert_eq!(60, offset_seconds_from_fixed_offset("+00:01"));
-        assert_eq!(-60, offset_seconds_from_fixed_offset("-00:01"));
-        assert_eq!(3600, offset_seconds_from_fixed_offset("+01:00"));
-        assert_eq!(-3600, offset_seconds_from_fixed_offset("-01:00"));
-        assert_eq!(7320, offset_seconds_from_fixed_offset("+02:02"));
-        assert_eq!(-7320, offset_seconds_from_fixed_offset("-02:02"));
-        assert_eq!(362_340, offset_seconds_from_fixed_offset("+99:99"));
-        assert_eq!(-362_340, offset_seconds_from_fixed_offset("-99:99"));
-        assert_eq!(3660, offset_seconds_from_fixed_offset("+00:61"));
+        assert_eq!(Some(0), offset_seconds_from_fixed_offset("+00:00").ok());
+        assert_eq!(Some(0), offset_seconds_from_fixed_offset("-00:00").ok());
+        assert_eq!(Some(60), offset_seconds_from_fixed_offset("+00:01").ok());
+        assert_eq!(Some(-60), offset_seconds_from_fixed_offset("-00:01").ok());
+        assert_eq!(Some(3600), offset_seconds_from_fixed_offset("+01:00").ok());
+        assert_eq!(Some(-3600), offset_seconds_from_fixed_offset("-01:00").ok());
+        assert_eq!(Some(7320), offset_seconds_from_fixed_offset("+02:02").ok());
+        assert_eq!(Some(-7320), offset_seconds_from_fixed_offset("-02:02").ok());
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+24:00").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("-24:00").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+00:60").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("-00:60").unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
     }
 
     #[test]
-    fn from_str_hh_mm_strange() {
-        assert_eq!(3660, offset_seconds_from_fixed_offset("+0061"));
+    fn from_str_invalid_fixed_strings() {
+        let invalid_fixed_strings = [
+            "+01:010", "+010:10", "+010:010", "0110", "01:10", "01-10", "+01-10", "+01::10",
+        ];
+
+        for invalid_string in invalid_fixed_strings {
+            assert!(
+                matches!(
+                    Offset::try_from(invalid_string).unwrap_err(),
+                    TimeError::TzStringError(_)
+                ),
+                "Expected TimeError::TzStringError for {}",
+                invalid_string,
+            );
+        }
     }
 
     #[test]
     fn fixed_time_zone_designation() {
-        assert_eq!("+0000", offset_name(&Offset::from(0)));
-        assert_eq!("+0000", offset_name(&Offset::from(59)));
-        assert_eq!("+0001", offset_name(&Offset::from(60)));
-        assert_eq!("-0001", offset_name(&Offset::from(-60)));
-        assert_eq!("+0100", offset_name(&Offset::from(3600)));
-        assert_eq!("-0100", offset_name(&Offset::from(-3600)));
-        assert_eq!("+0202", offset_name(&Offset::from(7320)));
-        assert_eq!("-0202", offset_name(&Offset::from(-7320)));
-        assert_eq!("+9959", offset_name(&Offset::from(359_940)));
-        assert_eq!("-9959", offset_name(&Offset::from(-359_940)));
+        assert_eq!("+0000", fixed_offset_name(0).unwrap());
+        assert_eq!("+0000", fixed_offset_name(59).unwrap());
+        assert_eq!("+0001", fixed_offset_name(60).unwrap());
+        assert_eq!("-0001", fixed_offset_name(-60).unwrap());
+        assert_eq!("+0100", fixed_offset_name(3600).unwrap());
+        assert_eq!("-0100", fixed_offset_name(-3600).unwrap());
+        assert_eq!("+0202", fixed_offset_name(7320).unwrap());
+        assert_eq!("-0202", fixed_offset_name(-7320).unwrap());
 
-        // Unexpected cases
-        assert_eq!("-0000", offset_name(&Offset::from(-59)));
+        assert_eq!("+2359", fixed_offset_name(MAX_OFFSET_SECONDS).unwrap());
+        assert_eq!("-2359", fixed_offset_name(MIN_OFFSET_SECONDS).unwrap());
 
-        // FIXME: Should error instead
-        assert_eq!("+10000", offset_name(&Offset::from(360_000)));
+        assert!(matches!(
+            fixed_offset_name(MAX_OFFSET_SECONDS + 1).unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
+
+        assert!(matches!(
+            fixed_offset_name(MIN_OFFSET_SECONDS - 1).unwrap_err(),
+            TimeError::TzOutOfRangeError(_)
+        ));
     }
 }
