@@ -70,7 +70,7 @@ fn offset_from_options(interp: &mut Artichoke, options: Value) -> Result<Offset,
 
 // Constructor
 pub fn now(interp: &mut Artichoke) -> Result<Value, Error> {
-    let now = Time::now().map_err(|_| StandardError::with_message("now is not available"))?;
+    let now = Time::now().map_err(convert_time_error_to_argument_error)?;
     let result = Time::alloc_value(now, interp)?;
     Ok(result)
 }
@@ -82,6 +82,26 @@ pub fn at(
     second: Option<Value>,
     third: Option<Value>,
 ) -> Result<Value, Error> {
+    // Coerce the params to the correct place. Specifically:
+    // - the options hash might not always be provided as the last argument.
+    // - subseconds can be provided with an optional symbol for the type of subsec.
+    //
+    // ```console
+    // [3.1.2] > Time.at(1)
+    // => 1970-01-01 01:00:01 +0100
+    // [3.1.2] > Time.at(1, 1)
+    // => 1970-01-01 01:00:01.000001 +0100
+    // [3.1.2] > Time.at(1, 1, :nsec)
+    // => 1970-01-01 01:00:01.000000001 +0100
+    // [3.1.2] > Time.at(1, in: "A")
+    // => 1970-01-01 01:00:01 +0100
+    // [3.1.2] > Time.at(1, 1, in: "A")
+    // => 1970-01-01 01:00:01.000001 +0100
+    // [3.1.2] > Time.at(1, 1, :nsec)
+    // => 1970-01-01 01:00:01.000000001 +0100
+    // [3.1.2] > Time.at(1, 1, :nsec, in: "A")
+    // => 1970-01-01 01:00:01.000000001 +0100
+    // ```
     let (subsec, subsec_type, options) = match (
         first.map(|opt| opt.ruby_type()),
         second.map(|opt| opt.ruby_type()),
