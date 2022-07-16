@@ -1,53 +1,51 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
-use spinoso_time::MICROS_IN_NANO;
-
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::symbol::Symbol;
 use crate::extn::core::time::{convert_time_error_to_argument_error, Offset, Time};
 use crate::extn::prelude::*;
 
 const MAX_NANOS: i64 = 1_000_000_000 - 1;
+const MILLIS_IN_NANO: i64 = 1_000_000;
+const MICROS_IN_NANO: i64 = 1_000;
+const NANOS_IN_NANO: i64 = 1;
 
-// Generate a subsecond multiplier from the given ruby value
+// Generate a subsecond multiplier from the given ruby value.
 //
-// - If not provided, the defaults to Micros
-// - Otherwise, expects a symbol with :milliseconds, :usec, or :nsec
+// - If not provided, the defaults to Micros.
+// - Otherwise, expects a symbol with :milliseconds, :usec, or :nsec.
 fn subsec_multiplier(interp: &mut Artichoke, subsec_type: Option<Value>) -> Result<i64, Error> {
-    match subsec_type {
-        Some(subsec_type) => {
-            let subsec_symbol = unsafe { Symbol::unbox_from_value(&mut subsec_type.clone(), interp)? }.bytes(interp);
-            if subsec_symbol == b"milliseconds" {
-                Ok(1_000_000)
-            } else if subsec_symbol == b"usec" {
-                Ok(1_000)
-            } else if subsec_symbol == b"nsec" {
-                Ok(1)
-            } else {
-                Err(ArgumentError::with_message("unexpected unit. expects :milliseconds, :usec, :nsec").into())
-            }
+    subsec_type.map_or(Ok(MICROS_IN_NANO), |mut value| {
+        let subsec_symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? }.bytes(interp);
+        match subsec_symbol {
+            b"milliseconds" => Ok(MILLIS_IN_NANO),
+            b"usec" => Ok(MICROS_IN_NANO),
+            b"nsec" => Ok(NANOS_IN_NANO),
+            _ => Err(ArgumentError::with_message("unexpected unit. expects :milliseconds, :usec, :nsec").into()),
         }
-        None => Ok(i64::from(MICROS_IN_NANO)),
-    }
+    })
 }
 
+// Convert a Ruby Value to a Offset which can be used to construct a _time_.
 fn offset_from_value(interp: &mut Artichoke, mut value: Value) -> Result<Offset, Error> {
-    match value.ruby_type() {
-        Ruby::Fixnum => {
-            let offset_seconds = i32::try_from(implicitly_convert_to_int(interp, value)?)
-                .map_err(|_| ArgumentError::with_message("invalid offset"))?;
-            Ok(Offset::try_from(offset_seconds).map_err(convert_time_error_to_argument_error)?)
-        }
-        Ruby::String => {
-            let offset_str = unsafe { implicitly_convert_to_string(interp, &mut value)? };
-            Ok(Offset::try_from(offset_str).map_err(convert_time_error_to_argument_error)?)
-        }
-        _ => Err(ArgumentError::with_message(
+    if let Ok(offset_seconds) = implicitly_convert_to_int(interp, value) {
+        let offset_seconds =
+            i32::try_from(offset_seconds).map_err(|_| ArgumentError::with_message("invalid offset"))?;
+        let offset = Offset::try_from(offset_seconds).map_err(convert_time_error_to_argument_error)?;
+        Ok(offset)
+    } else if let Ok(offset_str) = unsafe { implicitly_convert_to_string(interp, &mut value) } {
+        let offset = Offset::try_from(offset_str).map_err(convert_time_error_to_argument_error)?;
+        Ok(offset)
+    } else {
+        Err(ArgumentError::with_message(
             "+HH:MM, -HH:MM, UTC, A..I,K..Z, or a signed number of seconds expected for utc_offset",
-        ))?,
+        )
+        .into())
     }
 }
 
+// Check a Ruby Value Hash for the appropriate values to create and Offset
+// for a _time_.
 fn offset_from_options(interp: &mut Artichoke, options: Value) -> Result<Offset, Error> {
     let hash: Vec<(Value, Value)> = interp.try_convert_mut(options)?;
     let tz = hash
