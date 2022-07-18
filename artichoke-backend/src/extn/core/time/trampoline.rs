@@ -2,7 +2,7 @@
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::symbol::Symbol;
-use crate::extn::core::time::{convert_time_error_to_argument_error, Offset, Time};
+use crate::extn::core::time::{Offset, Time};
 use crate::extn::prelude::*;
 
 const MAX_NANOS: i64 = 1_000_000_000 - 1;
@@ -31,10 +31,10 @@ fn offset_from_value(interp: &mut Artichoke, mut value: Value) -> Result<Offset,
     if let Ok(offset_seconds) = implicitly_convert_to_int(interp, value) {
         let offset_seconds =
             i32::try_from(offset_seconds).map_err(|_| ArgumentError::with_message("invalid offset"))?;
-        let offset = Offset::try_from(offset_seconds).map_err(convert_time_error_to_argument_error)?;
+        let offset = Offset::try_from(offset_seconds)?;
         Ok(offset)
     } else if let Ok(offset_str) = unsafe { implicitly_convert_to_string(interp, &mut value) } {
-        let offset = Offset::try_from(offset_str).map_err(convert_time_error_to_argument_error)?;
+        let offset = Offset::try_from(offset_str)?;
         Ok(offset)
     } else {
         Err(ArgumentError::with_message(
@@ -68,7 +68,7 @@ fn offset_from_options(interp: &mut Artichoke, options: Value) -> Result<Offset,
 
 // Constructor
 pub fn now(interp: &mut Artichoke) -> Result<Value, Error> {
-    let now = Time::now().map_err(convert_time_error_to_argument_error)?;
+    let now = Time::now()?;
     let result = Time::alloc_value(now, interp)?;
     Ok(result)
 }
@@ -143,10 +143,9 @@ pub fn at(
         _ => Offset::local(),
     };
 
-    match Time::with_timespec_and_offset(seconds, subsec_nanos, offset) {
-        Ok(result) => Ok(Time::alloc_value(result, interp)?),
-        Err(err) => Err(convert_time_error_to_argument_error(err).into()),
-    }
+    let time = Time::with_timespec_and_offset(seconds, subsec_nanos, offset)?;
+
+    Time::alloc_value(time, interp)
 }
 
 pub fn mkutc<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
@@ -244,7 +243,7 @@ pub fn mutate_to_local(interp: &mut Artichoke, time: Value, offset: Option<Value
 
 pub fn mutate_to_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let mut obj = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    obj.set_utc().map_err(convert_time_error_to_argument_error)?;
+    obj.set_utc()?;
     Ok(time)
 }
 
@@ -257,7 +256,7 @@ pub fn as_local(interp: &mut Artichoke, time: Value, offset: Option<Value>) -> R
 
 pub fn as_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let utc = time.to_utc().map_err(convert_time_error_to_argument_error)?;
+    let utc = time.to_utc()?;
     Time::alloc_value(utc, interp)
 }
 
@@ -302,15 +301,11 @@ pub fn plus(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result
     if unsafe { Time::unbox_from_value(&mut other, interp) }.is_ok() {
         Err(TypeError::with_message("time + time?").into())
     } else if let Ok(other) = implicitly_convert_to_int(interp, other) {
-        let result = time
-            .checked_add_i64(other)
-            .map_err(convert_time_error_to_argument_error)?;
+        let result = time.checked_add_i64(other)?;
 
         Time::alloc_value(result, interp)
     } else if let Ok(other) = other.try_convert_into::<f64>(interp) {
-        let result = time
-            .checked_add_f64(other)
-            .map_err(convert_time_error_to_argument_error)?;
+        let result = time.checked_add_f64(other)?;
 
         Time::alloc_value(result, interp)
     } else {
@@ -324,15 +319,11 @@ pub fn minus(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Resul
         let result: Value = interp.convert_mut(time.to_float() - other.to_float());
         Ok(result)
     } else if let Ok(other) = implicitly_convert_to_int(interp, other) {
-        let result = time
-            .checked_sub_i64(other)
-            .map_err(convert_time_error_to_argument_error)?;
+        let result = time.checked_sub_i64(other)?;
 
         Time::alloc_value(result, interp)
     } else if let Ok(other) = other.try_convert_into::<f64>(interp) {
-        let result = time
-            .checked_sub_f64(other)
-            .map_err(convert_time_error_to_argument_error)?;
+        let result = time.checked_sub_f64(other)?;
 
         Time::alloc_value(result, interp)
     } else {

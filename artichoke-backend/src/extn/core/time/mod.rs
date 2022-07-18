@@ -33,6 +33,8 @@ impl HeapAllocatedData for Time {
     const RUBY_TYPE: &'static str = "Time";
 }
 
-pub(crate) fn convert_time_error_to_argument_error(error: TimeError) -> ArgumentError {
-    ArgumentError::from(format!("{}", error))
+impl From<TimeError> for Error {
+    fn from(error: TimeError) -> Error {
+        ArgumentError::from(format!("{}", error)).into()
+    }
 }
