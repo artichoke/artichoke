@@ -33,7 +33,7 @@ end
 
 def string_byteslice
   s = 'abcdefghijk'
-  #scalar
+  # scalar
   raise unless s.byteslice(0, 1000) == 'abcdefghijk'
   raise unless s.byteslice(5, 1000) == 'fghijk'
   raise unless s.byteslice(20, 1000).nil?
