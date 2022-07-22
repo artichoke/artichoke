@@ -53,10 +53,15 @@ pub fn element_reference(
         let captures_len = data.regexp.inner().captures_len(None)?;
         let rangelen =
             i64::try_from(captures_len).map_err(|_| ArgumentError::with_message("input string too long"))?;
-        if let Some(protect::Range { start, len }) = elem.is_range(interp, rangelen)? {
-            CaptureAt::StartLen(start, len)
-        } else {
-            return Ok(Value::nil());
+        match elem.is_range(interp, rangelen)? {
+            // ```
+            // [3.1.2] > m = /abc/.match("abc xyz")
+            // => #<MatchData "abc">
+            // [3.1.2] > m[-10..-5]
+            // => nil
+            // ```
+            None | Some(protect::Range::Out) => return Ok(Value::nil()),
+            Some(protect::Range::Valid { start, len }) => CaptureAt::StartLen(start, len),
         }
     };
     let matched = data.capture_at(at)?;

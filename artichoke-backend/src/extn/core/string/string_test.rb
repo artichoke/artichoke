@@ -33,6 +33,7 @@ end
 
 def string_byteslice
   s = 'abcdefghijk'
+  #scalar
   raise unless s.byteslice(0, 1000) == 'abcdefghijk'
   raise unless s.byteslice(5, 1000) == 'fghijk'
   raise unless s.byteslice(20, 1000).nil?
@@ -47,6 +48,18 @@ def string_byteslice
   raise unless s.byteslice(5, 3) == 'fgh'
   raise unless s.byteslice(5, -10).nil?
   raise unless s.byteslice(5, -2).nil?
+  # range
+  raise unless s.byteslice(1..4) == 'bcde'
+  raise unless s.byteslice(1..-1) == 'bcdefghijk'
+  raise unless s.byteslice(10..-1) == 'k'
+  raise unless s.byteslice(20..-1).nil?
+  raise unless s.byteslice(20..-20).nil?
+  raise unless s.byteslice(2..-20) == ''
+  raise unless s.byteslice(-1..20) == 'k'
+  raise unless s.byteslice(-20..20).nil?
+  raise unless s.byteslice(-5..-1) == 'ghijk'
+  raise unless s.byteslice(-5..1) == ''
+  raise unless s.byteslice(-5..8) == 'ghi'
 end
 
 def string_scan

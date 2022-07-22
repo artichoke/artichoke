@@ -213,7 +213,17 @@ unsafe extern "C" fn string_byteslice(mrb: *mut sys::mrb_state, slf: sys::mrb_va
     let length = length.map(Value::from);
     let result = trampoline::byteslice(&mut guard, value, index, length);
     match result {
-        Ok(value) => value.inner(),
+        Ok(value) if value.is_nil() => value.inner(),
+        Ok(value) => {
+            let rclass = sys::mrb_sys_class_of_value(mrb, slf);
+            let value = value.inner();
+            let target_rbasic = value.value.p.cast::<sys::RBasic>();
+
+            // Copy `RClass` from source class to newly allocated `Array`.
+            (*target_rbasic).c = rclass;
+
+            value
+        }
         Err(exception) => error::raise(guard, exception),
     }
 }
