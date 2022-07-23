@@ -7,6 +7,7 @@ use artichoke_core::hash::Hash as _;
 use artichoke_core::value::Value as _;
 use bstr::ByteSlice;
 
+use super::Encoding;
 use crate::convert::implicitly_convert_to_int;
 use crate::convert::implicitly_convert_to_nilable_string;
 use crate::convert::implicitly_convert_to_spinoso_string;
@@ -19,8 +20,6 @@ use crate::extn::core::regexp::{self, Regexp};
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 use crate::sys::protect;
-
-use super::Encoding;
 
 pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Value, Error> {
     let count = implicitly_convert_to_int(interp, count)?;
