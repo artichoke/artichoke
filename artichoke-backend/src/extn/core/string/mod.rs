@@ -89,7 +89,8 @@ impl BoxUnboxVmValue for String {
         unsafe {
             let flags = string.as_ref().unwrap().flags();
             let encoding_bits = encoding.to_flag();
-            let flags_with_encoding = flags | (u32::from(encoding_bits) << ENCODING_FLAG_BITPOS);
+            let flags_with_zeroed_encoding = flags & !(0b1111 << ENCODING_FLAG_BITPOS);
+            let flags_with_encoding = flags_with_zeroed_encoding | (u32::from(encoding_bits) << ENCODING_FLAG_BITPOS);
             string.as_mut().unwrap().set_flags(flags_with_encoding);
         }
         Ok(interp.protect(value.into()))
@@ -121,7 +122,8 @@ impl BoxUnboxVmValue for String {
         unsafe {
             let flags = string.as_ref().unwrap().flags();
             let encoding_bits = encoding.to_flag();
-            let flags_with_encoding = flags | (u32::from(encoding_bits) << ENCODING_FLAG_BITPOS);
+            let flags_with_zeroed_encoding = flags & !(0b1111 << ENCODING_FLAG_BITPOS);
+            let flags_with_encoding = flags_with_zeroed_encoding | (u32::from(encoding_bits) << ENCODING_FLAG_BITPOS);
             string.as_mut().unwrap().set_flags(flags_with_encoding);
         }
 
