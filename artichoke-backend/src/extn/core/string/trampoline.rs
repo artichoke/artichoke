@@ -42,7 +42,7 @@ pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
 
     let mut concatenated = s.clone();
     // XXX: This call doesn't do a check to see if we'll exceed the max allocation
-    //    size and may panic.
+    //    size and may panic or abort.
     concatenated.extend_from_slice(to_append);
     super::String::alloc_value(concatenated, interp)
 }
