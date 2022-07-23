@@ -50,6 +50,15 @@ pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
 }
 
 pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+    if value.is_frozen(interp) {
+        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+        let message = "can't modify frozen String: "
+            .chars()
+            .chain(s.inspect())
+            .collect::<super::String>();
+        return Err(FrozenError::from(message.into_vec()).into());
+    }
+
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     if let Ok(int) = other.try_convert_into::<i64>(interp) {
         return match s.encoding() {
