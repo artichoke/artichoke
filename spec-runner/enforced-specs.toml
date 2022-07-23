@@ -58,6 +58,9 @@ specs = [
   "unshift",
 ]
 
+[specs.core.builtin_constants]
+include = "all"
+
 [specs.core.comparable]
 include = "all"
 
