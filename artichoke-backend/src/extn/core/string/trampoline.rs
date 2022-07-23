@@ -120,20 +120,230 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
     //
     // The byte slice is immediately used and discarded after extraction. There
     // are no intervening interpreter accesses.
-    let other = unsafe { implicitly_convert_to_string(interp, &mut other)? };
-    // Safety:
-    //
-    // The string is reboxed before any intervening operations on the
-    // interpreter.
-    // The string is reboxed without any intervening mruby allocations.
-    unsafe {
-        let string_mut = s.as_inner_mut();
-        // XXX: This call doesn't do a check to see if we'll exceed the max allocation
-        //    size and may panic.
-        string_mut.extend_from_slice(other);
 
-        let s = s.take();
-        super::String::box_into_value(s, value, interp)
+    // TODO: need to get the spinoso string to get at its encoding.
+    let other = unsafe { implicitly_convert_to_string(interp, &mut other)? };
+    match s.encoding() {
+        // ```
+        // [3.1.2] > s = ""
+        // => ""
+        // [3.1.2] > b = "abc".b
+        // => "abc"
+        // [3.1.2] > s << b
+        // => "abc"
+        // [3.1.2] > s.encoding
+        // => #<Encoding:UTF-8>
+        // [3.1.2] > b = "\xFF\xFE".b
+        // => "\xFF\xFE"
+        // [3.1.2] > s = ""
+        // => ""
+        // [3.1.2] > s << b
+        // => "\xFF\xFE"
+        // [3.1.2] > s.encoding
+        // => #<Encoding:ASCII-8BIT>
+        // [3.1.2] > s = "abc"
+        // => "abc"
+        // [3.1.2] > s << b
+        // => "abc\xFF\xFE"
+        // [3.1.2] > s.encoding
+        // => #<Encoding:ASCII-8BIT>
+        // [3.1.2] > s = ""
+        // => ""
+        // [3.1.2] > b = "abc".b
+        // => "abc"
+        // [3.1.2] > b.ascii_only?
+        // => true
+        // [3.1.2] > s << b
+        // => "abc"
+        // [3.1.2] > s.encoding
+        // => #<Encoding:UTF-8>
+        // [3.1.2] > a = "\xFF\xFE".force_encoding(Encoding::ASCII)
+        // => "\xFF\xFE"
+        // [3.1.2] > s = ""
+        // => ""
+        // [3.1.2] > s << a
+        // => "\xFF\xFE"
+        // [3.1.2] > s.encoding
+        // => #<Encoding:US-ASCII>
+        // [3.1.2] > s = "abc"
+        // => "abc"
+        // [3.1.2] > s << a
+        // => "abc\xFF\xFE"
+        // [3.1.2] > s.encoding
+        // => #<Encoding:US-ASCII>
+        // ```
+        Encoding::Utf8 => {
+            // Safety:
+            //
+            // The string is reboxed before any intervening operations on the
+            // interpreter.
+            // The string is reboxed without any intervening mruby allocations.
+            unsafe {
+                let string_mut = s.as_inner_mut();
+                // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+                //    size and may panic or abort.
+                string_mut.extend_from_slice(other);
+
+                // TODO: set encoding to `other.encoding()` if other's byte
+                // content and encoding is incompatible with UTF-8.
+                //
+                // ```
+                // if !matches!(other.encoding(), Encoding::Utf8) && !other.is_ascii_only() {
+                //     // encodings are incompatible if other is not UTF-8 and is non-ASCII
+                //     string_mut.set_encoding(other.encoding());
+                // }
+                // ```
+
+                let s = s.take();
+                super::String::box_into_value(s, value, interp)
+            }
+        }
+        // Empty ASCII strings take on the encoding of the argument if the
+        // argument is not ASCII-compatible, even if the argument does not have
+        // a valid encoding.
+        //
+        // ```
+        // [3.1.2] > ae = "".force_encoding(Encoding::ASCII)
+        // => ""
+        // [3.1.2] > ae << "😀"
+        // => "😀"
+        // [3.1.2] > ae.encoding
+        // => #<Encoding:UTF-8>
+        // [3.1.2] > ae = "".force_encoding(Encoding::ASCII)
+        // => ""
+        // [3.1.2] > ae << "abc"
+        // => "abc"
+        // [3.1.2] > ae.encoding
+        // => #<Encoding:US-ASCII>
+        // [3.1.2] > ae = "".force_encoding(Encoding::ASCII)
+        // => ""
+        // [3.1.2] > ae << "\xFF\xFE"
+        // => "\xFF\xFE"
+        // [3.1.2] > ae.encoding
+        // => #<Encoding:UTF-8>
+        // [3.1.2] > ae = "".force_encoding(Encoding::ASCII)
+        // => ""
+        // [3.1.2] > ae << "\xFF\xFE".b
+        // => "\xFF\xFE"
+        // [3.1.2] > ae.encoding
+        // => #<Encoding:ASCII-8BIT>
+        // ```
+        Encoding::Ascii if s.is_empty() => {
+            // Safety:
+            //
+            // The string is reboxed before any intervening operations on the
+            // interpreter.
+            // The string is reboxed without any intervening mruby allocations.
+            unsafe {
+                let string_mut = s.as_inner_mut();
+                // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+                //    size and may panic or abort.
+                string_mut.extend_from_slice(other);
+
+                // TODO: set encoding to `other.encoding()` if other is
+                //     non-ASCII.
+
+                let s = s.take();
+                super::String::box_into_value(s, value, interp)
+            }
+        }
+        // ```
+        // [3.1.2] > a
+        // => "\xFF\xFE"
+        // [3.1.2] > a.encoding
+        // => #<Encoding:US-ASCII>
+        // [3.1.2] > a << "\xFF".b
+        // (irb):46:in `<main>': incompatible character encodings: US-ASCII and ASCII-8BIT (Encoding::CompatibilityError)
+        //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // [3.1.2] > a << "abc"
+        // => "\xFF\xFEabc"
+        // [3.1.2] > s.encoding
+        // => #<Encoding:US-ASCII>
+        // [3.1.2] > a << "😀"
+        // (irb):49:in `<main>': incompatible character encodings: US-ASCII and UTF-8 (Encoding::CompatibilityError)
+        //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // [3.1.2] > a << "😀".b
+        // (irb):50:in `<main>': incompatible character encodings: US-ASCII and ASCII-8BIT (Encoding::CompatibilityError)
+        //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // ```
+        Encoding::Ascii => {
+            if !other.is_ascii() {
+                // TODO: This exception should be an `Encoding::CompatibilityError`.
+                // TODO: Need access to the spinoso string from the implicit
+                //     conversion to get its name in the exception message.
+                return Err(ArgumentError::with_message("incompatible character encodings").into());
+            }
+            // Safety:
+            //
+            // The string is reboxed before any intervening operations on the
+            // interpreter.
+            // The string is reboxed without any intervening mruby allocations.
+            unsafe {
+                let string_mut = s.as_inner_mut();
+                // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+                //    size and may panic or abort.
+                string_mut.extend_from_slice(other);
+
+                let s = s.take();
+                super::String::box_into_value(s, value, interp)
+            }
+        }
+        // TODO: Add `Encoding::Binary if s.is_empty() {}` branch.
+        //
+        // If the receiver is an empty string with `Encoding::Binary` encoding
+        // and the argument is non-ASCII, take on the encoding of the arugment.
+        //
+        // This requires the implicit conversion to string to return the
+        // underlying spinoso string.
+        //
+        // ```
+        // [3.1.2] > be = "".b
+        // => ""
+        // [3.1.2] > be << "abc"
+        // => "abc"
+        // [3.1.2] > be.encoding
+        // => #<Encoding:ASCII-8BIT>
+        // [3.1.2] > be = "".b
+        // => ""
+        // [3.1.2] > be << "😀"
+        // => "😀"
+        // [3.1.2] > be.encoding
+        // => #<Encoding:UTF-8>
+        // [3.1.2] > be = "".b
+        // => ""
+        // [3.1.2] > be << "\xFF\xFE".force_encoding(Encoding::ASCII)
+        // => "\xFF\xFE"
+        // [3.1.2] > be.encoding
+        // => #<Encoding:US-ASCII>
+        // [3.1.2] > be = "".b
+        // => ""
+        // [3.1.2] > be << "abc".force_encoding(Encoding::ASCII)
+        // => "abc"
+        // [3.1.2] > be.encoding
+        // => #<Encoding:ASCII-8BIT>
+        // ```
+        Encoding::Binary => {
+            // Safety:
+            //
+            // The string is reboxed before any intervening operations on the
+            // interpreter.
+            // The string is reboxed without any intervening mruby allocations.
+            unsafe {
+                let string_mut = s.as_inner_mut();
+                // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+                //    size and may panic or abort.
+                string_mut.extend_from_slice(other);
+
+                let s = s.take();
+                super::String::box_into_value(s, value, interp)
+            }
+        }
     }
 }
 
