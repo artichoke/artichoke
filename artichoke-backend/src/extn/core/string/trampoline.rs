@@ -19,6 +19,8 @@ use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 use crate::sys::protect;
 
+use super::Encoding;
+
 pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Value, Error> {
     let count = implicitly_convert_to_int(interp, count)?;
     let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative argument"))?;
@@ -49,6 +51,65 @@ pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
 
 pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    if let Ok(int) = other.try_convert_into::<i64>(interp) {
+        if int < 0 {
+            return Err(RangeError::from(format!("{int} out of char range")).into());
+        }
+        return match s.encoding() {
+            Encoding::Utf8 => {
+                // Safety:
+                //
+                // The string is reboxed before any intervening operations on the
+                // interpreter.
+                // The string is reboxed without any intervening mruby allocations.
+                unsafe {
+                    let string_mut = s.as_inner_mut();
+                    // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+                    //    size and may panic or abort.
+                    string_mut
+                        .try_push_codepoint(int)
+                        .map_err(|err| RangeError::from(err.message()))?;
+                    let s = s.take();
+                    super::String::box_into_value(s, value, interp)
+                }
+            }
+            Encoding::Ascii => {
+                let byte = u8::try_from(int).map_err(|_| RangeError::from(format!("{int} out of char range")))?;
+                // Safety:
+                //
+                // The string is reboxed before any intervening operations on the
+                // interpreter.
+                // The string is reboxed without any intervening mruby allocations.
+                unsafe {
+                    let string_mut = s.as_inner_mut();
+                    // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+                    //    size and may panic or abort.
+                    string_mut.push_byte(byte);
+                    if !byte.is_ascii() {
+                        string_mut.set_encoding(Encoding::Binary);
+                    }
+                    let s = s.take();
+                    super::String::box_into_value(s, value, interp)
+                }
+            }
+            Encoding::Binary => {
+                let byte = u8::try_from(int).map_err(|_| RangeError::from(format!("{int} out of char range")))?;
+                // Safety:
+                //
+                // The string is reboxed before any intervening operations on the
+                // interpreter.
+                // The string is reboxed without any intervening mruby allocations.
+                unsafe {
+                    let string_mut = s.as_inner_mut();
+                    // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+                    //    size and may panic or abort.
+                    string_mut.push_byte(byte);
+                    let s = s.take();
+                    super::String::box_into_value(s, value, interp)
+                }
+            }
+        };
+    }
     // Safety:
     //
     // The byte slice is immediately used and discarded after extraction. There
