@@ -259,6 +259,23 @@ impl String {
         self.inner.encoding()
     }
 
+    /// Set the [`Encoding`] of this `String`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// let mut s = String::utf8(b"xyz".to_vec());
+    /// assert_eq!(s.encoding(), Encoding::Utf8);
+    /// s.set_encoding(Encoding::Binary);
+    /// assert_eq!(s.encoding(), Encoding::Binary);
+    /// ```
+    #[inline]
+    pub fn set_encoding(&mut self, encoding: Encoding) {
+        self.inner.set_encoding(encoding);
+    }
+
     /// Shortens the string, keeping the first `len` bytes and dropping the
     /// rest.
     ///
