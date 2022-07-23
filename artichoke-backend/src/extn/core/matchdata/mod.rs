@@ -37,16 +37,8 @@ impl Region {
     where
         R: RangeBounds<usize>,
     {
-        let start = match bounds.start_bound() {
-            Bound::Included(&bound) => Bound::Included(bound),
-            Bound::Excluded(&bound) => Bound::Excluded(bound),
-            Bound::Unbounded => Bound::Unbounded,
-        };
-        let end = match bounds.end_bound() {
-            Bound::Included(&bound) => Bound::Included(bound),
-            Bound::Excluded(&bound) => Bound::Excluded(bound),
-            Bound::Unbounded => Bound::Unbounded,
-        };
+        let start = bounds.start_bound().cloned();
+        let end = bounds.end_bound().cloned();
         Region { start, end }
     }
 
@@ -61,6 +53,8 @@ impl Region {
 
 impl RangeBounds<usize> for Region {
     fn start_bound(&self) -> Bound<&usize> {
+        // TODO: Use `self.start.as_ref()` when upstream `std` stabilizes:
+        // https://github.com/rust-lang/rust/issues/80996
         match self.start {
             Bound::Included(ref bound) => Bound::Included(bound),
             Bound::Excluded(ref bound) => Bound::Excluded(bound),
@@ -69,6 +63,8 @@ impl RangeBounds<usize> for Region {
     }
 
     fn end_bound(&self) -> Bound<&usize> {
+        // TODO: Use `self.end.as_ref()` when upstream `std` stabilizes:
+        // https://github.com/rust-lang/rust/issues/80996
         match self.end {
             Bound::Included(ref bound) => Bound::Included(bound),
             Bound::Excluded(ref bound) => Bound::Excluded(bound),
