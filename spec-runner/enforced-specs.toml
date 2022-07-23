@@ -97,6 +97,9 @@ include = "all"
 [specs.core.string]
 include = "set"
 specs = [
+  # Missing support for `"UTF-16LE"` encoding, but the underlying behavior being
+  # tested is implemented.
+  # "append",
   "bytesize",
   # `Range` of int, e.g. `1..9`, does not call `#to_int` on start and end.
   #
