@@ -9,6 +9,7 @@ use bstr::ByteSlice;
 
 use crate::convert::implicitly_convert_to_int;
 use crate::convert::implicitly_convert_to_nilable_string;
+use crate::convert::implicitly_convert_to_spinoso_string;
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::core::array::Array;
 #[cfg(feature = "core-regexp")]
@@ -122,7 +123,7 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
     // are no intervening interpreter accesses.
 
     // TODO: need to get the spinoso string to get at its encoding.
-    let other = unsafe { implicitly_convert_to_string(interp, &mut other)? };
+    let other = unsafe { implicitly_convert_to_spinoso_string(interp, &mut other)? };
     match s.encoding() {
         // ```
         // [3.1.2] > s = ""
@@ -182,17 +183,12 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
                 //    size and may panic or abort.
-                string_mut.extend_from_slice(other);
+                string_mut.extend_from_slice(other.as_slice());
 
-                // TODO: set encoding to `other.encoding()` if other's byte
-                // content and encoding is incompatible with UTF-8.
-                //
-                // ```
-                // if !matches!(other.encoding(), Encoding::Utf8) && !other.is_ascii_only() {
-                //     // encodings are incompatible if other is not UTF-8 and is non-ASCII
-                //     string_mut.set_encoding(other.encoding());
-                // }
-                // ```
+                if !matches!(other.encoding(), Encoding::Utf8) && !other.is_ascii_only() {
+                    // encodings are incompatible if other is not UTF-8 and is non-ASCII
+                    string_mut.set_encoding(other.encoding());
+                }
 
                 let s = s.take();
                 super::String::box_into_value(s, value, interp)
@@ -238,10 +234,12 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
                 //    size and may panic or abort.
-                string_mut.extend_from_slice(other);
+                string_mut.extend_from_slice(other.as_slice());
 
-                // TODO: set encoding to `other.encoding()` if other is
-                //     non-ASCII.
+                // Set encoding to `other.encoding()` if other is non-ASCII.
+                if !other.is_ascii_only() {
+                    string_mut.set_encoding(other.encoding());
+                }
 
                 let s = s.take();
                 super::String::box_into_value(s, value, interp)
@@ -274,10 +272,13 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
         // ```
         Encoding::Ascii => {
             if !other.is_ascii() {
-                // TODO: This exception should be an `Encoding::CompatibilityError`.
-                // TODO: Need access to the spinoso string from the implicit
-                //     conversion to get its name in the exception message.
-                return Err(ArgumentError::with_message("incompatible character encodings").into());
+                let code = format!(
+                    "raise Encoding::CompatibilityError, 'incompatible character encodings: {} and {}",
+                    s.encoding(),
+                    other.encoding()
+                );
+                interp.eval(code.as_bytes())?;
+                unreachable!("raised exception");
             }
             // Safety:
             //
@@ -288,14 +289,12 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
                 //    size and may panic or abort.
-                string_mut.extend_from_slice(other);
+                string_mut.extend_from_slice(other.as_slice());
 
                 let s = s.take();
                 super::String::box_into_value(s, value, interp)
             }
         }
-        // TODO: Add `Encoding::Binary if s.is_empty() {}` branch.
-        //
         // If the receiver is an empty string with `Encoding::Binary` encoding
         // and the argument is non-ASCII, take on the encoding of the arugment.
         //
@@ -328,6 +327,26 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
         // [3.1.2] > be.encoding
         // => #<Encoding:ASCII-8BIT>
         // ```
+        Encoding::Binary if s.is_empty() => {
+            // Safety:
+            //
+            // The string is reboxed before any intervening operations on the
+            // interpreter.
+            // The string is reboxed without any intervening mruby allocations.
+            unsafe {
+                let string_mut = s.as_inner_mut();
+                // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+                //    size and may panic or abort.
+                string_mut.extend_from_slice(other.as_slice());
+
+                if !other.is_ascii_only() {
+                    string_mut.set_encoding(other.encoding());
+                }
+
+                let s = s.take();
+                super::String::box_into_value(s, value, interp)
+            }
+        }
         Encoding::Binary => {
             // Safety:
             //
@@ -338,7 +357,7 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
                 //    size and may panic or abort.
-                string_mut.extend_from_slice(other);
+                string_mut.extend_from_slice(other.as_slice());
 
                 let s = s.take();
                 super::String::box_into_value(s, value, interp)
