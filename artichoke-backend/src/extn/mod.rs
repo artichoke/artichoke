@@ -44,11 +44,8 @@ pub fn init(interp: &mut Artichoke, config: ReleaseMetadata<'_>) -> InitializeRe
     release_date.freeze(interp)?;
     interp.define_global_constant("RUBY_RELEASE_DATE", release_date)?;
 
-    let revision = config
-        .ruby_revision()
-        .parse::<i64>()
-        .map_err(|_| NotDefinedError::global_constant("RUBY_REVISION"))?;
-    let revision = interp.convert(revision);
+    let revision = config.ruby_revision();
+    let revision = interp.try_convert_mut(revision)?;
     interp.define_global_constant("RUBY_REVISION", revision)?;
 
     let mut version = interp.try_convert_mut(config.ruby_version())?;
