@@ -52,9 +52,6 @@ pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
 pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     if let Ok(int) = other.try_convert_into::<i64>(interp) {
-        if int < 0 {
-            return Err(RangeError::from(format!("{int} out of char range")).into());
-        }
         return match s.encoding() {
             Encoding::Utf8 => {
                 // Safety:
