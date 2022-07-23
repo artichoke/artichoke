@@ -151,6 +151,9 @@
   color: "6e6ec0"
   description:
     "Target: Support for building the `wasm32-unknown-unknown` target."
+- name: "O-wasm-wasi"
+  color: "6e6ec0"
+  description: "Target: Support for building the `wasm32-wasi` target."
 - name: "O-windows"
   color: "6e6ec0"
   description:
