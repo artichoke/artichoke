@@ -1,15 +1,10 @@
-#include <stdbool.h>
+#include <mrbsys/ext.h>
 
-#include <mruby.h>
 #include <mruby/array.h>
-#include <mruby/class.h>
 #include <mruby/numeric.h>
 #include <mruby/presym.h>
 #include <mruby/range.h>
 #include <mruby/string.h>
-#include <mruby/value.h>
-
-#include <mrbsys/ext.h>
 
 #ifdef __cplusplus
 extern "C" {
