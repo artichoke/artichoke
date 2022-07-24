@@ -32,7 +32,7 @@ def string_element_reference_regexp
 end
 
 def string_byteslice
-  s = 'abcdefghijk'
+  s = 'abcdefghijk' # bytesize == 11
   # scalar
   raise unless s.byteslice(0, 1000) == 'abcdefghijk'
   raise unless s.byteslice(5, 1000) == 'fghijk'
@@ -96,6 +96,62 @@ def string_byteslice
   raise unless s.byteslice(-11..-1) == 'abcdefghijk'
   raise unless s.byteslice(-2..-1) == 'jk'
   raise unless s.byteslice(-1..-1) == 'k'
+  raise unless s.byteslice(-12..-13).nil?
+  raise unless s.byteslice(-11..-12) == ''
+  raise unless s.byteslice(-10..-12) == ''
+  raise unless s.byteslice(-10..-11) == ''
+  raise unless s.byteslice(-1..-11) == ''
+  raise unless s.byteslice(-1..-2) == ''
+
+  # non-ascii range test
+  s = '太贵了!!' # bytesize == 11
+  raise unless s.byteslice(0..0) == "\xE5"
+  raise unless s.byteslice(0..1) == "\xE5\xA4"
+  raise unless s.byteslice(0..10) == '太贵了!!'
+  raise unless s.byteslice(1..9) == "\xA4\xAA贵了!"
+  raise unless s.byteslice(9..10) == '!!'
+  raise unless s.byteslice(9..11) == '!!'
+  raise unless s.byteslice(10..10) == '!'
+  raise unless s.byteslice(10..11) == '!'
+  raise unless s.byteslice(11..11) == ''
+  raise unless s.byteslice(11..12) == ''
+  raise unless s.byteslice(1..0) == ''
+  raise unless s.byteslice(10..0) == ''
+  raise unless s.byteslice(9..1) == ''
+  raise unless s.byteslice(10..9) == ''
+  raise unless s.byteslice(11..9) == ''
+  raise unless s.byteslice(11..10) == ''
+  raise unless s.byteslice(12..11).nil?
+  raise unless s.byteslice(-12..0).nil?
+  raise unless s.byteslice(-12..1).nil?
+  raise unless s.byteslice(-11..0) == "\xE5"
+  raise unless s.byteslice(-11..1) == "\xE5\xA4"
+  raise unless s.byteslice(-11..10) == '太贵了!!'
+  raise unless s.byteslice(-11..11) == '太贵了!!'
+  raise unless s.byteslice(-10..9) == "\xA4\xAA贵了!"
+  raise unless s.byteslice(-2..10) == '!!'
+  raise unless s.byteslice(-1..10) == '!'
+  raise unless s.byteslice(0..-11) == "\xE5"
+  raise unless s.byteslice(0..-10) == "\xE5\xA4"
+  raise unless s.byteslice(0..-1) == '太贵了!!'
+  raise unless s.byteslice(1..-2) == "\xA4\xAA贵了!"
+  raise unless s.byteslice(9..-1) == '!!'
+  raise unless s.byteslice(10..-1) == '!'
+  raise unless s.byteslice(0..-12) == ''
+  raise unless s.byteslice(1..-12) == ''
+  raise unless s.byteslice(1..-11) == ''
+  raise unless s.byteslice(10..-2) == ''
+  raise unless s.byteslice(11..-2) == ''
+  raise unless s.byteslice(11..-1) == ''
+  raise unless s.byteslice(-13..-12).nil?
+  raise unless s.byteslice(-12..-12).nil?
+  raise unless s.byteslice(-12..-11).nil?
+  raise unless s.byteslice(-12..-10).nil?
+  raise unless s.byteslice(-11..-11) == "\xE5"
+  raise unless s.byteslice(-11..-10) == "\xE5\xA4"
+  raise unless s.byteslice(-11..-1) == '太贵了!!'
+  raise unless s.byteslice(-2..-1) == '!!'
+  raise unless s.byteslice(-1..-1) == '!'
   raise unless s.byteslice(-12..-13).nil?
   raise unless s.byteslice(-11..-12) == ''
   raise unless s.byteslice(-10..-12) == ''
