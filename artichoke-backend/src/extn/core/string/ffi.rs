@@ -633,6 +633,16 @@ unsafe extern "C" fn mrb_str_cat(
         // The string is repacked before any intervening mruby heap allocations.
         let string_mut = string.as_inner_mut();
         string_mut.extend_from_slice(slice);
+
+        // SAFETY: mruby assumes strings are allocated with `capacity = capa + 1`
+        // and that last byte is NUL.
+        //
+        // The capacity stored in the `RString*` is `capa`.
+        let len = string_mut.len();
+        string_mut.reserve_exact(1);
+        string_mut.push_byte(0);
+        string_mut.set_len(len);
+
         let inner = string.take();
         let value = String::box_into_value(inner, s, &mut guard).expect("String reboxing should not fail");
 
