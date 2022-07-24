@@ -269,10 +269,17 @@ unsafe extern "C" fn mrb_str_plus(mrb: *mut sys::mrb_state, a: sys::mrb_value, b
         return Value::nil().into();
     };
 
-    let mut s = String::with_capacity_and_encoding(a.len() + b.len(), a.encoding());
+    let mut s = String::with_capacity_and_encoding(a.len() + b.len() + 1, a.encoding());
 
     s.extend_from_slice(a.as_slice());
     s.extend_from_slice(b.as_slice());
+
+    // SAFETY: mruby assumes strings are allocated with `capacity = capa + 1`
+    // and that last byte is NUL.
+    //
+    // The capacity stored in the `RString*` is `capa`.
+    s.push_byte(0);
+    s.set_len(a.len() + b.len());
 
     let s = String::alloc_value(s, &mut guard).unwrap_or_default();
     s.into()
