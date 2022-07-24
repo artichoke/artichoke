@@ -27,7 +27,22 @@ use crate::value::Value;
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
-    let result = String::with_capacity(capa);
+
+    let alloc_capacity = if let Some(capacity) = capa.checked_add(1) {
+        capacity
+    } else {
+        let err = ArgumentError::with_message("string capacity too large");
+        error::raise(guard, err);
+    };
+    // SAFETY: mruby assumes strings are allocated with capa = capa + 1 and that
+    // last byte is NUL.
+    //
+    // The capacity stored in the `RString*` is `capa`.
+    let mut result = String::with_capacity(alloc_capacity);
+    let ptr = result.as_mut_ptr();
+    let last = ptr.add(capa);
+    *last = 0;
+
     let result = String::alloc_value(result, &mut guard);
     match result {
         Ok(value) => value.inner(),
