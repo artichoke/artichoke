@@ -476,5 +476,5 @@ mrb_sys_safe_gc_mark(mrb_state *mrb, mrb_value value)
 }
 
 #ifdef __cplusplus
-}  /* extern "C" { */
+} /* extern "C" { */
 #endif

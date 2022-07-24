@@ -166,5 +166,5 @@ artichoke_mrbgem_mruby_toplevel_ext_gem_final(mrb_state *mrb)
 }
 
 #ifdef __cplusplus
-}  /* extern "C" { */
+} /* extern "C" { */
 #endif

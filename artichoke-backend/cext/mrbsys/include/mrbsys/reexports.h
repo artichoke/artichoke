@@ -9,5 +9,5 @@ extern "C" {
 MRB_API void mrb_init_mrbgems(mrb_state *mrb);
 
 #ifdef __cplusplus
-}  /* extern "C" { */
+} /* extern "C" { */
 #endif
