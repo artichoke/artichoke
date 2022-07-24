@@ -148,10 +148,10 @@ pub unsafe fn is_range(
     }
 }
 
-#[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Range {
-    pub start: sys::mrb_int,
-    pub len: sys::mrb_int,
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Range {
+    Valid { start: sys::mrb_int, len: sys::mrb_int },
+    Out,
 }
 
 // `IsRange` must be `Copy` because we may unwind past the frames in which
@@ -164,20 +164,28 @@ struct IsRange {
 
 impl Protect for IsRange {
     unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
+        use sys::mrb_range_beg_len::{MRB_RANGE_OK, MRB_RANGE_OUT, MRB_RANGE_TYPE_MISMATCH};
+
         let ptr = sys::mrb_sys_cptr_ptr(data);
         let Self { value, len } = *Box::from_raw(ptr.cast::<Self>());
         let mut start = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let mut range_len = mem::MaybeUninit::<sys::mrb_int>::uninit();
         let check_range = sys::mrb_range_beg_len(mrb, value, start.as_mut_ptr(), range_len.as_mut_ptr(), len, false);
-        if check_range == sys::mrb_range_beg_len::MRB_RANGE_OK {
-            let start = start.assume_init();
-            let range_len = range_len.assume_init();
-            let out = Range { start, len: range_len };
-            let out = Box::new(out);
-            let out = Box::into_raw(out);
-            sys::mrb_sys_cptr_value(mrb, out.cast::<c_void>())
-        } else {
-            sys::mrb_sys_nil_value()
+        match check_range {
+            MRB_RANGE_OK => {
+                let start = start.assume_init();
+                let range_len = range_len.assume_init();
+                let out = Some(Range::Valid { start, len: range_len });
+                let out = Box::new(out);
+                let out = Box::into_raw(out);
+                sys::mrb_sys_cptr_value(mrb, out.cast::<c_void>())
+            }
+            MRB_RANGE_OUT => {
+                let out = Box::new(Range::Out);
+                let out = Box::into_raw(out);
+                sys::mrb_sys_cptr_value(mrb, out.cast::<c_void>())
+            }
+            MRB_RANGE_TYPE_MISMATCH => sys::mrb_sys_nil_value(),
         }
     }
 }

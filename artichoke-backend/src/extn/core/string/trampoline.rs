@@ -233,30 +233,38 @@ pub fn aref(
         }
         return matchdata::trampoline::element_reference(interp, match_data, interp.convert(0), None);
     }
-    if let Some(protect::Range { start: index, len }) = first.is_range(interp, s.char_len() as i64)? {
-        let index = if let Ok(index) = usize::try_from(index) {
-            Some(index)
-        } else {
-            index
-                .checked_neg()
-                .and_then(|index| usize::try_from(index).ok())
-                .and_then(|index| s.len().checked_sub(index))
-        };
-        let index = match index {
-            None => return Ok(Value::nil()),
-            Some(index) if index > s.len() => return Ok(Value::nil()),
-            Some(index) => index,
-        };
-        if let Ok(length) = usize::try_from(len) {
-            let end = index
-                .checked_add(length)
-                .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
-            if let Some(slice) = s.get_char_slice(index..end) {
-                let s = super::String::with_bytes_and_encoding(slice.to_vec(), s.encoding());
-                return super::String::alloc_value(s, interp);
+    match first.is_range(interp, s.char_len() as i64)? {
+        None => {}
+        // ```
+        // [3.1.2] > ""[-1..-1]
+        // => nil
+        // ``
+        Some(protect::Range::Out) => return Ok(Value::nil()),
+        Some(protect::Range::Valid { start: index, len }) => {
+            let index = if let Ok(index) = usize::try_from(index) {
+                Some(index)
+            } else {
+                index
+                    .checked_neg()
+                    .and_then(|index| usize::try_from(index).ok())
+                    .and_then(|index| s.len().checked_sub(index))
+            };
+            let index = match index {
+                None => return Ok(Value::nil()),
+                Some(index) if index > s.len() => return Ok(Value::nil()),
+                Some(index) => index,
+            };
+            if let Ok(length) = usize::try_from(len) {
+                let end = index
+                    .checked_add(length)
+                    .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
+                if let Some(slice) = s.get_char_slice(index..end) {
+                    let s = super::String::with_bytes_and_encoding(slice.to_vec(), s.encoding());
+                    return super::String::alloc_value(s, interp);
+                }
             }
+            return Ok(Value::nil());
         }
-        return Ok(Value::nil());
     }
     // The overload of `String#[]` that takes a `String` **only** takes `String`s.
     // No implicit conversion is performed.
@@ -410,6 +418,74 @@ pub fn byteslice(
     length: Option<Value>,
 ) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let maybe_range = if length.is_none() {
+        index.is_range(interp, s.bytesize() as i64)?
+    } else {
+        None
+    };
+    match maybe_range {
+        None => {}
+        Some(protect::Range::Out) => return Ok(Value::nil()),
+        Some(protect::Range::Valid { start: index, len }) => {
+            let index = if let Ok(index) = usize::try_from(index) {
+                Some(index)
+            } else {
+                index
+                    .checked_neg()
+                    .and_then(|index| usize::try_from(index).ok())
+                    .and_then(|index| s.len().checked_sub(index))
+            };
+            let index = match index {
+                None => return Ok(Value::nil()),
+                Some(index) if index > s.len() => return Ok(Value::nil()),
+                Some(index) => index,
+            };
+            if let Ok(length) = usize::try_from(len) {
+                let end = index
+                    .checked_add(length)
+                    .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
+                if let Some(slice) = s.get(index..end).or_else(|| s.get(index..)) {
+                    // Encoding from the source string is preserved.
+                    //
+                    // ```
+                    // [3.1.2] > s = "abc"
+                    // => "abc"
+                    // [3.1.2] > s.encoding
+                    // => #<Encoding:UTF-8>
+                    // [3.1.2] > s.byteslice(1..3).encoding
+                    // => #<Encoding:UTF-8>
+                    // [3.1.2] > t = s.force_encoding(Encoding::ASCII)
+                    // => "abc"
+                    // [3.1.2] > t.byteslice(1..3).encoding
+                    // => #<Encoding:US-ASCII>
+                    // ```
+                    let s = super::String::with_bytes_and_encoding(slice.to_vec(), s.encoding());
+                    // ```
+                    // [3.1.2] > class S < String; end
+                    // => nil
+                    // [3.1.2] > S.new("abc").byteslice(1..3).class
+                    // => String
+                    // ```
+                    //
+                    // The returned `String` is never frozen:
+                    //
+                    // ```
+                    // [3.1.2] > s = "abc"
+                    // => "abc"
+                    // [3.1.2] > s.frozen?
+                    // => false
+                    // [3.1.2] > s.byteslice(1..3).frozen?
+                    // => false
+                    // [3.1.2] > t = "abc".freeze
+                    // => "abc"
+                    // [3.1.2] > t.byteslice(1..3).frozen?
+                    // => false
+                    // ```
+                    return super::String::alloc_value(s, interp);
+                }
+            }
+        }
+    }
     // ```
     // [3.0.2] > class A; def to_int; 1; end; end
     // => :to_int
