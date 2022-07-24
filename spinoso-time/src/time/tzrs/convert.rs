@@ -3,7 +3,7 @@ use core::fmt::{Display, Formatter, Result};
 use super::{Time, ToA};
 
 impl Display for Time {
-    /// Returns a conanocial string representation of _time_.
+    /// Returns a canonical string representation of _time_.
     ///
     /// Can be used to implement the Ruby method [`Time#asctime`],
     /// [`Time#ctime`], [`Time#to_s`], and [`Time#inspect`].

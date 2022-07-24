@@ -46,7 +46,7 @@
 //!
 //! - **chrono**: Enable a `Time` backend which is implemented with the
 //!   [`chrono`] crate.
-//! - **tzrs**: Enable a `Time` backend wich is implemented by the [`tz-rs`] and
+//! - **tzrs**: Enable a `Time` backend which is implemented by the [`tz-rs`] and
 //!   [`tzdb`] crates.
 //!
 //! ## Additional features

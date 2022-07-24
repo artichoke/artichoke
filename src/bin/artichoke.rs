@@ -168,8 +168,8 @@ fn command() -> Command<'static> {
         .trailing_var_arg(true)
 }
 
-// NOTE: This routine is plucked from `ripgrep` as of
-// 9f924ee187d4c62aa6ebe4903d0cfc6507a5adb5.
+// NOTE: This routine is plucked from `ripgrep` as of commit
+// `9f924ee187d4c62aa6ebe4903d0cfc6507a5adb5`.
 //
 // `ripgrep` is licensed with the MIT License Copyright (c) 2015 Andrew Gallant.
 //

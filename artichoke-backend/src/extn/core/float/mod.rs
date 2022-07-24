@@ -91,7 +91,7 @@ impl Float {
     /// The largest possible integer in a double-precision floating point
     /// number.
     ///
-    /// Usually defaults to 1.7976931348623157e+308.
+    /// Usually defaults to `1.7976931348623157e+308`.
     pub const MAX: f64 = f64::MAX;
 
     /// The largest positive exponent in a double-precision floating point where

@@ -1,10 +1,18 @@
+# Also take into account developer comments
 dev_comments = true
+# Skip the README.md file as defined in the cargo manifest
 skip_readme = false
 
 [Hunspell]
 # lang and name of `.dic` file
 lang = "en_US"
+# OS specific additives
+# Linux: [ /usr/share/myspell ]
+# Windows: []
+# macOS [ /home/alice/Libraries/hunspell, /Libraries/hunspell ]
 
+# Additional search paths, which take presedence over the default
+# os specific search dirs, searched in order, defaults last
 search_dirs = ["."]
 
 # Adds additional dictionaries, can be specified as

@@ -438,7 +438,7 @@ pub fn frexp(value: f64) -> Result<(f64, i32), NotImplementedError> {
 
 /// Calculates the gamma function of the given value.
 ///
-/// Note that `gamma(n)` is same as `fact(n-1)` for integer n > 0. However
+/// Note that `gamma(n)` is same as `fact(n-1)` for integer `n > 0`. However
 /// `gamma(n)` returns float and can be an approximation.
 ///
 /// # Errors
@@ -455,7 +455,7 @@ pub const fn gamma(value: f64) -> Result<f64, NotImplementedError> {
 
 /// Calculates the gamma function of the given value.
 ///
-/// Note that `gamma(n)` is same as `fact(n-1)` for integer n > 0. However
+/// Note that `gamma(n)` is same as `fact(n-1)` for integer `n > 0`. However
 /// `gamma(n)` returns float and can be an approximation.
 ///
 /// # Examples
@@ -482,7 +482,7 @@ pub const fn gamma(value: f64) -> Result<f64, NotImplementedError> {
 #[inline]
 #[cfg(feature = "full")]
 pub fn gamma(value: f64) -> Result<f64, DomainError> {
-    // `gamma(n)` is the same as `n!` for integer n > 0. `gamma` returns float
+    // `gamma(n)` is the same as `n!` for integer `n > 0`. `gamma` returns float
     // and might be an approximation so include a lookup table for as many `n`
     // as can fit in the float mantissa.
     const FACTORIAL_TABLE: [f64; 23] = [

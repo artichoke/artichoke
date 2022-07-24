@@ -35,7 +35,7 @@ impl Time {
             9..=u32::MAX => *self,
             // Does integer truncation with round up at 5.
             //
-            // ``console
+            // ```console
             // [3.1.2] > t = Time.at(Time.new(2010, 3, 30, 5, 43, 25).to_i, 123_456_789, :nsec)
             // => 2010-03-30 05:43:25.123456789 -0700
             // [3.1.2] > (0..9).each {|d| u = t.round(d); puts "#{d}: #{u.nsec}" }
@@ -89,12 +89,12 @@ impl Time {
 // Addition
 impl Time {
     /// Addition — Adds some duration to _time_ and returns that value as a new
-    /// Time object.
+    /// `Time` object.
     ///
     /// # Errors
     ///
     /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
+    /// [`i64`] then a [`TimeError`] will be returned.
     pub fn checked_add(self, duration: Duration) -> Result<Self, TimeError> {
         let unix_time = self.inner.unix_time();
         let nanoseconds = self.inner.nanoseconds();
@@ -116,13 +116,13 @@ impl Time {
         Self::with_timespec_and_offset(seconds, nanoseconds, offset)
     }
 
-    /// Addition — Adds some i64 to _time_ and returns that value as a new Time
-    /// object.
+    /// Addition — Adds some [`i64`] to _time_ and returns that value as a new
+    /// `Time` object.
     ///
     /// # Errors
     ///
     /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
+    /// [`i64`] then a [`TimeError`] will be returned.
     pub fn checked_add_i64(&self, seconds: i64) -> Result<Self, TimeError> {
         if seconds.is_negative() {
             let seconds = seconds
@@ -136,27 +136,27 @@ impl Time {
         }
     }
 
-    /// Addition — Adds some u64 to _time_ and returns that value as a new Time
-    /// object.
+    /// Addition — Adds some [`u64`] to _time_ and returns that value as a new
+    /// `Time` object.
     ///
     /// # Errors
     ///
     /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
+    /// [`i64`] then a [`TimeError`] will be returned.
     pub fn checked_add_u64(&self, seconds: u64) -> Result<Self, TimeError> {
         let duration = Duration::from_secs(seconds);
         self.checked_add(duration)
     }
 
-    /// Addition — Adds some f64 fraction seconds to _time_ and returns that
-    /// value as a new Time object.
+    /// Addition — Adds some [`f64`] fraction seconds to _time_ and returns that
+    /// value as a new `Time` object.
     ///
     /// # Errors
     ///
     /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
+    /// [`i64`] then a [`TimeError`] will be returned.
     pub fn checked_add_f64(&self, seconds: f64) -> Result<Self, TimeError> {
-        // Fail safely during f64 conversion to duration
+        // Fail safely during `f64` conversion to duration
         if seconds.is_nan() || seconds.is_infinite() {
             return Err(TzOutOfRangeError::new().into());
         }
@@ -171,13 +171,13 @@ impl Time {
 
 // Subtraction
 impl Time {
-    /// Subtraction — Subtracts the given duration from _time_ and returns that
-    /// value as a new Time object.
+    /// Subtraction — Subtracts the given duration from _time_ and returns
+    /// that value as a new `Time` object.
     ///
     /// # Errors
     ///
     /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
+    /// [`i64`] then a [`TimeError`] will be returned.
     pub fn checked_sub(self, duration: Duration) -> Result<Self, TimeError> {
         let unix_time = self.inner.unix_time();
         let nanoseconds = self.inner.nanoseconds();
@@ -197,13 +197,13 @@ impl Time {
         Self::with_timespec_and_offset(seconds, nanoseconds, offset)
     }
 
-    /// Subtraction — Subtracts the given i64 from _time_ and returns that value
-    /// as a new Time object.
+    /// Subtraction — Subtracts the given [`i64`] from _time_ and returns that
+    /// value as a new `Time` object.
     ///
     /// # Errors
     ///
     /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
+    /// [`i64`] then a [`TimeError`] will be returned.
     pub fn checked_sub_i64(self, seconds: i64) -> Result<Self, TimeError> {
         if seconds.is_negative() {
             let seconds = seconds
@@ -217,27 +217,27 @@ impl Time {
         }
     }
 
-    /// Subtraction — Subtracts the given u64 from _time_ and returns that value
-    /// as a new Time object.
+    /// Subtraction — Subtracts the given [`u64`] from _time_ and returns that
+    /// value as a new `Time` object.
     ///
     /// # Errors
     ///
     /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
+    /// [`i64`] then a [`TimeError`] will be returned.
     pub fn checked_sub_u64(self, seconds: u64) -> Result<Self, TimeError> {
         let duration = Duration::from_secs(seconds);
         self.checked_sub(duration)
     }
 
-    /// Subtraction — Subtracts the given f64 as fraction seconds from _time_
-    /// and returns that value as a new Time object.
+    /// Subtraction — Subtracts the given [`f64`] as fraction seconds from
+    /// _time_ and returns that value as a new `Time` object.
     ///
     /// # Errors
     ///
     /// If this function attempts to overflow the the number of seconds as an
-    /// i64 then a [`TimeError`] will be returned.
+    /// [`i64`] then a [`TimeError`] will be returned.
     pub fn checked_sub_f64(self, seconds: f64) -> Result<Self, TimeError> {
-        // Fail safely during f64 conversion to duration
+        // Fail safely during `f64` conversion to duration
         if seconds.is_nan() || seconds.is_infinite() {
             return Err(TzOutOfRangeError::new().into());
         }
