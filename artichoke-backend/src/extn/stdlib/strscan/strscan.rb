@@ -95,6 +95,8 @@ class StringScanner
     return nil if eos?
 
     byte = @string.byteslice(@pos)
+    # StringScanner always returns `String` class
+    byte = String.new(byte) unless byte.instance_of?(String)
     @pos += 1
     @last_match_pos = @pos
     @last_match = byte
@@ -180,7 +182,10 @@ class StringScanner
     raise RangeError unless len.is_a?(Integer)
     raise ArgumentError if len.negative?
 
-    @string.byteslice(pos, len)
+    ret = @string.byteslice(pos, len)
+    # StringScanner always returns `String` class
+    ret = String.new(ret) unless ret.instance_of?(String)
+    ret
   end
 
   def peep(len)
@@ -206,6 +211,7 @@ class StringScanner
     return nil if @last_match.nil?
 
     ret = @string.byteslice(@last_match_pos, @string.bytesize - @last_match_pos) || ''
+    # StringScanner always returns `String` class
     ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
@@ -221,6 +227,7 @@ class StringScanner
         @last_match.bytesize
       end
     ret = @string.byteslice(0, @last_match_pos - match_byte_offset) || ''
+    # StringScanner always returns `String` class
     ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
@@ -234,6 +241,7 @@ class StringScanner
 
   def rest
     ret = @string.byteslice(@pos, @string.bytesize - @pos)
+    # StringScanner always returns `String` class
     ret = String.new(ret) unless ret.instance_of?(String)
     ret
   end
@@ -278,6 +286,7 @@ class StringScanner
 
     if return_string_p
       ret = @string.byteslice(previous_pos, match_end_byte_pos)
+      # StringScanner always returns `String` class
       ret = String.new(ret) unless ret.instance_of?(String)
       ret
     else
@@ -297,7 +306,10 @@ class StringScanner
     @last_match = match
     @last_match_pos = @pos
 
-    @string.byteslice(previous_pos, match_end_byte_pos)
+    ret = @string.byteslice(previous_pos, match_end_byte_pos)
+    # StringScanner always returns `String` class
+    ret = String.new(ret) unless ret.instance_of?(String)
+    ret
   end
 
   def search_full(pattern, advance_pointer_p, return_string_p)
@@ -310,7 +322,10 @@ class StringScanner
     @pos += match_end_byte_pos if advance_pointer_p
     @previous_pos = previous_pos
     if return_string_p
-      @string.byteslice(previous_pos, match_end_byte_pos)
+      ret = @string.byteslice(previous_pos, match_end_byte_pos)
+      # StringScanner always returns `String` class
+      ret = String.new(ret) unless ret.instance_of?(String)
+      ret
     else
       match.end(0)
     end
