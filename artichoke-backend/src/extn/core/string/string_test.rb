@@ -49,17 +49,59 @@ def string_byteslice
   raise unless s.byteslice(5, -10).nil?
   raise unless s.byteslice(5, -2).nil?
   # range
-  raise unless s.byteslice(1..4) == 'bcde'
-  raise unless s.byteslice(1..-1) == 'bcdefghijk'
-  raise unless s.byteslice(10..-1) == 'k'
-  raise unless s.byteslice(20..-1).nil?
-  raise unless s.byteslice(20..-20).nil?
-  raise unless s.byteslice(2..-20) == ''
-  raise unless s.byteslice(-1..20) == 'k'
-  raise unless s.byteslice(-20..20).nil?
-  raise unless s.byteslice(-5..-1) == 'ghijk'
-  raise unless s.byteslice(-5..1) == ''
-  raise unless s.byteslice(-5..8) == 'ghi'
+  raise unless s.byteslice(0..0) == "a"
+  raise unless s.byteslice(0..1) == "ab"
+  raise unless s.byteslice(0..10) == "abcdefghijk"
+  raise unless s.byteslice(1..9) == "bcdefghij"
+  raise unless s.byteslice(9..10) == "jk"
+  raise unless s.byteslice(9..11) == "jk"
+  raise unless s.byteslice(10..10) == "k"
+  raise unless s.byteslice(10..11) == "k"
+  raise unless s.byteslice(11..11) == ""
+  raise unless s.byteslice(11..12) == ""
+  raise unless s.byteslice(1..0) == "" 
+  raise unless s.byteslice(10..0) == "" 
+  raise unless s.byteslice(9..1) == ""
+  raise unless s.byteslice(10..9) == ""
+  raise unless s.byteslice(11..9) == ""
+  raise unless s.byteslice(11..10) == ""
+  raise unless s.byteslice(12..11).nil?
+  raise unless s.byteslice(-12..0).nil? 
+  raise unless s.byteslice(-12..1).nil?
+  raise unless s.byteslice(-11..0) == "a"
+  raise unless s.byteslice(-11..1) == "ab"
+  raise unless s.byteslice(-11..10) == "abcdefghijk"
+  raise unless s.byteslice(-11..11) == "abcdefghijk"
+  raise unless s.byteslice(-10..9) == "bcdefghij"
+  raise unless s.byteslice(-2..10) == "jk"
+  raise unless s.byteslice(-1..10) == "k"
+  raise unless s.byteslice(0..-11) == "a"
+  raise unless s.byteslice(0..-10) == "ab"
+  raise unless s.byteslice(0..-1) == "abcdefghijk"
+  raise unless s.byteslice(1..-2) == "bcdefghij"
+  raise unless s.byteslice(9..-1) == "jk"
+  raise unless s.byteslice(10..-1) == "k"
+  raise unless s.byteslice(0..-12) == ""
+  raise unless s.byteslice(1..-12) == ""
+  raise unless s.byteslice(1..-11) == ""
+  raise unless s.byteslice(10..-2) == ""
+  raise unless s.byteslice(11..-2) == ""
+  raise unless s.byteslice(11..-1) == ""
+  raise unless s.byteslice(-13..-12).nil?
+  raise unless s.byteslice(-12..-12).nil?
+  raise unless s.byteslice(-12..-11).nil?
+  raise unless s.byteslice(-12..-10).nil?
+  raise unless s.byteslice(-11..-11) == "a"
+  raise unless s.byteslice(-11..-10) == "ab"
+  raise unless s.byteslice(-11..-1) == "abcdefghijk"
+  raise unless s.byteslice(-2..-1) == "jk"
+  raise unless s.byteslice(-1..-1) == "k"
+  raise unless s.byteslice(-12..-13).nil?
+  raise unless s.byteslice(-11..-12) == ""
+  raise unless s.byteslice(-10..-12) == ""
+  raise unless s.byteslice(-10..-11) == ""
+  raise unless s.byteslice(-1..-11) == ""
+  raise unless s.byteslice(-1..-2) == ""
 end
 
 def string_scan
