@@ -419,7 +419,7 @@ pub fn byteslice(
 ) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let maybe_range = if length.is_none() {
-        index.is_range(interp, s.char_len() as i64)?
+        index.is_range(interp, s.bytesize() as i64)?
     } else {
         None
     };
