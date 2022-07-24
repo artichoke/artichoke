@@ -354,19 +354,25 @@ unsafe extern "C" fn mrb_str_dup(mrb: *mut sys::mrb_state, s: sys::mrb_value) ->
     let basic = sys::mrb_sys_basic_ptr(s).cast::<sys::RString>();
     let class = (*basic).c;
 
-    if let Ok(string) = String::unbox_from_value(&mut string, &mut guard) {
-        let dup = string.clone();
-        if let Ok(value) = String::alloc_value(dup, &mut guard) {
-            let value = value.inner();
+    let (ptr, len) = if let Ok(mut string) = String::unbox_from_value(&mut string, &mut guard) {
+        // SAFETY: string is not modified.
+        let string_mut = string.as_inner_mut();
 
-            // dup'd strings keep the class of the source `String`.
-            let dup_basic = sys::mrb_sys_basic_ptr(value).cast::<sys::RString>();
-            (*dup_basic).c = class;
+        (string_mut.as_mut_ptr(), string_mut.len())
+    } else {
+        return Value::nil().into();
+    };
 
-            return value;
-        }
-    }
-    Value::nil().into()
+    drop(guard);
+
+    // SAFETY: go throw `mrb_str_new` to maintain invariants around capacity and
+    // trailing NUL bytes.
+    let dup = mrb_str_new(mrb, ptr.cast::<c_char>(), len);
+    // dup'd strings keep the class of the source `String`.
+    let dup_basic = sys::mrb_sys_basic_ptr(dup).cast::<sys::RString>();
+    (*dup_basic).c = class;
+
+    dup
 }
 
 // ```c
