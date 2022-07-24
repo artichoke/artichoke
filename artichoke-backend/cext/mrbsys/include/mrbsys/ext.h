@@ -6,6 +6,8 @@
  * initializers).
  */
 
+#include <stdbool.h>
+
 #include <mruby.h>
 #include <mruby/class.h>
 #include <mruby/common.h>
@@ -15,17 +17,21 @@
 #include <mruby/value.h>
 #include <mruby/variable.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Check whether `mrb_value` is nil, false, or true
 
-MRB_API _Bool mrb_sys_value_is_nil(mrb_value value);
+MRB_API bool mrb_sys_value_is_nil(mrb_value value);
 
-MRB_API _Bool mrb_sys_value_is_false(mrb_value value);
+MRB_API bool mrb_sys_value_is_false(mrb_value value);
 
-MRB_API _Bool mrb_sys_value_is_true(mrb_value value);
+MRB_API bool mrb_sys_value_is_true(mrb_value value);
 
-MRB_API _Bool mrb_sys_range_excl(mrb_state *mrb, mrb_value value);
+MRB_API bool mrb_sys_range_excl(mrb_state *mrb, mrb_value value);
 
-MRB_API _Bool mrb_sys_obj_frozen(mrb_state *mrb, mrb_value value);
+MRB_API bool mrb_sys_obj_frozen(mrb_state *mrb, mrb_value value);
 
 // Extract pointers from `mrb_value`s
 
@@ -77,13 +83,13 @@ MRB_API mrb_value mrb_sys_new_symbol(mrb_sym id);
 
 // Manage Rust-backed `mrb_value`s
 
-MRB_API void mrb_sys_set_instance_tt(struct RClass *class, enum mrb_vtype type);
+MRB_API void mrb_sys_set_instance_tt(struct RClass *klass, enum mrb_vtype type);
 
 MRB_API void mrb_sys_data_init(mrb_value *value, void *ptr, const mrb_data_type *type);
 
 // Raise exceptions and debug info
 
-MRB_API mrb_noreturn void mrb_sys_raise(struct mrb_state *mrb, const char *eclass, const char *msg);
+MRB_API mrb_noreturn void mrb_sys_raise(struct mrb_state *mrb, const char *eklass, const char *msg);
 
 MRB_API void mrb_sys_raise_current_exception(struct mrb_state *mrb);
 
@@ -120,15 +126,19 @@ MRB_API void mrb_sys_gc_arena_restore(mrb_state *mrb, int arena_index);
 /**
  * Disable GC. Returns previous enabled state.
  */
-MRB_API _Bool mrb_sys_gc_disable(mrb_state *mrb);
+MRB_API bool mrb_sys_gc_disable(mrb_state *mrb);
 
 /**
  * Enable GC. Returns previous enabled state.
  */
-MRB_API _Bool mrb_sys_gc_enable(mrb_state *mrb);
+MRB_API bool mrb_sys_gc_enable(mrb_state *mrb);
 
-MRB_API _Bool mrb_sys_value_is_dead(mrb_state *_mrb, mrb_value value);
+MRB_API bool mrb_sys_value_is_dead(mrb_state *_mrb, mrb_value value);
 
 MRB_API int mrb_sys_gc_live_objects(mrb_state *mrb);
 
 MRB_API void mrb_sys_safe_gc_mark(mrb_state *mrb, mrb_value value);
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

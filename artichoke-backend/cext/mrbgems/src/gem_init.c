@@ -1,5 +1,9 @@
 #include <mruby.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void artichoke_mrbgem_mruby_error_gem_init(mrb_state *);
 void artichoke_mrbgem_mruby_error_gem_final(mrb_state *);
 void artichoke_mrbgem_mruby_eval_gem_init(mrb_state *);
@@ -51,3 +55,7 @@ mrb_init_mrbgems(mrb_state *mrb)
   artichoke_mrbgem_mruby_class_ext_gem_init(mrb);
   mrb_state_atexit(mrb, mrb_final_mrbgems);
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

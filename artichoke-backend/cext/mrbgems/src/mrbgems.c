@@ -2,6 +2,10 @@
 #include <mruby.h>
 #include <mruby/proc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void mrb_mruby_class_ext_gem_init(mrb_state *mrb);
 void mrb_mruby_class_ext_gem_final(mrb_state *mrb);
 void mrb_mruby_error_gem_init(mrb_state *mrb);
@@ -160,3 +164,7 @@ void
 artichoke_mrbgem_mruby_toplevel_ext_gem_final(mrb_state *mrb)
 {
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
