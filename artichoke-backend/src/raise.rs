@@ -23,15 +23,15 @@ struct ExceptionPayload {
 //   of a single threaded panic context.
 unsafe impl Send for ExceptionPayload {}
 
-// NOTE: this `no_mangle` function overrides a `static` function in
-// `exception.c` which is disabled via `#ifndef ARTICHOKE`.
+// NOTE: this function is aliased to the `static` function `exc_throw` with a
+// macro in `exception.c` depending on the value of the `ARTICHOKE` macro.
 //
 // ```c
 // static mrb_noreturn void
 // exc_throw(mrb_state *mrb, mrb_value exc)
 // ```
 #[no_mangle]
-unsafe extern "C-unwind" fn exc_throw(mrb: *mut sys::mrb_state, exc: sys::mrb_value) -> ! {
+unsafe extern "C-unwind" fn artichoke_exc_throw(mrb: *mut sys::mrb_state, exc: sys::mrb_value) -> ! {
     let _ = mrb;
     panic::resume_unwind(Box::new(ExceptionPayload {
         inner: Value::from(exc),
