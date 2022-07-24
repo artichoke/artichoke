@@ -229,7 +229,29 @@ unsafe extern "C" fn mrb_sym_str(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) ->
     unwrap_interpreter!(mrb, to => guard);
 
     let value = if let Ok(Some(bytes)) = guard.lookup_symbol(sym) {
-        let bytes = bytes.to_vec();
+        let mut bytes = bytes.to_vec();
+
+        // SAFETY: ensure the byte buffer is NUL-terminated.
+        //
+        // Add a NUL byte to the end of the allocation for the byte buffer in
+        // the new `RString`.
+        //
+        // mruby assumes that symbols are stored in memory as a null terminated
+        // `char*`s and creates "static" `RString`s from interned bytes that
+        // point at this NUL terminated memory.
+        //
+        // Sometimes mruby grabs the `RString` pointer directly from value
+        // returned by this API call and assumes it is NUL terminated.
+        //
+        // Add a 0 byte to the end of the `Vec` to force an allocation and then
+        // set the length to the length of the byte content.
+        //
+        // See https://github.com/artichoke/artichoke/pull/1969.
+        let len = bytes.len();
+        bytes.reserve_exact(1);
+        bytes.push(0);
+        bytes.set_len(len);
+
         guard.try_convert_mut(bytes)
     } else {
         guard.try_convert_mut("")
