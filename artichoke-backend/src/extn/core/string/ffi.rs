@@ -55,19 +55,25 @@ unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> 
 // ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const c_char, len: usize) -> sys::mrb_value {
-    unwrap_interpreter!(mrb, to => guard);
-    let s = if p.is_null() {
-        String::utf8(vec![0; len])
+    // SAFETY: delegate to `mrb_str_new_capa` to properly handle allocation and
+    // trailing NUL bytes.
+    let s = mrb_str_new_capa(mrb, len);
+
+    let rstring = s.value.p.cast::<sys::RString>();
+    let rstring_ptr = (*rstring).as_.heap.ptr;
+    let dest_slice = slice::from_raw_parts_mut(rstring_ptr, len);
+
+    if p.is_null() {
+        for byte in dest_slice {
+            *byte = 0;
+        }
     } else {
-        let bytes = slice::from_raw_parts(p.cast::<u8>(), len);
-        let bytes = bytes.to_vec();
-        String::utf8(bytes)
-    };
-    let result = String::alloc_value(s, &mut guard);
-    match result {
-        Ok(value) => value.inner(),
-        Err(exception) => error::raise(guard, exception),
+        let bytes = slice::from_raw_parts(p, len);
+        dest_slice.copy_from_slice(bytes);
     }
+    // Pack the new length from the `memcpy` into the `RString*`.
+    (*rstring).as_.heap.len = len as sys::mrb_int;
+    s
 }
 
 // ```c
@@ -75,15 +81,9 @@ unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const c_char, len
 // ```
 #[no_mangle]
 unsafe extern "C" fn mrb_str_new_cstr(mrb: *mut sys::mrb_state, p: *const c_char) -> sys::mrb_value {
-    unwrap_interpreter!(mrb, to => guard);
     let cstr = CStr::from_ptr(p);
-    let bytes = cstr.to_bytes().to_vec();
-    let result = String::utf8(bytes);
-    let result = String::alloc_value(result, &mut guard);
-    match result {
-        Ok(value) => value.inner(),
-        Err(exception) => error::raise(guard, exception),
-    }
+    let len = cstr.to_bytes().len();
+    mrb_str_new(mrb, p, len)
 }
 
 // ```c
