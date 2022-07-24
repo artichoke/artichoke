@@ -19,12 +19,12 @@ pub const MAX_OFFSET_SECONDS: i32 = 24 * 60 * 60 - 1;
 /// offset. This is equal to the number of seconds in 1 day, minus 1
 pub const MIN_OFFSET_SECONDS: i32 = -MAX_OFFSET_SECONDS;
 
-/// tzdb provides [`local_tz`] to get the local system timezone. If this ever
+/// `tzdb` provides [`local_tz`] to get the local system timezone. If this ever
 /// fails, we can assume `GMT`. `GMT` is used instead of `UTC` since it has a
 /// [`time_zone_designation`] - which if it is an empty string, then it is
 /// considered to be a UTC time.
 ///
-/// Note: this matches MRI Ruby implmentation. Where `TZ="" ruby -e "puts
+/// Note: this matches MRI Ruby implementation. Where `TZ="" ruby -e "puts
 /// Time::now"` will return a new _time_ with 0 offset from UTC, but still still
 /// report as a non UTC time:
 ///
@@ -123,7 +123,7 @@ impl Offset {
         }
 
         let offset_name = offset_hhmm_from_seconds(offset);
-        // creation of the LocalTimeType is never expected to fail, since the
+        // Creation of the `LocalTimeType` is never expected to fail, since the
         // bounds we are more restrictive of the values than the struct itself.
         let local_time_type = LocalTimeType::new(offset, false, Some(offset_name.as_bytes()))
             .expect("Failed to LocalTimeType for fixed offset");

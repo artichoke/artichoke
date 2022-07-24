@@ -229,8 +229,8 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn time_zone(&self) -> &str {
-        // We can usually get the name from wrapped DateTime, however UTC is a
-        // special case which is an empty string, thus the OffsetType is safer.
+        // We can usually get the name from wrapped `DateTime`, however UTC is a
+        // special case which is an empty string, thus the `OffsetType` is safer.
         //
         // Note: The offset cannot be relied upon for the timezone name, as it
         // may contain many options (e.g. CEST/CET)

@@ -1,10 +1,18 @@
 250
++
+=
+<
+>
+–
+—
 @generated
 API
 APIs
 ARGV
 BNF
 Booleans
+CEST
+CET
 CLI
 DoS
 ENV
@@ -12,6 +20,7 @@ EOF
 FFI
 FIXME
 GC
+IANA
 IEEE
 JDK
 JSON
@@ -23,6 +32,7 @@ Onigmo
 Oniguruma
 OOM
 OpenSSL
+POSIX
 PRNG/MS
 README/MS
 REPL
@@ -31,6 +41,7 @@ RTL
 SipHash
 Spinoso
 TODO
+TZif
 UTC
 UUID/MS
 VM/MS
@@ -86,6 +97,7 @@ enum
 env
 environ
 errno
+erroring
 eval
 evaled
 evaling
@@ -152,11 +164,13 @@ radix
 raisable
 rbenv
 readline
+read–eval–print–loop
 reallocate
 reallocation/S
 rebox
 reboxed
 representable
+rescuable
 resize
 rjl@hyperbo
 rubygem/S
@@ -190,6 +204,9 @@ truthy
 tuple
 typedef
 typesafe
+tz
+tzrs
+tz-rs
 unbox
 unboxed
 unboxing
@@ -199,6 +216,7 @@ unescaped
 unhandled
 unparseable
 unsetting
+unsimplified
 unterminated
 untrusted
 urandom

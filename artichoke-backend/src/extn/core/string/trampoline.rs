@@ -36,7 +36,7 @@ pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     // Safety:
     //
-    // The borrowed byte slice is immediately memcpy'd into the `s` byte
+    // The borrowed byte slice is immediately `memcpy`'d into the `s` byte
     // buffer. There are no intervening interpreter accesses.
     let to_append = unsafe { implicitly_convert_to_string(interp, &mut other)? };
 

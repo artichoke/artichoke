@@ -120,7 +120,7 @@ impl Ord for Time {
 impl Time {
     /// Returns a new Time from the given values in the provided `offset`.
     ///
-    /// Can be used to implment the Ruby method [`Time#new`] (using a
+    /// Can be used to implement the Ruby method [`Time#new`] (using a
     /// [`Timezone`] Object).
     ///
     /// **Note**: During DST transitions, a specific time can be ambiguous. This
@@ -159,7 +159,8 @@ impl Time {
         let tz = offset.time_zone_ref();
         let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz)?;
 
-        // .latest() will always return Some(DateTime)
+        // .latest() will always return `Some(DateTime)`
+        // FIXME: this assertion is not consistent with the docs in `tz-rs`.
         let dt = found_date_times.latest().expect("No datetime found with this offset");
         Ok(Self { inner: dt, offset })
     }
@@ -307,16 +308,16 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn to_float(&self) -> f64 {
-        // A f64 mantissa is only 52 bits wide, so putting 64 bits in there will
-        // result in a rounding issues, however this is expected in the Ruby
-        // spec.
+        // A `f64` mantissa is only 52 bits wide, so putting 64 bits in there
+        // will result in a rounding issues, however this is expected in the
+        // Ruby spec.
         #[allow(clippy::cast_precision_loss)]
         let sec = self.to_int() as f64;
         let nanos_fractional = f64::from(self.inner.nanoseconds()) / f64::from(NANOS_IN_SECOND);
         sec + nanos_fractional
     }
 
-    /// Returns the numerator and denominator for the number of nano seconds of
+    /// Returns the numerator and denominator for the number of nanoseconds of
     /// the Time struct unsimplified.
     ///
     /// This can be used directly to implement [`Time#subsec`].

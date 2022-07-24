@@ -19,7 +19,7 @@ pub fn is_explicit_relative<P: AsRef<OsStr>>(path: P) -> bool {
 //
 // This function attempts to handle such paths by decoding them and manually
 // checking for `./`, `.\`, `../`, and `..\`-prefixed paths by looking at raw
-// u16 codepoints.
+// `u16` codepoints.
 fn is_unpaired_surrogate_path_explicit_relative<P: AsRef<OsStr>>(path: P) -> bool {
     let mut wide = path.as_ref().encode_wide().peekable();
 

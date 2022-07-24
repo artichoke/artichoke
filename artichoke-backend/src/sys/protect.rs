@@ -78,7 +78,7 @@ impl<'a> Protect for Funcall<'a> {
 
         // This will always unwrap because we've already checked that we
         // have fewer than `MRB_FUNCALL_ARGC_MAX` args, which is less than
-        // i64 max value.
+        // `i64` max value.
         let argslen = if let Ok(argslen) = i64::try_from(args.len()) {
             argslen
         } else {

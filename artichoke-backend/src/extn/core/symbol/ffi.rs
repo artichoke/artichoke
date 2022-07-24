@@ -60,7 +60,7 @@ unsafe extern "C" fn mrb_intern_str(mrb: *mut sys::mrb_state, name: sys::mrb_val
     }
 }
 
-/* mrb_intern_check series functions returns 0 if the symbol is not defined */
+/* `mrb_intern_check` series functions returns 0 if the symbol is not defined */
 
 // ```c
 // MRB_API mrb_sym mrb_intern_check(mrb_state*,const char*,size_t);
