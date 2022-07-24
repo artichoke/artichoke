@@ -98,9 +98,39 @@ include = "all"
 include = "set"
 specs = [
   "bytesize",
-  # missing `Range` support: https://github.com/artichoke/artichoke/issues/1916
+  # `Range` of int, e.g. `1..9`, does not call `#to_int` on start and end.
+  #
+  # ```
+  # String#byteslice with Range calls to_int on range arguments
+  # TypeError: MockObject cannot be converted to Integer
+  #
+  # /artichoke/virtual_root/src/lib/core/string/shared/slice.rb:266:in byteslice
+  # /artichoke/virtual_root/src/lib/core/string/shared/slice.rb:266:in protect
+  # (eval):165:in all?
+  # (eval):590:in each
+  # /artichoke/virtual_root/src/lib/core/string/byteslice_spec.rb:18
+  # (eval):590:in each
+  # /artichoke/virtual_root/src/lib/spec_runner.rb:74:in run_specs
+  # (eval):1
+  #
+  # An exception occurred during: Mock.verify_count
+  # String#byteslice with Range calls to_int on range arguments
+  # SpecExpectationNotMetError: Mock 'from' expected to receive <=>(:any_args) exactly 2 times
+  # but received it 1 times
+  #
+  # (eval):590:in each
+  # (eval):186:in each
+  # (eval):165:in all?
+  # (eval):590:in each
+  # /artichoke/virtual_root/src/lib/core/string/byteslice_spec.rb:18
+  # (eval):590:in each
+  # /artichoke/virtual_root/src/lib/spec_runner.rb:74:in run_specs
+  # (eval):1
+  # ```
+  #
   # "byteslice",
   # `chomp` and `chop` have some improper separator handling
+  #
   # "chomp",
   # "chop",
   "clear",
