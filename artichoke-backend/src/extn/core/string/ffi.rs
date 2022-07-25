@@ -34,10 +34,8 @@ unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> 
         let err = ArgumentError::with_message("string capacity too large");
         error::raise(guard, err);
     };
-    // SAFETY: mruby assumes strings are allocated with capa = capa + 1 and that
-    // last byte is NUL.
-    //
-    // The capacity stored in the `RString*` is `capa`.
+    // SAFETY: mruby assumes strings are allocated with `capacity = capa + 1`
+    // and that last byte is NUL.
     let mut result = String::with_capacity(alloc_capacity);
     let ptr = result.as_mut_ptr();
     let last = ptr.add(capa);
@@ -276,8 +274,6 @@ unsafe extern "C" fn mrb_str_plus(mrb: *mut sys::mrb_state, a: sys::mrb_value, b
 
     // SAFETY: mruby assumes strings are allocated with `capacity = capa + 1`
     // and that last byte is NUL.
-    //
-    // The capacity stored in the `RString*` is `capa`.
     s.push_byte(0);
     s.set_len(a.len() + b.len());
 
@@ -372,8 +368,8 @@ unsafe extern "C" fn mrb_str_dup(mrb: *mut sys::mrb_state, s: sys::mrb_value) ->
 
     drop(guard);
 
-    // SAFETY: go throw `mrb_str_new` to maintain invariants around capacity and
-    // trailing NUL bytes.
+    // SAFETY: delegate to `mrb_str_new` to maintain invariants around capacity
+    // and trailing NUL bytes.
     let dup = mrb_str_new(mrb, ptr.cast::<c_char>(), len);
     // dup'd strings keep the class of the source `String`.
     let dup_basic = sys::mrb_sys_basic_ptr(dup).cast::<sys::RString>();
@@ -636,8 +632,6 @@ unsafe extern "C" fn mrb_str_cat(
 
         // SAFETY: mruby assumes strings are allocated with `capacity = capa + 1`
         // and that last byte is NUL.
-        //
-        // The capacity stored in the `RString*` is `capa`.
         let len = string_mut.len();
         string_mut.reserve_exact(1);
         string_mut.push_byte(0);
