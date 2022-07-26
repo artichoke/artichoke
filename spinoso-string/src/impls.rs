@@ -172,7 +172,7 @@ impl From<&str> for String {
 impl From<String> for Vec<u8> {
     #[inline]
     fn from(s: String) -> Self {
-        s.inner.into_vec()
+        s.inner.into_buf().into_inner()
     }
 }
 

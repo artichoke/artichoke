@@ -51,6 +51,7 @@ pub use focaccia::CaseFold;
 #[doc(inline)]
 pub use raw_parts::RawParts;
 
+mod buf;
 mod center;
 mod chars;
 mod codepoints;
@@ -62,6 +63,7 @@ mod inspect;
 mod iter;
 mod ord;
 
+use buf::Buf;
 pub use center::{Center, CenterError};
 pub use chars::Chars;
 pub use codepoints::{Codepoints, CodepointsError, InvalidCodepointError};
@@ -105,8 +107,8 @@ impl String {
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     #[must_use]
-    pub const fn new() -> Self {
-        let buf = Vec::new();
+    pub fn new() -> Self {
+        let buf = Buf::new();
         let inner = EncodedString::utf8(buf);
         Self { inner }
     }
@@ -156,7 +158,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
-        let buf = Vec::with_capacity(capacity);
+        let buf = Buf::with_capacity(capacity);
         let inner = EncodedString::utf8(buf);
         Self { inner }
     }
@@ -205,7 +207,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn with_capacity_and_encoding(capacity: usize, encoding: Encoding) -> Self {
-        let buf = Vec::with_capacity(capacity);
+        let buf = Buf::with_capacity(capacity);
         let inner = EncodedString::new(buf, encoding);
         Self { inner }
     }
@@ -213,28 +215,28 @@ impl String {
     #[inline]
     #[must_use]
     pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
-        let inner = EncodedString::new(buf, encoding);
+        let inner = EncodedString::new(buf.into(), encoding);
         Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn utf8(buf: Vec<u8>) -> Self {
-        let inner = EncodedString::utf8(buf);
+        let inner = EncodedString::utf8(buf.into());
         Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn ascii(buf: Vec<u8>) -> Self {
-        let inner = EncodedString::ascii(buf);
+        let inner = EncodedString::ascii(buf.into());
         Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn binary(buf: Vec<u8>) -> Self {
-        let inner = EncodedString::binary(buf);
+        let inner = EncodedString::binary(buf.into());
         Self { inner }
     }
 }
@@ -480,7 +482,7 @@ impl String {
     /// [`from_raw_parts`]: String::from_raw_parts
     #[must_use]
     pub fn into_raw_parts(self) -> RawParts<u8> {
-        RawParts::from_vec(self.inner.into_vec())
+        self.inner.into_buf().into_raw_parts()
     }
 
     /// Converts self into a vector without clones or allocation.
@@ -503,7 +505,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
-        self.inner.into_vec()
+        self.inner.into_buf().into_inner()
     }
 
     /// Converts the vector into `Box<[u8]>`.
@@ -536,7 +538,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn into_boxed_slice(self) -> Box<[u8]> {
-        self.inner.into_vec().into_boxed_slice()
+        self.inner.into_buf().into_boxed_slice()
     }
 
     /// Returns the number of bytes the string can hold without reallocating.
