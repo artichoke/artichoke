@@ -38,12 +38,16 @@ This crate is `no_std` compatible with a required dependency on [`alloc`].
 
 ## Crate features
 
-All features are enabled by default.
+All features are enabled by default unless otherwise noted.
 
 - **casecmp** - Enables ASCII and Unicode `casecmp` methods on `String`.
   Activating this feature enables a dependency on [`focaccia`].
 - **std** - Enables a dependency on the Rust Standard Library. Activating this
   feature enables [`std::error::Error`] impls on error types in this crate.
+- **always-nul-terminated-c-string-compat** - NOT enabled by default. Use an
+  alternate byte buffer backend that ensures string content is always followed
+  by a NUL byte. This feature can be used to ensure spinoso strings are FFI
+  compatible with C code that expects byte content to be NUL terminated.
 
 [`focaccia`]: https://docs.rs/focaccia
 [`std::error::error`]: https://doc.rust-lang.org/std/error/trait.Error.html
