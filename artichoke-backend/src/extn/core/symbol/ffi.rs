@@ -100,13 +100,10 @@ unsafe extern "C" fn mrb_intern_check_str(mrb: *mut sys::mrb_state, name: sys::m
     let name = Value::from(name);
     if let Ok(bytes) = name.try_convert_into_mut::<&[u8]>(&mut guard) {
         if let Ok(Some(sym)) = guard.check_interned_bytes(bytes) {
-            sym
-        } else {
-            0
+            return sym;
         }
-    } else {
-        0
     }
+    0
 }
 
 // `mrb_check_intern` series functions returns `nil` if the symbol is not
@@ -166,10 +163,10 @@ unsafe extern "C" fn mrb_check_intern_str(mrb: *mut sys::mrb_state, name: sys::m
 // MRB_API const char *mrb_sym_name(mrb_state*,mrb_sym);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_sym_name(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -> *const i8 {
+unsafe extern "C" fn mrb_sym_name(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -> *const c_char {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
     if let Ok(Some(bytes)) = guard.lookup_symbol_with_trailing_nul(sym) {
-        bytes.as_ptr().cast::<i8>()
+        bytes.as_ptr().cast::<c_char>()
     } else {
         ptr::null()
     }
