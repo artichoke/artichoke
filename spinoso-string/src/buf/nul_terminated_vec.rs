@@ -151,6 +151,7 @@ impl Buf {
 
     #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
+        let additional = additional.checked_add(1).unwrap_or(additional);
         self.inner.try_reserve(additional)?;
         ensure_nul_terminated(&mut self.inner);
         Ok(())
@@ -158,6 +159,7 @@ impl Buf {
 
     #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
+        let additional = additional.checked_add(1).unwrap_or(additional);
         self.inner.try_reserve_exact(additional)?;
         ensure_nul_terminated(&mut self.inner);
         Ok(())
