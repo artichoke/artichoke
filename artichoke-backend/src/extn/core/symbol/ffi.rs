@@ -100,10 +100,13 @@ unsafe extern "C" fn mrb_intern_check_str(mrb: *mut sys::mrb_state, name: sys::m
     let name = Value::from(name);
     if let Ok(bytes) = name.try_convert_into_mut::<&[u8]>(&mut guard) {
         if let Ok(Some(sym)) = guard.check_interned_bytes(bytes) {
-            return sym;
+            sym
+        } else {
+            0
         }
+    } else {
+        0
     }
-    0
 }
 
 // `mrb_check_intern` series functions returns `nil` if the symbol is not
@@ -163,10 +166,10 @@ unsafe extern "C" fn mrb_check_intern_str(mrb: *mut sys::mrb_state, name: sys::m
 // MRB_API const char *mrb_sym_name(mrb_state*,mrb_sym);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_sym_name(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -> *const c_char {
+unsafe extern "C" fn mrb_sym_name(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -> *const i8 {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
     if let Ok(Some(bytes)) = guard.lookup_symbol_with_trailing_nul(sym) {
-        bytes.as_ptr().cast::<c_char>()
+        bytes.as_ptr().cast::<i8>()
     } else {
         ptr::null()
     }
@@ -206,30 +209,7 @@ unsafe extern "C" fn mrb_sym_name_len(
 unsafe extern "C" fn mrb_sym_dump(mrb: *mut sys::mrb_state, sym: sys::mrb_sym) -> *const c_char {
     unwrap_interpreter!(mrb, to => guard, or_else = ptr::null());
     if let Ok(Some(bytes)) = guard.lookup_symbol(sym) {
-        let mut bytes = bytes.to_vec();
-
-        // SAFETY: ensure the byte buffer is NUL-terminated.
-        //
-        // Add a NUL byte to the end of the allocation for the byte buffer in
-        // the new `RString*`.
-        //
-        // mruby assumes that symbols are stored in memory as a null terminated
-        // `char*`s and creates "static" `RString`s from interned bytes that
-        // point at this NUL terminated memory.
-        //
-        // Sometimes mruby grabs the `RString` pointer directly from value
-        // returned by this API call and assumes it is NUL terminated.
-        //
-        // Add a 0 byte to the end of the `Vec` to ensure that the byte at index
-        // `len + 1` is NUL. Then set the length to the length of the `Vec` to
-        // hide the NUL byte.
-        //
-        // See https://github.com/artichoke/artichoke/pull/1969.
-        let len = bytes.len();
-        bytes.reserve_exact(1);
-        bytes.push(0);
-        bytes.set_len(len);
-
+        let bytes = bytes.to_vec();
         // Allocate a buffer with the lifetime of the interpreter and return
         // a pointer to it.
         if let Ok(string) = guard.try_convert_mut(bytes) {
