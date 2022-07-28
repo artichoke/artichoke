@@ -164,7 +164,7 @@ impl Buf {
 
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
-        self.inner.set_len(new_len)
+        self.inner.set_len(new_len);
     }
 
     #[inline]

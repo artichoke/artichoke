@@ -1,6 +1,6 @@
 use alloc::boxed::Box;
 use alloc::collections::TryReserveError;
-use alloc::vec::{Drain, Splice, Vec};
+use alloc::vec::Vec;
 use core::borrow::Borrow;
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
@@ -11,6 +11,22 @@ use std::io::{self, IoSlice, Write};
 
 use bstr::ByteVec;
 use raw_parts::RawParts;
+
+fn ensure_nul_terminated(vec: &mut Vec<u8>) {
+    const NUL_BYTE: u8 = 0;
+
+    let spare_capacity = vec.spare_capacity_mut();
+    // If the vec has spare capacity, set the first byte to NUL.
+    if let Some(next) = spare_capacity.get_mut(0) {
+        next.write(NUL_BYTE);
+        return;
+    }
+    // Else `vec.len == vec.capacity`, so reserve an extra byte.
+    vec.reserve_exact(1);
+    let spare_capacity = vec.spare_capacity_mut();
+    let next = spare_capacity.get_mut(0).expect("Vec should have spare capacity");
+    next.write(NUL_BYTE);
+}
 
 #[repr(transparent)]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -61,7 +77,8 @@ impl FromIterator<u8> for Buf {
     where
         T: IntoIterator<Item = u8>,
     {
-        let inner = iter.into_iter().collect();
+        let mut inner = iter.into_iter().collect();
+        ensure_nul_terminated(&mut inner);
         Self { inner }
     }
 }
@@ -70,6 +87,7 @@ impl Extend<u8> for Buf {
     #[inline]
     fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
         self.inner.extend(iter.into_iter());
+        ensure_nul_terminated(&mut self.inner);
     }
 }
 
@@ -83,6 +101,7 @@ impl Buf {
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         let inner = Vec::with_capacity(capacity);
+        ensure_nul_terminated(&mut inner);
         Self { inner }
     }
 
@@ -105,31 +124,39 @@ impl Buf {
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.inner.reserve(additional);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.inner.reserve_exact(additional);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
-        self.inner.try_reserve(additional)
+        self.inner.try_reserve(additional)?;
+        ensure_nul_terminated(&mut self.inner);
+        Ok(())
     }
 
     #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
-        self.inner.try_reserve_exact(additional)
+        self.inner.try_reserve_exact(additional)?;
+        ensure_nul_terminated(&mut self.inner);
+        Ok(())
     }
 
     #[inline]
     pub fn shrink_to_fit(&mut self) {
         self.inner.shrink_to_fit();
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.inner.shrink_to(min_capacity);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
@@ -140,6 +167,7 @@ impl Buf {
     #[inline]
     pub fn truncate(&mut self, len: usize) {
         self.inner.truncate(len);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
@@ -164,22 +192,28 @@ impl Buf {
 
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
-        self.inner.set_len(new_len)
+        self.inner.set_len(new_len);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn swap_remove(&mut self, index: usize) -> u8 {
-        self.inner.swap_remove(index)
+        let removed = self.inner.swap_remove(index);
+        ensure_nul_terminated(&mut self.inner);
+        removed
     }
 
     #[inline]
     pub fn insert(&mut self, index: usize, element: u8) {
         self.inner.insert(index, element);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn remove(&mut self, index: usize) -> u8 {
-        self.inner.remove(index)
+        let removed = self.inner.remove(index);
+        ensure_nul_terminated(&mut self.inner);
+        removed
     }
 
     #[inline]
@@ -188,6 +222,7 @@ impl Buf {
         F: FnMut(&u8) -> bool,
     {
         self.inner.retain(f);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
@@ -196,6 +231,7 @@ impl Buf {
         F: FnMut(&mut u8) -> bool,
     {
         self.inner.retain_mut(f);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
@@ -205,6 +241,7 @@ impl Buf {
         K: PartialEq<K>,
     {
         self.inner.dedup_by_key(key);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
@@ -213,34 +250,33 @@ impl Buf {
         F: FnMut(&mut u8, &mut u8) -> bool,
     {
         self.inner.dedup_by(same_bucket);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn push(&mut self, value: u8) {
         self.inner.push(value);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn pop(&mut self) -> Option<u8> {
-        self.inner.pop()
+        let popped = self.inner.pop();
+        ensure_nul_terminated(&mut self.inner);
+        popped
     }
 
     #[inline]
     pub fn append(&mut self, other: &mut Buf) {
         self.inner.append(&mut other.inner);
-    }
-
-    #[inline]
-    pub fn drain<R>(&mut self, range: R) -> Drain<'_, u8>
-    where
-        R: RangeBounds<usize>,
-    {
-        self.inner.drain(range)
+        ensure_nul_terminated(&mut self.inner);
+        ensure_nul_terminated(&mut other.inner);
     }
 
     #[inline]
     pub fn clear(&mut self) {
         self.inner.clear();
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
@@ -255,7 +291,9 @@ impl Buf {
 
     #[inline]
     pub fn split_off(&mut self, at: usize) -> Buf {
-        let split = self.inner.split_off(at);
+        let mut split = self.inner.split_off(at);
+        ensure_nul_terminated(&mut self.inner);
+        ensure_nul_terminated(&mut split);
         Self { inner: split }
     }
 
@@ -265,6 +303,7 @@ impl Buf {
         F: FnMut() -> u8,
     {
         self.inner.resize_with(new_len, f);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
@@ -285,11 +324,13 @@ where
     #[inline]
     pub fn resize(&mut self, new_len: usize, value: u8) {
         self.inner.resize(new_len, value);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
         self.inner.extend_from_slice(other);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
@@ -298,6 +339,7 @@ where
         R: RangeBounds<usize>,
     {
         self.inner.extend_from_within(src);
+        ensure_nul_terminated(&mut self.inner);
     }
 }
 
@@ -308,17 +350,7 @@ where
     #[inline]
     pub fn dedup(&mut self) {
         self.inner.dedup();
-    }
-}
-
-impl Buf {
-    #[inline]
-    pub fn splice<R, I>(&mut self, range: R, replace_with: I) -> Splice<'_, <I as IntoIterator>::IntoIter>
-    where
-        R: RangeBounds<usize>,
-        I: IntoIterator<Item = u8>,
-    {
-        self.inner.splice(range, replace_with)
+        ensure_nul_terminated(&mut self.inner);
     }
 }
 
@@ -334,16 +366,19 @@ impl Buf {
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {
         self.inner.push_byte(byte);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn push_char(&mut self, ch: char) {
         self.inner.push_char(ch);
+        ensure_nul_terminated(&mut self.inner);
     }
 
     #[inline]
     pub fn push_str<B: AsRef<[u8]>>(&mut self, bytes: B) {
         self.inner.push_str(bytes);
+        ensure_nul_terminated(&mut self.inner);
     }
 }
 
@@ -351,26 +386,36 @@ impl Buf {
 impl Write for Buf {
     #[inline]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.inner.write(buf)
+        let result = self.inner.write(buf);
+        ensure_nul_terminated(&mut self.inner);
+        result
     }
 
     #[inline]
     fn flush(&mut self) -> io::Result<()> {
-        self.inner.flush()
+        let result = self.inner.flush();
+        ensure_nul_terminated(&mut self.inner);
+        result
     }
 
     #[inline]
     fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
-        self.inner.write_vectored(bufs)
+        let result = self.inner.write_vectored(bufs);
+        ensure_nul_terminated(&mut self.inner);
+        result
     }
 
     #[inline]
     fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.inner.write_all(buf)
+        let result = self.inner.write_all(buf);
+        ensure_nul_terminated(&mut self.inner);
+        result
     }
 
     #[inline]
     fn write_fmt(&mut self, fmt: Arguments<'_>) -> io::Result<()> {
-        self.inner.write_fmt(fmt)
+        let result = self.inner.write_fmt(fmt);
+        ensure_nul_terminated(&mut self.inner);
+        result
     }
 }
