@@ -29,14 +29,23 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) {
 }
 
 #[repr(transparent)]
-#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Buf {
     inner: Vec<u8>,
 }
 
+impl Clone for Buf {
+    fn clone(&self) -> Self {
+        let mut vec = self.inner.clone();
+        ensure_nul_terminated(&mut vec);
+        Self { inner: vec }
+    }
+}
+
 impl From<Vec<u8>> for Buf {
     #[inline]
-    fn from(vec: Vec<u8>) -> Self {
+    fn from(mut vec: Vec<u8>) -> Self {
+        ensure_nul_terminated(&mut vec);
         Self { inner: vec }
     }
 }
