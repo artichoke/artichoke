@@ -69,6 +69,8 @@ impl Deref for Buf {
 impl DerefMut for Buf {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
+        // SAFETY: the mutable reference given out is a slice, NOT the underlying
+        // `Vec`, so the allocation cannot change size.
         &mut *self.inner
     }
 }
@@ -118,7 +120,10 @@ impl Buf {
 
     #[inline]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
-        let inner = RawParts::into_vec(raw_parts);
+        let mut inner = RawParts::into_vec(raw_parts);
+        // SAFETY: callers may have written into the spare capacity of the `Vec`
+        // so we must ensure the NUL termination byte is still present.
+        ensure_nul_terminated(&mut inner);
         Self { inner }
     }
 
