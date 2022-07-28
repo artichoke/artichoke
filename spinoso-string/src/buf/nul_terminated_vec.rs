@@ -103,13 +103,15 @@ impl Extend<u8> for Buf {
 impl Buf {
     #[inline]
     pub fn new() -> Self {
-        let inner = Vec::new();
+        let mut inner = Vec::with_capacity(1);
+        ensure_nul_terminated(&mut inner);
         Self { inner }
     }
 
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
-        let inner = Vec::with_capacity(capacity);
+        let capacity = capacity.checked_add(1).expect("capacity overflow");
+        let mut inner = Vec::with_capacity(capacity);
         ensure_nul_terminated(&mut inner);
         Self { inner }
     }
