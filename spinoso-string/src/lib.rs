@@ -100,8 +100,8 @@ impl String {
     /// ```
     /// use spinoso_string::{Encoding, String};
     ///
-    /// const S: String = String::new();
-    /// assert_eq!(S.encoding(), Encoding::Utf8);
+    /// let s = String::new();
+    /// assert_eq!(s.encoding(), Encoding::Utf8);
     /// ```
     ///
     /// [conventionally UTF-8]: crate::Encoding::Utf8
@@ -117,7 +117,7 @@ impl String {
     ///
     /// The `String` is [conventionally UTF-8].
     ///
-    /// The string will be able to hold exactly `capacity` bytes without
+    /// The string will be able to hold at least `capacity` bytes without
     /// reallocating. If `capacity` is 0, the string will not allocate.
     ///
     /// It is important to note that although the returned string has the
@@ -134,7 +134,7 @@ impl String {
     ///
     /// let s = String::with_capacity(10);
     /// assert_eq!(s.encoding(), Encoding::Utf8);
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// assert_eq!(s.len(), 0);
     /// ```
     ///
@@ -149,7 +149,7 @@ impl String {
     ///     s.push_byte(ch as u8);
     /// }
     /// // 10 elements have been inserted without reallocating.
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// assert_eq!(s.len(), 10);
     /// ```
     ///
@@ -166,7 +166,7 @@ impl String {
     /// Constructs a new, empty `String` with the specified capacity and
     /// encoding.
     ///
-    /// The string will be able to hold exactly `capacity` bytes without
+    /// The string will be able to hold at least `capacity` bytes without
     /// reallocating. If `capacity` is 0, the string will not allocate.
     ///
     /// It is important to note that although the returned string has the
@@ -183,7 +183,7 @@ impl String {
     ///
     /// let s = String::with_capacity(10);
     /// assert_eq!(s.encoding(), Encoding::Utf8);
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// assert_eq!(s.len(), 0);
     /// ```
     ///
@@ -199,7 +199,7 @@ impl String {
     ///     s.push_byte(ch as u8);
     /// }
     /// // 10 elements have been inserted without reallocating.
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// assert_eq!(s.len(), 10);
     /// ```
     ///
@@ -529,7 +529,7 @@ impl String {
     /// let mut s = String::with_capacity(10);
     /// s.extend_from_slice(&[b'a', b'b', b'c']);
     ///
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// let slice = s.into_boxed_slice();
     /// assert_eq!(slice.into_vec().capacity(), 3);
     /// ```
@@ -549,7 +549,7 @@ impl String {
     /// use spinoso_string::String;
     ///
     /// let s = String::with_capacity(10);
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// ```
     #[inline]
     #[must_use]
@@ -831,7 +831,7 @@ impl String {
     ///
     /// let mut s = String::with_capacity(10);
     /// s.extend_from_slice(b"abc");
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// s.shrink_to_fit();
     /// assert!(s.capacity() >= 3);
     /// ```
@@ -854,7 +854,7 @@ impl String {
     ///
     /// let mut s = String::with_capacity(10);
     /// s.extend_from_slice(b"abc");
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// s.shrink_to(5);
     /// assert!(s.capacity() >= 5);
     /// ```
