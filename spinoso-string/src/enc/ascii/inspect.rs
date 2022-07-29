@@ -72,14 +72,14 @@ impl<'a> FusedIterator for Inspect<'a> {}
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::{String, ToString};
+    use alloc::string::String;
 
     use super::{AsciiString, Inspect};
 
     #[test]
     fn empty() {
         let s = "";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""""#);
@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn fred() {
         let s = "fred";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""fred""#);
@@ -97,7 +97,7 @@ mod tests {
     #[test]
     fn invalid_utf8_byte() {
         let s = b"\xFF";
-        let s = AsciiString::new(s.to_vec());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\xFF""#);
@@ -106,7 +106,7 @@ mod tests {
     #[test]
     fn invalid_utf8() {
         let s = b"invalid-\xFF-utf8";
-        let s = AsciiString::new(s.to_vec());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""invalid-\xFF-utf8""#);
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn quote_collect() {
         let s = r#"a"b"#;
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
         assert_eq!(inspect.collect::<String>(), r#""a\"b""#);
     }
@@ -123,7 +123,7 @@ mod tests {
     #[test]
     fn quote_iter() {
         let s = r#"a"b"#;
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let mut inspect = Inspect::from(&s);
 
         assert_eq!(inspect.next(), Some('"'));
@@ -138,7 +138,7 @@ mod tests {
     #[test]
     fn emoji() {
         let s = "💎";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\xF0\x9F\x92\x8E""#);
@@ -147,7 +147,7 @@ mod tests {
     #[test]
     fn unicode_replacement_char() {
         let s = "�";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\xEF\xBF\xBD""#);
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn escape_slash() {
         let s = r"\";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\\""#);
@@ -165,7 +165,7 @@ mod tests {
     #[test]
     fn escape_inner_slash() {
         let s = r"foo\bar";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""foo\\bar""#);
@@ -174,7 +174,7 @@ mod tests {
     #[test]
     fn nul() {
         let s = "\0";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\x00""#);
@@ -183,7 +183,7 @@ mod tests {
     #[test]
     fn del() {
         let s = "\x7F";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\x7F""#);
@@ -227,7 +227,7 @@ mod tests {
             ["\x20", r#"" ""#],
         ];
         for [s, r] in test_cases {
-            let s = AsciiString::new(s.to_string().into_bytes());
+            let s = AsciiString::from(s);
             let inspect = Inspect::from(&s);
             assert_eq!(inspect.collect::<String>(), r, "For {s:?}, expected {r}");
         }
@@ -236,13 +236,13 @@ mod tests {
     #[test]
     fn special_double_quote() {
         let s = "\x22";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\"""#);
 
         let s = "\"";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\"""#);
@@ -251,13 +251,13 @@ mod tests {
     #[test]
     fn special_backslash() {
         let s = "\x5C";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\\""#);
 
         let s = "\\";
-        let s = AsciiString::new(s.to_string().into_bytes());
+        let s = AsciiString::from(s);
         let inspect = Inspect::from(&s);
 
         assert_eq!(inspect.collect::<String>(), r#""\\""#);

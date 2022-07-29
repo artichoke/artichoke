@@ -334,38 +334,38 @@ mod tests {
     quickcheck! {
         fn fuzz_char_len_utf8_contents_ascii_string(contents: String) -> bool {
             let expected = contents.len();
-            let s = AsciiString::new(contents.into_bytes());
+            let s = AsciiString::from(contents);
             s.char_len() == expected
         }
 
         fn fuzz_len_utf8_contents_ascii_string(contents: String) -> bool {
             let expected = contents.len();
-            let s = AsciiString::new(contents.into_bytes());
+            let s = AsciiString::from(contents);
             s.len() == expected
         }
 
         fn fuzz_char_len_binary_contents_ascii_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
-            let s = AsciiString::new(contents);
+            let s = AsciiString::from(contents);
             s.char_len() == expected
         }
 
         fn fuzz_len_binary_contents_ascii_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
-            let s = AsciiString::new(contents);
+            let s = AsciiString::from(contents);
             s.len() == expected
         }
     }
 
     #[test]
     fn constructs_empty_buffer() {
-        let s = AsciiString::new(Vec::new());
+        let s = AsciiString::from(Vec::new());
         assert_eq!(0, s.len());
     }
 
     #[test]
     fn casing_ascii_string_empty() {
-        let mut s = AsciiString::new(b"".to_vec());
+        let mut s = AsciiString::from(b"");
 
         s.make_capitalized();
         assert_eq!(s, "");
@@ -379,10 +379,10 @@ mod tests {
 
     #[test]
     fn casing_ascii_string_ascii() {
-        let lower = AsciiString::new(b"abc".to_vec());
-        let mid_upper = AsciiString::new(b"aBc".to_vec());
-        let upper = AsciiString::new(b"ABC".to_vec());
-        let long = AsciiString::new(b"aBC, 123, ABC, baby you and me girl".to_vec());
+        let lower = AsciiString::from(b"abc");
+        let mid_upper = AsciiString::from(b"aBc");
+        let upper = AsciiString::from(b"ABC");
+        let long = AsciiString::from(b"aBC, 123, ABC, baby you and me girl");
 
         let capitalize: fn(&AsciiString) -> AsciiString = |value: &AsciiString| {
             let mut value = value.clone();
@@ -478,7 +478,7 @@ mod tests {
 
     #[test]
     fn casing_ascii_string_invalid_utf8() {
-        let mut s = AsciiString::new(b"\xFF\xFE".to_vec());
+        let mut s = AsciiString::from(b"\xFF\xFE");
 
         s.make_capitalized();
         assert_eq!(s, &b"\xFF\xFE"[..]);
