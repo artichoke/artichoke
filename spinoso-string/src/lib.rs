@@ -51,6 +51,7 @@ pub use focaccia::CaseFold;
 #[doc(inline)]
 pub use raw_parts::RawParts;
 
+mod buf;
 mod center;
 mod chars;
 mod codepoints;
@@ -62,6 +63,7 @@ mod inspect;
 mod iter;
 mod ord;
 
+use buf::Buf;
 pub use center::{Center, CenterError};
 pub use chars::Chars;
 pub use codepoints::{Codepoints, CodepointsError, InvalidCodepointError};
@@ -98,15 +100,15 @@ impl String {
     /// ```
     /// use spinoso_string::{Encoding, String};
     ///
-    /// const S: String = String::new();
-    /// assert_eq!(S.encoding(), Encoding::Utf8);
+    /// let s = String::new();
+    /// assert_eq!(s.encoding(), Encoding::Utf8);
     /// ```
     ///
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     #[must_use]
-    pub const fn new() -> Self {
-        let buf = Vec::new();
+    pub fn new() -> Self {
+        let buf = Buf::new();
         let inner = EncodedString::utf8(buf);
         Self { inner }
     }
@@ -115,7 +117,7 @@ impl String {
     ///
     /// The `String` is [conventionally UTF-8].
     ///
-    /// The string will be able to hold exactly `capacity` bytes without
+    /// The string will be able to hold at least `capacity` bytes without
     /// reallocating. If `capacity` is 0, the string will not allocate.
     ///
     /// It is important to note that although the returned string has the
@@ -132,7 +134,7 @@ impl String {
     ///
     /// let s = String::with_capacity(10);
     /// assert_eq!(s.encoding(), Encoding::Utf8);
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// assert_eq!(s.len(), 0);
     /// ```
     ///
@@ -147,7 +149,7 @@ impl String {
     ///     s.push_byte(ch as u8);
     /// }
     /// // 10 elements have been inserted without reallocating.
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// assert_eq!(s.len(), 10);
     /// ```
     ///
@@ -156,7 +158,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
-        let buf = Vec::with_capacity(capacity);
+        let buf = Buf::with_capacity(capacity);
         let inner = EncodedString::utf8(buf);
         Self { inner }
     }
@@ -164,7 +166,7 @@ impl String {
     /// Constructs a new, empty `String` with the specified capacity and
     /// encoding.
     ///
-    /// The string will be able to hold exactly `capacity` bytes without
+    /// The string will be able to hold at least `capacity` bytes without
     /// reallocating. If `capacity` is 0, the string will not allocate.
     ///
     /// It is important to note that although the returned string has the
@@ -181,7 +183,7 @@ impl String {
     ///
     /// let s = String::with_capacity(10);
     /// assert_eq!(s.encoding(), Encoding::Utf8);
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// assert_eq!(s.len(), 0);
     /// ```
     ///
@@ -197,7 +199,7 @@ impl String {
     ///     s.push_byte(ch as u8);
     /// }
     /// // 10 elements have been inserted without reallocating.
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// assert_eq!(s.len(), 10);
     /// ```
     ///
@@ -205,7 +207,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn with_capacity_and_encoding(capacity: usize, encoding: Encoding) -> Self {
-        let buf = Vec::with_capacity(capacity);
+        let buf = Buf::with_capacity(capacity);
         let inner = EncodedString::new(buf, encoding);
         Self { inner }
     }
@@ -213,28 +215,28 @@ impl String {
     #[inline]
     #[must_use]
     pub fn with_bytes_and_encoding(buf: Vec<u8>, encoding: Encoding) -> Self {
-        let inner = EncodedString::new(buf, encoding);
+        let inner = EncodedString::new(buf.into(), encoding);
         Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn utf8(buf: Vec<u8>) -> Self {
-        let inner = EncodedString::utf8(buf);
+        let inner = EncodedString::utf8(buf.into());
         Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn ascii(buf: Vec<u8>) -> Self {
-        let inner = EncodedString::ascii(buf);
+        let inner = EncodedString::ascii(buf.into());
         Self { inner }
     }
 
     #[inline]
     #[must_use]
     pub fn binary(buf: Vec<u8>) -> Self {
-        let inner = EncodedString::binary(buf);
+        let inner = EncodedString::binary(buf.into());
         Self { inner }
     }
 }
@@ -480,7 +482,7 @@ impl String {
     /// [`from_raw_parts`]: String::from_raw_parts
     #[must_use]
     pub fn into_raw_parts(self) -> RawParts<u8> {
-        RawParts::from_vec(self.inner.into_vec())
+        self.inner.into_buf().into_raw_parts()
     }
 
     /// Converts self into a vector without clones or allocation.
@@ -503,7 +505,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn into_vec(self) -> Vec<u8> {
-        self.inner.into_vec()
+        self.inner.into_buf().into_inner()
     }
 
     /// Converts the vector into `Box<[u8]>`.
@@ -527,7 +529,7 @@ impl String {
     /// let mut s = String::with_capacity(10);
     /// s.extend_from_slice(&[b'a', b'b', b'c']);
     ///
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// let slice = s.into_boxed_slice();
     /// assert_eq!(slice.into_vec().capacity(), 3);
     /// ```
@@ -536,7 +538,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn into_boxed_slice(self) -> Box<[u8]> {
-        self.inner.into_vec().into_boxed_slice()
+        self.inner.into_buf().into_boxed_slice()
     }
 
     /// Returns the number of bytes the string can hold without reallocating.
@@ -547,7 +549,7 @@ impl String {
     /// use spinoso_string::String;
     ///
     /// let s = String::with_capacity(10);
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// ```
     #[inline]
     #[must_use]
@@ -829,7 +831,7 @@ impl String {
     ///
     /// let mut s = String::with_capacity(10);
     /// s.extend_from_slice(b"abc");
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// s.shrink_to_fit();
     /// assert!(s.capacity() >= 3);
     /// ```
@@ -852,7 +854,7 @@ impl String {
     ///
     /// let mut s = String::with_capacity(10);
     /// s.extend_from_slice(b"abc");
-    /// assert_eq!(s.capacity(), 10);
+    /// assert!(s.capacity() >= 10);
     /// s.shrink_to(5);
     /// assert!(s.capacity() >= 5);
     /// ```

@@ -6,6 +6,7 @@ use core::slice::SliceIndex;
 
 use bstr::{ByteSlice, ByteVec};
 
+use crate::buf::Buf;
 use crate::chars::ConventionallyUtf8;
 use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
@@ -23,12 +24,12 @@ pub use inspect::Inspect;
 #[allow(clippy::module_name_repetitions)]
 #[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Utf8String {
-    inner: Vec<u8>,
+    inner: Buf,
 }
 
 // Constructors
 impl Utf8String {
-    pub const fn new(buf: Vec<u8>) -> Self {
+    pub const fn new(buf: Buf) -> Self {
         Self { inner: buf }
     }
 }
@@ -45,7 +46,7 @@ impl fmt::Debug for Utf8String {
 impl Utf8String {
     #[inline]
     #[must_use]
-    pub fn into_vec(self) -> Vec<u8> {
+    pub fn into_buf(self) -> Buf {
         self.inner
     }
 
@@ -97,7 +98,7 @@ impl Utf8String {
     #[inline]
     #[must_use]
     pub fn into_iter(self) -> IntoIter {
-        IntoIter::from_vec(self.inner)
+        IntoIter::from_vec(self.inner.into_inner())
     }
 }
 
@@ -548,6 +549,9 @@ impl Utf8String {
         // This allocation assumes that in the common case, capitalizing
         // and lower-casing `char`s do not change the length of the
         // `String`.
+        //
+        // Use a `Vec` here instead of a `Buf` to ensure at most one alloc
+        // fixup happens instead of alloc fixups being O(chars).
         let mut replacement = Vec::with_capacity(self.len());
         let mut bytes = self.inner.as_slice();
 
@@ -583,13 +587,16 @@ impl Utf8String {
                 bytes = remainder;
             }
         }
-        self.inner = replacement;
+        self.inner = replacement.into();
     }
 
     #[inline]
     pub fn make_lowercase(&mut self) {
         // This allocation assumes that in the common case, lower-casing
         // `char`s do not change the length of the `String`.
+        //
+        // Use a `Vec` here instead of a `Buf` to ensure at most one alloc
+        // fixup happens instead of alloc fixups being O(chars).
         let mut replacement = Vec::with_capacity(self.len());
         let mut bytes = self.inner.as_slice();
 
@@ -608,13 +615,16 @@ impl Utf8String {
                 bytes = remainder;
             }
         }
-        self.inner = replacement;
+        self.inner = replacement.into();
     }
 
     #[inline]
     pub fn make_uppercase(&mut self) {
         // This allocation assumes that in the common case, upper-casing
         // `char`s do not change the length of the `String`.
+        //
+        // Use a `Vec` here instead of a `Buf` to ensure at most one alloc
+        // fixup happens instead of alloc fixups being O(chars).
         let mut replacement = Vec::with_capacity(self.len());
         let mut bytes = self.inner.as_slice();
 
@@ -633,7 +643,7 @@ impl Utf8String {
                 bytes = remainder;
             }
         }
-        self.inner = replacement;
+        self.inner = replacement.into();
     }
 }
 
@@ -674,11 +684,13 @@ impl Utf8String {
         // FIXME: this allocation can go away if `ConventionallyUtf8` impls
         // `DoubleEndedIterator`.
         let chars = ConventionallyUtf8::from(&self.inner[..]).collect::<Vec<_>>();
+        // Use a `Vec` here instead of a `Buf` to ensure at most one alloc
+        // fixup happens instead of alloc fixups being O(chars).
         let mut replacement = Vec::with_capacity(self.inner.len());
         for &bytes in chars.iter().rev() {
             replacement.extend_from_slice(bytes);
         }
-        self.inner = replacement;
+        self.inner = replacement.into();
     }
 }
 
