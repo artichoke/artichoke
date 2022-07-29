@@ -1,5 +1,4 @@
 use alloc::collections::TryReserveError;
-use alloc::vec::Vec;
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 use core::hash::{Hash, Hasher};
@@ -10,6 +9,7 @@ use ascii::AsciiString;
 use binary::BinaryString;
 use utf8::Utf8String;
 
+use crate::buf::Buf;
 use crate::codepoints::InvalidCodepointError;
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
@@ -34,7 +34,7 @@ pub enum EncodedString {
 
 impl Default for EncodedString {
     fn default() -> Self {
-        Self::utf8(Vec::new())
+        Self::utf8(Buf::new())
     }
 }
 
@@ -110,7 +110,7 @@ impl Borrow<[u8]> for EncodedString {
 impl EncodedString {
     #[inline]
     #[must_use]
-    pub const fn new(buf: Vec<u8>, encoding: Encoding) -> Self {
+    pub fn new(buf: Buf, encoding: Encoding) -> Self {
         match encoding {
             Encoding::Ascii => Self::ascii(buf),
             Encoding::Binary => Self::binary(buf),
@@ -120,19 +120,19 @@ impl EncodedString {
 
     #[inline]
     #[must_use]
-    pub const fn ascii(buf: Vec<u8>) -> Self {
+    pub fn ascii(buf: Buf) -> Self {
         Self::Ascii(AsciiString::new(buf))
     }
 
     #[inline]
     #[must_use]
-    pub const fn binary(buf: Vec<u8>) -> Self {
+    pub fn binary(buf: Buf) -> Self {
         Self::Binary(BinaryString::new(buf))
     }
 
     #[inline]
     #[must_use]
-    pub const fn utf8(buf: Vec<u8>) -> Self {
+    pub fn utf8(buf: Buf) -> Self {
         Self::Utf8(Utf8String::new(buf))
     }
 }
@@ -153,11 +153,11 @@ impl EncodedString {
 impl EncodedString {
     #[inline]
     #[must_use]
-    pub fn into_vec(self) -> Vec<u8> {
+    pub fn into_buf(self) -> Buf {
         match self {
-            EncodedString::Ascii(inner) => inner.into_vec(),
-            EncodedString::Binary(inner) => inner.into_vec(),
-            EncodedString::Utf8(inner) => inner.into_vec(),
+            EncodedString::Ascii(inner) => inner.into_buf(),
+            EncodedString::Binary(inner) => inner.into_buf(),
+            EncodedString::Utf8(inner) => inner.into_buf(),
         }
     }
 

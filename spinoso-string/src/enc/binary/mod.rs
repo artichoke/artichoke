@@ -1,11 +1,11 @@
 use alloc::collections::TryReserveError;
-use alloc::vec::Vec;
 use core::fmt;
 use core::ops::Range;
 use core::slice::SliceIndex;
 
-use bstr::{ByteSlice, ByteVec};
+use bstr::ByteSlice;
 
+use crate::buf::Buf;
 use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
@@ -22,12 +22,12 @@ pub use inspect::Inspect;
 #[allow(clippy::module_name_repetitions)]
 #[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BinaryString {
-    inner: Vec<u8>,
+    inner: Buf,
 }
 
 // Constructors
 impl BinaryString {
-    pub const fn new(buf: Vec<u8>) -> Self {
+    pub const fn new(buf: Buf) -> Self {
         Self { inner: buf }
     }
 }
@@ -44,7 +44,7 @@ impl fmt::Debug for BinaryString {
 impl BinaryString {
     #[inline]
     #[must_use]
-    pub fn into_vec(self) -> Vec<u8> {
+    pub fn into_buf(self) -> Buf {
         self.inner
     }
 
@@ -96,7 +96,7 @@ impl BinaryString {
     #[inline]
     #[must_use]
     pub fn into_iter(self) -> IntoIter {
-        IntoIter::from_vec(self.inner)
+        IntoIter::from_vec(self.inner.into_inner())
     }
 }
 
