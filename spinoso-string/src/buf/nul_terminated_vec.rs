@@ -16,16 +16,36 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) {
     const NUL_BYTE: u8 = 0;
 
     let spare_capacity = vec.spare_capacity_mut();
-    // If the vec has spare capacity, set the first byte to NUL.
-    if let Some(next) = spare_capacity.get_mut(0) {
-        next.write(NUL_BYTE);
-        return;
+    // If the vec has spare capacity, set the first and last bytes to NUL.
+    // See:
+    //
+    // - https://github.com/artichoke/artichoke/pull/1976#discussion_r932782264
+    // - https://github.com/artichoke/artichoke/blob/16c869a9ad29acfe143bfcc011917ef442ccac54/artichoke-backend/vendor/mruby/src/string.c#L36-L38
+    match spare_capacity {
+        [] => {}
+        [next] => {
+            next.write(NUL_BYTE);
+            return;
+        }
+        [head, .., tail] => {
+            head.write(NUL_BYTE);
+            tail.write(NUL_BYTE);
+            return;
+        }
     }
     // Else `vec.len == vec.capacity`, so reserve an extra byte.
     vec.reserve_exact(1);
     let spare_capacity = vec.spare_capacity_mut();
-    let next = spare_capacity.get_mut(0).expect("Vec should have spare capacity");
-    next.write(NUL_BYTE);
+    match spare_capacity {
+        [] => panic!("Vec should have spare capacity"),
+        [next] => {
+            next.write(NUL_BYTE);
+        }
+        [head, .., tail] => {
+            head.write(NUL_BYTE);
+            tail.write(NUL_BYTE);
+        }
+    }
 }
 
 #[repr(transparent)]
