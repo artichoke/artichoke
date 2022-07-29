@@ -689,7 +689,6 @@ mod tests {
     use alloc::vec::Vec;
     use core::str;
 
-    use bstr::ByteSlice;
     use quickcheck::quickcheck;
 
     use super::Utf8String;
@@ -699,38 +698,38 @@ mod tests {
     quickcheck! {
         fn fuzz_char_len_utf8_contents_utf8_string(contents: String) -> bool {
             let expected = contents.chars().count();
-            let s = Utf8String::new(contents.into_bytes());
+            let s = Utf8String::from(contents);
             s.char_len() == expected
         }
 
         fn fuzz_len_utf8_contents_utf8_string(contents: String) -> bool {
             let expected = contents.len();
-            let s = Utf8String::new(contents.into_bytes());
+            let s = Utf8String::from(contents);
             s.len() == expected
         }
 
         fn fuzz_char_len_binary_contents_utf8_string(contents: Vec<u8>) -> bool {
             if let Ok(utf8_contents) = str::from_utf8(&contents) {
                 let expected = utf8_contents.chars().count();
-                let s = Utf8String::new(contents);
+                let s = Utf8String::from(contents);
                 s.char_len() == expected
             } else {
                 let expected_at_most = contents.len();
-                let s = Utf8String::new(contents);
+                let s = Utf8String::from(contents);
                 s.char_len() <= expected_at_most
             }
         }
 
         fn fuzz_len_binary_contents_utf8_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
-            let s = Utf8String::new(contents);
+            let s = Utf8String::from(contents);
             s.len() == expected
         }
     }
 
     #[test]
     fn constructs_empty_buffer() {
-        let s = Utf8String::new(Vec::new());
+        let s = Utf8String::from(Vec::new());
         assert_eq!(0, s.len());
     }
 
@@ -755,7 +754,7 @@ mod tests {
         let s = Utf8String::from("a💎b🦀c🎉d");
         assert_eq!(s.char_len(), 7);
         // with invalid UTF-8 bytes
-        let s = Utf8String::new(b"a\xF0\x9F\x92\x8E\xFFabc".to_vec());
+        let s = Utf8String::from(b"a\xF0\x9F\x92\x8E\xFFabc");
         assert_eq!(s.char_len(), 6);
     }
 
@@ -770,27 +769,27 @@ mod tests {
         let s = Utf8String::from("�💎b🦀c🎉�");
         assert_eq!(s.char_len(), 7);
         // with invalid UFF-8 bytes
-        let s = Utf8String::new(b"\xEF\xBF\xBD\xF0\x9F\x92\x8E\xFF\xEF\xBF\xBDab".to_vec());
+        let s = Utf8String::from(b"\xEF\xBF\xBD\xF0\x9F\x92\x8E\xFF\xEF\xBF\xBDab");
         assert_eq!(s.char_len(), 6);
-        let s = Utf8String::new(REPLACEMENT_CHARACTER_BYTES.to_vec());
+        let s = Utf8String::from(REPLACEMENT_CHARACTER_BYTES);
         assert_eq!(s.char_len(), 1);
     }
 
     #[test]
     fn char_len_nul_byte() {
-        let s = Utf8String::from(b"\x00".as_bytes());
+        let s = Utf8String::from(b"\x00");
         assert_eq!(s.char_len(), 1);
-        let s = Utf8String::from(b"abc\x00".as_bytes());
+        let s = Utf8String::from(b"abc\x00");
         assert_eq!(s.char_len(), 4);
-        let s = Utf8String::from(b"abc\x00xyz".as_bytes());
+        let s = Utf8String::from(b"abc\x00xyz");
         assert_eq!(s.char_len(), 7);
     }
 
     #[test]
     fn char_len_invalid_utf8_byte_sequences() {
-        let s = Utf8String::from(b"\x00\x00\xD8\x00".as_bytes());
+        let s = Utf8String::from(b"\x00\x00\xD8\x00");
         assert_eq!(s.char_len(), 4);
-        let s = Utf8String::from(b"\xFF\xFE".as_bytes());
+        let s = Utf8String::from(b"\xFF\xFE");
         assert_eq!(s.char_len(), 2);
     }
 
@@ -800,14 +799,14 @@ mod tests {
             0xB3, 0x7E, 0x39, 0x70, 0x8E, 0xFD, 0xBB, 0x75, 0x62, 0x77, 0xE7, 0xDF, 0x6F, 0xF2, 0x76, 0x27, 0x81,
             0x9A, 0x3A, 0x9D, 0xED, 0x6B, 0x4F, 0xAE, 0xC4, 0xE7, 0xA1, 0x66, 0x11, 0xF1, 0x08, 0x1C,
         ];
-        let s = Utf8String::from(bytes.as_bytes());
+        let s = Utf8String::from(bytes);
         assert_eq!(s.char_len(), 32);
         // Mixed binary and ASCII
         let bytes = &[
             b'?', b'!', b'a', b'b', b'c', 0xFD, 0xBB, 0x75, 0x62, 0x77, 0xE7, 0xDF, 0x6F, 0xF2, 0x76, 0x27, 0x81,
             0x9A, 0x3A, 0x9D, 0xED, 0x6B, 0x4F, 0xAE, 0xC4, 0xE7, 0xA1, 0x66, 0x11, 0xF1, 0x08, 0x1C,
         ];
-        let s = Utf8String::from(bytes.as_bytes());
+        let s = Utf8String::from(bytes);
         assert_eq!(s.char_len(), 32);
     }
 
@@ -821,7 +820,7 @@ mod tests {
         // [2.6.3] > puts s.bytes.map{|b| "\\x#{b.to_s(16).upcase}"}.join
         // \xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF
         // ```
-        let s = Utf8String::from(b"\xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF".as_bytes());
+        let s = Utf8String::from(b"\xF0\x9F\xA6\x80\x61\x62\x63\xF0\x9F\x92\x8E\xFF");
         assert_eq!(s.char_len(), 6);
     }
 
@@ -907,7 +906,7 @@ mod tests {
 
     #[test]
     fn casing_utf8_string_empty() {
-        let mut s = Utf8String::new(b"".to_vec());
+        let mut s = Utf8String::from(b"");
 
         s.make_capitalized();
         assert_eq!(s, "");
@@ -921,10 +920,10 @@ mod tests {
 
     #[test]
     fn casing_utf8_string_ascii() {
-        let lower = Utf8String::new(b"abc".to_vec());
-        let mid_upper = Utf8String::new(b"aBc".to_vec());
-        let upper = Utf8String::new(b"ABC".to_vec());
-        let long = Utf8String::new(b"aBC, 123, ABC, baby you and me girl".to_vec());
+        let lower = Utf8String::from(b"abc");
+        let mid_upper = Utf8String::from(b"aBc");
+        let upper = Utf8String::from(b"ABC");
+        let long = Utf8String::from(b"aBC, 123, ABC, baby you and me girl");
 
         let capitalize: fn(&Utf8String) -> Utf8String = |value: &Utf8String| {
             let mut value = value.clone();
@@ -1027,7 +1026,7 @@ mod tests {
 
     #[test]
     fn casing_utf8_string_invalid_utf8() {
-        let mut s = Utf8String::new(b"\xFF\xFE".to_vec());
+        let mut s = Utf8String::from(b"\xFF\xFE");
 
         s.make_capitalized();
         assert_eq!(s, &b"\xFF\xFE"[..]);
@@ -1065,7 +1064,7 @@ mod tests {
         // The bytes `\xF0\x9F\x87` could lead to a valid UTF-8 sequence, but 3 of them
         // on their own are invalid. Only one replacement codepoint is substituted,
         // which demonstrates the "substitution of maximal subparts" strategy.
-        let s = Utf8String::new(b"\xF0\x9F\x87".to_vec());
+        let s = Utf8String::from(b"\xF0\x9F\x87");
         assert_eq!(s.chr(), b"\xF0");
     }
 }

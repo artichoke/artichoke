@@ -334,38 +334,38 @@ mod tests {
     quickcheck! {
         fn fuzz_char_len_utf8_contents_binary_string(contents: String) -> bool {
             let expected = contents.len();
-            let s = BinaryString::new(contents.into_bytes());
+            let s = BinaryString::from(contents);
             s.char_len() == expected
         }
 
         fn fuzz_len_utf8_contents_binary_string(contents: String) -> bool {
             let expected = contents.len();
-            let s = BinaryString::new(contents.into_bytes());
+            let s = BinaryString::from(contents);
             s.len() == expected
         }
 
         fn fuzz_char_len_binary_contents_binary_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
-            let s = BinaryString::new(contents);
+            let s = BinaryString::from(contents);
             s.char_len() == expected
         }
 
         fn fuzz_len_binary_contents_binary_string(contents: Vec<u8>) -> bool {
             let expected = contents.len();
-            let s = BinaryString::new(contents);
+            let s = BinaryString::from(contents);
             s.len() == expected
         }
     }
 
     #[test]
     fn constructs_empty_buffer() {
-        let s = BinaryString::new(Vec::new());
+        let s = BinaryString::from(Vec::new());
         assert_eq!(0, s.len());
     }
 
     #[test]
     fn casing_binary_string_empty() {
-        let mut s = BinaryString::new(b"".to_vec());
+        let mut s = BinaryString::from(b"");
 
         s.make_capitalized();
         assert_eq!(s, "");
@@ -379,10 +379,10 @@ mod tests {
 
     #[test]
     fn casing_binary_string_ascii() {
-        let lower = BinaryString::new(b"abc".to_vec());
-        let mid_upper = BinaryString::new(b"aBc".to_vec());
-        let upper = BinaryString::new(b"ABC".to_vec());
-        let long = BinaryString::new(b"aBC, 123, ABC, baby you and me girl".to_vec());
+        let lower = BinaryString::from(b"abc");
+        let mid_upper = BinaryString::from(b"aBc");
+        let upper = BinaryString::from(b"ABC");
+        let long = BinaryString::from(b"aBC, 123, ABC, baby you and me girl");
 
         let capitalize: fn(&BinaryString) -> BinaryString = |value: &BinaryString| {
             let mut value = value.clone();
@@ -478,7 +478,7 @@ mod tests {
 
     #[test]
     fn casing_binary_string_invalid_utf8() {
-        let mut s = BinaryString::new(b"\xFF\xFE".to_vec());
+        let mut s = BinaryString::from(b"\xFF\xFE");
 
         s.make_capitalized();
         assert_eq!(s, &b"\xFF\xFE"[..]);

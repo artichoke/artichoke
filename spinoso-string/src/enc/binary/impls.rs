@@ -33,38 +33,59 @@ impl From<Vec<u8>> for BinaryString {
     }
 }
 
+impl<const N: usize> From<[u8; N]> for BinaryString {
+    #[inline]
+    fn from(content: [u8; N]) -> Self {
+        let buf = content.to_vec();
+        Self::new(buf)
+    }
+}
+
+impl<const N: usize> From<&[u8; N]> for BinaryString {
+    #[inline]
+    fn from(content: &[u8; N]) -> Self {
+        let buf = content.to_vec();
+        Self::new(buf)
+    }
+}
+
 impl<'a> From<&'a [u8]> for BinaryString {
     #[inline]
     fn from(content: &'a [u8]) -> Self {
-        Self::new(content.to_vec())
+        let buf = content.to_vec();
+        Self::new(buf)
     }
 }
 
 impl<'a> From<&'a mut [u8]> for BinaryString {
     #[inline]
     fn from(content: &'a mut [u8]) -> Self {
-        Self::new(content.to_vec())
+        let buf = content.to_vec();
+        Self::new(buf)
     }
 }
 
 impl<'a> From<Cow<'a, [u8]>> for BinaryString {
     #[inline]
     fn from(content: Cow<'a, [u8]>) -> Self {
-        Self::new(content.into_owned())
+        let buf = content.into_owned();
+        Self::new(buf)
     }
 }
 
 impl From<String> for BinaryString {
     #[inline]
     fn from(s: String) -> Self {
-        Self::new(s.into_bytes())
+        let buf = s.into_bytes();
+        Self::new(buf)
     }
 }
 
 impl From<&str> for BinaryString {
     #[inline]
     fn from(s: &str) -> Self {
-        Self::new(s.as_bytes().to_vec())
+        let buf = s.as_bytes().to_vec();
+        Self::new(buf)
     }
 }
 
