@@ -82,7 +82,7 @@
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
 //!
-//! [ruby-random]: https://ruby-doc.org/core-2.6.3/Random.html
+//! [ruby-random]: https://ruby-doc.org/core-3.1.2/Random.html
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 //! [`rand`]: ::rand
 //! [`RngCore`]: rand_core::RngCore
@@ -207,7 +207,7 @@ impl error::Error for Error {
 /// assert_eq!(err.message(), "failed to get urandom");
 /// ```
 ///
-/// [Ruby `RuntimeError` Exception class]: https://ruby-doc.org/core-2.6.3/RuntimeError.html
+/// [Ruby `RuntimeError` Exception class]: https://ruby-doc.org/core-3.1.2/RuntimeError.html
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InitializeError {
     _private: (),
@@ -275,7 +275,7 @@ impl error::Error for InitializeError {}
 /// assert_eq!(err.message(), "failed to get urandom");
 /// ```
 ///
-/// [Ruby `RuntimeError` Exception class]: https://ruby-doc.org/core-2.6.3/RuntimeError.html
+/// [Ruby `RuntimeError` Exception class]: https://ruby-doc.org/core-3.1.2/RuntimeError.html
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UrandomError {
     _private: (),
@@ -342,7 +342,7 @@ impl error::Error for UrandomError {}
 /// assert_eq!(err.message(), "failed to get urandom");
 /// ```
 ///
-/// [Ruby `RuntimeError` Exception class]: https://ruby-doc.org/core-2.6.3/RuntimeError.html
+/// [Ruby `RuntimeError` Exception class]: https://ruby-doc.org/core-3.1.2/RuntimeError.html
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NewSeedError {
     _private: (),
@@ -407,7 +407,7 @@ impl error::Error for NewSeedError {}
 /// assert_eq!(err.message(), "ArgumentError");
 /// ```
 ///
-/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
+/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct ArgumentError(ArgumentErrorInner);
 

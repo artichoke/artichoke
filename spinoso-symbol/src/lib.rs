@@ -66,9 +66,9 @@
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
 //!
-//! [the `Symbol` API from Ruby Core]: https://ruby-doc.org/core-2.6.3/Symbol.html
-//! [`Symbol::all_symbols`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-c-all_symbols
-//! [`Symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
+//! [the `Symbol` API from Ruby Core]: https://ruby-doc.org/core-3.1.2/Symbol.html
+//! [`Symbol::all_symbols`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-c-all_symbols
+//! [`Symbol#inspect`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-inspect
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 //! [`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html
 
@@ -291,7 +291,7 @@ impl Symbol {
     /// error looking up the symbol in the underlying interner, a default
     /// iterator is returned.
     ///
-    /// [`Symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
+    /// [`Symbol#inspect`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-inspect
     #[inline]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]

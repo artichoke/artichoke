@@ -156,7 +156,7 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 ///
 /// [loaders]: crate::loaders
 /// [current working directory]: std::env::current_dir
-/// [ruby-string]: https://ruby-doc.org/core-2.6.3/String.html
+/// [ruby-string]: https://ruby-doc.org/core-3.1.2/String.html
 /// [reference implementation]: https://github.com/artichoke/ruby/blob/v3_0_2/file.c#L6287-L6293
 #[must_use]
 pub fn is_explicit_relative_bytes<P: AsRef<[u8]>>(path: P) -> bool {

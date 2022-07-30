@@ -50,7 +50,7 @@ mod iter;
 /// assert_eq!(ary, &[7, 1, 2, 3]);
 /// ```
 ///
-/// [ruby-array]: https://ruby-doc.org/core-2.6.3/Array.html
+/// [ruby-array]: https://ruby-doc.org/core-3.1.2/Array.html
 /// [`shift`]: Array::shift
 /// [`shift_n`]: Array::shift_n
 /// [`drop_n`]: Array::drop_n

@@ -20,9 +20,9 @@ use crate::RubyException;
 /// traceback information. `Exception` subclasses may add additional information
 /// like [`NameError#name`].
 ///
-/// [`Exception`]: https://ruby-doc.org/core-2.6.3/Exception.html
-/// [`Kernel#raise`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-raise
-/// [`NameError#name`]: https://ruby-doc.org/core-2.6.3/NameError.html#method-i-name
+/// [`Exception`]: https://ruby-doc.org/core-3.1.2/Exception.html
+/// [`Kernel#raise`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-raise
+/// [`NameError#name`]: https://ruby-doc.org/core-3.1.2/NameError.html#method-i-name
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct LocalJumpError {
     message: Cow<'static, [u8]>,

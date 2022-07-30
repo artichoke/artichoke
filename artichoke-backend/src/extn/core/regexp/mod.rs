@@ -1,5 +1,5 @@
 //! [ruby/spec](https://github.com/ruby/spec) compliant implementation of
-//! [`Regexp`](https://ruby-doc.org/core-2.6.3/Regexp.html).
+//! [`Regexp`](https://ruby-doc.org/core-3.1.2/Regexp.html).
 //!
 //! Each function on `Regexp` is implemented as its own module which contains
 //! the `Args` struct for invoking the function.

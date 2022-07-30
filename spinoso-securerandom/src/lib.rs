@@ -83,7 +83,7 @@
 //! # example().unwrap()
 //! ```
 //!
-//! [`SecureRandom`]: https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
+//! [`SecureRandom`]: https://ruby-doc.org/stdlib-3.1.2/libdoc/securerandom/rdoc/SecureRandom.html
 //! [`getrandom`]: https://crates.io/crates/getrandom
 
 // Ensure code blocks in `README.md` compile
@@ -194,7 +194,7 @@ impl error::Error for Error {
 /// assert_eq!(err.message(), "negative string size (or size too big)");
 /// ```
 ///
-/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
+/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ArgumentError(&'static str);
 

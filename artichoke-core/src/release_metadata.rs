@@ -91,7 +91,7 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > 2.6.3
+    /// > 3.1.2
     fn ruby_version(&self) -> &str;
 
     /// A description of the compiler used to build Artichoke.

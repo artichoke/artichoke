@@ -9,7 +9,7 @@
 /// cryptographically secure. For example, MRI's PRNG is a variant of Mersenne
 /// Twister.
 ///
-/// [`Random::DEFAULT`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT
+/// [`Random::DEFAULT`]: https://ruby-doc.org/core-3.1.2/Random.html#DEFAULT
 pub trait Prng {
     /// Concrete type for errors when retrieving the pseudorandom number
     /// generator.

@@ -26,8 +26,8 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#nsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-nsec
-    /// [`Time#tv_nsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_nsec
+    /// [`Time#nsec`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-nsec
+    /// [`Time#tv_nsec`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-tv_nsec
     #[inline]
     #[must_use]
     pub fn nanoseconds(&self) -> u32 {
@@ -50,8 +50,8 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#usec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-usec
-    /// [`Time#tv_usec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_usec
+    /// [`Time#usec`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-usec
+    /// [`Time#tv_usec`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-tv_usec
     #[inline]
     #[must_use]
     pub fn microseconds(&self) -> u32 {
@@ -78,7 +78,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#sec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sec
+    /// [`Time#sec`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-sec
     /// [leap seconds]: https://en.wikipedia.org/wiki/Leap_second
     #[inline]
     #[must_use]
@@ -103,7 +103,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#minute`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-min
+    /// [`Time#minute`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-min
     #[inline]
     #[must_use]
     pub fn minute(&self) -> u8 {
@@ -127,7 +127,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#hour`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-hour
+    /// [`Time#hour`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-hour
     #[inline]
     #[must_use]
     pub fn hour(&self) -> u8 {
@@ -151,8 +151,8 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#day`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-day
-    /// [`Time#mday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mday
+    /// [`Time#day`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-day
+    /// [`Time#mday`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-mday
     #[inline]
     #[must_use]
     pub fn day(&self) -> u8 {
@@ -176,8 +176,8 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#mon`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mon
-    /// [`Time#month`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-mon
+    /// [`Time#mon`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-mon
+    /// [`Time#month`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-mon
     #[inline]
     #[must_use]
     pub fn month(&self) -> u8 {
@@ -200,7 +200,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#year`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-year
+    /// [`Time#year`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-year
     #[inline]
     #[must_use]
     pub fn year(&self) -> i32 {
@@ -256,8 +256,8 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#utc?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc-3F
-    /// [`Time#gmt?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmt-3F
+    /// [`Time#utc?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-utc-3F
+    /// [`Time#gmt?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-gmt-3F
     #[inline]
     #[must_use]
     pub fn is_utc(&self) -> bool {
@@ -280,8 +280,8 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#utc_offset`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-utc_offset
-    /// [`Time#gmt_offset`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-gmt_offset
+    /// [`Time#utc_offset`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-utc_offset
+    /// [`Time#gmt_offset`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-gmt_offset
     #[inline]
     #[must_use]
     pub fn utc_offset(&self) -> i32 {
@@ -308,8 +308,8 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#dst?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-dst-3F
-    /// [`Time#isdst`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-isdst
+    /// [`Time#dst?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-dst-3F
+    /// [`Time#isdst`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-isdst
     #[inline]
     #[must_use]
     pub fn is_dst(&self) -> bool {
@@ -334,7 +334,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#wday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-wday
+    /// [`Time#wday`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-wday
     #[inline]
     #[must_use]
     pub fn day_of_week(&self) -> u8 {
@@ -358,7 +358,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#sunday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sunday-3F
+    /// [`Time#sunday?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-sunday-3F
     #[inline]
     #[must_use]
     pub fn is_sunday(&self) -> bool {
@@ -382,7 +382,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#monday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sunday-3F
+    /// [`Time#monday?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-sunday-3F
     #[inline]
     #[must_use]
     pub fn is_monday(&self) -> bool {
@@ -406,7 +406,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#tuesday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-sunday-3F
+    /// [`Time#tuesday?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-sunday-3F
     #[inline]
     #[must_use]
     pub fn is_tuesday(&self) -> bool {
@@ -430,7 +430,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#wednesday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-wednesday-3F
+    /// [`Time#wednesday?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-wednesday-3F
     #[inline]
     #[must_use]
     pub fn is_wednesday(&self) -> bool {
@@ -454,7 +454,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#thursday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-thursday-3F
+    /// [`Time#thursday?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-thursday-3F
     #[inline]
     #[must_use]
     pub fn is_thursday(&self) -> bool {
@@ -477,7 +477,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#friday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-friday-3F
+    /// [`Time#friday?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-friday-3F
     #[inline]
     #[must_use]
     pub fn is_friday(&self) -> bool {
@@ -501,7 +501,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#saturday?`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-saturday-3F
+    /// [`Time#saturday?`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-saturday-3F
     #[inline]
     #[must_use]
     pub fn is_saturday(&self) -> bool {
@@ -524,7 +524,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#yday`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-yday
+    /// [`Time#yday`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-yday
     #[inline]
     #[must_use]
     pub fn day_of_year(&self) -> u16 {

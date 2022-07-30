@@ -108,9 +108,9 @@
 //!   this feature adds several trait methods that depend on `OsStr` and `Path`
 //!   as well as several implementations of `std::error::Error`.
 //!
-//! [Kernel#require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
-//! [`Random::DEFAULT`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT
-//! [`Regexp`]: https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
+//! [Kernel#require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
+//! [`Random::DEFAULT`]: https://ruby-doc.org/core-3.1.2/Random.html#DEFAULT
+//! [`Regexp`]: https://ruby-doc.org/core-3.1.2/Regexp.html#class-Regexp-label-Special+global+variables
 //! [convert]: crate::convert
 
 #![no_std]

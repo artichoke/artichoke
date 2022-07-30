@@ -15,7 +15,9 @@
 //!
 //! This crate is a Rust and Ruby implementation of the [Ruby programming
 //! language][rubylang]. Artichoke is not production-ready, but intends to be a
-//! [MRI-compliant][rubyspec] implementation of Ruby 2.6.3.
+//! [MRI-compliant][rubyspec] implementation of [recent MRI Ruby][mri-target].
+//!
+//! [mri-target]: https://github.com/artichoke/artichoke/blob/trunk/RUBYSPEC.md#mri-target
 //!
 //! This crate provides:
 //!
@@ -131,7 +133,7 @@ pub fn interpreter() -> Result<Artichoke, Error> {
         .with_ruby_platform(env!("RUBY_PLATFORM"))
         .with_ruby_release_date(env!("RUBY_RELEASE_DATE"))
         .with_ruby_revision(env!("RUBY_REVISION"))
-        .with_ruby_version("2.6.3") // Artichoke targets MRI Ruby 2.6.3
+        .with_ruby_version("3.1.2") // Artichoke targets MRI Ruby 3.1.2
         .with_artichoke_compiler_version(Some(env!("ARTICHOKE_COMPILER_VERSION")));
     artichoke_backend::interpreter_with_config(release)
 }

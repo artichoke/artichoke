@@ -82,7 +82,7 @@ All features are enabled by default.
 [2.6.3][ruby-2.6.3] which is copyright Yukihiro Matsumoto \<matz@netlab.jp\>.
 Ruby is licensed with the [2-clause BSDL License][ruby-license].
 
-[ruby-random]: https://ruby-doc.org/core-2.6.3/Random.html
+[ruby-random]: https://ruby-doc.org/core-3.1.2/Random.html
 [`alloc`]: https://doc.rust-lang.org/alloc/
 [`rngcore`]: https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html
 [`rand`]: https://crates.io/crates/rand

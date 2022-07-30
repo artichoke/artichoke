@@ -58,7 +58,7 @@ use same_file::Handle;
 /// # example().unwrap();
 /// ```
 ///
-/// [require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+/// [require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
 /// [resolves to the same file]: same_file
 #[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "rubylib-native-file-system-loader")))]
@@ -284,7 +284,7 @@ impl Rubylib {
     /// If `path` does not exist, an [`io::Error`] with error kind
     /// [`io::ErrorKind::NotFound`] is returned.
     ///
-    /// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+    /// [`Kernel#require`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
     #[inline]
     pub fn mark_required(&mut self, path: &Path) -> io::Result<()> {
         for load_path in &*self.load_paths {

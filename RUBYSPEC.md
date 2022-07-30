@@ -7,6 +7,15 @@ core, and standard library packages.
 Artichoke enforces that some ruby/specs pass. These specs are tracked in
 [`spec-runner/enforced-specs.toml`].
 
+## MRI Target
+
+**Target**: MRI Ruby 3.1.2.
+
+Artichoke targets recent MRI Ruby. Compatibility with this target is currently
+very work in progress. As portions of Ruby Core and Stdlib are implemented in
+Artichoke, their behavior targets the most recent MRI. There are many spec
+failures.
+
 ## Running Specs
 
 You can run these specs for Artichoke crate with the `spec-runner` crate.

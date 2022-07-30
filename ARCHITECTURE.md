@@ -157,10 +157,10 @@ must have and how to [convert][core-convert-module] between Ruby VM and Rust
 types.
 
 [artichoke-core-src]: artichoke-core
-[kernel#require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
-[`random::default`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT
+[kernel#require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
+[`random::default`]: https://ruby-doc.org/core-3.1.2/Random.html#DEFAULT
 [regexp-globals]:
-  https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
+  https://ruby-doc.org/core-3.1.2/Regexp.html#class-Regexp-label-Special+global+variables
 [core-convert-module]:
   https://artichoke.github.io/artichoke/artichoke_core/convert/index.html
 [core-define-constant]:
@@ -218,8 +218,8 @@ crates as possible.
 [`spinoso-array`] and [`spinoso-env`] are two examples of typical _Spinoso_
 crates.
 
-[ruby core]: https://ruby-doc.org/core-2.6.3/
-[standard library]: https://ruby-doc.org/stdlib-2.6.3/
+[ruby core]: https://ruby-doc.org/core-3.1.2/
+[standard library]: https://ruby-doc.org/stdlib-3.1.2/
 [source-compatible]: https://hyperbo.la/w/source-level-polymorphism/
 [`spinoso-array`]: https://artichoke.github.io/artichoke/spinoso_array/
 [`spinoso-env`]: https://artichoke.github.io/artichoke/spinoso_env/
@@ -240,7 +240,7 @@ two implementations:
 `SmallArray`) which allows downstream consumers of these data structures to swap
 out implementations by changing an import.
 
-[ruby `array`]: https://ruby-doc.org/core-2.6.3/Array.html
+[ruby `array`]: https://ruby-doc.org/core-3.1.2/Array.html
 [spinoso-array-src]: spinoso-array
 [rust-alloc-vec]: https://doc.rust-lang.org/alloc/vec/struct.Vec.html
 [`smallvec`]:
@@ -270,7 +270,7 @@ import.
 where it may be undesirable for Ruby code to modify the host process's
 environment.
 
-[ruby-core-env]: https://ruby-doc.org/core-2.6.3/ENV.html
+[ruby-core-env]: https://ruby-doc.org/core-3.1.2/ENV.html
 [spinoso-env-src]: spinoso-env
 [rust-std-hashmap]:
   https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html

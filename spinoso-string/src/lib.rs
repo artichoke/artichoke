@@ -1072,8 +1072,8 @@ impl String {
     /// [binary]: crate::Encoding::Binary
     /// [`push_char`]: Self::push_char
     /// [`push_byte`]: Self::push_byte
-    /// [`String#<<`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-3C-3C
-    /// [ruby-integer]: https://ruby-doc.org/core-2.6.3/Integer.html
+    /// [`String#<<`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-3C-3C
+    /// [ruby-integer]: https://ruby-doc.org/core-3.1.2/Integer.html
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     pub fn try_push_codepoint(&mut self, codepoint: i64) -> Result<(), InvalidCodepointError> {
@@ -1154,8 +1154,8 @@ impl String {
     /// assert_eq!(s, "abc, easy as 123");
     /// ```
     ///
-    /// [`String#<<`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-3C-3C
-    /// [ruby-string]: https://ruby-doc.org/core-2.6.3/String.html
+    /// [`String#<<`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-3C-3C
+    /// [ruby-string]: https://ruby-doc.org/core-3.1.2/String.html
     #[inline]
     pub fn concat<T: AsRef<[u8]>>(&mut self, other: T) {
         let other = other.as_ref();
@@ -1204,7 +1204,7 @@ impl String {
     /// assert_eq!(s.as_slice(), b.as_slice());
     /// ```
     ///
-    /// [`String#b`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-b
+    /// [`String#b`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-b
     #[inline]
     #[must_use]
     pub fn to_binary(&self) -> Self {
@@ -1229,7 +1229,7 @@ impl String {
     /// assert_eq!(s.bytesize(), s.len());
     /// ```
     ///
-    /// [`String#bytesize`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-bytesize
+    /// [`String#bytesize`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-bytesize
     #[inline]
     #[must_use]
     pub fn bytesize(&self) -> usize {
@@ -1548,7 +1548,7 @@ impl String {
     /// assert_eq!(s.index("l", Some(3)), Some(3));
     /// ```
     ///
-    /// [`String#index`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-index
+    /// [`String#index`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-index
     #[inline]
     #[must_use]
     pub fn index<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
@@ -1602,7 +1602,7 @@ impl String {
     /// `char`s for the same underlying byte contents depending on the string's
     /// encoding.
     ///
-    /// [`String#inspect`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-inspect:
+    /// [`String#inspect`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-inspect:
     #[inline]
     pub fn inspect(&self) -> Inspect<'_> {
         Inspect::new(self.inner.inspect())
@@ -2013,7 +2013,7 @@ impl String {
     /// [conventionally UTF-8]: crate::Encoding::Utf8
     /// [ASCII]: crate::Encoding::Ascii
     /// [binary]: crate::Encoding::Binary
-    /// [`String#valid_encoding?`]: https://ruby-doc.org/core-3.0.0/String.html#method-i-valid_encoding-3F
+    /// [`String#valid_encoding?`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-valid_encoding-3F
     #[inline]
     #[must_use]
     pub fn is_valid_encoding(&self) -> bool {

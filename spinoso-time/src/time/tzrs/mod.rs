@@ -62,7 +62,7 @@ use crate::NANOS_IN_SECOND;
 /// ```
 ///
 /// [`tz-rs`]: tz
-/// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
+/// [`Time`]: https://ruby-doc.org/core-3.1.2/Time.html
 #[must_use]
 #[derive(Debug, Clone, Copy)]
 pub struct Time {
@@ -142,8 +142,8 @@ impl Time {
     ///
     /// Can produce a [`TimeError`], generally when provided values are out of range.
     ///
-    /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
-    /// [`Timezone`]: https://ruby-doc.org/core-2.6.3/Time.html#class-Time-label-Timezone+argument
+    /// [`Time#new`]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-new
+    /// [`Timezone`]: https://ruby-doc.org/core-3.1.2/Time.html#class-Time-label-Timezone+argument
     #[inline]
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -184,7 +184,7 @@ impl Time {
     ///
     /// Can produce a [`TimeError`], however these should never been seen in regular usage.
     ///
-    /// [`Time#now`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-now
+    /// [`Time#now`]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-now
     #[inline]
     pub fn now() -> Result<Self> {
         let offset = Offset::local();
@@ -215,7 +215,7 @@ impl Time {
     ///
     /// Can produce a [`TimeError`], however these should not be seen during regular usage.
     ///
-    /// [`Time#at`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-at
+    /// [`Time#at`]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-at
     #[inline]
     pub fn with_timespec_and_offset(seconds: i64, nanoseconds: u32, offset: Offset) -> Result<Self> {
         let time_zone_ref = offset.time_zone_ref();
@@ -279,8 +279,8 @@ impl Time {
     /// # example().unwrap();
     /// ```
     ///
-    /// [`Time#to_i`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_i
-    /// [`Time#tv_sec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-tv_sec
+    /// [`Time#to_i`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-to_i
+    /// [`Time#tv_sec`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-tv_sec
     #[inline]
     #[must_use]
     pub fn to_int(&self) -> i64 {
@@ -304,7 +304,7 @@ impl Time {
     /// # example().unwrap();
     /// ```
     ///
-    /// [`Time#to_f`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_f
+    /// [`Time#to_f`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-to_f
     #[inline]
     #[must_use]
     pub fn to_float(&self) -> f64 {
@@ -337,9 +337,9 @@ impl Time {
     /// # example().unwrap();
     /// ```
     ///
-    /// [`Time#subsec`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-subsec
+    /// [`Time#subsec`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-subsec
     /// [`to_int`]: struct.Time.html#method.to_int
-    /// [`Time#to_r`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_r
+    /// [`Time#to_r`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-to_r
     #[inline]
     #[must_use]
     pub fn subsec_fractional(&self) -> (u32, u32) {

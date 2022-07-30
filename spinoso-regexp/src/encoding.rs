@@ -37,7 +37,7 @@ impl error::Error for InvalidEncodingError {}
 ///
 /// See [`Regexp` encoding][regexp-encoding].
 ///
-/// [regexp-encoding]: https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Encoding
+/// [regexp-encoding]: https://ruby-doc.org/core-3.1.2/Regexp.html#class-Regexp-label-Encoding
 #[derive(Debug, Clone, Copy, PartialOrd, Ord)]
 pub enum Encoding {
     Fixed,
@@ -241,7 +241,7 @@ impl Encoding {
     ///
     /// See also [`Regexp#inspect`][regexp-inspect].
     ///
-    /// [regexp-inspect]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-inspect
+    /// [regexp-inspect]: https://ruby-doc.org/core-3.1.2/Regexp.html#method-i-inspect
     #[must_use]
     pub const fn as_modifier_str(self) -> &'static str {
         match self {

@@ -23,7 +23,7 @@ use crate::value::Value;
 /// `Array` implements [`BoxUnboxVmValue`] which enables it to be serialized to
 /// a mruby value and unboxed to the Rust `Array` type.
 ///
-/// [ruby-array]: https://ruby-doc.org/core-2.6.3/Array.html
+/// [ruby-array]: https://ruby-doc.org/core-3.1.2/Array.html
 /// [`shift`]: Array::shift
 /// [`shift_n`]: Array::shift_n
 /// [`drop_n`]: Array::drop_n

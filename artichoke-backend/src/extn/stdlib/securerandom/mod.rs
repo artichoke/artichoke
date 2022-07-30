@@ -13,7 +13,7 @@
 //! This implementation of `SecureRandom` supports the system RNG via the
 //! [`getrandom`] crate. This implementation does not depend on OpenSSL.
 //!
-//! [`SecureRandom`]: https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
+//! [`SecureRandom`]: https://ruby-doc.org/stdlib-3.1.2/libdoc/securerandom/rdoc/SecureRandom.html
 //! [`getrandom`]: https://crates.io/crates/getrandom
 
 use crate::convert::implicitly_convert_to_int;

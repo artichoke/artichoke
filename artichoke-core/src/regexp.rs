@@ -3,8 +3,8 @@
 /// Track the state of [`Regexp`] special [global variables] and global
 /// interpreter state.
 ///
-/// [`Regexp`]: https://ruby-doc.org/core-2.6.3/Regexp.html
-/// [global variables]: https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
+/// [`Regexp`]: https://ruby-doc.org/core-3.1.2/Regexp.html
+/// [global variables]: https://ruby-doc.org/core-3.1.2/Regexp.html#class-Regexp-label-Special+global+variables
 pub trait Regexp {
     /// Concrete error type for errors encountered when manipulating `Regexp`
     /// state.

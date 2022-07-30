@@ -26,7 +26,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#round`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-round
+    /// [`Time#round`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-round
     #[allow(clippy::cast_possible_truncation)]
     #[allow(clippy::cast_sign_loss)]
     #[inline]

@@ -61,7 +61,7 @@ pub use offset::Offset;
 /// computation. [`chrono`] provides an aware datetime view over the raw
 /// timestamp.
 ///
-/// [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
+/// [`Time`]: https://ruby-doc.org/core-3.1.2/Time.html
 #[derive(Debug, Clone, Copy)]
 pub struct Time {
     /// The number of non-leap seconds since January 1, 1970 0:00:00 UTC (aka

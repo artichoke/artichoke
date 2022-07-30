@@ -7,7 +7,7 @@ impl Default for Time {
     /// The zero-argument [`Time#new`] constructor creates a local time set to
     /// the current system time.
     ///
-    /// [`Time#new`]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
+    /// [`Time#new`]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-new
     fn default() -> Self {
         Self::new()
     }

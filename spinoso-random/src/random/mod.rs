@@ -133,7 +133,7 @@ impl Random {
     /// failed to completely generate a seed, an error is returned. This error
     /// should be raised as a [Ruby `RuntimeError`].
     ///
-    /// [Ruby `RuntimeError`]: https://ruby-doc.org/core-2.6.3/RuntimeError.html
+    /// [Ruby `RuntimeError`]: https://ruby-doc.org/core-3.1.2/RuntimeError.html
     #[inline]
     pub fn new() -> Result<Self, InitializeError> {
         if let Ok(seed) = new_seed() {
@@ -368,7 +368,7 @@ pub fn seed_to_key(seed: [u8; DEFAULT_SEED_BYTES]) -> [u32; DEFAULT_SEED_CNT] {
 /// to completely generate a seed, an error is returned. This error should be
 /// raised as a [Ruby `RuntimeError`].
 ///
-/// [Ruby `RuntimeError`]: https://ruby-doc.org/core-2.6.3/RuntimeError.html
+/// [Ruby `RuntimeError`]: https://ruby-doc.org/core-3.1.2/RuntimeError.html
 #[inline]
 pub fn new_seed() -> Result<[u32; DEFAULT_SEED_CNT], NewSeedError> {
     let mut seed = [0; DEFAULT_SEED_BYTES];

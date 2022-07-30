@@ -62,7 +62,7 @@
 //!   implementations in Rust [`core`]. Dropping this feature removes the
 //!   [`libm`] dependency.
 //!
-//! [`Float`]: https://ruby-doc.org/core-2.6.3/Float.html
+//! [`Float`]: https://ruby-doc.org/core-3.1.2/Float.html
 //! [`NaN`]: f64::NAN
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 
@@ -213,7 +213,7 @@ impl error::Error for Error {
 /// assert_eq!(err.message(), r#"Numerical argument is out of domain - "acos""#);
 /// ```
 ///
-/// [Ruby `Math::DomainError` Exception class]: https://ruby-doc.org/core-2.6.3/Math/DomainError.html
+/// [Ruby `Math::DomainError` Exception class]: https://ruby-doc.org/core-3.1.2/Math/DomainError.html
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DomainError(&'static str);
 
@@ -316,7 +316,7 @@ impl error::Error for DomainError {}
 ///
 /// [Rust core library]: https://doc.rust-lang.org/std/primitive.f64.html
 /// [additional dependencies]: https://crates.io/crates/libm
-/// [Ruby `NotImplementedError` Exception class]: https://ruby-doc.org/core-2.6.3/NotImplementedError.html
+/// [Ruby `NotImplementedError` Exception class]: https://ruby-doc.org/core-3.1.2/NotImplementedError.html
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct NotImplementedError(&'static str);
 

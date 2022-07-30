@@ -60,7 +60,7 @@
 //!
 //! This crate requires [`std`], the Rust Standard Library.
 //!
-//! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
+//! [`Time`]: https://ruby-doc.org/core-3.1.2/Time.html
 //! [`chrono`]: https://crates.io/crates/chrono
 //! [`tz-rs`]: https://crates.io/crates/tz-rs
 //! [`tzdb`]: https://crates.io/crates/tzdb

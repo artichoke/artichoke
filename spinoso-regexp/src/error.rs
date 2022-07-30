@@ -76,7 +76,7 @@ impl error::Error for Error {
 /// assert_eq!(err.message(), "invalid byte sequence in UTF-8");
 /// ```
 ///
-/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
+/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::module_name_repetitions)]
 pub struct ArgumentError(Cow<'static, str>);
@@ -177,8 +177,8 @@ impl ArgumentError {
 /// assert_eq!(err.message(), r"invalid multibyte character: /\xFF\xFE/");
 /// ```
 ///
-/// [`Regexp::compile`]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-compile
-/// [Ruby `RegexpError` Exception class]: https://ruby-doc.org/core-2.6.3/RegexpError.html
+/// [`Regexp::compile`]: https://ruby-doc.org/core-3.1.2/Regexp.html#method-c-compile
+/// [Ruby `RegexpError` Exception class]: https://ruby-doc.org/core-3.1.2/RegexpError.html
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::module_name_repetitions)]
 pub struct RegexpError(Cow<'static, str>);
@@ -273,7 +273,7 @@ impl RegexpError {
 /// assert_eq!(err.message(), "premature end of char-class");
 /// ```
 ///
-/// [Ruby `SyntaxError` Exception class]: https://ruby-doc.org/core-2.6.3/SyntaxError.html
+/// [Ruby `SyntaxError` Exception class]: https://ruby-doc.org/core-3.1.2/SyntaxError.html
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::module_name_repetitions)]
 pub struct SyntaxError(Cow<'static, str>);

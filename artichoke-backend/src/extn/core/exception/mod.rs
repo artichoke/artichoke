@@ -16,8 +16,8 @@
 //! This module implements the core exception types with [`spinoso-exception`]
 //! and re-exports these types.
 //!
-//! [`Exception`]: https://ruby-doc.org/core-2.6.3/Exception.html
-//! [`Kernel#raise`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-raise
+//! [`Exception`]: https://ruby-doc.org/core-3.1.2/Exception.html
+//! [`Kernel#raise`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-raise
 //! [`spinoso-exception`]: spinoso_exception
 
 use std::borrow::Cow;

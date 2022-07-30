@@ -17,7 +17,7 @@
 //! r.rand
 //! ```
 //!
-//! [`Random`]: https://ruby-doc.org/core-2.6.3/Random.html
+//! [`Random`]: https://ruby-doc.org/core-3.1.2/Random.html
 
 use core::mem;
 

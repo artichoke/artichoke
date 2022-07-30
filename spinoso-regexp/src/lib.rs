@@ -86,10 +86,10 @@ pub const LAST_MATCH: &[u8] = b"$~";
 ///
 /// [`Regexp#inspect`] prints `"/#{source}/"`.
 ///
-/// [`Regexp`]: https://ruby-doc.org/core-2.6.3/Regexp.html
-/// [`Regexp#source`]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-source
-/// [`Regexp::compile`]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-c-compile
-/// [`Regexp#inspect`]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-inspect
+/// [`Regexp`]: https://ruby-doc.org/core-3.1.2/Regexp.html
+/// [`Regexp#source`]: https://ruby-doc.org/core-3.1.2/Regexp.html#method-i-source
+/// [`Regexp::compile`]: https://ruby-doc.org/core-3.1.2/Regexp.html#method-c-compile
+/// [`Regexp#inspect`]: https://ruby-doc.org/core-3.1.2/Regexp.html#method-i-inspect
 #[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Source {
     pattern: Vec<u8>,

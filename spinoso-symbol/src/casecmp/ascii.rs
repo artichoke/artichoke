@@ -18,8 +18,8 @@ use artichoke_core::intern::Intern;
 /// If the interner returns an error while retrieving a symbol, that error is
 /// returned. See [`Intern::lookup_symbol`].
 ///
-/// [`Symbol#casecmp`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-casecmp
-/// [`Symbol`]: https://ruby-doc.org/core-2.6.3/Symbol.html
+/// [`Symbol#casecmp`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-casecmp
+/// [`Symbol`]: https://ruby-doc.org/core-3.1.2/Symbol.html
 #[inline]
 #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
 pub fn casecmp<T, U>(interner: &T, left: U, right: U) -> Result<Ordering, T::Error>

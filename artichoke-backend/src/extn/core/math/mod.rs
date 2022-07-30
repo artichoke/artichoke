@@ -14,7 +14,7 @@
 //! This module implements the core math module with [`spinoso-math`] and
 //! re-exports some of its internals.
 //!
-//! [`Float`]: https://ruby-doc.org/core-2.6.3/Float.html
+//! [`Float`]: https://ruby-doc.org/core-3.1.2/Float.html
 //! [`spinoso-math`]: spinoso_math
 
 use std::borrow::Cow;

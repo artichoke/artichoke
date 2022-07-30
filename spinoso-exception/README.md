@@ -78,9 +78,9 @@ All features are enabled by default.
 `spinoso-exception` is licensed with the [MIT License](LICENSE) (c) Ryan
 Lopopolo.
 
-[`exception`]: https://ruby-doc.org/core-2.6.3/Exception.html
-[`kernel#raise`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-raise
-[`nameerror#name`]: https://ruby-doc.org/core-2.6.3/NameError.html#method-i-name
+[`exception`]: https://ruby-doc.org/core-3.1.2/Exception.html
+[`kernel#raise`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-raise
+[`nameerror#name`]: https://ruby-doc.org/core-3.1.2/NameError.html#method-i-name
 [object safe]:
   https://doc.rust-lang.org/book/ch17-02-trait-objects.html#object-safety-is-required-for-trait-objects
 [`alloc`]: https://doc.rust-lang.org/alloc/

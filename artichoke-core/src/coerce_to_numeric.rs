@@ -32,8 +32,8 @@ pub trait CoerceToNumeric {
     /// If the underlying interpreter returns an error when calling `#to_f` or
     /// [`Numeric#coerce`], the error is returned.
     ///
-    /// [`Numeric`]: https://ruby-doc.org/core-2.6.3/Numeric.html
-    /// [`Numeric` class]: https://ruby-doc.org/core-2.6.3/Numeric.html
-    /// [`Numeric#coerce`]: https://ruby-doc.org/core-2.6.3/Numeric.html#method-i-coerce
+    /// [`Numeric`]: https://ruby-doc.org/core-3.1.2/Numeric.html
+    /// [`Numeric` class]: https://ruby-doc.org/core-3.1.2/Numeric.html
+    /// [`Numeric#coerce`]: https://ruby-doc.org/core-3.1.2/Numeric.html#method-i-coerce
     fn coerce_to_float(&mut self, value: Self::Value) -> Result<Self::Float, Self::Error>;
 }

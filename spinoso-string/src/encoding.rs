@@ -84,7 +84,7 @@ impl std::error::Error for InvalidEncodingError {}
 /// [`String::char_len`]: crate::String::char_len
 /// [UTF-8]: Self::Utf8
 /// [conventionally UTF-8]: https://docs.rs/bstr/0.2.*/bstr/#differences-with-standard-strings
-/// [`String#encode`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-encode
+/// [`String#encode`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-encode
 #[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Encoding {
     /// Conventionally UTF-8.
