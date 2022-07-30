@@ -10,10 +10,12 @@
 
 #[cfg(feature = "disk")]
 mod disk;
+mod memory;
 #[cfg(feature = "rubylib")]
 mod rubylib;
 
 #[cfg(feature = "disk")]
 pub use disk::Disk;
+pub use memory::Memory;
 #[cfg(feature = "rubylib")]
 pub use rubylib::Rubylib;
