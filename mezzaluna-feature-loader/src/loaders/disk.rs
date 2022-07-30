@@ -49,7 +49,7 @@ use crate::paths::is_explicit_relative;
 /// [explicit relative]: is_explicit_relative
 /// [resolves to the same file]: same_file
 /// [`Rubylib`]: super::Rubylib
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "disk")))]
 pub struct Disk {
     load_path: Vec<PathBuf>,

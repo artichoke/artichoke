@@ -57,7 +57,7 @@ use same_file::Handle;
 ///
 /// [require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
 /// [resolves to the same file]: same_file
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "rubylib")))]
 pub struct Rubylib {
     /// Fixed set of paths on the host file system to search for Ruby sources.

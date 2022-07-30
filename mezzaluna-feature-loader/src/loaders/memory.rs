@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 /// ```
 ///
 /// [load path]: Self::load_path
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "disk")))]
 pub struct Memory {
     sources: HashMap<PathBuf, Cow<'static, [u8]>>,
