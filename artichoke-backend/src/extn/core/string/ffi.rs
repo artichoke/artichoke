@@ -200,6 +200,8 @@ unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value,
     let inner = string.take();
     let value = String::box_into_value(inner, value, &mut guard).expect("String reboxing should not fail");
 
+    // `allow` for clarity and to potentially handle `TryReserveErrorKind`.
+    #[allow(clippy::single_match_else)]
     match result {
         Ok(_) => value.inner(),
         // NOTE: Ideally this code would distinguish between a capacity overflow
