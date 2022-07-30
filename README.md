@@ -15,8 +15,8 @@
 </p>
 
 Artichoke is a Ruby implementation written in Rust and Ruby. Artichoke intends
-to be [MRI-compatible][ruby-spec] and targets Ruby 2.6.3. Artichoke provides a
-Ruby runtime implemented in Rust and Ruby.
+to be [MRI-compatible][ruby-spec] and targets [recent MRI Ruby][mri-target].
+Artichoke provides a Ruby runtime implemented in Rust and Ruby.
 
 ## Try Artichoke
 
@@ -128,8 +128,8 @@ the project are:
 
 ## Contributing
 
-Artichoke aspires to be a Ruby 2.6.3-compatible implementation of the Ruby
-programming language. [There is lots to do][github-issues].
+Artichoke aspires to be an [MRI Ruby-compatible][mri-target] implementation of
+the Ruby programming language. [There is lots to do][github-issues].
 
 If Artichoke does not run Ruby source code in the same way that MRI does, it is
 a bug and we would appreciate if you [filed an issue so we can fix
@@ -154,6 +154,8 @@ each workspace crate discuss which third party licenses are applicable to the
 sources and derived works in Artichoke.
 
 [ruby-spec]: https://github.com/ruby/spec
+[mri-target]:
+  https://github.com/artichoke/artichoke/blob/trunk/RUBYSPEC.md#mri-target
 [playground]: https://artichoke.run
 [playground-repo]: https://github.com/artichoke/playground
 [webassembly]: https://webassembly.org/

@@ -74,7 +74,7 @@ impl<'a> ReleaseMetadata<'a> {
             platform: "host",
             release_date: "",
             revision: "1",
-            ruby_version: "2.6.3",
+            ruby_version: "3.1.2",
             compiler_version: Some("rustc"),
         }
     }
