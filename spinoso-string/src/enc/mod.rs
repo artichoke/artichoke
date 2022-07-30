@@ -2,6 +2,7 @@ use alloc::collections::TryReserveError;
 use core::borrow::Borrow;
 use core::cmp::Ordering;
 use core::hash::{Hash, Hasher};
+use core::mem;
 use core::ops::Range;
 use core::slice::SliceIndex;
 
@@ -146,6 +147,16 @@ impl EncodedString {
             EncodedString::Binary(_) => Encoding::Binary,
             EncodedString::Utf8(_) => Encoding::Utf8,
         }
+    }
+
+    #[inline]
+    pub fn set_encoding(&mut self, encoding: Encoding) {
+        if self.encoding() == encoding {
+            return;
+        };
+        let s = mem::take(self);
+        let buf = s.into_buf();
+        *self = Self::new(buf, encoding);
     }
 }
 

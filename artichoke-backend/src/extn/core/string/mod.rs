@@ -89,7 +89,8 @@ impl BoxUnboxVmValue for String {
         unsafe {
             let flags = string.as_ref().unwrap().flags();
             let encoding_bits = encoding.to_flag();
-            let flags_with_encoding = flags | (u32::from(encoding_bits) << ENCODING_FLAG_BITPOS);
+            let flags_with_zeroed_encoding = flags & !(0b1111 << ENCODING_FLAG_BITPOS);
+            let flags_with_encoding = flags_with_zeroed_encoding | (u32::from(encoding_bits) << ENCODING_FLAG_BITPOS);
             string.as_mut().unwrap().set_flags(flags_with_encoding);
         }
         Ok(interp.protect(value.into()))
@@ -121,7 +122,8 @@ impl BoxUnboxVmValue for String {
         unsafe {
             let flags = string.as_ref().unwrap().flags();
             let encoding_bits = encoding.to_flag();
-            let flags_with_encoding = flags | (u32::from(encoding_bits) << ENCODING_FLAG_BITPOS);
+            let flags_with_zeroed_encoding = flags & !(0b1111 << ENCODING_FLAG_BITPOS);
+            let flags_with_encoding = flags_with_zeroed_encoding | (u32::from(encoding_bits) << ENCODING_FLAG_BITPOS);
             string.as_mut().unwrap().set_flags(flags_with_encoding);
         }
 
@@ -161,6 +163,19 @@ mod tests {
         let result = interp.eval(FUNCTIONAL_TEST);
         unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
         let result = interp.eval(b"spec");
+        unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
+    }
+
+    #[test]
+    fn modifying_and_repacking_encoding_zeroes_old_encoding_flags() {
+        let mut interp = interpreter();
+        // Modify the encoding of a binary string in place to be UTF-8 by
+        // pushing a UTF-8 string into an empty binary string.
+        //
+        // Test for the newly taken UTF-8 encoding by ensuring that the char
+        // length of the string is 1.
+        let test = "be = ''.b ; be << '😀' ; raise 'unexpected encoding' unless be.length == 1";
+        let result = interp.eval(test.as_bytes());
         unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
     }
 }
