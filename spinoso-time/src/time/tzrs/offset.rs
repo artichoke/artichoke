@@ -105,8 +105,12 @@ impl Offset {
     #[inline]
     #[must_use]
     pub fn local() -> Self {
+        // Per the docs, it is suggested to cache the result of fetching the
+        // local timezone: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html.
+        static LOCAL_TZ: Lazy<TimeZoneRef<'static>> = Lazy::new(local_time_zone);
+
         Self {
-            inner: OffsetType::Tz(local_time_zone()),
+            inner: OffsetType::Tz(*LOCAL_TZ),
         }
     }
 
