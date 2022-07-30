@@ -27,6 +27,8 @@ pub const REPL: &[u8] = b"(airb)";
 // makes them safe to use with `Context::new_unchecked`.
 #[cfg(test)]
 mod tests {
+    use crate::backend::state::parser::Context;
+
     #[test]
     fn inline_eval_switch_filename_does_not_contain_nul_byte() {
         let contains_nul_byte = super::INLINE_EVAL_SWITCH.contains(&b'\0');
@@ -34,8 +36,18 @@ mod tests {
     }
 
     #[test]
+    fn inline_eval_switch_context_new_unchecked_safety() {
+        Context::new(super::INLINE_EVAL_SWITCH).unwrap();
+    }
+
+    #[test]
     fn repl_filename_does_not_contain_nul_byte() {
         let contains_nul_byte = super::REPL.contains(&b'\0');
         assert!(!contains_nul_byte);
+    }
+
+    #[test]
+    fn repl_context_new_unchecked_safety() {
+        Context::new(super::REPL).unwrap();
     }
 }

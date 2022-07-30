@@ -152,7 +152,7 @@ impl Context {
         T: Into<Cow<'static, [u8]>>,
     {
         let filename = filename.into();
-        let cstring = CString::new(filename.as_ref()).ok()?;
+        let cstring = CString::new(filename.clone()).ok()?;
         Some(Self {
             filename,
             filename_cstr: cstring.into_boxed_c_str(),
@@ -188,7 +188,7 @@ impl Context {
     /// Filename of this `Context`.
     #[must_use]
     pub fn filename(&self) -> &[u8] {
-        self.filename.as_ref()
+        &*self.filename
     }
 
     /// FFI-safe NUL-terminated C String of this `Context`.
@@ -196,15 +196,22 @@ impl Context {
     /// This [`CStr`] is valid as long as this `Context` is not dropped.
     #[must_use]
     pub fn filename_as_c_str(&self) -> &CStr {
-        self.filename_cstr.as_ref()
+        &*self.filename_cstr
     }
 }
 
 #[cfg(test)]
-mod context_test {
+mod test {
+    use super::Context;
+
     #[test]
     fn top_filename_does_not_contain_nul_byte() {
         let contains_nul_byte = super::TOP_FILENAME.iter().copied().any(|b| b == b'\0');
         assert!(!contains_nul_byte);
+    }
+
+    #[test]
+    fn top_filename_context_new_unchecked_safety() {
+        Context::new(super::TOP_FILENAME).unwrap();
     }
 }
