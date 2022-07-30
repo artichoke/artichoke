@@ -3,7 +3,7 @@
 //! `Symbol`s are immutable byte strings that have the same lifetime as the
 //! interpreter.
 //!
-//! [symbol]: https://ruby-doc.org/core-2.6.3/Symbol.html
+//! [symbol]: https://ruby-doc.org/core-3.1.2/Symbol.html
 
 use alloc::borrow::Cow;
 
@@ -12,7 +12,7 @@ use alloc::borrow::Cow;
 ///
 /// See the [Ruby `Symbol` type][symbol].
 ///
-/// [symbol]: https://ruby-doc.org/core-2.6.3/Symbol.html
+/// [symbol]: https://ruby-doc.org/core-3.1.2/Symbol.html
 pub trait Intern {
     /// Concrete type for symbol identifiers.
     ///

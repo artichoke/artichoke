@@ -12,9 +12,9 @@
 //! See [`LoadedFeatures`] for more documentation on how to use the types in
 //! this module.
 //!
-//! [required]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
-//! [`require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
-//! [`require_relative`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require_relative
+//! [required]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
+//! [`require`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
+//! [`require_relative`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require_relative
 
 use core::hash::BuildHasher;
 use std::collections::hash_map::RandomState;
@@ -61,8 +61,8 @@ use crate::Feature;
 /// features.shrink_to_fit();
 /// ```
 ///
-/// [`require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
-/// [`require_relative`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require_relative
+/// [`require`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
+/// [`require_relative`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require_relative
 #[derive(Debug)]
 pub struct LoadedFeatures<S = RandomState> {
     features: HashSet<Feature, S>,

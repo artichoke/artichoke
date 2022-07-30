@@ -6,7 +6,7 @@
 /// invalid behavior and ruby/spec expects a warning to be emitted to `$stderr`
 /// using the [`Warning`][warningmod] module from the standard library.
 ///
-/// [warningmod]: https://ruby-doc.org/core-2.6.3/Warning.html#method-i-warn
+/// [warningmod]: https://ruby-doc.org/core-3.1.2/Warning.html#method-i-warn
 pub trait Warn {
     /// Concrete error type for errors encountered when outputting warnings.
     type Error;

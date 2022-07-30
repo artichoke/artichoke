@@ -55,7 +55,7 @@ use same_file::Handle;
 /// # example().unwrap();
 /// ```
 ///
-/// [require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+/// [require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
 /// [resolves to the same file]: same_file
 #[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "rubylib")))]

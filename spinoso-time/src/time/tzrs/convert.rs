@@ -20,10 +20,10 @@ impl Display for Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#asctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-asctime
-    /// [`Time#ctime`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-ctime
-    /// [`Time#to_s`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_s
-    /// [`Time#inspect`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-inspect
+    /// [`Time#asctime`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-asctime
+    /// [`Time#ctime`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-ctime
+    /// [`Time#to_s`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-to_s
+    /// [`Time#inspect`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-inspect
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         // TODO: future
         //self.strftime("%Y-%m-%d %H:%M:%S %z")
@@ -51,7 +51,7 @@ impl Time {
     ///
     /// Panics on every invocation. Functionality is not implemented.
     ///
-    /// [ruby-time-strftime]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-strftime
+    /// [ruby-time-strftime]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-strftime
     #[inline]
     #[must_use]
     pub fn strftime(_: Self, _format: &str) -> String {
@@ -82,7 +82,7 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#to_a`]: https://ruby-doc.org/core-2.6.3/Time.html#method-i-to_a
+    /// [`Time#to_a`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-to_a
     #[inline]
     #[must_use]
     pub fn to_array(self) -> ToA {

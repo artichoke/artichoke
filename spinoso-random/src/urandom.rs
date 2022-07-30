@@ -29,7 +29,7 @@ use crate::UrandomError;
 /// to completely fill `dest`, an error is returned. This error should be raised
 /// as a [Ruby `RuntimeError`].
 ///
-/// [Ruby `RuntimeError`]: https://ruby-doc.org/core-2.6.3/RuntimeError.html
+/// [Ruby `RuntimeError`]: https://ruby-doc.org/core-3.1.2/RuntimeError.html
 pub fn urandom(dest: &mut [u8]) -> Result<(), UrandomError> {
     if getrandom::getrandom(dest).is_err() {
         return Err(UrandomError::new());

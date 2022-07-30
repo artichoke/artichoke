@@ -259,7 +259,7 @@ impl Options {
     ///
     /// See also [`Regexp#inspect`][regexp-inspect].
     ///
-    /// [regexp-inspect]: https://ruby-doc.org/core-2.6.3/Regexp.html#method-i-inspect
+    /// [regexp-inspect]: https://ruby-doc.org/core-3.1.2/Regexp.html#method-i-inspect
     #[must_use]
     pub const fn as_display_modifier(self) -> &'static str {
         use RegexpOption::{Disabled, Enabled};

@@ -1,4 +1,4 @@
-//! [`Kernel#require`](https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require)
+//! [`Kernel#require`](https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require)
 
 use std::path::{Path, PathBuf};
 

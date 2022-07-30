@@ -15,7 +15,7 @@
 //! nanoseconds as a `u32`, and a timezone offset which can be one of several
 //! types.
 //!
-//! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
+//! [`Time`]: https://ruby-doc.org/core-3.1.2/Time.html
 //! [`chrono`]: https://crates.io/crates/chrono
 //! [`tzrs`]: https://crates.io/crates/tz-rs
 //! [Unix timestamp]: https://en.wikipedia.org/wiki/Unix_time

@@ -79,41 +79,41 @@
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
 //!
-//! [`Exception`]: https://ruby-doc.org/core-2.6.3/Exception.html
-//! [`Kernel#raise`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-raise
-//! [`NameError#name`]: https://ruby-doc.org/core-2.6.3/NameError.html#method-i-name
-//! [`NoMemoryError`]: https://ruby-doc.org/core-2.6.3/NoMemoryError.html
-//! [`ScriptError`]: https://ruby-doc.org/core-2.6.3/ScriptError.html
-//! [`LoadError`]: https://ruby-doc.org/core-2.6.3/LoadError.html
-//! [`NotImplementedError`]: https://ruby-doc.org/core-2.6.3/NotImplementedError.html
-//! [`SyntaxError`]: https://ruby-doc.org/core-2.6.3/SyntaxError.html
-//! [`SecurityError`]: https://ruby-doc.org/core-2.6.3/SecurityError.html
-//! [`SignalException`]: https://ruby-doc.org/core-2.6.3/SignalException.html
-//! [`Interrupt`]: https://ruby-doc.org/core-2.6.3/Interrupt.html
-//! [`StandardError`]: https://ruby-doc.org/core-2.6.3/StandardError.html
-//! [`ArgumentError`]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
-//! [`UncaughtThrowError`]: https://ruby-doc.org/core-2.6.3/UncaughtThrowError.html
-//! [`EncodingError`]: https://ruby-doc.org/core-2.6.3/EncodingError.html
-//! [`FiberError`]: https://ruby-doc.org/core-2.6.3/FiberError.html
-//! [`IOError`]: https://ruby-doc.org/core-2.6.3/IOError.html
-//! [`EOFError`]: https://ruby-doc.org/core-2.6.3/EOFError.html
-//! [`IndexError`]: https://ruby-doc.org/core-2.6.3/IndexError.html
-//! [`KeyError`]: https://ruby-doc.org/core-2.6.3/KeyError.html
-//! [`StopIteration`]: https://ruby-doc.org/core-2.6.3/StopIteration.html
-//! [`LocalJumpError`]: https://ruby-doc.org/core-2.6.3/LocalJumpError.html
-//! [`NameError`]: https://ruby-doc.org/core-2.6.3/NameError.html
-//! [`NoMethodError`]: https://ruby-doc.org/core-2.6.3/NoMethodError.html
-//! [`RangeError`]: https://ruby-doc.org/core-2.6.3/RangeError.html
-//! [`FloatDomainError`]: https://ruby-doc.org/core-2.6.3/FloatDomainError.html
-//! [`RegexpError`]: https://ruby-doc.org/core-2.6.3/RegexpError.html
-//! [`RuntimeError`]: https://ruby-doc.org/core-2.6.3/RuntimeError.html
-//! [`FrozenError`]: https://ruby-doc.org/core-2.6.3/FrozenError.html
-//! [`SystemCallError`]: https://ruby-doc.org/core-2.6.3/SystemCallError.html
-//! [`ThreadError`]: https://ruby-doc.org/core-2.6.3/ThreadError.html
-//! [`TypeError`]: https://ruby-doc.org/core-2.6.3/TypeError.html
-//! [`ZeroDivisionError`]: https://ruby-doc.org/core-2.6.3/ZeroDivisionError.html
-//! [`SystemExit`]: https://ruby-doc.org/core-2.6.3/SystemExit.html
-//! [`SystemStackError`]: https://ruby-doc.org/core-2.6.3/SystemStackError.html
+//! [`Exception`]: https://ruby-doc.org/core-3.1.2/Exception.html
+//! [`Kernel#raise`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-raise
+//! [`NameError#name`]: https://ruby-doc.org/core-3.1.2/NameError.html#method-i-name
+//! [`NoMemoryError`]: https://ruby-doc.org/core-3.1.2/NoMemoryError.html
+//! [`ScriptError`]: https://ruby-doc.org/core-3.1.2/ScriptError.html
+//! [`LoadError`]: https://ruby-doc.org/core-3.1.2/LoadError.html
+//! [`NotImplementedError`]: https://ruby-doc.org/core-3.1.2/NotImplementedError.html
+//! [`SyntaxError`]: https://ruby-doc.org/core-3.1.2/SyntaxError.html
+//! [`SecurityError`]: https://ruby-doc.org/core-3.1.2/SecurityError.html
+//! [`SignalException`]: https://ruby-doc.org/core-3.1.2/SignalException.html
+//! [`Interrupt`]: https://ruby-doc.org/core-3.1.2/Interrupt.html
+//! [`StandardError`]: https://ruby-doc.org/core-3.1.2/StandardError.html
+//! [`ArgumentError`]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
+//! [`UncaughtThrowError`]: https://ruby-doc.org/core-3.1.2/UncaughtThrowError.html
+//! [`EncodingError`]: https://ruby-doc.org/core-3.1.2/EncodingError.html
+//! [`FiberError`]: https://ruby-doc.org/core-3.1.2/FiberError.html
+//! [`IOError`]: https://ruby-doc.org/core-3.1.2/IOError.html
+//! [`EOFError`]: https://ruby-doc.org/core-3.1.2/EOFError.html
+//! [`IndexError`]: https://ruby-doc.org/core-3.1.2/IndexError.html
+//! [`KeyError`]: https://ruby-doc.org/core-3.1.2/KeyError.html
+//! [`StopIteration`]: https://ruby-doc.org/core-3.1.2/StopIteration.html
+//! [`LocalJumpError`]: https://ruby-doc.org/core-3.1.2/LocalJumpError.html
+//! [`NameError`]: https://ruby-doc.org/core-3.1.2/NameError.html
+//! [`NoMethodError`]: https://ruby-doc.org/core-3.1.2/NoMethodError.html
+//! [`RangeError`]: https://ruby-doc.org/core-3.1.2/RangeError.html
+//! [`FloatDomainError`]: https://ruby-doc.org/core-3.1.2/FloatDomainError.html
+//! [`RegexpError`]: https://ruby-doc.org/core-3.1.2/RegexpError.html
+//! [`RuntimeError`]: https://ruby-doc.org/core-3.1.2/RuntimeError.html
+//! [`FrozenError`]: https://ruby-doc.org/core-3.1.2/FrozenError.html
+//! [`SystemCallError`]: https://ruby-doc.org/core-3.1.2/SystemCallError.html
+//! [`ThreadError`]: https://ruby-doc.org/core-3.1.2/ThreadError.html
+//! [`TypeError`]: https://ruby-doc.org/core-3.1.2/TypeError.html
+//! [`ZeroDivisionError`]: https://ruby-doc.org/core-3.1.2/ZeroDivisionError.html
+//! [`SystemExit`]: https://ruby-doc.org/core-3.1.2/SystemExit.html
+//! [`SystemStackError`]: https://ruby-doc.org/core-3.1.2/SystemStackError.html
 
 #![no_std]
 

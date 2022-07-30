@@ -184,7 +184,7 @@ impl TryFrom<&str> for Offset {
     /// - N-Y representing -01:00 to -12:00.
     /// - Z representing UTC/Zulu time (0 offset).
     ///
-    /// [accepted MRI values]: https://ruby-doc.org/core-2.6.3/Time.html#method-c-new
+    /// [accepted MRI values]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-new
     #[inline]
     fn try_from(input: &str) -> Result<Self, Self::Error> {
         match input {

@@ -17,7 +17,7 @@ use crate::{Encoding, String};
 /// When the **std** feature of `spinoso-string` is enabled, this struct
 /// implements [`std::error::Error`].
 ///
-/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
+/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 /// [`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html
 #[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]

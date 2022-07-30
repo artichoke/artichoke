@@ -68,7 +68,7 @@ mod iter;
 /// ```
 ///
 /// [`Array`]: crate::Array
-/// [ruby-array]: https://ruby-doc.org/core-2.6.3/Array.html
+/// [ruby-array]: https://ruby-doc.org/core-3.1.2/Array.html
 /// [`shift`]: TinyArray::shift
 /// [`shift_n`]: TinyArray::shift_n
 /// [`drop_n`]: TinyArray::drop_n

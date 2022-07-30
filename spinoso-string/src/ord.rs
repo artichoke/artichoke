@@ -15,7 +15,7 @@ pub enum OrdError {
 impl OrdError {
     /// `OrdError` corresponds to an [`ArgumentError`] Ruby exception.
     ///
-    /// [`ArgumentError`]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
+    /// [`ArgumentError`]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
     pub const EXCEPTION_TYPE: &'static str = "ArgumentError";
 
     /// Construct a new `OrdError` for an invalid UTF-8 byte sequence.
@@ -74,7 +74,7 @@ impl OrdError {
     /// assert_eq!(OrdError::empty_string().message(), "empty string");
     /// ```
     ///
-    /// [`ArgumentError`]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
+    /// [`ArgumentError`]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
     #[inline]
     #[must_use]
     pub const fn message(self) -> &'static str {

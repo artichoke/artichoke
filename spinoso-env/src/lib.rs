@@ -85,7 +85,7 @@
 //! - **system-env** - Enable an `ENV` backend that accesses the host system's
 //!   environment variables via the [`std::env`] module.
 //!
-//! [`ENV`]: https://ruby-doc.org/core-2.6.3/ENV.html
+//! [`ENV`]: https://ruby-doc.org/core-3.1.2/ENV.html
 //! [`HashMap`]: std::collections::HashMap
 //! [Rust Standard Library]: std
 //! [`std::env`]: module@std::env
@@ -188,7 +188,7 @@ impl error::Error for Error {
 /// assert_eq!(err.message(), "bad environment variable name: contains null byte");
 /// ```
 ///
-/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-2.6.3/ArgumentError.html
+/// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ArgumentError(&'static str);
 

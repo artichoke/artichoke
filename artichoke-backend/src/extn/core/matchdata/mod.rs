@@ -6,7 +6,7 @@
 //!
 //! `MatchData` passes all non-skipped [ruby/spec][rubyspec]s.
 //!
-//! [matchdata]: https://ruby-doc.org/core-2.6.3/MatchData.html
+//! [matchdata]: https://ruby-doc.org/core-3.1.2/MatchData.html
 //! [rubyspec]: https://github.com/ruby/spec
 
 use std::collections::HashMap;

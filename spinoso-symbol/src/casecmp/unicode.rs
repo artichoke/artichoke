@@ -29,8 +29,8 @@ use focaccia::CaseFold;
 ///
 /// [Unicode case folding]: https://www.w3.org/International/wiki/Case_folding
 /// [`ascii_casecmp`]: crate::casecmp::ascii_casecmp
-/// [`Symbol#casecmp?`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-casecmp-3F
-/// [`Symbol`]: https://ruby-doc.org/core-2.6.3/Symbol.html
+/// [`Symbol#casecmp?`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-casecmp-3F
+/// [`Symbol`]: https://ruby-doc.org/core-3.1.2/Symbol.html
 #[inline]
 #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
 pub fn case_eq<T, U>(interner: &T, left: U, right: U, fold: CaseFold) -> Result<Option<bool>, T::Error>
@@ -51,7 +51,7 @@ where
         //
         // > `nil` is returned if the two symbols have incompatible encodings,
         // > or if `other_symbol` is not a symbol.
-        // > <https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-casecmp-3F>
+        // > <https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-casecmp-3F>
         (Ok(_), Err(_)) | (Err(_), Ok(_)) => return Ok(None),
     };
     Ok(Some(cmp))

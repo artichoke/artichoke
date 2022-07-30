@@ -11,7 +11,7 @@
 //! The `SmallArray` backend requires the `small-array` Cargo feature to be
 //! enabled.
 //!
-//! [`Array`]: https://ruby-doc.org/core-2.6.3/Array.html
+//! [`Array`]: https://ruby-doc.org/core-3.1.2/Array.html
 //! [`Vec`]: alloc::vec::Vec
 //! [`SmallVec`]: ::smallvec::SmallVec
 //! [`TinyVec`]: ::tinyvec::TinyVec

@@ -16,7 +16,7 @@
 //! ENV['PS1'] = 'artichoke> '
 //! ```
 //!
-//! [`ENV`]: https://ruby-doc.org/core-2.6.3/ENV.html
+//! [`ENV`]: https://ruby-doc.org/core-3.1.2/ENV.html
 
 use std::borrow::Cow;
 use std::collections::HashMap;

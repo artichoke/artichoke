@@ -544,7 +544,7 @@ pub fn byteslice(
     let length = if let Some(length) = length {
         length
     } else {
-        // Per the docs -- https://ruby-doc.org/core-3.0.2/String.html#method-i-byteslice
+        // Per the docs -- https://ruby-doc.org/core-3.1.2/String.html#method-i-byteslice
         //
         // > If passed a single Integer, returns a substring of one byte at that position.
         //

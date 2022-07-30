@@ -30,7 +30,7 @@ use crate::file::File;
 ///
 /// See the documentation of [`require_source`] for more details.
 ///
-/// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+/// [`Kernel#require`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
 /// [`require_source`]: LoadSources::require_source
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Required {
@@ -42,7 +42,7 @@ pub enum Required {
     /// This variant has value `true` when converting to a Boolean as returned
     /// by `Kernel#require`.
     ///
-    /// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+    /// [`Kernel#require`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
     Success,
     /// [`Kernel#require`] did not require the file because it has already been
     /// required.
@@ -55,9 +55,9 @@ pub enum Required {
     /// This variant has value `false` when converting to a Boolean as returned
     /// by `Kernel#require`.
     ///
-    /// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+    /// [`Kernel#require`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
     /// [`load_source`]: LoadSources::load_source
-    /// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
+    /// [`Kernel#load`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-load
     AlreadyRequired,
 }
 
@@ -65,7 +65,7 @@ impl From<Required> for bool {
     /// Convert a [`Required`] enum into a [`bool`] as returned by
     /// [`Kernel#require`].
     ///
-    /// [`Kernel#require`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+    /// [`Kernel#require`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
     fn from(req: Required) -> Self {
         match req {
             Required::Success => true,
@@ -89,7 +89,7 @@ impl From<Required> for bool {
 ///
 /// See the documentation of [`load_source`] for more details.
 ///
-/// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
+/// [`Kernel#load`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-load
 /// [`load_source`]: LoadSources::load_source
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Loaded {
@@ -98,7 +98,7 @@ pub enum Loaded {
     /// This variant has value `true` when converting to a Boolean as returned
     /// by `Kernel#load`.
     ///
-    /// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
+    /// [`Kernel#load`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-load
     Success,
 }
 
@@ -106,7 +106,7 @@ impl From<Loaded> for bool {
     /// Convert a [`Loaded`] enum into a [`bool`] as returned by
     /// [`Kernel#load`].
     ///
-    /// [`Kernel#load`]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-load
+    /// [`Kernel#load`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-load
     fn from(loaded: Loaded) -> Self {
         let Loaded::Success = loaded;
         true

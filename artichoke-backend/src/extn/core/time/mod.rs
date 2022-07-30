@@ -16,7 +16,7 @@
 //! This implementation of `Time` supports the system clock via the
 //! [`chrono`] and [`chrono-tz`] crates.
 //!
-//! [`Time`]: https://ruby-doc.org/core-2.6.3/Time.html
+//! [`Time`]: https://ruby-doc.org/core-3.1.2/Time.html
 //! [`chrono`]: https://crates.io/crates/chrono
 //! [`chrono-tz`]: https://crates.io/crates/chrono-tz
 

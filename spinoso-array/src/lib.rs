@@ -114,7 +114,7 @@
 //! slicing APIs operate until the end of the vector or return `&[]`. Mutating
 //! APIs extend `Array`s on out of bounds access.
 //!
-//! [Ruby `Array`]: https://ruby-doc.org/core-2.6.3/Array.html
+//! [Ruby `Array`]: https://ruby-doc.org/core-3.1.2/Array.html
 //! [collection of crates]: https://crates.io/keywords/spinoso
 //! [Artichoke Ruby]: https://www.artichokeruby.org/
 //! [`Vec`]: alloc::vec::Vec

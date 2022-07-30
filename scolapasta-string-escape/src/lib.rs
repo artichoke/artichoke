@@ -78,8 +78,8 @@
 //!
 //! This crate is `no_std` compatible. This crate does not depend on [`alloc`].
 //!
-//! [`String#inspect`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-inspect
-//! [`Symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
+//! [`String#inspect`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-inspect
+//! [`Symbol#inspect`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-inspect
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
 
 #![no_std]

@@ -45,7 +45,7 @@ use crate::paths::is_explicit_relative;
 /// # example().unwrap();
 /// ```
 ///
-/// [require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
+/// [require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
 /// [explicit relative]: is_explicit_relative
 /// [resolves to the same file]: same_file
 /// [`Rubylib`]: super::Rubylib
