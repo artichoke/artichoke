@@ -142,11 +142,10 @@ pub fn join(interp: &mut Artichoke, ary: &Array, sep: &[u8]) -> Result<Vec<u8>, 
                 out.push(buf.into_bytes());
             }
             _ => {
-                // Safety:
-                //
-                // `s` is converted to an owned byte vec immediately before
-                // any intervening operations on the VM which may cause a
-                // garbage collection of the `RString` that backs `value`.
+                // SAFETY: `s` is converted to an owned byte `Vec` immediately
+                // before any intervening operations on the VM. This ensures
+                // there are no intervening garbage collections which may free
+                // the `RString*` that backs this value.
                 if let Ok(s) = unsafe { implicitly_convert_to_string(interp, &mut value) } {
                     out.push(s.to_vec());
                 } else {
@@ -247,18 +246,15 @@ impl BoxUnboxVmValue for Array {
         let _ = interp;
 
         // Make sure we have an Array otherwise extraction will fail.
-        // This check is critical to the safety of accessing the `value` union.
         if value.ruby_type() != Ruby::Array {
             let mut message = String::from("uninitialized ");
             message.push_str(Self::RUBY_TYPE);
             return Err(TypeError::from(message).into());
         }
 
-        // Safety:
-        //
-        // The above check on the data type ensures the `value` union holds an
-        // `RArray` in the `p` variant.
         let value = value.inner();
+        // SAFETY: The above check on the data type ensures the `value` union
+        // holds an `RArray*` in the `p` variant.
         let ary = sys::mrb_sys_basic_ptr(value).cast::<sys::RArray>();
 
         let ptr = (*ary).as_.heap.ptr;
@@ -273,10 +269,8 @@ impl BoxUnboxVmValue for Array {
         let RawParts { ptr, length, capacity } = Array::into_raw_parts(value);
         let value = unsafe {
             interp.with_ffi_boundary(|mrb| {
-                // Overflow Safety:
-                //
-                // `Array` is backed by a `Vec` which can at most allocate
-                // `isize::MAX` bytes.
+                // SAFETY: `Array` is backed by a `Vec` which can allocate at
+                // most `isize::MAX` bytes.
                 //
                 // `mrb_value` is not a ZST, so in practice, `len` and
                 // `capacity` will never overflow `mrb_int`, which is an `i64`
@@ -296,10 +290,8 @@ impl BoxUnboxVmValue for Array {
 
     fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
         // Make sure we have an Array otherwise boxing will produce undefined
-        // behavior.
-        //
-        // This check is critical to the memory safety of future runs of the
-        // garbage collector.
+        // behavior. This check is critical to protecting the garbage collector
+        // against use-after-free.
         assert_eq!(
             into.ruby_type(),
             Ruby::Array,
@@ -316,7 +308,7 @@ impl BoxUnboxVmValue for Array {
     }
 
     fn free(data: *mut c_void) {
-        // this function is never called. `Array` is freed directly in the VM by
+        // This function is never called. `Array` is freed directly in the VM by
         // calling `mrb_ary_artichoke_free`.
         //
         // Array should not have a destructor registered in the class registry.

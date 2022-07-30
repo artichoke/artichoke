@@ -69,15 +69,14 @@ impl Artichoke {
         F: FnOnce(*mut sys::mrb_state) -> T,
     {
         if let Some(state) = self.state.take() {
-            // Ensure we don't create multiple mutable references by moving the
-            // `mrb` out of the `Artichoke` and converting to a raw pointer.
-            //
-            // Safety:
+            // SAFETY: Ensure we don't create multiple mutable references by
+            // moving the `mrb` out of the `Artichoke` and converting to a raw
+            // pointer.
             //
             // 1. Extract a `*mut sys::mrb_state` pointer from the `NonNull`
             //    `mrb` field.
-            // 2. Function safety conditions declare that `Artichoke` is not
-            //    accessed inside the closure.
+            // 2. Function preconditions declare that `Artichoke` is not accessed
+            //    inside the closure.
             // 3. Rust borrowing rules enforce that `Artichoke` is not accessed
             //    inside the closure.
             // 4. This function moves the `State` into the `mrb`.
@@ -132,12 +131,9 @@ impl Artichoke {
 
     /// Consume an interpreter and free all live objects.
     pub fn close(mut self) {
-        // Safety:
-        //
-        // It is permissible to directly access the `*mut sys::mrb_state`
-        // because we are tearing down the interpreter. The only `MRB_API`
-        // calls made from this point are related to freeing interpreter
-        // memory.
+        // SAFETY: It is permissible to directly access the `*mut sys::mrb_state`
+        // because we are tearing down the interpreter. The only `MRB_API` calls
+        // made from this point are related to freeing interpreter memory.
         let mrb = unsafe { self.mrb.as_mut() };
         if let Some(state) = self.state.take() {
             // Do not free class and module specs before running the final
@@ -149,7 +145,8 @@ impl Artichoke {
                 ..
             } = *state;
 
-            // Safety
+            // SAFETY: This deallocation and drop order ensures that no dangling
+            // references and pointers are visible during teardown:
             //
             // - The parser must be deallocated to free the associated
             //   `mrbc_context`.
@@ -169,11 +166,9 @@ impl Artichoke {
             drop(classes);
             drop(modules);
         } else {
-            // Safety
-            //
-            // If there is no Artichoke Rust `State`, the mruby interpreter
-            // cannot be safely closed. Prefer to leak the interpreter than
-            // try to close it.
+            // SAFETY: If there is no Artichoke Rust `State`, the mruby
+            // interpreter cannot be safely closed. Prefer to leak the
+            // interpreter than try to close it.
             let _ = mrb;
         }
     }

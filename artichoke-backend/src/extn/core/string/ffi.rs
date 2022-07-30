@@ -189,10 +189,8 @@ unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value,
     } else {
         return s;
     };
-    // Safety:
-    //
-    // The string is repacked before any intervening use of the interpreter.
-    // The string is repacked before any intervening mruby heap allocations.
+    // SAFETY: The string is repacked before any intervening uses of `interp`
+    // which means no mruby heap allocations can occur.
     let string_mut = string.as_inner_mut();
 
     let result = try_resize(string_mut, len);
@@ -435,16 +433,12 @@ unsafe extern "C" fn mrb_string_value_cstr(mrb: *mut sys::mrb_state, ptr: *mut s
     } else {
         return ptr::null();
     };
-    // Safety:
-    //
-    // The string is repacked before any intervening use of the interpreter.
-    // The string is repacked before any intervening mruby heap allocations.
+    // SAFETY: The string is repacked before any intervening uses of `interp`
+    // which means no mruby heap allocations can occur.
     let string_mut = string.as_inner_mut();
     string_mut.push_byte(b'\0');
-    // Safety:
-    //
-    // This raw pointer will not be invalidated since we rebox this `String`
-    // into the mruby heap where the GC will keep it alive.
+    // SAFETY: This raw pointer will not be invalidated since we rebox this
+    // `String` into the mruby heap where the GC will keep it alive.
     let cstr = string.as_ptr().cast::<c_char>();
 
     let inner = string.take();
@@ -468,16 +462,12 @@ unsafe extern "C" fn mrb_string_cstr(mrb: *mut sys::mrb_state, s: sys::mrb_value
     } else {
         return ptr::null();
     };
-    // Safety:
-    //
-    // The string is repacked before any intervening use of the interpreter.
-    // The string is repacked before any intervening mruby heap allocations.
+    // SAFETY: The string is repacked before any intervening uses of `interp`
+    // which means no mruby heap allocations can occur.
     let string_mut = string.as_inner_mut();
     string_mut.push_byte(b'\0');
-    // Safety:
-    //
-    // This raw pointer will not be invalidated since we rebox this `String`
-    // into the mruby heap where the GC will keep it alive.
+    // SAFETY: This raw pointer will not be invalidated since we rebox this
+    // `String` into the mruby heap where the GC will keep it alive.
     let cstr = string.as_ptr().cast::<c_char>();
 
     let inner = string.take();
@@ -602,10 +592,8 @@ unsafe extern "C" fn mrb_str_cat(
     if let Ok(mut string) = String::unbox_from_value(&mut s, &mut guard) {
         let slice = slice::from_raw_parts(ptr.cast::<u8>(), len);
 
-        // Safety:
-        //
-        // The string is repacked before any intervening use of the interpreter.
-        // The string is repacked before any intervening mruby heap allocations.
+        // SAFETY: The string is repacked before any intervening uses of
+        // `interp` which means no mruby heap allocations can occur.
         let string_mut = string.as_inner_mut();
         string_mut.extend_from_slice(slice);
         let inner = string.take();

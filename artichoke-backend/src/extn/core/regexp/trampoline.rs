@@ -28,10 +28,9 @@ pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error
         let symbol = unsafe { Symbol::unbox_from_value(&mut pattern, interp)? };
         symbol.bytes(interp).to_vec()
     } else {
-        // Safety:
-        //
-        // Convert the bytes to an owned vec to prevent the underlying `RString`
-        // backing `pattern` from being freed during a garbage collection.
+        // SAFETY: Convert the bytes to an owned vec to prevent the underlying
+        // `RString*` backing `pattern` from being freed during a garbage
+        // collection.
         unsafe { implicitly_convert_to_string(interp, &mut pattern)?.to_vec() }
     };
     let pattern = Regexp::escape(&pattern_vec)?;

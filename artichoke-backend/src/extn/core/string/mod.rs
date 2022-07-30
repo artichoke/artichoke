@@ -42,11 +42,9 @@ impl BoxUnboxVmValue for String {
             return Err(TypeError::from(message).into());
         }
 
-        // Safety:
-        //
-        // The above check on the data type ensures the `value` union holds an
-        // `RString` in the `p` variant.
         let value = value.inner();
+        // SAFETY: The above check on the data type ensures the `value` union
+        // holds an `RString*` in the `p` variant.
         let string = sys::mrb_sys_basic_ptr(value).cast::<sys::RString>();
 
         let ptr = (*string).as_.heap.ptr;

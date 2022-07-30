@@ -107,11 +107,10 @@ impl Regexp {
             }
             regexp.inner().source().clone()
         } else {
-            // Safety:
-            //
-            // `bytes` is converted to an owned byte vec before any additional
-            // operations are run on the interpreter which might trigger a
-            // garbage collection of `pattern` and its backing `RString`.
+            // SAFETY: `bytes` is converted to an owned byte vec before any
+            // additional operations are run on the interpreter which might
+            // trigger a garbage collection of `pattern` and its backing
+            // `RString*`.
             let bytes = unsafe { implicitly_convert_to_string(interp, &mut pattern)? };
             Source::with_pattern_and_options(bytes.to_vec(), options.unwrap_or_default())
         };
@@ -138,12 +137,10 @@ impl Regexp {
                 let source = regexp.inner().config();
                 Ok(source.pattern().to_vec())
             } else {
-                // Safety:
-                //
-                // `bytes` is converted to an owned `String` before any
+                // SAFETY: `bytes` is converted to an owned `String` before any
                 // additional operations are run on the interpreter which might
                 // trigger a garbage collection of `pattern` and its backing
-                // `RString`.
+                // `RString*`.
                 let bytes = unsafe { implicitly_convert_to_string(interp, value)? };
                 if let Ok(pattern) = str::from_utf8(bytes) {
                     Ok(syntax::escape(pattern).into_bytes())
@@ -198,11 +195,9 @@ impl Regexp {
             pattern_vec = symbol.bytes(interp).to_vec();
             pattern_vec.as_slice()
         } else if let Ok(pattern) = unsafe { implicitly_convert_to_string(interp, &mut other) } {
-            // Safety:
-            //
-            // `pattern` is converted to an owned byte vec before any
+            // SAFETY: `pattern` is converted to an owned byte vec before any
             // intervening operations on the VM which may trigger a garbage
-            // collection of the `RString` that backs `other`.
+            // collection of the `RString*` that backs `other`.
             pattern_vec = pattern.to_vec();
             pattern_vec.as_slice()
         } else {

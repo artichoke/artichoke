@@ -11,12 +11,9 @@ use crate::platform_string::bytes_to_os_str;
 use crate::state::parser::Context;
 
 pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<Loaded, Error> {
-    // Safety:
-    //
-    // Converting the extracted byte slice to an owned `Vec<u8>` is required to
-    // prevent a use after free. evaling code on the interpreter with `require`
-    // may cause a garbage collection which might free the `RString` backing
-    // `filename`.
+    // SAFETY: The extracted byte slice is converted to an owned `Vec<u8>`
+    // before the interp is used again which protects against a garbage
+    // collection invalidating the pointer.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());
@@ -44,12 +41,9 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<Loaded, Error
 }
 
 pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<Required, Error> {
-    // Safety:
-    //
-    // Converting the extracted byte slice to an owned `Vec<u8>` is required to
-    // prevent a use after free. evaling code on the interpreter with `require`
-    // may cause a garbage collection which might free the `RString` backing
-    // `filename`.
+    // SAFETY: The extracted byte slice is converted to an owned `Vec<u8>`
+    // before the interp is used again which protects against a garbage
+    // collection invalidating the pointer.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());
@@ -78,12 +72,9 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<Required, 
 
 #[allow(clippy::module_name_repetitions)]
 pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: RelativePath) -> Result<Required, Error> {
-    // Safety:
-    //
-    // Converting the extracted byte slice to an owned `Vec<u8>` is required to
-    // prevent a use after free. evaling code on the interpreter with `require`
-    // may cause a garbage collection which might free the `RString` backing
-    // `filename`.
+    // SAFETY: The extracted byte slice is converted to an owned `Vec<u8>`
+    // before the interp is used again which protects against a garbage
+    // collection invalidating the pointer.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
         return Err(ArgumentError::with_message("path name contains null byte").into());

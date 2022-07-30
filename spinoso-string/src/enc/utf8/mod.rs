@@ -146,10 +146,8 @@ impl Utf8String {
         } else {
             return bytes.len();
         };
-        // Safety:
-        //
-        // If `ByteSlice::find_non_ascii_byte` returns `Some(_)`, the index is
-        // guaranteed to be a valid index within `bytes`.
+        // SAFETY: `ByteSlice::find_non_ascii_byte` gurantees that the index is
+        // in range for slicing if `Some(_)` is returned.
         bytes = unsafe { bytes.get_unchecked(tail..) };
         if simdutf8::basic::from_utf8(bytes).is_ok() {
             return tail + bytecount::num_chars(bytes);

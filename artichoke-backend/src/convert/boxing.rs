@@ -104,14 +104,9 @@ impl<'a, T> Deref for UnboxedValueGuard<'a, HeapAllocated<T>> {
 
 impl<'a, T> DerefMut for UnboxedValueGuard<'a, HeapAllocated<T>> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        // Safety:
-        //
-        // `HeapAllocated` data objects are boxed and the raw box pointer is
-        // stored in the `mrb_value`.
-        //
-        // `Deref::Target` is `T`, not `Box<T>`.
-        //
-        // Giving out a `&mut T` means the box pointer cannot be invalidated.
+        // SAFETY: `HeapAllocated` data objects are boxed and the raw box
+        // pointer is stored in the `mrb_value`. Because `Deref::Target` is `T`,
+        // not `Box<T>`, the box pointer cannot be invalidated.
         let inner = unsafe { self.as_inner_mut() };
         inner.0.as_mut()
     }
