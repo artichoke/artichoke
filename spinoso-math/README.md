@@ -67,7 +67,7 @@ All features are enabled by default.
 
 `spinoso-math` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
-[`float`]: https://ruby-doc.org/core-2.6.3/Float.html
+[`float`]: https://ruby-doc.org/core-3.1.2/Float.html
 [`core`]: https://doc.rust-lang.org/core/
 [`nan`]: https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.NAN
 [`f64`]: https://doc.rust-lang.org/std/primitive.f64.html

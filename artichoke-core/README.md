@@ -77,10 +77,10 @@ All features are enabled by default:
 
 `artichoke-core` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
-[kernel#require]: https://ruby-doc.org/core-2.6.3/Kernel.html#method-i-require
-[`random::default`]: https://ruby-doc.org/core-2.6.3/Random.html#DEFAULT
+[kernel#require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
+[`random::default`]: https://ruby-doc.org/core-3.1.2/Random.html#DEFAULT
 [regexp-globals]:
-  https://ruby-doc.org/core-2.6.3/Regexp.html#class-Regexp-label-Special+global+variables
+  https://ruby-doc.org/core-3.1.2/Regexp.html#class-Regexp-label-Special+global+variables
 [core-class-registry]:
   https://artichoke.github.io/artichoke/artichoke_core/class_registry/trait.ClassRegistry.html
 [core-coerce-numeric]:

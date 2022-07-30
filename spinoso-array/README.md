@@ -79,7 +79,7 @@ All features are enabled by default.
 
 `spinoso-array` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
-[ruby-array]: https://ruby-doc.org/core-2.6.3/Array.html
+[ruby-array]: https://ruby-doc.org/core-3.1.2/Array.html
 [artichoke]: https://github.com/artichoke/artichoke
 [`vec`]: https://doc.rust-lang.org/alloc/vec/struct.Vec.html
 [`smallvec`]: https://docs.rs/smallvec/latest/smallvec/struct.SmallVec.html

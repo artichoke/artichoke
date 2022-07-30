@@ -86,7 +86,7 @@ All features are enabled by default:
 
 `spinoso-env` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
-[`env`]: https://ruby-doc.org/core-2.6.3/ENV.html
+[`env`]: https://ruby-doc.org/core-3.1.2/ENV.html
 [`hashmap`]: std::collections::HashMap
 [rust standard library]: https://doc.rust-lang.org/std/
 [`std`]: https://doc.rust-lang.org/std/

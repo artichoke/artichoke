@@ -88,5 +88,5 @@ fn example() -> Result<(), spinoso_securerandom::Error> {
 Lopopolo.
 
 [`securerandom`]:
-  https://ruby-doc.org/stdlib-2.6.3/libdoc/securerandom/rdoc/SecureRandom.html
+  https://ruby-doc.org/stdlib-3.1.2/libdoc/securerandom/rdoc/SecureRandom.html
 [`getrandom`]: https://crates.io/crates/getrandom

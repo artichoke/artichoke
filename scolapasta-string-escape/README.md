@@ -96,6 +96,6 @@ This crate is `no_std`. This crate does not depend on [`alloc`].
 `scolapasta-string-escape` is licensed with the [MIT License](LICENSE) (c) Ryan
 Lopopolo.
 
-[`string#inspect`]: https://ruby-doc.org/core-2.6.3/String.html#method-i-inspect
-[`symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
+[`string#inspect`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-inspect
+[`symbol#inspect`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-inspect
 [`alloc`]: https://doc.rust-lang.org/alloc/

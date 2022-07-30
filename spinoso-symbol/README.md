@@ -103,14 +103,14 @@ Core.
 
 `spinoso-symbol` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
-[the `symbol` api from ruby core]: https://ruby-doc.org/core-2.6.3/Symbol.html
+[the `symbol` api from ruby core]: https://ruby-doc.org/core-3.1.2/Symbol.html
 [`intern`]:
   https://artichoke.github.io/artichoke/artichoke_core/intern/trait.Intern.html
 [`symbol::all_symbols`]:
-  https://ruby-doc.org/core-2.6.3/Symbol.html#method-c-all_symbols
-[`symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
+  https://ruby-doc.org/core-3.1.2/Symbol.html#method-c-all_symbols
+[`symbol#inspect`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-inspect
 [byte string interning apis]:
   https://artichoke.github.io/artichoke/artichoke_core/intern/trait.Intern.html
-[`symbol#inspect`]: https://ruby-doc.org/core-2.6.3/Symbol.html#method-i-inspect
+[`symbol#inspect`]: https://ruby-doc.org/core-3.1.2/Symbol.html#method-i-inspect
 [`alloc`]: https://doc.rust-lang.org/alloc/
 [`std::error::error`]: https://doc.rust-lang.org/std/error/trait.Error.html

@@ -82,7 +82,7 @@ This crate requires [`std`], the Rust Standard Library.
 
 `spinoso-time` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
-[`time`]: https://ruby-doc.org/core-2.6.3/Time.html
+[`time`]: https://ruby-doc.org/core-3.1.2/Time.html
 [`chrono`]: https://crates.io/crates/chrono
 [`tz-rs`]: https://crates.io/crates/tz-rs
 [`tzdb`]: https://crates.io/crates/tzdb
