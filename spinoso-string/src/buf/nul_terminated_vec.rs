@@ -37,7 +37,7 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) {
     vec.reserve_exact(1);
     let spare_capacity = vec.spare_capacity_mut();
     match spare_capacity {
-        [] => panic!("Vec should have spare capacity"),
+        [] => unreachable!("Vec should have spare capacity"),
         [next] => {
             next.write(NUL_BYTE);
         }
