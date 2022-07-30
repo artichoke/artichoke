@@ -30,11 +30,9 @@ impl BoxUnboxVmValue for Symbol {
             return Err(TypeError::from(message).into());
         }
 
-        // Safety:
-        //
-        // The above check on the data type ensures the `value` union holds a
-        // `u32` in the `sym` variant.
         let value = value.inner();
+        // SAFETY: The above check on the data type ensures the `value` union
+        // holds a `u32` in the `sym` variant.
         let symbol_id = value.value.sym;
         Ok(UnboxedValueGuard::new(Immediate::new(symbol_id.into())))
     }

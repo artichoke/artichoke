@@ -157,11 +157,7 @@ where
     W: io::Write + WriteColor,
 {
     interp.pop_context()?;
-    // Safety:
-    //
-    // - `Context::new_unchecked` requires that its argument has no NUL bytes.
-    // - `INLINE_EVAL_SWITCH` is controlled by this crate.
-    // - A test asserts that `INLINE_EVAL_SWITCH` has no NUL bytes.
+    // SAFETY: `INLINE_EVAL_SWITCH` has no NUL bytes (asserted by tests).
     let context = unsafe { Context::new_unchecked(INLINE_EVAL_SWITCH) };
     interp.push_context(context)?;
     if let Some(fixture) = fixture {

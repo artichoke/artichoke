@@ -79,11 +79,9 @@ where
         // `mrb_exc_raise` will call longjmp which will unwind the stack.
         sys::mrb_exc_raise(mrb, exc);
 
-        // Safety:
-        //
-        // This line is unreachable because `raise` will unwind the stack with
-        // longjmp when calling either `sys::mrb_exc_raise` in the preceding
-        // line.
+        // SAFETY: This line is unreachable because `raise` will unwind the
+        // stack with `longjmp` when calling `sys::mrb_exc_raise` in the
+        // preceding line.
         hint::unreachable_unchecked()
     }
 
@@ -98,10 +96,8 @@ where
     // `mrb_sys_raise` will call longjmp which will unwind the stack.
     sys::mrb_sys_raise(mrb, RUNTIME_ERROR_CSTR.as_ptr(), UNABLE_TO_RAISE_MESSAGE.as_ptr());
 
-    // Safety:
-    //
-    // This line is unreachable because `raise` will unwind the stack with
-    // longjmp when calling either `sys::mrb_sys_raise` in the preceding line.
+    // SAFETY: This line is unreachable because `raise` will unwind the stack
+    // with `longjmp` when calling `sys::mrb_exc_raise` in the preceding line.
     hint::unreachable_unchecked()
 }
 

@@ -114,10 +114,8 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
     let mut other = Value::from(other);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
         if let Ok(other) = Array::unbox_from_value(&mut other, &mut guard) {
-            // Safety:
-            //
-            // The array is repacked before any intervening uses of `interp`.
-            // The array is repacked before any intervening mruby allocations.
+            // SAFETY: The array is repacked before any intervening uses of
+            // `interp` which means no mruby heap allocations can occur.
             let array_mut = array.as_inner_mut();
             array_mut.extend(other.iter());
 
@@ -144,10 +142,8 @@ unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        // Safety:
-        //
-        // The array is repacked before any intervening uses of `interp`.
-        // The array is repacked before any intervening mruby allocations.
+        // SAFETY: The array is repacked before any intervening uses of `interp`
+        // which means no mruby heap allocations can occur.
         let array_mut = array.as_inner_mut();
         let popped = array_mut.pop();
 
@@ -172,10 +168,8 @@ unsafe extern "C" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value,
     let mut array = Value::from(ary);
     let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        // Safety:
-        //
-        // The array is repacked before any intervening uses of `interp`.
-        // The array is repacked before any intervening mruby allocations.
+        // SAFETY: The array is repacked before any intervening uses of `interp`
+        // which means no mruby heap allocations can occur.
         let array_mut = array.as_inner_mut();
         array_mut.push(value);
 
@@ -236,10 +230,8 @@ unsafe extern "C" fn mrb_ary_set(
         };
         // TODO: properly handle self-referential sets.
         if Value::from(ary) != value {
-            // Safety:
-            //
-            // The array is repacked before any intervening uses of `interp`.
-            // The array is repacked before any intervening mruby allocations.
+            // SAFETY: The array is repacked before any intervening uses of
+            // `interp` which means no mruby heap allocations can occur.
             let array_mut = array.as_inner_mut();
             array_mut.set(offset, value);
 
@@ -259,10 +251,8 @@ unsafe extern "C" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        // Safety:
-        //
-        // The array is repacked before any intervening uses of `interp`.
-        // The array is repacked before any intervening mruby allocations.
+        // SAFETY: The array is repacked before any intervening uses of `interp`
+        // which means no mruby heap allocations can occur.
         let array_mut = array.as_inner_mut();
         let result = array_mut.shift();
 
@@ -290,10 +280,8 @@ unsafe extern "C" fn mrb_ary_unshift(
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        // Safety:
-        //
-        // The array is repacked before any intervening uses of `interp`.
-        // The array is repacked before any intervening mruby allocations.
+        // SAFETY: The array is repacked before any intervening uses of `interp`
+        // which means no mruby heap allocations can occur.
         let array_mut = array.as_inner_mut();
         array_mut.unshift(value.into());
 

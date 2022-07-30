@@ -4,10 +4,8 @@ use crate::extn::prelude::*;
 
 pub fn integer(interp: &mut Artichoke, mut arg: Value, base: Option<Value>) -> Result<Value, Error> {
     let base = base.and_then(|base| interp.convert(base));
-    // Safety:
-    //
-    // Extract the `Copy` radix integer first since implicit conversions can
-    // trigger garbage collections.
+    // SAFETY: Extract the `Copy` radix integer first since implicit conversions
+    // can trigger garbage collections.
     let base = interp.try_convert_mut(base)?;
     let arg = interp.try_convert_mut(&mut arg)?;
     let integer = kernel::integer::method(arg, base)?;

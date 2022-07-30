@@ -37,10 +37,9 @@ pub fn plus(interp: &mut Artichoke, mut ary: Value, mut other: Value) -> Result<
 
 pub fn mul(interp: &mut Artichoke, mut ary: Value, mut joiner: Value) -> Result<Value, Error> {
     let array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-    // Safety:
-    //
-    // Convert separator to an owned byte vec to ensure the `RString` backing
-    // `joiner` is not garbage collected when invoking `to_s` during `join`.
+    // SAFETY: Convert separator to an owned byte vec to ensure the `RString*`
+    // backing `joiner` is not garbage collected when invoking `to_s` during
+    // `join`.
     if let Ok(separator) = unsafe { implicitly_convert_to_string(interp, &mut joiner) } {
         let separator = separator.to_vec();
         let s = super::join(interp, &*array, &separator)?;
@@ -110,11 +109,9 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
-    // Safety:
-    //
-    // Clearing a `Vec` does not reallocate it, but it does change it's length.
-    // The array is repacked before any intervening interpreter heap allocations
-    // occur.
+    // SAFETY: Clearing a `Vec` does not reallocate it, but it does change its
+    // length. The array is repacked before any intervening interpreter heap
+    // allocations occur.
     unsafe {
         let array_mut = array.as_inner_mut();
         array_mut.clear();
@@ -270,10 +267,8 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
-    // Safety:
-    //
-    // The array is repacked before any intervening interpreter heap allocations
-    // occur.
+    // SAFETY: The array is repacked without any intervening interpreter heap
+    // allocations.
     let result = unsafe {
         let array_mut = array.as_inner_mut();
         let result = array_mut.pop();
@@ -293,9 +288,7 @@ pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Valu
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
-    // Safety:
-    //
-    // The array is repacked without any intervening interpreter heap
+    // SAFETY: The array is repacked without any intervening interpreter heap
     // allocations.
     let array_mut = unsafe { array.as_inner_mut() };
     array_mut.push(value);
@@ -321,12 +314,8 @@ pub fn reverse_bang(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Err
     }
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
-    // Safety:
-    //
-    // Reversing an `Array` in place does not reallocate it.
-    //
-    // The array is repacked before any intervening interpreter heap allocations
-    // occur.
+    // SAFETY: Reversing an `Array` in place does not reallocate it. The array
+    // is repacked without any intervening interpreter heap allocations.
     unsafe {
         let array_mut = array.as_inner_mut();
         array_mut.reverse();
@@ -347,17 +336,15 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
         let count = implicitly_convert_to_int(interp, count)?;
         let count = usize::try_from(count).map_err(|_| ArgumentError::with_message("negative array size"))?;
 
-        // Safety:
-        //
-        // The call to `Array::shift_n` has potentially invalidated the raw
-        // parts of `array` stored in `ary`'s `RArray *`.
+        // SAFETY: The call to `Array::shift_n` will potentially invalidate the
+        // raw parts stored in `ary`'s `RArray*`.
         //
         // The below call to `Array::alloc_value` will trigger an mruby heap
         // allocation which may trigger a garbage collection.
         //
-        // The raw parts in `ary`'s `RArray *` must be repacked before a
-        // potential garbage collection, otherwise marking the children in `ary`
-        // will have undefined behavior.
+        // The raw parts in `ary`'s `RArray*` must be repacked before a potential
+        // garbage collection, otherwise marking the children in `ary` will have
+        // undefined behavior.
         //
         // The call to `Array::alloc_value` happens outside this block after
         // the `Array` has been repacked.
@@ -373,10 +360,8 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
 
         Array::alloc_value(shifted, interp)
     } else {
-        // Safety:
-        //
-        // The call to `Array::shift` above has potentially invalidated the raw
-        // parts of `array` stored in `ary`'s `RArray *`.
+        // SAFETY: The call to `Array::shift` will potentially invalidate the
+        // raw parts stored in `ary`'s `RArray*`.
         //
         // The raw parts in `ary`'s `RArray *` must be repacked before a
         // potential garbage collection, otherwise marking the children in `ary`

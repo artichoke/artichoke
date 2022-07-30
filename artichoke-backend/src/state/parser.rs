@@ -136,11 +136,7 @@ pub struct Context {
 
 impl Default for Context {
     fn default() -> Self {
-        // Safety:
-        //
-        // - The `TOP_FILENAME` constant is controlled by this module.
-        // - The `TOP_FILENAME` constant does not contain NUL bytes.
-        // - This behavior is enforced by a test in this module.
+        // SAFETY: `TOP_FILENAME` has no NUL bytes (asserted by tests).
         unsafe { Self::new_unchecked(TOP_FILENAME) }
     }
 }

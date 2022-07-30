@@ -90,12 +90,14 @@ impl<'a> TryConvertMut<Value, &'a [u8]> for Artichoke {
     fn try_convert_mut(&mut self, mut value: Value) -> Result<&'a [u8], Self::Error> {
         self.protect(value);
         let s = unsafe { String::unbox_from_value(&mut value, self)? };
-        // Safety
+        // SAFETY: This transmute modifies the lifetime of the byte slice pulled
+        // out of the boxed `String`. This requires that no garbage collections
+        // that reclaim `value` occur while this slice is alive. This is
+        // enforced for at least this entry from an mruby trampoline by the call
+        // to `protect` above.
         //
-        // This transmute modifies the lifetime of the byte slice pulled out of
-        // the boxed `String`. This is only safe if there are no garbage
-        // collections that reclaim `value`, which is enforced for at least this
-        // entry from an mruby trampoline by the call to `protect` above.
+        // FIXME: does this unbound lifetime and transmute below allow
+        // extracting `&'static [u8]`?
         let slice = unsafe { mem::transmute(s.as_slice()) };
         Ok(slice)
     }

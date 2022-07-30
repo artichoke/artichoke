@@ -211,11 +211,7 @@ where
     writeln!(output, "{}", preamble(interp)?)?;
 
     interp.reset_parser()?;
-    // Safety:
-    //
-    // - `Context::new_unchecked` requires that its argument has no NUL bytes.
-    // - `REPL` is controlled by this crate.
-    // - A test asserts that `REPL` has no NUL bytes.
+    // SAFETY: `REPL` has no NUL bytes (asserted by tests).
     let context = unsafe { Context::new_unchecked(REPL.to_vec()) };
     interp.push_context(context)?;
     let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;

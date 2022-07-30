@@ -8,10 +8,8 @@ use crate::Artichoke;
 
 impl Convert<bool, Value> for Artichoke {
     fn convert(&self, value: bool) -> Value {
-        // Safety
-        //
-        // Boolean Ruby Values do not need to be protected because they are
-        // immediates and do not live on the mruby heap.
+        // SAFETY: Boolean Ruby Values do not need to be protected because they
+        // are immediates and do not live on the mruby heap.
         if value {
             Value::from(unsafe { sys::mrb_sys_true_value() })
         } else {

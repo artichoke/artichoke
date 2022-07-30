@@ -94,12 +94,10 @@ impl<'a> Builder<'a> {
         let mut super_class = if let Some(super_class) = self.super_class {
             super_class
         } else {
-            // Safety:
-            //
-            // This direct access of the `mrb` property on `Artichoke` does not
-            // go through `Artichoke::with_ffi_boundary`. This is safe because
-            // no `MRB_API` functions are called, which means it is not required
-            // to re-box the Artichoke `State` into the `mrb_state->ud` pointer.
+            // SAFETY: Although this direct access of the `mrb` property on the
+            // interp does not go through `Artichoke::with_ffi_boundary`, no
+            // `MRB_API` functions are called, which means it is not required to
+            // re-box the Artichoke `State` into the `mrb_state->ud` pointer.
             //
             // This code only performs a memory access to read a field from the
             // `mrb_state`.
@@ -219,16 +217,10 @@ impl Spec {
         T: Into<Cow<'static, str>>,
     {
         let name = name.into();
-        // Safety:
+        // SAFETY: The constructed `mrb_data_type` has `'static` lifetime:
         //
-        // `name_cstr` is `&'static` so it will outlive the `data_type`.
-        //
-        // `Spec` does not offer mutable access to these fields.
-        //
-        // This, the `struct_name` pointer in `data_type` will point to valid
-        // memory as long as this `Spec` is not dropped.
-        //
-        // This has implications on drop order of components in the `State`.
+        // - `name_cstr` is `&'static` so it will outlive the `data_type`.
+        // - `Spec` does not offer mutable access to these fields.
         let data_type = sys::mrb_data_type {
             struct_name: name_cstr.as_ptr(),
             dfree: free,

@@ -36,9 +36,7 @@ pub fn mul(interp: &mut Artichoke, mut value: Value, count: Value) -> Result<Val
 
 pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // Safety:
-    //
-    // The borrowed byte slice is immediately `memcpy`'d into the `s` byte
+    // SAFETY: The borrowed byte slice is immediately copied into the `s` byte
     // buffer. There are no intervening interpreter accesses.
     let to_append = unsafe { implicitly_convert_to_string(interp, &mut other)? };
 
@@ -63,11 +61,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
     if let Ok(int) = other.try_convert_into::<i64>(interp) {
         return match s.encoding() {
             Encoding::Utf8 => {
-                // Safety:
-                //
-                // The string is reboxed before any intervening operations on the
-                // interpreter.
-                // The string is reboxed without any intervening mruby allocations.
+                // SAFETY: The string is repacked before any intervening uses of
+                // `interp` which means no mruby heap allocations can occur.
                 unsafe {
                     let string_mut = s.as_inner_mut();
                     // XXX: This call doesn't do a check to see if we'll exceed the max allocation
@@ -81,11 +76,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
             }
             Encoding::Ascii => {
                 let byte = u8::try_from(int).map_err(|_| RangeError::from(format!("{int} out of char range")))?;
-                // Safety:
-                //
-                // The string is reboxed before any intervening operations on the
-                // interpreter.
-                // The string is reboxed without any intervening mruby allocations.
+                // SAFETY: The string is repacked before any intervening uses of
+                // `interp` which means no mruby heap allocations can occur.
                 unsafe {
                     let string_mut = s.as_inner_mut();
                     // XXX: This call doesn't do a check to see if we'll exceed the max allocation
@@ -100,11 +92,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
             }
             Encoding::Binary => {
                 let byte = u8::try_from(int).map_err(|_| RangeError::from(format!("{int} out of char range")))?;
-                // Safety:
-                //
-                // The string is reboxed before any intervening operations on the
-                // interpreter.
-                // The string is reboxed without any intervening mruby allocations.
+                // SAFETY: The string is repacked before any intervening uses of
+                // `interp` which means no mruby heap allocations can occur.
                 unsafe {
                     let string_mut = s.as_inner_mut();
                     // XXX: This call doesn't do a check to see if we'll exceed the max allocation
@@ -116,12 +105,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
             }
         };
     }
-    // Safety:
-    //
-    // The byte slice is immediately used and discarded after extraction. There
-    // are no intervening interpreter accesses.
-
-    // TODO: need to get the spinoso string to get at its encoding.
+    // SAFETY: The byte slice is immediately used and discarded after extraction.
+    // There are no intervening interpreter accesses.
     let other = unsafe { implicitly_convert_to_spinoso_string(interp, &mut other)? };
     match s.encoding() {
         // ```
@@ -173,11 +158,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
         // => #<Encoding:US-ASCII>
         // ```
         Encoding::Utf8 => {
-            // Safety:
-            //
-            // The string is reboxed before any intervening operations on the
-            // interpreter.
-            // The string is reboxed without any intervening mruby allocations.
+            // SAFETY: The string is repacked before any intervening uses of
+            // `interp` which means no mruby heap allocations can occur.
             unsafe {
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
@@ -224,11 +206,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
         // => #<Encoding:ASCII-8BIT>
         // ```
         Encoding::Ascii if s.is_empty() => {
-            // Safety:
-            //
-            // The string is reboxed before any intervening operations on the
-            // interpreter.
-            // The string is reboxed without any intervening mruby allocations.
+            // SAFETY: The string is repacked before any intervening uses of
+            // `interp` which means no mruby heap allocations can occur.
             unsafe {
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
@@ -279,11 +258,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
                 interp.eval(code.as_bytes())?;
                 unreachable!("raised exception");
             }
-            // Safety:
-            //
-            // The string is reboxed before any intervening operations on the
-            // interpreter.
-            // The string is reboxed without any intervening mruby allocations.
+            // SAFETY: The string is repacked before any intervening uses of
+            // `interp` which means no mruby heap allocations can occur.
             unsafe {
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
@@ -327,11 +303,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
         // => #<Encoding:ASCII-8BIT>
         // ```
         Encoding::Binary if s.is_empty() => {
-            // Safety:
-            //
-            // The string is reboxed before any intervening operations on the
-            // interpreter.
-            // The string is reboxed without any intervening mruby allocations.
+            // SAFETY: The string is repacked before any intervening uses of
+            // `interp` which means no mruby heap allocations can occur.
             unsafe {
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
@@ -347,11 +320,8 @@ pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Resul
             }
         }
         Encoding::Binary => {
-            // Safety:
-            //
-            // The string is reboxed before any intervening operations on the
-            // interpreter.
-            // The string is reboxed without any intervening mruby allocations.
+            // SAFETY: The string is repacked before any intervening uses of
+            // `interp` which means no mruby heap allocations can occur.
             unsafe {
                 let string_mut = s.as_inner_mut();
                 // XXX: This call doesn't do a check to see if we'll exceed the max allocation
@@ -381,10 +351,6 @@ pub fn equals_equals(interp: &mut Artichoke, mut value: Value, mut other: Value)
         let equals = *s == *other;
         return Ok(interp.convert(equals));
     }
-    // Safety:
-    //
-    // The byte slice is immediately discarded after extraction. There are no
-    // intervening interpreter accesses.
     if value.respond_to(interp, "to_str")? {
         let result = other.funcall(interp, "==", &[value], None)?;
         // any falsy returned value yields `false`, otherwise `true`.
@@ -972,11 +938,8 @@ pub fn capitalize_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value
     }
 
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // Safety:
-    //
-    // The string is reboxed before any intervening operations on the
-    // interpreter.
-    // The string is reboxed without any intervening mruby allocations.
+    // SAFETY: The string is repacked before any intervening uses of `interp`
+    // which means no mruby heap allocations can occur.
     unsafe {
         let string_mut = s.as_inner_mut();
         // `make_capitalized` might reallocate the string and invalidate the
@@ -990,10 +953,8 @@ pub fn capitalize_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value
 
 pub fn casecmp_ascii(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // Safety:
-    //
-    // The byte slice is immediately discarded after extraction. There are no
-    // intervening interpreter accesses.
+    // SAFETY: The byte slice is immediately discarded after extraction. There
+    // are no intervening interpreter accesses.
     if let Ok(other) = unsafe { implicitly_convert_to_string(interp, &mut other) } {
         let cmp = s.ascii_casecmp(other) as i64;
         Ok(interp.convert(cmp))
@@ -1034,10 +995,8 @@ pub fn center(interp: &mut Artichoke, mut value: Value, width: Value, padstr: Op
         let dup = s.clone();
         return super::String::alloc_value(dup, interp);
     };
-    // Safety:
-    //
-    // The byte slice is immediately discarded after extraction and turned into
-    // an owned value. There are no intervening interpreter accesses.
+    // SAFETY: The byte slice is immediately converted to an owned `Vec` after
+    // extraction. There are no intervening interpreter accesses.
     let padstr = if let Some(mut padstr) = padstr {
         let padstr = unsafe { implicitly_convert_to_string(interp, &mut padstr)? };
         Some(padstr.to_vec())
@@ -1151,11 +1110,8 @@ pub fn clear(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     }
 
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // Safety:
-    //
-    // The string is reboxed before any intervening operations on the
-    // interpreter.
-    // The string is reboxed without any intervening mruby allocations.
+    // SAFETY: The string is repacked before any intervening uses of `interp`
+    // which means no mruby heap allocations can occur.
     unsafe {
         let string_mut = s.as_inner_mut();
         string_mut.clear();
@@ -1188,11 +1144,8 @@ pub fn downcase(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error
 
 pub fn downcase_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // Safety:
-    //
-    // The string is reboxed before any intervening operations on the
-    // interpreter.
-    // The string is reboxed without any intervening mruby allocations.
+    // SAFETY: The string is repacked before any intervening uses of `interp`
+    // which means no mruby heap allocations can occur.
     unsafe {
         let string_mut = s.as_inner_mut();
         // `make_lowercase` might reallocate the string and invalidate the
@@ -1307,10 +1260,7 @@ pub fn initialize(interp: &mut Artichoke, mut value: Value, from: Option<Value>)
     // => "abc"
     // ```
     let buf = if let Some(mut from) = from {
-        // Safety:
-        //
-        // The extracted slice is immediately copied to an owned buffer.
-        //
+        // SAFETY: The extracted slice is immediately copied to an owned buffer.
         // No intervening operations on the mruby VM occur.
         let from = unsafe { implicitly_convert_to_string(interp, &mut from)? };
         from.to_vec()
@@ -1344,11 +1294,8 @@ pub fn initialize(interp: &mut Artichoke, mut value: Value, from: Option<Value>)
 }
 
 pub fn initialize_copy(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
-    // Safety:
-    //
-    // The extracted slice is immediately copied to an owned buffer.
-    //
-    // No intervening operations on the mruby VM occur.
+    // SAFETY: The extracted slice is immediately copied to an owned buffer. No
+    // intervening operations on the mruby VM occur.
     let buf = unsafe {
         let from = implicitly_convert_to_string(interp, &mut other)?;
         from.to_vec()
@@ -1417,11 +1364,8 @@ pub fn reverse_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, E
     }
 
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // Safety:
-    //
-    // The string is reboxed before any intervening operations on the
-    // interpreter.
-    // The string is reboxed without any intervening mruby allocations.
+    // SAFETY: The string is repacked before any intervening uses of `interp`
+    // which means no mruby heap allocations can occur.
     unsafe {
         let string_mut = s.as_inner_mut();
         string_mut.reverse();
@@ -1475,10 +1419,8 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
         return Ok(interp.try_convert_mut(scan)?.unwrap_or(value));
     }
     #[cfg(feature = "core-regexp")]
-    // Safety:
-    //
-    // Convert `pattern_bytes` to an owned byte vec to ensure the underlying
-    // `RString` is not garbage collected when yielding matches.
+    // SAFETY: `pattern_bytes` is converted to an owned byte vec to ensure the
+    // underlying `RString*` is not garbage collected when yielding matches.
     if let Ok(pattern_bytes) = unsafe { implicitly_convert_to_string(interp, &mut pattern) } {
         let pattern_bytes = pattern_bytes.to_vec();
 
@@ -1537,10 +1479,8 @@ pub fn scan(interp: &mut Artichoke, value: Value, mut pattern: Value, block: Opt
         return interp.try_convert_mut(result);
     }
     #[cfg(not(feature = "core-regexp"))]
-    // Safety:
-    //
-    // Convert `pattern_bytes` to an owned byte vec to ensure the underlying
-    // `RString` is not garbage collected when yielding matches.
+    // SAFETY: `pattern_bytes` is converted to an owned byte vec to ensure the
+    // underlying `RString*` is not garbage collected when yielding matches.
     if let Ok(pattern_bytes) = unsafe { implicitly_convert_to_string(interp, &mut pattern) } {
         let pattern_bytes = pattern_bytes.to_vec();
 
@@ -1638,9 +1578,7 @@ pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Val
     let u8_byte = (i64_byte % 256)
         .try_into()
         .expect("taking mod 256 guarantees the resulting i64 is in range for u8");
-    // Safety:
-    //
-    // No need to repack, this is an in-place mutation.
+    // SAFETY: No need to repack, this is an in-place mutation.
     unsafe {
         let string_mut = s.as_inner_mut();
         let cell = string_mut.get_mut(index).ok_or_else(|| {
@@ -1741,11 +1679,8 @@ pub fn upcase(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> 
 
 pub fn upcase_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    // Safety:
-    //
-    // The string is reboxed before any intervening operations on the
-    // interpreter.
-    // The string is reboxed without any intervening mruby allocations.
+    // SAFETY: The string is repacked before any intervening uses of `interp`
+    // which means no mruby heap allocations can occur.
     unsafe {
         let string_mut = s.as_inner_mut();
         // `make_uppercase` might reallocate the string and invalidate the
