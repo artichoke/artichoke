@@ -5,7 +5,7 @@ use std::os::raw::c_char;
 use artichoke_core::value::Value as _;
 use spinoso_exception::TypeError;
 #[doc(inline)]
-use spinoso_string::{Encoding, RawParts, String};
+pub use spinoso_string::{Encoding, RawParts, String};
 
 use crate::convert::{BoxUnboxVmValue, UnboxedValueGuard};
 use crate::error::Error;

@@ -1,7 +1,8 @@
-use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
+use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::array::Array;
 use crate::extn::core::matchdata::{Capture, CaptureAt, CaptureExtract, MatchData};
 use crate::extn::core::regexp::Regexp;
+use crate::extn::core::string::String;
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 use crate::sys::protect;
@@ -37,32 +38,150 @@ pub fn element_reference(
     len: Option<Value>,
 ) -> Result<Value, Error> {
     let data = unsafe { MatchData::unbox_from_value(&mut value, interp)? };
-    let at = if let Some(len) = len {
+
+    // ```
+    // [3.1.2] > class X; def to_str; "x"; end; end
+    // => :to_str
+    // [3.1.2] > class Y; def to_int; 1; end; end
+    // => :to_int
+    // [3.1.2] > m = /(?<x>abc) ./.match("abc xyz")
+    // => #<MatchData "abc x" x:"abc">
+    // [3.1.2] > m["x", 1]
+    // (irb):23:in `[]': no implicit conversion of String into Integer (TypeError)
+    //         from (irb):23:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+    // [3.1.2] > m[1, 1]
+    // => ["abc"]
+    // [3.1.2] > m[1, -1]
+    // => nil
+    // [3.1.2] > m[X.new, X.new]
+    // (irb):26:in `[]': no implicit conversion of X into Integer (TypeError)
+    //         from (irb):26:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+    // [3.1.2] > m[Y.new, Y.new]
+    // => ["abc"]
+    // ```
+    if let Some(len) = len {
         let start = implicitly_convert_to_int(interp, elem)?;
         let len = implicitly_convert_to_int(interp, len)?;
-        CaptureAt::StartLen(start, len)
-    } else if let Ok(index) = implicitly_convert_to_int(interp, elem) {
-        CaptureAt::GroupIndex(index)
-    } else if let Ok(symbol) = unsafe { Symbol::unbox_from_value(&mut elem, interp) } {
-        CaptureAt::GroupName(symbol.bytes(interp))
-    } else if let Ok(name) = unsafe { implicitly_convert_to_string(interp, &mut elem) } {
-        CaptureAt::GroupName(name)
-    } else {
-        // NOTE(lopopolo): Encapsulation is broken here by reaching into the
-        // inner regexp.
-        let captures_len = data.regexp.inner().captures_len(None)?;
-        let rangelen =
-            i64::try_from(captures_len).map_err(|_| ArgumentError::with_message("input string too long"))?;
-        match elem.is_range(interp, rangelen)? {
-            // ```
-            // [3.1.2] > m = /abc/.match("abc xyz")
-            // => #<MatchData "abc">
-            // [3.1.2] > m[-10..-5]
-            // => nil
-            // ```
-            None | Some(protect::Range::Out) => return Ok(Value::nil()),
-            Some(protect::Range::Valid { start, len }) => CaptureAt::StartLen(start, len),
+        let at = CaptureAt::StartLen(start, len);
+        let matched = data.capture_at(at)?;
+        return interp.try_convert_mut(matched);
+    }
+
+    // ```
+    // [3.1.2] > m = /(?<x>abc) ./.match("abc xyz")
+    // => #<MatchData "abc x" x:"abc">
+    // [3.1.2] > m[:x]
+    // => "abc"
+    // [3.1.2] > m[:y]
+    // (irb):29:in `[]': undefined group name reference: y (IndexError)
+    //         from (irb):29:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+    // ```
+    if let Ok(symbol) = unsafe { Symbol::unbox_from_value(&mut elem, interp) } {
+        let at = CaptureAt::GroupName(symbol.bytes(interp));
+        let matched = data.capture_at(at)?;
+        return interp.try_convert_mut(matched);
+    }
+
+    // ```
+    // [3.1.2] > class X; def to_str; "x"; end; end
+    // => :to_str
+    // [3.1.2] > m = /(?<x>abc) ./.match("abc xyz")
+    // => #<MatchData "abc x" x:"abc">
+    // [3.1.2] > m['x']
+    // => "abc"
+    // [3.1.2] > m['y']
+    // (irb):12:in `[]': undefined group name reference: y (IndexError)
+    //         from (irb):12:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+    // [3.1.2] > m[1..2]
+    // => ["abc"]
+    // [3.1.2] > m[0..2]
+    // => ["abc x", "abc"]
+    // [3.1.2] > m[0..-1]
+    // => ["abc x", "abc"]
+    // [3.1.2] > m[X.new]
+    // (irb):17:in `[]': no implicit conversion of X into Integer (TypeError)
+    //         from (irb):17:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+    // ```
+    if let Ok(string) = unsafe { String::unbox_from_value(&mut elem, interp) } {
+        let at = CaptureAt::GroupName(string.as_slice());
+        let matched = data.capture_at(at)?;
+        return interp.try_convert_mut(matched);
+    }
+
+    // NOTE(lopopolo): Encapsulation is broken here by reaching into the
+    // inner regexp.
+    let captures_len = data.regexp.inner().captures_len(None)?;
+    let rangelen = i64::try_from(captures_len).map_err(|_| ArgumentError::with_message("input string too long"))?;
+    let at = match elem.is_range(interp, rangelen)? {
+        // ```
+        // [3.1.2] > class X; def to_str; "x"; end; end
+        // => :to_str
+        // [3.1.2] > class Y; def to_int; 1; end; end
+        // => :to_int
+        // [3.1.2] > m = /(?<x>abc) ./.match("abc xyz")
+        // => #<MatchData "abc x" x:"abc">
+        // [3.1.2] > m[0]
+        // => "abc x"
+        // [3.1.2] > m[1]
+        // => "abc"
+        // [3.1.2] > m[2]
+        // => nil
+        // [3.1.2] > m[-1]
+        // => "abc"
+        // [3.1.2] > m[-2]
+        // => nil
+        // [3.1.2] > m[X.new]
+        // (irb):17:in `[]': no implicit conversion of X into Integer (TypeError)
+        //         from (irb):17:in `<main>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // [3.1.2] > m[Y.new]
+        // => "abc"
+        // ```
+        None => {
+            let index = implicitly_convert_to_int(interp, elem)?;
+            CaptureAt::GroupIndex(index)
         }
+        // ```
+        // [3.1.2] > m = /abc/.match("abc xyz")
+        // => #<MatchData "abc">
+        // [3.1.2] > m[-10..-5]
+        // => nil
+        // ```
+        Some(protect::Range::Out) => return Ok(Value::nil()),
+        // ```
+        // [3.1.2] > m = /(?<x>abc) ./.match("abc xyz")
+        // => #<MatchData "abc x" x:"abc">
+        // [3.1.2] > m[1..2]
+        // => ["abc"]
+        // [3.1.2] > m[0..2]
+        // => ["abc x", "abc"]
+        // [3.1.2] > m[0..-1]
+        // => ["abc x", "abc"]
+        // [3.1.2] > m[-10..-1]
+        // => nil
+        // [3.1.2] > m[-10..7]
+        // => nil
+        // [3.1.2] > m[-10..-5]
+        // => nil
+        // ```
+        Some(protect::Range::Valid { start, len }) => CaptureAt::StartLen(start, len),
     };
     let matched = data.capture_at(at)?;
     interp.try_convert_mut(matched)
