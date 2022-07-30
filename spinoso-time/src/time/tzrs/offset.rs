@@ -224,14 +224,24 @@ impl TryFrom<&str> for Offset {
             // ```
             "Z" | "UTC" => Ok(Self::utc()),
             _ => {
+                // With `Regex`, `\d` is a "Unicode friendly" Perl character
+                // class which matches Unicode property `Nd`. The `Nd` property
+                // includes all sorts of numerals, including Devanagari and
+                // Kannada, which don't parse into an `i32` using `FromStr`.
+                //
+                // `[[:digit:]]` is documented to be an ASCII character class
+                // for only digits 0-9.
+                //
+                // See:
+                // - https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
+                // - https://docs.rs/regex/latest/regex/#ascii-character-classes
                 static HH_MM_MATCHER: Lazy<Regex> =
-                    Lazy::new(|| Regex::new(r"^([\-\+]{1})(\d{2}):?(\d{2})$").unwrap());
-                if HH_MM_MATCHER.is_match(input) {
-                    let caps = HH_MM_MATCHER.captures(input).unwrap();
+                    Lazy::new(|| Regex::new(r"^([\-\+]{1})([[:digit:]]{2}):?([[:digit:]]{2})$").unwrap());
 
-                    let sign = if caps.get(1).unwrap().as_str() == "+" { 1 } else { -1 };
-                    let hours = caps.get(2).unwrap().as_str().parse::<i32>().unwrap();
-                    let minutes = caps.get(3).unwrap().as_str().parse::<i32>().unwrap();
+                if let Some(caps) = HH_MM_MATCHER.captures(input) {
+                    let sign = if &caps[1] == "+" { 1 } else { -1 };
+                    let hours = caps[2].parse::<i32>().expect("Two ASCII digits fit in i32");
+                    let minutes = caps[3].parse::<i32>().expect("Two ASCII digits fit in i32");
 
                     if hours > 23 || minutes > 59 {
                         return Err(TzOutOfRangeError::new().into());
@@ -406,6 +416,23 @@ mod tests {
                 invalid_string,
             );
         }
+    }
+
+    #[test]
+    fn from_str_non_ascii_numeral_fixed_strings() {
+        // This offset string is constructed out of non-ASCII numerals in the
+        // Unicode Nd character class. The sequence contains `+`, Devanagari 1,
+        // Devanagari 0, Kannada 3, and Kannada 6.
+        //
+        // See:
+        //
+        // - https://en.wikipedia.org/wiki/Devanagari_numerals#Table
+        // - https://en.wikipedia.org/wiki/Kannada_script#Numerals
+        let offset = "+१०:೩೬";
+        assert!(matches!(
+            offset_seconds_from_fixed_offset(offset).unwrap_err(),
+            TimeError::TzStringError(_)
+        ));
     }
 
     #[test]
