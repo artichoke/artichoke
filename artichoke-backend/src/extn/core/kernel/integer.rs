@@ -117,6 +117,14 @@ impl<'a> TryFrom<&'a [u8]> for IntegerString<'a> {
     }
 }
 
+impl<'a> TryFrom<&'a str> for IntegerString<'a> {
+    type Error = Utf8Error;
+
+    fn try_from(to_parse: &'a str) -> Result<Self, Self::Error> {
+        to_parse.as_bytes().try_into()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Utf8Error {
     NonAscii,
@@ -139,7 +147,7 @@ impl<'a> IntegerString<'a> {
     #[inline]
     #[must_use]
     pub const fn new() -> Self {
-        Self("")
+        Self(b"")
     }
 
     #[must_use]
@@ -230,20 +238,20 @@ impl<'a> ParseState<'a> {
         }
     }
 
-    fn collect_digit(self, digit: char) -> Self {
+    fn collect_digit(self, digit: u8) -> Self {
         match self {
             Self::Initial(arg) => {
                 let mut digits = String::new();
-                digits.push(digit);
+                digits.push(char::from(digit));
                 Self::Accumulate(arg, Sign::new(), digits)
             }
             Self::Sign(arg, sign) => {
                 let mut digits = String::new();
-                digits.push(digit);
+                digits.push(char::from(digit));
                 Self::Accumulate(arg, sign, digits)
             }
             Self::Accumulate(arg, sign, mut digits) => {
-                digits.push(digit);
+                digits.push(char::from(digit));
                 Self::Accumulate(arg, sign, digits)
             }
         }
@@ -301,22 +309,27 @@ impl<'a> ParseState<'a> {
 
 pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error> {
     let mut state = ParseState::new(arg);
-    let mut chars = arg.inner().chars().skip_while(|c| c.is_whitespace()).peekable();
-    let mut prev = None::<char>;
+    let mut chars = arg
+        .as_bytes()
+        .iter()
+        .copied()
+        .skip_while(|b| b.is_ascii_whitespace())
+        .peekable();
+    let mut prev = None::<u8>;
 
     while let Some(current) = chars.next() {
         // Ignore an embedded underscore (`_`).
-        if current == '_' {
-            let valid_prev = prev.map_or(false, |prev| prev.is_numeric() || prev.is_alphabetic());
+        if current == b'_' {
+            let valid_prev = prev.map_or(false, |prev| prev.is_ascii_alphanumeric());
             let next = chars.peek();
-            let valid_next = next.map_or(false, |next| next.is_numeric() || next.is_alphabetic());
+            let valid_next = next.map_or(false, |next| next.is_ascii_alphanumeric());
             if valid_prev && valid_next {
                 prev = Some(current);
                 continue;
             }
         }
-        if current.is_whitespace() {
-            if let Some('+' | '-') = prev {
+        if current.is_ascii_whitespace() {
+            if let Some(b'+' | b'-') = prev {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
@@ -327,8 +340,8 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
         }
 
         state = match current {
-            '+' => state.set_sign(Sign::Positive)?,
-            '-' => state.set_sign(Sign::Negative)?,
+            b'+' => state.set_sign(Sign::Positive)?,
+            b'-' => state.set_sign(Sign::Negative)?,
             digit => state.collect_digit(digit),
         };
         prev = Some(current);
@@ -356,8 +369,6 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
 
 #[cfg(test)]
 mod tests {
-    use core::str;
-
     use bstr::ByteSlice;
 
     use super::{method as integer, Radix};
@@ -385,49 +396,49 @@ mod tests {
 
     #[test]
     fn no_digits_with_base_prefix() {
-        let result = integer("0x".into(), None);
+        let result = integer("0x".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0x""#.as_bytes().as_bstr()
         );
 
-        let result = integer("0b".into(), None);
+        let result = integer("0b".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0b""#.as_bytes().as_bstr()
         );
 
-        let result = integer("0o".into(), None);
+        let result = integer("0o".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0o""#.as_bytes().as_bstr()
         );
 
-        let result = integer("o".into(), None);
+        let result = integer("o".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "o""#.as_bytes().as_bstr()
         );
 
-        let result = integer("0X".into(), None);
+        let result = integer("0X".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0X""#.as_bytes().as_bstr()
         );
 
-        let result = integer("0B".into(), None);
+        let result = integer("0B".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0B""#.as_bytes().as_bstr()
         );
 
-        let result = integer("0O".into(), None);
+        let result = integer("0O".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0O""#.as_bytes().as_bstr()
         );
 
-        let result = integer("O".into(), None);
+        let result = integer("O".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message(),
             r#"invalid value for Integer(): "O""#.as_bytes().as_bstr()
@@ -436,13 +447,13 @@ mod tests {
 
     #[test]
     fn no_digits_with_invalid_base_prefix() {
-        let result = integer("0z".into(), None);
+        let result = integer("0z".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0z""#.as_bytes().as_bstr()
         );
 
-        let result = integer("0z".into(), Radix::new(12));
+        let result = integer("0z".try_into().unwrap(), Radix::new(12));
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0z""#.as_bytes().as_bstr()
@@ -451,19 +462,19 @@ mod tests {
 
     #[test]
     fn leading_underscore_is_err() {
-        let result = integer("0x_0000001234567".into(), None);
+        let result = integer("0x_0000001234567".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0x_0000001234567""#.as_bytes().as_bstr()
         );
 
-        let result = integer("0_x0000001234567".into(), None);
+        let result = integer("0_x0000001234567".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0_x0000001234567""#.as_bytes().as_bstr()
         );
 
-        let result = integer("___0x0000001234567".into(), None);
+        let result = integer("___0x0000001234567".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "___0x0000001234567""#.as_bytes().as_bstr()
@@ -472,7 +483,7 @@ mod tests {
 
     #[test]
     fn all_spaces_is_err() {
-        let result = integer("    ".into(), None);
+        let result = integer("    ".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "    ""#.as_bytes().as_bstr()
@@ -481,7 +492,7 @@ mod tests {
 
     #[test]
     fn empty_is_err() {
-        let result = integer("".into(), None);
+        let result = integer("".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): """#.as_bytes().as_bstr()
@@ -490,7 +501,7 @@ mod tests {
 
     #[test]
     fn nul_byte_is_err() {
-        let result = integer("\0".into(), None);
+        let result = integer("\0".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             // TODO: should be:
@@ -499,7 +510,7 @@ mod tests {
             r#"invalid value for Integer(): "\x00""#.as_bytes().as_bstr()
         );
 
-        let result = integer("123\0".into(), None);
+        let result = integer("123\0".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             // TODO: should be:
@@ -508,7 +519,7 @@ mod tests {
             r#"invalid value for Integer(): "123\x00""#.as_bytes().as_bstr()
         );
 
-        let result = integer("123\0456".into(), None);
+        let result = integer("123\0456".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             // TODO: should be:
@@ -520,25 +531,25 @@ mod tests {
 
     #[test]
     fn more_than_one_sign_is_err() {
-        let result = integer("++12".into(), None);
+        let result = integer("++12".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "++12""#.as_bytes().as_bstr()
         );
 
-        let result = integer("+-12".into(), None);
+        let result = integer("+-12".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "+-12""#.as_bytes().as_bstr()
         );
 
-        let result = integer("-+12".into(), None);
+        let result = integer("-+12".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "-+12""#.as_bytes().as_bstr()
         );
 
-        let result = integer("--12".into(), None);
+        let result = integer("--12".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "--12""#.as_bytes().as_bstr()
@@ -547,7 +558,7 @@ mod tests {
 
     #[test]
     fn emoji_is_err() {
-        let result = integer("🕐".into(), None);
+        let result = integer("🕐".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "🕐""#.as_bytes().as_bstr()
@@ -557,7 +568,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn invalid_utf8_is_err() {
-        let result = integer(str::from_utf8(b"\xFF").unwrap().into(), None);
+        let result = integer(b"\xFF"[..].try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "🕐""#.as_bytes().as_bstr()
