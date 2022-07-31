@@ -249,12 +249,15 @@ impl TryFrom<&str> for Offset {
                 let hours = caps[2].parse::<i32>().expect("Two ASCII digits fit in i32");
                 let minutes = caps[3].parse::<i32>().expect("Two ASCII digits fit in i32");
 
-                if hours > 23 || minutes > 59 {
-                    return Err(TzOutOfRangeError::new().into());
+                // Check that the parsed offset is in range, which goes from:
+                // - `00:00` to `00:59`
+                // - `00:00` to `23:59`
+                if (0..=23).contains(&hours) && (0..=59).contains(&minutes) {
+                    let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
+                    Ok(Self::fixed(offset_seconds)?)
+                } else {
+                    Err(TzOutOfRangeError::new().into())
                 }
-
-                let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
-                Ok(Self::fixed(offset_seconds)?)
             }
         }
     }
