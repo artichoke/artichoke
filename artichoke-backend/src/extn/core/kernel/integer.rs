@@ -379,6 +379,8 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
 
 #[cfg(test)]
 mod tests {
+    use core::str;
+
     use bstr::ByteSlice;
 
     use super::{method as integer, Radix};
@@ -407,56 +409,48 @@ mod tests {
     #[test]
     fn no_digits_with_base_prefix() {
         let result = integer("0x".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0x""#.as_bytes().as_bstr()
         );
 
         let result = integer("0b".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0b""#.as_bytes().as_bstr()
         );
 
         let result = integer("0o".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0o""#.as_bytes().as_bstr()
         );
 
         let result = integer("o".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "o""#.as_bytes().as_bstr()
         );
 
         let result = integer("0X".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0X""#.as_bytes().as_bstr()
         );
 
         let result = integer("0B".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0B""#.as_bytes().as_bstr()
         );
 
         let result = integer("0O".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0O""#.as_bytes().as_bstr()
         );
 
         let result = integer("O".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message(),
             r#"invalid value for Integer(): "O""#.as_bytes().as_bstr()
@@ -466,17 +460,130 @@ mod tests {
     #[test]
     fn no_digits_with_invalid_base_prefix() {
         let result = integer("0z".into(), None);
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0z""#.as_bytes().as_bstr()
         );
 
         let result = integer("0z".into(), Radix::new(12));
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0z""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn leading_underscore_is_err() {
+        let result = integer("0x_0000001234567".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0x_0000001234567""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("0_x0000001234567".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0_x0000001234567""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("___0x0000001234567".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "___0x0000001234567""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn all_spaces_is_err() {
+        let result = integer("    ".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "    ""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn empty_is_err() {
+        let result = integer("".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): """#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn nul_byte_is_err() {
+        let result = integer("\0".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            // TODO: should be:
+            // r#"invalid value for Integer(): "\\0""#.as_bytes().as_bstr()
+            // See https://github.com/artichoke/artichoke/issues/1350
+            r#"invalid value for Integer(): "\x00""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("123\0".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            // TODO: should be:
+            // r#"invalid value for Integer(): "123\\0""#.as_bytes().as_bstr()
+            // See https://github.com/artichoke/artichoke/issues/1350
+            r#"invalid value for Integer(): "123\x00""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("123\0456".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            // TODO: should be:
+            // r#"invalid value for Integer(): "123\\0456""#.as_bytes().as_bstr()
+            // See https://github.com/artichoke/artichoke/issues/1350
+            r#"invalid value for Integer(): "123\x00456""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn more_than_one_sign_is_err() {
+        let result = integer("++12".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "++12""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("+-12".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "+-12""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-+12".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-+12""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("--12".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "--12""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn emoji_is_err() {
+        let result = integer("🕐".into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "🕐""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid_utf8_is_err() {
+        let result = integer(str::from_utf8(b"\xFF").unwrap().into(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "🕐""#.as_bytes().as_bstr()
         );
     }
 
@@ -515,7 +622,6 @@ mod tests {
         let mut interp = interpreter();
         let radix = interp.convert(1);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             // should be:
@@ -528,7 +634,6 @@ mod tests {
         let mut interp = interpreter();
         let radix = interp.convert(12000);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
-        assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             // should be:
@@ -541,7 +646,6 @@ mod tests {
         let mut interp = interpreter();
         let radix = interp.convert(-12000);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
-        assert!(result.is_err());
         // ```ruby
         // irb(main):003:0> Integer("123", -12000)
         // (irb):3:in `Integer': invalid radix 12000 (ArgumentError)
@@ -586,10 +690,10 @@ mod tests {
         let mut interp = interpreter();
         let radix = interp.convert(i64::MAX);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
-        assert!(result.is_err());
+        result.unwrap_err();
 
         let radix = interp.convert(i64::MIN);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
-        assert!(result.is_err());
+        result.unwrap_err();
     }
 }
