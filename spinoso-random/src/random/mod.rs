@@ -381,20 +381,25 @@ pub fn new_seed() -> Result<[u32; DEFAULT_SEED_CNT], NewSeedError> {
 
 #[cfg(test)]
 mod tests {
-    use std::format;
+    use alloc::string::String;
+    use core::fmt::Write as _;
 
     use super::Random;
 
     #[test]
     fn fmt_debug_does_not_leak_seed() {
         let random = Random::with_seed(874);
-        let debug = format!("{random:?}");
-        assert!(!debug.contains("894"));
-        assert_eq!(debug, "Random {}");
+
+        let mut buf = String::new();
+        write!(&mut buf, "{random:?}").unwrap();
+        assert!(!buf.contains("874"));
+        assert_eq!(buf, "Random {}");
 
         let random = Random::with_seed(123_456);
-        let debug = format!("{random:?}");
-        assert!(!debug.contains("123456"));
-        assert_eq!(debug, "Random {}");
+
+        let mut buf = String::new();
+        write!(&mut buf, "{random:?}").unwrap();
+        assert!(!buf.contains("123456"));
+        assert_eq!(buf, "Random {}");
     }
 }
