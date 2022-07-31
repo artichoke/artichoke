@@ -437,6 +437,22 @@ mod tests {
     }
 
     #[test]
+    fn from_str_fixed_strings_with_newlines() {
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+10:00\n+11:00").unwrap_err(),
+            TimeError::TzStringError(_)
+        ));
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("+10:00\n").unwrap_err(),
+            TimeError::TzStringError(_)
+        ));
+        assert!(matches!(
+            offset_seconds_from_fixed_offset("\n+10:00").unwrap_err(),
+            TimeError::TzStringError(_)
+        ));
+    }
+
+    #[test]
     fn fixed_time_zone_designation() {
         assert_eq!("+0000", fixed_offset_name(0).unwrap());
         assert_eq!("+0000", fixed_offset_name(59).unwrap());
