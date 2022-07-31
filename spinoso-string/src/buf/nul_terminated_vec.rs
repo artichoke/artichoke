@@ -4,7 +4,6 @@ use alloc::vec::Vec;
 use core::borrow::Borrow;
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
-use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut, RangeBounds};
 #[cfg(feature = "std")]
 use std::io::{self, IoSlice, Write};
@@ -347,11 +346,6 @@ impl Buf {
     #[inline]
     pub fn leak<'a>(self) -> &'a mut [u8] {
         self.inner.leak()
-    }
-
-    #[inline]
-    pub fn spare_capacity_mut(&mut self) -> &mut [MaybeUninit<u8>] {
-        self.inner.spare_capacity_mut()
     }
 }
 
