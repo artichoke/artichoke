@@ -101,53 +101,36 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::module_name_repetitions)]
-pub struct IntegerString<'a>(&'a str);
-
-impl<'a> From<&'a str> for IntegerString<'a> {
-    fn from(to_parse: &'a str) -> Self {
-        Self(to_parse)
-    }
-}
+pub struct IntegerString<'a>(&'a [u8]);
 
 impl<'a> TryFrom<&'a [u8]> for IntegerString<'a> {
     type Error = Utf8Error;
 
     fn try_from(to_parse: &'a [u8]) -> Result<Self, Self::Error> {
+        if !to_parse.is_ascii() {
+            return Err(Utf8Error::NonAscii);
+        }
         if to_parse.find_byte(b'\0').is_some() {
             return Err(Utf8Error::NulByte);
         }
-        let to_parse = str::from_utf8(to_parse)?;
-        Ok(to_parse.into())
+        Ok(Self(to_parse))
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Utf8Error {
+    NonAscii,
     NulByte,
-    InvalidUtf8(str::Utf8Error),
 }
 
-impl error::Error for Utf8Error {
-    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match self {
-            Self::NulByte => None,
-            Self::InvalidUtf8(ref err) => Some(err),
-        }
-    }
-}
+impl error::Error for Utf8Error {}
 
 impl fmt::Display for Utf8Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::NonAscii => f.write_str("String contained non-ASCII bytes"),
             Self::NulByte => f.write_str("String contained forbidden NUL byte"),
-            Self::InvalidUtf8(_) => f.write_str("String contained invalid UTF-8 bytes"),
         }
-    }
-}
-
-impl From<str::Utf8Error> for Utf8Error {
-    fn from(err: str::Utf8Error) -> Self {
-        Self::InvalidUtf8(err)
     }
 }
 
@@ -166,14 +149,8 @@ impl<'a> IntegerString<'a> {
 
     #[inline]
     #[must_use]
-    pub fn inner(self) -> &'a str {
-        self.0
-    }
-
-    #[inline]
-    #[must_use]
     pub fn as_bytes(self) -> &'a [u8] {
-        self.0.as_bytes()
+        self.0
     }
 }
 
