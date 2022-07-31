@@ -235,8 +235,9 @@ impl TryFrom<&str> for Offset {
                 // See:
                 // - https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
                 // - https://docs.rs/regex/latest/regex/#ascii-character-classes
-                static HH_MM_MATCHER: Lazy<Regex> =
-                    Lazy::new(|| Regex::new(r"^([\-\+]{1})([[:digit:]]{2}):?([[:digit:]]{2})$").unwrap());
+                static HH_MM_MATCHER: Lazy<Regex> = Lazy::new(|| {
+                    Regex::new(r"^([\-\+]{1})([[:digit:]]{2}):?([[:digit:]]{2})$").expect("regex must compile")
+                });
 
                 if let Some(caps) = HH_MM_MATCHER.captures(input) {
                     let sign = if &caps[1] == "+" { 1 } else { -1 };
