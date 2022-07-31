@@ -239,20 +239,18 @@ impl TryFrom<&str> for Offset {
                     Regex::new(r"^([\-\+]{1})([[:digit:]]{2}):?([[:digit:]]{2})$").expect("regex must compile")
                 });
 
-                if let Some(caps) = HH_MM_MATCHER.captures(input) {
-                    let sign = if &caps[1] == "+" { 1 } else { -1 };
-                    let hours = caps[2].parse::<i32>().expect("Two ASCII digits fit in i32");
-                    let minutes = caps[3].parse::<i32>().expect("Two ASCII digits fit in i32");
+                let caps = HH_MM_MATCHER.captures(input).ok_or_else(TzStringError::new)?;
 
-                    if hours > 23 || minutes > 59 {
-                        return Err(TzOutOfRangeError::new().into());
-                    }
+                let sign = if &caps[1] == "+" { 1 } else { -1 };
+                let hours = caps[2].parse::<i32>().expect("Two ASCII digits fit in i32");
+                let minutes = caps[3].parse::<i32>().expect("Two ASCII digits fit in i32");
 
-                    let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
-                    Ok(Self::fixed(offset_seconds)?)
-                } else {
-                    Err(TzStringError::new().into())
+                if hours > 23 || minutes > 59 {
+                    return Err(TzOutOfRangeError::new().into());
                 }
+
+                let offset_seconds: i32 = sign * ((hours * SECONDS_IN_HOUR) + (minutes * SECONDS_IN_MINUTE));
+                Ok(Self::fixed(offset_seconds)?)
             }
         }
     }
