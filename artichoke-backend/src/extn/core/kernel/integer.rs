@@ -524,6 +524,24 @@ mod tests {
     }
 
     #[test]
+    fn double_underscore_is_err() {
+        let result = integer("0x111__11".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0x111__11""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn trailing_underscore_is_err() {
+        let result = integer("0x111_11_".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0x111_11_""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
     fn all_spaces_is_err() {
         let result = integer("    ".try_into().unwrap(), None);
         assert_eq!(
