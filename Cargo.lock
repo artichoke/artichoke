@@ -12,6 +12,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "android_system_properties"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7ed72e1635e121ca3e79420540282af22da58be50de153d36f81ddc6b83aa9e"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "artichoke"
 version = "0.1.0-pre.0"
 dependencies = [
@@ -280,10 +289,11 @@ checksum = "db0d4cf898abf0081f964436dc980e96670a0f36863e4b83aaacdb65c9d7ccc3"
 
 [[package]]
 name = "iana-time-zone"
-version = "0.1.35"
+version = "0.1.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be8185498dab35f87e740e2a878ec92b2241ef2c12ac85680f8ba7491f1ed76b"
+checksum = "00c0d80ad9ca8d30ca648bf6cb1e3e3326d75071b76dbe143dd4a9cedcd58975"
 dependencies = [
+ "android_system_properties",
  "core-foundation",
  "js-sys",
  "wasm-bindgen",
