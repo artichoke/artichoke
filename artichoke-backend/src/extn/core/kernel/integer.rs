@@ -302,7 +302,6 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
         .copied()
         .skip_while(|b| b.is_ascii_whitespace())
         .peekable();
-    let mut prev = None::<u8>;
 
     match chars.peek() {
         Some(b'+') => {
@@ -360,15 +359,44 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
         }
     };
     // Squeeze leading zeros.
-    let mut chars = chars.skip_while(|&b| b == b'0');
+    loop {
+        if chars.next_if_eq(&b'0').is_some() {
+            if chars.next_if_eq(&b'_').is_some() {
+                match chars.peek() {
+                    None | Some(b'_') => {
+                        let mut message = String::from(r#"invalid value for Integer(): ""#);
+                        format_unicode_debug_into(&mut message, arg.into())?;
+                        message.push('"');
+                        return Err(ArgumentError::from(message).into());
+                    }
+                    Some(_) => {}
+                }
+            }
+        } else if let Some(b'_') = chars.peek() {
+            let mut message = String::from(r#"invalid value for Integer(): ""#);
+            format_unicode_debug_into(&mut message, arg.into())?;
+            message.push('"');
+            return Err(ArgumentError::from(message).into());
+        } else {
+            break;
+        }
+    }
 
     loop {
         match chars.next() {
-            Some(b'_') => {}
+            Some(b'_') => match chars.peek() {
+                None | Some(b'_') => {
+                    let mut message = String::from(r#"invalid value for Integer(): ""#);
+                    format_unicode_debug_into(&mut message, arg.into())?;
+                    message.push('"');
+                    return Err(ArgumentError::from(message).into());
+                }
+                Some(_) => {}
+            },
             Some(b) if RADIX_TABLE[usize::from(b)] <= radix => {
                 state = state.collect_digit(b);
             }
-            Some(b) => {
+            Some(_) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
@@ -425,6 +453,8 @@ mod tests {
         assert_eq!(result.unwrap(), 17);
         let result = integer("0x0_0_0_11".try_into().unwrap(), Radix::new(16));
         assert_eq!(result.unwrap(), 17);
+        let result = integer("0x00000_15".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), 21);
 
         let result = integer("0x___11".try_into().unwrap(), Radix::new(16));
         result.unwrap_err();
@@ -538,6 +568,11 @@ mod tests {
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0x111_11_""#.as_bytes().as_bstr()
+        );
+        let result = integer("0x00000_".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0x00000_""#.as_bytes().as_bstr()
         );
     }
 
