@@ -2,7 +2,7 @@ use std::error;
 use std::fmt::{self, Write as _};
 use std::iter::Iterator;
 use std::num::NonZeroU32;
-use std::str::{self, FromStr};
+use std::str;
 
 use bstr::ByteSlice;
 
@@ -217,7 +217,7 @@ impl Default for Sign {
 enum ParseState<'a> {
     Initial(IntegerString<'a>),
     Sign(IntegerString<'a>, Sign),
-    Accumulate(IntegerString<'a>, Sign, String),
+    Accumulate(IntegerString<'a>, String),
 }
 
 impl<'a> ParseState<'a> {
@@ -228,7 +228,7 @@ impl<'a> ParseState<'a> {
 
     fn set_sign(self, sign: Sign) -> Result<Self, Error> {
         match self {
-            Self::Sign(arg, _) | Self::Accumulate(arg, _, _) => {
+            Self::Sign(arg, _) | Self::Accumulate(arg, _) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
@@ -243,71 +243,58 @@ impl<'a> ParseState<'a> {
             Self::Initial(arg) => {
                 let mut digits = String::new();
                 digits.push(char::from(digit));
-                Self::Accumulate(arg, Sign::new(), digits)
+                Self::Accumulate(arg, digits)
             }
             Self::Sign(arg, sign) => {
                 let mut digits = String::new();
+                if let Sign::Negative = sign {
+                    digits.push('-');
+                }
                 digits.push(char::from(digit));
-                Self::Accumulate(arg, sign, digits)
+                Self::Accumulate(arg, digits)
             }
-            Self::Accumulate(arg, sign, mut digits) => {
+            Self::Accumulate(arg, mut digits) => {
                 digits.push(char::from(digit));
-                Self::Accumulate(arg, sign, digits)
+                Self::Accumulate(arg, digits)
             }
         }
     }
 
-    fn parse(self) -> Result<(String, Option<Radix>), Error> {
-        let (arg, sign, mut digits) = match self {
-            Self::Accumulate(arg, sign, digits) => (arg, sign, digits),
+    fn parse(self) -> Result<String, Error> {
+        match self {
+            Self::Accumulate(_, digits) => Ok(digits),
             Self::Initial(arg) | Self::Sign(arg, _) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
-                return Err(ArgumentError::from(message).into());
+                Err(ArgumentError::from(message).into())
             }
-        };
-        let radix = match digits.as_bytes() {
-            [b'0', b'b' | b'B', ..] => {
-                digits.drain(..2);
-                Radix::new(2)
-            }
-            [b'0', b'o' | b'O', ..] => {
-                digits.drain(..2);
-                Radix::new(8)
-            }
-            [b'0', b'd' | b'D', ..] => {
-                digits.drain(..2);
-                Radix::new(10)
-            }
-            [b'0', b'x' | b'X', ..] => {
-                digits.drain(..2);
-                Radix::new(16)
-            }
-            [x, y, ..] => {
-                let first = char::from(*x);
-                let next = char::from(*y);
-                if !next.is_numeric() && !next.is_alphabetic() {
-                    let mut message = String::from(r#"invalid value for Integer(): ""#);
-                    format_unicode_debug_into(&mut message, arg.into())?;
-                    message.push('"');
-                    return Err(ArgumentError::from(message).into());
-                } else if '0' == first {
-                    Radix::new(8)
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        };
-        if let Sign::Negative = sign {
-            digits.insert(0, '-');
         }
-        Ok((digits, radix))
+    }
+}
+
+const fn radix_table() -> [u32; 256] {
+    let mut table = [255; 256];
+    let mut idx = 0_usize;
+    loop {
+        if idx >= table.len() {
+            return table;
+        }
+        let byte = idx as u8;
+        if byte >= b'0' && byte <= b'9' {
+            table[idx] = (byte - b'0' + 1) as u32;
+        } else if byte >= b'A' && byte <= b'Z' {
+            table[idx] = (byte - b'A' + 11) as u32;
+        } else if byte >= b'a' && byte <= b'z' {
+            table[idx] = (byte - b'a' + 11) as u32;
+        }
+        idx += 1;
     }
 }
 
 pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error> {
+    const RADIX_TABLE: [u32; 256] = radix_table();
+
     let mut state = ParseState::new(arg);
     let mut chars = arg
         .as_bytes()
@@ -317,48 +304,84 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
         .peekable();
     let mut prev = None::<u8>;
 
-    while let Some(current) = chars.next() {
-        // Ignore an embedded underscore (`_`).
-        if current == b'_' {
-            let valid_prev = prev.map_or(false, |prev| prev.is_ascii_alphanumeric());
-            let next = chars.peek();
-            let valid_next = next.map_or(false, |next| next.is_ascii_alphanumeric());
-            if valid_prev && valid_next {
-                prev = Some(current);
-                continue;
+    match chars.peek() {
+        Some(b'+') => {
+            state = state.set_sign(Sign::Positive)?;
+            chars.next();
+        }
+        Some(b'-') => {
+            state = state.set_sign(Sign::Negative)?;
+            chars.next();
+        }
+        Some(_) => {}
+        None => {
+            let mut message = String::from(r#"invalid value for Integer(): ""#);
+            format_unicode_debug_into(&mut message, arg.into())?;
+            message.push('"');
+            return Err(ArgumentError::from(message).into());
+        }
+    }
+    let radix = match chars.peek() {
+        // https://github.com/ruby/ruby/blob/v3_1_2/bignum.c#L4094-L4115
+        Some(b'0') => {
+            chars.next();
+            match chars.peek() {
+                Some(b'b' | b'B') if matches!(radix, None) || matches!(radix, Some(radix) if radix.as_u32() == 2) => {
+                    chars.next();
+                    2
+                }
+                Some(b'o' | b'O') if matches!(radix, None) || matches!(radix, Some(radix) if radix.as_u32() == 8) => {
+                    chars.next();
+                    8
+                }
+                Some(b'd' | b'D') if matches!(radix, None) || matches!(radix, Some(radix) if radix.as_u32() == 10) => {
+                    chars.next();
+                    10
+                }
+                Some(b'x' | b'X') if matches!(radix, None) || matches!(radix, Some(radix) if radix.as_u32() == 16) => {
+                    chars.next();
+                    16
+                }
+                Some(b'b' | b'B' | b'o' | b'O' | b'd' | b'D' | b'x' | b'X') => {
+                    let mut message = String::from(r#"invalid value for Integer(): ""#);
+                    format_unicode_debug_into(&mut message, arg.into())?;
+                    message.push('"');
+                    return Err(ArgumentError::from(message).into());
+                }
+                Some(_) | None => 8,
             }
         }
-        if current.is_ascii_whitespace() {
-            if let Some(b'+' | b'-') = prev {
+        Some(_) => radix.map_or(10, Radix::as_u32),
+        None => {
+            let mut message = String::from(r#"invalid value for Integer(): ""#);
+            format_unicode_debug_into(&mut message, arg.into())?;
+            message.push('"');
+            return Err(ArgumentError::from(message).into());
+        }
+    };
+    // Squeeze leading zeros.
+    let mut chars = chars.skip_while(|&b| b == b'0');
+
+    loop {
+        match chars.next() {
+            Some(b'_') => {}
+            Some(b) if RADIX_TABLE[usize::from(b)] <= radix => {
+                state = state.collect_digit(b);
+            }
+            Some(b) => {
                 let mut message = String::from(r#"invalid value for Integer(): ""#);
                 format_unicode_debug_into(&mut message, arg.into())?;
                 message.push('"');
                 return Err(ArgumentError::from(message).into());
             }
-            prev = Some(current);
-            continue;
+            None => break,
         }
-
-        state = match current {
-            b'+' => state.set_sign(Sign::Positive)?,
-            b'-' => state.set_sign(Sign::Negative)?,
-            digit => state.collect_digit(digit),
-        };
-        prev = Some(current);
     }
 
-    let (src, src_radix) = state.parse()?;
+    let s = state.parse()?;
 
-    let parsed_int = match (radix, src_radix) {
-        (Some(x), Some(y)) if x == y => i64::from_str_radix(src.as_str(), x.as_u32()).ok(),
-        (None, None) => i64::from_str(src.as_str()).ok(),
-        (Some(x), None) | (None, Some(x)) if (2..=36).contains(&x.as_u32()) => {
-            i64::from_str_radix(src.as_str(), x.as_u32()).ok()
-        }
-        _ => None,
-    };
-    if let Some(parsed_int) = parsed_int {
-        Ok(parsed_int)
+    if let Ok(int) = i64::from_str_radix(&*s, radix) {
+        Ok(int)
     } else {
         let mut message = String::from(r#"invalid value for Integer(): ""#);
         format_unicode_debug_into(&mut message, arg.into())?;
@@ -371,7 +394,7 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
 mod tests {
     use bstr::ByteSlice;
 
-    use super::{method as integer, Radix};
+    use super::{method as integer, IntegerString, Radix};
     use crate::test::prelude::*;
 
     #[test]
@@ -392,6 +415,25 @@ mod tests {
     fn radix_new_rejects_too_large_radixes() {
         let radix = Radix::new(12000);
         assert!(radix.is_none());
+    }
+
+    #[test]
+    fn squeeze_leading_zeros() {
+        let result = integer("0x0000000000000011".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), 17);
+        let result = integer("0x00_00000000000011".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), 17);
+        let result = integer("0x0_0_0_11".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), 17);
+
+        let result = integer("0x___11".try_into().unwrap(), Radix::new(16));
+        result.unwrap_err();
+        let result = integer("0x0___11".try_into().unwrap(), Radix::new(16));
+        result.unwrap_err();
+        let result = integer("0x_0__11".try_into().unwrap(), Radix::new(16));
+        result.unwrap_err();
+        let result = integer("0x_00__11".try_into().unwrap(), Radix::new(16));
+        result.unwrap_err();
     }
 
     #[test]
@@ -501,32 +543,9 @@ mod tests {
 
     #[test]
     fn nul_byte_is_err() {
-        let result = integer("\0".try_into().unwrap(), None);
-        assert_eq!(
-            result.unwrap_err().message().as_bstr(),
-            // TODO: should be:
-            // r#"invalid value for Integer(): "\\0""#.as_bytes().as_bstr()
-            // See https://github.com/artichoke/artichoke/issues/1350
-            r#"invalid value for Integer(): "\x00""#.as_bytes().as_bstr()
-        );
-
-        let result = integer("123\0".try_into().unwrap(), None);
-        assert_eq!(
-            result.unwrap_err().message().as_bstr(),
-            // TODO: should be:
-            // r#"invalid value for Integer(): "123\\0""#.as_bytes().as_bstr()
-            // See https://github.com/artichoke/artichoke/issues/1350
-            r#"invalid value for Integer(): "123\x00""#.as_bytes().as_bstr()
-        );
-
-        let result = integer("123\0456".try_into().unwrap(), None);
-        assert_eq!(
-            result.unwrap_err().message().as_bstr(),
-            // TODO: should be:
-            // r#"invalid value for Integer(): "123\\0456""#.as_bytes().as_bstr()
-            // See https://github.com/artichoke/artichoke/issues/1350
-            r#"invalid value for Integer(): "123\x00456""#.as_bytes().as_bstr()
-        );
+        IntegerString::try_from("\0").unwrap_err();
+        IntegerString::try_from("123\0").unwrap_err();
+        IntegerString::try_from("123\0456").unwrap_err();
     }
 
     #[test]
@@ -558,11 +577,7 @@ mod tests {
 
     #[test]
     fn emoji_is_err() {
-        let result = integer("🕐".try_into().unwrap(), None);
-        assert_eq!(
-            result.unwrap_err().message().as_bstr(),
-            r#"invalid value for Integer(): "🕐""#.as_bytes().as_bstr()
-        );
+        IntegerString::try_from("🕐").unwrap_err();
     }
 
     #[test]
