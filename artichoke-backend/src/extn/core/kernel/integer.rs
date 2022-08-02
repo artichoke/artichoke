@@ -251,18 +251,13 @@ impl<'a> ParseState<'a> {
     fn parse(self) -> Result<String, Error> {
         match self {
             Self::Accumulate(_, digits) => Ok(digits),
-            Self::Initial(arg) | Self::Sign(arg, _) => {
-                let mut message = String::from(r#"invalid value for Integer(): ""#);
-                format_unicode_debug_into(&mut message, arg.into())?;
-                message.push('"');
-                Err(ArgumentError::from(message).into())
-            }
+            Self::Initial(arg) | Self::Sign(arg, _) => Err(arg.to_error()),
         }
     }
 }
 
 const fn radix_table() -> [u32; 256] {
-    let mut table = [255; 256];
+    let mut table = [u32::MAX; 256];
     let mut idx = 0_usize;
     loop {
         if idx >= table.len() {
@@ -280,9 +275,9 @@ const fn radix_table() -> [u32; 256] {
     }
 }
 
-pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error> {
-    const RADIX_TABLE: [u32; 256] = radix_table();
+static RADIX_TABLE: [u32; 256] = radix_table();
 
+pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error> {
     let mut state = ParseState::new(arg);
     let mut chars = arg
         .as_bytes()
