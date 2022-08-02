@@ -1,5 +1,4 @@
-use std::error;
-use std::fmt::{self, Write as _};
+use std::fmt::Write as _;
 use std::iter::Iterator;
 use std::num::NonZeroU32;
 use std::str;
@@ -104,42 +103,34 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
 pub struct IntegerString<'a>(&'a [u8]);
 
 impl<'a> TryFrom<&'a [u8]> for IntegerString<'a> {
-    type Error = Utf8Error;
+    type Error = Error;
 
     fn try_from(to_parse: &'a [u8]) -> Result<Self, Self::Error> {
         if !to_parse.is_ascii() {
-            return Err(Utf8Error::NonAscii);
+            return Err(int_to_argument_error(to_parse));
         }
         if to_parse.find_byte(b'\0').is_some() {
-            return Err(Utf8Error::NulByte);
+            return Err(int_to_argument_error(to_parse));
         }
         Ok(Self(to_parse))
     }
 }
 
 impl<'a> TryFrom<&'a str> for IntegerString<'a> {
-    type Error = Utf8Error;
+    type Error = Error;
 
     fn try_from(to_parse: &'a str) -> Result<Self, Self::Error> {
         to_parse.as_bytes().try_into()
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Utf8Error {
-    NonAscii,
-    NulByte,
-}
-
-impl error::Error for Utf8Error {}
-
-impl fmt::Display for Utf8Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::NonAscii => f.write_str("String contained non-ASCII bytes"),
-            Self::NulByte => f.write_str("String contained forbidden NUL byte"),
-        }
+fn int_to_argument_error(arg: &[u8]) -> Error {
+    let mut message = String::from(r#"invalid value for Integer(): ""#);
+    if let Err(err) = format_unicode_debug_into(&mut message, arg) {
+        return err.into();
     }
+    message.push('"');
+    ArgumentError::from(message).into()
 }
 
 impl<'a> IntegerString<'a> {
@@ -160,6 +151,11 @@ impl<'a> IntegerString<'a> {
     pub fn as_bytes(self) -> &'a [u8] {
         self.0
     }
+
+    #[must_use]
+    pub fn to_error(self) -> Error {
+        int_to_argument_error(self.0)
+    }
 }
 
 impl<'a> TryConvertMut<&'a mut Value, IntegerString<'a>> for Artichoke {
@@ -176,10 +172,7 @@ impl<'a> TryConvertMut<&'a mut Value, IntegerString<'a>> for Artichoke {
             if let Some(converted) = IntegerString::from_slice(arg) {
                 Ok(converted)
             } else {
-                let mut message = String::from(r#"invalid value for Integer(): ""#);
-                format_unicode_debug_into(&mut message, arg)?;
-                message.push('"');
-                Err(ArgumentError::from(message).into())
+                Err(int_to_argument_error(arg))
             }
         } else {
             Err(TypeError::from(message).into())
@@ -228,12 +221,7 @@ impl<'a> ParseState<'a> {
 
     fn set_sign(self, sign: Sign) -> Result<Self, Error> {
         match self {
-            Self::Sign(arg, _) | Self::Accumulate(arg, _) => {
-                let mut message = String::from(r#"invalid value for Integer(): ""#);
-                format_unicode_debug_into(&mut message, arg.into())?;
-                message.push('"');
-                Err(ArgumentError::from(message).into())
-            }
+            Self::Sign(arg, _) | Self::Accumulate(arg, _) => Err(arg.to_error()),
             Self::Initial(arg) => Ok(ParseState::Sign(arg, sign)),
         }
     }
@@ -313,12 +301,7 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
             chars.next();
         }
         Some(_) => {}
-        None => {
-            let mut message = String::from(r#"invalid value for Integer(): ""#);
-            format_unicode_debug_into(&mut message, arg.into())?;
-            message.push('"');
-            return Err(ArgumentError::from(message).into());
-        }
+        None => return Err(arg.to_error()),
     }
     let radix = match chars.peek() {
         // https://github.com/ruby/ruby/blob/v3_1_2/bignum.c#L4094-L4115
@@ -341,42 +324,24 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
                     chars.next();
                     16
                 }
-                Some(b'b' | b'B' | b'o' | b'O' | b'd' | b'D' | b'x' | b'X') => {
-                    let mut message = String::from(r#"invalid value for Integer(): ""#);
-                    format_unicode_debug_into(&mut message, arg.into())?;
-                    message.push('"');
-                    return Err(ArgumentError::from(message).into());
-                }
+                Some(b'b' | b'B' | b'o' | b'O' | b'd' | b'D' | b'x' | b'X') => return Err(arg.to_error()),
                 Some(_) | None => 8,
             }
         }
         Some(_) => radix.map_or(10, Radix::as_u32),
-        None => {
-            let mut message = String::from(r#"invalid value for Integer(): ""#);
-            format_unicode_debug_into(&mut message, arg.into())?;
-            message.push('"');
-            return Err(ArgumentError::from(message).into());
-        }
+        None => return Err(arg.to_error()),
     };
     // Squeeze leading zeros.
     loop {
         if chars.next_if_eq(&b'0').is_some() {
             if chars.next_if_eq(&b'_').is_some() {
                 match chars.peek() {
-                    None | Some(b'_') => {
-                        let mut message = String::from(r#"invalid value for Integer(): ""#);
-                        format_unicode_debug_into(&mut message, arg.into())?;
-                        message.push('"');
-                        return Err(ArgumentError::from(message).into());
-                    }
+                    None | Some(b'_') => return Err(arg.to_error()),
                     Some(_) => {}
                 }
             }
         } else if let Some(b'_') = chars.peek() {
-            let mut message = String::from(r#"invalid value for Integer(): ""#);
-            format_unicode_debug_into(&mut message, arg.into())?;
-            message.push('"');
-            return Err(ArgumentError::from(message).into());
+            return Err(arg.to_error());
         } else {
             break;
         }
@@ -385,23 +350,13 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
     loop {
         match chars.next() {
             Some(b'_') => match chars.peek() {
-                None | Some(b'_') => {
-                    let mut message = String::from(r#"invalid value for Integer(): ""#);
-                    format_unicode_debug_into(&mut message, arg.into())?;
-                    message.push('"');
-                    return Err(ArgumentError::from(message).into());
-                }
+                None | Some(b'_') => return Err(arg.to_error()),
                 Some(_) => {}
             },
             Some(b) if RADIX_TABLE[usize::from(b)] <= radix => {
                 state = state.collect_digit(b);
             }
-            Some(_) => {
-                let mut message = String::from(r#"invalid value for Integer(): ""#);
-                format_unicode_debug_into(&mut message, arg.into())?;
-                message.push('"');
-                return Err(ArgumentError::from(message).into());
-            }
+            Some(_) => return Err(arg.to_error()),
             None => break,
         }
     }
@@ -411,10 +366,7 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
     if let Ok(int) = i64::from_str_radix(&*s, radix) {
         Ok(int)
     } else {
-        let mut message = String::from(r#"invalid value for Integer(): ""#);
-        format_unicode_debug_into(&mut message, arg.into())?;
-        message.push('"');
-        Err(ArgumentError::from(message).into())
+        Err(arg.to_error())
     }
 }
 
