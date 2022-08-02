@@ -4,6 +4,7 @@
 //!
 //! [RFC 4122]: https://tools.ietf.org/html/rfc4122#section-4.4
 
+use rand::rngs::OsRng;
 use rand::{CryptoRng, RngCore};
 use scolapasta_hex as hex;
 
@@ -30,7 +31,7 @@ pub fn v4() -> Result<String, Error> {
     }
 
     let mut bytes = [0; OCTETS];
-    get_random_bytes(rand::thread_rng(), &mut bytes)?;
+    get_random_bytes(OsRng, &mut bytes)?;
 
     // Per RFC 4122, Section 4.4, set bits for version and `clock_seq_hi_and_reserved`.
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
