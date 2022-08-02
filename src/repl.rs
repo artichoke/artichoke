@@ -216,7 +216,7 @@ where
     interp.push_context(context)?;
     let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
 
-    let mut rl = Editor::<()>::new();
+    let mut rl = Editor::<()>::new().map_err(UnhandledReadlineError)?;
     // If a code block is open, accumulate code from multiple read lines in this
     // mutable `String` buffer.
     let mut buf = String::new();
