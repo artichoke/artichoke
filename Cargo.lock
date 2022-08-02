@@ -104,12 +104,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37ccbd214614c6783386c1af30caf03192f17891059cecc394b4fb119e363de3"
 
 [[package]]
-name = "byte-slice-cast"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87c5fdd0166095e1d463fc6cc01aa8ce547ad77a4e84d42eb6762b084e28067e"
-
-[[package]]
 name = "bytecount"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -828,11 +822,10 @@ dependencies = [
 
 [[package]]
 name = "tzdb"
-version = "0.2.7"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02a29f1fbaa871320d9d6c81e19c650837a3959cf463472408c934c49af7df5f"
+checksum = "7f6bf696b9fc4c9274ac1faf528e4d0c61de641bd51790ce75377c35eec57553"
 dependencies = [
- "byte-slice-cast",
  "iana-time-zone",
  "phf",
  "phf_shared",
