@@ -2,11 +2,7 @@
 vulnerability = "deny"
 unmaintained = "deny"
 notice = "warn"
-ignore = [
-  # time/chrono problems, have not been a problem in practice
-  # see: https://github.com/chronotope/chrono/issues/499
-  "RUSTSEC-2020-0159",
-]
+ignore = []
 
 [licenses]
 unlicensed = "deny"
