@@ -96,7 +96,8 @@ use std::collections::TryReserveError;
 use std::error;
 
 use rand::distributions::Alphanumeric;
-use rand::{self, CryptoRng, Rng, RngCore};
+use rand::rngs::OsRng;
+use rand::{CryptoRng, Rng, RngCore};
 use scolapasta_hex as hex;
 
 mod uuid;
@@ -456,7 +457,7 @@ pub fn random_bytes(len: Option<i64>) -> Result<Vec<u8>, Error> {
     let mut bytes = Vec::new();
     bytes.try_reserve(len)?;
     bytes.resize(len, 0);
-    get_random_bytes(rand::thread_rng(), &mut bytes)?;
+    get_random_bytes(OsRng, &mut bytes)?;
     Ok(bytes)
 }
 
@@ -578,7 +579,7 @@ pub fn random_number(max: Max) -> Result<Rand, DomainError> {
         }
     }
 
-    get_random_number(rand::thread_rng(), max)
+    get_random_number(OsRng, max)
 }
 
 /// Generate a hex-encoded [`String`] of random bytes.
@@ -725,7 +726,7 @@ pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, Error> {
         None => DEFAULT_REQUESTED_BYTES,
     };
 
-    let string = get_alphanumeric(rand::thread_rng(), len)?;
+    let string = get_alphanumeric(OsRng, len)?;
     Ok(string)
 }
 

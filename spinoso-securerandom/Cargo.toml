@@ -15,7 +15,7 @@ categories = ["algorithms"]
 
 [dependencies]
 base64 = { version = "0.13.0", default-features = false, features = ["alloc"] }
-rand = "0.8.0"
+rand = { version = "0.8.0", default-features = false, features = ["getrandom"] }
 scolapasta-hex = { version = "0.2.0", path = "../scolapasta-hex", default-features = false, features = ["alloc"] }
 
 [package.metadata.docs.rs]
