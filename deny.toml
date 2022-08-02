@@ -11,6 +11,7 @@ allow = [
   "Apache-2.0 WITH LLVM-exception",
   "BSL-1.0",
   "MIT",
+  "Unicode-DFS-2016",
 ]
 deny = []
 copyleft = "deny"
