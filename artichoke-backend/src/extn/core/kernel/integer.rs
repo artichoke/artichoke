@@ -72,7 +72,7 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
                     .ok_or_else(|| ArgumentError::with_message("invalid radix"))?;
                 match u32::try_from(num) {
                     // See https://github.com/ruby/ruby/blob/v2_6_3/bignum.c#L4106-L4110
-                    Ok(1) => return Ok(Some(Radix::default())),
+                    Ok(1) => return Ok(None),
                     Ok(radix) => radix,
                     Err(_) => {
                         let mut message = String::new();
@@ -375,41 +375,65 @@ mod tests {
     #[test]
     fn radix_new_validates_radix_is_nonzero() {
         let radix = Radix::new(0);
-        assert!(radix.is_none());
+        assert_eq!(radix, None);
     }
 
     #[test]
     fn radix_new_parses_valid_radixes() {
         for r in 2..=36 {
             let radix = Radix::new(r);
-            assert!(radix.is_some());
+            let radix = radix.unwrap();
+            assert_eq!(radix.as_u32(), r);
         }
     }
 
     #[test]
     fn radix_new_rejects_too_large_radixes() {
         let radix = Radix::new(12000);
-        assert!(radix.is_none());
+        assert_eq!(radix, None);
     }
 
     #[test]
     fn squeeze_leading_zeros() {
         let result = integer("0x0000000000000011".try_into().unwrap(), Radix::new(16));
         assert_eq!(result.unwrap(), 17);
+        let result = integer("-0x0000000000000011".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), -17);
+
         let result = integer("0x00_00000000000011".try_into().unwrap(), Radix::new(16));
         assert_eq!(result.unwrap(), 17);
+        let result = integer("-0x00_00000000000011".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), -17);
+
         let result = integer("0x0_0_0_11".try_into().unwrap(), Radix::new(16));
         assert_eq!(result.unwrap(), 17);
-        let result = integer("0x00000_15".try_into().unwrap(), Radix::new(16));
-        assert_eq!(result.unwrap(), 21);
+        let result = integer("-0x0_0_0_11".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), -17);
 
+        let result = integer("-0x00000_15".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), -21);
+    }
+
+    #[test]
+    fn squeeze_leading_zeros_enforces_no_double_underscore() {
         let result = integer("0x___11".try_into().unwrap(), Radix::new(16));
         result.unwrap_err();
+        let result = integer("-0x___11".try_into().unwrap(), Radix::new(16));
+        result.unwrap_err();
+
         let result = integer("0x0___11".try_into().unwrap(), Radix::new(16));
         result.unwrap_err();
+        let result = integer("-0x0___11".try_into().unwrap(), Radix::new(16));
+        result.unwrap_err();
+
         let result = integer("0x_0__11".try_into().unwrap(), Radix::new(16));
         result.unwrap_err();
+        let result = integer("-0x_0__11".try_into().unwrap(), Radix::new(16));
+        result.unwrap_err();
+
         let result = integer("0x_00__11".try_into().unwrap(), Radix::new(16));
+        result.unwrap_err();
+        let result = integer("-0x_00__11".try_into().unwrap(), Radix::new(16));
         result.unwrap_err();
     }
 
@@ -439,6 +463,12 @@ mod tests {
             r#"invalid value for Integer(): "o""#.as_bytes().as_bstr()
         );
 
+        let result = integer("0d".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "0d""#.as_bytes().as_bstr()
+        );
+
         let result = integer("0X".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
@@ -459,8 +489,77 @@ mod tests {
 
         let result = integer("O".try_into().unwrap(), None);
         assert_eq!(
-            result.unwrap_err().message(),
+            result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "O""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("0D".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message(),
+            r#"invalid value for Integer(): "0D""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn no_digits_with_base_prefix_neg() {
+        let result = integer("-0x".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0x""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-0b".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0b""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-0o".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0o""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-o".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-o""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-0d".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0d""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-0X".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0X""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-0B".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0B""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-0O".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0O""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-O".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-O""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-0D".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message(),
+            r#"invalid value for Integer(): "-0D""#.as_bytes().as_bstr()
         );
     }
 
@@ -477,6 +576,318 @@ mod tests {
             result.unwrap_err().message().as_bstr(),
             r#"invalid value for Integer(): "0z""#.as_bytes().as_bstr()
         );
+    }
+
+    #[test]
+    fn no_digits_with_invalid_base_prefix_neg() {
+        let result = integer("-0z".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0z""#.as_bytes().as_bstr()
+        );
+
+        let result = integer("-0z".try_into().unwrap(), Radix::new(12));
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "-0z""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn binary_requires_alpha_prefix() {
+        let result = integer("B1".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "B1""#.as_bytes().as_bstr()
+        );
+        let result = integer("b1".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "b1""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn binary_parses() {
+        let result = integer("0B1111".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0b1111".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0B1111".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0b1111".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn binary_with_given_2_radix_parses() {
+        let result = integer("0B1111".try_into().unwrap(), Radix::new(2));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0b1111".try_into().unwrap(), Radix::new(2));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0B1111".try_into().unwrap(), Radix::new(2));
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0b1111".try_into().unwrap(), Radix::new(2));
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn binary_with_mismatched_radix_is_err() {
+        let result = integer("0B1111".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("0b1111".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0B1111".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0b1111".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn binary_with_digits_out_of_radix_is_err() {
+        let result = integer("0B1111AH".try_into().unwrap(), None);
+        result.unwrap_err();
+        let result = integer("0b1111ah".try_into().unwrap(), None);
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn octal_requires_alpha_prefix() {
+        let result = integer("O7".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "O7""#.as_bytes().as_bstr()
+        );
+        let result = integer("o7".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "o7""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn octal_parses() {
+        let result = integer("0O17".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0o17".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0O17".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0o17".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn octal_with_given_8_radix_parses() {
+        let result = integer("0O17".try_into().unwrap(), Radix::new(8));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0o17".try_into().unwrap(), Radix::new(8));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0O17".try_into().unwrap(), Radix::new(8));
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0o17".try_into().unwrap(), Radix::new(8));
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn octal_with_mismatched_radix_is_err() {
+        let result = integer("0O17".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("0o17".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0O17".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0o17".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn octal_with_digits_out_of_radix_is_err() {
+        let result = integer("0O17AH".try_into().unwrap(), None);
+        result.unwrap_err();
+        let result = integer("0O17ah".try_into().unwrap(), None);
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn decimal_requires_alpha_prefix() {
+        let result = integer("D9".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "D9""#.as_bytes().as_bstr()
+        );
+        let result = integer("d9".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "d9""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn decimal_parses() {
+        let result = integer("0D15".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0d15".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0D15".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0d15".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn decimal_with_given_10_radix_parses() {
+        let result = integer("0D15".try_into().unwrap(), Radix::new(10));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0d15".try_into().unwrap(), Radix::new(10));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0D15".try_into().unwrap(), Radix::new(10));
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0d15".try_into().unwrap(), Radix::new(10));
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn decimal_with_mismatched_radix_is_err() {
+        let result = integer("0D15".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("0d15".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0D15".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0d15".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn decimal_with_digits_out_of_radix_is_err() {
+        let result = integer("0D15AH".try_into().unwrap(), None);
+        result.unwrap_err();
+        let result = integer("0d15ah".try_into().unwrap(), None);
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn hex_requires_alpha_prefix() {
+        let result = integer("XF".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "XF""#.as_bytes().as_bstr()
+        );
+        let result = integer("xF".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "xF""#.as_bytes().as_bstr()
+        );
+        let result = integer("Xf".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "Xf""#.as_bytes().as_bstr()
+        );
+        let result = integer("xf".try_into().unwrap(), None);
+        assert_eq!(
+            result.unwrap_err().message().as_bstr(),
+            r#"invalid value for Integer(): "xf""#.as_bytes().as_bstr()
+        );
+    }
+
+    #[test]
+    fn hex_parses() {
+        let result = integer("0XF".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0xF".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0XF".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0xF".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("0Xf".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0xf".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0Xf".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0xf".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn hex_with_given_16_radix_parses() {
+        let result = integer("0XF".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0xF".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0XF".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0xF".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("0Xf".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("0xf".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-0Xf".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), -15);
+        let result = integer("-0xf".try_into().unwrap(), Radix::new(16));
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn hex_with_mismatched_radix_is_err() {
+        let result = integer("0XF".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("0xF".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0XF".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0xF".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("0Xf".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("0xf".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0Xf".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+        let result = integer("-0xf".try_into().unwrap(), Radix::new(24));
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn hex_with_digits_out_of_radix_is_err() {
+        let result = integer("0XFAH".try_into().unwrap(), None);
+        result.unwrap_err();
+        let result = integer("0xFah".try_into().unwrap(), None);
+        result.unwrap_err();
+        let result = integer("0XfAH".try_into().unwrap(), None);
+        result.unwrap_err();
+        let result = integer("0xfah".try_into().unwrap(), None);
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn digits_out_of_radix_is_err() {
+        let result = integer("17AH".try_into().unwrap(), Radix::new(12));
+        result.unwrap_err();
+        let result = integer("17ah".try_into().unwrap(), Radix::new(12));
+        result.unwrap_err();
+
+        let result = integer("17AH".try_into().unwrap(), None);
+        result.unwrap_err();
+        let result = integer("17ah".try_into().unwrap(), None);
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn parsing_is_case_insensitive() {
+        // ```
+        // [3.1.2] > Integer('abcdefgxyz', 36)
+        // => 1047601316316923
+        // [3.1.2] > Integer('abcdefgxyz'.upcase, 36)
+        // => 1047601316316923
+        // ```
+        let result = integer("abcdefgxyz".try_into().unwrap(), Radix::new(36));
+        assert_eq!(result.unwrap(), 1_047_601_316_316_923);
+        let result = integer("ABCDEFGXYZ".try_into().unwrap(), Radix::new(36));
+        assert_eq!(result.unwrap(), 1_047_601_316_316_923);
     }
 
     #[test]
@@ -581,13 +992,8 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn invalid_utf8_is_err() {
-        let result = integer(b"\xFF"[..].try_into().unwrap(), None);
-        assert_eq!(
-            result.unwrap_err().message().as_bstr(),
-            r#"invalid value for Integer(): "🕐""#.as_bytes().as_bstr()
-        );
+        IntegerString::try_from(&b"\xFF"[..]).unwrap_err();
     }
 
     #[test]
@@ -595,7 +1001,7 @@ mod tests {
         let mut interp = interpreter();
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(None);
         let result = result.unwrap();
-        assert!(result.is_none());
+        assert_eq!(result, None);
     }
 
     #[test]
@@ -604,20 +1010,27 @@ mod tests {
         let radix = interp.convert(0);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
         let result = result.unwrap();
-        assert!(
-            result.is_none(),
+        assert_eq!(
+            result, None,
             "0 radix should parse to None and fallback to literal prefix parsing"
         );
     }
 
     #[test]
     fn negative_one_radix_parses_to_none() {
+        // ```
+        // [3.1.2] > Integer('0x123f'.upcase, -1)
+        // => 4671
+        // [3.1.2] > Integer('0x123f'.upcase, 16)
+        // => 4671
         let mut interp = interpreter();
-        let expected = Radix::new(10).unwrap();
         let radix = interp.convert(-1);
         let result: Result<Option<Radix>, _> = interp.try_convert_mut(Some(radix));
         let result = result.unwrap();
-        assert_eq!(result, Some(expected), "-1 radix should parse to base 10");
+        assert_eq!(
+            result, None,
+            "-1 radix should parse to None and fallback to literal prefix parsing"
+        );
     }
 
     #[test]
