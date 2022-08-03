@@ -303,25 +303,42 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
         // https://github.com/ruby/ruby/blob/v3_1_2/bignum.c#L4094-L4115
         Some(b'0') => {
             chars.next();
-            match chars.peek() {
-                Some(b'b' | b'B') if matches!(radix, None) || matches!(radix, Some(radix) if radix.as_u32() == 2) => {
+            match (chars.peek(), radix) {
+                (Some(b'b' | b'B'), None) => {
                     chars.next();
                     2
                 }
-                Some(b'o' | b'O') if matches!(radix, None) || matches!(radix, Some(radix) if radix.as_u32() == 8) => {
+                (Some(b'b' | b'B'), Some(radix)) if radix.as_u32() == 2 => {
+                    chars.next();
+                    2
+                }
+                (Some(b'o' | b'O'), None) => {
                     chars.next();
                     8
                 }
-                Some(b'd' | b'D') if matches!(radix, None) || matches!(radix, Some(radix) if radix.as_u32() == 10) => {
+                (Some(b'o' | b'O'), Some(radix)) if radix.as_u32() == 8 => {
+                    chars.next();
+                    8
+                }
+                (Some(b'd' | b'D'), None) => {
                     chars.next();
                     10
                 }
-                Some(b'x' | b'X') if matches!(radix, None) || matches!(radix, Some(radix) if radix.as_u32() == 16) => {
+                (Some(b'd' | b'D'), Some(radix)) if radix.as_u32() == 10 => {
+                    chars.next();
+                    10
+                }
+                (Some(b'x' | b'X'), None) => {
                     chars.next();
                     16
                 }
-                Some(b'b' | b'B' | b'o' | b'O' | b'd' | b'D' | b'x' | b'X') => return Err(arg.to_error()),
-                Some(_) | None => 8,
+                (Some(b'x' | b'X'), Some(radix)) if radix.as_u32() == 16 => {
+                    chars.next();
+                    16
+                }
+                (Some(b'b' | b'B' | b'o' | b'O' | b'd' | b'D' | b'x' | b'X'), Some(_)) => return Err(arg.to_error()),
+                (Some(_) | None, None) => 8,
+                (Some(_) | None, Some(radix)) => radix.as_u32(),
             }
         }
         Some(_) => radix.map_or(10, Radix::as_u32),
@@ -392,6 +409,20 @@ mod tests {
     fn radix_new_rejects_too_large_radixes() {
         let radix = Radix::new(12000);
         assert_eq!(radix, None);
+    }
+
+    #[test]
+    fn leading_zero_does_not_imply_octal_when_given_radix() {
+        // ```
+        // [3.1.2] > Integer('017', 12)
+        // => 19
+        // [3.1.2] > Integer('-017', 12)
+        // => -19
+        // ```
+        let result = integer("017".try_into().unwrap(), Radix::new(12));
+        assert_eq!(result.unwrap(), 19);
+        let result = integer("-017".try_into().unwrap(), Radix::new(12));
+        assert_eq!(result.unwrap(), -19);
     }
 
     #[test]
@@ -595,7 +626,7 @@ mod tests {
     }
 
     #[test]
-    fn binary_requires_alpha_prefix() {
+    fn binary_alpha_requires_zero_prefix() {
         let result = integer("B1".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
@@ -653,7 +684,7 @@ mod tests {
     }
 
     #[test]
-    fn octal_requires_alpha_prefix() {
+    fn octal_alpha_requires_zero_prefix() {
         let result = integer("O7".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
@@ -691,6 +722,22 @@ mod tests {
     }
 
     #[test]
+    fn octal_no_alpha_parses() {
+        let result = integer("017".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-017".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
+    fn octal_no_alpha_with_given_8_radix_parses() {
+        let result = integer("017".try_into().unwrap(), Radix::new(8));
+        assert_eq!(result.unwrap(), 15);
+        let result = integer("-017".try_into().unwrap(), Radix::new(8));
+        assert_eq!(result.unwrap(), -15);
+    }
+
+    #[test]
     fn octal_with_mismatched_radix_is_err() {
         let result = integer("0O17".try_into().unwrap(), Radix::new(24));
         result.unwrap_err();
@@ -706,12 +753,12 @@ mod tests {
     fn octal_with_digits_out_of_radix_is_err() {
         let result = integer("0O17AH".try_into().unwrap(), None);
         result.unwrap_err();
-        let result = integer("0O17ah".try_into().unwrap(), None);
+        let result = integer("0o17ah".try_into().unwrap(), None);
         result.unwrap_err();
     }
 
     #[test]
-    fn decimal_requires_alpha_prefix() {
+    fn decimal_alpha_requires_zero_prefix() {
         let result = integer("D9".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
@@ -769,7 +816,7 @@ mod tests {
     }
 
     #[test]
-    fn hex_requires_alpha_prefix() {
+    fn hex_alpha_requires_zero_prefix() {
         let result = integer("XF".try_into().unwrap(), None);
         assert_eq!(
             result.unwrap_err().message().as_bstr(),
