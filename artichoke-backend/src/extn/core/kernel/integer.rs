@@ -412,6 +412,20 @@ mod tests {
     }
 
     #[test]
+    fn parse_int_max() {
+        let result = integer("9_223_372_036_854_775_807".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), i64::MAX);
+        let result = integer("+9_223_372_036_854_775_807".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), i64::MAX);
+    }
+
+    #[test]
+    fn parse_int_min() {
+        let result = integer("-9_223_372_036_854_775_808".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), i64::MIN);
+    }
+
+    #[test]
     fn leading_zero_does_not_imply_octal_when_given_radix() {
         // ```
         // [3.1.2] > Integer('017', 12)
