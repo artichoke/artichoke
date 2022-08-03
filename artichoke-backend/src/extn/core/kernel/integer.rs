@@ -229,12 +229,12 @@ impl<'a> ParseState<'a> {
     fn collect_digit(self, digit: u8) -> Self {
         match self {
             Self::Initial(arg) => {
-                let mut digits = String::new();
+                let mut digits = String::with_capacity(10);
                 digits.push(char::from(digit));
                 Self::Accumulate(arg, digits)
             }
             Self::Sign(arg, sign) => {
-                let mut digits = String::new();
+                let mut digits = String::with_capacity(10);
                 if let Sign::Negative = sign {
                     digits.push('-');
                 }
