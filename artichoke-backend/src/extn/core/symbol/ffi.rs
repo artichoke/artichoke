@@ -82,9 +82,9 @@ unsafe extern "C" fn mrb_intern_check(mrb: *mut sys::mrb_state, name: *const c_c
 #[no_mangle]
 unsafe extern "C" fn mrb_intern_check_cstr(mrb: *mut sys::mrb_state, name: *const c_char) -> sys::mrb_sym {
     let string = CStr::from_ptr(name);
-    let bytes = string.to_bytes();
+    let bytes = string.to_bytes_with_nul();
     unwrap_interpreter!(mrb, to => guard, or_else = 0);
-    if let Ok(Some(sym)) = guard.check_interned_bytes(bytes) {
+    if let Ok(Some(sym)) = guard.check_interned_bytes_with_trailing_nul(bytes) {
         sym
     } else {
         0
