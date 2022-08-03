@@ -206,6 +206,7 @@ impl Default for Sign {
     }
 }
 
+#[must_use]
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 enum ParseState<'a> {
     Initial(IntegerString<'a>),
