@@ -69,6 +69,10 @@
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
 
+#[cfg(feature = "dhat-heap")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
+
 #[macro_use]
 extern crate rust_embed;
 
@@ -104,6 +108,9 @@ struct Args {
 
 /// Main entry point.
 pub fn main() {
+    #[cfg(feature = "dhat-heap")]
+    let profiler = dhat::Profiler::new_heap();
+
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
 
     let command = Command::new("spec-runner")
@@ -148,7 +155,12 @@ pub fn main() {
         process::exit(1);
     };
 
-    match try_main(&mut stderr, &args) {
+    let result = try_main(&mut stderr, &args);
+
+    #[cfg(feature = "dhat-heap")]
+    drop(profiler);
+
+    match result {
         Ok(true) => process::exit(0),
         Ok(false) => process::exit(if quiet { 0 } else { 1 }),
         Err(err) => {
