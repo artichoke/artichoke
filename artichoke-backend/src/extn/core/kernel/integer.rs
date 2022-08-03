@@ -461,6 +461,18 @@ mod tests {
     }
 
     #[test]
+    fn squeeze_leading_zeros_is_octal_when_octal_digits() {
+        let result = integer("000000000000000000000000000000000000000123".try_into().unwrap(), None);
+        assert_eq!(result.unwrap(), 83);
+    }
+
+    #[test]
+    fn squeeze_leading_is_invalid_when_non_octal_digits() {
+        let result = integer("000000000000000000000000000000000000000987".try_into().unwrap(), None);
+        result.unwrap_err();
+    }
+
+    #[test]
     fn squeeze_leading_zeros_enforces_no_double_underscore() {
         let result = integer("0x___11".try_into().unwrap(), Radix::new(16));
         result.unwrap_err();
