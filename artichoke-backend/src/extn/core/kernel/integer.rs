@@ -264,6 +264,7 @@ const fn radix_table() -> [u32; 256] {
         if idx >= table.len() {
             return table;
         }
+        #[allow(clippy::cast_possible_truncation)]
         let byte = idx as u8;
         if byte >= b'0' && byte <= b'9' {
             table[idx] = (byte - b'0' + 1) as u32;
@@ -284,7 +285,7 @@ pub fn method(arg: IntegerString<'_>, radix: Option<Radix>) -> Result<i64, Error
         .as_bytes()
         .iter()
         .copied()
-        .skip_while(|b| b.is_ascii_whitespace())
+        .skip_while(u8::is_ascii_whitespace)
         .peekable();
 
     match chars.peek() {
@@ -1030,7 +1031,7 @@ mod tests {
     fn nul_byte_is_err() {
         IntegerString::try_from("\0").unwrap_err();
         IntegerString::try_from("123\0").unwrap_err();
-        IntegerString::try_from("123\0456").unwrap_err();
+        IntegerString::try_from("123\x00456").unwrap_err();
     }
 
     #[test]
