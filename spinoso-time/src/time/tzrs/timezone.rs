@@ -26,10 +26,11 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], might come as a result of an offset
-    /// causing the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-getlocal
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn to_offset(&self, offset: Offset) -> Result<Self> {
         Self::with_timespec_and_offset(self.inner.unix_time(), self.inner.nanoseconds(), offset)
@@ -54,12 +55,13 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], might come as a result of an offset
-    /// causing the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     ///
     /// [`Time#getutc`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-getutc
     /// [`Time#getgm`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-getgm
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn to_utc(&self) -> Result<Self> {
         self.to_offset(Offset::utc())
@@ -86,10 +88,11 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], might come as a result of an offset
-    /// causing the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#getlocal`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-getlocal
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn to_local(&self) -> Result<Self> {
         self.to_offset(Offset::local())
@@ -116,8 +119,10 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], might come as a result of an offset
-    /// causing the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
+    ///
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn set_offset(&mut self, offset: Offset) -> Result<()> {
         let time_zone_ref = offset.time_zone_ref();
@@ -150,10 +155,11 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], might come as a result of an offset
-    /// causing the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-localtime
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn set_local(&mut self) -> Result<()> {
         self.set_offset(Offset::local())
@@ -180,11 +186,12 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], might come as a result of an offset
-    /// causing the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-utc
     /// [`Time#gmtime`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-gmtime
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn set_utc(&mut self) -> Result<()> {
         self.set_offset(Offset::utc())
@@ -212,10 +219,11 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], might come as a result of an offset
-    /// causing the `unix_time` to exceed `i64::MAX`.
+    /// Can produce a [`TimeError`], might come as a result of an offset causing
+    /// the `unix_time` to exceed `i64::MAX`.
     ///
     /// [`Time#localtime`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-localtime
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn set_offset_from_utc(&mut self, offset: Offset) -> Result<()> {
         let time_zone_ref = offset.time_zone_ref();
