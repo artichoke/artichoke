@@ -299,8 +299,13 @@ impl TryFrom<i32> for Offset {
 
 #[cfg(test)]
 mod tests {
+    use once_cell::sync::Lazy;
+    use tz::timezone::Transition;
+    use tz::{LocalTimeType, TimeZone};
+
     use super::*;
     use crate::tzrs::error::TimeError;
+    use crate::tzrs::Time;
 
     fn offset_seconds_from_fixed_offset(input: &str) -> Result<i32, TimeError> {
         let offset = Offset::try_from(input)?;
@@ -479,6 +484,32 @@ mod tests {
         assert!(matches!(
             fixed_offset_name(MIN_OFFSET_SECONDS - 1).unwrap_err(),
             TimeError::TzOutOfRangeError(_)
+        ));
+    }
+
+    // https://github.com/x-hgg-x/tz-rs/issues/34#issuecomment-1206140198
+    #[test]
+    fn tzrs_gh_34_handle_missing_transition_tzif_v1() {
+        static TZ: Lazy<TimeZone> = Lazy::new(|| {
+            let local_time_types = vec![
+                LocalTimeType::new(0, false, None).unwrap(),
+                LocalTimeType::new(3600, false, None).unwrap(),
+            ];
+
+            TimeZone::new(
+                vec![Transition::new(0, 1), Transition::new(86400, 1)],
+                local_time_types,
+                vec![],
+                None,
+            )
+            .unwrap()
+        });
+        let offset = Offset {
+            inner: OffsetType::Tz(TZ.as_ref()),
+        };
+        assert!(matches!(
+            Time::new(1970, 1, 2, 12, 0, 0, 0, offset).unwrap_err(),
+            TimeError::Unknown,
         ));
     }
 }

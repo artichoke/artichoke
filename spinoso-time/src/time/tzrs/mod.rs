@@ -159,9 +159,23 @@ impl Time {
         let tz = offset.time_zone_ref();
         let found_date_times = DateTime::find(year, month, day, hour, minute, second, nanoseconds, tz)?;
 
-        // .latest() will always return `Some(DateTime)`
-        // FIXME: this assertion is not consistent with the docs in `tz-rs`.
-        let dt = found_date_times.latest().expect("No datetime found with this offset");
+        // According to the `tz-rs` author, `FoundDateTimeList::latest` and
+        // `FoundDateTimeList::first` can return `None` if the provided time
+        // zone has no extra rule and the date time would be located after the
+        // last transition.
+        //
+        // This situation can happen when using a TZif v1 file, which cannot
+        // contain a footer with an extra rule definition. If you are using the
+        // last version of the Time Zone Database, all TZif v1 files have been
+        // replaced by TZif v2 or v3 files, so this error should be uncommon.
+        //
+        // As of `tzdb` 0.4.0, the Time Zone Database is version 2022a which has
+        // this property, which means an `expect` below can never panic, however
+        // upstream has provided a test case which means we have a test that
+        // simulates this failure condition and requires us to handle it.
+        //
+        // See: https://github.com/x-hgg-x/tz-rs/issues/34#issuecomment-1206140198
+        let dt = found_date_times.latest().ok_or(TimeError::Unknown)?;
         Ok(Self { inner: dt, offset })
     }
 
