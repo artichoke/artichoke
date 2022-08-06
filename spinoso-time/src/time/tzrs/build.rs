@@ -7,10 +7,12 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], generally when provided values are out of range
+    /// Can produce a [`TimeError`], generally when provided values are out of
+    /// range.
     ///
     /// [`Time#local`]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-local
     /// [`Time#mktime`]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-mktime
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn local(
         year: i32,
@@ -39,10 +41,12 @@ impl Time {
     ///
     /// # Errors
     ///
-    /// Can produce a [`super::TimeError`], generally when provided values are out of range
+    /// Can produce a [`TimeError`], generally when provided values are out of
+    /// range.
     ///
     /// [`Time#utc`]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-utc
     /// [`Time#gm`]: https://ruby-doc.org/core-3.1.2/Time.html#method-c-gm
+    /// [`TimeError`]: super::TimeError
     #[inline]
     pub fn utc(
         year: i32,
