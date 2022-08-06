@@ -12,11 +12,18 @@ pub use super::error::{TimeError, TzOutOfRangeError, TzStringError};
 
 const SECONDS_IN_MINUTE: i32 = 60;
 const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;
+const SECONDS_IN_DAY: i32 = SECONDS_IN_HOUR * 24;
+
 /// The maximum allowed offset in seconds from UTC in the future for a fixed
-/// offset. This is equal to the number of seconds in 1 day, minus 1
-pub const MAX_OFFSET_SECONDS: i32 = 24 * 60 * 60 - 1;
+/// offset.
+///
+/// This constant has magnitude to the number of seconds in 1 day, minus 1.
+pub const MAX_OFFSET_SECONDS: i32 = SECONDS_IN_DAY - 1;
+
 /// The maximum allowed offset in seconds from UTC in the past for a fixed
-/// offset. This is equal to the number of seconds in 1 day, minus 1
+/// offset.
+///
+/// This constant has magitude of the number of seconds in 1 day, minus 1.
 pub const MIN_OFFSET_SECONDS: i32 = -MAX_OFFSET_SECONDS;
 
 /// `tzdb` provides [`local_tz`] to get the local system timezone. If this ever
@@ -90,6 +97,21 @@ enum OffsetType {
 
 impl Offset {
     /// Generate a UTC based offset.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_time::tzrs::{Offset, Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let offset = Offset::utc();
+    /// assert!(offset.is_utc());
+    ///
+    /// let time = Time::new(2022, 7, 29, 12, 36, 0, 0, offset)?;
+    /// assert!(time.is_utc());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
     #[inline]
     #[must_use]
     pub fn utc() -> Self {
@@ -100,6 +122,24 @@ impl Offset {
     ///
     /// Detection is done by [`tzdb::local_tz`], and if it fails will return a
     /// GMT timezone.
+    ///
+    /// The system timezone is detected on the first call to this function and
+    /// will be constant for the life of the program.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_time::tzrs::{Offset, Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let offset = Offset::local();
+    /// assert!(!offset.is_utc());
+    ///
+    /// let time = Time::new(2022, 7, 29, 12, 36, 0, 0, offset)?;
+    /// assert!(!time.is_utc());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
     ///
     /// [`tzdb::local_tz`]: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html
     #[inline]
@@ -115,6 +155,29 @@ impl Offset {
     }
 
     /// Generate an offset with a number of seconds from UTC.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_time::tzrs::{Offset, Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let offset = Offset::fixed(6600)?; // +0150
+    /// assert!(!offset.is_utc());
+    ///
+    /// let time = Time::new(2022, 7, 29, 12, 36, 0, 0, offset)?;
+    /// assert!(!time.is_utc());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
+    ///
+    /// The offset must be in range:
+    ///
+    /// ```
+    /// # use spinoso_time::tzrs::Offset;
+    /// let offset = Offset::fixed(500_000); // +0150
+    /// assert!(offset.is_err());
+    /// ```
     ///
     /// # Errors
     ///
@@ -137,7 +200,7 @@ impl Offset {
         })
     }
 
-    /// Generate an offset based on a provided [`tz::timezone::TimeZoneRef`].
+    /// Generate an offset based on a provided [`TimeZoneRef`].
     ///
     /// This can be combined with [`tzdb`] to generate offsets based on
     /// predefined IANA time zones.
@@ -150,6 +213,21 @@ impl Offset {
     }
 
     /// Returns whether this offset is UTC.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_time::tzrs::{Offset, Time, TimeError};
+    /// # fn example() -> Result<(), TimeError> {
+    /// let offset = Offset::utc();
+    /// assert!(offset.is_utc());
+    ///
+    /// let offset = Offset::fixed(6600)?; // +0150
+    /// assert!(!offset.is_utc());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
     #[inline]
     #[must_use]
     pub fn is_utc(&self) -> bool {
@@ -178,7 +256,7 @@ impl Offset {
 impl TryFrom<&str> for Offset {
     type Error = TimeError;
 
-    /// Construct a Offset based on the [accepted MRI values]
+    /// Construct a Offset based on the [accepted MRI values].
     ///
     /// Accepts:
     ///
@@ -290,7 +368,10 @@ impl From<TimeZoneRef<'static>> for Offset {
 
 impl TryFrom<i32> for Offset {
     type Error = TimeError;
-    /// Construct a Offset with the offset in seconds from UTC
+
+    /// Construct a Offset with the offset in seconds from UTC.
+    ///
+    /// See [`Offset::fixed`].
     #[inline]
     fn try_from(seconds: i32) -> Result<Self, Self::Error> {
         Self::fixed(seconds)
