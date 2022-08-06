@@ -16,7 +16,7 @@ pub use error::TimeError;
 pub use offset::{Offset, MAX_OFFSET_SECONDS, MIN_OFFSET_SECONDS};
 pub use to_a::ToA;
 
-/// Alias for [`std::result::Result`] with the unified `TimeError`
+/// Alias for [`std::result::Result`] with the unified [`TimeError`].
 pub type Result<T> = std::result::Result<T, TimeError>;
 
 use crate::NANOS_IN_SECOND;
