@@ -24,7 +24,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scolapasta-int-parse = "0.1.0"
+scolapasta-int-parse = "0.2.0"
 ```
 
 Parse strings into integers like:
