@@ -631,6 +631,13 @@ name = "scolapasta-hex"
 version = "0.2.0"
 
 [[package]]
+name = "scolapasta-int-parse"
+version = "0.1.0"
+dependencies = [
+ "scolapasta-string-escape",
+]
+
+[[package]]
 name = "scolapasta-string-escape"
 version = "0.3.0"
 dependencies = [

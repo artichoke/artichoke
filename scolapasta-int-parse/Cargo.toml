@@ -1,0 +1,27 @@
+[package]
+name = "scolapasta-int-parse"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2021"
+rust-version = "1.62.0"
+description = """
+no_std integer parser for Ruby-formatted numeric byte strings.
+"""
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["integer", "no_std", "radix", "ruby"]
+categories = ["encoding", "no-std", "parser-implementations", "no-std"]
+
+[dependencies]
+scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
+
+[features]
+default = ["std"]
+# By default, `scolapasta-int-parse` is `no_std`. This feature implementations
+# of `std::error::Error` on error types in this crate.
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

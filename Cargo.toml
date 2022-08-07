@@ -59,6 +59,7 @@ members = [
   "artichoke-load-path",
   "mezzaluna-feature-loader",
   "scolapasta-hex",
+  "scolapasta-int-parse",
   "scolapasta-string-escape",
   "spinoso-array",
   "spinoso-env",
