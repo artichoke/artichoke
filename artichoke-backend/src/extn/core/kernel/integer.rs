@@ -2,7 +2,6 @@ use core::fmt::Write as _;
 
 use scolapasta_int_parse::Radix;
 
-use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
 
 impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
@@ -10,7 +9,22 @@ impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
 
     fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Option<Radix>, Self::Error> {
         if let Some(value) = value {
-            let num = implicitly_convert_to_int(self, value)?;
+            let num = match value.try_convert_into::<Option<i64>>(self) {
+                // nil and non-integer arguments are ignored.
+                //
+                // ```
+                // [3.1.2] > Integer('999', nil)
+                // => 999
+                // [3.1.2] > Integer('999', Object.new)
+                // => 999
+                // [3.1.2] > Integer('0x999', nil)
+                // => 2457
+                // [3.1.2] > Integer('0x999', Object.new)
+                // => 2457
+                // ```
+                Ok(None) | Err(_) => return Ok(None),
+                Ok(Some(num)) => num,
+            };
             let radix = if let Ok(radix) = u32::try_from(num) {
                 radix
             } else {
