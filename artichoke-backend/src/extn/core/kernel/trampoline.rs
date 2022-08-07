@@ -5,6 +5,30 @@ use crate::extn::core::kernel;
 use crate::extn::core::kernel::require::RelativePath;
 use crate::extn::prelude::*;
 
+// FIXME: handle float and integer arguments.
+//
+// ```
+// [3.1.2] > Integer 999
+// => 999
+// [3.1.2] > Integer 999.9
+// => 999
+// [3.1.2] >
+// ^C
+// [3.1.2] > Integer -999.9
+// => -999
+// [3.1.2] > Integer Float::NAN
+// (irb):43:in `Integer': NaN (FloatDomainError)
+//         from (irb):43:in `<main>'
+//         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+//         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+//         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+// [3.1.2] > Integer Float::INFINITY
+// (irb):44:in `Integer': Infinity (FloatDomainError)
+//         from (irb):44:in `<main>'
+//         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+//         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+//         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+// ```
 pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) -> Result<Value, Error> {
     let base = base.and_then(|base| interp.convert(base));
     // SAFETY: Extract the `Copy` radix integer first since implicit conversions
