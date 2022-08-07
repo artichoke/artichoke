@@ -24,6 +24,8 @@
 //! input byte string:
 //!
 //! - Assert the byte string is ASCII and does not contain NUL bytes.
+//! - Parse the radix to ensure it is in range and valid for the given input
+//!   byte string.
 //! - Trim leading whitespace.
 //! - Accept a single, optional `+` or `-` sign byte.
 //! - Parse a literal radix out of the string from one of `0b`, `0B`, `0o`,
