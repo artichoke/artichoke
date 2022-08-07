@@ -659,4 +659,169 @@ mod tests {
         parse("-+12", None).unwrap_err();
         parse("--12", None).unwrap_err();
     }
+
+    #[test]
+    fn zero_radix_is_default() {
+        // ```
+        // [3.1.2] > Integer "0x111", 0
+        // => 273
+        // [3.1.2] > Integer "111", 0
+        // => 111
+        // ```
+        let result = parse("0x111", Some(0));
+        assert_eq!(result.unwrap(), 273);
+        let result = parse("111", Some(0));
+        assert_eq!(result.unwrap(), 111);
+    }
+
+    #[test]
+    fn negative_one_radix_is_default() {
+        // ```
+        // [3.1.2] > Integer('0x123f'.upcase, -1)
+        // => 4671
+        // [3.1.2] > Integer('0x123f'.upcase, 16)
+        // => 4671
+        // [3.1.2] > Integer "111", -1
+        // => 111
+        // ```
+        let result = parse("0x123f", Some(-1));
+        assert_eq!(result.unwrap(), 4671);
+        let result = parse("111", Some(-1));
+        assert_eq!(result.unwrap(), 111);
+    }
+
+    #[test]
+    fn one_radix_is_err() {
+        parse("0x123f", Some(1)).unwrap_err();
+        parse("111", Some(1)).unwrap_err();
+    }
+
+    #[test]
+    fn out_of_range_radix_is_err() {
+        parse("0x123f", Some(1200)).unwrap_err();
+        parse("123", Some(1200)).unwrap_err();
+        parse("123", Some(-1200)).unwrap_err();
+    }
+
+    #[test]
+    fn literals_with_negative_out_of_range_radix_ignore_radix() {
+        let result = parse("0x123f", Some(-1200));
+        assert_eq!(result.unwrap(), 4671);
+    }
+
+    #[test]
+    fn negative_radix_in_valid_range_is_parsed() {
+        // ```
+        // [3.1.2] > Integer "111", -2
+        // => 7
+        // [3.1.2] > Integer "111", -10
+        // => 111
+        // [3.1.2] > Integer "111", -36
+        // => 1333
+        // ```
+        let result = parse("111", Some(-2));
+        assert_eq!(result.unwrap(), 7);
+        let result = parse("111", Some(-10));
+        assert_eq!(result.unwrap(), 111);
+        let result = parse("111", Some(-36));
+        assert_eq!(result.unwrap(), 1333);
+    }
+
+    #[test]
+    fn all_valid_radixes() {
+        // ```
+        // (2..36).each {|r| puts "(\"111\", #{r}, #{Integer "111", r}),"; nil }.to_a.uniq
+        // (2..36).each {|r| puts "(\"111\", #{-r}, #{Integer "111", -r}),"; nil }.to_a.uniq
+        // ```
+        let test_cases = [
+            ("111", 2, 7),
+            ("111", 3, 13),
+            ("111", 4, 21),
+            ("111", 5, 31),
+            ("111", 6, 43),
+            ("111", 7, 57),
+            ("111", 8, 73),
+            ("111", 9, 91),
+            ("111", 10, 111),
+            ("111", 11, 133),
+            ("111", 12, 157),
+            ("111", 13, 183),
+            ("111", 14, 211),
+            ("111", 15, 241),
+            ("111", 16, 273),
+            ("111", 17, 307),
+            ("111", 18, 343),
+            ("111", 19, 381),
+            ("111", 20, 421),
+            ("111", 21, 463),
+            ("111", 22, 507),
+            ("111", 23, 553),
+            ("111", 24, 601),
+            ("111", 25, 651),
+            ("111", 26, 703),
+            ("111", 27, 757),
+            ("111", 28, 813),
+            ("111", 29, 871),
+            ("111", 30, 931),
+            ("111", 31, 993),
+            ("111", 32, 1057),
+            ("111", 33, 1123),
+            ("111", 34, 1191),
+            ("111", 35, 1261),
+            ("111", 36, 1333),
+            ("111", -2, 7),
+            ("111", -3, 13),
+            ("111", -4, 21),
+            ("111", -5, 31),
+            ("111", -6, 43),
+            ("111", -7, 57),
+            ("111", -8, 73),
+            ("111", -9, 91),
+            ("111", -10, 111),
+            ("111", -11, 133),
+            ("111", -12, 157),
+            ("111", -13, 183),
+            ("111", -14, 211),
+            ("111", -15, 241),
+            ("111", -16, 273),
+            ("111", -17, 307),
+            ("111", -18, 343),
+            ("111", -19, 381),
+            ("111", -20, 421),
+            ("111", -21, 463),
+            ("111", -22, 507),
+            ("111", -23, 553),
+            ("111", -24, 601),
+            ("111", -25, 651),
+            ("111", -26, 703),
+            ("111", -27, 757),
+            ("111", -28, 813),
+            ("111", -29, 871),
+            ("111", -30, 931),
+            ("111", -31, 993),
+            ("111", -32, 1057),
+            ("111", -33, 1123),
+            ("111", -34, 1191),
+            ("111", -35, 1261),
+            ("111", -36, 1333),
+        ];
+        for (subject, radix, output) in test_cases {
+            let result = parse(subject, Some(radix));
+            assert_eq!(
+                result.unwrap(),
+                output,
+                "Mismatched output for test case ({subject}, {radix}, {output})"
+            );
+        }
+    }
+
+    #[test]
+    fn int_max_radix_does_not_panic() {
+        parse("111", Some(i64::MAX)).unwrap_err();
+    }
+
+    #[test]
+    fn int_min_radix_does_not_panic() {
+        parse("111", Some(i64::MIN)).unwrap_err();
+    }
 }

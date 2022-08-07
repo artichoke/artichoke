@@ -111,8 +111,12 @@ impl Radix {
             // => 83
             // [3.1.2] > Integer "0x123", 0
             // => 291
+            // [3.1.2] > Integer "0x123", -1
+            // => 291
+            // [3.1.2] > Integer "111", -1
+            // => 111
             // ```
-            Ok(0) => Ok(None),
+            Ok(0 | -1) => Ok(None),
             // ```
             // [3.1.2] > Integer "123", 1
             // (irb):31:in `Integer': invalid radix 1 (ArgumentError)
