@@ -38,6 +38,7 @@ dependencies = [
  "onig",
  "qed",
  "regex",
+ "scolapasta-int-parse",
  "scolapasta-string-escape",
  "spinoso-array",
  "spinoso-env",
@@ -438,6 +439,13 @@ dependencies = [
 [[package]]
 name = "scolapasta-hex"
 version = "0.2.0"
+
+[[package]]
+name = "scolapasta-int-parse"
+version = "0.1.0"
+dependencies = [
+ "scolapasta-string-escape",
+]
 
 [[package]]
 name = "scolapasta-string-escape"
