@@ -46,6 +46,53 @@ jobs:
         if: github.event_name == 'schedule'
         run: cargo fuzz run eval -- -max_total_time=1800 # 30 minutes
 
+  fuzz-kernel-integer:
+    name: Fuzz Kernel#Integer
+    runs-on: ubuntu-latest
+    env:
+      RUST_BACKTRACE: 1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install nightly Rust toolchain
+        run: |
+          echo "::group::rustup toolchain install"
+          rustup toolchain install nightly --profile minimal
+          echo "::endgroup::"
+          echo "::group::set default toolchain"
+          rm -rf rust-toolchain
+          rustup default nightly
+          echo "::endgroup::"
+          echo "::group::rustup version"
+          rustup -Vv
+          echo "::endgroup::"
+          echo "::group::rustc version"
+          rustc -Vv
+          echo "::endgroup::"
+          echo "::group::cargo version"
+          cargo version --verbose
+          echo "::endgroup::"
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+
+      - name: Build fuzz targets
+        run: cargo fuzz build
+
+      - name: Fuzz Kernel#Integer with binary input
+        if: github.event_name == 'schedule'
+        run: cargo fuzz run kernel-integer-bytes -- -max_total_time=600 # 10 minutes
+
+      - name: Fuzz Kernel#Integer with numeric input
+        if: github.event_name == 'schedule'
+        run: cargo fuzz run kernel-integer-int -- -max_total_time=600 # 10 minutes
+
+      - name: Fuzz Kernel#Integer with UTF-8 input
+        if: github.event_name == 'schedule'
+        run: cargo fuzz run kernel-integer-str -- -max_total_time=600 # 10 minutes
+
   leak-san:
     name: Compile and test with LeakSanitizer
     runs-on: ubuntu-latest
