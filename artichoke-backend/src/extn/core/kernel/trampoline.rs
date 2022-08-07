@@ -1,5 +1,3 @@
-use scolapasta_int_parse::Radix;
-
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::core::kernel;
 use crate::extn::core::kernel::require::RelativePath;
@@ -30,10 +28,15 @@ use crate::extn::prelude::*;
 //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
 // ```
 pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) -> Result<Value, Error> {
+    // Flatten explicit `nil` argument with missing argument
     let base = base.and_then(|base| interp.convert(base));
     // SAFETY: Extract the `Copy` radix integer first since implicit conversions
     // can trigger garbage collections.
-    let base: Option<Radix> = interp.try_convert_mut(base)?;
+    let base = if let Some(base) = base {
+        Some(base.try_convert_into::<i64>(interp)?)
+    } else {
+        None
+    };
 
     // Implicit conversions are only performed if a non-nil radix argument is
     // given:

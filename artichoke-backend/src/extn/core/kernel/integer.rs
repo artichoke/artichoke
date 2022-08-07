@@ -1,68 +1,27 @@
-use core::fmt::Write as _;
-
-use scolapasta_int_parse::Radix;
+use scolapasta_int_parse::InvalidRadixExceptionKind;
 
 use crate::extn::prelude::*;
 
-impl TryConvertMut<Option<Value>, Option<Radix>> for Artichoke {
-    type Error = Error;
+impl<'a> From<scolapasta_int_parse::Error<'a>> for Error {
+    fn from(err: scolapasta_int_parse::Error<'a>) -> Self {
+        use scolapasta_int_parse::Error::{Argument, Radix};
 
-    fn try_convert_mut(&mut self, value: Option<Value>) -> Result<Option<Radix>, Self::Error> {
-        if let Some(value) = value {
-            let num = match value.try_convert_into::<Option<i64>>(self) {
-                // nil and non-integer arguments are ignored.
-                //
-                // ```
-                // [3.1.2] > Integer('999', nil)
-                // => 999
-                // [3.1.2] > Integer('999', Object.new)
-                // => 999
-                // [3.1.2] > Integer('0x999', nil)
-                // => 2457
-                // [3.1.2] > Integer('0x999', Object.new)
-                // => 2457
-                // ```
-                Ok(None) | Err(_) => return Ok(None),
-                Ok(Some(num)) => num,
-            };
-            let radix = if let Ok(radix) = u32::try_from(num) {
-                radix
-            } else {
-                let num = num
-                    .checked_neg()
-                    .ok_or_else(|| ArgumentError::with_message("invalid radix"))?;
-                match u32::try_from(num) {
-                    // See https://github.com/ruby/ruby/blob/v2_6_3/bignum.c#L4106-L4110
-                    Ok(1) => return Ok(None),
-                    Ok(radix) => radix,
-                    Err(_) => {
-                        let mut message = String::new();
-                        write!(&mut message, "invalid radix {}", num).map_err(WriteError::from)?;
-                        return Err(ArgumentError::from(message).into());
-                    }
-                }
-            };
-            match Radix::new(radix) {
-                Some(radix) => Ok(Some(radix)),
-                // a zero radix means `Integer` should fall back to string parsing
-                // of numeric literal prefixes.
-                None if radix == 0 => Ok(None),
-                None => {
-                    let mut message = String::new();
-                    write!(&mut message, "invalid radix {}", radix).map_err(WriteError::from)?;
-                    Err(ArgumentError::from(message).into())
-                }
+        match err {
+            Argument(err) => {
+                let message = err.to_string();
+                ArgumentError::from(message).into()
             }
-        } else {
-            Ok(None)
+            Radix(err) => match err.exception_kind() {
+                InvalidRadixExceptionKind::ArgumentError => {
+                    let message = err.to_string();
+                    ArgumentError::from(message).into()
+                }
+                InvalidRadixExceptionKind::RangeError => {
+                    let message = err.to_string();
+                    RangeError::from(message).into()
+                }
+            },
         }
-    }
-}
-
-impl<'a> From<scolapasta_int_parse::ArgumentError<'a>> for Error {
-    fn from(err: scolapasta_int_parse::ArgumentError<'a>) -> Self {
-        let message = err.to_string();
-        ArgumentError::from(message).into()
     }
 }
 
