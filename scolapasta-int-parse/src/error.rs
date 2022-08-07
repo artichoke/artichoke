@@ -7,6 +7,7 @@ use crate::subject::IntegerString;
 /// Sum type for all possible errors from this crate.
 ///
 /// See [`ArgumentError`] and [`InvalidRadixError`] for more details.
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Error<'a> {
     /// An [`ArgumentError`].
     Argument(ArgumentError<'a>),
@@ -44,6 +45,18 @@ impl<'a> From<InvalidRadixErrorKind> for Error<'a> {
     }
 }
 
+impl<'a> fmt::Display for Error<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Argument(err) => write!(f, "{}", err),
+            Self::Radix(err) => write!(f, "{}", err),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl<'a> std::error::Error for Error<'a> {}
+
 /// Error that indicates the input to [`parse`] was invalid.
 ///
 /// This error can be returned in the following circumstances:
@@ -63,7 +76,7 @@ impl<'a> From<InvalidRadixErrorKind> for Error<'a> {
 ///
 /// ```
 /// # use scolapasta_int_parse::Radix;
-/// let result = scolapasta_int_parse::parse("0xBAD", Radix::new(10));
+/// let result = scolapasta_int_parse::parse("0xBAD", Some(10));
 /// let err = result.unwrap_err();
 /// assert_eq!(err.to_string(), r#"invalid value for Integer(): "0xBAD""#);
 /// ```
@@ -82,10 +95,10 @@ impl<'a> ArgumentError<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use scolapasta_int_parse::Radix;
-    /// let result = scolapasta_int_parse::parse("0xBAD", Radix::new(10));
+    /// # use scolapasta_int_parse::Error;
+    /// let result = scolapasta_int_parse::parse("0xBAD", Some(10));
     /// let err = result.unwrap_err();
-    /// assert_eq!(err.subject(), "0xBAD".as_bytes());
+    /// assert!(matches!(err, Error::Argument(err) if err.subject() == "0xBAD".as_bytes()));
     /// ```
     #[must_use]
     pub const fn subject(self) -> &'a [u8] {
@@ -120,7 +133,7 @@ impl<'a> fmt::Display for ArgumentError<'a> {
 #[cfg(feature = "std")]
 impl<'a> std::error::Error for ArgumentError<'a> {}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum InvalidRadixErrorKind {
     TooSmall(i64),
     TooBig(i64),
@@ -141,7 +154,7 @@ pub enum InvalidRadixErrorKind {
 ///
 /// [`RangeError`]: https://ruby-doc.org/core-3.1.2/RangeError.html
 /// [`ArgumentError`]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum InvalidRadixExceptionKind {
     /// If the given radix falls outside the range of an [`i32`], the error should
     /// be mapped to a [`RangeError`]:
@@ -170,7 +183,8 @@ pub enum InvalidRadixExceptionKind {
 /// This error can be returned in the following circumstances:
 ///
 /// - The input is out of range of [`i32`].
-/// - The input is negative (depends on input byte string).
+/// - The input radix is negative (if the input byte string does not have an
+///   `0x`-style prefix) and out of range `-36..=-2`.
 /// - The input is out of range of `2..=36`.
 ///
 /// This error may map to several Ruby `Exception` types. See
@@ -180,14 +194,14 @@ pub enum InvalidRadixExceptionKind {
 ///
 /// ```
 /// # use scolapasta_int_parse::Radix;
-/// let result = scolapasta_int_parse::parse("123", 500);
+/// let result = scolapasta_int_parse::parse("123", Some(500));
 /// let err = result.unwrap_err();
 /// assert_eq!(err.to_string(), "invalid radix 500");
 /// ```
 ///
 /// [`parse`]: crate::parse
 #[allow(clippy::module_name_repetitions)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InvalidRadixError {
     kind: InvalidRadixErrorKind,
 }

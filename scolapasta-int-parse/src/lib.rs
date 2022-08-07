@@ -49,7 +49,7 @@ mod parser;
 mod radix;
 mod subject;
 
-pub use error::{ArgumentError, InvalidRadixError, InvalidRadixExceptionKind};
+pub use error::{ArgumentError, Error, InvalidRadixError, InvalidRadixExceptionKind};
 use parser::{Sign, State as ParseState};
 pub use radix::Radix;
 use radix::RADIX_TABLE;
@@ -61,6 +61,8 @@ use subject::IntegerString;
 /// the input byte string:
 ///
 /// - Assert the byte string is ASCII and does not contain NUL bytes.
+/// - Parse the radix to ensure it is in range and valid for the given input
+///   byte string.
 /// - Trim leading whitespace.
 /// - Accept a single, optional `+` or `-` sign byte.
 /// - Parse a literal radix out of the string from one of `0b`, `0B`, `0o`,
@@ -69,6 +71,7 @@ use subject::IntegerString;
 ///   length is interpreted as an octal literal.
 /// - Remove ("squeeze") leading zeros.
 /// - Collect ASCII alphanumeric bytes and filter out underscores.
+/// - Pass the collected ASCII alphanumeric bytes to [`i64::from_str_radix`].
 ///
 /// If the given radix argument is [`None`] the input byte string is either
 /// parsed with the radix embedded within it (e.g. `0x...` is base 16) or
@@ -78,23 +81,28 @@ use subject::IntegerString;
 ///
 /// This function can return an error in the following circumstances:
 ///
-/// - The input has non-ASCII bytes.
-/// - The input contains a NUL byte.
-/// - The input is the empty byte slice.
-/// - The input only contains +/- signs.
+/// - The input byte string has non-ASCII bytes.
+/// - The input byte string contains a NUL byte.
+/// - The input byte string is the empty byte slice.
+/// - The input byte string only contains +/- signs.
 /// - The given radix does not match a `0x`-style prefix.
 /// - Invalid or duplicate +/- signs are in the input.
 /// - Consecutive underscores are present in the input.
 /// - Leading or trailing underscores are present in the input.
 /// - The input contains ASCII alphanumeric bytes that are invalid for the
 ///   computed radix.
-/// - Pass the collected ASCII alphanumeric bytes to [`i64::from_str_radix`].
+/// - The input radix is out of range of [`i32`].
+/// - The input radix is negative (if the input byte string does not have an
+///   `0x`-style prefix) and out of range `-36..=-2`.
+/// - The input raidx is out of range of `2..=36`.
+///
+/// See [`ArgumentError`] and [`InvalidRadixError`] for more details.
 ///
 /// # Examples
 ///
 /// ```
-/// # use scolapasta_int_parse::{ArgumentError, Radix, parse};
-/// # fn example() -> Result<(), ArgumentError<'static>> {
+/// # use scolapasta_int_parse::{Error, parse};
+/// # fn example() -> Result<(), Error<'static>> {
 /// let int_max = parse("9_223_372_036_854_775_807", None)?;
 /// assert_eq!(int_max, i64::MAX);
 ///
@@ -117,12 +125,12 @@ use subject::IntegerString;
 /// If a `Some(_)` radix is given, that radix is used:
 ///
 /// ```
-/// # use scolapasta_int_parse::{ArgumentError, Radix, parse};
-/// # fn example() -> Result<(), ArgumentError<'static>> {
-/// let num = parse("32xyz", Radix::new(36))?;
+/// # use scolapasta_int_parse::{Error, parse};
+/// # fn example() -> Result<(), Error<'static>> {
+/// let num = parse("32xyz", Some(36))?;
 /// assert_eq!(num, 5_176_187);
 ///
-/// let binary = parse("1100_0011", Radix::new(2))?;
+/// let binary = parse("1100_0011", Some(2))?;
 /// assert_eq!(binary, 195);
 /// # Ok(())
 /// # }
@@ -133,11 +141,11 @@ use subject::IntegerString;
 /// error is returned:
 ///
 /// ```
-/// # use scolapasta_int_parse::{ArgumentError, Radix, parse};
-/// let result = parse("0b1100_0011", Radix::new(12));
+/// # use scolapasta_int_parse::parse;
+/// let result = parse("0b1100_0011", Some(12));
 /// assert!(result.is_err());
 /// ```
-pub fn parse<T>(subject: &T, radix: Option<Radix>) -> Result<i64, ArgumentError<'_>>
+pub fn parse<T>(subject: &T, radix: Option<i64>) -> Result<i64, Error<'_>>
 where
     T: AsRef<[u8]> + ?Sized,
 {
@@ -145,12 +153,18 @@ where
     parse_inner(subject, radix)
 }
 
-fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentError<'_>> {
+fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
     // Phase 1: Ensure ASCII, ensure no NUL bytes.
     let subject = IntegerString::try_from(subject)?;
+    // Phase 2: Parse radix
+    let radix = if let Some(radix) = radix {
+        Radix::try_base_from_str_and_i64(subject, radix)?
+    } else {
+        None
+    };
     let mut state = ParseState::new(subject);
 
-    // Phase 2: Trim leading whitespace.
+    // Phase 3: Trim leading whitespace.
     let mut chars = subject
         .as_bytes()
         .iter()
@@ -158,7 +172,7 @@ fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentErro
         .skip_while(u8::is_ascii_whitespace)
         .peekable();
 
-    // Phase 3: Set sign.
+    // Phase 4: Set sign.
     match chars.peek() {
         Some(b'+') => {
             state = state.set_sign(Sign::Positive)?;
@@ -172,7 +186,7 @@ fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentErro
         None => return Err(subject.into()),
     }
 
-    // Phase 4: Determine radix.
+    // Phase 5: Determine radix.
     let radix = match chars.peek() {
         // https://github.com/ruby/ruby/blob/v3_1_2/bignum.c#L4094-L4115
         Some(b'0') => {
@@ -182,7 +196,7 @@ fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentErro
                     chars.next();
                     2
                 }
-                (Some(b'b' | b'B'), Some(radix)) if radix.as_u32() == 2 => {
+                (Some(b'b' | b'B'), Some(radix)) if radix == 2 => {
                     chars.next();
                     2
                 }
@@ -190,7 +204,7 @@ fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentErro
                     chars.next();
                     8
                 }
-                (Some(b'o' | b'O'), Some(radix)) if radix.as_u32() == 8 => {
+                (Some(b'o' | b'O'), Some(radix)) if radix == 8 => {
                     chars.next();
                     8
                 }
@@ -198,7 +212,7 @@ fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentErro
                     chars.next();
                     10
                 }
-                (Some(b'd' | b'D'), Some(radix)) if radix.as_u32() == 10 => {
+                (Some(b'd' | b'D'), Some(radix)) if radix == 10 => {
                     chars.next();
                     10
                 }
@@ -206,20 +220,20 @@ fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentErro
                     chars.next();
                     16
                 }
-                (Some(b'x' | b'X'), Some(radix)) if radix.as_u32() == 16 => {
+                (Some(b'x' | b'X'), Some(radix)) if radix == 16 => {
                     chars.next();
                     16
                 }
                 (Some(b'b' | b'B' | b'o' | b'O' | b'd' | b'D' | b'x' | b'X'), Some(_)) => return Err(subject.into()),
                 (Some(_) | None, None) => 8,
-                (Some(_) | None, Some(radix)) => radix.as_u32(),
+                (Some(_) | None, Some(radix)) => radix,
             }
         }
-        Some(_) => radix.map_or(10, Radix::as_u32),
+        Some(_) => radix.unwrap_or(10),
         None => return Err(subject.into()),
     };
 
-    // Phase 5: Squeeze leading zeros, reject invalid underscore sequences.
+    // Phase 6: Squeeze leading zeros, reject invalid underscore sequences.
     loop {
         if chars.next_if_eq(&b'0').is_some() {
             if chars.next_if_eq(&b'_').is_some() {
@@ -235,7 +249,7 @@ fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentErro
         }
     }
 
-    // Phase 6: Collect ASCII alphanumeric digits, reject invalid underscore
+    // Phase 7: Collect ASCII alphanumeric digits, reject invalid underscore
     // sequences.
     loop {
         match chars.next() {
@@ -251,14 +265,14 @@ fn parse_inner(subject: &[u8], radix: Option<Radix>) -> Result<i64, ArgumentErro
         }
     }
 
-    // Phase 7: Parse (signed) ASCII alphanumeric string to an `i64`.
+    // Phase 8: Parse (signed) ASCII alphanumeric string to an `i64`.
     let src = state.into_numeric_string()?;
     i64::from_str_radix(&*src, radix).map_err(|_| subject.into())
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{parse, Radix};
+    use crate::parse;
 
     #[test]
     fn parse_int_max() {
@@ -282,30 +296,30 @@ mod tests {
         // [3.1.2] > parse('-017', 12)
         // => -19
         // ```
-        let result = parse("017", Radix::new(12));
+        let result = parse("017", Some(12));
         assert_eq!(result.unwrap(), 19);
-        let result = parse("-017", Radix::new(12));
+        let result = parse("-017", Some(12));
         assert_eq!(result.unwrap(), -19);
     }
 
     #[test]
     fn squeeze_leading_zeros() {
-        let result = parse("0x0000000000000011", Radix::new(16));
+        let result = parse("0x0000000000000011", Some(16));
         assert_eq!(result.unwrap(), 17);
-        let result = parse("-0x0000000000000011", Radix::new(16));
+        let result = parse("-0x0000000000000011", Some(16));
         assert_eq!(result.unwrap(), -17);
 
-        let result = parse("0x00_00000000000011", Radix::new(16));
+        let result = parse("0x00_00000000000011", Some(16));
         assert_eq!(result.unwrap(), 17);
-        let result = parse("-0x00_00000000000011", Radix::new(16));
+        let result = parse("-0x00_00000000000011", Some(16));
         assert_eq!(result.unwrap(), -17);
 
-        let result = parse("0x0_0_0_11", Radix::new(16));
+        let result = parse("0x0_0_0_11", Some(16));
         assert_eq!(result.unwrap(), 17);
-        let result = parse("-0x0_0_0_11", Radix::new(16));
+        let result = parse("-0x0_0_0_11", Some(16));
         assert_eq!(result.unwrap(), -17);
 
-        let result = parse("-0x00000_15", Radix::new(16));
+        let result = parse("-0x00000_15", Some(16));
         assert_eq!(result.unwrap(), -21);
     }
 
@@ -322,14 +336,14 @@ mod tests {
 
     #[test]
     fn squeeze_leading_zeros_enforces_no_double_underscore() {
-        parse("0x___11", Radix::new(16)).unwrap_err();
-        parse("-0x___11", Radix::new(16)).unwrap_err();
-        parse("0x0___11", Radix::new(16)).unwrap_err();
-        parse("-0x0___11", Radix::new(16)).unwrap_err();
-        parse("0x_0__11", Radix::new(16)).unwrap_err();
-        parse("-0x_0__11", Radix::new(16)).unwrap_err();
-        parse("0x_00__11", Radix::new(16)).unwrap_err();
-        parse("-0x_00__11", Radix::new(16)).unwrap_err();
+        parse("0x___11", Some(16)).unwrap_err();
+        parse("-0x___11", Some(16)).unwrap_err();
+        parse("0x0___11", Some(16)).unwrap_err();
+        parse("-0x0___11", Some(16)).unwrap_err();
+        parse("0x_0__11", Some(16)).unwrap_err();
+        parse("-0x_0__11", Some(16)).unwrap_err();
+        parse("0x_00__11", Some(16)).unwrap_err();
+        parse("-0x_00__11", Some(16)).unwrap_err();
     }
 
     #[test]
@@ -363,13 +377,13 @@ mod tests {
     #[test]
     fn no_digits_with_invalid_base_prefix() {
         parse("0z", None).unwrap_err();
-        parse("0z", Radix::new(12)).unwrap_err();
+        parse("0z", Some(12)).unwrap_err();
     }
 
     #[test]
     fn no_digits_with_invalid_base_prefix_neg() {
         parse("-0z", None).unwrap_err();
-        parse("-0z", Radix::new(12)).unwrap_err();
+        parse("-0z", Some(12)).unwrap_err();
     }
 
     #[test]
@@ -392,22 +406,22 @@ mod tests {
 
     #[test]
     fn binary_with_given_2_radix_parses() {
-        let result = parse("0B1111", Radix::new(2));
+        let result = parse("0B1111", Some(2));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("0b1111", Radix::new(2));
+        let result = parse("0b1111", Some(2));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("-0B1111", Radix::new(2));
+        let result = parse("-0B1111", Some(2));
         assert_eq!(result.unwrap(), -15);
-        let result = parse("-0b1111", Radix::new(2));
+        let result = parse("-0b1111", Some(2));
         assert_eq!(result.unwrap(), -15);
     }
 
     #[test]
     fn binary_with_mismatched_radix_is_err() {
-        parse("0B1111", Radix::new(24)).unwrap_err();
-        parse("0b1111", Radix::new(24)).unwrap_err();
-        parse("-0B1111", Radix::new(24)).unwrap_err();
-        parse("-0b1111", Radix::new(24)).unwrap_err();
+        parse("0B1111", Some(24)).unwrap_err();
+        parse("0b1111", Some(24)).unwrap_err();
+        parse("-0B1111", Some(24)).unwrap_err();
+        parse("-0b1111", Some(24)).unwrap_err();
     }
 
     #[test]
@@ -436,13 +450,13 @@ mod tests {
 
     #[test]
     fn octal_with_given_8_radix_parses() {
-        let result = parse("0O17", Radix::new(8));
+        let result = parse("0O17", Some(8));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("0o17", Radix::new(8));
+        let result = parse("0o17", Some(8));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("-0O17", Radix::new(8));
+        let result = parse("-0O17", Some(8));
         assert_eq!(result.unwrap(), -15);
-        let result = parse("-0o17", Radix::new(8));
+        let result = parse("-0o17", Some(8));
         assert_eq!(result.unwrap(), -15);
     }
 
@@ -456,18 +470,18 @@ mod tests {
 
     #[test]
     fn octal_no_alpha_with_given_8_radix_parses() {
-        let result = parse("017", Radix::new(8));
+        let result = parse("017", Some(8));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("-017", Radix::new(8));
+        let result = parse("-017", Some(8));
         assert_eq!(result.unwrap(), -15);
     }
 
     #[test]
     fn octal_with_mismatched_radix_is_err() {
-        parse("0O17", Radix::new(24)).unwrap_err();
-        parse("0o17", Radix::new(24)).unwrap_err();
-        parse("-0O17", Radix::new(24)).unwrap_err();
-        parse("-0o17", Radix::new(24)).unwrap_err();
+        parse("0O17", Some(24)).unwrap_err();
+        parse("0o17", Some(24)).unwrap_err();
+        parse("-0O17", Some(24)).unwrap_err();
+        parse("-0o17", Some(24)).unwrap_err();
     }
 
     #[test]
@@ -496,22 +510,22 @@ mod tests {
 
     #[test]
     fn decimal_with_given_10_radix_parses() {
-        let result = parse("0D15", Radix::new(10));
+        let result = parse("0D15", Some(10));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("0d15", Radix::new(10));
+        let result = parse("0d15", Some(10));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("-0D15", Radix::new(10));
+        let result = parse("-0D15", Some(10));
         assert_eq!(result.unwrap(), -15);
-        let result = parse("-0d15", Radix::new(10));
+        let result = parse("-0d15", Some(10));
         assert_eq!(result.unwrap(), -15);
     }
 
     #[test]
     fn decimal_with_mismatched_radix_is_err() {
-        parse("0D15", Radix::new(24)).unwrap_err();
-        parse("0d15", Radix::new(24)).unwrap_err();
-        parse("-0D15", Radix::new(24)).unwrap_err();
-        parse("-0d15", Radix::new(24)).unwrap_err();
+        parse("0D15", Some(24)).unwrap_err();
+        parse("0d15", Some(24)).unwrap_err();
+        parse("-0D15", Some(24)).unwrap_err();
+        parse("-0d15", Some(24)).unwrap_err();
     }
 
     #[test]
@@ -550,34 +564,34 @@ mod tests {
 
     #[test]
     fn hex_with_given_16_radix_parses() {
-        let result = parse("0XF", Radix::new(16));
+        let result = parse("0XF", Some(16));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("0xF", Radix::new(16));
+        let result = parse("0xF", Some(16));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("-0XF", Radix::new(16));
+        let result = parse("-0XF", Some(16));
         assert_eq!(result.unwrap(), -15);
-        let result = parse("-0xF", Radix::new(16));
+        let result = parse("-0xF", Some(16));
         assert_eq!(result.unwrap(), -15);
-        let result = parse("0Xf", Radix::new(16));
+        let result = parse("0Xf", Some(16));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("0xf", Radix::new(16));
+        let result = parse("0xf", Some(16));
         assert_eq!(result.unwrap(), 15);
-        let result = parse("-0Xf", Radix::new(16));
+        let result = parse("-0Xf", Some(16));
         assert_eq!(result.unwrap(), -15);
-        let result = parse("-0xf", Radix::new(16));
+        let result = parse("-0xf", Some(16));
         assert_eq!(result.unwrap(), -15);
     }
 
     #[test]
     fn hex_with_mismatched_radix_is_err() {
-        parse("0XF", Radix::new(24)).unwrap_err();
-        parse("0xF", Radix::new(24)).unwrap_err();
-        parse("0Xf", Radix::new(24)).unwrap_err();
-        parse("0xf", Radix::new(24)).unwrap_err();
-        parse("-0XF", Radix::new(24)).unwrap_err();
-        parse("-0xF", Radix::new(24)).unwrap_err();
-        parse("-0Xf", Radix::new(24)).unwrap_err();
-        parse("-0xf", Radix::new(24)).unwrap_err();
+        parse("0XF", Some(24)).unwrap_err();
+        parse("0xF", Some(24)).unwrap_err();
+        parse("0Xf", Some(24)).unwrap_err();
+        parse("0xf", Some(24)).unwrap_err();
+        parse("-0XF", Some(24)).unwrap_err();
+        parse("-0xF", Some(24)).unwrap_err();
+        parse("-0Xf", Some(24)).unwrap_err();
+        parse("-0xf", Some(24)).unwrap_err();
     }
 
     #[test]
@@ -590,8 +604,8 @@ mod tests {
 
     #[test]
     fn digits_out_of_radix_is_err() {
-        parse("17AH", Radix::new(12)).unwrap_err();
-        parse("17ah", Radix::new(12)).unwrap_err();
+        parse("17AH", Some(12)).unwrap_err();
+        parse("17ah", Some(12)).unwrap_err();
         parse("17AH", None).unwrap_err();
         parse("17ah", None).unwrap_err();
     }
@@ -604,9 +618,9 @@ mod tests {
         // [3.1.2] > parse('abcdefgxyz'.upcase, 36)
         // => 1047601316316923
         // ```
-        let result = parse("abcdefgxyz", Radix::new(36));
+        let result = parse("abcdefgxyz", Some(36));
         assert_eq!(result.unwrap(), 1_047_601_316_316_923);
-        let result = parse("ABCDEFGXYZ", Radix::new(36));
+        let result = parse("ABCDEFGXYZ", Some(36));
         assert_eq!(result.unwrap(), 1_047_601_316_316_923);
     }
 
