@@ -46,6 +46,7 @@ dependencies = [
  "qed",
  "quickcheck",
  "regex",
+ "scolapasta-int-parse",
  "scolapasta-string-escape",
  "spinoso-array",
  "spinoso-env",
