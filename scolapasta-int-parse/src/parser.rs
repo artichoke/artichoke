@@ -49,16 +49,16 @@ impl<'a> State<'a> {
         // In bases below 10, the string repr for large numbers will be longer,
         // but pre-allocating for these uncommon cases seems wasteful. The
         // `String` will reallocate if it needs to in these pathological cases.
-        const MAX_REPR_LENGTH: usize = 21;
+        const PRE_ALLOCATED_DIGIT_CAPACITY: usize = 21;
 
         match self {
             Self::Initial(arg) => {
-                let mut digits = String::with_capacity(MAX_REPR_LENGTH);
+                let mut digits = String::with_capacity(PRE_ALLOCATED_DIGIT_CAPACITY);
                 digits.push(char::from(digit));
                 Self::Accumulate(arg, digits)
             }
             Self::Sign(arg, sign) => {
-                let mut digits = String::with_capacity(MAX_REPR_LENGTH);
+                let mut digits = String::with_capacity(PRE_ALLOCATED_DIGIT_CAPACITY);
                 if let Sign::Negative = sign {
                     digits.push('-');
                 }

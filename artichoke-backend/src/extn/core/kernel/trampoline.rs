@@ -50,6 +50,12 @@ pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) 
     //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
     //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
     //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+    // [3.1.2] > Integer(A.new, nil)
+    // (irb):2:in `Integer': can't convert A into Integer (TypeError)
+    //         from (irb):2:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
     // [3.1.2] > Integer(A.new, 10)
     // => 1234
     // ```

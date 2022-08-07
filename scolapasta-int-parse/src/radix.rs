@@ -5,17 +5,13 @@ use crate::subject::IntegerString;
 
 // Create a lookup table from each byte value (of which the ASCII range is
 // relevant) to the maximum minimum radix the character is valid for.
-#[allow(clippy::cast_possible_truncation)]
 const fn radix_table() -> [u32; 256] {
     // `u32::MAX` is used as a sentinel such that no valid radix can use this
     // byte.
     let mut table = [u32::MAX; 256];
-    let mut idx = 0_usize;
+    let mut byte = 0_u8;
     loop {
-        if idx >= table.len() {
-            return table;
-        }
-        let byte = idx as u8;
+        let idx = byte as usize;
         if byte >= b'0' && byte <= b'9' {
             table[idx] = (byte - b'0' + 1) as u32;
         } else if byte >= b'A' && byte <= b'Z' {
@@ -23,7 +19,10 @@ const fn radix_table() -> [u32; 256] {
         } else if byte >= b'a' && byte <= b'z' {
             table[idx] = (byte - b'a' + 11) as u32;
         }
-        idx += 1;
+        if byte.checked_add(1).is_none() {
+            return table;
+        }
+        byte += 1;
     }
 }
 
