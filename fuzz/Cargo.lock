@@ -62,6 +62,7 @@ version = "0.0.0"
 dependencies = [
  "artichoke",
  "libfuzzer-sys",
+ "scolapasta-int-parse",
 ]
 
 [[package]]
