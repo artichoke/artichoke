@@ -18,7 +18,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 
-//! Parse a given byte string and optional [`Radix`] into an [`i64`].
+//! Parse a given byte string and optional radix into an [`i64`].
 //!
 //! [`parse`] wraps [`i64::from_str_radix`] by performing normalizations on the
 //! input byte string:

@@ -156,16 +156,6 @@ pub enum InvalidRadixErrorKind {
 /// [`ArgumentError`]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum InvalidRadixExceptionKind {
-    /// If the given radix falls outside the range of an [`i32`], the error should
-    /// be mapped to a [`RangeError`]:
-    ///
-    /// ```console
-    /// [3.1.2] > begin; Integer "123", (2 ** 31 + 1); rescue => e; p e; end
-    /// #<RangeError: integer 2147483649 too big to convert to `int'>
-    /// [3.1.2] > begin; Integer "123", -(2 ** 31 + 1); rescue => e; p e; end
-    /// #<RangeError: integer -2147483649 too small to convert to `int'>
-    /// ```
-    ArgumentError,
     /// If the given radix falls within the range of an [`i32`], but outside the
     /// range of `2..=36`, the error should be mapped to an [`ArgumentError`]:
     ///
@@ -175,6 +165,20 @@ pub enum InvalidRadixExceptionKind {
     /// [3.1.2] > begin; Integer "123", -49; rescue => e; p e; end
     /// #<ArgumentError: invalid radix 49>
     /// ```
+    ///
+    /// [`ArgumentError`]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
+    ArgumentError,
+    /// If the given radix falls outside the range of an [`i32`], the error should
+    /// be mapped to a [`RangeError`]:
+    ///
+    /// ```console
+    /// [3.1.2] > begin; Integer "123", (2 ** 31 + 1); rescue => e; p e; end
+    /// #<RangeError: integer 2147483649 too big to convert to `int'>
+    /// [3.1.2] > begin; Integer "123", -(2 ** 31 + 1); rescue => e; p e; end
+    /// #<RangeError: integer -2147483649 too small to convert to `int'>
+    /// ```
+    ///
+    /// [`RangeError`]: https://ruby-doc.org/core-3.1.2/RangeError.html
     RangeError,
 }
 
