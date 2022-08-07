@@ -34,13 +34,29 @@ pub static RADIX_TABLE: [u32; 256] = radix_table();
 /// This type enforces that its value is in the range 2 and 36 inclusive, which
 /// is required by [`i64::from_str_radix`].
 ///
-/// See [`parse`] for more details on how to use this type.
+/// This type is not part of the public API for [`parse`] but can be used on its
+/// own.
 ///
 /// [`parse`]: crate::parse
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Radix(NonZeroU32);
 
 impl Default for Radix {
+    /// The default radix is `10`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use scolapasta_int_parse::Radix;
+    /// # fn example() -> Option<()> {
+    /// let default = Radix::default();
+    /// let base10 = Radix::new(10)?;
+    /// assert_eq!(default, base10);
+    /// assert_eq!(default.as_u32(), 10);
+    /// # Some(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
     fn default() -> Self {
         // SAFETY: Constant `10` is non-zero and between 2 and 36.
         unsafe { Self::new_unchecked(10) }
@@ -266,6 +282,7 @@ mod tests {
         let default = Radix::default();
         let base10 = Radix::new(10).unwrap();
         assert_eq!(default, base10);
+        assert_eq!(default.as_u32(), 10);
     }
 
     #[test]

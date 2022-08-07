@@ -57,7 +57,7 @@ impl<'a> fmt::Display for Error<'a> {
 #[cfg(feature = "std")]
 impl<'a> std::error::Error for Error<'a> {}
 
-/// Error that indicates the input to [`parse`] was invalid.
+/// Error that indicates the byte string input to [`parse`] was invalid.
 ///
 /// This error can be returned in the following circumstances:
 ///
@@ -140,14 +140,15 @@ pub enum InvalidRadixErrorKind {
     Invalid(i64),
 }
 
-/// An enum describing which type of Ruby `Exception` and [`InvalidRadixError`]
+/// An enum describing which type of Ruby `Exception` an [`InvalidRadixError`]
 /// should be mapped to.
 ///
 /// If the given radix falls outside the range of an [`i32`], the error should
 /// be mapped to a [`RangeError`].
 ///
 /// If the given radix falls within the range of an [`i32`], but outside the
-/// range of `2..=36`, the error should be mapped to an [`ArgumentError`].
+/// range of `2..=36` (or `-36..=-2` in some cases), the error should be mapped
+/// to an [`ArgumentError`].
 ///
 /// The error message for these Ruby exceptions should be derived from the
 /// [`fmt::Display`] implementation of [`InvalidRadixError`].
@@ -157,7 +158,8 @@ pub enum InvalidRadixErrorKind {
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum InvalidRadixExceptionKind {
     /// If the given radix falls within the range of an [`i32`], but outside the
-    /// range of `2..=36`, the error should be mapped to an [`ArgumentError`]:
+    /// range of `2..=36` (or -36..=-2 in some cases), the error should be
+    /// mapped to an [`ArgumentError`]:
     ///
     /// ```console
     /// [3.1.2] > begin; Integer "123", 49; rescue => e; p e; end
@@ -217,7 +219,7 @@ impl From<InvalidRadixErrorKind> for InvalidRadixError {
 }
 
 impl InvalidRadixError {
-    /// Map an invalid radix error to the kind of Ruby Exception it should be
+    /// Map an invalid radix error to the kind of Ruby `Exception` it should be
     /// raised as.
     ///
     /// See [`InvalidRadixExceptionKind`] for more details.
