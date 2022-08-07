@@ -1,14 +1,76 @@
+use crate::convert::implicitly_convert_to_string;
 use crate::extn::core::kernel;
 use crate::extn::core::kernel::require::RelativePath;
 use crate::extn::prelude::*;
 
-pub fn integer(interp: &mut Artichoke, mut arg: Value, base: Option<Value>) -> Result<Value, Error> {
+// FIXME: handle float and integer arguments.
+//
+// ```
+// [3.1.2] > Integer 999
+// => 999
+// [3.1.2] > Integer 999.9
+// => 999
+// [3.1.2] >
+// ^C
+// [3.1.2] > Integer -999.9
+// => -999
+// [3.1.2] > Integer Float::NAN
+// (irb):43:in `Integer': NaN (FloatDomainError)
+//         from (irb):43:in `<main>'
+//         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+//         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+//         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+// [3.1.2] > Integer Float::INFINITY
+// (irb):44:in `Integer': Infinity (FloatDomainError)
+//         from (irb):44:in `<main>'
+//         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+//         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+//         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+// ```
+pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) -> Result<Value, Error> {
+    // Flatten explicit `nil` argument with missing argument
     let base = base.and_then(|base| interp.convert(base));
     // SAFETY: Extract the `Copy` radix integer first since implicit conversions
     // can trigger garbage collections.
-    let base = interp.try_convert_mut(base)?;
-    let arg = interp.try_convert_mut(&mut arg)?;
-    let integer = kernel::integer::method(arg, base)?;
+    let base = if let Some(base) = base {
+        Some(base.try_convert_into::<i64>(interp)?)
+    } else {
+        None
+    };
+
+    // Implicit conversions are only performed if a non-nil radix argument is
+    // given:
+    //
+    // ```
+    // [3.1.2] > class A; def to_str; "1234"; end; end
+    // => :to_str
+    // [3.1.2] > Integer(A.new)
+    // (irb):20:in `Integer': can't convert A into Integer (TypeError)
+    //         from (irb):20:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+    // [3.1.2] > Integer(A.new, nil)
+    // (irb):2:in `Integer': can't convert A into Integer (TypeError)
+    //         from (irb):2:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+    // [3.1.2] > Integer(A.new, 10)
+    // => 1234
+    // ```
+    let integer = if base.is_none() {
+        let subject = subject.try_convert_into_mut::<&[u8]>(interp)?;
+        scolapasta_int_parse::parse(subject, base)?
+    } else {
+        // SAFETY: no interpreter access occurs between extracting this slice
+        // and the slice going out of scope, so the buffer backing it will not
+        // be invalidated.
+        let subject = unsafe { implicitly_convert_to_string(interp, &mut subject)? };
+        // This line needs to appear in both branches because the lifetimes of
+        // `subject` differ.
+        scolapasta_int_parse::parse(subject, base)?
+    };
     Ok(interp.convert(integer))
 }
 
