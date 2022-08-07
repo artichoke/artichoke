@@ -4,6 +4,46 @@ use scolapasta_string_escape::format_debug_escape_into;
 
 use crate::subject::IntegerString;
 
+/// Sum type for all possible errors from this crate.
+///
+/// See [`ArgumentError`] and [`InvalidRadixError`] for more details.
+pub enum Error<'a> {
+    /// An [`ArgumentError`].
+    Argument(ArgumentError<'a>),
+    /// An [`InvalidRadixError`].
+    Radix(InvalidRadixError),
+}
+
+impl<'a> From<ArgumentError<'a>> for Error<'a> {
+    fn from(err: ArgumentError<'a>) -> Self {
+        Self::Argument(err)
+    }
+}
+
+impl<'a> From<IntegerString<'a>> for Error<'a> {
+    fn from(subject: IntegerString<'a>) -> Self {
+        Self::Argument(subject.into())
+    }
+}
+
+impl<'a> From<&'a [u8]> for Error<'a> {
+    fn from(subject: &'a [u8]) -> Self {
+        Self::Argument(subject.into())
+    }
+}
+
+impl<'a> From<InvalidRadixError> for Error<'a> {
+    fn from(err: InvalidRadixError) -> Self {
+        Self::Radix(err)
+    }
+}
+
+impl<'a> From<InvalidRadixErrorKind> for Error<'a> {
+    fn from(err: InvalidRadixErrorKind) -> Self {
+        Self::Radix(err.into())
+    }
+}
+
 /// Error that indicates the input to [`parse`] was invalid.
 ///
 /// This error can be returned in the following circumstances:
@@ -79,6 +119,143 @@ impl<'a> fmt::Display for ArgumentError<'a> {
 
 #[cfg(feature = "std")]
 impl<'a> std::error::Error for ArgumentError<'a> {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum InvalidRadixErrorKind {
+    TooSmall(i64),
+    TooBig(i64),
+    Invalid(i64),
+}
+
+/// An enum describing which type of Ruby `Exception` and [`InvalidRadixError`]
+/// should be mapped to.
+///
+/// If the given radix falls outside the range of an [`i32`], the error should
+/// be mapped to a [`RangeError`].
+///
+/// If the given radix falls within the range of an [`i32`], but outside the
+/// range of `2..=36`, the error should be mapped to an [`ArgumentError`].
+///
+/// The error message for these Ruby exceptions should be derived from the
+/// [`fmt::Display`] implementation of [`InvalidRadixError`].
+///
+/// [`RangeError`]: https://ruby-doc.org/core-3.1.2/RangeError.html
+/// [`ArgumentError`]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum InvalidRadixExceptionKind {
+    /// If the given radix falls outside the range of an [`i32`], the error should
+    /// be mapped to a [`RangeError`]:
+    ///
+    /// ```console
+    /// [3.1.2] > begin; Integer "123", (2 ** 31 + 1); rescue => e; p e; end
+    /// #<RangeError: integer 2147483649 too big to convert to `int'>
+    /// [3.1.2] > begin; Integer "123", -(2 ** 31 + 1); rescue => e; p e; end
+    /// #<RangeError: integer -2147483649 too small to convert to `int'>
+    /// ```
+    ArgumentError,
+    /// If the given radix falls within the range of an [`i32`], but outside the
+    /// range of `2..=36`, the error should be mapped to an [`ArgumentError`]:
+    ///
+    /// ```console
+    /// [3.1.2] > begin; Integer "123", 49; rescue => e; p e; end
+    /// #<ArgumentError: invalid radix 49>
+    /// [3.1.2] > begin; Integer "123", -49; rescue => e; p e; end
+    /// #<ArgumentError: invalid radix 49>
+    /// ```
+    RangeError,
+}
+
+/// Error that indicates the radix input to [`parse`] was invalid.
+///
+/// This error can be returned in the following circumstances:
+///
+/// - The input is out of range of [`i32`].
+/// - The input is negative (depends on input byte string).
+/// - The input is out of range of `2..=36`.
+///
+/// This error may map to several Ruby `Exception` types. See
+/// [`InvalidRadixExceptionKind`] for more details.
+///
+/// # Examples
+///
+/// ```
+/// # use scolapasta_int_parse::Radix;
+/// let result = scolapasta_int_parse::parse("123", 500);
+/// let err = result.unwrap_err();
+/// assert_eq!(err.to_string(), "invalid radix 500");
+/// ```
+///
+/// [`parse`]: crate::parse
+#[allow(clippy::module_name_repetitions)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub struct InvalidRadixError {
+    kind: InvalidRadixErrorKind,
+}
+
+impl From<InvalidRadixErrorKind> for InvalidRadixError {
+    fn from(kind: InvalidRadixErrorKind) -> Self {
+        Self { kind }
+    }
+}
+
+impl InvalidRadixError {
+    /// Map an invalid radix error to the kind of Ruby Exception it should be
+    /// raised as.
+    ///
+    /// See [`InvalidRadixExceptionKind`] for more details.
+    #[must_use]
+    pub fn exception_kind(&self) -> InvalidRadixExceptionKind {
+        match self.kind {
+            InvalidRadixErrorKind::Invalid(_) => InvalidRadixExceptionKind::ArgumentError,
+            InvalidRadixErrorKind::TooSmall(_) | InvalidRadixErrorKind::TooBig(_) => {
+                InvalidRadixExceptionKind::RangeError
+            }
+        }
+    }
+}
+
+impl fmt::Display for InvalidRadixError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            // ```
+            // [3.1.2] > Integer "123", -((2 ** 31 + 1))
+            // (irb):14:in `Integer': integer -2147483649 too small to convert to `int' (RangeError)
+            //         from (irb):14:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // ```
+            InvalidRadixErrorKind::TooSmall(num) => write!(f, "integer {} too small to convert to `int'", num),
+            // ```
+            // [3.1.2] > Integer "123", (2 ** 31 + 1)
+            // (irb):15:in `Integer': integer 2147483649 too big to convert to `int' (RangeError)
+            //         from (irb):15:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // ```
+            InvalidRadixErrorKind::TooBig(num) => write!(f, "integer {} too big to convert to `int'", num),
+            // ```
+            // [3.1.2] > Integer "123", 1
+            // (irb):17:in `Integer': invalid radix 1 (ArgumentError)
+            //         from (irb):17:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // [3.1.2] > Integer "123", 39
+            // (irb):18:in `Integer': invalid radix 39 (ArgumentError)
+            //         from (irb):18:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // ```
+            InvalidRadixErrorKind::Invalid(num) => write!(f, "invalid radix {}", num),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for InvalidRadixError {}
 
 #[cfg(test)]
 mod tests {

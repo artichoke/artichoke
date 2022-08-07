@@ -1,5 +1,8 @@
 use core::num::NonZeroU32;
 
+use crate::error::{InvalidRadixError, InvalidRadixErrorKind};
+use crate::subject::IntegerString;
+
 // Create a lookup table from each byte value (of which the ASCII range is
 // relevant) to the maximum minimum radix the character is valid for.
 #[allow(clippy::cast_possible_truncation)]
@@ -96,6 +99,135 @@ impl Radix {
         Self(NonZeroU32::new_unchecked(radix))
     }
 
+    pub(crate) fn try_base_from_str_and_i64(
+        subject: IntegerString<'_>,
+        num: i64,
+    ) -> Result<Option<u32>, InvalidRadixError> {
+        match i32::try_from(num) {
+            // ```
+            // [3.1.2] > Integer "123", 0
+            // => 123
+            // [3.1.2] > Integer "0123", 0
+            // => 83
+            // [3.1.2] > Integer "0x123", 0
+            // => 291
+            // ```
+            Ok(0) => Ok(None),
+            // ```
+            // [3.1.2] > Integer "123", 1
+            // (irb):31:in `Integer': invalid radix 1 (ArgumentError)
+            //         from (irb):31:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // [3.1.2] > Integer "0x123", 1
+            // (irb):32:in `Integer': invalid radix 1 (ArgumentError)
+            //         from (irb):32:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // ```
+            Ok(1) => Err(InvalidRadixErrorKind::Invalid(num).into()),
+            // Octal and base literals ignore negative radixes, but only if they
+            // are in range of `i32`.
+            //
+            // ```
+            // [3.1.2] > Integer "0123", -1
+            // => 83
+            // [3.1.2] > Integer "0123", -2000
+            // => 83
+            // [3.1.2] > Integer "0x123", -1
+            // => 291
+            // [3.1.2] > Integer "0x123", -(2 ** 31)
+            // => 291
+            // [3.1.2] > Integer "0d123", -(2 ** 39)
+            // (irb):81:in `Integer': integer -549755813888 too small to convert to `int' (RangeError)
+            //         from (irb):81:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // ```
+            Ok(_) if num < 0 && matches!(subject.as_bytes().first(), Some(&b'0')) => Ok(None),
+            // ```
+            // [3.1.2] > Integer "123", -(2 ** 31)
+            // (irb):63:in `Integer': invalid radix -2147483648 (ArgumentError)
+            //         from (irb):63:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // ```
+            Ok(i32::MIN) => Err(InvalidRadixErrorKind::Invalid(num).into()),
+            Ok(radix) => {
+                // ```
+                // [3.1.2] > Integer "123", -(2**21)
+                // (irb):46:in `Integer': invalid radix 2097152 (ArgumentError)
+                //         from (irb):46:in `<main>'
+                //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+                //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+                //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+                // ```
+                let radix = match u32::try_from(radix) {
+                    Ok(radix) => radix,
+                    // ```
+                    // [3.1.2] > Integer "111", -2
+                    // => 7
+                    // [3.1.2] > Integer "123", -36
+                    // => 1371
+                    // ```
+                    Err(_) if (-36..=-2).contains(&radix) => (-radix).try_into().expect("radix is in range for u32"),
+                    // ```
+                    // [3.1.2] > Integer "123", -(2 ** 21)
+                    // (irb):67:in `Integer': invalid radix 2097152 (ArgumentError)
+                    //         from (irb):67:in `<main>'
+                    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+                    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+                    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+                    // [3.1.2] > 2 ** 21
+                    // => 2097152
+                    // ```
+                    Err(_) => {
+                        // Unchecked negation is safe because we checked for
+                        // `i32::MAX` above.
+                        let num = -num;
+                        return Err(InvalidRadixErrorKind::Invalid(num).into());
+                    }
+                };
+                if let Some(radix) = Radix::new(radix) {
+                    Ok(Some(radix.as_u32()))
+                } else {
+                    // ```
+                    // [3.1.2] > Integer "123", 49
+                    // (irb):83:in `Integer': invalid radix 49 (ArgumentError)
+                    //         from (irb):83:in `<main>'
+                    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+                    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+                    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+                    // ```
+                    Err(InvalidRadixErrorKind::Invalid(num).into())
+                }
+            }
+            // ```
+            // [3.1.2] > Integer "123", (2 ** 32 + 1)
+            // (irb):34:in `Integer': integer 4294967297 too big to convert to `int' (RangeError)
+            //         from (irb):34:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // ```
+            Err(_) if num > i32::MAX.into() => Err(InvalidRadixErrorKind::TooBig(num).into()),
+            // ```
+            // [3.1.2] > Integer "123", -(2 ** 32 + 1)
+            // (irb):33:in `Integer': integer -4294967297 too small to convert to `int' (RangeError)
+            //         from (irb):33:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+            // ```
+            Err(_) if num < i32::MIN.into() => Err(InvalidRadixErrorKind::TooSmall(num).into()),
+            Err(_) => unreachable!("all cases covered"),
+        }
+    }
+
     /// Extract the `Radix` as the underlying [`u32`].
     ///
     /// # Examples
@@ -120,7 +252,11 @@ impl Radix {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
+    use core::fmt::Write as _;
+
     use super::{Radix, RADIX_TABLE};
+    use crate::error::InvalidRadixExceptionKind;
 
     #[test]
     fn default_is_radix_10() {
@@ -248,5 +384,189 @@ mod tests {
                 "unexpected value for test case '{byte}'"
             );
         }
+    }
+
+    #[test]
+    fn from_base_zero() {
+        let subject = "123".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, 0);
+        assert_eq!(result.unwrap(), None);
+
+        let subject = "0123".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, 0);
+        assert_eq!(result.unwrap(), None);
+
+        let subject = "0x123".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, 0);
+        assert_eq!(result.unwrap(), None);
+    }
+
+    #[test]
+    fn from_base_one_err() {
+        let subject = "123".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, 1).unwrap_err();
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+
+        let subject = "0123".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, 1).unwrap_err();
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+
+        let subject = "0x123".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, 1).unwrap_err();
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+    }
+
+    #[test]
+    fn from_base_i32_min_no_prefix_err() {
+        let subject = "123".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, i32::MIN.into()).unwrap_err();
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+    }
+
+    #[test]
+    fn from_base_i32_min_with_prefix_ignored() {
+        let subject = "0123".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, i32::MIN.into());
+        assert_eq!(result.unwrap(), None);
+
+        let subject = "0x123".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, i32::MIN.into());
+        assert_eq!(result.unwrap(), None);
+    }
+
+    #[test]
+    fn from_base_negative_out_of_i32_range_min_with_prefix_err() {
+        let subject = "0d123".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, -(2_i64.pow(39))).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "integer -549755813888 too small to convert to `int'");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
+    }
+
+    #[test]
+    fn from_base_negative_out_of_range_err() {
+        let subject = "123".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, -(2_i64.pow(21))).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "invalid radix 2097152");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+
+        let subject = "123".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, -(2_i64.pow(31))).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "invalid radix -2147483648");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+    }
+
+    #[test]
+    fn from_base_negative_abs_is_valid() {
+        let subject = "111".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, -2);
+        assert_eq!(result.unwrap(), Some(2));
+
+        let subject = "111".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, -10);
+        assert_eq!(result.unwrap(), Some(10));
+
+        let subject = "111".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, -36);
+        assert_eq!(result.unwrap(), Some(36));
+    }
+
+    #[test]
+    fn from_base_negative_abs_is_invalid_err() {
+        let subject = "111".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, -500).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "invalid radix 500");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+
+        let subject = "111".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, -49).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "invalid radix 49");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+    }
+
+    #[test]
+    fn from_base_positive_is_valid() {
+        let subject = "111".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, 2);
+        assert_eq!(result.unwrap(), Some(2));
+
+        let subject = "111".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, 10);
+        assert_eq!(result.unwrap(), Some(10));
+
+        let subject = "111".try_into().unwrap();
+        let result = Radix::try_base_from_str_and_i64(subject, 36);
+        assert_eq!(result.unwrap(), Some(36));
+    }
+
+    #[test]
+    fn from_base_positive_is_invalid_err() {
+        let subject = "111".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, 500).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "invalid radix 500");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+
+        let subject = "111".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, 49).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "invalid radix 49");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
+    }
+
+    #[test]
+    fn from_base_too_big_i32() {
+        let subject = "111".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, i64::from(i32::MAX) + 1_i64).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "integer 2147483648 too big to convert to `int'");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
+
+        let subject = "111".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, 2_i64.pow(32) + 1_i64).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "integer 4294967297 too big to convert to `int'");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
+    }
+
+    #[test]
+    fn from_base_too_small_i32() {
+        let subject = "111".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, i64::from(i32::MIN) - 1_i64).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "integer -2147483649 too small to convert to `int'");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
+
+        let subject = "111".try_into().unwrap();
+        let err = Radix::try_base_from_str_and_i64(subject, -(2_i64).pow(32) - 1_i64).unwrap_err();
+
+        let mut buf = String::new();
+        write!(&mut buf, "{}", err).unwrap();
+        assert_eq!(&*buf, "integer -4294967297 too small to convert to `int'");
+        assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
     }
 }

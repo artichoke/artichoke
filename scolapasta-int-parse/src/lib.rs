@@ -49,7 +49,7 @@ mod parser;
 mod radix;
 mod subject;
 
-pub use error::ArgumentError;
+pub use error::{ArgumentError, InvalidRadixError, InvalidRadixExceptionKind};
 use parser::{Sign, State as ParseState};
 pub use radix::Radix;
 use radix::RADIX_TABLE;
