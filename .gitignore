@@ -667,3 +667,6 @@ FodyWeavers.xsd
 !**/vendor/spec/**/*.so
 !**/vendor/spec/**/*.so.*
 !**/vendor/spec/**/*.dylib
+# https://github.com/sourcefrog/cargo-mutants/blob/main/.gitignore
+mutants.out
+mutants.out.old
