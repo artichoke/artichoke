@@ -318,7 +318,8 @@ impl TryFrom<&str> for Offset {
                 // - https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
                 // - https://docs.rs/regex/latest/regex/#ascii-character-classes
                 static HH_MM_MATCHER: Lazy<Regex> = Lazy::new(|| {
-                    Regex::new(r"^([\-\+]{1})([[:digit:]]{2}):?([[:digit:]]{2})$").expect("regex must compile")
+                    // regex must compile
+                    Regex::new(r"^([\-\+]{1})([[:digit:]]{2}):?([[:digit:]]{2})$").unwrap()
                 });
 
                 let caps = HH_MM_MATCHER.captures(input).ok_or_else(TzStringError::new)?;
