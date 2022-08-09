@@ -324,7 +324,15 @@ impl TryFrom<&str> for Offset {
 
                 let caps = HH_MM_MATCHER.captures(input).ok_or_else(TzStringError::new)?;
 
+                // Special handling of the +/- sign is required because `-00:30`
+                // must parse to a negative offset and `i32::from_str_radix`
+                // cannot preserve the `-` sign when parsing zero.
                 let sign = if &caps[1] == "+" { 1 } else { -1 };
+
+                // Both of these calls to `parse::<i32>()` ultimately boil down
+                // to `i32::from_str_radix(s, 10)`. This function strips leading
+                // zero padding as is present when parsing offsets like `+00:30`
+                // or `-08:00`.
                 let hours = caps[2].parse::<i32>().expect("Two ASCII digits fit in i32");
                 let minutes = caps[3].parse::<i32>().expect("Two ASCII digits fit in i32");
 
