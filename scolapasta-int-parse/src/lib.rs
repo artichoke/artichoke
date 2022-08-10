@@ -65,7 +65,7 @@ use subject::IntegerString;
 /// - Assert the byte string is ASCII and does not contain NUL bytes.
 /// - Parse the radix to ensure it is in range and valid for the given input
 ///   byte string.
-/// - Trim leading whitespace.
+/// - Trim leading and trailing whitespace.
 /// - Accept a single, optional `+` or `-` sign byte.
 /// - Parse a literal radix out of the string from one of `0b`, `0B`, `0o`,
 ///   `0O`, `0d`, `0D`, `0x`, or `0X`. If the given radix is `Some(_)`, the
@@ -166,13 +166,26 @@ fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
     };
     let mut state = ParseState::new(subject);
 
-    // Phase 3: Trim leading whitespace.
-    let mut chars = subject
-        .as_bytes()
-        .iter()
-        .copied()
-        .skip_while(u8::is_ascii_whitespace)
-        .peekable();
+    // Phase 3: Trim leading and trailing whitespace.
+    let mut chars = {
+        let mut bytes = subject.as_bytes();
+        loop {
+            if let Some((first, tail)) = bytes.split_first() {
+                if first.is_ascii_whitespace() {
+                    bytes = tail;
+                    continue;
+                }
+            }
+            if let Some((last, head)) = bytes.split_last() {
+                if last.is_ascii_whitespace() {
+                    bytes = head;
+                    continue;
+                }
+            }
+            break;
+        }
+        bytes.iter().copied().peekable()
+    };
 
     // Phase 4: Set sign.
     match chars.peek() {
@@ -825,5 +838,87 @@ mod tests {
     #[test]
     fn int_min_radix_does_not_panic() {
         parse("111", Some(i64::MIN)).unwrap_err();
+    }
+
+    #[test]
+    fn trailing_whitespace() {
+        let result = parse("1 ", None);
+        assert_eq!(result.unwrap(), 1);
+    }
+
+    #[test]
+    fn all_ascii_whitespace_is_trimmed_from_end() {
+        // ```
+        // [3.1.2] > Integer "93 "
+        // => 93
+        // [3.1.2] > Integer "93\n"
+        // => 93
+        // [3.1.2] > Integer "93\t"
+        // => 93
+        // [3.1.2] > Integer "93\u000A"
+        // => 93
+        // [3.1.2] > Integer "93\u000C"
+        // => 93
+        // [3.1.2] > Integer "93\u000D"
+        // => 93
+        // ```
+        let result = parse("93 ", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("93\n", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("93\t", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("93\u{000A}", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("93\u{000C}", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("93\u{000D}", None);
+        assert_eq!(result.unwrap(), 93);
+    }
+
+    #[test]
+    fn all_ascii_whitespace_is_trimmed_from_start() {
+        // ```
+        // [3.1.2] > Integer " 93"
+        // => 93
+        // [3.1.2] > Integer "\n93"
+        // => 93
+        // [3.1.2] > Integer "\t93"
+        // => 93
+        // [3.1.2] > Integer "\u000A93"
+        // => 93
+        // [3.1.2] > Integer "\u000C93"
+        // => 93
+        // [3.1.2] > Integer "\u000D93"
+        // => 93
+        // ```
+        let result = parse(" 93", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\n93", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\t93", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\u{000A}93", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\u{000C}93", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\u{000D}93", None);
+        assert_eq!(result.unwrap(), 93);
+    }
+
+    #[test]
+    fn inputs_with_both_leading_and_trailing_whitespace_are_parsed() {
+        let result = parse("  93  ", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\n 93 \n", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\t 93 \t", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\u{000A} 93 \u{000A}", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\u{000C} 93 \u{000C}", None);
+        assert_eq!(result.unwrap(), 93);
+        let result = parse("\u{000D} 93 \u{000D}", None);
+        assert_eq!(result.unwrap(), 93);
     }
 }
