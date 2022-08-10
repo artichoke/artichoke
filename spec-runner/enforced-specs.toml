@@ -172,6 +172,38 @@ skip = [
   "upcase",
 ]
 
+[specs.core.time]
+include = "all"
+# Missing support for many of these in the `chrono` feature of spinoso-time
+skip = [
+  "_dump",
+  "_load",
+  "at",
+  "comparison",
+  "dup",
+  "eql",
+  "getlocal",
+  "gm",
+  "gmtime",
+  "local",
+  "localtime",
+  "minus",
+  "mktime",
+  "new",
+  "now",
+  "nsec",
+  "plus",
+  "sec",
+  "succ",
+  "time",
+  "to_i",
+  "tv_sec",
+  "usec",
+  "utc",
+  "wday",
+  "zone",
+]
+
 ## Ruby Standard Library
 
 [specs.library.abbrev]
