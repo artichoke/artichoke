@@ -240,8 +240,9 @@ fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
                     16
                 }
                 (Some(b'b' | b'B' | b'o' | b'O' | b'd' | b'D' | b'x' | b'X'), Some(_)) => return Err(subject.into()),
-                (Some(_) | None, None) => 8,
-                (Some(_) | None, Some(radix)) => radix,
+                (None, _) => return Ok(0),
+                (Some(_), None) => 8,
+                (Some(_), Some(radix)) => radix,
             }
         }
         Some(_) => radix.unwrap_or(10),
@@ -838,6 +839,32 @@ mod tests {
     #[test]
     fn int_min_radix_does_not_panic() {
         parse("111", Some(i64::MIN)).unwrap_err();
+    }
+
+    #[test]
+    fn decimal_zero() {
+        let result = parse("0", None);
+        assert_eq!(result.unwrap(), 0);
+        let result = parse("0", Some(2));
+        assert_eq!(result.unwrap(), 0);
+        let result = parse("0", Some(8));
+        assert_eq!(result.unwrap(), 0);
+        let result = parse("0", Some(10));
+        assert_eq!(result.unwrap(), 0);
+        let result = parse("0", Some(16));
+        assert_eq!(result.unwrap(), 0);
+        let result = parse("0", Some(36));
+        assert_eq!(result.unwrap(), 0);
+    }
+
+    #[test]
+    fn decimal_zero_whitespace() {
+        let result = parse("0 ", None);
+        assert_eq!(result.unwrap(), 0);
+        let result = parse(" 0", None);
+        assert_eq!(result.unwrap(), 0);
+        let result = parse(" 0 ", None);
+        assert_eq!(result.unwrap(), 0);
     }
 
     #[test]
