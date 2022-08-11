@@ -316,7 +316,7 @@ impl Time {
         self.inner.local_time_type().is_dst()
     }
 
-    /// Returns an integer representing the day of the week, 0..6, with Sunday
+    /// Returns an integer representing the day of the week, `0..=6`, with Sunday
     /// == 0.
     ///
     /// Can be used to implement [`Time#wday`].
@@ -508,7 +508,7 @@ impl Time {
         self.day_of_week() == 6
     }
 
-    /// Returns an integer representing the day of the year, 1..366.
+    /// Returns an integer representing the day of the year, `1..=366`.
     ///
     /// Can be used to implement [`Time#yday`].
     ///
