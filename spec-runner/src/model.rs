@@ -6,7 +6,7 @@ use std::ffi::OsStr;
 use serde::{Deserialize, Serialize};
 
 /// Config file format for declaring the set of ruby/spec suites to run.
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Config {
     /// Specs by family.
     pub specs: Specs,
@@ -30,7 +30,7 @@ impl Config {
 }
 
 /// The set of all ruby/specs to run, by top-level directory.
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Specs {
     pub language: Option<HashMap<String, Suite>>,
@@ -56,7 +56,7 @@ impl Specs {
 }
 
 /// The specs to run for a suite or API group.
-#[derive(Debug, Clone, Hash, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Serialize, Deserialize)]
 #[serde(tag = "include")]
 #[serde(rename_all = "snake_case")]
 pub enum Suite {
@@ -81,7 +81,7 @@ impl Suite {
     }
 }
 
-#[derive(Default, Debug, Clone, Hash, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Serialize, Deserialize)]
 pub struct All {
     /// List of specs to always skip because they are known to fail.
     pub skip: Option<Vec<String>>,
@@ -94,7 +94,7 @@ impl All {
     }
 }
 
-#[derive(Default, Debug, Clone, Hash, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Serialize, Deserialize)]
 pub struct Set {
     /// List of specs to include.
     pub specs: Vec<String>,
