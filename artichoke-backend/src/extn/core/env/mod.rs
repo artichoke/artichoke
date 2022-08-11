@@ -12,8 +12,8 @@
 //! Core API, it is globally available:
 //!
 //! ```ruby
-//! ENV['PATH']
-//! ENV['PS1'] = 'artichoke> '
+//! ENV["PATH"]
+//! ENV["PS1"] = 'artichoke> '
 //! ```
 //!
 //! [`ENV`]: https://ruby-doc.org/core-3.1.2/ENV.html

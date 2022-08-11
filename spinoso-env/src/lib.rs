@@ -32,8 +32,8 @@
 //! Core API, it is globally available:
 //!
 //! ```ruby
-//! ENV['PATH']
-//! ENV['PS1'] = 'artichoke> '
+//! ENV["PATH"]
+//! ENV["PS1"] = 'artichoke> '
 //! ```
 //!
 //! There are two `ENV` implementations in this crate:
