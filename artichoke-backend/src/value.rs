@@ -3,16 +3,14 @@ use std::error;
 use std::fmt;
 use std::ptr;
 
-use artichoke_core::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
+use artichoke_core::convert::{Convert, ConvertMut, TryConvertMut};
 use artichoke_core::intern::Intern;
 use artichoke_core::value::Value as ValueCore;
 
-use crate::convert::BoxUnboxVmValue;
 use crate::core::ClassRegistry;
 use crate::error::{Error, RubyException};
 use crate::exception_handler;
 use crate::extn::core::exception::{ArgumentError, Fatal};
-use crate::extn::core::symbol::Symbol;
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Ruby};
@@ -207,11 +205,16 @@ impl ValueCore for Value {
     }
 
     fn respond_to(&self, interp: &mut Self::Artichoke, method: &str) -> Result<bool, Self::Error> {
-        let method = interp.intern_string(String::from(method))?;
-        let method = Symbol::new(method);
-        let method = Symbol::alloc_value(method, interp)?;
-        let respond_to = self.funcall(interp, "respond_to?", &[method], None)?;
-        interp.try_convert(respond_to)
+        // Look up a method in the mruby VM's method table for this value's
+        // class object.
+        let method_sym = if let Some(sym) = interp.check_interned_string(method)? {
+            sym
+        } else {
+            interp.intern_string(String::from(method))?
+        };
+        let has_method =
+            unsafe { interp.with_ffi_boundary(|mrb| sys::mrb_sys_value_has_method(mrb, self.inner(), method_sym))? };
+        Ok(has_method)
     }
 
     fn to_s(&self, interp: &mut Self::Artichoke) -> Vec<u8> {
@@ -627,5 +630,36 @@ mod tests {
             b"undefined method 'garbage_method_name'".as_bstr(),
             err.message().as_ref().as_bstr()
         );
+    }
+
+    #[test]
+    fn value_respond_to() {
+        let mut interp = interpreter();
+        let nil = Value::nil();
+        assert!(nil.respond_to(&mut interp, "nil?").unwrap());
+        assert!(nil.respond_to(&mut interp, "class").unwrap());
+        assert!(!nil.respond_to(&mut interp, "zyxw_not_a_method").unwrap());
+
+        let object = interp.eval(b"Object.new").unwrap();
+        assert!(object.respond_to(&mut interp, "class").unwrap());
+        assert!(object.respond_to(&mut interp, "freeze").unwrap());
+        assert!(!object.respond_to(&mut interp, "zyxw_not_a_method").unwrap());
+
+        let array = interp.eval(b"[1, 2, 3]").unwrap();
+        assert!(array.respond_to(&mut interp, "class").unwrap());
+        assert!(array.respond_to(&mut interp, "length").unwrap());
+        assert!(!array.respond_to(&mut interp, "zyxw_not_a_method").unwrap());
+    }
+
+    #[test]
+    fn value_respond_to_basic_object() {
+        let mut interp = interpreter();
+
+        // `BasicObject` does not have `#respond_to?` and relies on
+        // `Value::respond_to` being implemented with VM method table lookups.
+        let basic_object = interp.eval(b"BasicObject.new").unwrap();
+        assert!(basic_object.respond_to(&mut interp, "__send__").unwrap());
+        assert!(!basic_object.respond_to(&mut interp, "class").unwrap());
+        assert!(!basic_object.respond_to(&mut interp, "zyxw_not_a_method").unwrap());
     }
 }

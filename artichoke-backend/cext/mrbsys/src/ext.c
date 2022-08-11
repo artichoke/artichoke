@@ -14,6 +14,16 @@ const uint8_t mrblib_irep[] = {0};
 
 const char mrb_digitmap[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
+// VM method table twiddling
+
+MRB_API bool
+mrb_sys_value_has_method(mrb_state *mrb, mrb_value value, mrb_sym method)
+{
+  struct RClass *class_pointer = mrb_sys_class_of_value(mrb, value);
+  mrb_method_t m = mrb_method_search_vm(mrb, &class_pointer, method);
+  return !MRB_METHOD_UNDEF_P(m);
+}
+
 // Check whether `mrb_value` is nil, false, or true
 
 MRB_API bool
