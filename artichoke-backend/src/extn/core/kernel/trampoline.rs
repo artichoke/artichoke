@@ -57,6 +57,8 @@ pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) 
             if let Ok(s) = subject.try_convert_into_mut::<&[u8]>(interp) {
                 scolapasta_int_parse::parse(s, Some(base))?
             } else if subject.respond_to(interp, "to_str")? {
+                // SAFETY: the extracted byte slice is used and discarded before
+                // the interpreter is accessed again.
                 let s = unsafe { implicitly_convert_to_string(interp, &mut subject)? };
                 scolapasta_int_parse::parse(s, Some(base))?
             } else {
