@@ -22,12 +22,12 @@ impl<'a> Iterator for Iter<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.inner.next()?;
-        Some(&*next)
+        Some(&**next)
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let nth = self.inner.nth(n)?;
-        Some(&*nth)
+        Some(&**nth)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -40,7 +40,7 @@ impl<'a> Iterator for Iter<'a> {
 
     fn last(self) -> Option<Self::Item> {
         let last = self.inner.last()?;
-        Some(&*last)
+        Some(&**last)
     }
 }
 

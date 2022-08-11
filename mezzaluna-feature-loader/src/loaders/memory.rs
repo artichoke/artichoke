@@ -88,12 +88,12 @@ impl Memory {
         // Absolute paths do not need to be resolved against the load paths.
         if let Ok(path) = path.strip_prefix(self.load_path()) {
             if let Some(bytes) = self.sources.get(path) {
-                return Some(&*bytes);
+                return Some(&**bytes);
             }
             return None;
         }
         let bytes = self.sources.get(path)?;
-        Some(&*bytes)
+        Some(&**bytes)
     }
 
     /// Insert byte content into the in-memory feature store at the given path.

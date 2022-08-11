@@ -476,7 +476,7 @@ mod tests {
             let num = NonZeroUsize::new(num).unwrap();
             let sym_str = nth_match_group(num);
             let sym_bytes = nth_match_group_bytes(num);
-            assert_eq!(&*sym_str.as_bytes(), &*sym_bytes);
+            assert_eq!(sym_str.as_bytes(), &*sym_bytes);
         }
     }
 }
