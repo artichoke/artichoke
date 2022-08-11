@@ -306,7 +306,7 @@ impl BinaryString {
 
     #[inline]
     pub fn ord(&self) -> Result<u32, OrdError> {
-        let byte = self.inner.get(0).copied().ok_or_else(OrdError::empty_string)?;
+        let byte = self.inner.first().copied().ok_or_else(OrdError::empty_string)?;
         Ok(u32::from(byte))
     }
 
