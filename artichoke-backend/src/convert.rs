@@ -19,6 +19,7 @@ mod float;
 mod float_to_int;
 mod hash;
 mod implicit;
+mod maybe_to_int;
 mod nilable;
 mod string;
 
@@ -28,6 +29,7 @@ pub use implicit::{
     implicitly_convert_to_int, implicitly_convert_to_nilable_string, implicitly_convert_to_spinoso_string,
     implicitly_convert_to_string,
 };
+pub use maybe_to_int::maybe_to_int;
 
 /// Provide a fallible converter for types that implement an infallible
 /// conversion.
