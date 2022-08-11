@@ -1,4 +1,4 @@
-use crate::convert::implicitly_convert_to_string;
+use crate::convert::{float_to_int, implicitly_convert_to_int, implicitly_convert_to_string, maybe_to_int};
 use crate::extn::core::kernel;
 use crate::extn::core::kernel::require::RelativePath;
 use crate::extn::prelude::*;
@@ -30,48 +30,54 @@ use crate::extn::prelude::*;
 pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) -> Result<Value, Error> {
     // Flatten explicit `nil` argument with missing argument
     let base = base.and_then(|base| interp.convert(base));
-    // SAFETY: Extract the `Copy` radix integer first since implicit conversions
-    // can trigger garbage collections.
-    let base = if let Some(base) = base {
-        Some(base.try_convert_into::<i64>(interp)?)
+
+    let result = if subject.is_nil() {
+        if let Some(base) = base {
+            if maybe_to_int(interp, base)?.is_some() {
+                return Err(ArgumentError::with_message("base specified for non string value").into());
+            }
+        }
+        return Err(TypeError::with_message("can't convert nil into Integer").into());
+    } else if let Ok(subject) = subject.try_convert_into_mut::<&[u8]>(interp) {
+        let base = if let Some(base) = base {
+            maybe_to_int(interp, base)?
+        } else {
+            None
+        };
+        scolapasta_int_parse::parse(subject, base)?
+    } else if let Ok(float) = subject.try_convert_into::<f64>(interp) {
+        if let Some(base) = base {
+            if maybe_to_int(interp, base)?.is_some() {
+                return Err(ArgumentError::with_message("base specified for non string value").into());
+            }
+        }
+        float_to_int(float)?
+    } else if let Some(base) = base {
+        if let Some(base) = maybe_to_int(interp, base)? {
+            if let Ok(s) = subject.try_convert_into_mut::<&[u8]>(interp) {
+                scolapasta_int_parse::parse(s, Some(base))?
+            } else if subject.respond_to(interp, "to_str")? {
+                // SAFETY: the extracted byte slice is used and discarded before
+                // the interpreter is accessed again.
+                let s = unsafe { implicitly_convert_to_string(interp, &mut subject)? };
+                scolapasta_int_parse::parse(s, Some(base))?
+            } else {
+                return Err(ArgumentError::with_message("base specified for non string value").into());
+            }
+        } else {
+            implicitly_convert_to_int(interp, subject).map_err(|_| {
+                let message = format!("can't convert {} into Integer", interp.class_name_for_value(subject));
+                TypeError::from(message)
+            })?
+        }
     } else {
-        None
+        implicitly_convert_to_int(interp, subject).map_err(|_| {
+            let message = format!("can't convert {} into Integer", interp.class_name_for_value(subject));
+            TypeError::from(message)
+        })?
     };
 
-    // Implicit conversions are only performed if a non-nil radix argument is
-    // given:
-    //
-    // ```
-    // [3.1.2] > class A; def to_str; "1234"; end; end
-    // => :to_str
-    // [3.1.2] > Integer(A.new)
-    // (irb):20:in `Integer': can't convert A into Integer (TypeError)
-    //         from (irb):20:in `<main>'
-    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
-    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
-    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
-    // [3.1.2] > Integer(A.new, nil)
-    // (irb):2:in `Integer': can't convert A into Integer (TypeError)
-    //         from (irb):2:in `<main>'
-    //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
-    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
-    //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
-    // [3.1.2] > Integer(A.new, 10)
-    // => 1234
-    // ```
-    let integer = if base.is_none() {
-        let subject = subject.try_convert_into_mut::<&[u8]>(interp)?;
-        scolapasta_int_parse::parse(subject, base)?
-    } else {
-        // SAFETY: no interpreter access occurs between extracting this slice
-        // and the slice going out of scope, so the buffer backing it will not
-        // be invalidated.
-        let subject = unsafe { implicitly_convert_to_string(interp, &mut subject)? };
-        // This line needs to appear in both branches because the lifetimes of
-        // `subject` differ.
-        scolapasta_int_parse::parse(subject, base)?
-    };
-    Ok(interp.convert(integer))
+    Ok(interp.convert(result))
 }
 
 pub fn load(interp: &mut Artichoke, path: Value) -> Result<Value, Error> {

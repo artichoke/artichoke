@@ -4,6 +4,13 @@
 # https://ruby-doc.org/core-2.6.3/Kernel.html
 def spec
   throw_catch
+  kernel_integer_implicit_conversion
+  kernel_integer_float
+  kernel_integer_float_infinity
+  kernel_integer_float_neg_infinity
+  kernel_integer_float_nan
+  kernel_integer_integer
+  kernel_integer_nil
   kernel_p_no_args
   kernel_p_one_arg
   kernel_p_array_args
@@ -41,6 +48,476 @@ def throw_catch
     456
   end
   raise unless result == 123
+end
+
+class A
+  def to_int
+    16
+  end
+end
+
+class AA
+  def to_int
+    '16'
+  end
+end
+
+class B
+  def to_str
+    '55'
+  end
+end
+
+class C
+  def to_int
+    raise 'to int err'
+  end
+end
+
+class D
+  def to_str
+    raise 'to str err'
+  end
+end
+
+class AAA
+  def to_int
+    Object.new
+  end
+end
+
+class S < String; end
+
+class AAAA
+  def to_int
+    S.new
+  end
+end
+
+def kernel_integer_implicit_conversion
+  begin
+    Integer(10, A.new)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(10.9, A.new)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  raise unless Integer('10', A.new) == 16
+  raise unless Integer(10, AA.new) == 10
+  raise unless Integer(10.9, AA.new) == 10
+  raise unless Integer('10', AA.new) == 10
+  raise unless Integer(10, AAA.new) == 10
+  raise unless Integer(10.9, AAA.new) == 10
+  raise unless Integer('10', AAA.new) == 10
+  raise unless Integer(10, AAAA.new) == 10
+  raise unless Integer(10.9, AAAA.new) == 10
+  raise unless Integer('10', AAAA.new) == 10
+  raise unless Integer(10, B.new) == 10
+  raise unless Integer(10.9, B.new) == 10
+  raise unless Integer('10', B.new) == 10
+
+  begin
+    Integer(10, C.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to int err'
+  end
+
+  begin
+    Integer(10.9, C.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to int err'
+  end
+
+  begin
+    Integer('10', C.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to int err'
+  end
+
+  raise unless Integer(10, D.new) == 10
+  raise unless Integer(10.9, D.new) == 10
+  raise unless Integer('10', D.new) == 10
+  raise unless Integer(10, [1, 2, 3]) == 10
+  raise unless Integer(10.9, [1, 2, 3]) == 10
+  raise unless Integer('10', [1, 2, 3]) == 10
+
+  raise unless Integer('555', '55') == 555
+  raise unless Integer('555', '10') == 555
+  raise unless Integer(A.new) == 16
+
+  begin
+    Integer(B.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
+  end
+
+  begin
+    Integer(C.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert C into Integer"
+  end
+
+  begin
+    Integer(D.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert D into Integer"
+  end
+
+  begin
+    Integer(A.new, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(A.new, A.new)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  raise unless Integer(A.new, B.new) == 16
+
+  begin
+    Integer(A.new, C.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to int err'
+  end
+
+  raise unless Integer(A.new, D.new) == 16
+  raise unless Integer(A.new, Object.new) == 16
+  raise unless Integer(A.new, BasicObject.new) == 16
+  raise unless Integer(A.new, [1, 2, 3]) == 16
+  raise unless Integer(A.new, AA.new) == 16
+  raise unless Integer(B.new, 10) == 55
+
+  begin
+    Integer(B.new, '10')
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
+  end
+
+  raise unless Integer(B.new, A.new) == 85
+
+  begin
+    Integer(B.new, AA.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
+  end
+
+  begin
+    Integer(B.new, B.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
+  end
+
+  begin
+    Integer(B.new, C.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to int err'
+  end
+
+  begin
+    Integer(B.new, D.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
+  end
+
+  begin
+    Integer(C.new, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(C.new, A.new)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(C.new, AA.new)
+    raise 'expected ArgumentError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert C into Integer"
+  end
+
+  begin
+    Integer(C.new, B.new)
+    raise 'expected ArgumentError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert C into Integer"
+  end
+
+  begin
+    Integer(C.new, C.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to int err'
+  end
+
+  begin
+    Integer(C.new, D.new)
+    raise 'expected ArgumentError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert C into Integer"
+  end
+
+  begin
+    Integer(D.new, 10)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to str err'
+  end
+
+  begin
+    Integer(D.new, A.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to str err'
+  end
+
+  begin
+    Integer(D.new, AA.new)
+    raise 'expected ArgumentError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert D into Integer"
+  end
+
+  begin
+    Integer(D.new, B.new)
+    raise 'expected ArgumentError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert D into Integer"
+  end
+
+  begin
+    Integer(D.new, C.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to int err'
+  end
+
+  begin
+    Integer(D.new, D.new)
+    raise 'expected ArgumentError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert D into Integer"
+  end
+end
+
+def kernel_integer_float
+  raise unless Integer(10.2) == 10
+  raise unless Integer(10.5) == 10
+  raise unless Integer(10.9) == 10
+  raise unless Integer(-10.2) == -10
+  raise unless Integer(-10.5) == -10
+  raise unless Integer(-10.9) == -10
+  raise unless Integer(10.2, nil) == 10
+  raise unless Integer(10.5, nil) == 10
+  raise unless Integer(10.9, nil) == 10
+  raise unless Integer(-10.2, nil) == -10
+  raise unless Integer(-10.5, nil) == -10
+  raise unless Integer(-10.9, nil) == -10
+
+  begin
+    Integer(10.2, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(10.2, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(10.2, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+end
+
+def kernel_integer_float_infinity
+  begin
+    Integer(Float::INFINITY)
+    raise 'expected FloatDomainError'
+  rescue FloatDomainError => e
+    raise "got message: #{e.message}" unless e.message == 'Infinity'
+  end
+
+  begin
+    Integer(Float::INFINITY, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(Float::INFINITY, '10')
+    raise 'expected FloatDomainError'
+  rescue FloatDomainError => e
+    raise "got message: #{e.message}" unless e.message == 'Infinity'
+  end
+end
+
+def kernel_integer_float_neg_infinity
+  begin
+    Integer(-Float::INFINITY)
+    raise 'expected FloatDomainError'
+  rescue FloatDomainError => e
+    raise "got message: #{e.message}" unless e.message == '-Infinity'
+  end
+
+  begin
+    Integer(-Float::INFINITY, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(-Float::INFINITY, '10')
+    raise 'expected FloatDomainError'
+  rescue FloatDomainError => e
+    raise "got message: #{e.message}" unless e.message == '-Infinity'
+  end
+end
+
+def kernel_integer_float_nan
+  begin
+    Integer(Float::NAN)
+    raise 'expected FloatDomainError'
+  rescue FloatDomainError => e
+    raise "got message: #{e.message}" unless e.message == 'NaN'
+  end
+
+  begin
+    Integer(Float::NAN, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(Float::NAN, '10')
+    raise 'expected FloatDomainError'
+  rescue FloatDomainError => e
+    raise "got message: #{e.message}" unless e.message == 'NaN'
+  end
+end
+
+def kernel_integer_integer
+  raise unless Integer(16) == 16
+  raise unless Integer(-16) == -16
+
+  begin
+    Integer(16, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  raise unless Integer(16, '10') == 16
+  raise unless Integer(-16, '10') == -16
+end
+
+def kernel_integer_nil
+  begin
+    Integer(nil)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
+  end
+
+  begin
+    Integer(nil, nil)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
+  end
+
+  begin
+    Integer(nil, '10')
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
+  end
+
+  begin
+    Integer(nil, [1, 2, 3])
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
+  end
+
+  begin
+    Integer(nil, 10)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(nil, A.new)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
+  end
+
+  begin
+    Integer(nil, AA.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
+  end
+
+  begin
+    Integer(nil, B.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
+  end
+
+  begin
+    Integer(nil, C.new)
+    raise 'expected RuntimeError'
+  rescue RuntimeError => e
+    raise "got message: #{e.message}" unless e.message == 'to int err'
+  end
+
+  begin
+    Integer(nil, D.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
+  end
 end
 
 class Foo

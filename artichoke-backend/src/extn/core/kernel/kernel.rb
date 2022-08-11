@@ -62,37 +62,7 @@ module Kernel
   end
 
   def Integer(arg, base = nil, exception: true) # rubocop:disable Naming/MethodName
-    raise ArgumentError, 'base specified for non string value' if base&.positive? && arg.is_a?(Numeric)
-
-    classname = arg.class
-    classname = arg.inspect if arg.nil? || arg.equal?(false) || arg.equal?(true)
-
-    raise TypeError, "can't convert #{classname} into Integer" if arg.nil?
-
-    if arg.respond_to?(:to_int)
-      ret = arg.to_int
-
-      # uncritically return the value of to_int even if it is not an Integer
-      return ret if ret.is_a?(Numeric)
-      return ret if !ret.nil? && ret.scan(/\D/)&.empty? && ret.to_i.nil?
-
-      if arg.respond_to?(:to_i)
-        ret = arg.to_i
-        return ret if ret.is_a?(Numeric)
-
-        raise TypeError, "can't convert #{classname} to Integer (#{arg.class}#to_i gives #{ret.class})"
-      end
-    elsif !arg.is_a?(String) && arg && arg.respond_to?(:to_i)
-      ret = arg.to_i
-
-      return ret if ret.is_a?(Numeric)
-
-      raise TypeError, "can't convert #{classname} to Integer (#{arg.class}#to_i gives #{ret.class})"
-    elsif arg.is_a?(String)
-      return ::Artichoke::Kernel::Integer(arg, base)
-    end
-
-    raise TypeError, "can't convert #{classname} to Integer"
+    ::Artichoke::Kernel.Integer(arg, base)
   rescue StandardError => e
     return nil if exception.equal?(false)
 
