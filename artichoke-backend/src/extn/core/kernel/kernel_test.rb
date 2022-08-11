@@ -58,13 +58,13 @@ end
 
 class AA
   def to_int
-    "16"
+    '16'
   end
 end
 
 class B
   def to_str
-    "55"
+    '55'
   end
 end
 
@@ -157,21 +157,21 @@ def kernel_integer_implicit_conversion
 
   begin
     Integer(B.new)
-    raise "expected TypeError"
+    raise 'expected TypeError'
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
   end
 
   begin
     Integer(C.new)
-    raise "expected TypeError"
+    raise 'expected TypeError'
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert C into Integer"
   end
 
   begin
     Integer(D.new)
-    raise "expected TypeError"
+    raise 'expected TypeError'
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert D into Integer"
   end
@@ -208,7 +208,7 @@ def kernel_integer_implicit_conversion
 
   begin
     Integer(B.new, '10')
-    raise "expected TypeError"
+    raise 'expected TypeError'
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
   end
@@ -217,14 +217,14 @@ def kernel_integer_implicit_conversion
 
   begin
     Integer(B.new, AA.new)
-    raise "expected TypeError"
+    raise 'expected TypeError'
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
   end
 
   begin
     Integer(B.new, B.new)
-    raise "expected TypeError"
+    raise 'expected TypeError'
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
   end
@@ -238,7 +238,7 @@ def kernel_integer_implicit_conversion
 
   begin
     Integer(B.new, D.new)
-    raise "expected TypeError"
+    raise 'expected TypeError'
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert B into Integer"
   end
@@ -344,92 +344,92 @@ def kernel_integer_float
 
   begin
     Integer(10.2, 10)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 
   begin
     Integer(10.2, 10)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 
   begin
     Integer(10.2, 10)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 end
 
 def kernel_integer_float_infinity
   begin
     Integer(Float::INFINITY)
-    raise "expected FloatDomainError"
+    raise 'expected FloatDomainError'
   rescue FloatDomainError => e
-    raise "got message: #{e.message}" unless e.message == "Infinity"
+    raise "got message: #{e.message}" unless e.message == 'Infinity'
   end
 
   begin
     Integer(Float::INFINITY, 10)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 
   begin
     Integer(Float::INFINITY, '10')
-    raise "expected FloatDomainError"
+    raise 'expected FloatDomainError'
   rescue FloatDomainError => e
-    raise "got message: #{e.message}" unless e.message == "Infinity"
+    raise "got message: #{e.message}" unless e.message == 'Infinity'
   end
 end
 
 def kernel_integer_float_neg_infinity
   begin
     Integer(-Float::INFINITY)
-    raise "expected FloatDomainError"
+    raise 'expected FloatDomainError'
   rescue FloatDomainError => e
-    raise "got message: #{e.message}" unless e.message == "-Infinity"
+    raise "got message: #{e.message}" unless e.message == '-Infinity'
   end
 
   begin
     Integer(-Float::INFINITY, 10)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 
   begin
     Integer(-Float::INFINITY, '10')
-    raise "expected FloatDomainError"
+    raise 'expected FloatDomainError'
   rescue FloatDomainError => e
-    raise "got message: #{e.message}" unless e.message == "-Infinity"
+    raise "got message: #{e.message}" unless e.message == '-Infinity'
   end
 end
 
 def kernel_integer_float_nan
   begin
     Integer(Float::NAN)
-    raise "expected FloatDomainError"
+    raise 'expected FloatDomainError'
   rescue FloatDomainError => e
-    raise "got message: #{e.message}" unless e.message == "NaN"
+    raise "got message: #{e.message}" unless e.message == 'NaN'
   end
 
   begin
     Integer(Float::NAN, 10)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 
   begin
     Integer(Float::NAN, '10')
-    raise "expected FloatDomainError"
+    raise 'expected FloatDomainError'
   rescue FloatDomainError => e
-    raise "got message: #{e.message}" unless e.message == "NaN"
+    raise "got message: #{e.message}" unless e.message == 'NaN'
   end
 end
 
@@ -439,9 +439,9 @@ def kernel_integer_integer
 
   begin
     Integer(16, 10)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 
   raise unless Integer(16, '10') == 16
@@ -479,16 +479,16 @@ def kernel_integer_nil
 
   begin
     Integer(nil, 10)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 
   begin
     Integer(nil, A.new)
-    raise "expected ArgumentError"
+    raise 'expected ArgumentError'
   rescue ArgumentError => e
-    raise "got message: #{e.message}" unless e.message == "base specified for non string value"
+    raise "got message: #{e.message}" unless e.message == 'base specified for non string value'
   end
 
   begin
@@ -518,7 +518,6 @@ def kernel_integer_nil
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
   end
-
 end
 
 class Foo
