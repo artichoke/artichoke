@@ -21,6 +21,10 @@
 extern "C" {
 #endif
 
+// VM method table twiddling
+
+MRB_API bool mrb_sys_value_has_method(mrb_state *mrb, mrb_value value, mrb_sym method);
+
 // Check whether `mrb_value` is nil, false, or true
 
 MRB_API bool mrb_sys_value_is_nil(mrb_value value);
