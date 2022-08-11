@@ -8,12 +8,14 @@ use crate::error::Error;
 ///
 /// This function can return either a [`FloatDomainError`] or a [`RangeError`].
 ///
-/// [`FloatDomainError`] is returned if the input is either [NaN] or infinite.
+/// [`FloatDomainError`] is returned if the input is either [`NaN`] or infinite.
 ///
 /// [`RangeError`] is returned if the input is finite but out of range of
 /// `i64::MIN..=i64::MAX`.
 ///
-/// [NaN]: f64::NAN
+/// [`NaN`]: f64::NAN
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_precision_loss)]
 pub fn float_to_int(float: f64) -> Result<i64, Error> {
     if float.is_nan() {
         return Err(FloatDomainError::with_message("NaN").into());
