@@ -518,7 +518,7 @@ impl Time {
     /// # use spinoso_time::tzrs::{Time, TimeError};
     /// # fn example() -> Result<(), TimeError> {
     /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
-    /// assert_eq!(now.day_of_year(), 188);
+    /// assert_eq!(now.day_of_year(), 189);
     /// # Ok(())
     /// # }
     /// # example().unwrap()
@@ -528,7 +528,7 @@ impl Time {
     #[inline]
     #[must_use]
     pub fn day_of_year(&self) -> u16 {
-        self.inner.year_day()
+        self.inner.year_day() + 1
     }
 }
 
@@ -549,5 +549,30 @@ mod tests {
         assert_eq!(1, dt.microseconds());
         assert_eq!("UTC", dt.time_zone());
         assert!(dt.is_utc());
+    }
+
+    #[test]
+    fn yday() {
+        // ```
+        // [3.1.2] > Time.new(2022, 7, 8, 12, 34, 56, 0).yday
+        // => 189
+        // [3.1.2] > Time.new(2022, 1, 1, 12, 34, 56, 0).yday
+        // => 1
+        // [3.1.2] > Time.new(2022, 12, 31, 12, 34, 56, 0).yday
+        // => 365
+        // [3.1.2] > Time.new(2020, 12, 31, 12, 34, 56, 0).yday
+        // => 366
+        // ```
+        let time = Time::utc(2022, 7, 8, 12, 34, 56, 0).unwrap();
+        assert_eq!(time.day_of_year(), 189);
+
+        let start_2022 = Time::utc(2022, 1, 1, 12, 34, 56, 0).unwrap();
+        assert_eq!(start_2022.day_of_year(), 1);
+
+        let end_2022 = Time::utc(2022, 12, 31, 12, 34, 56, 0).unwrap();
+        assert_eq!(end_2022.day_of_year(), 365);
+
+        let end_leap_year = Time::utc(2020, 12, 31, 12, 34, 56, 0).unwrap();
+        assert_eq!(end_leap_year.day_of_year(), 366);
     }
 }
