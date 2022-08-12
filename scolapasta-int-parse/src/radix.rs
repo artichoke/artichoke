@@ -2,6 +2,7 @@ use core::num::NonZeroU32;
 
 use crate::error::{InvalidRadixError, InvalidRadixErrorKind};
 use crate::subject::IntegerString;
+use crate::whitespace;
 
 // Create a lookup table from each byte value (of which the ASCII range is
 // relevant) to the maximum minimum radix the character is valid for.
@@ -166,7 +167,9 @@ impl Radix {
             //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
             //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
             // ```
-            Ok(_) if num < 0 && matches!(subject.as_bytes().first(), Some(&b'0')) => Ok(None),
+            Ok(_) if num < 0 && matches!(whitespace::trim_leading(subject.as_bytes()).first(), Some(&b'0')) => {
+                Ok(None)
+            }
             // ```
             // [3.1.2] > Integer "123", -(2 ** 31)
             // (irb):63:in `Integer': invalid radix -2147483648 (ArgumentError)
