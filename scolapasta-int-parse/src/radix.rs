@@ -589,4 +589,19 @@ mod tests {
         assert_eq!(&*buf, "integer -4294967297 too small to convert to `int'");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
     }
+
+    #[test]
+    fn negative_radix_with_inline_base_and_leading_spaces_ignores() {
+        // [3.1.2] > Integer "                  0123", -6
+        // => 83
+        // [3.1.2] > Integer "                  0x123", -6
+        // => 291
+        let subject = "                  0123".try_into().unwrap();
+        let radix = Radix::try_base_from_str_and_i64(subject, -6).unwrap();
+        assert_eq!(radix, None);
+
+        let subject = "                  0x123".try_into().unwrap();
+        let radix = Radix::try_base_from_str_and_i64(subject, -6).unwrap();
+        assert_eq!(radix, None);
+    }
 }

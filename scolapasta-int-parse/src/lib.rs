@@ -931,4 +931,18 @@ mod tests {
         let result = parse("\u{000D} 93 \u{000D}", None);
         assert_eq!(result.unwrap(), 93);
     }
+
+    #[test]
+    fn negative_radix_leading_whitespace() {
+        // ```
+        // [3.1.2] > Integer "                  0123", -6
+        // => 83
+        // [3.1.2] > Integer "                  0x123", -6
+        // => 291
+        // ```
+        let result = parse("                  0123", Some(-6));
+        assert_eq!(result.unwrap(), 83);
+        let result = parse("                  0x123", Some(-6));
+        assert_eq!(result.unwrap(), 291);
+    }
 }
