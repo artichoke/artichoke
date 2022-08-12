@@ -3,7 +3,7 @@ name = "scolapasta-string-escape"
 version = "0.3.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
-rust-version = "1.62.0"
+rust-version = "1.63.0"
 description = """
 String escape code and debug formatting utility package for Artichoke Ruby.
 """

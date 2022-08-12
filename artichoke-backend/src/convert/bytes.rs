@@ -178,7 +178,7 @@ mod tests {
             let str_bytes = value.funcall(&mut interp, "bytes", &[], None).unwrap();
             let first = str_bytes.funcall(&mut interp, "[]", &[zero], None).unwrap();
             let first = first.try_convert_into::<Option<i64>>(&interp).unwrap();
-            if first != bytes.get(0).copied().map(i64::from) {
+            if first != bytes.first().copied().map(i64::from) {
                 return false;
             }
 
@@ -217,7 +217,7 @@ mod tests {
             let str_bytes = value.funcall(&mut interp, "bytes", &[], None).unwrap();
             let first = str_bytes.funcall(&mut interp, "[]", &[zero], None).unwrap();
             let first = first.try_convert_into::<Option<i64>>(&interp).unwrap();
-            if first != bytes.get(0).copied().map(i64::from) {
+            if first != bytes.first().copied().map(i64::from) {
                 return false;
             }
 

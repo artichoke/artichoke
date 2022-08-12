@@ -134,26 +134,3 @@ impl PartialEq for &dyn RegexpType {
 }
 
 impl Eq for &dyn RegexpType {}
-
-impl fmt::Debug for &mut dyn RegexpType {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&&*self, f)
-    }
-}
-
-impl Hash for &mut dyn RegexpType {
-    #[inline]
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        Hash::hash(&&*self, state);
-    }
-}
-
-impl PartialEq for &mut dyn RegexpType {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        PartialEq::eq(&&*self, &&*other)
-    }
-}
-
-impl Eq for &mut dyn RegexpType {}

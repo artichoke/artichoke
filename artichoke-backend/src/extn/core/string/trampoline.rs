@@ -1632,14 +1632,14 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
     let mut slice = s.as_slice();
     let mut squeezed = false;
     // squeeze preceding zeros.
-    while let Some(&b'0') = slice.get(0) {
+    while let Some(&b'0') = slice.first() {
         slice = &slice[1..];
         squeezed = true;
     }
     // Trim leading literal specifier but only if there was a leading 0.
     if squeezed {
         #[allow(clippy::match_same_arms)]
-        match (base, slice.get(0).copied()) {
+        match (base, slice.first().copied()) {
             (2, Some(b'b' | b'B')) => slice = &slice[1..],
             (8, Some(b'o' | b'O')) => slice = &slice[1..],
             (10, Some(b'd' | b'D')) => slice = &slice[1..],

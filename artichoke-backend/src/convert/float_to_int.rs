@@ -88,28 +88,28 @@ mod tests {
     #[test]
     fn float_nan_is_domain_error() {
         let err = float_to_int(f64::NAN).unwrap_err();
-        assert_eq!(&*err.message().as_bstr(), "NaN".as_bytes().as_bstr());
-        assert_eq!(&*err.name(), "FloatDomainError");
+        assert_eq!(err.message().as_bstr(), "NaN".as_bytes().as_bstr());
+        assert_eq!(err.name(), "FloatDomainError");
     }
 
     #[test]
     fn float_infinities_are_domain_error() {
         let err = float_to_int(f64::INFINITY).unwrap_err();
-        assert_eq!(&*err.message().as_bstr(), "Infinity".as_bytes().as_bstr());
-        assert_eq!(&*err.name(), "FloatDomainError");
+        assert_eq!(err.message().as_bstr(), "Infinity".as_bytes().as_bstr());
+        assert_eq!(err.name(), "FloatDomainError");
 
         let err = float_to_int(f64::NEG_INFINITY).unwrap_err();
-        assert_eq!(&*err.message().as_bstr(), "-Infinity".as_bytes().as_bstr());
-        assert_eq!(&*err.name(), "FloatDomainError");
+        assert_eq!(err.message().as_bstr(), "-Infinity".as_bytes().as_bstr());
+        assert_eq!(err.name(), "FloatDomainError");
     }
 
     // FIXME: MRI converts these to `BigNum`s.
     #[test]
     fn float_out_of_i64_range_is_range_error() {
         let err = float_to_int(f64::MAX).unwrap_err();
-        assert_eq!(&*err.name(), "RangeError");
+        assert_eq!(err.name(), "RangeError");
 
         let err = float_to_int(f64::MIN).unwrap_err();
-        assert_eq!(&*err.name(), "RangeError");
+        assert_eq!(err.name(), "RangeError");
     }
 }
