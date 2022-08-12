@@ -168,7 +168,7 @@ fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
     let mut state = ParseState::new(subject);
 
     // Phase 3: Trim leading and trailing whitespace.
-    let mut chars = trim_whitespace(subject.as_bytes()).iter().copied().peekable();
+    let mut chars = whitespace::trim(subject.as_bytes()).iter().copied().peekable();
 
     // Phase 4: Set sign.
     match chars.peek() {
@@ -267,28 +267,6 @@ fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
     // Phase 8: Parse (signed) ASCII alphanumeric string to an `i64`.
     let src = state.into_numeric_string()?;
     i64::from_str_radix(&*src, radix).map_err(|_| subject.into())
-}
-
-fn trim_whitespace(mut bytes: &[u8]) -> &[u8] {
-    loop {
-        if let Some((first, remaining)) = bytes.split_first() {
-            if first.is_ascii_whitespace() {
-                bytes = remaining;
-                continue;
-            }
-        }
-        break;
-    }
-    loop {
-        if let Some((last, remaining)) = bytes.split_last() {
-            if last.is_ascii_whitespace() {
-                bytes = remaining;
-                continue;
-            }
-        }
-        break;
-    }
-    bytes
 }
 
 #[cfg(test)]
