@@ -50,6 +50,7 @@ mod error;
 mod parser;
 mod radix;
 mod subject;
+mod whitespace;
 
 pub use error::{ArgumentError, Error, InvalidRadixError, InvalidRadixExceptionKind};
 use parser::{Sign, State as ParseState};
