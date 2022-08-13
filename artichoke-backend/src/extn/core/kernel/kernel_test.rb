@@ -97,7 +97,7 @@ end
 
 class R
   def to_int
-    "xys"
+    'xys'
   end
 
   def to_i
@@ -107,25 +107,25 @@ end
 
 class W
   def to_int
-    "nine"
+    'nine'
   end
 end
 
 class X
   def to_int
-    "9"
+    '9'
   end
 end
 
 class Y
   def to_i
-    "nine"
+    'nine'
   end
 end
 
 class Z
   def to_i
-    "9"
+    '9'
   end
 end
 
