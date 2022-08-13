@@ -1,5 +1,18 @@
+fn is_ascii_whitespace(b: &u8) -> bool {
+    // From the docs for `u8::is_ascii_whitespace`:
+    // https://doc.rust-lang.org/std/primitive.u8.html#method.is_ascii_whitespace
+    //
+    // > Rust uses the WhatWG Infra Standard’s definition of ASCII whitespace.
+    // > There are several other definitions in wide use. For instance, the
+    // > POSIX > locale includes U+000B VERTICAL TAB as well as all the above
+    // > characters [...]
+    //
+    // Ruby uses the POSIX standards.
+    b.is_ascii_whitespace() || matches!(b, b'\x0B')
+}
+
 pub fn trim_leading(bytes: &[u8]) -> &[u8] {
-    if let Some(idx) = bytes.iter().position(|b| !b.is_ascii_whitespace()) {
+    if let Some(idx) = bytes.iter().position(|b| !is_ascii_whitespace(b)) {
         &bytes[idx..]
     } else {
         bytes
@@ -7,8 +20,8 @@ pub fn trim_leading(bytes: &[u8]) -> &[u8] {
 }
 
 pub fn trim_trailing(bytes: &[u8]) -> &[u8] {
-    if let Some(idx) = bytes.iter().rev().position(|b| !b.is_ascii_whitespace()) {
-        &bytes[..bytes.len() - idx]
+    if let Some(idx) = bytes.iter().rposition(|b| !is_ascii_whitespace(b)) {
+        &bytes[..=idx]
     } else {
         bytes
     }
@@ -22,6 +35,35 @@ pub fn trim(bytes: &[u8]) -> &[u8] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn byte_is_whitespace() {
+        // ```
+        // [3.1.2] > (0..127).each { |b| s = "#{b.chr}27"; puts "#{b}, #{s.inspect}" unless Integer(s, exception: false).nil? }
+        // 9, "\t27"
+        // 10, "\n27"
+        // 11, "\v27"
+        // 12, "\f27"
+        // 13, "\r27"
+        // 32, " 27"
+        // 43, "+27"
+        // 45, "-27"
+        // 48, "027"
+        // 49, "127"
+        // 50, "227"
+        // 51, "327"
+        // 52, "427"
+        // 53, "527"
+        // 54, "627"
+        // 55, "727"
+        // 56, "827"
+        // 57, "927"
+        // ```
+        const WHITESPACE_BYTES: &[u8] = &[9, 10, 11, 12, 13, 32];
+        for b in u8::MIN..=u8::MAX {
+            assert_eq!(is_ascii_whitespace(&b), WHITESPACE_BYTES.contains(&b));
+        }
+    }
 
     #[test]
     fn trim_leading_trims_leading_whitespace() {
@@ -101,5 +143,16 @@ mod tests {
             trim(b" \t\n\x0A\x0C \t\n\x0A\x0C \t\n\x0A\x0C \t\n\x0A\x0Cabc \t\n\x0A\x0C \t\n\x0A\x0C \t\n\x0A\x0C \t\n\x0A\x0C"),
             b"abc"
         );
+    }
+
+    #[test]
+    fn vertical_tab_is_whitespace() {
+        // ```
+        // [3.1.2] > Integer "    \u000B 27"
+        // => 27
+        // ```
+        assert_eq!(trim_leading(b"\x0Babc"), b"abc");
+        assert_eq!(trim_trailing(b"abc\x0B"), b"abc");
+        assert_eq!(trim(b"\x0Babc\x0B"), b"abc");
     }
 }

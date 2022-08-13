@@ -945,4 +945,14 @@ mod tests {
         let result = parse("                  0x123", Some(-6));
         assert_eq!(result.unwrap(), 291);
     }
+
+    #[test]
+    fn trim_vertical_tab() {
+        // ```
+        // [3.1.2] > Integer "    \x0B 27"
+        // => 27
+        // ```
+        let result = parse(b"    \x0B 27", None);
+        assert_eq!(result.unwrap(), 27);
+    }
 }
