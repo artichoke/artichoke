@@ -7,7 +7,8 @@ fn is_posix_ascii_whitespace(b: u8) -> bool {
     // > POSIX > locale includes U+000B VERTICAL TAB as well as all the above
     // > characters [...]
     //
-    // Ruby uses the POSIX standards.
+    // Ruby uses the POSIX standards:
+    // https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap07.html
     b.is_ascii_whitespace() || matches!(b, b'\x0B')
 }
 
