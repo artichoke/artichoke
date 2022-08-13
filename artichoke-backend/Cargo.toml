@@ -25,7 +25,7 @@ qed = "1.3.0"
 # See: CVE-2022-24713
 # https://github.com/artichoke/artichoke/pull/1729
 regex = "1.5.5"
-scolapasta-int-parse = { version = "0.2.1", path = "../scolapasta-int-parse", default-features = false }
+scolapasta-int-parse = { version = "0.2.2", path = "../scolapasta-int-parse", default-features = false }
 scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
 spinoso-array = { version = "0.9.0", path = "../spinoso-array", default-features = false }
 spinoso-env = { version = "0.2.0", path = "../spinoso-env", optional = true, default-features = false }

@@ -1,6 +1,6 @@
 [package]
 name = "scolapasta-int-parse"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.63.0"

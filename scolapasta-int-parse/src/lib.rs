@@ -50,6 +50,7 @@ mod error;
 mod parser;
 mod radix;
 mod subject;
+mod whitespace;
 
 pub use error::{ArgumentError, Error, InvalidRadixError, InvalidRadixExceptionKind};
 use parser::{Sign, State as ParseState};
@@ -167,7 +168,7 @@ fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
     let mut state = ParseState::new(subject);
 
     // Phase 3: Trim leading and trailing whitespace.
-    let mut chars = trim_whitespace(subject.as_bytes()).iter().copied().peekable();
+    let mut chars = whitespace::trim(subject.as_bytes()).iter().copied().peekable();
 
     // Phase 4: Set sign.
     match chars.peek() {
@@ -266,28 +267,6 @@ fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
     // Phase 8: Parse (signed) ASCII alphanumeric string to an `i64`.
     let src = state.into_numeric_string()?;
     i64::from_str_radix(&*src, radix).map_err(|_| subject.into())
-}
-
-fn trim_whitespace(mut bytes: &[u8]) -> &[u8] {
-    loop {
-        if let Some((first, remaining)) = bytes.split_first() {
-            if first.is_ascii_whitespace() {
-                bytes = remaining;
-                continue;
-            }
-        }
-        break;
-    }
-    loop {
-        if let Some((last, remaining)) = bytes.split_last() {
-            if last.is_ascii_whitespace() {
-                bytes = remaining;
-                continue;
-            }
-        }
-        break;
-    }
-    bytes
 }
 
 #[cfg(test)]
@@ -951,5 +930,29 @@ mod tests {
         assert_eq!(result.unwrap(), 93);
         let result = parse("\u{000D} 93 \u{000D}", None);
         assert_eq!(result.unwrap(), 93);
+    }
+
+    #[test]
+    fn negative_radix_leading_whitespace() {
+        // ```
+        // [3.1.2] > Integer "                  0123", -6
+        // => 83
+        // [3.1.2] > Integer "                  0x123", -6
+        // => 291
+        // ```
+        let result = parse("                  0123", Some(-6));
+        assert_eq!(result.unwrap(), 83);
+        let result = parse("                  0x123", Some(-6));
+        assert_eq!(result.unwrap(), 291);
+    }
+
+    #[test]
+    fn trim_vertical_tab() {
+        // ```
+        // [3.1.2] > Integer "    \x0B 27"
+        // => 27
+        // ```
+        let result = parse(b"    \x0B 27", None);
+        assert_eq!(result.unwrap(), 27);
     }
 }

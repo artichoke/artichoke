@@ -437,7 +437,7 @@ version = "0.2.0"
 
 [[package]]
 name = "scolapasta-int-parse"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "scolapasta-string-escape",
 ]
