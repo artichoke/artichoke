@@ -1020,7 +1020,7 @@ impl String {
     ///
     /// let mut s = String::utf8(b"UTF-8?".to_vec());
     /// s.push_byte(0xFF);
-    /// assert_eq!(s, &b"UTF-8?\xFF"[..]);
+    /// assert_eq!(s, b"UTF-8?\xFF");
     /// ```
     ///
     /// [encoding]: crate::Encoding
@@ -1109,7 +1109,7 @@ impl String {
     ///
     /// let mut s = String::from("<3");
     /// s.push_char('💎');
-    /// assert_eq!(s, &b"<3\xF0\x9F\x92\x8E"[..]); // "<3💎"
+    /// assert_eq!(s, b"<3\xF0\x9F\x92\x8E"); // "<3💎"
     /// ```
     #[inline]
     pub fn push_char(&mut self, ch: char) {

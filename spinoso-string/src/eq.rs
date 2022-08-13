@@ -14,6 +14,30 @@ impl PartialEq<String> for Vec<u8> {
     }
 }
 
+impl<const N: usize> PartialEq<[u8; N]> for String {
+    fn eq(&self, other: &[u8; N]) -> bool {
+        **self == *other
+    }
+}
+
+impl<const N: usize> PartialEq<String> for [u8; N] {
+    fn eq(&self, other: &String) -> bool {
+        *self == **other
+    }
+}
+
+impl<const N: usize> PartialEq<&[u8; N]> for String {
+    fn eq(&self, other: &&[u8; N]) -> bool {
+        **self == **other
+    }
+}
+
+impl<const N: usize> PartialEq<String> for &[u8; N] {
+    fn eq(&self, other: &String) -> bool {
+        **self == **other
+    }
+}
+
 impl PartialEq<[u8]> for String {
     fn eq(&self, other: &[u8]) -> bool {
         **self == *other
