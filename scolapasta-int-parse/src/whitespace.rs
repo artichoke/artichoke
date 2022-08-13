@@ -1,4 +1,4 @@
-fn is_ascii_whitespace(b: u8) -> bool {
+fn is_posix_ascii_whitespace(b: u8) -> bool {
     // From the docs for `u8::is_ascii_whitespace`:
     // https://doc.rust-lang.org/std/primitive.u8.html#method.is_ascii_whitespace
     //
@@ -12,7 +12,7 @@ fn is_ascii_whitespace(b: u8) -> bool {
 }
 
 pub fn trim_leading(bytes: &[u8]) -> &[u8] {
-    if let Some(idx) = bytes.iter().position(|&b| !is_ascii_whitespace(b)) {
+    if let Some(idx) = bytes.iter().position(|&b| !is_posix_ascii_whitespace(b)) {
         &bytes[idx..]
     } else {
         bytes
@@ -20,7 +20,7 @@ pub fn trim_leading(bytes: &[u8]) -> &[u8] {
 }
 
 pub fn trim_trailing(bytes: &[u8]) -> &[u8] {
-    if let Some(idx) = bytes.iter().rposition(|&b| !is_ascii_whitespace(b)) {
+    if let Some(idx) = bytes.iter().rposition(|&b| !is_posix_ascii_whitespace(b)) {
         &bytes[..=idx]
     } else {
         bytes
@@ -61,7 +61,7 @@ mod tests {
         // ```
         const WHITESPACE_BYTES: &[u8] = &[9, 10, 11, 12, 13, 32];
         for b in u8::MIN..=u8::MAX {
-            assert_eq!(is_ascii_whitespace(b), WHITESPACE_BYTES.contains(&b));
+            assert_eq!(is_posix_ascii_whitespace(b), WHITESPACE_BYTES.contains(&b));
         }
     }
 
