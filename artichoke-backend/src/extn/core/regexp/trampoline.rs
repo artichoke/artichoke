@@ -12,14 +12,21 @@ pub fn initialize(
 ) -> Result<Value, Error> {
     if let Ok(existing) = unsafe { Regexp::unbox_from_value(&mut into, interp) } {
         if existing.is_literal() {
-            // NOTE: In Ruby 3.0.0+, this branch should return a `FrozenError`.
-            return Err(SecurityError::with_message("can't modify literal regexp").into());
+            return Err(FrozenError::with_message("can't modify literal regexp").into());
         }
         return Err(TypeError::with_message("already initialized regexp").into());
     }
     let (options, encoding) = interp.try_convert_mut((options, encoding))?;
     let regexp = Regexp::initialize(interp, pattern, options, encoding)?;
-    Regexp::box_into_value(regexp, into, interp)
+    let result = Regexp::box_into_value(regexp, into, interp);
+    if let Some(options) = options {
+        if options.is_literal() {
+            let mut value = result?;
+            value.freeze(interp)?;
+            return Ok(value);
+        }
+    }
+    result
 }
 
 pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error> {
@@ -168,4 +175,24 @@ pub fn to_s(interp: &mut Artichoke, mut regexp: Value) -> Result<Value, Error> {
     let regexp = unsafe { Regexp::unbox_from_value(&mut regexp, interp)? };
     let s = regexp.string();
     interp.try_convert_mut(s)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test::prelude::*;
+
+    #[test]
+    fn should_raise_frozen_error() {
+        let mut interp = interpreter();
+        let pattern = interp.try_convert_mut("xyz").unwrap();
+        let options = None;
+        let encoding = None;
+        let slf = interp.eval(b"/abc/").unwrap();
+        let result = initialize(&mut interp, pattern, options, encoding, slf);
+        assert_eq!(
+            "FrozenError (can't modify literal regexp)",
+            result.unwrap_err().to_string()
+        );
+    }
 }
