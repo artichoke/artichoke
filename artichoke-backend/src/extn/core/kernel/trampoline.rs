@@ -1,4 +1,6 @@
-use crate::convert::{float_to_int, implicitly_convert_to_int, implicitly_convert_to_string, maybe_to_int};
+use crate::convert::{
+    float_to_int, implicitly_convert_to_int, implicitly_convert_to_string, maybe_to_int, MaybeToInt,
+};
 use crate::extn::core::kernel;
 use crate::extn::core::kernel::require::RelativePath;
 use crate::extn::prelude::*;
@@ -33,27 +35,36 @@ pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) 
 
     let result = if subject.is_nil() {
         if let Some(base) = base {
-            if maybe_to_int(interp, base)?.is_some() {
+            if matches!(maybe_to_int(interp, base)?, MaybeToInt::Int(..)) {
                 return Err(ArgumentError::with_message("base specified for non string value").into());
             }
         }
         return Err(TypeError::with_message("can't convert nil into Integer").into());
     } else if let Ok(subject) = subject.try_convert_into_mut::<&[u8]>(interp) {
         let base = if let Some(base) = base {
-            maybe_to_int(interp, base)?
+            if let MaybeToInt::Int(int) = maybe_to_int(interp, base)? {
+                Some(int)
+            } else {
+                None
+            }
         } else {
             None
         };
         scolapasta_int_parse::parse(subject, base)?
     } else if let Ok(float) = subject.try_convert_into::<f64>(interp) {
         if let Some(base) = base {
-            if maybe_to_int(interp, base)?.is_some() {
+            if matches!(maybe_to_int(interp, base)?, MaybeToInt::Int(..)) {
                 return Err(ArgumentError::with_message("base specified for non string value").into());
             }
         }
         float_to_int(float)?
     } else if let Some(base) = base {
-        if let Some(base) = maybe_to_int(interp, base)? {
+        let base = if let MaybeToInt::Int(int) = maybe_to_int(interp, base)? {
+            Some(int)
+        } else {
+            None
+        };
+        if let Some(base) = base {
             if let Ok(s) = subject.try_convert_into_mut::<&[u8]>(interp) {
                 scolapasta_int_parse::parse(s, Some(base))?
             } else if subject.respond_to(interp, "to_str")? {
@@ -71,10 +82,20 @@ pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) 
             })?
         }
     } else {
-        implicitly_convert_to_int(interp, subject).map_err(|_| {
-            let message = format!("can't convert {} into Integer", interp.class_name_for_value(subject));
-            TypeError::from(message)
-        })?
+        match maybe_to_int(interp, subject) {
+            Ok(MaybeToInt::Int(int)) => int,
+            Ok(MaybeToInt::Err(err)) => return Err(err.into()),
+            Ok(MaybeToInt::UncriticalReturn(result)) => {
+                let class = interp.class_name_for_value(subject).to_owned();
+                let result = interp.class_name_for_value(result);
+                let message = format!("can't convert {class} to Integer ({class}#to_i gives {result})");
+                return Err(TypeError::from(message).into());
+            }
+            Ok(MaybeToInt::NotApplicable) | Err(_) => {
+                let message = format!("can't convert {} into Integer", interp.class_name_for_value(subject));
+                return Err(TypeError::from(message).into());
+            }
+        }
     };
 
     Ok(interp.convert(result))
