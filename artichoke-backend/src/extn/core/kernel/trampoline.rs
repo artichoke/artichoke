@@ -84,10 +84,6 @@ pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) 
     } else {
         match maybe_to_int(interp, subject) {
             Ok(MaybeToInt::Int(int)) => int,
-            Ok(MaybeToInt::NotApplicable) => {
-                let message = format!("can't convert {} into Integer", interp.class_name_for_value(subject));
-                return Err(TypeError::from(message).into());
-            }
             Ok(MaybeToInt::Err(err)) => return Err(err.into()),
             Ok(MaybeToInt::UncriticalReturn(result)) => {
                 let class = interp.class_name_for_value(subject).to_owned();
@@ -95,7 +91,7 @@ pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) 
                 let message = format!("can't convert {class} to Integer ({class}#to_i gives {result})");
                 return Err(TypeError::from(message).into());
             }
-            Err(_) => {
+            Ok(MaybeToInt::NotApplicable) | Err(_) => {
                 let message = format!("can't convert {} into Integer", interp.class_name_for_value(subject));
                 return Err(TypeError::from(message).into());
             }
