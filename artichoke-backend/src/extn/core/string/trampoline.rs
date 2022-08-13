@@ -59,51 +59,18 @@ pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Res
 
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     if let Ok(int) = other.try_convert_into::<i64>(interp) {
-        return match s.encoding() {
-            Encoding::Utf8 => {
-                // SAFETY: The string is repacked before any intervening uses of
-                // `interp` which means no mruby heap allocations can occur.
-                unsafe {
-                    let string_mut = s.as_inner_mut();
-                    // XXX: This call doesn't do a check to see if we'll exceed the max allocation
-                    //    size and may panic or abort.
-                    string_mut
-                        .try_push_codepoint(int)
-                        .map_err(|err| RangeError::from(err.message()))?;
-                    let s = s.take();
-                    super::String::box_into_value(s, value, interp)
-                }
-            }
-            Encoding::Ascii => {
-                let byte = u8::try_from(int).map_err(|_| RangeError::from(format!("{int} out of char range")))?;
-                // SAFETY: The string is repacked before any intervening uses of
-                // `interp` which means no mruby heap allocations can occur.
-                unsafe {
-                    let string_mut = s.as_inner_mut();
-                    // XXX: This call doesn't do a check to see if we'll exceed the max allocation
-                    //    size and may panic or abort.
-                    string_mut.push_byte(byte);
-                    if !byte.is_ascii() {
-                        string_mut.set_encoding(Encoding::Binary);
-                    }
-                    let s = s.take();
-                    super::String::box_into_value(s, value, interp)
-                }
-            }
-            Encoding::Binary => {
-                let byte = u8::try_from(int).map_err(|_| RangeError::from(format!("{int} out of char range")))?;
-                // SAFETY: The string is repacked before any intervening uses of
-                // `interp` which means no mruby heap allocations can occur.
-                unsafe {
-                    let string_mut = s.as_inner_mut();
-                    // XXX: This call doesn't do a check to see if we'll exceed the max allocation
-                    //    size and may panic or abort.
-                    string_mut.push_byte(byte);
-                    let s = s.take();
-                    super::String::box_into_value(s, value, interp)
-                }
-            }
-        };
+        // SAFETY: The string is repacked before any intervening uses of
+        // `interp` which means no mruby heap allocations can occur.
+        unsafe {
+            let string_mut = s.as_inner_mut();
+            // XXX: This call doesn't do a check to see if we'll exceed the max allocation
+            //    size and may panic or abort.
+            string_mut
+                .try_push_int(int)
+                .map_err(|err| RangeError::from(err.message()))?;
+            let s = s.take();
+            return super::String::box_into_value(s, value, interp);
+        }
     }
     // SAFETY: The byte slice is immediately used and discarded after extraction.
     // There are no intervening interpreter accesses.
