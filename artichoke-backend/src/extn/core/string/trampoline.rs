@@ -47,7 +47,7 @@ pub fn add(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
     super::String::alloc_value(concatenated, interp)
 }
 
-pub fn push(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
+pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     if value.is_frozen(interp) {
         let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
         let message = "can't modify frozen String: "
