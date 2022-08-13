@@ -1,5 +1,5 @@
 pub fn trim_leading(bytes: &[u8]) -> &[u8] {
-    if let Some(idx) = bytes.iter().position(|&b| !b.is_ascii_whitespace()) {
+    if let Some(idx) = bytes.iter().position(|b| !b.is_ascii_whitespace()) {
         &bytes[idx..]
     } else {
         bytes
@@ -7,7 +7,7 @@ pub fn trim_leading(bytes: &[u8]) -> &[u8] {
 }
 
 pub fn trim_trailing(bytes: &[u8]) -> &[u8] {
-    if let Some(idx) = bytes.iter().rev().position(|&b| !b.is_ascii_whitespace()) {
+    if let Some(idx) = bytes.iter().rev().position(|b| !b.is_ascii_whitespace()) {
         &bytes[..bytes.len() - idx]
     } else {
         bytes
