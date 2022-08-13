@@ -11,6 +11,7 @@ def spec
   kernel_integer_float_nan
   kernel_integer_integer
   kernel_integer_nil
+  kernel_integer_maybe_to_int
   kernel_p_no_args
   kernel_p_one_arg
   kernel_p_array_args
@@ -91,6 +92,40 @@ class S < String; end
 class AAAA
   def to_int
     S.new
+  end
+end
+
+class R
+  def to_int
+    "xys"
+  end
+
+  def to_i
+    nil
+  end
+end
+
+class W
+  def to_int
+    "nine"
+  end
+end
+
+class X
+  def to_int
+    "9"
+  end
+end
+
+class Y
+  def to_i
+    "nine"
+  end
+end
+
+class Z
+  def to_i
+    "9"
   end
 end
 
@@ -517,6 +552,50 @@ def kernel_integer_nil
     raise 'expected TypeError'
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == "can't convert nil into Integer"
+  end
+end
+
+def kernel_integer_maybe_to_int
+  begin
+    Integer(Y.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert Y to Integer (Y#to_i gives String)"
+  end
+
+  begin
+    Integer(Z.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert Z to Integer (Z#to_i gives String)"
+  end
+
+  begin
+    Integer(W.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert W into Integer"
+  end
+
+  begin
+    Integer(X.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert X into Integer"
+  end
+
+  begin
+    Integer(R.new)
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == "can't convert R to Integer (R#to_i gives NilClass)"
+  end
+
+  begin
+    Integer('abc', R.new)
+    raise 'expected ArgumentError'
+  rescue ArgumentError => e
+    raise "got message: #{e.message}" unless e.message == 'invalid value for Integer(): "abc"'
   end
 end
 
