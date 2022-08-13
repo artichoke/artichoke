@@ -1100,6 +1100,14 @@ impl String {
     /// A more permissive version of [`try_push_codepoint`] which can alter the
     /// receiver's encoding to accomodate the given byte.
     ///
+    /// # Errors
+    ///
+    /// If this `String` is [conventionally UTF-8] and the given codepoint is
+    /// not a valid [`char`], an error is returned.
+    ///
+    /// If this `String` has [ASCII] or [binary] encoding and the given
+    /// codepoint is not a valid byte, an error is returned.
+    ///
     /// # Examples
     ///
     /// For [UTF-8] and [binary] strings, this function behaves identically to
@@ -1152,6 +1160,7 @@ impl String {
     /// [UTF-8]: crate::Encoding::Utf8
     /// [ASCII]: crate::Encoding::Ascii
     /// [binary]: crate::Encoding::Binary
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
     #[inline]
     pub fn try_push_int(&mut self, int: i64) -> Result<(), InvalidCodepointError> {
         self.inner.try_push_int(int)
