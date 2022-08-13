@@ -245,6 +245,11 @@ impl BinaryString {
     }
 
     #[inline]
+    pub fn try_push_int(&mut self, int: i64) -> Result<(), InvalidCodepointError> {
+        self.try_push_codepoint(int)
+    }
+
+    #[inline]
     pub fn push_char(&mut self, ch: char) {
         self.inner.push_char(ch);
     }

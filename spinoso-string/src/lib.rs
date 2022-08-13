@@ -1020,7 +1020,7 @@ impl String {
     ///
     /// let mut s = String::utf8(b"UTF-8?".to_vec());
     /// s.push_byte(0xFF);
-    /// assert_eq!(s, &b"UTF-8?\xFF"[..]);
+    /// assert_eq!(s, b"UTF-8?\xFF");
     /// ```
     ///
     /// [encoding]: crate::Encoding
@@ -1097,6 +1097,75 @@ impl String {
         self.inner.try_push_codepoint(codepoint)
     }
 
+    /// A more permissive version of [`try_push_codepoint`] which can alter the
+    /// receiver's encoding to accomodate the given byte.
+    ///
+    /// # Errors
+    ///
+    /// If this `String` is [conventionally UTF-8] and the given codepoint is
+    /// not a valid [`char`], an error is returned.
+    ///
+    /// If this `String` has [ASCII] or [binary] encoding and the given
+    /// codepoint is not a valid byte, an error is returned.
+    ///
+    /// # Examples
+    ///
+    /// For [UTF-8] and [binary] strings, this function behaves identically to
+    /// [`try_push_codepoint`].
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// # fn example() -> Result<(), spinoso_string::InvalidCodepointError> {
+    /// let mut s = String::utf8(b"".to_vec());
+    /// s.try_push_int(b'a' as i64)?;
+    /// assert_eq!(s, "a");
+    /// assert!(s.try_push_int(0xD83F).is_err());
+    /// assert!(s.try_push_int(-1).is_err());
+    ///
+    /// let mut s = String::binary(b"".to_vec());
+    /// s.try_push_int(b'a' as i64)?;
+    /// assert_eq!(s, "a");
+    /// assert!(s.try_push_int(1024).is_err());
+    /// assert!(s.try_push_int(-1).is_err());
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
+    ///
+    /// For [ASCII] strings, the given integer must be a valid byte. If the
+    /// given integer is outside of the ASCII range, the string's encoding is
+    /// changed to [`Encoding::Binary`].
+    ///
+    /// ```
+    /// use spinoso_string::{Encoding, String};
+    ///
+    /// # fn example() -> Result<(), spinoso_string::InvalidCodepointError> {
+    /// let mut s = String::ascii(b"".to_vec());
+    /// s.try_push_int(b'a' as i64)?;
+    /// assert_eq!(s, "a");
+    /// assert_eq!(s.encoding(), Encoding::Ascii);
+    /// assert!(s.try_push_int(1024).is_err());
+    /// assert!(s.try_push_int(-1).is_err());
+    ///
+    /// s.try_push_int(b'\xFF' as i64)?;
+    /// assert_eq!(s, b"a\xFF");
+    /// assert_eq!(s.encoding(), Encoding::Binary);
+    /// # Ok(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
+    ///
+    /// [`try_push_codepoint`]: Self::try_push_codepoint
+    /// [UTF-8]: crate::Encoding::Utf8
+    /// [ASCII]: crate::Encoding::Ascii
+    /// [binary]: crate::Encoding::Binary
+    /// [conventionally UTF-8]: crate::Encoding::Utf8
+    #[inline]
+    pub fn try_push_int(&mut self, int: i64) -> Result<(), InvalidCodepointError> {
+        self.inner.try_push_int(int)
+    }
+
     /// Appends a given [`char`] onto the end of this `String`.
     ///
     /// The given char is UTF-8 encoded and the UTF-8 bytes are appended to the
@@ -1109,7 +1178,7 @@ impl String {
     ///
     /// let mut s = String::from("<3");
     /// s.push_char('💎');
-    /// assert_eq!(s, &b"<3\xF0\x9F\x92\x8E"[..]); // "<3💎"
+    /// assert_eq!(s, b"<3\xF0\x9F\x92\x8E"); // "<3💎"
     /// ```
     #[inline]
     pub fn push_char(&mut self, ch: char) {

@@ -473,6 +473,22 @@ impl EncodedString {
     }
 
     #[inline]
+    pub fn try_push_int(&mut self, int: i64) -> Result<(), InvalidCodepointError> {
+        match self {
+            EncodedString::Ascii(inner) => {
+                let mut enc = None;
+                inner.try_push_int(int, &mut enc)?;
+                if let Some(enc) = enc {
+                    self.set_encoding(enc);
+                }
+            }
+            EncodedString::Binary(inner) => inner.try_push_int(int)?,
+            EncodedString::Utf8(inner) => inner.try_push_int(int)?,
+        }
+        Ok(())
+    }
+
+    #[inline]
     pub fn push_char(&mut self, ch: char) {
         match self {
             EncodedString::Ascii(inner) => inner.push_char(ch),

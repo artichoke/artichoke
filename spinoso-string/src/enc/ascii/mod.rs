@@ -7,6 +7,7 @@ use bstr::ByteSlice;
 
 use crate::buf::Buf;
 use crate::codepoints::InvalidCodepointError;
+use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
@@ -243,6 +244,19 @@ impl AsciiString {
         } else {
             Err(InvalidCodepointError::codepoint_out_of_range(codepoint))
         }
+    }
+
+    #[inline]
+    pub fn try_push_int(&mut self, int: i64, enc: &mut Option<Encoding>) -> Result<(), InvalidCodepointError> {
+        match u8::try_from(int) {
+            Ok(byte) if byte.is_ascii() => self.push_byte(byte),
+            Ok(byte) => {
+                self.push_byte(byte);
+                *enc = Some(Encoding::Binary);
+            }
+            Err(_) => return Err(InvalidCodepointError::codepoint_out_of_range(int)),
+        }
+        Ok(())
     }
 
     #[inline]

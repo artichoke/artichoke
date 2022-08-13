@@ -15,7 +15,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     class::Builder::for_spec(interp, &spec)
         .add_method("*", string_mul, sys::mrb_args_req(1))?
         .add_method("+", string_add, sys::mrb_args_req(1))?
-        .add_method("<<", string_push, sys::mrb_args_req(1))?
+        .add_method("<<", string_append, sys::mrb_args_req(1))?
         .add_method("<=>", string_cmp_rocket, sys::mrb_args_req(1))?
         .add_method("==", string_equals_equals, sys::mrb_args_req(1))?
         .add_method("[]", string_aref, sys::mrb_args_req(1))?
@@ -101,12 +101,12 @@ unsafe extern "C" fn string_add(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -
     }
 }
 
-unsafe extern "C" fn string_push(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C" fn string_append(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let other = Value::from(other);
-    let result = trampoline::push(&mut guard, value, other);
+    let result = trampoline::append(&mut guard, value, other);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
