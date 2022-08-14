@@ -140,6 +140,7 @@ impl ArgumentError {
     pub const fn with_message(message: &'static str) -> Self {
         Self(Cow::Borrowed(message))
     }
+
     #[must_use]
     pub(crate) const fn unsupported_pattern_encoding() -> Self {
         Self::with_message("Unsupported pattern encoding")

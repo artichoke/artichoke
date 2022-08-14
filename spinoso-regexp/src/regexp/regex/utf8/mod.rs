@@ -203,6 +203,11 @@ impl Utf8 {
     }
 
     #[must_use]
+    pub fn is_literal(&self) -> bool {
+        self.source.options().is_literal()
+    }
+
+    #[must_use]
     pub fn source(&self) -> &Source {
         &self.source
     }
@@ -237,5 +242,209 @@ impl Utf8 {
     #[must_use]
     pub fn string(&self) -> &[u8] {
         self.config.pattern()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use bstr::{ByteSlice, B};
+
+    use super::Utf8;
+    use crate::{Config, Encoding, Error, Flags, Options, Source};
+
+    fn make(pattern: impl AsRef<[u8]>, options: Option<Options>, encoding: Encoding) -> Utf8 {
+        let source = Source::with_pattern_and_options(pattern.as_ref().to_vec(), options.unwrap_or_default());
+        let config = Config::from(&source);
+        Utf8::with_literal_derived_encoding(source, config, encoding).unwrap()
+    }
+
+    #[test]
+    fn can_compile_posix_character_classes() {
+        let regexp = make("[[:digit:]][[:space:]][[:alpha:]][[:punct:]]", None, Encoding::None);
+        assert!(regexp.is_match(b"1 a&", None).unwrap());
+    }
+
+    #[test]
+    fn can_compile_perl_unicode_patterns() {
+        let regexp = make(r"\d+ \d+", None, Encoding::None);
+        // This haystack contains non-ASCII numerals in the Unicode Nd character
+        // class. The sequence contains Devanagari 1, Devanagari 0, Kannada 3,
+        // and Kannada 6.
+        //
+        // See:
+        //
+        // - https://en.wikipedia.org/wiki/Devanagari_numerals#Table
+        // - https://en.wikipedia.org/wiki/Kannada_script#Numerals
+        let haystack = "123 १०೩೬";
+        assert!(regexp.is_match(haystack.as_bytes(), None).unwrap());
+    }
+
+    #[test]
+    fn requires_utf8_encoding_for_pattern() {
+        let source = Source::with_pattern_and_options(b"abc \xFF\xFE 123".to_vec(), Options::default());
+        let config = Config::from(&source);
+        let err = Utf8::with_literal_derived_encoding(source, config, Encoding::None).unwrap_err();
+        assert!(matches!(err, Error::Argument(err) if err.message() == "Unsupported pattern encoding"));
+    }
+
+    #[test]
+    fn invalid_pattern_is_syntax_error_for_literal() {
+        let options = Options::from(Flags::LITERAL);
+        let source = Source::with_pattern_and_options(b"[".to_vec(), options);
+        let config = Config::from(&source);
+        let err = Utf8::with_literal_derived_encoding(source, config, Encoding::None).unwrap_err();
+        assert!(matches!(err, Error::Syntax(..)));
+    }
+
+    #[test]
+    fn invalid_pattern_is_syntax_error_for_compiled() {
+        let options = Options::from(Flags::ALL_REGEXP_OPTS);
+        let source = Source::with_pattern_and_options(b"[".to_vec(), options);
+        let config = Config::from(&source);
+        let err = Utf8::with_literal_derived_encoding(source, config, Encoding::None).unwrap_err();
+        assert!(matches!(err, Error::Regexp(..)));
+    }
+
+    #[test]
+    fn literal_pattern_backrefs_are_not_supported() {
+        let options = Options::from(Flags::LITERAL);
+        let source = Source::with_pattern_and_options(br"\0".to_vec(), options);
+        let config = Config::from(&source);
+        let err = Utf8::with_literal_derived_encoding(source, config, Encoding::None).unwrap_err();
+        assert!(matches!(err, Error::Syntax(err) if err.message().contains("backreferences are not supported")));
+    }
+
+    #[test]
+    fn compiled_pattern_backrefs_are_not_supported() {
+        let options = Options::from(Flags::ALL_REGEXP_OPTS);
+        let source = Source::with_pattern_and_options(br"\0".to_vec(), options);
+        let config = Config::from(&source);
+        let err = Utf8::with_literal_derived_encoding(source, config, Encoding::None).unwrap_err();
+        assert!(matches!(err, Error::Regexp(err) if err.message().contains("backreferences are not supported")));
+    }
+
+    #[test]
+    fn is_literal() {
+        let options = Options::from(Flags::LITERAL);
+        let regexp = make("abc", Some(options), Encoding::None);
+        assert!(regexp.is_literal());
+
+        let options = Options::from(Flags::empty());
+        let regexp = make("abc", Some(options), Encoding::None);
+        assert!(!regexp.is_literal());
+
+        let options = Options::from(Flags::ALL_REGEXP_OPTS);
+        let regexp = make("abc", Some(options), Encoding::None);
+        assert!(!regexp.is_literal());
+
+        let regexp = make("abc", None, Encoding::None);
+        assert!(!regexp.is_literal());
+    }
+
+    #[test]
+    fn string() {
+        let test_cases = [
+            ("abc", B("abc")),
+            ("xyz", B("xyz")),
+            ("🦀", B("🦀")),
+            ("铁锈", B("铁锈")),
+        ];
+        for (pattern, string) in test_cases {
+            let regexp = make(pattern, None, Encoding::None);
+            assert_eq!(
+                regexp.string().as_bstr(),
+                string.as_bstr(),
+                "Mismatched string for pattern"
+            );
+        }
+    }
+
+    #[test]
+    fn fmt_display() {
+        let test_cases = [
+            (B("abc"), "abc"),
+            (B("xyz"), "xyz"),
+            (B("🦀"), "🦀"),
+            (B("铁锈"), "铁锈"),
+            // Invalid UTF-8 patterns are not supported 👇
+            // (B(b"\xFF\xFE"), r"\xFF\xFE"),
+            // (B(b"abc \xFF\xFE xyz"), r"abc \xFF\xFE xyz"),
+        ];
+        for (pattern, display) in test_cases {
+            let regexp = make(pattern, None, Encoding::None);
+            assert_eq!(regexp.to_string(), display, "Mismatched display impl for pattern");
+        }
+    }
+
+    #[test]
+    fn debug() {
+        let test_cases = [
+            (B("\0"), r"/\x00/", Options::default()),
+            (B("\0"), r"/\x00/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (B("\0"), r"/\x00/ix", Options::from(Flags::IGNORECASE | Flags::EXTENDED)),
+            (B("\0"), r"/\x00/m", Options::from(Flags::MULTILINE)),
+            (B(b"\x0a"), "/\n/", Options::default()),
+            (B("\x0B"), "/\x0B/", Options::default()),
+            // NOTE: the control chacters, not a raw string, are in the debug output.
+            (B("\n\r\t"), "/\n\r\t/", Options::default()),
+            (B("\n\r\t"), "/\n\r\t/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (
+                B("\n\r\t"),
+                "/\n\r\t/ix",
+                Options::from(Flags::IGNORECASE | Flags::EXTENDED),
+            ),
+            (B("\n\r\t"), "/\n\r\t/m", Options::from(Flags::MULTILINE)),
+            (B("\x7F"), r"/\x7F/", Options::default()),
+            (B("\x7F"), r"/\x7F/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (
+                B("\x7F"),
+                r"/\x7F/ix",
+                Options::from(Flags::IGNORECASE | Flags::EXTENDED),
+            ),
+            (B("\x7F"), r"/\x7F/m", Options::from(Flags::MULTILINE)),
+            (B(r"\a"), r"/\a/", Options::default()),
+            (B(r"\a"), r"/\a/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (B(r"\a"), r"/\a/ix", Options::from(Flags::IGNORECASE | Flags::EXTENDED)),
+            (B(r"\a"), r"/\a/m", Options::from(Flags::MULTILINE)),
+            (B("abc"), "/abc/", Options::default()),
+            (B("abc"), "/abc/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (B("abc"), "/abc/ix", Options::from(Flags::IGNORECASE | Flags::EXTENDED)),
+            (B("abc"), "/abc/m", Options::from(Flags::MULTILINE)),
+            (B("a+b*c"), "/a+b*c/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (B("xyz"), "/xyz/", Options::default()),
+            (B("xyz"), "/xyz/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (B("xyz"), "/xyz/ix", Options::from(Flags::IGNORECASE | Flags::EXTENDED)),
+            (B("xyz"), "/xyz/m", Options::from(Flags::MULTILINE)),
+            (B("x+y*z"), "/x+y*z/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (B("🦀💎"), "/🦀💎/", Options::default()),
+            (B("🦀💎"), "/🦀💎/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (
+                B("🦀💎"),
+                "/🦀💎/ix",
+                Options::from(Flags::IGNORECASE | Flags::EXTENDED),
+            ),
+            (B("🦀💎"), "/🦀💎/m", Options::from(Flags::MULTILINE)),
+            (B("🦀+💎*"), "/🦀+💎*/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (B("铁锈"), "/铁锈/", Options::default()),
+            (B("铁锈"), "/铁锈/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            (
+                B("铁锈"),
+                "/铁锈/ix",
+                Options::from(Flags::IGNORECASE | Flags::EXTENDED),
+            ),
+            (B("铁锈"), "/铁锈/m", Options::from(Flags::MULTILINE)),
+            (B("铁+锈*"), "/铁+锈*/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
+            // Invalid UTF-8 patterns are not supported 👇
+            // (B(b"\xFF\xFE"), r"\xFF\xFE", Options::default()),
+            // (B(b"abc \xFF\xFE xyz"), r"abc \xFF\xFE xyz", Options::default()),
+        ];
+        for (pattern, debug, options) in test_cases {
+            let regexp = make(pattern, Some(options), Encoding::None);
+            assert_eq!(
+                regexp.debug().collect::<String>(),
+                debug,
+                "Mismatched debug iterator for pattern"
+            );
+        }
     }
 }
