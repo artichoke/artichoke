@@ -5,7 +5,10 @@ use bstr::{ByteSlice, ByteVec};
 use regex::{Match, Regex, RegexBuilder};
 use scolapasta_string_escape::format_debug_escape_into;
 
-use crate::{ArgumentError, Config, Debug, Encoding, Error, RegexpError, Source, SyntaxError};
+use crate::debug::Debug;
+use crate::encoding::Encoding;
+use crate::error::{ArgumentError, Error, RegexpError, SyntaxError};
+use crate::{Config, Source};
 
 mod iter;
 
@@ -102,7 +105,7 @@ impl Utf8 {
         Debug::new(
             self.source.pattern(),
             self.source.options.as_display_modifier(),
-            self.encoding.as_modifier_string(),
+            self.encoding.as_modifier_str(),
         )
     }
 
@@ -130,7 +133,7 @@ impl Utf8 {
         }
         inspect.push_byte(b'/');
         inspect.push_str(self.source.options.as_display_modifier());
-        inspect.push_str(self.encoding.as_modifier_string());
+        inspect.push_str(self.encoding.as_modifier_str());
         inspect
     }
 

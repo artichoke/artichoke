@@ -11,10 +11,8 @@ pub struct Captures<'a> {
 
 impl<'a> From<regex::Captures<'a>> for Captures<'a> {
     fn from(captures: regex::Captures<'a>) -> Self {
-        Self {
-            captures,
-            iter: 0..captures.len(),
-        }
+        let iter = 0..captures.len();
+        Self { captures, iter }
     }
 }
 
