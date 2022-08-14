@@ -2,29 +2,8 @@
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::symbol::Symbol;
-use crate::extn::core::time::{Offset, Time};
+use crate::extn::core::time::{Offset, Time, subsec::Subsec};
 use crate::extn::prelude::*;
-
-const MAX_NANOS: i64 = 1_000_000_000 - 1;
-const MILLIS_IN_NANO: i64 = 1_000_000;
-const MICROS_IN_NANO: i64 = 1_000;
-const NANOS_IN_NANO: i64 = 1;
-
-// Generate a subsecond multiplier from the given ruby value.
-//
-// - If not provided, the defaults to Micros.
-// - Otherwise, expects a symbol with :milliseconds, :usec, or :nsec.
-fn subsec_multiplier(interp: &mut Artichoke, subsec_type: Option<Value>) -> Result<i64, Error> {
-    subsec_type.map_or(Ok(MICROS_IN_NANO), |mut value| {
-        let subsec_symbol = unsafe { Symbol::unbox_from_value(&mut value, interp)? }.bytes(interp);
-        match subsec_symbol {
-            b"milliseconds" => Ok(MILLIS_IN_NANO),
-            b"usec" => Ok(MICROS_IN_NANO),
-            b"nsec" => Ok(NANOS_IN_NANO),
-            _ => Err(ArgumentError::with_message("unexpected unit. expects :milliseconds, :usec, :nsec").into()),
-        }
-    })
-}
 
 // Convert a Ruby Value to a Offset which can be used to construct a _time_.
 fn offset_from_value(interp: &mut Artichoke, mut value: Value) -> Result<Offset, Error> {
@@ -118,25 +97,13 @@ pub fn at(
         _ => Err(ArgumentError::with_message("invalid arguments"))?,
     };
 
-    let seconds = implicitly_convert_to_int(interp, seconds)?;
 
-    let subsec_nanos = if let Some(subsec) = subsec {
-        let subsec_multiplier = subsec_multiplier(interp, subsec_type)?;
-        let subsec = implicitly_convert_to_int(interp, subsec)?
-            .checked_mul(subsec_multiplier)
-            .ok_or_else(|| ArgumentError::with_message("Time too large"))?;
+    let subsec: Subsec = interp.try_convert_mut((subsec, subsec_type))?;
+    let (subsec_secs, subsec_nanos) = subsec.to_tuple();
 
-        // 0..=MAX_NANOS is a safe conversion since it's gauranteed to be
-        // inside u32 range.
-        #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
-        match subsec {
-            0..=MAX_NANOS => Ok(subsec as u32),
-            i64::MIN..=-1 => Err(ArgumentError::with_message("subseconds needs to be > 0")),
-            _ => Err(ArgumentError::with_message("subseconds outside of range")),
-        }?
-    } else {
-        0
-    };
+    let seconds = implicitly_convert_to_int(interp, seconds)?
+        .checked_add(subsec_secs)
+        .ok_or(ArgumentError::with_message("Time too large"))?;
 
     let offset = match options {
         Some(options) => offset_from_options(interp, options)?,
