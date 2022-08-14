@@ -198,8 +198,10 @@ impl Options {
     ///
     /// Alias for the corresponding `Into<Flags>` implementation.
     #[must_use]
-    pub const fn flags(self) -> Flags {
-        self.flags
+    pub fn flags(self) -> Flags {
+        let mut flags = self.flags;
+        flags.remove(Flags::LITERAL);
+        flags
     }
 
     /// Convert an `Options` to its bit representation.
