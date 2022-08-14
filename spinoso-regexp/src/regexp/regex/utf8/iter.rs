@@ -4,6 +4,7 @@ use core::ops::Range;
 use regex::CaptureNames;
 
 #[derive(Debug)]
+#[must_use = "this `Captures` is an `Iterator`, which should be consumed if constructed"]
 pub struct Captures<'a> {
     captures: regex::Captures<'a>,
     iter: Range<usize>,
@@ -43,6 +44,7 @@ impl<'a> Iterator for Captures<'a> {
 impl<'a> FusedIterator for Captures<'a> {}
 
 #[derive(Debug)]
+#[must_use = "this `CaptureIndices` is an `Iterator`, which should be consumed if constructed"]
 pub struct CaptureIndices<'a, 'b> {
     name: &'b [u8],
     capture_names: Enumerate<CaptureNames<'a>>,
@@ -66,7 +68,7 @@ impl<'a, 'b> Iterator for CaptureIndices<'a, 'b> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some((index, group)) = self.capture_names.next() {
+        for (index, group) in self.capture_names.by_ref() {
             let group = group.map(str::as_bytes);
             if matches!(group, Some(group) if group == self.name) {
                 return Some(index);

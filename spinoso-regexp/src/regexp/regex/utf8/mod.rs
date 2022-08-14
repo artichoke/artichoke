@@ -66,6 +66,7 @@ impl Utf8 {
     }
 
     /// Returns the number of captures.
+    #[must_use]
     pub fn captures_len(&self) -> usize {
         self.regex.captures_len()
     }
@@ -136,6 +137,7 @@ impl Utf8 {
         Ok(Some(map))
     }
 
+    #[must_use]
     pub fn names(&self) -> Vec<Vec<u8>> {
         let mut names = vec![];
         let mut capture_names = self.named_captures().unwrap_or_default().collect::<Vec<_>>();
@@ -200,18 +202,22 @@ impl Utf8 {
         )
     }
 
+    #[must_use]
     pub fn source(&self) -> &Source {
         &self.source
     }
 
+    #[must_use]
     pub fn config(&self) -> &Config {
         &self.config
     }
 
+    #[must_use]
     pub fn encoding(&self) -> Encoding {
         self.encoding
     }
 
+    #[must_use]
     pub fn inspect(&self) -> Vec<u8> {
         // pattern length + 2x '/' + mix + encoding
         let mut inspect = Vec::with_capacity(self.source.pattern.len() + 2 + 4);
@@ -228,6 +234,7 @@ impl Utf8 {
         inspect
     }
 
+    #[must_use]
     pub fn string(&self) -> &[u8] {
         self.config.pattern()
     }

@@ -9,28 +9,34 @@ pub struct NamedCapture {
 }
 
 impl NamedCapture {
+    #[must_use]
     pub(crate) const fn new(group: Vec<u8>, indices: Vec<usize>) -> Self {
         Self { group, indices }
     }
 
+    #[must_use]
     pub fn group(&self) -> &[u8] {
         &self.group[..]
     }
 
+    #[must_use]
     pub fn indices(&self) -> &[usize] {
         &self.indices[..]
     }
 
+    #[must_use]
     pub fn into_group(self) -> Vec<u8> {
         self.group
     }
 
+    #[must_use]
     pub fn into_group_and_indices(self) -> (Vec<u8>, Vec<usize>) {
         (self.group, self.indices)
     }
 }
 
 #[derive(Debug, Clone)]
+#[must_use = "this `NamedCaptures` is an `Iterator`, which should be consumed if constructed"]
 pub struct NamedCaptures {
     items: vec::IntoIter<NamedCapture>,
 }
@@ -76,6 +82,7 @@ impl ExactSizeIterator for NamedCaptures {}
 impl FusedIterator for NamedCaptures {}
 
 #[derive(Default, Debug, Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct NamedCapturesForHaystack {
     matches: HashMap<Vec<u8>, Option<Vec<u8>>>,
 }
@@ -90,6 +97,7 @@ impl NamedCapturesForHaystack {
         self.matches.insert(name, matched);
     }
 
+    #[must_use]
     pub fn into_map(self) -> HashMap<Vec<u8>, Option<Vec<u8>>> {
         self.matches
     }
