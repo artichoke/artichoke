@@ -301,6 +301,12 @@ impl Regexp {
 
     #[inline]
     #[must_use]
+    pub fn is_literal(&self) -> bool {
+        self.0.source().options().is_literal()
+    }
+
+    #[inline]
+    #[must_use]
     pub fn options(&self) -> i64 {
         let options = self.0.source().options().flags();
         let encoding = self.0.encoding().flags();
