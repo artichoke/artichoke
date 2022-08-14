@@ -240,7 +240,7 @@ pub struct Config {
 
 impl fmt::Debug for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Source")
+        f.debug_struct("Config")
             .field("pattern", &self.pattern.as_bstr())
             .field("options", &self.options)
             .finish()
