@@ -55,7 +55,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 }
 
 unsafe extern "C" fn initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    let (pattern, options, encoding) = mrb_get_args!(mrb, required = 1, optional = 2);
+    let (pattern, options, encoding, _block) = mrb_get_args!(mrb, required = 1, optional = 2, &block);
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);
     let pattern = Value::from(pattern);
