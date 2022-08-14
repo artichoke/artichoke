@@ -97,7 +97,7 @@ impl From<Options> for i64 {
 
 impl From<Flags> for Options {
     fn from(mut flags: Flags) -> Self {
-        flags.remove(Flags::FIXEDENCODING | Flags::NOENCODING | Flags::LITERAL);
+        flags.remove(Flags::FIXEDENCODING | Flags::NOENCODING);
         Self { flags }
     }
 }
@@ -133,11 +133,7 @@ impl From<Option<bool>> for Options {
 
 impl From<&str> for Options {
     fn from(options: &str) -> Self {
-        let mut flags = Flags::empty();
-        flags.set(Flags::MULTILINE, options.contains('m'));
-        flags.set(Flags::IGNORECASE, options.contains('i'));
-        flags.set(Flags::EXTENDED, options.contains('x'));
-        Self { flags }
+        Self::from(options.as_bytes())
     }
 }
 
@@ -147,6 +143,7 @@ impl From<&[u8]> for Options {
         flags.set(Flags::MULTILINE, options.find_byte(b'm').is_some());
         flags.set(Flags::IGNORECASE, options.find_byte(b'i').is_some());
         flags.set(Flags::EXTENDED, options.find_byte(b'x').is_some());
+        flags.set(Flags::LITERAL, options.find_byte(b'l').is_some());
         Self { flags }
     }
 }
