@@ -149,7 +149,7 @@ impl<'a> Iterator for Debug<'a> {
         if let Some(literal) = self.literal.next() {
             return Some(literal);
         }
-        if !dbg!(self.source).is_empty() {
+        if !self.source.is_empty() {
             let (ch, size) = bstr::decode_utf8(self.source);
             return match ch {
                 // '/' is the `Regexp` literal delimiter, so escape it.
@@ -192,14 +192,14 @@ impl<'a> Iterator for Debug<'a> {
                     // While not an invalid byte, we rely on the documented
                     // behavior of `InvalidUtf8ByteSequence` to always escape
                     // any bytes given to it.
-                    self.literal = dbg!(InvalidUtf8ByteSequence::with_byte(ch as u8));
+                    self.literal = InvalidUtf8ByteSequence::with_byte(ch as u8);
                     self.literal.next()
                 }
                 Some(ch) => {
                     self.source = &self.source[size..];
                     Some(ch)
                 }
-                // Otherwise, we've gotten invalid UTF-8, which means this is not an
+                // Otherwise, we've gotten invalid UTF-8, which means this is not a
                 // printable char.
                 None => {
                     let (chunk, remainder) = self.source.split_at(size);
