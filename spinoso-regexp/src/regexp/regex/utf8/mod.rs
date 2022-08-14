@@ -96,6 +96,32 @@ impl Utf8 {
         }
     }
 
+    // Check whether this regexp matches the given haystack starting at an offset.
+    //
+    // If the given offset is negative, it counts backward from the end of the
+    // haystack.
+    pub fn is_match(&self, haystack: &[u8], pos: Option<i64>) -> Result<bool, Error> {
+        let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
+        let haystack_char_len = haystack.chars().count();
+        let pos = pos.unwrap_or_default();
+        let pos = if let Ok(pos) = usize::try_from(pos) {
+            pos
+        } else {
+            let pos = pos
+                .checked_neg()
+                .and_then(|pos| usize::try_from(pos).ok())
+                .and_then(|pos| haystack_char_len.checked_sub(pos));
+            if let Some(pos) = pos {
+                pos
+            } else {
+                return Ok(false);
+            }
+        };
+        let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
+        let haystack = &haystack[offset..];
+        Ok(self.regex.find(haystack).is_some())
+    }
+
     pub fn debug(&self) -> Debug<'_> {
         Debug::new(
             self.source.pattern(),
