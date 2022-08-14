@@ -18,15 +18,11 @@ pub fn initialize(
     }
     let (options, encoding) = interp.try_convert_mut((options, encoding))?;
     let regexp = Regexp::initialize(interp, pattern, options, encoding)?;
-    let result = Regexp::box_into_value(regexp, into, interp);
-    if let Some(options) = options {
-        if options.is_literal() {
-            let mut value = result?;
-            value.freeze(interp)?;
-            return Ok(value);
-        }
+    let mut value = Regexp::box_into_value(regexp, into, interp)?;
+    if matches!(options, Some(options) if options.is_literal()) {
+        value.freeze(interp)?;
     }
-    result
+    Ok(value)
 }
 
 pub fn escape(interp: &mut Artichoke, mut pattern: Value) -> Result<Value, Error> {
