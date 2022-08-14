@@ -44,6 +44,22 @@ def regexp_initialize_already_init_compiled
   rescue TypeError => e
     raise "got message: #{e.message}" unless e.message == 'already initialized regexp'
   end
+
+  r = Regexp.compile('abc', 'i', 'n')
+  begin
+    r.send(:initialize, '/xyz/')
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == 'already initialized regexp'
+  end
+
+  r = Regexp.compile('abc', 'i', 'n')
+  begin
+    r.send(:initialize, Regexp.compile('xyz'))
+    raise 'expected TypeError'
+  rescue TypeError => e
+    raise "got message: #{e.message}" unless e.message == 'already initialized regexp'
+  end
 end
 
 # Since Ruby 3.0, Regexp literals are frozen by default.
