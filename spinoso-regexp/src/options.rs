@@ -311,7 +311,10 @@ mod tests {
 
     #[test]
     fn from_all_flags_ignores_encoding_and_literal() {
-        assert_eq!(Options::from(Flags::all()), Options::from(Flags::ALL_REGEXP_OPTS));
+        assert_eq!(
+            Options::from(Flags::all()),
+            Options::from(Flags::ALL_REGEXP_OPTS | Flags::LITERAL)
+        );
     }
 
     // If options is an `Integer`, it should be one or more of the constants
@@ -564,10 +567,13 @@ mod tests {
         assert_ne!(Options::from(Flags::EXTENDED | Flags::IGNORECASE), opts);
         assert_ne!(Options::from(Flags::MULTILINE | Flags::IGNORECASE), opts);
         assert_eq!(
-            Options::from(Flags::EXTENDED | Flags::IGNORECASE | Flags::MULTILINE),
+            Options::from(Flags::EXTENDED | Flags::IGNORECASE | Flags::MULTILINE | Flags::LITERAL),
             opts
         );
-        assert_eq!(Options::from(Flags::ALL_REGEXP_OPTS), opts);
+
+        let mut flags = opts.flags;
+        flags.remove(Flags::LITERAL);
+        assert_eq!(Options::from(Flags::ALL_REGEXP_OPTS).flags, flags);
         assert_eq!(opts.ignore_case(), RegexpOption::Enabled);
         assert_eq!(opts.extended(), RegexpOption::Enabled);
         assert_eq!(opts.multiline(), RegexpOption::Enabled);
