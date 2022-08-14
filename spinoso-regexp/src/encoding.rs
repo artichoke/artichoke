@@ -135,7 +135,7 @@ impl TryFrom<&[u8]> for Encoding {
             match flag {
                 b'u' | b's' | b'e' if enc.is_none() => enc = Some(Encoding::Fixed),
                 b'n' if enc.is_none() => enc = Some(Encoding::No),
-                b'i' | b'm' | b'x' | b'o' => continue,
+                b'i' | b'm' | b'x' | b'o' | b'l' => continue,
                 _ => return Err(InvalidEncodingError::new()),
             }
         }

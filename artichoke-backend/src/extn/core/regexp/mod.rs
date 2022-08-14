@@ -301,6 +301,12 @@ impl Regexp {
 
     #[inline]
     #[must_use]
+    pub fn is_literal(&self) -> bool {
+        self.0.source().options().is_literal()
+    }
+
+    #[inline]
+    #[must_use]
     pub fn options(&self) -> i64 {
         let options = self.0.source().options().flags();
         let encoding = self.0.encoding().flags();
@@ -359,5 +365,22 @@ impl TryConvertMut<(Option<Value>, Option<Value>), (Option<Options>, Option<Enco
         } else {
             Ok((None, None))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test::prelude::*;
+
+    const SUBJECT: &str = "Regexp";
+    const FUNCTIONAL_TEST: &[u8] = include_bytes!("regexp_test.rb");
+
+    #[test]
+    fn functional() {
+        let mut interp = interpreter();
+        let result = interp.eval(FUNCTIONAL_TEST);
+        unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
+        let result = interp.eval(b"spec");
+        unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
     }
 }

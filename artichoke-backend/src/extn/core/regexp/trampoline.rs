@@ -1,5 +1,5 @@
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_nilable_string, implicitly_convert_to_string};
-use crate::extn::core::regexp::{Options, Regexp};
+use crate::extn::core::regexp::Regexp;
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
 
@@ -11,8 +11,7 @@ pub fn initialize(
     mut into: Value,
 ) -> Result<Value, Error> {
     if let Ok(existing) = unsafe { Regexp::unbox_from_value(&mut into, interp) } {
-        let options = Options::from(existing.options());
-        if options.is_literal() {
+        if existing.is_literal() {
             // NOTE: In Ruby 3.0.0+, this branch should return a `FrozenError`.
             return Err(SecurityError::with_message("can't modify literal regexp").into());
         }

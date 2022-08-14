@@ -97,7 +97,7 @@ impl From<Options> for i64 {
 
 impl From<Flags> for Options {
     fn from(mut flags: Flags) -> Self {
-        flags.remove(Flags::FIXEDENCODING | Flags::NOENCODING | Flags::LITERAL);
+        flags.remove(Flags::FIXEDENCODING | Flags::NOENCODING);
         Self { flags }
     }
 }
@@ -133,11 +133,7 @@ impl From<Option<bool>> for Options {
 
 impl From<&str> for Options {
     fn from(options: &str) -> Self {
-        let mut flags = Flags::empty();
-        flags.set(Flags::MULTILINE, options.contains('m'));
-        flags.set(Flags::IGNORECASE, options.contains('i'));
-        flags.set(Flags::EXTENDED, options.contains('x'));
-        Self { flags }
+        Self::from(options.as_bytes())
     }
 }
 
@@ -147,6 +143,7 @@ impl From<&[u8]> for Options {
         flags.set(Flags::MULTILINE, options.find_byte(b'm').is_some());
         flags.set(Flags::IGNORECASE, options.find_byte(b'i').is_some());
         flags.set(Flags::EXTENDED, options.find_byte(b'x').is_some());
+        flags.set(Flags::LITERAL, options.find_byte(b'l').is_some());
         Self { flags }
     }
 }
@@ -201,8 +198,10 @@ impl Options {
     ///
     /// Alias for the corresponding `Into<Flags>` implementation.
     #[must_use]
-    pub const fn flags(self) -> Flags {
-        self.flags
+    pub fn flags(self) -> Flags {
+        let mut flags = self.flags;
+        flags.remove(Flags::LITERAL);
+        flags
     }
 
     /// Convert an `Options` to its bit representation.
@@ -312,7 +311,10 @@ mod tests {
 
     #[test]
     fn from_all_flags_ignores_encoding_and_literal() {
-        assert_eq!(Options::from(Flags::all()), Options::from(Flags::ALL_REGEXP_OPTS));
+        assert_eq!(
+            Options::from(Flags::all()),
+            Options::from(Flags::ALL_REGEXP_OPTS | Flags::LITERAL)
+        );
     }
 
     // If options is an `Integer`, it should be one or more of the constants
@@ -565,10 +567,13 @@ mod tests {
         assert_ne!(Options::from(Flags::EXTENDED | Flags::IGNORECASE), opts);
         assert_ne!(Options::from(Flags::MULTILINE | Flags::IGNORECASE), opts);
         assert_eq!(
-            Options::from(Flags::EXTENDED | Flags::IGNORECASE | Flags::MULTILINE),
+            Options::from(Flags::EXTENDED | Flags::IGNORECASE | Flags::MULTILINE | Flags::LITERAL),
             opts
         );
-        assert_eq!(Options::from(Flags::ALL_REGEXP_OPTS), opts);
+
+        let mut flags = opts.flags;
+        flags.remove(Flags::LITERAL);
+        assert_eq!(Options::from(Flags::ALL_REGEXP_OPTS).flags, flags);
         assert_eq!(opts.ignore_case(), RegexpOption::Enabled);
         assert_eq!(opts.extended(), RegexpOption::Enabled);
         assert_eq!(opts.multiline(), RegexpOption::Enabled);

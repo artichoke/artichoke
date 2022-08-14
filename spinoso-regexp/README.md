@@ -31,7 +31,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-regexp = "0.3.0"
+spinoso-regexp = "0.4.0"
 ```
 
 ## Crate features
