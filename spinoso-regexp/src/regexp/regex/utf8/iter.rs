@@ -1,16 +1,20 @@
 use core::iter::{Enumerate, FusedIterator};
+use core::ops::Range;
 
 use regex::CaptureNames;
 
 #[derive(Debug)]
 pub struct Captures<'a> {
     captures: regex::Captures<'a>,
-    idx: usize,
+    iter: Range<usize>,
 }
 
 impl<'a> From<regex::Captures<'a>> for Captures<'a> {
     fn from(captures: regex::Captures<'a>) -> Self {
-        Self { captures, idx: 0 }
+        Self {
+            captures,
+            iter: 0..captures.len(),
+        }
     }
 }
 
@@ -18,27 +22,23 @@ impl<'a> Iterator for Captures<'a> {
     type Item = Option<&'a [u8]>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let subcapture = match self.captures.iter().skip(self.idx).next() {
-            Some(Some(capture)) => Some(capture.as_str().as_bytes()),
-            Some(None) => None,
-            None => return None,
-        };
-        self.idx += 1;
-        Some(subcapture)
+        let idx = self.iter.next()?;
+        match self.captures.get(idx) {
+            Some(capture) => Some(Some(capture.as_str().as_bytes())),
+            None => Some(None),
+        }
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        let subcapture = match self.captures.iter().skip(self.idx).nth(n) {
-            Some(Some(capture)) => Some(capture.as_str().as_bytes()),
-            Some(None) => None,
-            None => return None,
-        };
-        self.idx += n;
-        Some(subcapture)
+        let idx = self.iter.nth(n)?;
+        match self.captures.get(idx) {
+            Some(capture) => Some(Some(capture.as_str().as_bytes())),
+            None => Some(None),
+        }
     }
 
     fn count(self) -> usize {
-        self.captures.iter().skip(self.idx).count()
+        self.iter.count()
     }
 }
 
