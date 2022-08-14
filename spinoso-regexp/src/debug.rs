@@ -84,6 +84,7 @@ pub struct Debug<'a> {
     //
     // `Regexp#inspect` prints `"/#{source}/"`.
     source: &'a [u8],
+    non_standard_control_escapes: &'static [u8],
     literal: InvalidUtf8ByteSequence,
     options: &'static str,
     encoding: &'static str,
@@ -122,6 +123,7 @@ impl<'a> Debug<'a> {
         Self {
             delimiters: Delimiters::DEFAULT,
             source,
+            non_standard_control_escapes: &[],
             literal: InvalidUtf8ByteSequence::new(),
             options,
             encoding,
@@ -136,35 +138,73 @@ impl<'a> Iterator for Debug<'a> {
         if let Some(prefix) = self.delimiters.emit_left_delimiter() {
             return Some(prefix);
         }
+        if let Some((&next, tail)) = self.non_standard_control_escapes.split_first() {
+            self.non_standard_control_escapes = tail;
+            return Some(next.into());
+        }
         if let Some(literal) = self.literal.next() {
             return Some(literal);
         }
-        if !self.source.is_empty() {
+        if !dbg!(self.source).is_empty() {
             let (ch, size) = bstr::decode_utf8(self.source);
-            let next = match ch {
+            return match ch {
                 // '/' is the `Regexp` literal delimiter, so escape it.
                 Some('/') => {
+                    self.source = &self.source[1..];
                     // While not an invalid byte, we rely on the documented
                     // behavior of `InvalidUtf8ByteSequence` to always escape
                     // any bytes given to it.
                     self.literal = InvalidUtf8ByteSequence::with_byte(b'/');
                     Some('\\')
                 }
-                Some(ch) => Some(ch),
+                Some('\x07') => {
+                    self.source = &self.source[1..];
+                    let (&next, tail) = br"\x07".split_first().unwrap();
+                    self.non_standard_control_escapes = tail;
+                    Some(next.into())
+                }
+                Some('\x08') => {
+                    self.source = &self.source[1..];
+                    let (&next, tail) = br"\x08".split_first().unwrap();
+                    self.non_standard_control_escapes = tail;
+                    Some(next.into())
+                }
+                Some('\x1B') => {
+                    self.source = &self.source[1..];
+                    let (&next, tail) = br"\x1B".split_first().unwrap();
+                    self.non_standard_control_escapes = tail;
+                    Some(next.into())
+                }
+                Some(ch) if ch.is_ascii() && posix_space::is_space(ch as u8) => {
+                    self.source = &self.source[1..];
+                    Some(ch)
+                }
+                Some(ch) if ch.is_ascii() => {
+                    self.source = &self.source[1..];
+                    // While not an invalid byte, we rely on the documented
+                    // behavior of `InvalidUtf8ByteSequence` to always escape
+                    // any bytes given to it.
+                    self.literal = dbg!(InvalidUtf8ByteSequence::with_byte(ch as u8));
+                    self.literal.next()
+                }
+                Some(ch) => {
+                    self.source = &self.source[size..];
+                    Some(ch)
+                }
                 // Otherwise, we've gotten invalid UTF-8, which means this is not an
                 // printable char.
                 None => {
+                    let (chunk, remainder) = self.source.split_at(size);
+                    self.source = remainder;
                     // This conversion is safe to unwrap due to the documented
                     // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
                     // which indicate that `size` is always in the range of 0..=3.
-                    self.literal = InvalidUtf8ByteSequence::try_from(&self.source[..size]).unwrap();
+                    self.literal = InvalidUtf8ByteSequence::try_from(chunk).unwrap();
                     // `size` is non-zero because `pattern` is non-empty.
                     // `Literal`s created from > one byte are always non-empty.
                     self.literal.next()
                 }
             };
-            self.source = &self.source[size..];
-            return next;
         }
         if let Some(suffix) = self.delimiters.emit_right_delimiter() {
             return Some(suffix);
@@ -185,6 +225,8 @@ impl<'a> FusedIterator for Debug<'a> {}
 
 #[cfg(test)]
 mod tests {
+    use bstr::{ByteSlice, B};
+
     use super::Debug;
 
     // Iterator + Collect
@@ -272,19 +314,24 @@ mod tests {
     }
 
     #[test]
-    fn iter_ascii_escaped_byte_pattern_literal_exhaustive() {
+    fn iter_ascii_escaped_byte_pattern_literal_ascii_control() {
         // ```ruby
-        // [2.6.6] > /"\a\b\c\e\f\r\n\\\"$$"/
-        // => /"\a\b\c\e\f\r\n\\\"$$"/
-        // [2.6.6] > /"\a\b\c\e\f\r\n\\\"$$"/.source.bytes
-        // => [34, 92, 97, 92, 98, 92, 99, 92, 101, 92, 102, 92, 114, 92, 110, 92, 92, 92, 34, 36, 36, 34]
+        // [3.1.2] > Regexp.compile((0..0x1F).to_a.map(&:chr).join).inspect.bytes
         // ```
-        let pattern = [
-            34, 92, 97, 92, 98, 92, 99, 92, 101, 92, 102, 92, 114, 92, 110, 92, 92, 92, 34, 36, 36, 34,
-        ];
+        let pattern = (0x00..=0x1F).collect::<Vec<u8>>();
         let debug = Debug::new(&pattern, "", "");
         let s = debug.collect::<String>();
-        assert_eq!(s, r#"/"\a\b\c\e\f\r\n\\\"$$"/"#);
+        assert_eq!(
+            s.as_bytes().as_bstr(),
+            B(&[
+                47, 92, 120, 48, 48, 92, 120, 48, 49, 92, 120, 48, 50, 92, 120, 48, 51, 92, 120, 48, 52, 92, 120, 48,
+                53, 92, 120, 48, 54, 92, 120, 48, 55, 92, 120, 48, 56, 9, 10, 11, 12, 13, 92, 120, 48, 69, 92, 120,
+                48, 70, 92, 120, 49, 48, 92, 120, 49, 49, 92, 120, 49, 50, 92, 120, 49, 51, 92, 120, 49, 52, 92, 120,
+                49, 53, 92, 120, 49, 54, 92, 120, 49, 55, 92, 120, 49, 56, 92, 120, 49, 57, 92, 120, 49, 65, 92, 120,
+                49, 66, 92, 120, 49, 67, 92, 120, 49, 68, 92, 120, 49, 69, 92, 120, 49, 70, 47_u8
+            ])
+            .as_bstr(),
+        );
     }
 
     #[test]
