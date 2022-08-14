@@ -152,6 +152,7 @@ mod tests {
     use crate::test::prelude::*;
 
     const SUBJECT: &str = "String";
+    #[cfg(feature = "core-regexp")]
     const FUNCTIONAL_TEST: &[u8] = include_bytes!("string_test.rb");
 
     #[test]

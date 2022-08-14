@@ -211,11 +211,14 @@ mod tests {
         interp.eval(br#"eval("require 'foo'")"#).unwrap_err();
         interp.eval(br#"Regexp.compile(2)"#).unwrap_err();
         interp.eval(br#"Regexp.compile(2)"#).unwrap_err();
-        interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
-        interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
-        interp
-            .eval(
-                br#"\
+        #[cfg(feature = "core-regexp")]
+        {
+            interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
+            interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
+        }
+        #[cfg(feature = "stdlib-forwardable")]
+        {
+            const REQUIRE_TEST: &[u8] = b"\
 def fail
   begin
     require 'foo'
@@ -224,9 +227,10 @@ def fail
   end
 end
 
-fail"#,
-            )
-            .unwrap();
+fail
+";
+            interp.eval(REQUIRE_TEST).unwrap();
+        }
         let kernel = interp.eval(br#"Kernel"#).unwrap();
         kernel.funcall(&mut interp, "raise", &[], None).unwrap_err();
         kernel.funcall(&mut interp, "raise", &[], None).unwrap_err();
