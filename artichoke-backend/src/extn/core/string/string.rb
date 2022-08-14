@@ -940,6 +940,8 @@ class String
   #
   # XXX: This should probably be implemented in native code.
   # TODO: Lots of branches are not implemented.
+  # TODO: when implemented in native code remove `#[cfg(feature = "regexp")]`
+  #       from  `value::tests::funcall_string_split_regexp`.
   def split(pattern = nil, limit = (limit_not_set = true), &block)
     return [] if empty?
     return [dup] if limit == 1
