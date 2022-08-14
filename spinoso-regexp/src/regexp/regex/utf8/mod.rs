@@ -32,9 +32,7 @@ impl fmt::Display for Utf8 {
 
 impl Utf8 {
     pub fn with_literal_derived_encoding(source: Source, config: Config, encoding: Encoding) -> Result<Self, Error> {
-        let pattern = str::from_utf8(config.pattern()).map_err(|_| {
-            ArgumentError::with_message("regex crate utf8 backend for Regexp only supports UTF-8 patterns")
-        })?;
+        let pattern = str::from_utf8(config.pattern()).map_err(|_| ArgumentError::unsupported_pattern_encoding())?;
         let mut builder = RegexBuilder::new(pattern);
         builder.case_insensitive(config.options.ignore_case().is_enabled());
         builder.multi_line(config.options.multiline().is_enabled());
@@ -57,8 +55,7 @@ impl Utf8 {
     }
 
     pub fn captures<'a>(&self, haystack: &'a [u8]) -> Result<Option<Captures<'a>>, Error> {
-        let haystack =
-            str::from_utf8(haystack).map_err(|_| ArgumentError::with_message("invalid byte sequence in UTF-8"))?;
+        let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         Ok(self.regex.captures(haystack).map(Captures::from))
     }
 
@@ -78,8 +75,7 @@ impl Utf8 {
     /// If there is a match, the returned value is always greater than 0; the
     /// 0th capture always corresponds to the entire match.
     pub fn capture_count_for_haystack(&self, haystack: &[u8]) -> Result<usize, ArgumentError> {
-        let haystack =
-            str::from_utf8(haystack).map_err(|_| ArgumentError::with_message("invalid byte sequence in UTF-8"))?;
+        let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         if let Some(captures) = self.regex.captures(haystack) {
             Ok(captures.len())
         } else {
@@ -91,8 +87,7 @@ impl Utf8 {
     ///
     /// The 0th capture always corresponds to the entire match.
     pub fn entire_match<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Error> {
-        let haystack =
-            str::from_utf8(haystack).map_err(|_| ArgumentError::with_message("invalid byte sequence in UTF-8"))?;
+        let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         if let Some(captures) = self.regex.captures(haystack) {
             let entire_match = captures.get(0);
             Ok(entire_match.as_ref().map(Match::as_str).map(str::as_bytes))
