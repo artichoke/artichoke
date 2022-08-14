@@ -79,16 +79,6 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
             let seconds_base = NANOS_IN_SECOND / multiplier_nanos;
 
             match subsec.ruby_type() {
-                Ruby::Fixnum => {
-                    let subsec: i64 = subsec.try_convert_into(self)?;
-
-                    // The below conversions should be safe. The multiplier is gauranteed to not be
-                    // 0, the remainder should never overflow, and is gauranteed to be less than
-                    // u32::MAX;
-                    let secs = subsec / seconds_base;
-                    let nanos = ((subsec % seconds_base) * multiplier_nanos) as u32;
-                    Ok(Subsec { secs, nanos })
-                },
                 Ruby::Float => {
                     // TODO: Safe conversions here are really hard, there may end up being some
                     // loss in accuracy.
@@ -97,12 +87,28 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                 _ => {
                     let subsec: i64 = implicitly_convert_to_int(self, subsec)?;
 
-                    // The below conversions should be safe. The multiplier is gauranteed to not be
-                    // 0, the remainder should never overflow, and is gauranteed to be less than
-                    // u32::MAX;
-                    let secs = subsec / seconds_base;
-                    let nanos = ((subsec % seconds_base) * multiplier_nanos) as u32;
-                    Ok(Subsec { secs, nanos })
+                    // The below calculations should always be safe. The
+                    // multiplier is gauranteed to not be 0, the remainder
+                    // should never overflow, and is gauranteed to be less
+                    // than u32::MAX.
+                    let mut secs = subsec / seconds_base;
+                    let mut nanos = (subsec % seconds_base) * multiplier_nanos;
+
+                    if subsec.is_negative() {
+                        // Nanos always needs to be a positive u32. If subsec
+                        // is negative, we will always need remove one second.
+                        // Nanos can then be adjusted since it will always be
+                        // the inverse of the total nanos in a second.
+                        secs = secs.checked_sub(1)
+                            .ok_or(ArgumentError::with_message("Time too small"))?;
+
+                        if nanos.signum() != 0 {
+                            nanos += NANOS_IN_SECOND;
+                        }
+                    }
+
+                    // Cast to u32 is safe since it will always be less than NANOS_IN_SECOND due to modulo and negative adjustments.
+                    Ok(Subsec { secs, nanos: nanos as u32 })
                 }
             }
         } else {
@@ -116,6 +122,9 @@ mod tests {
     use crate::test::prelude::*;
 
     use super::Subsec;
+    use bstr::ByteSlice;
+
+    use std::collections::HashMap;
 
     fn subsec(interp: &mut Artichoke, params: (Option<&[u8]>, Option<&[u8]>)) -> Result<Subsec, Error> {
         let (subsec, subsec_type) = params;
@@ -150,67 +159,126 @@ mod tests {
     fn no_unit_implies_micros() {
         let mut interp = interpreter();
 
-        let result = subsec(&mut interp, (Some(b"0"), None)).unwrap();
-        assert_eq!(result.to_tuple(), (0, 0));
+        let expectations: HashMap<&[u8], (i64, u32)> = HashMap::from([
+            (b"-1000001".as_slice(), (-2, 999_999_000)),
+            (b"-1000000".as_slice(), (-2, 0)),
+            (b"-999999".as_slice(), (-1, 1_000)),
+            (b"-1".as_slice(), (-1, 999_999_000)),
+            (b"0".as_slice(), (0, 0)),
+            (b"1".as_slice(), (0, 1_000)),
+            (b"999999".as_slice(), (0, 999_999_000)),
+            (b"1000000".as_slice(), (1, 0)),
+            (b"1000001".as_slice(), (1, 1_000))
+        ]);
 
-        let result = subsec(&mut interp, (Some(b"999999"), None)).unwrap();
-        assert_eq!(result.to_tuple(), (0, 999_999_000));
+        let subsec_unit = None;
 
-        let result = subsec(&mut interp, (Some(b"1000000"), None)).unwrap();
-        assert_eq!(result.to_tuple(), (1, 0));
-
-        let result = subsec(&mut interp, (Some(b"1000001"), None)).unwrap();
-        assert_eq!(result.to_tuple(), (1, 1_000));
+        for (input, expectation) in expectations {
+            let result = subsec(&mut interp, (Some(input), subsec_unit)).unwrap();
+            assert_eq!(
+                result.to_tuple(),
+                expectation,
+                "Expected TryConvertMut<(Some({}), None), Result<Subsec>>, to return {} secs, {} nanos",
+                input.as_bstr(),
+                expectation.0,
+                expectation.1
+            );
+        }
     }
 
     #[test]
     fn subsec_millis() {
         let mut interp = interpreter();
 
-        let result = subsec(&mut interp, (Some(b"0"), Some(b":milliseconds"))).unwrap();
-        assert_eq!(result.to_tuple(), (0, 0));
+        let expectations: HashMap<&[u8], (i64, u32)> = HashMap::from([
+            (b"-1001".as_slice(), (-2, 999_000_000)),
+            (b"-1000".as_slice(), (-2, 0)),
+            (b"-999".as_slice(), (-1, 1_000_000)),
+            (b"-1".as_slice(), (-1, 999_000_000)),
+            (b"0".as_slice(), (0, 0)),
+            (b"1".as_slice(), (0, 1_000_000)),
+            (b"999".as_slice(), (0, 999_000_000)),
+            (b"1000".as_slice(), (1, 0)),
+            (b"1001".as_slice(), (1, 1_000_000))
+        ]);
 
-        let result = subsec(&mut interp, (Some(b"999"), Some(b":milliseconds"))).unwrap();
-        assert_eq!(result.to_tuple(), (0, 999_000_000));
+        let subsec_unit = b":milliseconds";
 
-        let result = subsec(&mut interp, (Some(b"1000"), Some(b":milliseconds"))).unwrap();
-        assert_eq!(result.to_tuple(), (1, 0));
-
-        let result = subsec(&mut interp, (Some(b"1001"), Some(b":milliseconds"))).unwrap();
-        assert_eq!(result.to_tuple(), (1, 1_000_000));
+        for (input, expectation) in expectations {
+            let result = subsec(&mut interp, (Some(input), Some(subsec_unit))).unwrap();
+            assert_eq!(
+                result.to_tuple(),
+                expectation,
+                "Expected TryConvertMut<(Some({}), Some({})), Result<Subsec>>, to return {} secs, {} nanos",
+                input.as_bstr(),
+                subsec_unit.as_bstr(),
+                expectation.0,
+                expectation.1
+            );
+        }
     }
 
     #[test]
     fn subsec_micros() {
         let mut interp = interpreter();
 
-        let result = subsec(&mut interp, (Some(b"0"), Some(b":usec"))).unwrap();
-        assert_eq!(result.to_tuple(), (0, 0));
+        let expectations: HashMap<&[u8], (i64, u32)> = HashMap::from([
+            (b"-1000001".as_slice(), (-2, 999_999_000)),
+            (b"-1000000".as_slice(), (-2, 0)),
+            (b"-999999".as_slice(), (-1, 1_000)),
+            (b"-1".as_slice(), (-1, 999_999_000)),
+            (b"0".as_slice(), (0, 0)),
+            (b"1".as_slice(), (0, 1_000)),
+            (b"999999".as_slice(), (0, 999_999_000)),
+            (b"1000000".as_slice(), (1, 0)),
+            (b"1000001".as_slice(), (1, 1_000))
+        ]);
 
-        let result = subsec(&mut interp, (Some(b"999999"), Some(b":usec"))).unwrap();
-        assert_eq!(result.to_tuple(), (0, 999_999_000));
+        let subsec_unit = b":usec";
 
-        let result = subsec(&mut interp, (Some(b"1000000"), Some(b":usec"))).unwrap();
-        assert_eq!(result.to_tuple(), (1, 0));
-
-        let result = subsec(&mut interp, (Some(b"1000001"), Some(b":usec"))).unwrap();
-        assert_eq!(result.to_tuple(), (1, 1_000));
+        for (input, expectation) in expectations {
+            let result = subsec(&mut interp, (Some(input), Some(subsec_unit))).unwrap();
+            assert_eq!(
+                result.to_tuple(),
+                expectation,
+                "Expected TryConvertMut<(Some({}), Some({})), Result<Subsec>>, to return {} secs, {} nanos",
+                input.as_bstr(),
+                subsec_unit.as_bstr(),
+                expectation.0,
+                expectation.1
+            );
+        }
     }
 
     #[test]
-    fn subsub_nanos() {
+    fn subsec_nanos() {
         let mut interp = interpreter();
 
-        let result = subsec(&mut interp, (Some(b"0"), Some(b":nsec"))).unwrap();
-        assert_eq!(result.to_tuple(), (0, 0));
+        let expectations: HashMap<&[u8], (i64, u32)> = HashMap::from([
+            (b"-1000000001".as_slice(), (-2, 999_999_999)),
+            (b"-1000000000".as_slice(), (-2, 0)),
+            (b"-999999999".as_slice(), (-1, 1)),
+            (b"-1".as_slice(), (-1, 999_999_999)),
+            (b"0".as_slice(), (0, 0)),
+            (b"1".as_slice(), (0, 1)),
+            (b"999999999".as_slice(), (0, 999_999_999)),
+            (b"1000000000".as_slice(), (1, 0)),
+            (b"1000000001".as_slice(), (1, 1))
+        ]);
 
-        let result = subsec(&mut interp, (Some(b"999999999"), Some(b":nsec"))).unwrap();
-        assert_eq!(result.to_tuple(), (0, 999_999_999));
+        let subsec_unit = b":nsec";
 
-        let result = subsec(&mut interp, (Some(b"1000000000"), Some(b":nsec"))).unwrap();
-        assert_eq!(result.to_tuple(), (1, 0));
-
-        let result = subsec(&mut interp, (Some(b"1000000001"), Some(b":nsec"))).unwrap();
-        assert_eq!(result.to_tuple(), (1, 1));
+        for (input, expectation) in expectations {
+            let result = subsec(&mut interp, (Some(input), Some(subsec_unit))).unwrap();
+            assert_eq!(
+                result.to_tuple(),
+                expectation,
+                "Expected TryConvertMut<(Some({}), Some({})), Result<Subsec>>, to return {} secs, {} nanos",
+                input.as_bstr(),
+                subsec_unit.as_bstr(),
+                expectation.0,
+                expectation.1
+            );
+        }
     }
 }
