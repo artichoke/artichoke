@@ -11635,7 +11635,7 @@ parse_string(parser_state *p)
     int f = 0;
     int re_opt;
     char *s = strndup(tok(p), toklen(p));
-    char flags[3];
+    char flags[4];
     char *flag = flags;
     char enc = '\0';
     char *encp;
@@ -11675,6 +11675,7 @@ parse_string(parser_state *p)
       if (f & 4) *flag++ = 'm';
       if (f & 16) enc = 'u';
       if (f & 32) enc = 'n';
+      if (f & 128) *flag++ = 'l';
     }
     if (flag > flags) {
       dup = strndup(flags, (size_t)(flag - flags));
