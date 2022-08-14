@@ -1,5 +1,6 @@
 use core::fmt;
 use core::str;
+use std::collections::HashSet;
 
 use bstr::{ByteSlice, ByteVec};
 use regex::{Match, Regex, RegexBuilder};
@@ -8,6 +9,7 @@ use scolapasta_string_escape::format_debug_escape_into;
 use crate::debug::Debug;
 use crate::encoding::Encoding;
 use crate::error::{ArgumentError, Error, RegexpError, SyntaxError};
+use crate::named_captures::{NamedCapture, NamedCaptures, NamedCapturesForHaystack};
 use crate::{Config, Source};
 
 mod iter;
@@ -59,7 +61,7 @@ impl Utf8 {
         Ok(self.regex.captures(haystack).map(Captures::from))
     }
 
-    pub fn capture_indexes_for_name<'a, 'b>(&'a self, name: &'b [u8]) -> CaptureIndices<'a, 'b> {
+    pub fn capture_indices_for_name<'a, 'b>(&'a self, name: &'b [u8]) -> CaptureIndices<'a, 'b> {
         CaptureIndices::with_name_and_iter(name, self.regex.capture_names())
     }
 
@@ -94,6 +96,74 @@ impl Utf8 {
         } else {
             Ok(None)
         }
+    }
+
+    /// Returns a hash representing information about the named captures of this
+    /// `Regexp`.
+    ///
+    /// A key of the hash is a name of the named captures. A value of the hash
+    /// is an array which is list of indexes of corresponding named captures.
+    pub fn named_captures(&self) -> Result<NamedCaptures, Error> {
+        // Use a Vec of key-value pairs because insertion order matters for spec
+        // compliance.
+        let mut map = vec![];
+        for group in self.regex.capture_names().flatten() {
+            let indices = self.capture_indices_for_name(group.as_bytes()).collect::<Vec<_>>();
+            if !indices.is_empty() {
+                map.push(NamedCapture::new(group.into(), indices));
+            }
+        }
+        Ok(map.into())
+    }
+
+    pub fn named_captures_for_haystack(&self, haystack: &[u8]) -> Result<Option<NamedCapturesForHaystack>, Error> {
+        let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
+        let captures = if let Some(captures) = self.regex.captures(haystack) {
+            captures
+        } else {
+            return Ok(None);
+        };
+        let mut map = NamedCapturesForHaystack::with_capacity(captures.len());
+        for named_capture in self.named_captures()? {
+            let (group, indices) = named_capture.into_group_and_indices();
+            let capture = indices.iter().rev().copied().find_map(|index| captures.get(index));
+            if let Some(capture) = capture {
+                map.insert(group, Some(capture.as_str().into()));
+            } else {
+                map.insert(group, None);
+            }
+        }
+        Ok(Some(map))
+    }
+
+    pub fn names(&self) -> Vec<Vec<u8>> {
+        let mut names = vec![];
+        let mut capture_names = self.named_captures().unwrap_or_default().collect::<Vec<_>>();
+        capture_names.sort_by(|left, right| {
+            let left = left.indices().iter().min().copied().unwrap_or(usize::MAX);
+            let right = right.indices().iter().min().copied().unwrap_or(usize::MAX);
+            left.cmp(&right)
+        });
+        let mut set = HashSet::with_capacity(capture_names.len());
+        for cn in capture_names {
+            let name = cn.into_group();
+            if set.contains(&name) {
+                continue;
+            }
+            names.push(name.clone());
+            set.insert(name);
+        }
+        names
+    }
+
+    pub fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Error> {
+        let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
+        let pos = self
+            .regex
+            .captures(haystack)
+            .and_then(|captures| captures.get(at))
+            .map(|match_pos| (match_pos.start(), match_pos.end()));
+        Ok(pos)
     }
 
     // Check whether this regexp matches the given haystack starting at an offset.
