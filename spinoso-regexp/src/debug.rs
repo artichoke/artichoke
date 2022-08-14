@@ -48,6 +48,8 @@ impl Delimiters {
 /// This struct is created by the `debug` method on the regexp implementations
 /// in this crate. See these functions' documentation for more.
 ///
+/// This iterator can be used to implement Ruby's [`Regexp#inspect`].
+///
 /// # Examples
 ///
 /// UTF-8 regexp patterns and options are formatted in a debug
@@ -70,6 +72,8 @@ impl Delimiters {
 /// let s = debug.collect::<String>();
 /// assert_eq!(s, r"/\xFF\xFE/");
 /// ```
+///
+/// [`Regexp#inspect`]: https://ruby-doc.org/core-2.4.1/Regexp.html#method-i-inspect
 #[derive(Default, Debug, Clone)]
 #[must_use = "this `Debug` is an `Iterator`, which should be consumed if constructed"]
 pub struct Debug<'a> {

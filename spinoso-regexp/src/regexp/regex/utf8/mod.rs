@@ -2,7 +2,6 @@ use core::fmt;
 use core::str;
 use std::collections::HashSet;
 
-use bstr::{ByteSlice, ByteVec};
 use regex::{Match, Regex, RegexBuilder};
 use scolapasta_string_escape::format_debug_escape_into;
 
@@ -220,23 +219,6 @@ impl Utf8 {
     #[must_use]
     pub fn encoding(&self) -> Encoding {
         self.encoding
-    }
-
-    #[must_use]
-    pub fn inspect(&self) -> Vec<u8> {
-        // pattern length + 2x '/' + mix + encoding
-        let mut inspect = Vec::with_capacity(self.source.pattern.len() + 2 + 4);
-        inspect.push_byte(b'/');
-        if self.source.pattern.contains_str("/") {
-            let mut escaped = self.source.pattern.replace("/", r"\/");
-            inspect.append(&mut escaped);
-        } else {
-            inspect.extend_from_slice(self.source.pattern());
-        }
-        inspect.push_byte(b'/');
-        inspect.push_str(self.source.options.as_display_modifier());
-        inspect.push_str(self.encoding.as_modifier_str());
-        inspect
     }
 
     #[must_use]
