@@ -179,7 +179,7 @@ impl<'a> Iterator for Debug<'a> {
                     self.non_standard_control_escapes = tail;
                     Some(next.into())
                 }
-                Some(ch @ '"' | ch @ '\'' | ch @ '\\') => {
+                Some(ch @ ('"' | '\'' | '\\')) => {
                     self.source = &self.source[1..];
                     Some(ch)
                 }
