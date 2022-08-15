@@ -48,10 +48,10 @@ impl Utf8 {
     /// let source = Source::with_pattern_and_options(pattern.to_vec(), Options::default());
     /// let config = Config::from(&source);
     /// let regexp = Utf8::with_literal_derived_encoding(source, config, Encoding::None)?;
-    /// assert!(regexp.is_match("a123 १०೩೬".as_bytes())?);
+    /// assert!(regexp.is_match("a123 १०೩೬".as_bytes(), None)?);
     /// # Ok(())
     /// # }
-    /// # example.unwrap()
+    /// # example().unwrap()
     /// ```
     ///
     /// # Errors
