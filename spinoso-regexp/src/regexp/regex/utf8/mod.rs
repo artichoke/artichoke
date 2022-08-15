@@ -32,6 +32,37 @@ impl fmt::Display for Utf8 {
 }
 
 impl Utf8 {
+    /// Construct a Regexp with a UTF-8 [`regex`] backend.
+    ///
+    /// The constructed regexp is Unicode aware. All character classes used in
+    /// patterns other than POSIX character classes support all of Unicode.
+    ///
+    /// `Utf8` regexes require their patterns and haystacks to be valid UTF-8.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use spinoso_regexp::{Config, Encoding, Error, Options, Source, Utf8};
+    /// # fn example() -> Result<(), Error> {
+    /// let pattern = br"[[:alpha:]]\d+ \d+";
+    /// let source = Source::with_pattern_and_options(pattern.to_vec(), Options::default());
+    /// let config = Config::from(&source);
+    /// let regexp = Utf8::with_literal_derived_encoding(source, config, Encoding::None)?;
+    /// assert!(regexp.is_match("a123 १०೩೬".as_bytes())?);
+    /// # Ok(())
+    /// # }
+    /// # example.unwrap()
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// If the pattern in the given source is not valid UTF-8, an
+    /// [`ArgumentError`] is returned. If the given source pattern fails to
+    /// parse, either a [`SyntaxError`] or [`RegexpError`] is returned depending
+    /// on the source [`Options`].
+    ///
+    /// [`regex`]: regex::Regex
+    /// [`Options`]: crate::Options
     pub fn with_literal_derived_encoding(source: Source, config: Config, encoding: Encoding) -> Result<Self, Error> {
         let pattern = str::from_utf8(config.pattern()).map_err(|_| ArgumentError::unsupported_pattern_encoding())?;
         let mut builder = RegexBuilder::new(pattern);
@@ -55,6 +86,9 @@ impl Utf8 {
         Ok(regexp)
     }
 
+    /// # Errors
+    ///
+    /// If the given haystack is not valid UTF-8, an error is returned.
     pub fn captures<'a>(&self, haystack: &'a [u8]) -> Result<Option<Captures<'a>>, Error> {
         let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         Ok(self.regex.captures(haystack).map(Captures::from))
@@ -76,6 +110,10 @@ impl Utf8 {
     ///
     /// If there is a match, the returned value is always greater than 0; the
     /// 0th capture always corresponds to the entire match.
+    ///
+    /// # Errors
+    ///
+    /// If the given haystack is not valid UTF-8, an error is returned.
     pub fn capture_count_for_haystack(&self, haystack: &[u8]) -> Result<usize, ArgumentError> {
         let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         if let Some(captures) = self.regex.captures(haystack) {
@@ -88,6 +126,10 @@ impl Utf8 {
     /// Return the 0th capture group if `haystack` is matched by this regexp.
     ///
     /// The 0th capture always corresponds to the entire match.
+    ///
+    /// # Errors
+    ///
+    /// If the given haystack is not valid UTF-8, an error is returned.
     pub fn entire_match<'a>(&self, haystack: &'a [u8]) -> Result<Option<&'a [u8]>, Error> {
         let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         if let Some(captures) = self.regex.captures(haystack) {
@@ -103,7 +145,7 @@ impl Utf8 {
     ///
     /// A key of the hash is a name of the named captures. A value of the hash
     /// is an array which is list of indexes of corresponding named captures.
-    pub fn named_captures(&self) -> Result<NamedCaptures, Error> {
+    pub fn named_captures(&self) -> NamedCaptures {
         // Use a Vec of key-value pairs because insertion order matters for spec
         // compliance.
         let mut map = vec![];
@@ -113,9 +155,12 @@ impl Utf8 {
                 map.push(NamedCapture::new(group.into(), indices));
             }
         }
-        Ok(map.into())
+        map.into()
     }
 
+    /// # Errors
+    ///
+    /// If the given haystack is not valid UTF-8, an error is returned.
     pub fn named_captures_for_haystack(&self, haystack: &[u8]) -> Result<Option<NamedCapturesForHaystack>, Error> {
         let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         let captures = if let Some(captures) = self.regex.captures(haystack) {
@@ -124,7 +169,7 @@ impl Utf8 {
             return Ok(None);
         };
         let mut map = NamedCapturesForHaystack::with_capacity(captures.len());
-        for named_capture in self.named_captures()? {
+        for named_capture in self.named_captures() {
             let (group, indices) = named_capture.into_group_and_indices();
             let capture = indices.iter().rev().copied().find_map(|index| captures.get(index));
             if let Some(capture) = capture {
@@ -139,7 +184,7 @@ impl Utf8 {
     #[must_use]
     pub fn names(&self) -> Vec<Vec<u8>> {
         let mut names = vec![];
-        let mut capture_names = self.named_captures().unwrap_or_default().collect::<Vec<_>>();
+        let mut capture_names = self.named_captures().collect::<Vec<_>>();
         capture_names.sort_by(|left, right| {
             let left = left.indices().iter().min().copied().unwrap_or(usize::MAX);
             let right = right.indices().iter().min().copied().unwrap_or(usize::MAX);
@@ -157,6 +202,9 @@ impl Utf8 {
         names
     }
 
+    /// # Errors
+    ///
+    /// If the given haystack is not valid UTF-8, an error is returned.
     pub fn pos(&self, haystack: &[u8], at: usize) -> Result<Option<(usize, usize)>, Error> {
         let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         let pos = self
@@ -167,10 +215,14 @@ impl Utf8 {
         Ok(pos)
     }
 
-    // Check whether this regexp matches the given haystack starting at an offset.
-    //
-    // If the given offset is negative, it counts backward from the end of the
-    // haystack.
+    /// Check whether this regexp matches the given haystack starting at an offset.
+    ///
+    /// If the given offset is negative, it counts backward from the end of the
+    /// haystack.
+    ///
+    /// # Errors
+    ///
+    /// If the given haystack is not valid UTF-8, an error is returned.
     pub fn is_match(&self, haystack: &[u8], pos: Option<i64>) -> Result<bool, Error> {
         let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         let haystack_char_len = haystack.chars().count();
