@@ -34,13 +34,16 @@ use bstr::ByteSlice;
 mod debug;
 mod encoding;
 mod error;
+mod named_captures;
 mod options;
 mod regexp;
 
 pub use debug::Debug;
 pub use encoding::{Encoding, InvalidEncodingError};
 pub use error::{ArgumentError, Error, RegexpError, SyntaxError};
+pub use named_captures::NamedCaptures;
 pub use options::{Options, RegexpOption};
+pub use regexp::regex::utf8::Utf8;
 
 bitflags::bitflags! {
     #[derive(Default)]
@@ -107,7 +110,7 @@ impl fmt::Debug for Source {
 
 impl From<Config> for Source {
     fn from(config: Config) -> Self {
-        Self::with_pattern_and_options(config.pattern.clone(), config.options)
+        Self::with_pattern_and_options(config.pattern, config.options)
     }
 }
 
@@ -249,7 +252,7 @@ impl fmt::Debug for Config {
 
 impl From<Source> for Config {
     fn from(source: Source) -> Self {
-        Self::with_pattern_and_options(source.pattern.clone(), source.options)
+        Self::with_pattern_and_options(source.pattern, source.options)
     }
 }
 

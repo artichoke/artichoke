@@ -48,6 +48,8 @@ impl Delimiters {
 /// This struct is created by the `debug` method on the regexp implementations
 /// in this crate. See these functions' documentation for more.
 ///
+/// This iterator can be used to implement Ruby's [`Regexp#inspect`].
+///
 /// # Examples
 ///
 /// UTF-8 regexp patterns and options are formatted in a debug
@@ -70,6 +72,8 @@ impl Delimiters {
 /// let s = debug.collect::<String>();
 /// assert_eq!(s, r"/\xFF\xFE/");
 /// ```
+///
+/// [`Regexp#inspect`]: https://ruby-doc.org/core-2.4.1/Regexp.html#method-i-inspect
 #[derive(Default, Debug, Clone)]
 #[must_use = "this `Debug` is an `Iterator`, which should be consumed if constructed"]
 pub struct Debug<'a> {
@@ -84,6 +88,7 @@ pub struct Debug<'a> {
     //
     // `Regexp#inspect` prints `"/#{source}/"`.
     source: &'a [u8],
+    non_standard_control_escapes: &'static [u8],
     literal: InvalidUtf8ByteSequence,
     options: &'static str,
     encoding: &'static str,
@@ -122,6 +127,7 @@ impl<'a> Debug<'a> {
         Self {
             delimiters: Delimiters::DEFAULT,
             source,
+            non_standard_control_escapes: &[],
             literal: InvalidUtf8ByteSequence::new(),
             options,
             encoding,
@@ -136,35 +142,77 @@ impl<'a> Iterator for Debug<'a> {
         if let Some(prefix) = self.delimiters.emit_left_delimiter() {
             return Some(prefix);
         }
+        if let Some((&next, tail)) = self.non_standard_control_escapes.split_first() {
+            self.non_standard_control_escapes = tail;
+            return Some(next.into());
+        }
         if let Some(literal) = self.literal.next() {
             return Some(literal);
         }
         if !self.source.is_empty() {
             let (ch, size) = bstr::decode_utf8(self.source);
-            let next = match ch {
+            return match ch {
                 // '/' is the `Regexp` literal delimiter, so escape it.
                 Some('/') => {
+                    self.source = &self.source[1..];
                     // While not an invalid byte, we rely on the documented
                     // behavior of `InvalidUtf8ByteSequence` to always escape
                     // any bytes given to it.
                     self.literal = InvalidUtf8ByteSequence::with_byte(b'/');
                     Some('\\')
                 }
-                Some(ch) => Some(ch),
-                // Otherwise, we've gotten invalid UTF-8, which means this is not an
+                Some('\x07') => {
+                    self.source = &self.source[1..];
+                    let (&next, tail) = br"\x07".split_first().unwrap();
+                    self.non_standard_control_escapes = tail;
+                    Some(next.into())
+                }
+                Some('\x08') => {
+                    self.source = &self.source[1..];
+                    let (&next, tail) = br"\x08".split_first().unwrap();
+                    self.non_standard_control_escapes = tail;
+                    Some(next.into())
+                }
+                Some('\x1B') => {
+                    self.source = &self.source[1..];
+                    let (&next, tail) = br"\x1B".split_first().unwrap();
+                    self.non_standard_control_escapes = tail;
+                    Some(next.into())
+                }
+                Some(ch @ ('"' | '\'' | '\\')) => {
+                    self.source = &self.source[1..];
+                    Some(ch)
+                }
+                Some(ch) if ch.is_ascii() && posix_space::is_space(ch as u8) => {
+                    self.source = &self.source[1..];
+                    Some(ch)
+                }
+                Some(ch) if ch.is_ascii() => {
+                    self.source = &self.source[1..];
+                    // While not an invalid byte, we rely on the documented
+                    // behavior of `InvalidUtf8ByteSequence` to always escape
+                    // any bytes given to it.
+                    self.literal = InvalidUtf8ByteSequence::with_byte(ch as u8);
+                    self.literal.next()
+                }
+                Some(ch) => {
+                    self.source = &self.source[size..];
+                    Some(ch)
+                }
+                // Otherwise, we've gotten invalid UTF-8, which means this is not a
                 // printable char.
                 None => {
+                    let (chunk, remainder) = self.source.split_at(size);
+                    self.source = remainder;
                     // This conversion is safe to unwrap due to the documented
                     // behavior of `bstr::decode_utf8` and `InvalidUtf8ByteSequence`
                     // which indicate that `size` is always in the range of 0..=3.
-                    self.literal = InvalidUtf8ByteSequence::try_from(&self.source[..size]).unwrap();
+                    self.literal = InvalidUtf8ByteSequence::try_from(chunk).unwrap();
                     // `size` is non-zero because `pattern` is non-empty.
                     // `Literal`s created from > one byte are always non-empty.
                     self.literal.next()
                 }
             };
-            self.source = &self.source[size..];
-            return next;
         }
         if let Some(suffix) = self.delimiters.emit_right_delimiter() {
             return Some(suffix);
@@ -185,6 +233,8 @@ impl<'a> FusedIterator for Debug<'a> {}
 
 #[cfg(test)]
 mod tests {
+    use bstr::{ByteSlice, B};
+
     use super::Debug;
 
     // Iterator + Collect
@@ -272,19 +322,83 @@ mod tests {
     }
 
     #[test]
-    fn iter_ascii_escaped_byte_pattern_literal_exhaustive() {
+    fn iter_ascii_escaped_byte_pattern_literal_ascii_control() {
         // ```ruby
-        // [2.6.6] > /"\a\b\c\e\f\r\n\\\"$$"/
-        // => /"\a\b\c\e\f\r\n\\\"$$"/
-        // [2.6.6] > /"\a\b\c\e\f\r\n\\\"$$"/.source.bytes
-        // => [34, 92, 97, 92, 98, 92, 99, 92, 101, 92, 102, 92, 114, 92, 110, 92, 92, 92, 34, 36, 36, 34]
+        // [3.1.2] > Regexp.compile((0..0x1F).to_a.map(&:chr).join).inspect.bytes
         // ```
-        let pattern = [
-            34, 92, 97, 92, 98, 92, 99, 92, 101, 92, 102, 92, 114, 92, 110, 92, 92, 92, 34, 36, 36, 34,
-        ];
+        let pattern = (0x00..=0x1F).collect::<Vec<u8>>();
         let debug = Debug::new(&pattern, "", "");
         let s = debug.collect::<String>();
-        assert_eq!(s, r#"/"\a\b\c\e\f\r\n\\\"$$"/"#);
+        assert_eq!(
+            s.as_bytes().as_bstr(),
+            B(&[
+                47, 92, 120, 48, 48, 92, 120, 48, 49, 92, 120, 48, 50, 92, 120, 48, 51, 92, 120, 48, 52, 92, 120, 48,
+                53, 92, 120, 48, 54, 92, 120, 48, 55, 92, 120, 48, 56, 9, 10, 11, 12, 13, 92, 120, 48, 69, 92, 120,
+                48, 70, 92, 120, 49, 48, 92, 120, 49, 49, 92, 120, 49, 50, 92, 120, 49, 51, 92, 120, 49, 52, 92, 120,
+                49, 53, 92, 120, 49, 54, 92, 120, 49, 55, 92, 120, 49, 56, 92, 120, 49, 57, 92, 120, 49, 65, 92, 120,
+                49, 66, 92, 120, 49, 67, 92, 120, 49, 68, 92, 120, 49, 69, 92, 120, 49, 70, 47_u8
+            ])
+            .as_bstr(),
+        );
+    }
+
+    #[test]
+    fn iter_ascii_pattern_exhaustive() {
+        // ```ruby
+        // Regexp.compile((0..0x7F).to_a.reject {|b| "[](){}".include?(b.chr) }.map(&:chr).join).inspect.bytes
+        // ```
+        let pattern = (0x00..=0x7F).filter(|b| !b"[](){}".contains(b)).collect::<Vec<u8>>();
+        let debug = Debug::new(&pattern, "", "");
+        let s = debug.collect::<String>();
+        assert_eq!(
+            s.as_bytes().as_bstr(),
+            B(&[
+                47, 92, 120, 48, 48, 92, 120, 48, 49, 92, 120, 48, 50, 92, 120, 48, 51, 92, 120, 48, 52, 92, 120, 48,
+                53, 92, 120, 48, 54, 92, 120, 48, 55, 92, 120, 48, 56, 9, 10, 11, 12, 13, 92, 120, 48, 69, 92, 120,
+                48, 70, 92, 120, 49, 48, 92, 120, 49, 49, 92, 120, 49, 50, 92, 120, 49, 51, 92, 120, 49, 52, 92, 120,
+                49, 53, 92, 120, 49, 54, 92, 120, 49, 55, 92, 120, 49, 56, 92, 120, 49, 57, 92, 120, 49, 65, 92, 120,
+                49, 66, 92, 120, 49, 67, 92, 120, 49, 68, 92, 120, 49, 69, 92, 120, 49, 70, 32, 33, 34, 35, 36, 37,
+                38, 39, 42, 43, 44, 45, 46, 92, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+                64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88,
+                89, 90, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112,
+                113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 124, 126, 92, 120, 55, 70, 47_u8
+            ])
+            .as_bstr(),
+        );
+    }
+
+    #[test]
+    fn iter_ascii_pattern_escaped_exhaustive() {
+        // ```ruby
+        // Regexp.escape((0..0x7F).to_a.map(&:chr).join).bytes
+        // Regexp.compile(Regexp.escape((0..0x7F).to_a.map(&:chr).join)).inspect.bytes
+        // ```
+        let pattern = &[
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 92, 116, 92, 110, 92, 118, 92, 102, 92, 114, 14, 15, 16, 17, 18, 19, 20, 21,
+            22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 92, 32, 33, 34, 92, 35, 92, 36, 37, 38, 39, 92, 40, 92, 41, 92,
+            42, 92, 43, 44, 92, 45, 92, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 92, 63,
+            64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
+            90, 92, 91, 92, 92, 92, 93, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
+            110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 92, 123, 92, 124, 92, 125, 126, 127_u8,
+        ];
+        let debug = Debug::new(pattern, "", "");
+        let s = debug.collect::<String>();
+        assert_eq!(
+            s.as_bytes().as_bstr(),
+            B(&[
+                47, 92, 120, 48, 48, 92, 120, 48, 49, 92, 120, 48, 50, 92, 120, 48, 51, 92, 120, 48, 52, 92, 120, 48,
+                53, 92, 120, 48, 54, 92, 120, 48, 55, 92, 120, 48, 56, 92, 116, 92, 110, 92, 118, 92, 102, 92, 114,
+                92, 120, 48, 69, 92, 120, 48, 70, 92, 120, 49, 48, 92, 120, 49, 49, 92, 120, 49, 50, 92, 120, 49, 51,
+                92, 120, 49, 52, 92, 120, 49, 53, 92, 120, 49, 54, 92, 120, 49, 55, 92, 120, 49, 56, 92, 120, 49, 57,
+                92, 120, 49, 65, 92, 120, 49, 66, 92, 120, 49, 67, 92, 120, 49, 68, 92, 120, 49, 69, 92, 120, 49, 70,
+                92, 32, 33, 34, 92, 35, 92, 36, 37, 38, 39, 92, 40, 92, 41, 92, 42, 92, 43, 44, 92, 45, 92, 46, 92,
+                47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 92, 63, 64, 65, 66, 67, 68, 69, 70,
+                71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 92, 91, 92, 92, 92,
+                93, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113,
+                114, 115, 116, 117, 118, 119, 120, 121, 122, 92, 123, 92, 124, 92, 125, 126, 92, 120, 55, 70, 47_u8
+            ])
+            .as_bstr(),
+        );
     }
 
     #[test]

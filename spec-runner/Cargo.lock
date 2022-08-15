@@ -833,6 +833,7 @@ dependencies = [
  "bitflags",
  "bstr",
  "onig",
+ "posix-space",
  "regex",
  "scolapasta-string-escape",
 ]

@@ -141,6 +141,16 @@ impl ArgumentError {
         Self(Cow::Borrowed(message))
     }
 
+    #[must_use]
+    pub(crate) const fn unsupported_pattern_encoding() -> Self {
+        Self::with_message("Unsupported pattern encoding")
+    }
+
+    #[must_use]
+    pub(crate) const fn unsupported_haystack_encoding() -> Self {
+        Self::with_message("Unsupported haystack encoding")
+    }
+
     /// Retrieve the exception message associated with this argument error.
     ///
     /// # Examples
