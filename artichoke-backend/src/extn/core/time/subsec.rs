@@ -1,13 +1,12 @@
+use crate::convert::implicitly_convert_to_int;
+use crate::extn::core::symbol::Symbol;
 ///! Parser of Ruby Time subsecond parameters to help generate `Time`.
 ///!
 ///! This module implements the logic to parse two optional parameters in the
 ///! `Time.at` function call. These parameters (if specified) provide the number
 ///! of subsecond parts to add, and a scale of those subsecond parts (millis, micros,
 ///! and nanos).
-
 use crate::extn::prelude::*;
-use crate::extn::core::symbol::Symbol;
-use crate::convert::implicitly_convert_to_int;
 
 const NANOS_IN_SECOND: i64 = 1_000_000_000;
 
@@ -29,9 +28,9 @@ enum SubsecMultiplier {
 impl SubsecMultiplier {
     const fn as_nanos(self) -> i64 {
         match self {
-           Self::Millis => MILLIS_IN_NANO,
-           Self::Micros => MICROS_IN_NANO,
-           Self::Nanos => NANOS_IN_NANO,
+            Self::Millis => MILLIS_IN_NANO,
+            Self::Micros => MICROS_IN_NANO,
+            Self::Nanos => NANOS_IN_NANO,
         }
     }
 }
@@ -57,8 +56,6 @@ impl TryConvertMut<Option<Value>, SubsecMultiplier> for Artichoke {
         }
     }
 }
-
-
 
 #[derive(Debug, Copy, Clone)]
 pub struct Subsec {
@@ -159,7 +156,8 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                         // is negative, we will always need remove one second.
                         // Nanos can then be adjusted since it will always be
                         // the inverse of the total nanos in a second.
-                        secs = secs.checked_sub(1)
+                        secs = secs
+                            .checked_sub(1)
                             .ok_or(ArgumentError::with_message("Time too small"))?;
 
                         if nanos.signum() != 0 {
@@ -168,7 +166,10 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                     }
 
                     // Cast to u32 is safe since it will always be less than NANOS_IN_SECOND due to modulo and negative adjustments.
-                    Ok(Subsec { secs, nanos: nanos as u32 })
+                    Ok(Subsec {
+                        secs,
+                        nanos: nanos as u32,
+                    })
                 }
             }
         } else {
@@ -226,7 +227,7 @@ mod tests {
             (b"1".as_slice(), (0, 1_000)),
             (b"999999".as_slice(), (0, 999_999_000)),
             (b"1000000".as_slice(), (1, 0)),
-            (b"1000001".as_slice(), (1, 1_000))
+            (b"1000001".as_slice(), (1, 1_000)),
         ];
 
         let subsec_unit: Option<&[u8]> = None;
@@ -257,7 +258,7 @@ mod tests {
             (b"1".as_slice(), (0, 1_000_000)),
             (b"999".as_slice(), (0, 999_000_000)),
             (b"1000".as_slice(), (1, 0)),
-            (b"1001".as_slice(), (1, 1_000_000))
+            (b"1001".as_slice(), (1, 1_000_000)),
         ];
 
         let subsec_unit: Option<&[u8]> = Some(b":milliseconds");
@@ -290,7 +291,7 @@ mod tests {
             (b"1".as_slice(), (0, 1_000)),
             (b"999999".as_slice(), (0, 999_999_000)),
             (b"1000000".as_slice(), (1, 0)),
-            (b"1000001".as_slice(), (1, 1_000))
+            (b"1000001".as_slice(), (1, 1_000)),
         ];
 
         let subsec_unit: Option<&[u8]> = Some(b":usec");
@@ -322,7 +323,7 @@ mod tests {
             (b"1".as_slice(), (0, 1)),
             (b"999999999".as_slice(), (0, 999_999_999)),
             (b"1000000000".as_slice(), (1, 0)),
-            (b"1000000001".as_slice(), (1, 1))
+            (b"1000000001".as_slice(), (1, 1)),
         ];
 
         let subsec_unit: Option<&[u8]> = Some(b":nsec");
