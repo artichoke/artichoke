@@ -80,3 +80,128 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::extn::core::time::Offset;
+    use crate::test::prelude::*;
+
+    #[test]
+    fn no_options_does_not_raise() {
+        let mut interp = interpreter();
+
+        let options = interp.eval(b"{}").unwrap();
+
+        let offset: Option<Offset> = interp.try_convert_mut(options).unwrap();
+        assert_eq!(offset, None);
+    }
+
+    #[test]
+    fn raises_on_keys_except_in() {
+        let mut interp = interpreter();
+
+        let options = interp.eval(b"{ foo: 'bar' }").unwrap();
+
+        let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
+        let error = result.unwrap_err();
+
+        assert_eq!(error.name(), "ArgumentError");
+        assert_eq!(error.message(), b"unknown keyword: foo".as_slice());
+    }
+
+    #[test]
+    fn raises_on_invalid_timezone_string() {
+        let mut interp = interpreter();
+
+        let options = interp.eval(b"{ in: 'J' }").unwrap();
+
+        let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
+        let error = result.unwrap_err();
+
+        assert_eq!(error.name(), "ArgumentError");
+        assert_eq!(
+            error.message(),
+            b"\"+HH:MM\", \"-HH:MM\", \"UTC\" or \"A\"..\"I\",\"K\"..\"Z\" expected for utc_offset: J".as_slice()
+        );
+    }
+
+    #[test]
+    fn provides_an_int_based_offset() {
+        let mut interp = interpreter();
+
+        // this value is i32::MIN - 1.
+        let options = interp.eval(b"{ in: 3600 }").unwrap();
+
+        let result: Option<Offset> = interp.try_convert_mut(options).unwrap();
+        assert_eq!(result.unwrap(), Offset::fixed(3600).unwrap());
+    }
+
+    #[test]
+    fn provides_a_float_based_offset() {
+        let mut interp = interpreter();
+
+        // this value is i32::MIN - 1.
+        let options = interp.eval(b"{ in: 3600.0 }").unwrap();
+
+        let result: Option<Offset> = interp.try_convert_mut(options).unwrap();
+        assert_eq!(result.unwrap(), Offset::fixed(3600).unwrap());
+    }
+
+    #[test]
+    fn provides_a_string_based_offset() {
+        let mut interp = interpreter();
+
+        // this value is i32::MIN - 1.
+        let options = interp.eval(b"{ in: 'A' }").unwrap();
+
+        let result: Option<Offset> = interp.try_convert_mut(options).unwrap();
+        assert_eq!(result.unwrap(), Offset::fixed(3600).unwrap());
+    }
+
+    #[test]
+    fn raises_on_float_out_of_range() {
+        let mut interp = interpreter();
+
+        // this value is i32::MIN - 1.
+        let options = interp.eval(b"{ in: -2_147_483_649.00 }").unwrap();
+
+        let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
+        let error = result.unwrap_err();
+
+        assert_eq!(error.message(), b"utc_offset out of range".as_slice());
+        assert_eq!(error.name(), "ArgumentError");
+
+        // this value is i32::MAX + 1.
+        let options = interp.eval(b"{ in: 2_147_483_648.00 }").unwrap();
+
+        let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
+        let error = result.unwrap_err();
+
+        assert_eq!(error.message(), b"utc_offset out of range".as_slice());
+        assert_eq!(error.name(), "ArgumentError");
+    }
+
+    #[test]
+    fn raises_on_int_out_of_range() {
+        let mut interp = interpreter();
+
+        // this value is i32::MIN - 1.
+        let options = interp.eval(b"{ in: -2_147_483_649 }").unwrap();
+
+        let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
+        let error = result.unwrap_err();
+
+        assert_eq!(error.message(), b"utc_offset out of range".as_slice());
+        assert_eq!(error.name(), "ArgumentError");
+
+        // this value is i32::MAX + 1.
+        let options = interp.eval(b"{ in: 2_147_483_648 }").unwrap();
+
+        let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
+        let error = result.unwrap_err();
+
+        assert_eq!(error.message(), b"utc_offset out of range".as_slice());
+        assert_eq!(error.name(), "ArgumentError");
+    }
+
+}
