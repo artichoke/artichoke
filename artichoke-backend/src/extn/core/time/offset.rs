@@ -27,7 +27,7 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
                 in_param = Some(*value)
             } else {
                 let mut message = b"unknown keyword: ".to_vec();
-                message.extend(k.to_vec());
+                message.extend_from_slice(k);
                 Err(ArgumentError::from(message))?
             }
         }
@@ -40,7 +40,7 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
                     let offset = Offset::try_from(offset_str)
                         .map_err(|_| {
                             let mut message = b"\"+HH:MM\", \"-HH:MM\", \"UTC\" or \"A\"..\"I\",\"K\"..\"Z\" expected for utc_offset: ".to_vec();
-                            message.extend(offset_str.to_vec());
+                            message.extend_from_slice(offset_str);
                             ArgumentError::from(message)
                         })?;
 

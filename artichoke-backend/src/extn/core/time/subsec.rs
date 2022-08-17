@@ -47,7 +47,7 @@ impl TryConvertMut<Option<Value>, SubsecMultiplier> for Artichoke {
                 b"nsec" => Ok(SubsecMultiplier::Nanos),
                 _ => {
                     let mut message = b"unexpected unit: ".to_vec();
-                    message.extend(subsec_symbol.to_vec());
+                    message.extend_from_slice(subsec_symbol);
                     Err(ArgumentError::from(message).into())
                 }
             }
