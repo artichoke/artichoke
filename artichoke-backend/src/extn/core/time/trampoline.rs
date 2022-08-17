@@ -79,26 +79,56 @@ pub fn at(
     // [3.1.2] > Time.at(1, 1, :nsec, in: "A")
     // => 1970-01-01 01:00:01.000000001 +0100
     // ```
-    let (subsec, subsec_type, options) = match (
-        first.map(|opt| opt.ruby_type()),
-        second.map(|opt| opt.ruby_type()),
-        third.map(|opt| opt.ruby_type()),
-    ) {
-        (None, None, None) => (None, None, None),
-        (Some(Ruby::Hash), None, None) => (None, None, first),
-        (Some(Ruby::Fixnum), None, None) => (first, None, None),
-        (Some(_), None, None) => Err(ArgumentError::with_message("expected a number"))?,
-        (Some(Ruby::Fixnum), Some(Ruby::Hash), None) => (first, None, second),
-        (Some(Ruby::Fixnum), Some(Ruby::Symbol), None) => (first, second, None),
-        (Some(Ruby::Fixnum), Some(_), None) => Err(ArgumentError::with_message(
-            "expected one of [:milliseconds, :usec, :nsec]",
-        ))?,
-        (Some(Ruby::Fixnum), Some(Ruby::Symbol), Some(Ruby::Hash)) => (first, second, third),
-        _ => Err(ArgumentError::with_message("invalid arguments"))?,
-    };
 
+    let mut subsec = first;
+    let mut subsec_unit = second;
+    let mut options = third;
 
-    let subsec: Subsec = interp.try_convert_mut((subsec, subsec_type))?;
+    // Re-position the options hash under the `options` if it exists. Calling
+    // `Time.at` without the optional parameters will end up placing the
+    // options hash in the incorrect parameter position.
+    //
+    // e.g.
+    // Time.at(0, in: "A")
+    //              ^--first
+    // Time.at(0, 1, in: "A")
+    //                 ^-- second
+    // Time.at(0, 1, :nsec, in: "A")
+    //                        ^-- third
+    //
+    // The below logic:
+    // - ensures the third parameter is a Ruby::Hash if provided
+    // - if third param is not options, check the second paramter, if it is a
+    //   Ruby::Hash then assume this is the options hash, and clear out the
+    //   second parameter
+    // - if second param is not options, check the first param, if it is a
+    //   Ruby::Hash then assume this is the options hash, and clear out the
+    //   first parameter
+    if let Some(third_param) = third {
+        if third_param.ruby_type() != Ruby::Hash {
+            return Err(ArgumentError::with_message("invalid offset options").into())
+        }
+    } else {
+        options = if let Some(second_param) = second {
+            if second_param.ruby_type() == Ruby::Hash {
+                subsec_unit = None;
+                Some(second_param)
+            } else if let Some(first_param) = first {
+                if first_param.ruby_type() == Ruby::Hash {
+                    subsec = None;
+                    Some(first_param)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    let subsec: Subsec = interp.try_convert_mut((subsec, subsec_unit))?;
     let (subsec_secs, subsec_nanos) = subsec.to_tuple();
 
     let seconds = implicitly_convert_to_int(interp, seconds)?
