@@ -214,7 +214,7 @@ mod tests {
     }
 
     #[test]
-    fn no_unit_implies_micros() {
+    fn int_no_unit_implies_micros() {
         let mut interp = interpreter();
 
         let expectations = [
@@ -229,7 +229,7 @@ mod tests {
             (b"1000001".as_slice(), (1, 1_000))
         ];
 
-        let subsec_unit = None;
+        let subsec_unit: Option<&[u8]> = None;
 
         for (input, expectation) in expectations.iter() {
             let result = subsec(&mut interp, (Some(input), subsec_unit)).unwrap();
@@ -245,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn subsec_millis() {
+    fn int_subsec_millis() {
         let mut interp = interpreter();
 
         let expectations = [
@@ -260,16 +260,16 @@ mod tests {
             (b"1001".as_slice(), (1, 1_000_000))
         ];
 
-        let subsec_unit = b":milliseconds";
+        let subsec_unit: Option<&[u8]> = Some(b":milliseconds");
 
         for (input, expectation) in expectations.iter() {
-            let result = subsec(&mut interp, (Some(input), Some(subsec_unit))).unwrap();
+            let result = subsec(&mut interp, (Some(input), subsec_unit)).unwrap();
             assert_eq!(
                 result.to_tuple(),
                 *expectation,
                 "Expected TryConvertMut<(Some({}), Some({})), Result<Subsec>>, to return {} secs, {} nanos",
                 input.as_bstr(),
-                subsec_unit.as_bstr(),
+                subsec_unit.unwrap().as_bstr(),
                 expectation.0,
                 expectation.1
             );
@@ -277,7 +277,7 @@ mod tests {
     }
 
     #[test]
-    fn subsec_micros() {
+    fn int_subsec_micros() {
         let mut interp = interpreter();
 
         //let expectations: [(&[u8], (i64, u32))] = [
@@ -293,16 +293,16 @@ mod tests {
             (b"1000001".as_slice(), (1, 1_000))
         ];
 
-        let subsec_unit = b":usec";
+        let subsec_unit: Option<&[u8]> = Some(b":usec");
 
         for (input, expectation) in expectations.iter() {
-            let result = subsec(&mut interp, (Some(input), Some(subsec_unit))).unwrap();
+            let result = subsec(&mut interp, (Some(input), subsec_unit)).unwrap();
             assert_eq!(
                 result.to_tuple(),
                 *expectation,
                 "Expected TryConvertMut<(Some({}), Some({})), Result<Subsec>>, to return {} secs, {} nanos",
                 input.as_bstr(),
-                subsec_unit.as_bstr(),
+                subsec_unit.unwrap().as_bstr(),
                 expectation.0,
                 expectation.1
             );
@@ -310,7 +310,7 @@ mod tests {
     }
 
     #[test]
-    fn subsec_nanos() {
+    fn int_subsec_nanos() {
         let mut interp = interpreter();
 
         let expectations = [
@@ -325,16 +325,16 @@ mod tests {
             (b"1000000001".as_slice(), (1, 1))
         ];
 
-        let subsec_unit = b":nsec";
+        let subsec_unit: Option<&[u8]> = Some(b":nsec");
 
         for (input, expectation) in expectations.iter() {
-            let result = subsec(&mut interp, (Some(input), Some(subsec_unit))).unwrap();
+            let result = subsec(&mut interp, (Some(input), subsec_unit)).unwrap();
             assert_eq!(
                 result.to_tuple(),
                 *expectation,
                 "Expected TryConvertMut<(Some({}), Some({})), Result<Subsec>>, to return {} secs, {} nanos",
                 input.as_bstr(),
-                subsec_unit.as_bstr(),
+                subsec_unit.unwrap().as_bstr(),
                 expectation.0,
                 expectation.1
             );
