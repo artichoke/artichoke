@@ -14,8 +14,8 @@ const MILLIS_IN_NANO: i64 = 1_000_000;
 const MICROS_IN_NANO: i64 = 1_000;
 const NANOS_IN_NANO: i64 = 1;
 
-const MAX_FLOAT_SECONDS: f64 = i64::MAX as f64;
 const MIN_FLOAT_SECONDS: f64 = i64::MIN as f64;
+const MAX_FLOAT_SECONDS: f64 = i64::MAX as f64;
 const MIN_FLOAT_NANOS: f64 = 0.0;
 const MAX_FLOAT_NANOS: f64 = NANOS_IN_SECOND as f64;
 
