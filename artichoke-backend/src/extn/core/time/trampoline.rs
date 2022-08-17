@@ -258,12 +258,12 @@ pub fn plus(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
     if unsafe { Time::unbox_from_value(&mut other, interp) }.is_ok() {
         Err(TypeError::with_message("time + time?").into())
-    } else if let Ok(other) = implicitly_convert_to_int(interp, other) {
-        let result = time.checked_add_i64(other)?;
-
-        Time::alloc_value(result, interp)
     } else if let Ok(other) = other.try_convert_into::<f64>(interp) {
         let result = time.checked_add_f64(other)?;
+
+        Time::alloc_value(result, interp)
+    } else if let Ok(other) = implicitly_convert_to_int(interp, other) {
+        let result = time.checked_add_i64(other)?;
 
         Time::alloc_value(result, interp)
     } else {
