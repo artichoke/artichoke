@@ -26,6 +26,7 @@ use crate::extn::prelude::*;
 pub mod mruby;
 pub mod trampoline;
 pub mod subsec;
+pub mod offset;
 
 #[doc(inline)]
 pub use spinoso_time::tzrs::*;

@@ -1,49 +1,8 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
-use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
-use crate::extn::core::symbol::Symbol;
+use crate::convert::{implicitly_convert_to_int};
 use crate::extn::core::time::{Offset, Time, subsec::Subsec};
 use crate::extn::prelude::*;
-
-// Convert a Ruby Value to a Offset which can be used to construct a _time_.
-fn offset_from_value(interp: &mut Artichoke, mut value: Value) -> Result<Offset, Error> {
-    if let Ok(offset_seconds) = implicitly_convert_to_int(interp, value) {
-        let offset_seconds =
-            i32::try_from(offset_seconds).map_err(|_| ArgumentError::with_message("invalid offset"))?;
-        let offset = Offset::try_from(offset_seconds)?;
-        Ok(offset)
-    } else if let Ok(offset_str) = unsafe { implicitly_convert_to_string(interp, &mut value) } {
-        let offset = Offset::try_from(offset_str)?;
-        Ok(offset)
-    } else {
-        Err(ArgumentError::with_message(
-            "+HH:MM, -HH:MM, UTC, A..I,K..Z, or a signed number of seconds expected for utc_offset",
-        )
-        .into())
-    }
-}
-
-// Check a Ruby Value Hash for the appropriate values to create and Offset
-// for a _time_.
-fn offset_from_options(interp: &mut Artichoke, options: Value) -> Result<Offset, Error> {
-    let hash: Vec<(Value, Value)> = interp.try_convert_mut(options)?;
-    let tz = hash
-        .into_iter()
-        .map(|(k, v)| {
-            let key = unsafe { Symbol::unbox_from_value(&mut k.clone(), interp)? }.bytes(interp);
-            if key == b"in" {
-                Ok(v)
-            } else {
-                Err(ArgumentError::with_message("unknown keyword"))?
-            }
-        })
-        .collect::<Result<Vec<Value>, Error>>()?;
-
-    match tz[..] {
-        [tz] => offset_from_value(interp, tz),
-        _ => Err(ArgumentError::with_message("unknown keyword"))?,
-    }
-}
 
 // Constructor
 pub fn now(interp: &mut Artichoke) -> Result<Value, Error> {
@@ -135,9 +94,11 @@ pub fn at(
         .checked_add(subsec_secs)
         .ok_or(ArgumentError::with_message("Time too large"))?;
 
-    let offset = match options {
-        Some(options) => offset_from_options(interp, options)?,
-        _ => Offset::local(),
+    let offset: Offset = if let Some(options) = options {
+        let offset: Option<Offset> = interp.try_convert_mut(options)?;
+        offset.unwrap_or(Offset::local())
+    } else {
+        Offset::local()
     };
 
     let time = Time::with_timespec_and_offset(seconds, subsec_nanos, offset)?;
