@@ -46,7 +46,11 @@ impl TryConvertMut<Option<Value>, SubsecMultiplier> for Artichoke {
                 b"milliseconds" => Ok(SubsecMultiplier::Millis),
                 b"usec" => Ok(SubsecMultiplier::Micros),
                 b"nsec" => Ok(SubsecMultiplier::Nanos),
-                _ => Err(ArgumentError::with_message("unexpected unit. expects :milliseconds, :usec, :nsec").into()),
+                _ => {
+                    let mut message = b"unexpected unit: ".to_vec();
+                    message.extend(subsec_symbol.to_vec());
+                    Err(ArgumentError::from(message).into())
+                }
             }
         } else {
             Ok(SubsecMultiplier::Micros)
@@ -531,5 +535,15 @@ mod tests {
 
         assert_eq!(err.name(), "FloatDomainError");
         assert_eq!(err.message(), b"Infinity".as_slice());
+    }
+
+    #[test]
+    fn invalid_subsec_unit() {
+        let mut interp = interpreter();
+
+        let err = subsec(&mut interp, (Some(b"1"), Some(b":bad_unit"))).unwrap_err();
+
+        assert_eq!(err.name(), "ArgumentError");
+        assert_eq!(err.message(), b"unexpected unit: bad_unit".as_slice());
     }
 }
