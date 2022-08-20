@@ -9,6 +9,7 @@ mod error;
 mod math;
 mod offset;
 mod parts;
+mod strftime;
 mod timezone;
 mod to_a;
 

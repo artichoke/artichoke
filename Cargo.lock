@@ -747,6 +747,7 @@ dependencies = [
  "chrono-tz",
  "once_cell",
  "regex",
+ "strftime-ruby",
  "tz-rs",
  "tzdb",
 ]
@@ -756,6 +757,12 @@ name = "str-buf"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e08d8363704e6c71fc928674353e6b7c23dcea9d82d7012c8faf2a3a025f8d0"
+
+[[package]]
+name = "strftime-ruby"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b02d24309580475dca1e01d10378f9a0d979aa95ee6c00bdbbf883f5315c905"
 
 [[package]]
 name = "strsim"
