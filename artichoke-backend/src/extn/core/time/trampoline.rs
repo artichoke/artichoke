@@ -1,35 +1,110 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
-use spinoso_time::MICROS_IN_NANO;
-
 use crate::convert::implicitly_convert_to_int;
-use crate::extn::core::time::Time;
+use crate::extn::core::time::{subsec::Subsec, Offset, Time};
 use crate::extn::prelude::*;
 
 // Constructor
-
 pub fn now(interp: &mut Artichoke) -> Result<Value, Error> {
-    let now = Time::now();
+    let now = Time::now()?;
     let result = Time::alloc_value(now, interp)?;
     Ok(result)
 }
 
-pub fn at(interp: &mut Artichoke, seconds: Value, microseconds: Option<Value>) -> Result<Value, Error> {
-    let seconds = implicitly_convert_to_int(interp, seconds)?;
-    let sub_second_nanos = if let Some(microseconds) = microseconds {
-        implicitly_convert_to_int(interp, microseconds)?
-            .checked_mul(i64::from(MICROS_IN_NANO))
-            .ok_or_else(|| ArgumentError::with_message("Time too large"))?
+pub fn at(
+    interp: &mut Artichoke,
+    seconds: Value,
+    first: Option<Value>,
+    second: Option<Value>,
+    third: Option<Value>,
+) -> Result<Value, Error> {
+    // Coerce the params to the correct place. Specifically:
+    // - the options hash might not always be provided as the last argument.
+    // - subseconds can be provided with an optional symbol for the type of subsec.
+    //
+    // ```console
+    // [3.1.2] > Time.at(1)
+    // => 1970-01-01 01:00:01 +0100
+    // [3.1.2] > Time.at(1, 1)
+    // => 1970-01-01 01:00:01.000001 +0100
+    // [3.1.2] > Time.at(1, 1, :nsec)
+    // => 1970-01-01 01:00:01.000000001 +0100
+    // [3.1.2] > Time.at(1, in: "A")
+    // => 1970-01-01 01:00:01 +0100
+    // [3.1.2] > Time.at(1, 1, in: "A")
+    // => 1970-01-01 01:00:01.000001 +0100
+    // [3.1.2] > Time.at(1, 1, :nsec)
+    // => 1970-01-01 01:00:01.000000001 +0100
+    // [3.1.2] > Time.at(1, 1, :nsec, in: "A")
+    // => 1970-01-01 01:00:01.000000001 +0100
+    // ```
+
+    let mut subsec = first;
+    let mut subsec_unit = second;
+    let mut options = third;
+
+    // Re-position the options hash under the `options` if it exists. Calling
+    // `Time.at` without the optional parameters will end up placing the
+    // options hash in the incorrect parameter position.
+    //
+    // ```console
+    // Time.at(0, in: "A")
+    // #          ^--first
+    // Time.at(0, 1, in: "A")
+    // #             ^-- second
+    // Time.at(0, 1, :nsec, in: "A")
+    // #                    ^-- third
+    // ```
+    //
+    // The below logic:
+    // - ensures the third parameter is a Ruby::Hash if provided.
+    // - if third param is not options, check the second paramter, if it is a
+    //   Ruby::Hash then assume this is the options hash, and clear out the
+    //   second parameter.
+    // - if second param is not options, check the first param, if it is a
+    //   Ruby::Hash then assume this is the options hash, and clear out the
+    //   first parameter.
+    if let Some(third_param) = third {
+        if third_param.ruby_type() != Ruby::Hash {
+            return Err(ArgumentError::with_message("invalid offset options").into());
+        }
     } else {
-        0_i64
+        options = if let Some(second_param) = second {
+            if second_param.ruby_type() == Ruby::Hash {
+                subsec_unit = None;
+                Some(second_param)
+            } else if let Some(first_param) = first {
+                if first_param.ruby_type() == Ruby::Hash {
+                    subsec = None;
+                    Some(first_param)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    let subsec: Subsec = interp.try_convert_mut((subsec, subsec_unit))?;
+    let (subsec_secs, subsec_nanos) = subsec.to_tuple();
+
+    let seconds = implicitly_convert_to_int(interp, seconds)?
+        .checked_add(subsec_secs)
+        .ok_or(ArgumentError::with_message("Time too large"))?;
+
+    let offset: Offset = if let Some(options) = options {
+        let offset: Option<Offset> = interp.try_convert_mut(options)?;
+        offset.unwrap_or_else(Offset::local)
+    } else {
+        Offset::local()
     };
 
-    if let Some(time) = Time::at(seconds, sub_second_nanos) {
-        let result = Time::alloc_value(time, interp)?;
-        Ok(result)
-    } else {
-        Err(ArgumentError::with_message("Time too large").into())
-    }
+    let time = Time::with_timespec_and_offset(seconds, subsec_nanos, offset)?;
+
+    Time::alloc_value(time, interp)
 }
 
 pub fn mkutc<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
@@ -127,7 +202,7 @@ pub fn mutate_to_local(interp: &mut Artichoke, time: Value, offset: Option<Value
 
 pub fn mutate_to_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let mut obj = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    *obj = obj.to_utc();
+    obj.set_utc()?;
     Ok(time)
 }
 
@@ -140,7 +215,7 @@ pub fn as_local(interp: &mut Artichoke, time: Value, offset: Option<Value>) -> R
 
 pub fn as_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let utc = time.to_utc();
+    let utc = time.to_utc()?;
     Time::alloc_value(utc, interp)
 }
 
@@ -180,37 +255,54 @@ pub fn to_array(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
 
 // Math
 
-pub fn plus(interp: &mut Artichoke, time: Value, other: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    let _ = other;
-    Err(NotImplementedError::new().into())
+pub fn plus(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    if unsafe { Time::unbox_from_value(&mut other, interp) }.is_ok() {
+        // ```console
+        // [3.1.2] > Time.now + Time.now
+        // (irb):15:in `+': time + time? (TypeError)
+        //         from (irb):15:in `<main>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // ```
+        Err(TypeError::with_message("time + time?").into())
+    } else if let Ok(other) = other.try_convert_into::<f64>(interp) {
+        let result = time.checked_add_f64(other)?;
+
+        Time::alloc_value(result, interp)
+    } else if let Ok(other) = implicitly_convert_to_int(interp, other) {
+        let result = time.checked_add_i64(other)?;
+
+        Time::alloc_value(result, interp)
+    } else {
+        Err(TypeError::with_message("can't convert into an exact number").into())
+    }
 }
 
 pub fn minus(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let other = if let Ok(other) = unsafe { Time::unbox_from_value(&mut other, interp) } {
-        other
+    if let Ok(other) = unsafe { Time::unbox_from_value(&mut other, interp) } {
+        let result: Value = interp.convert_mut(time.to_float() - other.to_float());
+        Ok(result)
     } else if let Ok(other) = implicitly_convert_to_int(interp, other) {
-        let _ = other;
-        return Err(NotImplementedError::with_message("Time#- with Integer argument is not implemented").into());
+        let result = time.checked_sub_i64(other)?;
+
+        Time::alloc_value(result, interp)
     } else if let Ok(other) = other.try_convert_into::<f64>(interp) {
-        let _ = other;
-        return Err(NotImplementedError::with_message("Time#- with Float argument is not implemented").into());
+        let result = time.checked_sub_f64(other)?;
+
+        Time::alloc_value(result, interp)
     } else {
-        return Err(TypeError::with_message("can't convert into an exact number").into());
-    };
-    let difference = time.difference(*other);
-    interp.try_convert_mut(difference)
+        Err(TypeError::with_message("can't convert into an exact number").into())
+    }
 }
 
 // Coarse math
 
-pub fn succ(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+pub fn succ(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
     interp.warn(b"warning: Time#succ is obsolete; use time + 1")?;
-    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let next = time.succ();
-    Time::alloc_value(next, interp)
+    plus(interp, time, interp.convert(1))
 }
 
 pub fn round(interp: &mut Artichoke, time: Value, num_digits: Option<Value>) -> Result<Value, Error> {
@@ -266,14 +358,14 @@ pub fn year(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
 
 pub fn weekday(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let weekday = time.weekday();
+    let weekday = time.day_of_week();
     let result = interp.convert(weekday);
     Ok(result)
 }
 
 pub fn year_day(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let year_day = time.year_day();
+    let year_day = time.day_of_year();
     let result = interp.convert(year_day);
     Ok(result)
 }

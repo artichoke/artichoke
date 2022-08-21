@@ -21,13 +21,22 @@
 //! [`chrono-tz`]: https://crates.io/crates/chrono-tz
 
 use crate::convert::HeapAllocatedData;
+use crate::extn::prelude::*;
 
 pub mod mruby;
+pub mod offset;
+pub mod subsec;
 pub mod trampoline;
 
 #[doc(inline)]
-pub use spinoso_time::chrono::Time;
+pub use spinoso_time::tzrs::*;
 
 impl HeapAllocatedData for Time {
     const RUBY_TYPE: &'static str = "Time";
+}
+
+impl From<TimeError> for Error {
+    fn from(error: TimeError) -> Error {
+        ArgumentError::from(format!("{}", error)).into()
+    }
 }
