@@ -1,11 +1,12 @@
+//! Parser for Ruby Time subsecond parameters to help generate `Time`.
+//!
+//! This module implements the logic to parse two optional parameters in the
+//! `Time.at` function call. These parameters (if specified) provide the number
+//! of subsecond parts to add, and a scale of those subsecond parts (millis, micros,
+//! and nanos).
+
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::symbol::Symbol;
-///! Parser of Ruby Time subsecond parameters to help generate `Time`.
-///!
-///! This module implements the logic to parse two optional parameters in the
-///! `Time.at` function call. These parameters (if specified) provide the number
-///! of subsecond parts to add, and a scale of those subsecond parts (millis, micros,
-///! and nanos).
 use crate::extn::prelude::*;
 
 const NANOS_IN_SECOND: i64 = 1_000_000_000;
@@ -61,6 +62,15 @@ impl TryConvertMut<Option<Value>, SubsecMultiplier> for Artichoke {
     }
 }
 
+/// A struct that represents the adjustment needed to a `Time` based on a
+/// the parsing of optional Ruby Values. Seconds can require adjustment as a
+/// means for handling overflow of values. e.g. `1_001` millis can be requested
+/// which should result in 1 seconds, and `1_000_000` nanoseconds.
+///
+/// Note: Negative nanoseconds are not supported, thus any negative adjustment
+/// will generally result in at least -1 second, and the relevant positive
+/// amount of nanoseconds. e.g. `-1_000` microseconds should result in -1
+/// second, and `999_999_000` nanoseconds.
 #[derive(Debug, Copy, Clone)]
 pub struct Subsec {
     secs: i64,
@@ -86,15 +96,10 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
         if let Some(subsec) = subsec {
             let multiplier: SubsecMultiplier = self.try_convert_mut(subsec_unit)?;
             let multiplier_nanos = multiplier.as_nanos();
-            // subsec will represent the user provided value in subsec_unit
-            // resolution. This means the base to be used for the number of
-            // seconds will change dependant on unit.
-            //
-            // For example, there are 1_000_000 micros in a second. This means
-            // that 1_000_001 micros seconds is 1 second, and 1 microsecond.
-            // In this example, seconds_base will be 1_000_000. For millis and
-            // nanos unit types, these would be 1_000 and 1_000_000_000
-            // respectively.
+            // `subsec` represents the user provided value in `subsec_unit`
+            // resolution. The base used to derive the number of seconds is
+            // based on the `subsec_unit`. e.g. `1_001` milliseconds is 1
+            // second, and `1_000_000` nanoseconds.
             let seconds_base = NANOS_IN_SECOND / multiplier_nanos;
 
             if subsec.ruby_type() == Ruby::Float {

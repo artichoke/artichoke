@@ -1,3 +1,5 @@
+//! Parser for Ruby Time offset parameter to help generate `Time`.
+
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::symbol::Symbol;
 use crate::extn::core::time::Offset;
