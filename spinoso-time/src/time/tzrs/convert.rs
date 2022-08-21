@@ -46,8 +46,12 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::Time;
-    /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # use spinoso_time::tzrs::{TimeError, Time};
+    /// # #[derive(Debug)]
+    /// # enum Error { Time(TimeError), Strftime(strftime::Error) };
+    /// # impl From<TimeError> for Error { fn from(err: TimeError) -> Self { Self::Time(err) } }
+    /// # impl From<strftime::Error> for Error { fn from(err: strftime::Error) -> Self { Self::Strftime(err) } }
+    /// # fn example() -> Result<(), Error> {
     /// let now = Time::utc(2022, 05, 26, 13, 16, 22, 276)?;
     /// assert_eq!(
     ///     now.strftime("Today is %c 🎉".as_bytes())?,
