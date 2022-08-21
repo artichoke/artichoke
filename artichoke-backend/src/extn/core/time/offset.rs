@@ -95,6 +95,8 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    use bstr::ByteSlice;
+
     use crate::extn::core::time::Offset;
     use crate::test::prelude::*;
 
@@ -118,7 +120,7 @@ mod tests {
         let error = result.unwrap_err();
 
         assert_eq!(error.name(), "ArgumentError");
-        assert_eq!(error.message(), b"unknown keyword: foo".as_slice());
+        assert_eq!(error.message().as_bstr(), b"unknown keyword: foo".as_slice().as_bstr());
     }
 
     #[test]
@@ -132,8 +134,10 @@ mod tests {
 
         assert_eq!(error.name(), "ArgumentError");
         assert_eq!(
-            error.message(),
-            br#"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: J"#.as_slice()
+            error.message().as_bstr(),
+            br#"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: J"#
+                .as_slice()
+                .as_bstr()
         );
     }
 
@@ -186,7 +190,10 @@ mod tests {
         let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
         let error = result.unwrap_err();
 
-        assert_eq!(error.message(), b"utc_offset out of range".as_slice());
+        assert_eq!(
+            error.message().as_bstr(),
+            b"utc_offset out of range".as_slice().as_bstr()
+        );
         assert_eq!(error.name(), "ArgumentError");
     }
 
@@ -200,7 +207,10 @@ mod tests {
         let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
         let error = result.unwrap_err();
 
-        assert_eq!(error.message(), b"utc_offset out of range".as_slice());
+        assert_eq!(
+            error.message().as_bstr(),
+            b"utc_offset out of range".as_slice().as_bstr()
+        );
         assert_eq!(error.name(), "ArgumentError");
 
         // this value is i32::MAX + 1.
@@ -209,7 +219,10 @@ mod tests {
         let result: Result<Option<Offset>, Error> = interp.try_convert_mut(options);
         let error = result.unwrap_err();
 
-        assert_eq!(error.message(), b"utc_offset out of range".as_slice());
+        assert_eq!(
+            error.message().as_bstr(),
+            b"utc_offset out of range".as_slice().as_bstr()
+        );
         assert_eq!(error.name(), "ArgumentError");
     }
 }

@@ -547,7 +547,7 @@ mod tests {
         let err = subsec(&mut interp, (Some(b"Float::INFINITY"), None)).unwrap_err();
 
         assert_eq!(err.name(), "FloatDomainError");
-        assert_eq!(err.message(), b"Infinity".as_slice());
+        assert_eq!(err.message().as_bstr(), b"Infinity".as_slice().as_bstr());
     }
 
     #[test]
@@ -557,6 +557,9 @@ mod tests {
         let err = subsec(&mut interp, (Some(b"1"), Some(b":bad_unit"))).unwrap_err();
 
         assert_eq!(err.name(), "ArgumentError");
-        assert_eq!(err.message(), b"unexpected unit: bad_unit".as_slice());
+        assert_eq!(
+            err.message().as_bstr(),
+            b"unexpected unit: bad_unit".as_slice().as_bstr()
+        );
     }
 }
