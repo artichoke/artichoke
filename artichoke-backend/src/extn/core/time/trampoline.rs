@@ -257,6 +257,14 @@ pub fn to_array(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
 pub fn plus(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
     if unsafe { Time::unbox_from_value(&mut other, interp) }.is_ok() {
+        // ```console
+        // [3.1.2] > Time.now + Time.now
+        // (irb):15:in `+': time + time? (TypeError)
+        //         from (irb):15:in `<main>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+        //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // ```
         Err(TypeError::with_message("time + time?").into())
     } else if let Ok(other) = other.try_convert_into::<f64>(interp) {
         let result = time.checked_add_f64(other)?;
