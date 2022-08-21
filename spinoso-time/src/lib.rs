@@ -72,6 +72,9 @@ mod readme {}
 
 use core::time::Duration;
 
+#[cfg(feature = "tzrs")]
+pub use strftime;
+
 mod time;
 
 #[cfg(feature = "chrono")]
