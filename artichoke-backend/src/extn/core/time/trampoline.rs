@@ -47,22 +47,23 @@ pub fn at(
     // `Time.at` without the optional parameters will end up placing the
     // options hash in the incorrect parameter position.
     //
-    // e.g.
+    // ```console
     // Time.at(0, in: "A")
-    //              ^--first
+    // #          ^--first
     // Time.at(0, 1, in: "A")
-    //                 ^-- second
+    // #             ^-- second
     // Time.at(0, 1, :nsec, in: "A")
-    //                        ^-- third
+    // #                    ^-- third
+    // ```
     //
     // The below logic:
-    // - ensures the third parameter is a Ruby::Hash if provided
+    // - ensures the third parameter is a Ruby::Hash if provided.
     // - if third param is not options, check the second paramter, if it is a
     //   Ruby::Hash then assume this is the options hash, and clear out the
-    //   second parameter
+    //   second parameter.
     // - if second param is not options, check the first param, if it is a
     //   Ruby::Hash then assume this is the options hash, and clear out the
-    //   first parameter
+    //   first parameter.
     if let Some(third_param) = third {
         if third_param.ruby_type() != Ruby::Hash {
             return Err(ArgumentError::with_message("invalid offset options").into());
