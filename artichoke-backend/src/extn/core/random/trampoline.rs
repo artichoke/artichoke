@@ -1,5 +1,7 @@
 //! Glue between mruby FFI and `ENV` Rust implementation.
 
+use spinoso_string::String;
+
 use super::{Random, Rng, Seed};
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
@@ -27,7 +29,10 @@ pub fn bytes(interp: &mut Artichoke, mut rand: Value, size: Value) -> Result<Val
     let mut random = unsafe { Rng::unbox_from_value(&mut rand, interp)? };
     let size = implicitly_convert_to_int(interp, size)?;
     let mut buf = match usize::try_from(size) {
-        Ok(0) => return interp.try_convert_mut(Vec::<u8>::new()),
+        Ok(0) => {
+            let s = String::binary(vec![]);
+            return String::alloc_value(s, interp);
+        }
         Ok(len) => vec![0; len],
         Err(_) => return Err(ArgumentError::with_message("negative string size (or size too big)").into()),
     };
@@ -35,7 +40,8 @@ pub fn bytes(interp: &mut Artichoke, mut rand: Value, size: Value) -> Result<Val
         Rng::Global => interp.prng_mut()?.fill_bytes(&mut buf),
         Rng::Instance(random) => random.fill_bytes(&mut buf),
     }
-    interp.try_convert_mut(buf)
+    let s = String::binary(buf);
+    String::alloc_value(s, interp)
 }
 
 pub fn rand(interp: &mut Artichoke, mut rand: Value, max: Option<Value>) -> Result<Value, Error> {
@@ -90,10 +96,14 @@ pub fn srand(interp: &mut Artichoke, seed: Option<Value>) -> Result<Value, Error
 pub fn urandom(interp: &mut Artichoke, size: Value) -> Result<Value, Error> {
     let size = implicitly_convert_to_int(interp, size)?;
     let mut buf = match usize::try_from(size) {
-        Ok(0) => return interp.try_convert_mut(Vec::<u8>::new()),
+        Ok(0) => {
+            let s = String::binary(vec![]);
+            return String::alloc_value(s, interp);
+        }
         Ok(len) => vec![0; len],
         Err(_) => return Err(ArgumentError::with_message("negative string size (or size too big)").into()),
     };
     spinoso_random::urandom(&mut buf)?;
-    interp.try_convert_mut(buf)
+    let s = String::binary(buf);
+    String::alloc_value(s, interp)
 }
