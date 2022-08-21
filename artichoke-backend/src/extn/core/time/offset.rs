@@ -35,6 +35,14 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
         // [2.6.3]> Time.at(0, i: 0)
         // ArgumentError (unknown keyword: i)
         // ```
+        //
+        // FIXME: In Ruby 3.1.2, this exception message formats the symbol with
+        // `Symbol#inspect`:
+        //
+        // ```console
+        // [3.1.2] > Time.at(0, i: 0)
+        // <internal:timev>:270:in `at': unknown keyword: :i (ArgumentError)
+        // ```
         for (mut key, _) in &hash {
             let k = unsafe { Symbol::unbox_from_value(&mut key, self)? }.bytes(self);
             if k != b"in" {
@@ -54,8 +62,7 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
 
                 let offset = Offset::try_from(offset_str).map_err(|_| {
                     let mut message =
-                        br#"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: "#
-                            .to_vec();
+                        br#"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: "#.to_vec();
                     message.extend_from_slice(offset_str);
                     ArgumentError::from(message)
                 })?;
