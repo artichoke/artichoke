@@ -113,6 +113,9 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                     return Err(FloatDomainError::with_message("NaN").into());
                 }
                 if subsec.is_infinite() {
+                    if subsec.is_sign_negative() {
+                        return Err(FloatDomainError::with_message("-Infinity").into());
+                    }
                     return Err(FloatDomainError::with_message("Infinity").into());
                 }
 
@@ -548,6 +551,11 @@ mod tests {
 
         assert_eq!(err.name(), "FloatDomainError");
         assert_eq!(err.message().as_bstr(), b"Infinity".as_slice().as_bstr());
+
+        let err = subsec(&mut interp, (Some(b"-Float::INFINITY"), None)).unwrap_err();
+
+        assert_eq!(err.name(), "FloatDomainError");
+        assert_eq!(err.message().as_bstr(), b"-Infinity".as_slice().as_bstr());
     }
 
     #[test]
