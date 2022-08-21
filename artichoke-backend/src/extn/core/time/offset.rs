@@ -54,7 +54,7 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
 
                 let offset = Offset::try_from(offset_str).map_err(|_| {
                     let mut message =
-                        b"\"+HH:MM\", \"-HH:MM\", \"UTC\" or \"A\"..\"I\",\"K\"..\"Z\" expected for utc_offset: "
+                        br#"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: "#
                             .to_vec();
                     message.extend_from_slice(offset_str);
                     ArgumentError::from(message)
@@ -126,7 +126,7 @@ mod tests {
         assert_eq!(error.name(), "ArgumentError");
         assert_eq!(
             error.message(),
-            b"\"+HH:MM\", \"-HH:MM\", \"UTC\" or \"A\"..\"I\",\"K\"..\"Z\" expected for utc_offset: J".as_slice()
+            br#"+HH:MM", "-HH:MM", "UTC" or "A".."I","K".."Z" expected for utc_offset: J"#.as_slice()
         );
     }
 
@@ -134,7 +134,6 @@ mod tests {
     fn provides_an_int_based_offset() {
         let mut interp = interpreter();
 
-        // this value is i32::MIN - 1.
         let options = interp.eval(b"{ in: 3600 }").unwrap();
 
         let result: Option<Offset> = interp.try_convert_mut(options).unwrap();
@@ -145,7 +144,6 @@ mod tests {
     fn provides_a_float_based_offset() {
         let mut interp = interpreter();
 
-        // this value is i32::MIN - 1.
         let options = interp.eval(b"{ in: 3600.0 }").unwrap();
 
         let result: Option<Offset> = interp.try_convert_mut(options).unwrap();
@@ -156,7 +154,6 @@ mod tests {
     fn provides_a_string_based_offset() {
         let mut interp = interpreter();
 
-        // this value is i32::MIN - 1.
         let options = interp.eval(b"{ in: 'A' }").unwrap();
 
         let result: Option<Offset> = interp.try_convert_mut(options).unwrap();

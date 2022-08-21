@@ -128,7 +128,7 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                 let mut nanos = (subsec % seconds_base) * multiplier_nanos;
 
                 // is_sign_negative() is not enough here, since this logic
-                // should als be skilled for negative zero.
+                // should also be skilled for negative zero.
                 if subsec < -0.0 {
                     // Nanos always needs to be a positive u32. If subsec
                     // is negative, we will always need remove one second.
