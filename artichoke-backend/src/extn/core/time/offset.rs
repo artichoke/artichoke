@@ -3,7 +3,9 @@ use crate::extn::core::symbol::Symbol;
 use crate::extn::core::time::Offset;
 use crate::extn::prelude::*;
 
+#[allow(clippy::cast_precision_loss)]
 const MAX_FLOAT_OFFSET: f64 = i32::MAX as f64;
+#[allow(clippy::cast_precision_loss)]
 const MIN_FLOAT_OFFSET: f64 = i32::MIN as f64;
 
 impl TryConvertMut<Value, Option<Offset>> for Artichoke {
@@ -20,7 +22,7 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
         // [2.6.3]> Time.at(0, {})
         // => 1970-01-01 01:00:00 +0100
         // ```
-        if hash.len() == 0 {
+        if hash.is_empty() {
             return Ok(None);
         }
 
@@ -31,12 +33,12 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
         // [2.6.3]> Time.at(0, i: 0)
         // ArgumentError (unknown keyword: i)
         // ```
-        for (mut key, _) in hash.iter() {
+        for (mut key, _) in &hash {
             let k = unsafe { Symbol::unbox_from_value(&mut key, self)? }.bytes(self);
             if k != b"in" {
                 let mut message = b"unknown keyword: ".to_vec();
                 message.extend_from_slice(k);
-                Err(ArgumentError::from(message))?
+                Err(ArgumentError::from(message))?;
             }
         }
 
@@ -64,10 +66,11 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
                 // supported in spinoso_time with the `tzrs` feature.
                 let offset_seconds: f64 = self.try_convert(in_value)?;
 
-                if !(MIN_FLOAT_OFFSET..=MAX_FLOAT_OFFSET).contains(&offset_seconds) {
-                    Err(ArgumentError::with_message("utc_offset out of range").into())
-                } else {
+                if (MIN_FLOAT_OFFSET..=MAX_FLOAT_OFFSET).contains(&offset_seconds) {
+                    #[allow(clippy::cast_possible_truncation)]
                     Ok(Some(Offset::try_from(offset_seconds as i32)?))
+                } else {
+                    Err(ArgumentError::with_message("utc_offset out of range").into())
                 }
             }
             _ => {
@@ -203,5 +206,4 @@ mod tests {
         assert_eq!(error.message(), b"utc_offset out of range".as_slice());
         assert_eq!(error.name(), "ArgumentError");
     }
-
 }

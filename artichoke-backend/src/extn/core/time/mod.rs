@@ -24,9 +24,9 @@ use crate::convert::HeapAllocatedData;
 use crate::extn::prelude::*;
 
 pub mod mruby;
-pub mod trampoline;
-pub mod subsec;
 pub mod offset;
+pub mod subsec;
+pub mod trampoline;
 
 #[doc(inline)]
 pub use spinoso_time::tzrs::*;

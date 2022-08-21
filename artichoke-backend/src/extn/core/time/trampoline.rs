@@ -1,7 +1,7 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
-use crate::convert::{implicitly_convert_to_int};
-use crate::extn::core::time::{Offset, Time, subsec::Subsec};
+use crate::convert::implicitly_convert_to_int;
+use crate::extn::core::time::{subsec::Subsec, Offset, Time};
 use crate::extn::prelude::*;
 
 // Constructor
@@ -65,7 +65,7 @@ pub fn at(
     //   first parameter
     if let Some(third_param) = third {
         if third_param.ruby_type() != Ruby::Hash {
-            return Err(ArgumentError::with_message("invalid offset options").into())
+            return Err(ArgumentError::with_message("invalid offset options").into());
         }
     } else {
         options = if let Some(second_param) = second {
@@ -96,7 +96,7 @@ pub fn at(
 
     let offset: Offset = if let Some(options) = options {
         let offset: Option<Offset> = interp.try_convert_mut(options)?;
-        offset.unwrap_or(Offset::local())
+        offset.unwrap_or_else(Offset::local)
     } else {
         Offset::local()
     };
