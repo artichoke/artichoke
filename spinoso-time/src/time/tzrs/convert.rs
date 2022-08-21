@@ -5,7 +5,7 @@ use super::{Time, ToA};
 impl fmt::Display for Time {
     /// Returns a canonical string representation of _time_.
     ///
-    /// `Display` uses the same format as [`Time::to_s`].
+    /// `Display` uses the same format as [`Time#to_s`].
     ///
     /// # Examples
     ///
@@ -19,10 +19,7 @@ impl fmt::Display for Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#asctime`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-asctime
-    /// [`Time#ctime`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-ctime
     /// [`Time#to_s`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-to_s
-    /// [`Time#inspect`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-inspect
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // https://github.com/ruby/ruby/blob/v3_1_2/time.c#L4007-L4017
         const UTC_FORMAT: &str = "%Y-%m-%d %H:%M:%S UTC";
