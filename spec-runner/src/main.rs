@@ -49,11 +49,11 @@
 //!
 //! ```console
 //! $ cargo run -q -p spec-runner -- --help
-//! spec-runner 0.6.0
+//! spec-runner 0.6.1
 //! ruby/spec runner for Artichoke.
 //!
 //! USAGE:
-//!     spec-runner [OPTIONS] <config>
+//!     spec-runner [OPTIONS] [config]
 //!
 //! ARGS:
 //!     <config>    Path to TOML config file
@@ -246,6 +246,10 @@ pub fn is_require_path(config: &Config, name: &str) -> bool {
         let (_, suite) = suites.iter().find(|(name, _)| OsStr::new(name) == suite_name)?;
         let spec_name = components.next()?.as_os_str().to_str()?;
 
+        if matches!(Path::new(components.last()?.as_os_str()).extension(), Some(ext) if ext != OsStr::new(".rb")) {
+            return None;
+        }
+
         match suite {
             Suite::All(ref all) if all.skip.iter().flatten().any(|name| spec_name.starts_with(name)) => Some(false),
             Suite::All(..) => Some(true),
@@ -255,4 +259,17 @@ pub fn is_require_path(config: &Config, name: &str) -> bool {
     }
     // And the convert to the expected `bool`.
     matches!(inner(config, name), Some(true))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn argf_fixture_is_not_loaded() {
+        let config = "[specs.core.argf]\ninclude = 'all'";
+        let config = toml::from_str::<Config>(config).unwrap();
+
+        assert!(!is_require_path(&config, "core/argf/fixtures/file1.txt"));
+    }
 }
