@@ -47,7 +47,7 @@ skip = ["parse"]
 
 ```console
 $ cargo run -q -p spec-runner -- --help
-spec-runner 0.6.0
+spec-runner 0.6.1
 ruby/spec runner for Artichoke.
 
 USAGE:
