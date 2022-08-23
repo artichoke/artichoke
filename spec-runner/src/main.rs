@@ -246,8 +246,15 @@ pub fn is_require_path(config: &Config, name: &str) -> bool {
         let (_, suite) = suites.iter().find(|(name, _)| OsStr::new(name) == suite_name)?;
         let spec_name = components.next()?.as_os_str().to_str()?;
 
-        if matches!(Path::new(components.last()?.as_os_str()).extension(), Some(ext) if ext != OsStr::new(".rb")) {
-            return None;
+        let last = if let Some(last) = components.last() {
+            last.as_os_str().to_str()?
+        } else {
+            spec_name
+        };
+        match Path::new(last).extension() {
+            None => {}
+            Some(ext) if ext == OsStr::new("rb") => {}
+            Some(_) => return None,
         }
 
         match suite {
@@ -264,6 +271,14 @@ pub fn is_require_path(config: &Config, name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn argf_spec_is_loaded() {
+        let config = "[specs.core.argf]\ninclude = 'all'";
+        let config = toml::from_str::<Config>(config).unwrap();
+
+        assert!(is_require_path(&config, "core/argf/pos_spec.rb"));
+    }
 
     #[test]
     fn argf_fixture_is_not_loaded() {
