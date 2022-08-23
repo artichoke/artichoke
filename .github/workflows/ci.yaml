@@ -563,6 +563,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Setup Node.js runtime
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install npm
+        run: npm i -f npm@8.16.0
+
       - name: Lint and check formatting with clang-format
         run: npx github:artichoke/clang-format --check
 
