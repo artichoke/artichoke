@@ -71,8 +71,8 @@ core APIs and standard library packages to create a Ruby environment.
 Interpreter backends are expected to implement the core interpreter traits from
 [`artichoke-core`][artichoke-core-docs].
 
-Artichoke currently implements one interpreter backend [based on mruby
-3.0.0][b-mruby], `artichoke-backend`. The project has plans to implement an
+Artichoke currently implements one interpreter backend [based on
+mruby][b-mruby], `artichoke-backend`. The project has plans to implement an
 [MRI-based backend][b-mri] crate and a [pure Rust backend][b-artichoke].
 
 [artichoke-core-docs]: https://artichoke.github.io/artichoke/artichoke_core/
