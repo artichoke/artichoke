@@ -14,6 +14,7 @@
 //!
 //! The prelude may grow over time as additional items see ubiquitous use.
 
+pub use crate::aref;
 pub use crate::block::Block;
 pub use crate::class;
 pub use crate::convert::{BoxUnboxVmValue, HeapAllocatedData};
