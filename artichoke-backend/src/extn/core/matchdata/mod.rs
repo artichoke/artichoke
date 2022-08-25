@@ -189,7 +189,7 @@ impl MatchData {
             return Ok(CaptureMatch::None);
         };
         match at {
-            CaptureAt::GroupIndex(index) => match aref::index_to_usize(index, captures.len()) {
+            CaptureAt::GroupIndex(index) => match aref::offset_to_index(index, captures.len()) {
                 None => Ok(CaptureMatch::None),
                 Some(idx) => {
                     if let Some(capture) = captures.into_iter().nth(idx) {
@@ -217,7 +217,7 @@ impl MatchData {
             }
             CaptureAt::StartLen(start, len) => {
                 if let Ok(len) = usize::try_from(len) {
-                    let start = if let Some(start) = aref::index_to_usize(start, captures.len()) {
+                    let start = if let Some(start) = aref::offset_to_index(start, captures.len()) {
                         start
                     } else {
                         return Ok(CaptureMatch::None);

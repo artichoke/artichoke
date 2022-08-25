@@ -59,7 +59,7 @@ pub fn element_assignment(
 ) -> Result<(usize, Option<usize>, Value), Error> {
     if let Some(elem) = third {
         let start = implicitly_convert_to_int(interp, first)?;
-        let start = if let Some(start) = aref::index_to_usize(start, len) {
+        let start = if let Some(start) = aref::offset_to_index(start, len) {
             start
         } else {
             let mut message = String::new();
@@ -80,7 +80,7 @@ pub fn element_assignment(
         match first.is_range(interp, rangelen)? {
             None => {
                 let index = implicitly_convert_to_int(interp, first)?;
-                if let Some(index) = aref::index_to_usize(index, len) {
+                if let Some(index) = aref::offset_to_index(index, len) {
                     Ok((index, None, second))
                 } else {
                     let mut message = String::new();

@@ -352,7 +352,7 @@ pub fn aref(
         let index = implicitly_convert_to_int(interp, first)?;
         let length = implicitly_convert_to_int(interp, second)?;
 
-        let index = match aref::index_to_usize(index, s.len()) {
+        let index = match aref::offset_to_index(index, s.len()) {
             None => return Ok(Value::nil()),
             // Short circuit with `nil` if `index > len`.
             //
@@ -451,7 +451,7 @@ pub fn aref(
         // ``
         Some(protect::Range::Out) => return Ok(Value::nil()),
         Some(protect::Range::Valid { start: index, len }) => {
-            let index = match aref::index_to_usize(index, s.len()) {
+            let index = match aref::offset_to_index(index, s.len()) {
                 None => return Ok(Value::nil()),
                 Some(index) if index > s.len() => return Ok(Value::nil()),
                 Some(index) => index,
@@ -533,7 +533,7 @@ pub fn aref(
     }
     let index = implicitly_convert_to_int(interp, first)?;
 
-    if let Some(index) = aref::index_to_usize(index, s.len()) {
+    if let Some(index) = aref::offset_to_index(index, s.len()) {
         // Index the byte, non existent indexes return `nil`.
         //
         // ```
@@ -611,7 +611,7 @@ pub fn byteslice(
         None => {}
         Some(protect::Range::Out) => return Ok(Value::nil()),
         Some(protect::Range::Valid { start: index, len }) => {
-            let index = match aref::index_to_usize(index, s.len()) {
+            let index = match aref::offset_to_index(index, s.len()) {
                 None => return Ok(Value::nil()),
                 Some(index) if index > s.len() => return Ok(Value::nil()),
                 Some(index) => index,
@@ -678,7 +678,7 @@ pub fn byteslice(
     // ```
     let index = implicitly_convert_to_int(interp, index)?;
 
-    let index = match aref::index_to_usize(index, s.len()) {
+    let index = match aref::offset_to_index(index, s.len()) {
         None => return Ok(Value::nil()),
         // Short circuit with `nil` if `index > len`.
         //
@@ -1072,7 +1072,7 @@ pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
 pub fn getbyte(interp: &mut Artichoke, mut value: Value, index: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let index = implicitly_convert_to_int(interp, index)?;
-    let index = if let Some(index) = aref::index_to_usize(index, s.len()) {
+    let index = if let Some(index) = aref::offset_to_index(index, s.len()) {
         index
     } else {
         return Ok(Value::nil());
@@ -1111,7 +1111,7 @@ pub fn index(
     let needle = unsafe { implicitly_convert_to_string(interp, &mut needle)? };
     let index = if let Some(offset) = offset {
         let offset = implicitly_convert_to_int(interp, offset)?;
-        let offset = aref::index_to_usize(offset, s.len());
+        let offset = aref::offset_to_index(offset, s.len());
         s.index(needle, offset)
     } else {
         s.index(needle, None)
@@ -1271,7 +1271,7 @@ pub fn rindex(
     let needle = unsafe { implicitly_convert_to_string(interp, &mut needle)? };
     let index = if let Some(offset) = offset {
         let offset = implicitly_convert_to_int(interp, offset)?;
-        let offset = aref::index_to_usize(offset, s.len());
+        let offset = aref::offset_to_index(offset, s.len());
         s.rindex(needle, offset)
     } else {
         s.rindex(needle, None)
@@ -1407,7 +1407,7 @@ pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Val
     }
 
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let index = if let Some(index) = aref::index_to_usize(index, s.len()) {
+    let index = if let Some(index) = aref::offset_to_index(index, s.len()) {
         index
     } else {
         let mut message = String::from("index ");

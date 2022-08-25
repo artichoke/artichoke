@@ -214,7 +214,7 @@ unsafe extern "C" fn mrb_ary_set(
     let mut array = Value::from(ary);
     let value = Value::from(value);
     if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
-        let offset = aref::index_to_usize(offset, array.len()).unwrap_or(0);
+        let offset = aref::offset_to_index(offset, array.len()).unwrap_or(0);
         // TODO: properly handle self-referential sets.
         if Value::from(ary) != value {
             // SAFETY: The array is repacked before any intervening uses of

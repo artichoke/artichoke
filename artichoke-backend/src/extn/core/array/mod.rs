@@ -170,7 +170,7 @@ fn aref(interp: &mut Artichoke, ary: &Array, index: Value, len: Option<Value>) -
         args::ElementReference::Index(index) => (index, None),
         args::ElementReference::StartLen(index, len) => (index, Some(len)),
     };
-    let start = if let Some(start) = aref::index_to_usize(index, ary.len()) {
+    let start = if let Some(start) = aref::offset_to_index(index, ary.len()) {
         start
     } else {
         return Ok(None);

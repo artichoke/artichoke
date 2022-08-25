@@ -110,7 +110,6 @@ mod readme {}
 #[doc(hidden)]
 pub mod macros;
 
-pub mod aref;
 mod artichoke;
 pub mod block;
 pub mod class;

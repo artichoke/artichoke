@@ -196,7 +196,7 @@ impl RegexpType for Onig {
             .map_err(|_| ArgumentError::with_message("Oniguruma backend for Regexp only supports UTF-8 haystacks"))?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
-        let pos = if let Some(pos) = aref::index_to_usize(pos, haystack_char_len) {
+        let pos = if let Some(pos) = aref::offset_to_index(pos, haystack_char_len) {
             pos
         } else {
             return Ok(false);
@@ -221,7 +221,7 @@ impl RegexpType for Onig {
         regexp::clear_capture_globals(interp)?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
-        let pos = if let Some(pos) = aref::index_to_usize(pos, haystack_char_len) {
+        let pos = if let Some(pos) = aref::offset_to_index(pos, haystack_char_len) {
             pos
         } else {
             return Ok(Value::nil());
