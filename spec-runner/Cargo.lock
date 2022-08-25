@@ -48,6 +48,7 @@ dependencies = [
  "onig",
  "qed",
  "regex",
+ "scolapasta-aref",
  "scolapasta-int-parse",
  "scolapasta-string-escape",
  "spinoso-array",
@@ -548,6 +549,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "scolapasta-aref"
+version = "0.1.0"
+
+[[package]]
 name = "scolapasta-hex"
 version = "0.2.0"
 
@@ -691,6 +696,7 @@ dependencies = [
  "onig",
  "posix-space",
  "regex",
+ "scolapasta-aref",
  "scolapasta-string-escape",
 ]
 

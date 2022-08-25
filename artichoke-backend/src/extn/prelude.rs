@@ -14,6 +14,8 @@
 //!
 //! The prelude may grow over time as additional items see ubiquitous use.
 
+pub use scolapasta_aref as aref;
+
 pub use crate::block::Block;
 pub use crate::class;
 pub use crate::convert::{BoxUnboxVmValue, HeapAllocatedData};

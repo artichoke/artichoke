@@ -59,21 +59,13 @@ pub fn element_assignment(
 ) -> Result<(usize, Option<usize>, Value), Error> {
     if let Some(elem) = third {
         let start = implicitly_convert_to_int(interp, first)?;
-        let start = if let Ok(start) = usize::try_from(start) {
+        let start = if let Some(start) = aref::offset_to_index(start, len) {
             start
         } else {
-            let pos = start
-                .checked_neg()
-                .and_then(|start| usize::try_from(start).ok())
-                .and_then(|start| len.checked_sub(start));
-            if let Some(start) = pos {
-                start
-            } else {
-                let mut message = String::new();
-                write!(&mut message, "index {} too small for array; minimum: -{}", start, len)
-                    .map_err(WriteError::from)?;
-                return Err(IndexError::from(message).into());
-            }
+            let mut message = String::new();
+            write!(&mut message, "index {} too small for array; minimum: -{}", start, len)
+                .map_err(WriteError::from)?;
+            return Err(IndexError::from(message).into());
         };
         let slice_len = implicitly_convert_to_int(interp, second)?;
         if let Ok(slice_len) = usize::try_from(slice_len) {
@@ -88,21 +80,13 @@ pub fn element_assignment(
         match first.is_range(interp, rangelen)? {
             None => {
                 let index = implicitly_convert_to_int(interp, first)?;
-                if let Ok(index) = usize::try_from(index) {
+                if let Some(index) = aref::offset_to_index(index, len) {
                     Ok((index, None, second))
                 } else {
-                    let idx = index
-                        .checked_neg()
-                        .and_then(|index| usize::try_from(index).ok())
-                        .and_then(|index| len.checked_sub(index));
-                    if let Some(idx) = idx {
-                        Ok((idx, None, second))
-                    } else {
-                        let mut message = String::new();
-                        write!(&mut message, "index {} too small for array; minimum: -{}", index, len)
-                            .map_err(WriteError::from)?;
-                        Err(IndexError::from(message).into())
-                    }
+                    let mut message = String::new();
+                    write!(&mut message, "index {} too small for array; minimum: -{}", index, len)
+                        .map_err(WriteError::from)?;
+                    Err(IndexError::from(message).into())
                 }
             }
             // ```

@@ -58,6 +58,7 @@ members = [
   "artichoke-core",
   "artichoke-load-path",
   "mezzaluna-feature-loader",
+  "scolapasta-aref",
   "scolapasta-hex",
   "scolapasta-int-parse",
   "scolapasta-string-escape",
