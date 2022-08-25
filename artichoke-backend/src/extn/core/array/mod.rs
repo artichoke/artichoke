@@ -170,18 +170,10 @@ fn aref(interp: &mut Artichoke, ary: &Array, index: Value, len: Option<Value>) -
         args::ElementReference::Index(index) => (index, None),
         args::ElementReference::StartLen(index, len) => (index, Some(len)),
     };
-    let start = if let Ok(start) = usize::try_from(index) {
+    let start = if let Some(start) = aref::index_to_usize(index, ary.len()) {
         start
     } else {
-        let idx = index
-            .checked_neg()
-            .and_then(|index| usize::try_from(index).ok())
-            .and_then(|index| ary.len().checked_sub(index));
-        if let Some(start) = idx {
-            start
-        } else {
-            return Ok(None);
-        }
+        return Ok(None);
     };
     if start > ary.len() {
         return Ok(None);
