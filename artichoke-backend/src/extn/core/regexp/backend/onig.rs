@@ -196,18 +196,10 @@ impl RegexpType for Onig {
             .map_err(|_| ArgumentError::with_message("Oniguruma backend for Regexp only supports UTF-8 haystacks"))?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
-        let pos = if let Ok(pos) = usize::try_from(pos) {
+        let pos = if let Some(pos) = aref::index_to_usize(pos, haystack_char_len) {
             pos
         } else {
-            let pos = pos
-                .checked_neg()
-                .and_then(|pos| usize::try_from(pos).ok())
-                .and_then(|pos| haystack_char_len.checked_sub(pos));
-            if let Some(pos) = pos {
-                pos
-            } else {
-                return Ok(false);
-            }
+            return Ok(false);
         };
         let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
         if let Some(haystack) = haystack.get(offset..) {
@@ -229,18 +221,10 @@ impl RegexpType for Onig {
         regexp::clear_capture_globals(interp)?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
-        let pos = if let Ok(pos) = usize::try_from(pos) {
+        let pos = if let Some(pos) = aref::index_to_usize(pos, haystack_char_len) {
             pos
         } else {
-            let pos = pos
-                .checked_neg()
-                .and_then(|pos| usize::try_from(pos).ok())
-                .and_then(|pos| haystack_char_len.checked_sub(pos));
-            if let Some(pos) = pos {
-                pos
-            } else {
-                return Ok(Value::nil());
-            }
+            return Ok(Value::nil());
         };
         let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
         let target = if let Some(haystack) = haystack.get(offset..) {
