@@ -189,30 +189,16 @@ impl MatchData {
             return Ok(CaptureMatch::None);
         };
         match at {
-            CaptureAt::GroupIndex(index) => {
-                if let Ok(idx) = usize::try_from(index) {
+            CaptureAt::GroupIndex(index) => match aref::index_to_usize(index, captures.len()) {
+                None => Ok(CaptureMatch::None),
+                Some(idx) => {
                     if let Some(capture) = captures.into_iter().nth(idx) {
                         Ok(CaptureMatch::Single(capture))
                     } else {
                         Ok(CaptureMatch::None)
                     }
-                } else {
-                    let idx = index
-                        .checked_neg()
-                        .and_then(|index| usize::try_from(index).ok())
-                        .and_then(|index| captures.len().checked_sub(index));
-                    match idx {
-                        Some(0) | None => Ok(CaptureMatch::None),
-                        Some(idx) => {
-                            if let Some(capture) = captures.into_iter().nth(idx) {
-                                Ok(CaptureMatch::Single(capture))
-                            } else {
-                                Ok(CaptureMatch::None)
-                            }
-                        }
-                    }
                 }
-            }
+            },
             CaptureAt::GroupName(name) => {
                 let indexes = self.regexp.inner().capture_indexes_for_name(name)?;
                 if let Some(indexes) = indexes {
@@ -231,18 +217,10 @@ impl MatchData {
             }
             CaptureAt::StartLen(start, len) => {
                 if let Ok(len) = usize::try_from(len) {
-                    let start = if let Ok(start) = usize::try_from(start) {
+                    let start = if let Some(start) = aref::index_to_usize(start, captures.len()) {
                         start
                     } else {
-                        let idx = start
-                            .checked_neg()
-                            .and_then(|index| usize::try_from(index).ok())
-                            .and_then(|index| captures.len().checked_sub(index));
-                        if let Some(start) = idx {
-                            start
-                        } else {
-                            return Ok(CaptureMatch::None);
-                        }
+                        return Ok(CaptureMatch::None);
                     };
                     let matches = captures.into_iter().skip(start).take(len).collect::<Vec<_>>();
                     Ok(CaptureMatch::Range(matches))
