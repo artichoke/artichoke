@@ -35,6 +35,7 @@ assert_eq!(index, Some(8))
 ## `no_std`
 
 This crate is `no_std` compatible. This crate does not depend on [`alloc`].
+
 ## License
 
 `scolapasta-aref` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.

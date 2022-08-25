@@ -14,6 +14,8 @@
 //!
 //! The prelude may grow over time as additional items see ubiquitous use.
 
+pub use scolapasta_aref as aref;
+
 pub use crate::block::Block;
 pub use crate::class;
 pub use crate::convert::{BoxUnboxVmValue, HeapAllocatedData};
@@ -25,7 +27,6 @@ pub use crate::prelude::*;
 pub use crate::string::{format_unicode_debug_into, WriteError};
 pub use crate::sys;
 pub use crate::value::Value;
-pub use scolapasta_aref as aref;
 
 /// Type alias for errors returned from `init` functions in
 /// [`extn`](crate::extn).
