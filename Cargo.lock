@@ -610,6 +610,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "scolapasta-aref"
+version = "0.1.0"
+
+[[package]]
 name = "scolapasta-hex"
 version = "0.2.0"
 
