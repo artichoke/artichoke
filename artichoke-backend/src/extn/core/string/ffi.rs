@@ -100,25 +100,37 @@ unsafe extern "C" fn mrb_str_index(
         return -1;
     };
 
+    /*
+    len = RSTRING_LEN(str);
+    if (offset < 0) {
+      offset += len;
+      if (offset < 0) return -1;
+    }
+    if (len - offset < slen) return -1;
+    s = RSTRING_PTR(str);
+    if (offset) {
+      s += offset;
+    }
+    if (slen == 0) return offset;
+    /* need proceed one character at a time */
+    len = RSTRING_LEN(str) - offset;
+    */
+    let mut offset = isize::try_from(offset).unwrap_or(0);
+    let len = isize::try_from(string.len()).unwrap_or(0);
+    if offset < 0 {
+        offset += len;
+    }
     let offset = if let Ok(offset) = usize::try_from(offset) {
         offset
     } else {
-        let offset = offset
-            .checked_neg()
-            .and_then(|offset| usize::try_from(offset).ok())
-            .and_then(|offset| offset.checked_sub(string.len()));
-        if let Some(offset) = offset {
-            offset
-        } else {
-            return -1;
-        }
+        return -1;
     };
     let haystack = if let Some(haystack) = string.get(offset..) {
         haystack
     } else {
         return -1;
     };
-    let needle = slice::from_raw_parts(sptr.cast::<u8>(), usize::try_from(slen).unwrap_or_default());
+    let needle = slice::from_raw_parts(sptr.cast::<u8>(), usize::try_from(slen).unwrap_or(0));
     if needle.is_empty() {
         return offset as sys::mrb_int;
     }
