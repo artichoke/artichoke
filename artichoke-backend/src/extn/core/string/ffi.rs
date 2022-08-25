@@ -85,6 +85,7 @@ unsafe extern "C" fn mrb_str_new_static(mrb: *mut sys::mrb_state, p: *const c_ch
 // MRB_API mrb_int mrb_str_index(mrb_state *mrb, mrb_value str, const char *sptr, mrb_int slen, mrb_int offset)
 // ```
 #[no_mangle]
+#[allow(clippy::similar_names)]
 unsafe extern "C" fn mrb_str_index(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
