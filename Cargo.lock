@@ -708,6 +708,7 @@ dependencies = [
  "onig",
  "posix-space",
  "regex",
+ "scolapasta-aref",
  "scolapasta-string-escape",
 ]
 

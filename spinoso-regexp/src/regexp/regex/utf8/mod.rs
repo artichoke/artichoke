@@ -227,18 +227,10 @@ impl Utf8 {
         let haystack = str::from_utf8(haystack).map_err(|_| ArgumentError::unsupported_haystack_encoding())?;
         let haystack_char_len = haystack.chars().count();
         let pos = pos.unwrap_or_default();
-        let pos = if let Ok(pos) = usize::try_from(pos) {
+        let pos = if let Some(pos) = scolapasta_aref::offset_to_index(pos, haystack_char_len) {
             pos
         } else {
-            let pos = pos
-                .checked_neg()
-                .and_then(|pos| usize::try_from(pos).ok())
-                .and_then(|pos| haystack_char_len.checked_sub(pos));
-            if let Some(pos) = pos {
-                pos
-            } else {
-                return Ok(false);
-            }
+            return Ok(false);
         };
         let offset = haystack.chars().take(pos).map(char::len_utf8).sum();
         let haystack = &haystack[offset..];
