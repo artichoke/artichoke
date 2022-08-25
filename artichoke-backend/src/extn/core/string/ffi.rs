@@ -403,6 +403,7 @@ unsafe extern "C" fn mrb_str_substr(
         }
     };
 
+    // FIXME: mruby treats this as a character offset, not a byte offset.
     if let Some(slice) = string.get(offset..) {
         let substr = String::with_bytes_and_encoding(slice.to_vec(), string.encoding());
         String::alloc_value(substr, &mut guard).unwrap_or_default().into()
