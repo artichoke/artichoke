@@ -352,25 +352,7 @@ pub fn aref(
         let index = implicitly_convert_to_int(interp, first)?;
         let length = implicitly_convert_to_int(interp, second)?;
 
-        // ```
-        // [3.0.1] > s = "abc"
-        // => "abc"
-        // [3.0.1] > s[-2, 10]
-        // => "bc"
-        // [3.0.1] > s[-3, 10]
-        // => "abc"
-        // [3.0.1] > s[-4, 10]
-        // => nil
-        // ```
-        let index = if let Ok(index) = usize::try_from(index) {
-            Some(index)
-        } else {
-            index
-                .checked_neg()
-                .and_then(|index| usize::try_from(index).ok())
-                .and_then(|index| s.len().checked_sub(index))
-        };
-        let index = match index {
+        let index = match aref::index_to_usize(index, s.len()) {
             None => return Ok(Value::nil()),
             // Short circuit with `nil` if `index > len`.
             //
@@ -469,15 +451,7 @@ pub fn aref(
         // ``
         Some(protect::Range::Out) => return Ok(Value::nil()),
         Some(protect::Range::Valid { start: index, len }) => {
-            let index = if let Ok(index) = usize::try_from(index) {
-                Some(index)
-            } else {
-                index
-                    .checked_neg()
-                    .and_then(|index| usize::try_from(index).ok())
-                    .and_then(|index| s.len().checked_sub(index))
-            };
-            let index = match index {
+            let index = match aref::index_to_usize(index, s.len()) {
                 None => return Ok(Value::nil()),
                 Some(index) if index > s.len() => return Ok(Value::nil()),
                 Some(index) => index,
@@ -559,25 +533,7 @@ pub fn aref(
     }
     let index = implicitly_convert_to_int(interp, first)?;
 
-    // ```
-    // [3.0.1] > s = "abc"
-    // => "abc"
-    // [3.0.1] > s[-2]
-    // => "b"
-    // [3.0.1] > s[-3]
-    // => "a"
-    // [3.0.1] > s[-4]
-    // => nil
-    // ```
-    let index = if let Ok(index) = usize::try_from(index) {
-        Some(index)
-    } else {
-        index
-            .checked_neg()
-            .and_then(|index| usize::try_from(index).ok())
-            .and_then(|index| s.len().checked_sub(index))
-    };
-    if let Some(index) = index {
+    if let Some(index) = aref::index_to_usize(index, s.len()) {
         // Index the byte, non existent indexes return `nil`.
         //
         // ```
@@ -655,15 +611,7 @@ pub fn byteslice(
         None => {}
         Some(protect::Range::Out) => return Ok(Value::nil()),
         Some(protect::Range::Valid { start: index, len }) => {
-            let index = if let Ok(index) = usize::try_from(index) {
-                Some(index)
-            } else {
-                index
-                    .checked_neg()
-                    .and_then(|index| usize::try_from(index).ok())
-                    .and_then(|index| s.len().checked_sub(index))
-            };
-            let index = match index {
+            let index = match aref::index_to_usize(index, s.len()) {
                 None => return Ok(Value::nil()),
                 Some(index) if index > s.len() => return Ok(Value::nil()),
                 Some(index) => index,
@@ -730,25 +678,7 @@ pub fn byteslice(
     // ```
     let index = implicitly_convert_to_int(interp, index)?;
 
-    // ```
-    // [3.0.2] > s = "abc"
-    // => "abc"
-    // [3.0.2] > s.byteslice(-2, 10)
-    // => "bc"
-    // [3.0.2] > s.byteslice(-3, 10)
-    // => "abc"
-    // [3.0.2] > s.byteslice(-4, 10)
-    // => nil
-    // ```
-    let index = if let Ok(index) = usize::try_from(index) {
-        Some(index)
-    } else {
-        index
-            .checked_neg()
-            .and_then(|index| usize::try_from(index).ok())
-            .and_then(|index| s.len().checked_sub(index))
-    };
-    let index = match index {
+    let index = match aref::index_to_usize(index, s.len()) {
         None => return Ok(Value::nil()),
         // Short circuit with `nil` if `index > len`.
         //
@@ -1142,18 +1072,10 @@ pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result
 pub fn getbyte(interp: &mut Artichoke, mut value: Value, index: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let index = implicitly_convert_to_int(interp, index)?;
-    let index = if let Ok(index) = usize::try_from(index) {
+    let index = if let Some(index) = aref::index_to_usize(index, s.len()) {
         index
     } else {
-        let index = index
-            .checked_neg()
-            .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
-        let index = usize::try_from(index).ok().and_then(|index| s.len().checked_sub(index));
-        if let Some(index) = index {
-            index
-        } else {
-            return Ok(Value::nil());
-        }
+        return Ok(Value::nil());
     };
     let byte = s.get(index).copied().map(i64::from);
     Ok(interp.convert(byte))
@@ -1189,14 +1111,7 @@ pub fn index(
     let needle = unsafe { implicitly_convert_to_string(interp, &mut needle)? };
     let index = if let Some(offset) = offset {
         let offset = implicitly_convert_to_int(interp, offset)?;
-        let offset = if let Ok(offset) = usize::try_from(offset) {
-            Some(offset)
-        } else {
-            offset
-                .checked_neg()
-                .and_then(|offset| usize::try_from(offset).ok())
-                .and_then(|offset| s.len().checked_sub(offset))
-        };
+        let offset = aref::index_to_usize(offset, s.len());
         s.index(needle, offset)
     } else {
         s.index(needle, None)
@@ -1356,14 +1271,7 @@ pub fn rindex(
     let needle = unsafe { implicitly_convert_to_string(interp, &mut needle)? };
     let index = if let Some(offset) = offset {
         let offset = implicitly_convert_to_int(interp, offset)?;
-        let offset = if let Ok(offset) = usize::try_from(offset) {
-            Some(offset)
-        } else {
-            offset
-                .checked_neg()
-                .and_then(|offset| usize::try_from(offset).ok())
-                .and_then(|offset| s.len().checked_sub(offset))
-        };
+        let offset = aref::index_to_usize(offset, s.len());
         s.rindex(needle, offset)
     } else {
         s.rindex(needle, None)
@@ -1499,22 +1407,14 @@ pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Val
     }
 
     let mut s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let index = if let Ok(index) = usize::try_from(index) {
+    let index = if let Some(index) = aref::index_to_usize(index, s.len()) {
         index
     } else {
-        let idx = index
-            .checked_neg()
-            .ok_or_else(|| RangeError::with_message("bignum too big to convert into `long'"))?;
-        let idx = usize::try_from(idx).ok().and_then(|index| s.len().checked_sub(index));
-        if let Some(idx) = idx {
-            idx
-        } else {
-            let mut message = String::from("index ");
-            // Suppress error because `String`'s `fmt::Write` impl is infallible.
-            // (It will abort on OOM).
-            let _ignored = write!(&mut message, "{} out of string", index);
-            return Err(IndexError::from(message).into());
-        }
+        let mut message = String::from("index ");
+        // Suppress error because `String`'s `fmt::Write` impl is infallible.
+        // (It will abort on OOM).
+        let _ignored = write!(&mut message, "{} out of string", index);
+        return Err(IndexError::from(message).into());
     };
     // Wrapping when negative is intentional
     //
