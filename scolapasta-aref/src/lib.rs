@@ -68,6 +68,7 @@
 /// # }
 /// # example().unwrap()
 /// ```
+#[must_use]
 pub fn offset_to_index(index: i64, len: usize) -> Option<usize> {
     // Here's an example of this behavior from `String`. All containers that
     // respond to `#[]` ("aref") behave similarly.
