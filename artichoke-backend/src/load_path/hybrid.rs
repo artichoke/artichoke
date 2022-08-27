@@ -4,7 +4,7 @@ use std::path::Path;
 
 #[cfg(feature = "load-path-rubylib-native-file-system-loader")]
 use artichoke_load_path::Rubylib;
-use scolapasta_path::paths::is_explicit_relative;
+use scolapasta_path::is_explicit_relative;
 
 use super::{ExtensionHook, Memory, Native};
 use crate::platform_string::os_string_to_bytes;

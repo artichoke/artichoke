@@ -20,4 +20,6 @@
 
 //! Functions for working with filesystem paths and loading Ruby source code.
 
-pub mod paths;
+mod paths;
+
+pub use paths::{is_explicit_relative, is_explicit_relative_bytes, memory_loader_ruby_load_path};

@@ -33,7 +33,7 @@ use windows as imp;
 ///
 /// ```
 /// # use std::path::Path;
-/// # use mezzaluna_feature_loader::paths::memory_loader_ruby_load_path;
+/// # use scolapasta_path::memory_loader_ruby_load_path;
 /// # #[cfg(windows)]
 /// assert_eq!(memory_loader_ruby_load_path(), Path::new("c:/artichoke/virtual_root/src/lib"));
 /// ```
@@ -42,7 +42,7 @@ use windows as imp;
 ///
 /// ```
 /// # use std::path::Path;
-/// # use mezzaluna_feature_loader::paths::memory_loader_ruby_load_path;
+/// # use scolapasta_path::memory_loader_ruby_load_path;
 /// # #[cfg(not(windows))]
 /// assert_eq!(memory_loader_ruby_load_path(), Path::new("/artichoke/virtual_root/src/lib"));
 /// ```
@@ -77,7 +77,7 @@ pub fn memory_loader_ruby_load_path() -> &'static Path {
 /// # Examples
 ///
 /// ```
-/// # use mezzaluna_feature_loader::paths::is_explicit_relative;
+/// # use scolapasta_path::is_explicit_relative;
 /// assert!(is_explicit_relative("./test/loader"));
 /// assert!(is_explicit_relative("../rake/test_task"));
 ///
@@ -132,7 +132,7 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 /// # Examples
 ///
 /// ```
-/// # use mezzaluna_feature_loader::paths::is_explicit_relative_bytes;
+/// # use scolapasta_path::is_explicit_relative_bytes;
 /// assert!(is_explicit_relative_bytes(b"./test/loader"));
 /// assert!(is_explicit_relative_bytes(b"../rake/test_task"));
 ///
