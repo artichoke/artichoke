@@ -56,7 +56,7 @@ mod tests {
         let test_cases = [r"/bin", r"/home/artichoke"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected absolute path '{}' to NOT be explicit relative path",
                 path
             );
@@ -68,7 +68,7 @@ mod tests {
         let test_cases = [r"temp", r"temp/../var"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected relative path '{}' to NOT be explicit relative path",
                 path
             );
@@ -80,7 +80,7 @@ mod tests {
         let test_cases = [r"./cache", r"../cache", r"./.git", r"../.git"];
         for path in test_cases {
             assert!(
-                is_explicit_relative(path),
+                is_explicit_relative(OsStr::new(path)),
                 "expected relative path '{}' to be explicit relative path",
                 path
             );
@@ -92,7 +92,7 @@ mod tests {
         let test_cases = [r"...\var", r".../var", r"\var", r"/var"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected path '{}' to NOT be explicit relative path",
                 path
             );
@@ -113,7 +113,7 @@ mod tests {
         ];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected relative path '{}' to NOT be explicit relative path",
                 path
             );

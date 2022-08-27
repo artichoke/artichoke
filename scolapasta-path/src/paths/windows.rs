@@ -92,7 +92,7 @@ mod tests {
         let test_cases = [r"c:\windows", r"c:/windows", r"\\.\COM1", r"\\?\C:\windows"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected absolute path '{}' to NOT be explicit relative path",
                 path
             );

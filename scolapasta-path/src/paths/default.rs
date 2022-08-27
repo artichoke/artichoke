@@ -16,7 +16,7 @@ pub fn is_explicit_relative_bytes(path: &[u8]) -> bool {
     // See the reference implementation based on MRI:
     //
     // https://github.com/artichoke/ruby/blob/v3_0_2/file.c#L6287-L6293
-    match bytes {
+    match path {
         [b'.', b'.', x, ..] if path::is_separator((*x).into()) => true,
         [b'.', x, ..] if path::is_separator((*x).into()) => true,
         _ => false,

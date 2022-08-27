@@ -105,7 +105,7 @@ pub fn memory_loader_ruby_load_path() -> &'static Path {
 #[must_use]
 pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
     let path = path.as_ref();
-    imp::is_explicit_relative(path)
+    imp::is_explicit_relative(path.as_ref())
 }
 
 /// Return whether the given byte string to treat as a path starts with an
