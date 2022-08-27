@@ -46,7 +46,7 @@ fn is_unpaired_surrogate_path_explicit_relative(path: &OsStr) -> bool {
 }
 
 pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, PathBuf> {
-    let mut buf = OsString::from(path).into_string()?;
+    let mut buf = OsString::from(path).into_string()?.into_bytes();
     for byte in &mut buf {
         if *byte == b'\\' {
             *byte = b'/';
