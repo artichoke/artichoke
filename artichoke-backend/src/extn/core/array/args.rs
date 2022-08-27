@@ -2,6 +2,7 @@ use std::fmt::Write as _;
 
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
+use crate::string::WriteError;
 use crate::sys::protect;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]

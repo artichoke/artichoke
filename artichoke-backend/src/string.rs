@@ -10,45 +10,11 @@ use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
-use scolapasta_string_escape::format_debug_escape_into;
-
 use crate::core::{ClassRegistry, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::extn::core::exception::Fatal;
 use crate::sys;
 use crate::Artichoke;
-
-/// Write a UTF-8 debug representation of a byte slice into the given writer.
-///
-/// This method encodes a bytes slice into a UTF-8 valid representation by
-/// writing invalid sequences as `\xXX` escape codes.
-///
-/// This method also escapes UTF-8 valid characters like `\n` and `\t`.
-///
-/// # Examples
-///
-/// Basic usage:
-///
-/// ```
-/// # use artichoke_backend::string::format_unicode_debug_into;
-///
-/// let mut message = String::from("cannot load such file -- ");
-/// let filename = b"utf8-invalid-name-\xFF";
-/// format_unicode_debug_into(&mut message, &filename[..]);
-/// assert_eq!(r"cannot load such file -- utf8-invalid-name-\xFF", message);
-/// ```
-///
-/// # Errors
-///
-/// This method only returns an error when the given writer returns an
-/// error.
-#[inline]
-pub fn format_unicode_debug_into<W>(dest: W, string: &[u8]) -> Result<(), WriteError>
-where
-    W: fmt::Write,
-{
-    format_debug_escape_into(dest, string).map_err(WriteError)
-}
 
 /// Error type for [`format_unicode_debug_into`].
 ///
@@ -120,60 +86,7 @@ impl RubyException for WriteError {
 impl From<WriteError> for Error {
     #[inline]
     fn from(exception: WriteError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<WriteError>> for Error {
-    #[inline]
-    fn from(exception: Box<WriteError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<WriteError> for Box<dyn RubyException> {
-    #[inline]
-    fn from(exception: WriteError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<WriteError>> for Box<dyn RubyException> {
-    #[inline]
-    fn from(exception: Box<WriteError>) -> Box<dyn RubyException> {
-        exception
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::format_unicode_debug_into;
-
-    #[test]
-    fn invalid_utf8() {
-        let mut buf = String::new();
-        format_unicode_debug_into(&mut buf, &b"abc\xFF"[..]).unwrap();
-        assert_eq!(r"abc\xFF", buf.as_str());
-    }
-
-    #[test]
-    fn ascii() {
-        let mut buf = String::new();
-        format_unicode_debug_into(&mut buf, &b"abc"[..]).unwrap();
-        assert_eq!(r"abc", buf.as_str());
-    }
-
-    #[test]
-    fn emoji() {
-        let mut buf = String::new();
-        format_unicode_debug_into(&mut buf, "Ruby 💎".as_bytes()).unwrap();
-        assert_eq!(r"Ruby 💎", buf.as_str());
-    }
-
-    #[test]
-    fn escaped() {
-        let mut buf = String::new();
-        format_unicode_debug_into(&mut buf, b"\n").unwrap();
-        assert_eq!(r"\n", buf.as_str());
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }

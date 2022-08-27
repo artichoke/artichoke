@@ -28,6 +28,7 @@ dependencies = [
  "clap",
  "log",
  "rustyline",
+ "scolapasta-string-escape",
  "termcolor",
  "tz-rs",
 ]

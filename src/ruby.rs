@@ -9,11 +9,12 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+use scolapasta_string_escape::format_debug_escape_into;
 use termcolor::WriteColor;
 
 use crate::backend::platform_string::os_str_to_bytes;
 use crate::backend::state::parser::Context;
-use crate::backend::string::format_unicode_debug_into;
+use crate::backend::string::WriteError;
 use crate::backtrace;
 use crate::filename::INLINE_EVAL_SWITCH;
 use crate::prelude::*;
@@ -204,7 +205,7 @@ fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Error> 
     let mut buf = String::from(message);
     buf.push_str(" -- ");
     let path = os_str_to_bytes(file.as_ref())?;
-    format_unicode_debug_into(&mut buf, path)?;
+    format_debug_escape_into(&mut buf, path).map_err(WriteError::from)?;
     Ok(buf)
 }
 

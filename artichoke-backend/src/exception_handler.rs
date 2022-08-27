@@ -3,11 +3,11 @@ use std::error;
 use std::fmt;
 
 use bstr::BString;
+use scolapasta_string_escape::format_debug_escape_into;
 
 use crate::core::{TryConvertMut, Value as _};
 use crate::error::{Error, RubyException};
 use crate::gc::MrbGarbageCollection;
-use crate::string::{format_unicode_debug_into, WriteError};
 use crate::sys;
 use crate::value::Value;
 use crate::Artichoke;
@@ -79,7 +79,7 @@ impl fmt::Display for CaughtException {
     fn fmt(&self, mut f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.name())?;
         f.write_str(" (")?;
-        format_unicode_debug_into(&mut f, &self.message()).map_err(WriteError::into_inner)?;
+        format_debug_escape_into(&mut f, &self.message())?;
         f.write_str(")")?;
         Ok(())
     }

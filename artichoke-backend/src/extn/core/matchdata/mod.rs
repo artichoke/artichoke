@@ -15,12 +15,14 @@ use std::ops::{Bound, RangeBounds};
 use std::str;
 
 use bstr::BString;
+use scolapasta_string_escape::format_debug_escape_into;
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
 use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
+use crate::string::WriteError;
 
 mod boxing;
 pub mod mruby;
@@ -210,7 +212,7 @@ impl MatchData {
                     Ok(CaptureMatch::Single(capture.map(<[_]>::to_vec)))
                 } else {
                     let mut message = String::from("undefined group name reference: \"");
-                    format_unicode_debug_into(&mut message, name)?;
+                    format_debug_escape_into(&mut message, name).map_err(WriteError::from)?;
                     message.push('"');
                     Err(IndexError::from(message).into())
                 }
