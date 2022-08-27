@@ -6,7 +6,7 @@ use super::default::is_explicit_relative_bytes;
 
 pub fn is_explicit_relative(path: &OsStr) -> bool {
     if let Some(path) = path.to_str() {
-        return is_explicit_relative_bytes(path);
+        return is_explicit_relative_bytes(path.as_bytes());
     }
 
     is_unpaired_surrogate_path_explicit_relative(path)
