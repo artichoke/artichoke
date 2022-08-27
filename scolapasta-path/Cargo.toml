@@ -1,0 +1,22 @@
+[package]
+name = "scolapasta-path"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+edition = "2021"
+rust-version = "1.63.0"
+description = """
+Path utilities for loading Ruby source code"
+"""
+repository = "https://github.com/artichoke/artichoke"
+readme = "README.md"
+license = "MIT"
+keywords = ["filesystem", "path"]
+categories = ["filesystem"]
+
+[dependencies]
+
+[features]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
