@@ -6,8 +6,10 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use bstr::{BString, ByteSlice};
+use scolapasta_path::normalize_slashes;
 
-use super::{absolutize_relative_to, normalize_slashes, ExtensionHook, RUBY_LOAD_PATH};
+use super::{absolutize_relative_to, ExtensionHook, RUBY_LOAD_PATH};
+use crate::platform_string::ConvertBytesError;
 
 const CODE_DEFAULT_CONTENTS: &[u8] = b"# virtual source file";
 
@@ -325,7 +327,8 @@ impl Memory {
             message.push_str(" are readable");
             return Err(io::Error::new(io::ErrorKind::NotFound, message));
         }
-        let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
+        let path =
+            normalize_slashes(path).map_err(|_| io::Error::new(io::ErrorKind::NotFound, ConvertBytesError::new()))?;
         if let Some(entry) = self.fs.get(path.as_bstr()) {
             if let Some(ref code) = entry.code {
                 match code.content {
@@ -360,7 +363,8 @@ impl Memory {
             message.push_str(" are writable");
             return Err(io::Error::new(io::ErrorKind::PermissionDenied, message));
         }
-        let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
+        let path =
+            normalize_slashes(path).map_err(|_| io::Error::new(io::ErrorKind::NotFound, ConvertBytesError::new()))?;
         match self.fs.entry(path.into()) {
             HashEntry::Occupied(mut entry) => {
                 entry.get_mut().replace_content(buf);
@@ -406,7 +410,8 @@ impl Memory {
             message.push_str(" are writable");
             return Err(io::Error::new(io::ErrorKind::PermissionDenied, message));
         }
-        let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
+        let path =
+            normalize_slashes(path).map_err(|_| io::Error::new(io::ErrorKind::NotFound, ConvertBytesError::new()))?;
         match self.fs.entry(path.into()) {
             HashEntry::Occupied(mut entry) => {
                 entry.get_mut().set_extension(extension);
@@ -457,7 +462,7 @@ impl Memory {
                 self.loaded_features.insert(path.into());
                 Ok(())
             }
-            Err(err) => Err(io::Error::new(io::ErrorKind::NotFound, err)),
+            Err(_) => Err(io::Error::new(io::ErrorKind::NotFound, ConvertBytesError::new())),
         }
     }
 }

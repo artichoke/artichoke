@@ -1,6 +1,6 @@
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::os::windows::ffi::OsStrExt;
-use std::path;
+use std::path::{self, PathBuf};
 
 use super::default::is_explicit_relative_bytes;
 
@@ -45,12 +45,23 @@ fn is_unpaired_surrogate_path_explicit_relative(path: &OsStr) -> bool {
     )
 }
 
+pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, PathBuf> {
+    let mut buf = OsString::from(path).into_string()?;
+    for byte in &mut buf {
+        if *byte == b'\\' {
+            *byte = b'/';
+        }
+    }
+    Ok(buf)
+}
+
 #[cfg(test)]
 mod tests {
     use std::ffi::{OsStr, OsString};
     use std::os::windows::ffi::OsStringExt;
+    use std::path::PathBuf;
 
-    use super::{is_explicit_relative, is_unpaired_surrogate_path_explicit_relative};
+    use super::{is_explicit_relative, is_unpaired_surrogate_path_explicit_relative, normalize_slashes};
 
     #[test]
     fn empty() {
@@ -333,5 +344,54 @@ mod tests {
         let wide = [b'.'.into(), b'.'.into(), 0xd800_u16];
         let path = OsString::from_wide(&wide);
         assert!(!is_unpaired_surrogate_path_explicit_relative(&path));
+    }
+
+    #[test]
+    fn normalize_slashes_no_backslash() {
+        let path = PathBuf::from(r"abcxyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abcxyz".to_vec());
+
+        let path = PathBuf::from(r"abc/xyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abc/xyz".to_vec());
+    }
+
+    #[test]
+    fn normalize_slashes_backslash() {
+        let path = PathBuf::from(r"abc\xyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abc/xyz".to_vec());
+
+        let path = PathBuf::from(r"abc\xyz\123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abc/xyz/123".to_vec());
+
+        let path = PathBuf::from(r"abc\xyz/123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abc/xyz/123".to_vec());
+
+        let path = PathBuf::from(r"abc/xyz\123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abc/xyz/123".to_vec());
+    }
+
+    #[test]
+    fn normalize_slashes_backslash_with_drive() {
+        let path = PathBuf::from(r"c:\abc\xyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), br"c:/abc/xyz".to_vec());
+
+        let path = PathBuf::from(r"c:\abc\xyz\123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"c:/abc/xyz/123".to_vec());
+
+        let path = PathBuf::from(r"c:\abc\xyz/123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"c:/abc/xyz/123".to_vec());
+
+        let path = PathBuf::from(r"c:\abc/xyz\123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"c:/abc/xyz/123".to_vec());
+
+        let path = PathBuf::from(r"c:/abc\xyz\123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"c:/abc/xyz/123".to_vec());
+    }
+
+    #[test]
+    fn normalize_slashes_unpaired_surrogate() {
+        let wide = [b'a'.into(), b'\\'.into(), 0xd800_u16];
+        let path = OsString::from_wide(&wide);
+        normalize_slashes(path.into()).unwrap_err();
     }
 }

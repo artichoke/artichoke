@@ -14,10 +14,7 @@
 
 use std::path::{Component, Path, PathBuf};
 
-use bstr::ByteVec;
-
 use crate::error::Error;
-use crate::platform_string::ConvertBytesError;
 use crate::Artichoke;
 
 #[cfg(feature = "load-path-native-file-system-loader")]
@@ -98,18 +95,6 @@ where
         }
     }
     components.into_iter().collect()
-}
-
-pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, ConvertBytesError> {
-    let mut path = Vec::from_path_buf(path).map_err(|_| ConvertBytesError::new())?;
-    if cfg!(windows) {
-        for byte in &mut path {
-            if *byte == b'\\' {
-                *byte = b'/';
-            }
-        }
-    }
-    Ok(path)
 }
 
 #[cfg(test)]
