@@ -1,5 +1,5 @@
-use std::ffi::OsStr;
-use std::path;
+use std::ffi::{OsStr, OsString};
+use std::path::{self, PathBuf};
 
 #[allow(dead_code)]
 pub fn is_explicit_relative(path: &OsStr) -> bool {
@@ -23,11 +23,20 @@ pub fn is_explicit_relative_bytes(path: &[u8]) -> bool {
     }
 }
 
+#[allow(dead_code)]
+pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, PathBuf> {
+    match OsString::from(path).into_string() {
+        Ok(s) => Ok(s.into()),
+        Err(buf) => Err(buf.into()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::ffi::OsStr;
+    use std::path::PathBuf;
 
-    use super::{is_explicit_relative, is_explicit_relative_bytes};
+    use super::{is_explicit_relative, is_explicit_relative_bytes, normalize_slashes};
 
     #[test]
     fn empty() {
@@ -161,5 +170,23 @@ mod tests {
                 path
             );
         }
+    }
+
+    #[test]
+    fn normalize_slashes_no_backslash() {
+        let path = PathBuf::from(r"abcxyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abcxyz".to_vec());
+
+        let path = PathBuf::from(r"abc/xyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abc/xyz".to_vec());
+    }
+
+    #[test]
+    fn normalize_slashes_backslash_noop() {
+        let path = PathBuf::from(r"abc\xyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), br"abc\xyz".to_vec());
+
+        let path = PathBuf::from(r"abc\xyz\123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), br"abc\xyz\123".to_vec());
     }
 }

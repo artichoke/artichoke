@@ -6,7 +6,7 @@
 //! These functions are defined in terms of [`Path`] from the Rust Standard
 //! Library.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 mod default;
 #[cfg(unix)]
@@ -160,4 +160,19 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 pub fn is_explicit_relative_bytes<P: AsRef<[u8]>>(path: P) -> bool {
     let path = path.as_ref();
     default::is_explicit_relative_bytes(path)
+}
+
+/// Normalize path separators to all be `/`.
+///
+/// This function is a no-op on all non-Windows platforms. On Windows, this
+/// function will convert `\` separators to `/` if the given [`PathBuf`] is
+/// valid UTF-8.
+///
+/// # Errors
+///
+/// On unix systems, this function is infallible. On all other platforms,
+/// including Windows, if the given [`PathBuf`] is not valid UTF-8, the original
+/// `PathBuf` is returned as an error. See [`Path::to_str`] for details.
+pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, PathBuf> {
+    imp::normalize_slashes(path)
 }

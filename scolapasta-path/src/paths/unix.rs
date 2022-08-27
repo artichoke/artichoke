@@ -1,5 +1,6 @@
-use std::ffi::OsStr;
-use std::os::unix::ffi::OsStrExt;
+use std::ffi::{OsStr, OsString};
+use std::os::unix::ffi::{OsStrExt, OsStringExt};
+use std::path::PathBuf;
 
 use super::is_explicit_relative_bytes;
 
@@ -9,12 +10,18 @@ pub fn is_explicit_relative(path: &OsStr) -> bool {
     is_explicit_relative_bytes(bytes)
 }
 
+#[allow(clippy::unnecessary_wraps)]
+pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, PathBuf> {
+    Ok(OsString::from(path).into_vec())
+}
+
 #[cfg(test)]
 mod tests {
-    use std::ffi::OsStr;
-    use std::os::unix::ffi::OsStrExt;
+    use std::ffi::{OsStr, OsString};
+    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+    use std::path::PathBuf;
 
-    use super::is_explicit_relative;
+    use super::{is_explicit_relative, normalize_slashes};
 
     #[test]
     fn empty() {
@@ -142,5 +149,35 @@ mod tests {
     fn invalid_utf8_relative() {
         let path = OsStr::from_bytes(b"\xFF\xFE");
         assert!(!is_explicit_relative(path));
+    }
+
+    #[test]
+    fn normalize_slashes_no_backslash() {
+        let path = PathBuf::from(r"abcxyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abcxyz".to_vec());
+
+        let path = PathBuf::from(r"abc/xyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), b"abc/xyz".to_vec());
+    }
+
+    #[test]
+    fn normalize_slashes_backslash_noop() {
+        let path = PathBuf::from(r"abc\xyz".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), br"abc\xyz".to_vec());
+
+        let path = PathBuf::from(r"abc\xyz\123".to_string());
+        assert_eq!(normalize_slashes(path).unwrap(), br"abc\xyz\123".to_vec());
+    }
+
+    #[test]
+    fn normalize_slashes_invalid_utf8() {
+        let path = OsString::from_vec(b"abcxyz\xFF".to_vec());
+        assert_eq!(normalize_slashes(path.into()).unwrap(), b"abcxyz\xFF".to_vec());
+
+        let path = OsString::from_vec(b"abc/xyz\xFF".to_vec());
+        assert_eq!(normalize_slashes(path.into()).unwrap(), b"abc/xyz\xFF".to_vec());
+
+        let path = OsString::from_vec(b"abc\\xyz\xFF".to_vec());
+        assert_eq!(normalize_slashes(path.into()).unwrap(), b"abc\\xyz\xFF".to_vec());
     }
 }

@@ -5,8 +5,10 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use bstr::{BString, ByteSlice};
+use scolapasta_path::normalize_slashes;
 
-use super::{absolutize_relative_to, normalize_slashes};
+use super::absolutize_relative_to;
+use crate::platform_string::ConvertBytesError;
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Native {
@@ -94,7 +96,8 @@ impl Native {
     pub fn mark_required(&mut self, path: &Path) -> io::Result<()> {
         let cwd = env::current_dir()?;
         let path = absolutize_relative_to(path, &cwd);
-        let path = normalize_slashes(path).map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
+        let path =
+            normalize_slashes(path).map_err(|_| io::Error::new(io::ErrorKind::NotFound, ConvertBytesError::new()))?;
         self.loaded_features.insert(path.into());
         Ok(())
     }

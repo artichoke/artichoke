@@ -33,4 +33,4 @@
 
 mod paths;
 
-pub use paths::{is_explicit_relative, is_explicit_relative_bytes, memory_loader_ruby_load_path};
+pub use paths::{is_explicit_relative, is_explicit_relative_bytes, memory_loader_ruby_load_path, normalize_slashes};
