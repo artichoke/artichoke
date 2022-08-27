@@ -41,7 +41,6 @@ dependencies = [
  "bstr",
  "cc",
  "intaglio",
- "mezzaluna-feature-loader",
  "onig",
  "qed",
  "quickcheck",
