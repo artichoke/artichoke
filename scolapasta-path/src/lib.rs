@@ -19,3 +19,5 @@
 #![cfg_attr(docsrs, feature(doc_alias))]
 
 //! Functions for working with filesystem paths and loading Ruby source code.
+
+pub mod paths;

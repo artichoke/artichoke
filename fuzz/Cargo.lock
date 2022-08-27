@@ -40,6 +40,7 @@ dependencies = [
  "regex",
  "scolapasta-aref",
  "scolapasta-int-parse",
+ "scolapasta-path",
  "scolapasta-string-escape",
  "spinoso-array",
  "spinoso-env",
@@ -173,6 +174,9 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 [[package]]
 name = "mezzaluna-feature-loader"
 version = "0.5.0"
+dependencies = [
+ "scolapasta-path",
+]
 
 [[package]]
 name = "once_cell"
@@ -291,6 +295,10 @@ dependencies = [
  "posix-space",
  "scolapasta-string-escape",
 ]
+
+[[package]]
+name = "scolapasta-path"
+version = "0.1.0"
 
 [[package]]
 name = "scolapasta-string-escape"

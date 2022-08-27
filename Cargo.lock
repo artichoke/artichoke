@@ -48,6 +48,7 @@ dependencies = [
  "regex",
  "scolapasta-aref",
  "scolapasta-int-parse",
+ "scolapasta-path",
  "scolapasta-string-escape",
  "spinoso-array",
  "spinoso-env",
@@ -360,6 +361,7 @@ name = "mezzaluna-feature-loader"
 version = "0.5.0"
 dependencies = [
  "same-file",
+ "scolapasta-path",
 ]
 
 [[package]]
@@ -625,6 +627,10 @@ dependencies = [
  "posix-space",
  "scolapasta-string-escape",
 ]
+
+[[package]]
+name = "scolapasta-path"
+version = "0.1.0"
 
 [[package]]
 name = "scolapasta-string-escape"
