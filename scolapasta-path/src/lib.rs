@@ -19,6 +19,17 @@
 #![cfg_attr(docsrs, feature(doc_alias))]
 
 //! Functions for working with filesystem paths and loading Ruby source code.
+//!
+//! # Examples
+//!
+//! ```
+//! # use scolapasta_path::is_explicit_relative;
+//! assert!(is_explicit_relative("./test/loader"));
+//! assert!(is_explicit_relative("../rake/test_task"));
+//!
+//! assert!(!is_explicit_relative("json/pure"));
+//! assert!(!is_explicit_relative("/artichoke/src/json/pure"));
+//! ```
 
 mod paths;
 

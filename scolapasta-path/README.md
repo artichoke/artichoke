@@ -23,6 +23,18 @@ Add this to your `Cargo.toml`:
 scolapasta-path = "0.1.0"
 ```
 
+And check for explicit relative paths like:
+
+```rust
+use scolapasta_path::is_explicit_relative;
+
+assert!(is_explicit_relative("./test/loader"));
+assert!(is_explicit_relative("../rake/test_task"));
+
+assert!(!is_explicit_relative("json/pure"));
+assert!(!is_explicit_relative("/artichoke/src/json/pure"));
+```
+
 ## License
 
 `scolapasta-path` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
