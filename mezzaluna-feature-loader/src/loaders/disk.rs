@@ -5,7 +5,6 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use same_file::Handle;
-
 use scolapasta_path::is_explicit_relative;
 
 /// A Ruby source code loader that loads sources directly from disk and resolves
