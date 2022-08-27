@@ -6,8 +6,8 @@ use crate::error::Error;
 use crate::extn::core::exception::IOError;
 use crate::extn::core::warning::Warning;
 use crate::ffi::InterpreterExtractError;
+use crate::fmt::WriteError;
 use crate::state::output::Output;
-use crate::string::WriteError;
 use crate::Artichoke;
 
 impl Warn for Artichoke {

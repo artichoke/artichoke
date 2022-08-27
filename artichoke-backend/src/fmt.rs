@@ -1,10 +1,4 @@
-//! Utilities for working with Ruby `String`s.
-//!
-//! In Ruby, `String` is a `Vec<u8>` with an optional encoding. `String`s
-//! default to UTF-8 encoding but this does not require the byte vector to
-//! contain valid UTF-8.
-//!
-//! Artichoke aims to support ASCII, UTF-8, maybe UTF-8, and binary encodings.
+//! Utilities for interfacing [`std::fmt`] with Artichoke's exception types.
 
 use std::borrow::Cow;
 use std::error;
@@ -16,14 +10,24 @@ use crate::extn::core::exception::Fatal;
 use crate::sys;
 use crate::Artichoke;
 
-/// Error type for [`format_unicode_debug_into`].
+/// Error type which converts a [`fmt::Error`] into an Artichoke [`Error`].
 ///
 /// This error type can also be used to convert generic [`fmt::Error`] into an
 /// [`Error`], such as when formatting integers with [`write!`].
 ///
 /// This  error type wraps a [`fmt::Error`].
 ///
-/// [`Error`]: crate::error::Error
+/// # Examples
+///
+/// ```
+/// # use crate::prelude::*;
+/// fn task(interp: &mut Artichoke) -> Result<String, Error> {
+///     let mut buf = String::new();
+///     write!(&mut buf, "success!").map_err(WriteError::from)?;
+///     Ok(buf)
+/// }
+/// # task().unwrap()
+/// ```
 #[derive(Debug, Clone, Copy)]
 pub struct WriteError(fmt::Error);
 

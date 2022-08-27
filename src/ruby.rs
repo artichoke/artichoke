@@ -12,9 +12,9 @@ use std::path::{Path, PathBuf};
 use scolapasta_string_escape::format_debug_escape_into;
 use termcolor::WriteColor;
 
+use crate::backend::fmt::WriteError;
 use crate::backend::platform_string::os_str_to_bytes;
 use crate::backend::state::parser::Context;
-use crate::backend::string::WriteError;
 use crate::backtrace;
 use crate::filename::INLINE_EVAL_SWITCH;
 use crate::prelude::*;

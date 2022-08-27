@@ -22,7 +22,7 @@ use crate::extn::core::regexp::backend::NilableString;
 use crate::extn::core::regexp::Regexp;
 use crate::extn::core::symbol::Symbol;
 use crate::extn::prelude::*;
-use crate::string::WriteError;
+use crate::fmt::WriteError;
 
 mod boxing;
 pub mod mruby;
