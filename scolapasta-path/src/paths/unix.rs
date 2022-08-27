@@ -3,8 +3,7 @@ use std::os::unix::ffi::OsStrExt;
 
 use super::is_explicit_relative_bytes;
 
-pub fn is_explicit_relative<P: AsRef<OsStr>>(path: P) -> bool {
-    let path = path.as_ref();
+pub fn is_explicit_relative(path: &OsStr) -> bool {
     let bytes = path.as_bytes();
 
     is_explicit_relative_bytes(bytes)
@@ -19,37 +18,37 @@ mod tests {
 
     #[test]
     fn empty() {
-        assert!(!is_explicit_relative(""));
+        assert!(!is_explicit_relative(OsStr::new("")));
     }
 
     #[test]
     fn single_char() {
-        assert!(!is_explicit_relative("a"));
+        assert!(!is_explicit_relative(OsStr::new("a")));
     }
 
     #[test]
     fn single_dot() {
-        assert!(!is_explicit_relative("."));
+        assert!(!is_explicit_relative(OsStr::new(".")));
     }
 
     #[test]
     fn double_dot() {
-        assert!(!is_explicit_relative(".."));
+        assert!(!is_explicit_relative(OsStr::new("..")));
     }
 
     #[test]
     fn triple_dot() {
-        assert!(!is_explicit_relative("..."));
+        assert!(!is_explicit_relative(OsStr::new("...")));
     }
 
     #[test]
     fn single_dot_slash() {
-        assert!(is_explicit_relative("./"));
+        assert!(is_explicit_relative(OsStr::new("./")));
     }
 
     #[test]
     fn double_dot_slash() {
-        assert!(is_explicit_relative("../"));
+        assert!(is_explicit_relative(OsStr::new("../")));
     }
 
     #[test]
