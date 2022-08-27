@@ -20,7 +20,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scolapasta-path = "0.1.0"
+scolapasta-path = "0.2.0"
 ```
 
 And check for explicit relative paths like:
