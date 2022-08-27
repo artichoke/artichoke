@@ -268,7 +268,7 @@ mod tests {
 
     #[test]
     fn unpaired_surrogate_empty() {
-        assert!(!is_unpaired_surrogate_path_explicit_relative(OsStr::new()));
+        assert!(!is_unpaired_surrogate_path_explicit_relative(OsStr::new("")));
     }
 
     #[test]
