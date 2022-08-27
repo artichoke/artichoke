@@ -3,8 +3,7 @@ use std::os::unix::ffi::OsStrExt;
 
 use super::is_explicit_relative_bytes;
 
-pub fn is_explicit_relative<P: AsRef<OsStr>>(path: P) -> bool {
-    let path = path.as_ref();
+pub fn is_explicit_relative(path: &OsStr) -> bool {
     let bytes = path.as_bytes();
 
     is_explicit_relative_bytes(bytes)
@@ -19,37 +18,37 @@ mod tests {
 
     #[test]
     fn empty() {
-        assert!(!is_explicit_relative(""));
+        assert!(!is_explicit_relative(OsStr::new("")));
     }
 
     #[test]
     fn single_char() {
-        assert!(!is_explicit_relative("a"));
+        assert!(!is_explicit_relative(OsStr::new("a")));
     }
 
     #[test]
     fn single_dot() {
-        assert!(!is_explicit_relative("."));
+        assert!(!is_explicit_relative(OsStr::new(".")));
     }
 
     #[test]
     fn double_dot() {
-        assert!(!is_explicit_relative(".."));
+        assert!(!is_explicit_relative(OsStr::new("..")));
     }
 
     #[test]
     fn triple_dot() {
-        assert!(!is_explicit_relative("..."));
+        assert!(!is_explicit_relative(OsStr::new("...")));
     }
 
     #[test]
     fn single_dot_slash() {
-        assert!(is_explicit_relative("./"));
+        assert!(is_explicit_relative(OsStr::new("./")));
     }
 
     #[test]
     fn double_dot_slash() {
-        assert!(is_explicit_relative("../"));
+        assert!(is_explicit_relative(OsStr::new("../")));
     }
 
     #[test]
@@ -57,7 +56,7 @@ mod tests {
         let test_cases = [r"/bin", r"/home/artichoke"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected absolute path '{}' to NOT be explicit relative path",
                 path
             );
@@ -69,7 +68,7 @@ mod tests {
         let test_cases = [r"temp", r"temp/../var"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected relative path '{}' to NOT be explicit relative path",
                 path
             );
@@ -81,7 +80,7 @@ mod tests {
         let test_cases = [r"./cache", r"../cache", r"./.git", r"../.git"];
         for path in test_cases {
             assert!(
-                is_explicit_relative(path),
+                is_explicit_relative(OsStr::new(path)),
                 "expected relative path '{}' to be explicit relative path",
                 path
             );
@@ -93,7 +92,7 @@ mod tests {
         let test_cases = [r"...\var", r".../var", r"\var", r"/var"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected path '{}' to NOT be explicit relative path",
                 path
             );
@@ -114,7 +113,7 @@ mod tests {
         ];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected relative path '{}' to NOT be explicit relative path",
                 path
             );

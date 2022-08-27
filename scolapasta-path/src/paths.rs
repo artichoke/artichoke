@@ -33,7 +33,7 @@ use windows as imp;
 ///
 /// ```
 /// # use std::path::Path;
-/// # use mezzaluna_feature_loader::paths::memory_loader_ruby_load_path;
+/// # use scolapasta_path::memory_loader_ruby_load_path;
 /// # #[cfg(windows)]
 /// assert_eq!(memory_loader_ruby_load_path(), Path::new("c:/artichoke/virtual_root/src/lib"));
 /// ```
@@ -42,7 +42,7 @@ use windows as imp;
 ///
 /// ```
 /// # use std::path::Path;
-/// # use mezzaluna_feature_loader::paths::memory_loader_ruby_load_path;
+/// # use scolapasta_path::memory_loader_ruby_load_path;
 /// # #[cfg(not(windows))]
 /// assert_eq!(memory_loader_ruby_load_path(), Path::new("/artichoke/virtual_root/src/lib"));
 /// ```
@@ -60,8 +60,8 @@ pub fn memory_loader_ruby_load_path() -> &'static Path {
 /// Explicit relative paths start with `.` or `..` followed immediately by a
 /// directory separator.
 ///
-/// Some [loaders] have special handling for explicit relative paths where
-/// explicit relative paths are resolved relative to the process's [current
+/// Some Ruby source loaders have special handling for explicit relative paths
+/// where explicit relative paths are resolved relative to the process's [current
 /// working directory] rather than the load path.
 ///
 /// # Compatibility
@@ -77,7 +77,7 @@ pub fn memory_loader_ruby_load_path() -> &'static Path {
 /// # Examples
 ///
 /// ```
-/// # use mezzaluna_feature_loader::paths::is_explicit_relative;
+/// # use scolapasta_path::is_explicit_relative;
 /// assert!(is_explicit_relative("./test/loader"));
 /// assert!(is_explicit_relative("../rake/test_task"));
 ///
@@ -99,13 +99,12 @@ pub fn memory_loader_ruby_load_path() -> &'static Path {
 /// }
 /// ```
 ///
-/// [loaders]: crate::loaders
 /// [current working directory]: std::env::current_dir
 /// [reference implementation]: https://github.com/artichoke/ruby/blob/v3_0_2/file.c#L6287-L6293
 #[must_use]
 pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
     let path = path.as_ref();
-    imp::is_explicit_relative(path)
+    imp::is_explicit_relative(path.as_ref())
 }
 
 /// Return whether the given byte string to treat as a path starts with an
@@ -114,8 +113,8 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 /// Explicit relative paths start with `.` or `..` followed immediately by a
 /// directory separator.
 ///
-/// Some [loaders] have special handling for explicit relative paths where
-/// explicit relative paths are resolved relative to the process's [current
+/// Some Ruby source loaders have special handling for explicit relative paths
+/// where explicit relative paths are resolved relative to the process's [current
 /// working directory] rather than the load path.
 ///
 /// # Usage
@@ -132,7 +131,7 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 /// # Examples
 ///
 /// ```
-/// # use mezzaluna_feature_loader::paths::is_explicit_relative_bytes;
+/// # use scolapasta_path::is_explicit_relative_bytes;
 /// assert!(is_explicit_relative_bytes(b"./test/loader"));
 /// assert!(is_explicit_relative_bytes(b"../rake/test_task"));
 ///
@@ -154,7 +153,6 @@ pub fn is_explicit_relative<P: AsRef<Path>>(path: P) -> bool {
 /// }
 /// ```
 ///
-/// [loaders]: crate::loaders
 /// [current working directory]: std::env::current_dir
 /// [ruby-string]: https://ruby-doc.org/core-3.1.2/String.html
 /// [reference implementation]: https://github.com/artichoke/ruby/blob/v3_0_2/file.c#L6287-L6293

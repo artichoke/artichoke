@@ -44,12 +44,12 @@ dependencies = [
  "bstr",
  "cc",
  "intaglio",
- "mezzaluna-feature-loader",
  "onig",
  "qed",
  "regex",
  "scolapasta-aref",
  "scolapasta-int-parse",
+ "scolapasta-path",
  "scolapasta-string-escape",
  "spinoso-array",
  "spinoso-env",
@@ -309,10 +309,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
-name = "mezzaluna-feature-loader"
-version = "0.5.0"
-
-[[package]]
 name = "miniz_oxide"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -563,6 +559,10 @@ dependencies = [
  "posix-space",
  "scolapasta-string-escape",
 ]
+
+[[package]]
+name = "scolapasta-path"
+version = "0.1.0"
 
 [[package]]
 name = "scolapasta-string-escape"

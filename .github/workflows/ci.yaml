@@ -456,6 +456,14 @@ jobs:
         run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "spinoso-time"
 
+      - name: Compile scolapasta-aref with no default features
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
+        working-directory: "scolapasta-aref"
+
+      - name: Compile scolapasta-aref with all features
+        run: cargo check --verbose --all-features --all-targets --profile=test
+        working-directory: "scolapasta-aref"
+
       - name: Compile scolapasta-hex with no default features
         run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "scolapasta-hex"
@@ -469,6 +477,22 @@ jobs:
           cargo check --verbose --no-default-features --features alloc --all-targets --profile=test
           cargo check --verbose --no-default-features --features alloc,std --all-targets --profile=test
         working-directory: "scolapasta-hex"
+
+      - name: Compile scolapasta-int-parse with no default features
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
+        working-directory: "scolapasta-int-parse"
+
+      - name: Compile scolapasta-int-parse with all features
+        run: cargo check --verbose --all-features --all-targets --profile=test
+        working-directory: "scolapasta-int-parse"
+
+      - name: Compile scolapasta-path with no default features
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
+        working-directory: "scolapasta-path"
+
+      - name: Compile scolapasta-path with all features
+        run: cargo check --verbose --all-features --all-targets --profile=test
+        working-directory: "scolapasta-path"
 
       - name: Compile scolapasta-string-escape with no default features
         run: cargo check --verbose --no-default-features --all-targets --profile=test

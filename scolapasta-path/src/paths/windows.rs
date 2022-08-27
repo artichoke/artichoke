@@ -4,10 +4,9 @@ use std::path;
 
 use super::default::is_explicit_relative_bytes;
 
-pub fn is_explicit_relative<P: AsRef<OsStr>>(path: P) -> bool {
-    let path = path.as_ref();
+pub fn is_explicit_relative(path: &OsStr) -> bool {
     if let Some(path) = path.to_str() {
-        return is_explicit_relative_bytes(path);
+        return is_explicit_relative_bytes(path.as_bytes());
     }
 
     is_unpaired_surrogate_path_explicit_relative(path)
@@ -20,8 +19,8 @@ pub fn is_explicit_relative<P: AsRef<OsStr>>(path: P) -> bool {
 // This function attempts to handle such paths by decoding them and manually
 // checking for `./`, `.\`, `../`, and `..\`-prefixed paths by looking at raw
 // `u16` codepoints.
-fn is_unpaired_surrogate_path_explicit_relative<P: AsRef<OsStr>>(path: P) -> bool {
-    let mut wide = path.as_ref().encode_wide().peekable();
+fn is_unpaired_surrogate_path_explicit_relative(path: &OsStr) -> bool {
+    let mut wide = path.encode_wide().peekable();
 
     // Explicit relative paths start with `.`
     if !matches!(wide.next(), Some(c) if c == u16::from(b'.')) {
@@ -48,44 +47,44 @@ fn is_unpaired_surrogate_path_explicit_relative<P: AsRef<OsStr>>(path: P) -> boo
 
 #[cfg(test)]
 mod tests {
-    use std::ffi::OsString;
+    use std::ffi::{OsStr, OsString};
     use std::os::windows::ffi::OsStringExt;
 
     use super::{is_explicit_relative, is_unpaired_surrogate_path_explicit_relative};
 
     #[test]
     fn empty() {
-        assert!(!is_explicit_relative(""));
+        assert!(!is_explicit_relative(OsStr::new("")));
     }
 
     #[test]
     fn single_char() {
-        assert!(!is_explicit_relative("a"));
+        assert!(!is_explicit_relative(OsStr::new("a")));
     }
 
     #[test]
     fn single_dot() {
-        assert!(!is_explicit_relative("."));
+        assert!(!is_explicit_relative(OsStr::new(".")));
     }
 
     #[test]
     fn double_dot() {
-        assert!(!is_explicit_relative(".."));
+        assert!(!is_explicit_relative(OsStr::new("..")));
     }
 
     #[test]
     fn triple_dot() {
-        assert!(!is_explicit_relative("..."));
+        assert!(!is_explicit_relative(OsStr::new("...")));
     }
 
     #[test]
     fn single_dot_slash() {
-        assert!(is_explicit_relative("./"));
+        assert!(is_explicit_relative(OsStr::new("./")));
     }
 
     #[test]
     fn double_dot_slash() {
-        assert!(is_explicit_relative("../"));
+        assert!(is_explicit_relative(OsStr::new("../")));
     }
 
     #[test]
@@ -93,7 +92,7 @@ mod tests {
         let test_cases = [r"c:\windows", r"c:/windows", r"\\.\COM1", r"\\?\C:\windows"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected absolute path '{}' to NOT be explicit relative path",
                 path
             );
@@ -105,7 +104,7 @@ mod tests {
         let test_cases = [r"c:temp", r"temp", r"\temp", r"/temp"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected relative path '{}' to NOT be explicit relative path",
                 path
             );
@@ -126,7 +125,7 @@ mod tests {
         ];
         for path in test_cases {
             assert!(
-                is_explicit_relative(path),
+                is_explicit_relative(OsStr::new(path)),
                 "expected relative path '{}' to be explicit relative path",
                 path
             );
@@ -138,7 +137,7 @@ mod tests {
         let test_cases = [r"...\windows", r".../windows", r"\windows", r"/windows"];
         for path in test_cases {
             assert!(
-                !is_explicit_relative(path),
+                !is_explicit_relative(OsStr::new(path)),
                 "expected path '{}' to NOT be explicit relative path",
                 path
             );
@@ -269,70 +268,70 @@ mod tests {
 
     #[test]
     fn unpaired_surrogate_empty() {
-        assert!(!is_unpaired_surrogate_path_explicit_relative(OsString::new()));
+        assert!(!is_unpaired_surrogate_path_explicit_relative(OsStr::new("")));
     }
 
     #[test]
     fn unpaired_surrogate_dot() {
         let wide = [u16::from(b'.')];
         let path = OsString::from_wide(&wide);
-        assert!(!is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(!is_unpaired_surrogate_path_explicit_relative(&path));
     }
 
     #[test]
     fn unpaired_surrogate_double_dot() {
         let wide = [u16::from(b'.'), u16::from(b'.')];
         let path = OsString::from_wide(&wide);
-        assert!(!is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(!is_unpaired_surrogate_path_explicit_relative(&path));
     }
 
     #[test]
     fn unpaired_surrogate_dot_slash() {
         let wide = [u16::from(b'.'), u16::from(b'/')];
         let path = OsString::from_wide(&wide);
-        assert!(is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(is_unpaired_surrogate_path_explicit_relative(&path));
 
         let wide = [u16::from(b'.'), u16::from(b'\\')];
         let path = OsString::from_wide(&wide);
-        assert!(is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(is_unpaired_surrogate_path_explicit_relative(&path));
     }
 
     #[test]
     fn unpaired_surrogate_dot_dot_slash() {
         let wide = [u16::from(b'.'), u16::from(b'.'), u16::from(b'/')];
         let path = OsString::from_wide(&wide);
-        assert!(is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(is_unpaired_surrogate_path_explicit_relative(&path));
 
         let wide = [u16::from(b'.'), u16::from(b'.'), u16::from(b'\\')];
         let path = OsString::from_wide(&wide);
-        assert!(is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(is_unpaired_surrogate_path_explicit_relative(&path));
     }
 
     #[test]
     fn unpaired_surrogate_relative_single() {
         let wide = [u16::from(b'a')];
         let path = OsString::from_wide(&wide);
-        assert!(!is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(!is_unpaired_surrogate_path_explicit_relative(&path));
     }
 
     #[test]
     fn unpaired_surrogate_relative_with_unpaired_surrogate() {
         let wide = [0xd800_u16];
         let path = OsString::from_wide(&wide);
-        assert!(!is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(!is_unpaired_surrogate_path_explicit_relative(&path));
     }
 
     #[test]
     fn unpaired_surrogate_dot_unpaired_surrogate() {
         let wide = [b'.'.into(), 0xd800_u16];
         let path = OsString::from_wide(&wide);
-        assert!(!is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(!is_unpaired_surrogate_path_explicit_relative(&path));
     }
 
     #[test]
     fn unpaired_surrogate_dot_dot_unpaired_surrogate() {
         let wide = [b'.'.into(), b'.'.into(), 0xd800_u16];
         let path = OsString::from_wide(&wide);
-        assert!(!is_unpaired_surrogate_path_explicit_relative(path));
+        assert!(!is_unpaired_surrogate_path_explicit_relative(&path));
     }
 }
