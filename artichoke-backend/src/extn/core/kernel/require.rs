@@ -4,10 +4,10 @@ use std::path::{Path, PathBuf};
 
 use artichoke_core::load::{Loaded, Required};
 use bstr::ByteSlice;
+use scolapasta_path::bytes_to_os_str;
 
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::prelude::*;
-use crate::platform_string::bytes_to_os_str;
 use crate::state::parser::Context;
 
 pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<Loaded, Error> {

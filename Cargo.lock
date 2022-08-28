@@ -28,6 +28,7 @@ dependencies = [
  "clap",
  "log",
  "rustyline",
+ "scolapasta-path",
  "scolapasta-string-escape",
  "termcolor",
  "tz-rs",
@@ -35,7 +36,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-backend"
-version = "0.17.0"
+version = "0.18.0"
 dependencies = [
  "artichoke-core",
  "artichoke-load-path",
@@ -630,7 +631,7 @@ dependencies = [
 
 [[package]]
 name = "scolapasta-path"
-version = "0.2.0"
+version = "0.3.0"
 
 [[package]]
 name = "scolapasta-string-escape"

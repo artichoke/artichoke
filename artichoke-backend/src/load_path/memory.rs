@@ -6,10 +6,9 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use bstr::{BString, ByteSlice};
-use scolapasta_path::normalize_slashes;
+use scolapasta_path::{normalize_slashes, ConvertBytesError};
 
 use super::{absolutize_relative_to, ExtensionHook, RUBY_LOAD_PATH};
-use crate::platform_string::ConvertBytesError;
 
 const CODE_DEFAULT_CONTENTS: &[u8] = b"# virtual source file";
 

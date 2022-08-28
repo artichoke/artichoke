@@ -5,11 +5,11 @@ use std::path::Path;
 use artichoke_core::eval::Eval;
 use artichoke_core::file::File;
 use artichoke_core::load::{LoadSources, Loaded, Required};
+use scolapasta_path::os_str_to_bytes;
 use spinoso_exception::LoadError;
 
 use crate::error::Error;
 use crate::ffi::InterpreterExtractError;
-use crate::platform_string::os_str_to_bytes;
 use crate::Artichoke;
 
 const RUBY_EXTENSION: &str = "rb";
