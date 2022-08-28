@@ -3,10 +3,11 @@ use std::error;
 use std::ffi::c_void;
 use std::fmt;
 
+use spinoso_exception::Fatal;
+
 use crate::core::{ClassRegistry, Eval, TryConvertMut};
 use crate::error::{Error, RubyException};
 use crate::extn;
-use crate::extn::core::exception::Fatal;
 use crate::ffi;
 use crate::gc::{MrbGarbageCollection, State as GcState};
 use crate::release_metadata::ReleaseMetadata;

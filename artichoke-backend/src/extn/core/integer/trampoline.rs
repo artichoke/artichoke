@@ -11,7 +11,7 @@ pub fn chr(interp: &mut Artichoke, value: Value, encoding: Option<Value>) -> Res
 pub fn element_reference(interp: &mut Artichoke, value: Value, bit: Value) -> Result<Value, Error> {
     let value = value.try_convert_into::<Integer>(interp)?;
     let bit = implicitly_convert_to_int(interp, bit)?;
-    let bit = value.bit(bit)?;
+    let bit = value.bit(bit);
     Ok(interp.convert(bit))
 }
 
@@ -42,6 +42,7 @@ pub fn is_nobits(interp: &mut Artichoke, value: Value, mask: Value) -> Result<Va
     Ok(interp.convert(result))
 }
 
+#[allow(clippy::unnecessary_wraps)]
 pub fn size(interp: &Artichoke) -> Result<Value, Error> {
     qed::const_assert!(Integer::size() < i8::MAX as usize);
     const SIZE: i64 = Integer::size() as i64;

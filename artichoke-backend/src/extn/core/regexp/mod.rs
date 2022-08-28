@@ -26,11 +26,11 @@ use crate::extn::prelude::*;
 pub mod backend;
 mod boxing;
 pub mod enc;
-pub mod mruby;
+pub(in crate::extn) mod mruby;
 pub mod opts;
 pub mod pattern;
 pub mod syntax;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[cfg(feature = "core-regexp-oniguruma")]
 use backend::onig::Onig;

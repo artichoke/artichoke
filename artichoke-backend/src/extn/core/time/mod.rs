@@ -23,10 +23,10 @@
 use crate::convert::HeapAllocatedData;
 use crate::extn::prelude::*;
 
-pub mod mruby;
+pub(in crate::extn) mod mruby;
 pub mod offset;
 pub mod subsec;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[doc(inline)]
 pub use spinoso_time::tzrs::*;

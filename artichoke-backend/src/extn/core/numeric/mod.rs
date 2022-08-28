@@ -1,7 +1,7 @@
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
-pub mod mruby;
+pub(in crate::extn) mod mruby;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Numeric;
@@ -44,27 +44,6 @@ pub enum Coercion {
 ///
 /// Artichoke represents the `[y, x]` tuple Array as the [`Coercion`] enum, which
 /// orders its values `Coercion::Integer(x, y)`.
-///
-/// # Examples
-///
-/// ```
-/// # use artichoke_backend::prelude::*;
-/// # use artichoke_backend::extn::core::numeric::{self, Coercion};
-/// # fn example() -> Result<(), Box<dyn std::error::Error>> {
-/// # let mut interp = artichoke_backend::interpreter()?;
-/// let x = interp.convert(1_i64);
-/// let y = interp.convert_mut(2.5_f64);
-/// assert_eq!(Coercion::Float(1.0, 2.5), numeric::coerce(&mut interp, x, y)?);
-/// let x = interp.convert_mut(1.2_f64);
-/// let y = interp.convert(3_i64);
-/// assert_eq!(Coercion::Float(1.2, 3.0), numeric::coerce(&mut interp, x, y)?);
-/// let x = interp.convert(1_i64);
-/// let y = interp.convert(2_i64);
-/// assert_eq!(Coercion::Integer(1, 2), numeric::coerce(&mut interp, x, y)?);
-/// # Ok(())
-/// # }
-/// # example().unwrap();
-/// ```
 ///
 /// [numeric]: https://ruby-doc.org/core-3.1.2/Numeric.html#method-i-coerce
 pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Error> {
@@ -128,4 +107,42 @@ pub fn coerce(interp: &mut Artichoke, x: Value, y: Value) -> Result<Coercion, Er
         }
     }
     do_coerce(interp, x, y, 0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Coercion;
+    use crate::test::prelude::*;
+
+    #[test]
+    fn coerce_int_to_float() {
+        let mut interp = interpreter();
+        let x = interp.convert(1_i64);
+        let y = interp.convert_mut(2.5_f64);
+        assert_eq!(Coercion::Float(1.0, 2.5), super::coerce(&mut interp, x, y).unwrap());
+    }
+
+    #[test]
+    fn coerce_float_to_int() {
+        let mut interp = interpreter();
+        let x = interp.convert_mut(1.2_f64);
+        let y = interp.convert(3_i64);
+        assert_eq!(Coercion::Float(1.2, 3.0), super::coerce(&mut interp, x, y).unwrap());
+    }
+
+    #[test]
+    fn coerce_int_to_int() {
+        let mut interp = interpreter();
+        let x = interp.convert(1_i64);
+        let y = interp.convert(2_i64);
+        assert_eq!(Coercion::Integer(1, 2), super::coerce(&mut interp, x, y).unwrap());
+    }
+
+    #[test]
+    fn coerce_float_to_float() {
+        let mut interp = interpreter();
+        let x = interp.convert_mut(1.2_f64);
+        let y = interp.convert_mut(2.5_f64);
+        assert_eq!(Coercion::Float(1.2, 2.5), super::coerce(&mut interp, x, y).unwrap());
+    }
 }

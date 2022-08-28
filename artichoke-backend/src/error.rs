@@ -1,3 +1,10 @@
+//! Error types for Ruby exceptions and unwinding support.
+//!
+//! This module contains the boxed trait object and underlying trait that
+//! unifies all error types in this crate as a Ruby `Exception`.
+//!
+//! [`raise`] can convert any [`RubyException`] into an unwinding action.
+
 use std::borrow::Cow;
 use std::error;
 use std::ffi::CStr;
@@ -7,6 +14,17 @@ use std::hint;
 use crate::sys;
 use crate::{Artichoke, Guard};
 
+/// The `Error` type, a wrapper around a dynamic exception type.
+///
+/// `Error` works a lot like `Box<dyn std::error::Error>`, but with these
+/// differences:
+///
+/// - `Error` requires that the error is `'static`.
+/// - `Error` requires that the error implement [`RubyException`].
+/// - `Error` can convert itself to a backtrace on the underlying Ruby VM.
+///
+/// All types that implement [`RubyException`] are able to be converted to
+/// `Error`.
 #[derive(Debug)]
 pub struct Error(Box<dyn RubyException>);
 

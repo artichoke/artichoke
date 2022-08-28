@@ -63,6 +63,25 @@ pub fn mul(interp: &mut Artichoke, mut ary: Value, mut joiner: Value) -> Result<
     }
 }
 
+pub fn push_single(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Error> {
+    if ary.is_frozen(interp) {
+        return Err(FrozenError::with_message("can't modify frozen Array").into());
+    }
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+
+    // SAFETY: The array is repacked without any intervening interpreter heap
+    // allocations.
+    let array_mut = unsafe { array.as_inner_mut() };
+    array_mut.push(value);
+
+    unsafe {
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
+    }
+
+    Ok(ary)
+}
+
 pub fn element_reference(
     interp: &mut Artichoke,
     mut ary: Value,
@@ -280,25 +299,6 @@ pub fn pop(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     };
 
     Ok(interp.convert(result))
-}
-
-pub fn push(interp: &mut Artichoke, mut ary: Value, value: Value) -> Result<Value, Error> {
-    if ary.is_frozen(interp) {
-        return Err(FrozenError::with_message("can't modify frozen Array").into());
-    }
-    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
-
-    // SAFETY: The array is repacked without any intervening interpreter heap
-    // allocations.
-    let array_mut = unsafe { array.as_inner_mut() };
-    array_mut.push(value);
-
-    unsafe {
-        let inner = array.take();
-        Array::box_into_value(inner, ary, interp)?;
-    }
-
-    Ok(ary)
 }
 
 pub fn reverse(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {

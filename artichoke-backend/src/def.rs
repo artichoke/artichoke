@@ -5,11 +5,12 @@ use std::fmt;
 use std::io::{self, Write as _};
 use std::ptr::NonNull;
 
+use spinoso_exception::{NameError, ScriptError};
+
 use crate::class;
 use crate::convert::BoxUnboxVmValue;
 use crate::core::{ClassRegistry, TryConvertMut};
 use crate::error::{Error, RubyException};
-use crate::extn::core::exception::{NameError, ScriptError};
 use crate::module;
 use crate::sys;
 use crate::Artichoke;

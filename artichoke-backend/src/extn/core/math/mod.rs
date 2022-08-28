@@ -21,8 +21,8 @@ use std::borrow::Cow;
 
 use crate::extn::prelude::*;
 
-pub mod mruby;
-pub mod trampoline;
+pub(in crate::extn) mod mruby;
+pub(super) mod trampoline;
 
 #[doc(inline)]
 pub use spinoso_math::{DomainError, Math, E, PI};

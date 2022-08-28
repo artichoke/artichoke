@@ -86,6 +86,9 @@ impl Args {
 
 /// Main entry point for Artichoke's version of the `ruby` CLI.
 ///
+/// This entry point handles allocating, intitializing, and closing an Artichoke
+/// interpreter.
+///
 /// # Errors
 ///
 /// If an exception is raised on the interpreter, then an error is returned.
@@ -100,12 +103,7 @@ where
     result
 }
 
-/// Main entry point for Artichoke's version of the `ruby` CLI.
-///
-/// # Errors
-///
-/// If an exception is raised on the interpreter, then an error is returned.
-pub fn entrypoint<R, W>(
+fn entrypoint<R, W>(
     interp: &mut Artichoke,
     args: Args,
     mut input: R,

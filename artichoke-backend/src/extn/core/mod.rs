@@ -2,42 +2,42 @@
 
 use crate::extn::prelude::*;
 
-pub mod array;
-pub mod artichoke;
-pub mod basicobject;
-pub mod comparable;
-pub mod enumerable;
-pub mod enumerator;
+pub(crate) mod array;
+pub(crate) mod artichoke;
+pub(crate) mod basicobject;
+pub(crate) mod comparable;
+pub(crate) mod enumerable;
+pub(crate) mod enumerator;
 #[cfg(feature = "core-env")]
-pub mod env;
-pub mod exception;
-pub mod falseclass;
-pub mod float;
-pub mod hash;
-pub mod integer;
-pub mod kernel;
+pub(crate) mod env;
+pub(crate) mod exception;
+pub(crate) mod falseclass;
+pub(crate) mod float;
+pub(crate) mod hash;
+pub(crate) mod integer;
+pub(crate) mod kernel;
 #[cfg(feature = "core-regexp")]
-pub mod matchdata;
+pub(crate) mod matchdata;
 #[cfg(feature = "core-math")]
-pub mod math;
-pub mod method;
-pub mod module;
-pub mod nilclass;
-pub mod numeric;
-pub mod object;
-pub mod proc;
+pub(crate) mod math;
+pub(crate) mod method;
+pub(crate) mod module;
+pub(crate) mod nilclass;
+pub(crate) mod numeric;
+pub(crate) mod object;
+pub(crate) mod proc;
 #[cfg(feature = "core-random")]
-pub mod random;
-pub mod range;
+pub(crate) mod random;
+pub(crate) mod range;
 #[cfg(feature = "core-regexp")]
-pub mod regexp;
-pub mod string;
-pub mod symbol;
-pub mod thread;
+pub(crate) mod regexp;
+pub(crate) mod string;
+pub(crate) mod symbol;
+pub(crate) mod thread;
 #[cfg(feature = "core-time")]
-pub mod time;
-pub mod trueclass;
-pub mod warning;
+pub(crate) mod time;
+pub(crate) mod trueclass;
+pub(crate) mod warning;
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // These core classes are ordered according to the dependency DAG between

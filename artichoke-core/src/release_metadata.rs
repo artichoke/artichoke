@@ -15,7 +15,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > artichoke - Copyright (c) 2019-2020 Ryan Lopopolo \<rjl@hyperbo.la\>
+    /// ```text
+    /// artichoke - Copyright (c) 2019-2020 Ryan Lopopolo \<rjl@hyperbo.la\>
+    /// ```
     fn ruby_copyright(&self) -> &str;
 
     /// A description of the current build.
@@ -24,7 +26,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > artichoke 0.1.0-pre.0 (2021-01-12 revision 4009) [x86_64-apple-darwin]
+    /// ```text
+    /// artichoke 0.1.0-pre.0 (2021-01-12 revision 4009) [x86_64-apple-darwin]
+    /// ```
     fn ruby_description(&self) -> &str;
 
     /// The engine, or VM, used in the current build.
@@ -33,7 +37,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > artichoke-mruby
+    /// ```text
+    /// artichoke-mruby
+    /// ```
     fn ruby_engine(&self) -> &str;
 
     /// The version of the engine, or VM, used in the current build.
@@ -42,7 +48,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > 0.1.0-pre.0
+    /// ```text
+    /// 0.1.0-pre.0
+    /// ```
     fn ruby_engine_version(&self) -> &str;
 
     /// The patch level the current build.
@@ -51,7 +59,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > 0
+    /// ```text
+    /// 0
+    /// ```
     fn ruby_patchlevel(&self) -> &str;
 
     /// The target triple of the platform this build targets.
@@ -62,7 +72,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > x86_64-apple-darwin
+    /// ```text
+    /// x86_64-apple-darwin
+    /// ```
     ///
     /// [triple]: https://forge.rust-lang.org/release/platform-support.html
     fn ruby_platform(&self) -> &str;
@@ -73,7 +85,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > 2021-01-12
+    /// ```text
+    /// 2021-01-12
+    /// ```
     fn ruby_release_date(&self) -> &str;
 
     /// The revision count of the Artichoke git repository used for this build.
@@ -82,7 +96,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > 4009
+    /// ```text
+    /// 4009
+    /// ```
     fn ruby_revision(&self) -> &str;
 
     /// The target MRI Ruby version for this build.
@@ -91,7 +107,9 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > 3.1.2
+    /// ```text
+    /// 3.1.2
+    /// ```
     fn ruby_version(&self) -> &str;
 
     /// A description of the compiler used to build Artichoke.
@@ -100,6 +118,8 @@ pub trait ReleaseMetadata {
     ///
     /// # Examples
     ///
-    /// > rustc 1.49.0 (e1884a8e3 2020-12-29) on x86_64-apple-darwin
+    /// ```text
+    /// rustc 1.49.0 (e1884a8e3 2020-12-29) on x86_64-apple-darwin
+    /// ```
     fn artichoke_compiler_version(&self) -> Option<&str>;
 }

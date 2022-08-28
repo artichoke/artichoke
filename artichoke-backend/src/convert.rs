@@ -2,9 +2,10 @@ use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
+use spinoso_exception::TypeError;
+
 use crate::core::{ClassRegistry, Convert, ConvertMut, TryConvert, TryConvertMut, Value as _};
 use crate::error::{Error, RubyException};
-use crate::extn::core::exception::TypeError;
 use crate::sys;
 use crate::types::{Ruby, Rust};
 use crate::value::Value;

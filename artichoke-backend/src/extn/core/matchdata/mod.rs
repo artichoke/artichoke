@@ -25,8 +25,8 @@ use crate::extn::prelude::*;
 use crate::fmt::WriteError;
 
 mod boxing;
-pub mod mruby;
-pub mod trampoline;
+pub(in crate::extn) mod mruby;
+pub(super) mod trampoline;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Region {
@@ -256,11 +256,6 @@ impl MatchData {
         }
     }
 
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.len().unwrap_or_default() > 0
-    }
-
     #[inline]
     pub fn len(&self) -> Result<usize, Error> {
         let haystack = self.matched_region();
@@ -348,11 +343,6 @@ impl MatchData {
     #[must_use]
     pub fn regexp(&self) -> &Regexp {
         &self.regexp
-    }
-
-    #[inline]
-    pub fn regexp_mut(&mut self) -> &mut Regexp {
-        &mut self.regexp
     }
 
     #[inline]

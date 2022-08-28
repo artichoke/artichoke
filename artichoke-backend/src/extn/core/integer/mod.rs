@@ -5,8 +5,8 @@ use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
 use crate::fmt::WriteError;
 
-pub mod mruby;
-pub mod trampoline;
+pub(in crate::extn) mod mruby;
+pub(super) mod trampoline;
 
 #[repr(transparent)]
 #[derive(Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -146,11 +146,11 @@ impl Integer {
     }
 
     #[inline]
-    pub fn bit(self, bit: i64) -> Result<Self, Error> {
+    pub fn bit(self, bit: i64) -> Self {
         if let Ok(bit) = u32::try_from(bit) {
-            Ok(self.as_i64().checked_shr(bit).map_or(0, |v| v & 1).into())
+            self.as_i64().checked_shr(bit).map_or(0, |v| v & 1).into()
         } else {
-            Ok(Self(0))
+            Self(0)
         }
     }
 

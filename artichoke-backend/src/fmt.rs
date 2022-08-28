@@ -4,9 +4,10 @@ use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
+use spinoso_exception::Fatal;
+
 use crate::core::{ClassRegistry, TryConvertMut};
 use crate::error::{Error, RubyException};
-use crate::extn::core::exception::Fatal;
 use crate::sys;
 use crate::Artichoke;
 
@@ -23,6 +24,7 @@ use crate::Artichoke;
 /// use std::fmt::Write;
 /// # use artichoke_backend::Error;;
 /// # use artichoke_backend::fmt::WriteError;
+///
 /// fn task() -> Result<String, Error> {
 ///     let mut buf = String::new();
 ///     write!(&mut buf, "success!").map_err(WriteError::from)?;

@@ -4,8 +4,8 @@ use crate::convert::{Immediate, UnboxedValueGuard};
 use crate::extn::prelude::*;
 
 pub mod ffi;
-pub mod mruby;
-pub mod trampoline;
+pub(in crate::extn) mod mruby;
+pub(super) mod trampoline;
 
 #[doc(inline)]
 pub use spinoso_symbol::Symbol;

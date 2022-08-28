@@ -8,8 +8,8 @@ use crate::fmt::WriteError;
 
 pub mod args;
 mod ffi;
-pub mod mruby;
-pub mod trampoline;
+pub(in crate::extn) mod mruby;
+pub(super) mod trampoline;
 mod wrapper;
 
 #[doc(inline)]

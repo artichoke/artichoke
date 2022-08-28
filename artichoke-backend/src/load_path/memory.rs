@@ -222,12 +222,13 @@ impl Entry {
 /// - Optional hook to a Rust function to be executed on `require` (similar to a
 ///   MRI C extension rubygem).
 ///
-/// Sources in `Memory` are only writable via the
-/// [`LoadSources`](crate::core::LoadSources) trait. Sources can only be
-/// completely replaced.
+/// Sources in `Memory` are only writable via the [`LoadSources`] trait. Sources
+/// can only be completely replaced.
 ///
 /// These APIs are consumed primarily by the `Kernel::require` implementation in
-/// [`extn::core::kernel::require`](crate::extn::core::kernel::require).
+/// `extn::core::kernel::require`.
+///
+/// [`LoadSources`]: artichoke_core::load::LoadSources
 #[derive(Debug)]
 pub struct Memory {
     fs: HashMap<BString, Entry>,
@@ -253,9 +254,11 @@ impl Memory {
     ///
     /// Sets the current working directory of the virtual file system to
     /// [`RUBY_LOAD_PATH`] for storing Ruby source files. This path is searched
-    /// by [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`].
+    /// by [`Kernel::require`], [`Kernel::require_relative`], and [`Kernel::load`].
     ///
-    /// [`Kernel::require`, `Kernel::require_relative`, and `Kernel::load`]: crate::extn::core::kernel::require
+    /// [`Kernel::require`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
+    /// [`Kernel::require_relative`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require_relative
+    /// [`Kernel::load`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-load
     #[must_use]
     pub fn new() -> Self {
         Self::default()

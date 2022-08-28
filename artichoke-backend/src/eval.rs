@@ -2,11 +2,11 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use scolapasta_path::os_str_to_bytes;
+use spinoso_exception::{ArgumentError, Fatal};
 
 use crate::core::{Eval, LoadSources, Parser};
 use crate::error::Error;
 use crate::exception_handler;
-use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::ffi::InterpreterExtractError;
 use crate::state::parser::Context;
 use crate::sys;

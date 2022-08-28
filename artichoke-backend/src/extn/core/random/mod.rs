@@ -28,8 +28,8 @@ pub use spinoso_random::{Max, Rand, Random};
 use crate::convert::{implicitly_convert_to_int, HeapAllocatedData};
 use crate::extn::prelude::*;
 
-pub mod mruby;
-pub mod trampoline;
+pub(in crate::extn) mod mruby;
+pub(super) mod trampoline;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 enum Rng {
