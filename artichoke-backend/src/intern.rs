@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
 use intaglio::SymbolOverflowError;
-
 use spinoso_exception::Fatal;
 
 use crate::core::{ClassRegistry, Intern, TryConvertMut};
