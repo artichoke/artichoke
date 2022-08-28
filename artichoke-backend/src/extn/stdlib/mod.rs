@@ -1,33 +1,33 @@
 use crate::extn::prelude::*;
 
 #[cfg(feature = "stdlib-abbrev")]
-pub mod abbrev;
+pub(in crate::extn) mod abbrev;
 #[cfg(feature = "stdlib-base64")]
-pub mod base64;
+pub(in crate::extn) mod base64;
 #[cfg(feature = "stdlib-cmath")]
-pub mod cmath;
+pub(in crate::extn) mod cmath;
 #[cfg(feature = "stdlib-delegate")]
-pub mod delegate;
+pub(in crate::extn) mod delegate;
 #[cfg(feature = "stdlib-forwardable")]
-pub mod forwardable;
+pub(in crate::extn) mod forwardable;
 #[cfg(feature = "stdlib-json")]
-pub mod json;
+pub(in crate::extn) mod json;
 #[cfg(feature = "stdlib-monitor")]
-pub mod monitor;
+pub(in crate::extn) mod monitor;
 #[cfg(feature = "stdlib-ostruct")]
-pub mod ostruct;
+pub(in crate::extn) mod ostruct;
 #[cfg(feature = "stdlib-securerandom")]
-pub mod securerandom;
+pub(in crate::extn) mod securerandom;
 #[cfg(feature = "stdlib-set")]
-pub mod set;
+pub(in crate::extn) mod set;
 #[cfg(feature = "stdlib-shellwords")]
-pub mod shellwords;
+pub(in crate::extn) mod shellwords;
 #[cfg(feature = "stdlib-strscan")]
-pub mod strscan;
+pub(in crate::extn) mod strscan;
 #[cfg(feature = "stdlib-time")]
-pub mod time;
+pub(in crate::extn) mod time;
 #[cfg(feature = "stdlib-uri")]
-pub mod uri;
+pub(in crate::extn) mod uri;
 
 #[allow(unused_variables)]
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
