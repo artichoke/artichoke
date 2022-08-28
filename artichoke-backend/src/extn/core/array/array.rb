@@ -99,10 +99,6 @@ class Array
     array
   end
 
-  def <<(obj)
-    push(obj)
-  end
-
   def <=>(other)
     return nil unless other.is_a?(Array)
 

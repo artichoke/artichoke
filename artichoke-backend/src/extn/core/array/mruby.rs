@@ -16,6 +16,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_self_method("[]", ary_cls_constructor, sys::mrb_args_rest())?
         .add_method("+", ary_plus, sys::mrb_args_req(1))?
         .add_method("*", ary_mul, sys::mrb_args_req(1))?
+        .add_method("<<", ary_push_single, sys::mrb_args_req(1))?
         .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))?
         .add_method("[]=", ary_element_assignment, sys::mrb_args_req_and_opt(2, 1))?
         .add_method("clear", ary_clear, sys::mrb_args_none())?
@@ -83,6 +84,22 @@ unsafe extern "C" fn ary_mul(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> s
     let array = Value::from(ary);
     let joiner = Value::from(joiner);
     let result = trampoline::mul(&mut guard, array, joiner);
+    match result {
+        Ok(value) => {
+            let basic = sys::mrb_sys_basic_ptr(ary);
+            sys::mrb_write_barrier(mrb, basic);
+            value.inner()
+        }
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn ary_push_single(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+    let elem = mrb_get_args!(mrb, required = 1);
+    unwrap_interpreter!(mrb, to => guard);
+    let array = Value::from(ary);
+    let elem = Value::from(elem);
+    let result = trampoline::push_single(&mut guard, array, elem);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
