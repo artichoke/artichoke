@@ -20,7 +20,7 @@ use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::exception as exc;
 use crate::extn::prelude::*;
 
-pub mod mruby;
+pub(crate) mod mruby;
 pub mod trampoline;
 
 #[doc(inline)]

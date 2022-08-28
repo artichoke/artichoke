@@ -1,7 +1,7 @@
 use crate::extn::core::integer::Integer;
 use crate::extn::prelude::*;
 
-pub mod mruby;
+pub(crate) mod mruby;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Numeric;

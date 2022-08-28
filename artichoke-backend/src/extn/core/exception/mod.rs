@@ -27,7 +27,7 @@ pub use spinoso_exception::core::*;
 
 use crate::extn::prelude::*;
 
-pub mod mruby;
+pub(crate) mod mruby;
 
 /// Implement traits to convert Spinoso exceptions to artichoke-backend error
 /// types.

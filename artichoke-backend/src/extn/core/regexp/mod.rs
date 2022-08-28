@@ -26,7 +26,7 @@ use crate::extn::prelude::*;
 pub mod backend;
 mod boxing;
 pub mod enc;
-pub mod mruby;
+pub(crate) mod mruby;
 pub mod opts;
 pub mod pattern;
 pub mod syntax;

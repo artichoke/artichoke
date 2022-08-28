@@ -1,5 +1,5 @@
 pub mod integer;
-pub mod mruby;
+pub(crate) mod mruby;
 pub mod require;
 pub mod trampoline;
 

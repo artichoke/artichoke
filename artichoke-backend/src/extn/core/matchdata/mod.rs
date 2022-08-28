@@ -25,7 +25,7 @@ use crate::extn::prelude::*;
 use crate::fmt::WriteError;
 
 mod boxing;
-pub mod mruby;
+pub(crate) mod mruby;
 pub mod trampoline;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]

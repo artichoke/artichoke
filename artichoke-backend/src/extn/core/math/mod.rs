@@ -21,7 +21,7 @@ use std::borrow::Cow;
 
 use crate::extn::prelude::*;
 
-pub mod mruby;
+pub(crate) mod mruby;
 pub mod trampoline;
 
 #[doc(inline)]

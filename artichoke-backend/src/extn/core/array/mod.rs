@@ -8,7 +8,7 @@ use crate::fmt::WriteError;
 
 pub mod args;
 mod ffi;
-pub mod mruby;
+pub(crate) mod mruby;
 pub mod trampoline;
 mod wrapper;
 
