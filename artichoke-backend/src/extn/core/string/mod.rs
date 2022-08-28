@@ -16,7 +16,7 @@ use crate::Artichoke;
 
 mod ffi;
 pub(crate) mod mruby;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 const ENCODING_FLAG_BITPOS: usize = 5;
 

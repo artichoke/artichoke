@@ -22,7 +22,7 @@ use std::borrow::Cow;
 use crate::extn::prelude::*;
 
 pub(crate) mod mruby;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[doc(inline)]
 pub use spinoso_math::{DomainError, Math, E, PI};

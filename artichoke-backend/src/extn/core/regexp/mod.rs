@@ -30,7 +30,7 @@ pub(crate) mod mruby;
 pub mod opts;
 pub mod pattern;
 pub mod syntax;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[cfg(feature = "core-regexp-oniguruma")]
 use backend::onig::Onig;

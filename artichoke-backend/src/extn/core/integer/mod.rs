@@ -6,7 +6,7 @@ use crate::extn::prelude::*;
 use crate::fmt::WriteError;
 
 pub(crate) mod mruby;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[repr(transparent)]
 #[derive(Default, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]

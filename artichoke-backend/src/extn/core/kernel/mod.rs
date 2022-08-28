@@ -1,7 +1,7 @@
 pub mod integer;
 pub(crate) mod mruby;
 pub mod require;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Kernel;

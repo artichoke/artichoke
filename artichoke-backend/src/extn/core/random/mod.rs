@@ -29,7 +29,7 @@ use crate::convert::{implicitly_convert_to_int, HeapAllocatedData};
 use crate::extn::prelude::*;
 
 pub(crate) mod mruby;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 enum Rng {

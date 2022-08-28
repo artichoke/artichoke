@@ -26,7 +26,7 @@ use crate::fmt::WriteError;
 
 mod boxing;
 pub(crate) mod mruby;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct Region {

@@ -26,7 +26,7 @@ use spinoso_env::{ArgumentError as EnvArgumentError, Error as EnvError, InvalidE
 use crate::extn::prelude::*;
 
 pub(crate) mod mruby;
-pub mod trampoline;
+pub(super) mod trampoline;
 
 #[cfg(not(feature = "core-env-system"))]
 type Backend = spinoso_env::Memory;
