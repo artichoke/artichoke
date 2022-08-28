@@ -52,25 +52,8 @@ impl RubyException for DomainError {
 
 impl From<DomainError> for Error {
     fn from(exception: DomainError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<DomainError>> for Error {
-    fn from(exception: Box<DomainError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<DomainError> for Box<dyn RubyException> {
-    fn from(exception: DomainError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<DomainError>> for Box<dyn RubyException> {
-    fn from(exception: Box<DomainError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 

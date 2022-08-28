@@ -59,25 +59,8 @@ impl RubyException for ArenaSavepointError {
 
 impl From<ArenaSavepointError> for Error {
     fn from(exception: ArenaSavepointError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<ArenaSavepointError>> for Error {
-    fn from(exception: Box<ArenaSavepointError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<ArenaSavepointError> for Box<dyn RubyException> {
-    fn from(exception: ArenaSavepointError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<ArenaSavepointError>> for Box<dyn RubyException> {
-    fn from(exception: Box<ArenaSavepointError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 

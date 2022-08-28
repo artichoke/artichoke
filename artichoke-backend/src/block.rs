@@ -45,25 +45,8 @@ impl RubyException for NoBlockGiven {
 
 impl From<NoBlockGiven> for Error {
     fn from(exception: NoBlockGiven) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<NoBlockGiven>> for Error {
-    fn from(exception: Box<NoBlockGiven>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<NoBlockGiven> for Box<dyn RubyException> {
-    fn from(exception: NoBlockGiven) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<NoBlockGiven>> for Box<dyn RubyException> {
-    fn from(exception: Box<NoBlockGiven>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 

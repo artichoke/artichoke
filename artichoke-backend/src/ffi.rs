@@ -97,25 +97,8 @@ impl RubyException for InterpreterExtractError {
 
 impl From<InterpreterExtractError> for Error {
     fn from(exception: InterpreterExtractError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<InterpreterExtractError>> for Error {
-    fn from(exception: Box<InterpreterExtractError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<InterpreterExtractError> for Box<dyn RubyException> {
-    fn from(exception: InterpreterExtractError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<InterpreterExtractError>> for Box<dyn RubyException> {
-    fn from(exception: Box<InterpreterExtractError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 
