@@ -14,11 +14,12 @@ pub trait MrbGarbageCollection {
     /// C API.
     ///
     /// Normally objects created via the C API are marked as permanently alive
-    /// ("white" GC color) with a call to
-    /// [`mrb_gc_protect`](sys::mrb_gc_protect).
+    /// ("white" GC color) with a call to [`mrb_gc_protect`].
     ///
     /// The returned [`ArenaIndex`] implements [`Drop`], so it is sufficient to
     /// let it go out of scope to ensure objects are eventually collected.
+    ///
+    /// [`mrb_gc_protect`]: sys::mrb_gc_protect
     fn create_arena_savepoint(&mut self) -> Result<ArenaIndex<'_>, ArenaSavepointError>;
 
     /// Retrieve the number of live objects on the interpreter heap.
@@ -31,18 +32,21 @@ pub trait MrbGarbageCollection {
 
     /// Perform an incremental garbage collection.
     ///
-    /// An incremental GC is less computationally expensive than a
-    /// [full GC](MrbGarbageCollection::full_gc), but does not guarantee that
-    /// all dead objects will be reaped. You may wish to use an incremental GC
-    /// if you are operating with an interpreter in a loop.
+    /// An incremental GC is less computationally expensive than a [full GC],
+    /// but does not guarantee that all dead objects will be reaped. You may
+    /// wish to use an incremental GC if you are operating with an interpreter
+    /// in a loop.
+    ///
+    /// [full GC]: MrbGarbageCollection::full_gc
     fn incremental_gc(&mut self) -> Result<(), Error>;
 
     /// Perform a full garbage collection.
     ///
     /// A full GC guarantees that all dead objects will be reaped, so it is more
-    /// expensive than an
-    /// [incremental GC](MrbGarbageCollection::incremental_gc). You may wish to
-    /// use a full GC if you are memory constrained.
+    /// expensive than an [incremental GC]. You may wish to use a full GC if you
+    /// are memory constrained.
+    ///
+    /// [incremental GC]: MrbGarbageCollection::incremental_gc
     fn full_gc(&mut self) -> Result<(), Error>;
 
     /// Enable garbage collection.
@@ -62,10 +66,8 @@ impl MrbGarbageCollection for Artichoke {
     }
 
     fn live_object_count(&mut self) -> i32 {
-        unsafe {
-            self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_live_objects(mrb))
-                .unwrap_or_default()
-        }
+        let live_objects = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_live_objects(mrb)) };
+        live_objects.unwrap_or(0)
     }
 
     fn mark_value(&mut self, value: &Value) -> Result<(), Error> {
@@ -82,7 +84,6 @@ impl MrbGarbageCollection for Artichoke {
         Ok(())
     }
 
-    // TODO: propagate errors.
     fn full_gc(&mut self) -> Result<(), Error> {
         unsafe {
             self.with_ffi_boundary(|mrb| sys::mrb_full_gc(mrb))?;
@@ -92,26 +93,14 @@ impl MrbGarbageCollection for Artichoke {
 
     fn enable_gc(&mut self) -> Result<State, Error> {
         unsafe {
-            let state = self.with_ffi_boundary(|mrb| {
-                if sys::mrb_sys_gc_enable(mrb) {
-                    State::Enabled
-                } else {
-                    State::Disabled
-                }
-            })?;
+            let state = self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_enable(mrb).into())?;
             Ok(state)
         }
     }
 
     fn disable_gc(&mut self) -> Result<State, Error> {
         unsafe {
-            let state = self.with_ffi_boundary(|mrb| {
-                if sys::mrb_sys_gc_disable(mrb) {
-                    State::Enabled
-                } else {
-                    State::Disabled
-                }
-            })?;
+            let state = self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_disable(mrb).into())?;
             Ok(state)
         }
     }
@@ -123,8 +112,19 @@ pub enum State {
     Enabled,
 }
 
+impl From<bool> for State {
+    fn from(state: bool) -> Self {
+        if state {
+            Self::Enabled
+        } else {
+            Self::Disabled
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::State;
     use crate::test::prelude::*;
 
     #[test]
@@ -166,6 +166,20 @@ mod tests {
             baseline_object_count + 1,
             "Arena restore + full GC should free unreachable objects",
         );
+    }
+
+    #[test]
+    fn gc_state() {
+        let mut interp = interpreter();
+        assert_eq!(interp.enable_gc().unwrap(), State::Enabled);
+        assert_eq!(interp.enable_gc().unwrap(), State::Enabled);
+
+        assert_eq!(interp.disable_gc().unwrap(), State::Enabled);
+        assert_eq!(interp.disable_gc().unwrap(), State::Disabled);
+        assert_eq!(interp.disable_gc().unwrap(), State::Disabled);
+
+        assert_eq!(interp.enable_gc().unwrap(), State::Disabled);
+        assert_eq!(interp.enable_gc().unwrap(), State::Enabled);
     }
 
     #[test]
