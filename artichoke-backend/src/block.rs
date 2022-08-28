@@ -144,7 +144,10 @@ impl Block {
 
     pub fn yield_arg(&self, interp: &mut Artichoke, arg: &Value) -> Result<Value, Error> {
         if arg.is_dead(interp) {
-            return Err(Fatal::from("Value yielded to block is dead. This indicates a bug in the mruby garbage collector. Please leave a comment at https://github.com/artichoke/artichoke/issues/1336.").into());
+            let message = "Value yielded to block is dead. \
+                           This indicates a bug in the mruby garbage collector. \
+                           Please leave a comment at https://github.com/artichoke/artichoke/issues/1336.";
+            return Err(Fatal::with_message(message).into());
         }
         let result = unsafe { interp.with_ffi_boundary(|mrb| protect::block_yield(mrb, self.inner(), arg.inner()))? };
         match result {
