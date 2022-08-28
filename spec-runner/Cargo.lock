@@ -39,7 +39,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-backend"
-version = "0.18.0"
+version = "0.19.0"
 dependencies = [
  "artichoke-core",
  "artichoke-load-path",
