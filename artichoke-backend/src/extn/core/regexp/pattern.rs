@@ -14,21 +14,6 @@ pub struct Pattern {
 }
 
 impl Pattern {
-    /// Construct a new, empty pattern.
-    #[must_use]
-    pub const fn new() -> Self {
-        Self {
-            pattern: Vec::new(),
-            options: Options::new(),
-        }
-    }
-
-    /// Return the pattern as a byte slice.
-    #[must_use]
-    pub fn pattern(&self) -> &[u8] {
-        self.pattern.as_slice()
-    }
-
     /// Consume self and return the inner pattern byte vector.
     #[must_use]
     pub fn into_pattern(self) -> Vec<u8> {
