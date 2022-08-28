@@ -23,6 +23,7 @@ use crate::Artichoke;
 /// use std::fmt::Write;
 /// # use artichoke_backend::Error;;
 /// # use artichoke_backend::fmt::WriteError;
+///
 /// fn task() -> Result<String, Error> {
 ///     let mut buf = String::new();
 ///     write!(&mut buf, "success!").map_err(WriteError::from)?;
