@@ -23,7 +23,7 @@
 use crate::convert::HeapAllocatedData;
 use crate::extn::prelude::*;
 
-pub(crate) mod mruby;
+pub(in crate::extn) mod mruby;
 pub mod offset;
 pub mod subsec;
 pub(super) mod trampoline;

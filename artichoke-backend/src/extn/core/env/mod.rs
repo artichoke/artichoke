@@ -25,7 +25,7 @@ use spinoso_env::{ArgumentError as EnvArgumentError, Error as EnvError, InvalidE
 
 use crate::extn::prelude::*;
 
-pub(crate) mod mruby;
+pub(in crate::extn) mod mruby;
 pub(super) mod trampoline;
 
 #[cfg(not(feature = "core-env-system"))]

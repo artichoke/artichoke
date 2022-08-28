@@ -1,5 +1,5 @@
 pub mod integer;
-pub(crate) mod mruby;
+pub(in crate::extn) mod mruby;
 pub mod require;
 pub(super) mod trampoline;
 

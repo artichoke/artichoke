@@ -4,7 +4,7 @@ use crate::convert::{Immediate, UnboxedValueGuard};
 use crate::extn::prelude::*;
 
 pub mod ffi;
-pub(crate) mod mruby;
+pub(in crate::extn) mod mruby;
 pub(super) mod trampoline;
 
 #[doc(inline)]

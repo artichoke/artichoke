@@ -3,7 +3,7 @@ use std::fmt;
 use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
 
-pub(crate) mod mruby;
+pub(in crate::extn) mod mruby;
 
 #[repr(transparent)]
 #[derive(Default, Clone, Copy, PartialEq, PartialOrd)]

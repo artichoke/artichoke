@@ -5,7 +5,7 @@ use crate::extn::core::numeric::{self, Coercion, Outcome};
 use crate::extn::prelude::*;
 use crate::fmt::WriteError;
 
-pub(crate) mod mruby;
+pub(in crate::extn) mod mruby;
 pub(super) mod trampoline;
 
 #[repr(transparent)]
