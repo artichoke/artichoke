@@ -171,7 +171,7 @@ pub use crate::interpreter::{interpreter, interpreter_with_config};
 /// The prelude may grow over time as additional items see ubiquitous use.
 pub mod prelude {
     pub use artichoke_core::prelude::*;
-    pub use spinoso_exception::*;
+    pub use spinoso_exception::core::*;
 
     pub use crate::error::{self, Error, RubyException};
     pub use crate::gc::MrbGarbageCollection;
