@@ -116,25 +116,8 @@ impl RubyException for UnboxRubyError {
 
 impl From<UnboxRubyError> for Error {
     fn from(exception: UnboxRubyError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<UnboxRubyError>> for Error {
-    fn from(exception: Box<UnboxRubyError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<UnboxRubyError> for Box<dyn RubyException> {
-    fn from(exception: UnboxRubyError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<UnboxRubyError>> for Box<dyn RubyException> {
-    fn from(exception: Box<UnboxRubyError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 
@@ -184,24 +167,7 @@ impl RubyException for BoxIntoRubyError {
 
 impl From<BoxIntoRubyError> for Error {
     fn from(exception: BoxIntoRubyError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<BoxIntoRubyError>> for Error {
-    fn from(exception: Box<BoxIntoRubyError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<BoxIntoRubyError> for Box<dyn RubyException> {
-    fn from(exception: BoxIntoRubyError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<BoxIntoRubyError>> for Box<dyn RubyException> {
-    fn from(exception: Box<BoxIntoRubyError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }

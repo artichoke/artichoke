@@ -120,25 +120,8 @@ impl RubyException for InterpreterAllocError {
 
 impl From<InterpreterAllocError> for Error {
     fn from(exception: InterpreterAllocError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<InterpreterAllocError>> for Error {
-    fn from(exception: Box<InterpreterAllocError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<InterpreterAllocError> for Box<dyn RubyException> {
-    fn from(exception: InterpreterAllocError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<InterpreterAllocError>> for Box<dyn RubyException> {
-    fn from(exception: Box<InterpreterAllocError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 

@@ -32,25 +32,8 @@ impl RubyException for ConvertBytesError {
 
 impl From<ConvertBytesError> for Error {
     fn from(exception: ConvertBytesError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<ConvertBytesError>> for Error {
-    fn from(exception: Box<ConvertBytesError>) -> Self {
-        Self::from(*exception)
-    }
-}
-
-impl From<ConvertBytesError> for Box<dyn RubyException> {
-    fn from(exception: ConvertBytesError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<ConvertBytesError>> for Box<dyn RubyException> {
-    fn from(exception: Box<ConvertBytesError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 

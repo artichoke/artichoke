@@ -287,25 +287,8 @@ impl RubyException for ConstantNameError {
 
 impl From<ConstantNameError> for Error {
     fn from(exception: ConstantNameError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<ConstantNameError>> for Error {
-    fn from(exception: Box<ConstantNameError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<ConstantNameError> for Box<dyn RubyException> {
-    fn from(exception: ConstantNameError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<ConstantNameError>> for Box<dyn RubyException> {
-    fn from(exception: Box<ConstantNameError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 
@@ -446,25 +429,8 @@ impl RubyException for NotDefinedError {
 
 impl From<NotDefinedError> for Error {
     fn from(exception: NotDefinedError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<NotDefinedError>> for Error {
-    fn from(exception: Box<NotDefinedError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<NotDefinedError> for Box<dyn RubyException> {
-    fn from(exception: NotDefinedError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<NotDefinedError>> for Box<dyn RubyException> {
-    fn from(exception: Box<NotDefinedError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 

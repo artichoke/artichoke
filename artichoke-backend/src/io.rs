@@ -94,24 +94,7 @@ impl RubyException for IoError {
 
 impl From<IoError> for Error {
     fn from(exception: IoError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<IoError>> for Error {
-    fn from(exception: Box<IoError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<IoError> for Box<dyn RubyException> {
-    fn from(exception: IoError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<IoError>> for Box<dyn RubyException> {
-    fn from(exception: Box<IoError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }

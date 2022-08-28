@@ -147,27 +147,7 @@ impl RubyException for SymbolOverflowError {
 impl From<SymbolOverflowError> for Error {
     #[inline]
     fn from(exception: SymbolOverflowError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<SymbolOverflowError>> for Error {
-    #[inline]
-    fn from(exception: Box<SymbolOverflowError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<SymbolOverflowError> for Box<dyn RubyException> {
-    #[inline]
-    fn from(exception: SymbolOverflowError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<SymbolOverflowError>> for Box<dyn RubyException> {
-    #[inline]
-    fn from(exception: Box<SymbolOverflowError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }

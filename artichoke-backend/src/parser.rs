@@ -81,24 +81,7 @@ impl RubyException for IncrementLinenoError {
 
 impl From<IncrementLinenoError> for Error {
     fn from(exception: IncrementLinenoError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<IncrementLinenoError>> for Error {
-    fn from(exception: Box<IncrementLinenoError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<IncrementLinenoError> for Box<dyn RubyException> {
-    fn from(exception: IncrementLinenoError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<IncrementLinenoError>> for Box<dyn RubyException> {
-    fn from(exception: Box<IncrementLinenoError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }

@@ -42,25 +42,8 @@ macro_rules! ruby_exception_impl {
     ($exc:ident) => {
         impl From<$exc> for Error {
             fn from(exception: $exc) -> Error {
-                Error::from(Box::<dyn RubyException>::from(exception))
-            }
-        }
-
-        impl From<Box<$exc>> for Error {
-            fn from(exception: Box<$exc>) -> Error {
-                Error::from(Box::<dyn RubyException>::from(exception))
-            }
-        }
-
-        impl From<$exc> for Box<dyn RubyException> {
-            fn from(exception: $exc) -> Box<dyn RubyException> {
-                Box::new(exception)
-            }
-        }
-
-        impl From<Box<$exc>> for Box<dyn RubyException> {
-            fn from(exception: Box<$exc>) -> Box<dyn RubyException> {
-                exception
+                let err: Box<dyn RubyException> = Box::new(exception);
+                Self::from(err)
             }
         }
 

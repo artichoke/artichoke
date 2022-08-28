@@ -358,25 +358,8 @@ impl RubyException for ArgCountError {
 
 impl From<ArgCountError> for Error {
     fn from(exception: ArgCountError) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<Box<ArgCountError>> for Error {
-    fn from(exception: Box<ArgCountError>) -> Self {
-        Self::from(Box::<dyn RubyException>::from(exception))
-    }
-}
-
-impl From<ArgCountError> for Box<dyn RubyException> {
-    fn from(exception: ArgCountError) -> Box<dyn RubyException> {
-        Box::new(exception)
-    }
-}
-
-impl From<Box<ArgCountError>> for Box<dyn RubyException> {
-    fn from(exception: Box<ArgCountError>) -> Box<dyn RubyException> {
-        exception
+        let err: Box<dyn RubyException> = Box::new(exception);
+        Self::from(err)
     }
 }
 
