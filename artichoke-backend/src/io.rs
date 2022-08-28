@@ -5,7 +5,6 @@ use std::io;
 
 use crate::core::{ClassRegistry, Io, TryConvertMut};
 use crate::error::{Error, RubyException};
-use crate::extn::core::exception;
 use crate::ffi::InterpreterExtractError;
 use crate::state::output::Output;
 use crate::sys;
@@ -87,7 +86,10 @@ impl RubyException for IoError {
 
     fn as_mrb_value(&self, interp: &mut Artichoke) -> Option<sys::mrb_value> {
         let message = interp.try_convert_mut(self.message()).ok()?;
-        let value = interp.new_instance::<exception::IOError>(&[message]).ok().flatten()?;
+        let value = interp
+            .new_instance::<spinoso_exception::IOError>(&[message])
+            .ok()
+            .flatten()?;
         Some(value.inner())
     }
 }

@@ -1,8 +1,9 @@
 use std::borrow::Cow;
 
+use spinoso_exception::ScriptError;
+
 use crate::core::{ClassRegistry, IncrementLinenoError, Parser, TryConvertMut};
 use crate::error::{Error, RubyException};
-use crate::extn::core::exception::ScriptError;
 use crate::ffi::InterpreterExtractError;
 use crate::state::parser::Context;
 use crate::sys;

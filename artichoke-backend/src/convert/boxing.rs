@@ -5,10 +5,11 @@ use std::mem::ManuallyDrop;
 use std::ops::{Deref, DerefMut};
 use std::ptr;
 
+use spinoso_exception::TypeError;
+
 use crate::core::Value as _;
 use crate::def::NotDefinedError;
 use crate::error::Error;
-use crate::extn::core::exception::TypeError;
 use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::types::Ruby;

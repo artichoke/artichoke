@@ -4,9 +4,10 @@ use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
+use spinoso_exception::Fatal;
+
 use crate::core::{ClassRegistry, TryConvertMut};
 use crate::error::{Error, RubyException};
-use crate::extn::core::exception::Fatal;
 use crate::sys;
 use crate::Artichoke;
 

@@ -17,7 +17,6 @@
 //! [`getrandom`]: https://crates.io/crates/getrandom
 
 use crate::convert::implicitly_convert_to_int;
-use crate::extn::core::exception as exc;
 use crate::extn::prelude::*;
 
 pub(in crate::extn) mod mruby;
@@ -42,7 +41,7 @@ impl From<SecureRandomError> for Error {
 
 impl From<ArgumentError> for Error {
     fn from(err: ArgumentError) -> Self {
-        exc::ArgumentError::from(err.message()).into()
+        spinoso_exception::ArgumentError::from(err.message()).into()
     }
 }
 
@@ -86,7 +85,7 @@ impl TryConvertMut<Option<Value>, Max> for Artichoke {
                     let max = implicitly_convert_to_int(self, max).map_err(|_| {
                         let mut message = b"invalid argument - ".to_vec();
                         message.extend_from_slice(max.inspect(self).as_slice());
-                        exc::ArgumentError::from(message)
+                        spinoso_exception::ArgumentError::from(message)
                     })?;
                     Ok(Max::Integer(max))
                 }

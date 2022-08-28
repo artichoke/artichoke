@@ -1,9 +1,10 @@
 use std::fmt::Write;
 
+use spinoso_exception::IOError;
+
 use crate::core::{ModuleRegistry, TryConvertMut, Value as _, Warn};
 use crate::def::NotDefinedError;
 use crate::error::Error;
-use crate::extn::core::exception::IOError;
 use crate::extn::core::warning::Warning;
 use crate::ffi::InterpreterExtractError;
 use crate::fmt::WriteError;

@@ -292,7 +292,8 @@ impl PartialEq for Spec {
 
 #[cfg(test)]
 mod tests {
-    use crate::extn::core::exception::StandardError;
+    use spinoso_exception::StandardError;
+
     use crate::extn::core::kernel::Kernel;
     use crate::test::prelude::*;
 

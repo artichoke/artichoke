@@ -2,9 +2,10 @@ use std::borrow::Cow;
 
 use intaglio::SymbolOverflowError;
 
+use spinoso_exception::Fatal;
+
 use crate::core::{ClassRegistry, Intern, TryConvertMut};
 use crate::error::{Error, RubyException};
-use crate::extn::core::exception::Fatal;
 use crate::ffi::InterpreterExtractError;
 use crate::sys;
 use crate::Artichoke;

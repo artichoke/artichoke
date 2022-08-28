@@ -8,11 +8,11 @@ use std::ptr;
 use artichoke_core::convert::{Convert, ConvertMut, TryConvertMut};
 use artichoke_core::intern::Intern;
 use artichoke_core::value::Value as ValueCore;
+use spinoso_exception::{ArgumentError, Fatal};
 
 use crate::core::ClassRegistry;
 use crate::error::{Error, RubyException};
 use crate::exception_handler;
-use crate::extn::core::exception::{ArgumentError, Fatal};
 use crate::gc::MrbGarbageCollection;
 use crate::sys::{self, protect};
 use crate::types::{self, Ruby};

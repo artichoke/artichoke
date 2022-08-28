@@ -2,10 +2,11 @@ use std::borrow::Cow;
 use std::error;
 use std::fmt;
 
+use spinoso_exception::{Fatal, TypeError};
+
 use crate::core::{ClassRegistry, TryConvertMut, Value as _};
 use crate::error::{Error, RubyException};
 use crate::exception_handler;
-use crate::extn::core::exception::{Fatal, TypeError};
 use crate::sys::{self, protect};
 use crate::types::{self, Ruby};
 use crate::value::Value;
