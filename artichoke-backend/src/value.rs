@@ -1,3 +1,5 @@
+//! Boxed values on the Ruby interpreter heap.
+
 use std::borrow::Cow;
 use std::error;
 use std::fmt;
