@@ -4,6 +4,7 @@ use std::num::NonZeroUsize;
 use std::str;
 
 use regex::{Match, Regex, RegexBuilder};
+use scolapasta_string_escape::format_debug_escape_into;
 
 use super::super::{NameToCaptureLocations, NilableString};
 use crate::extn::core::matchdata::MatchData;
@@ -49,7 +50,7 @@ impl Utf8 {
 impl fmt::Display for Utf8 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let pattern = self.config.pattern();
-        format_unicode_debug_into(f, pattern).map_err(WriteError::into_inner)
+        format_debug_escape_into(f, pattern)
     }
 }
 
@@ -127,9 +128,9 @@ impl RegexpType for Utf8 {
         // cannot panic.
         //
         // In practice this error will never be triggered since the only
-        // fallible call in `format_unicode_debug_into` is to `write!` which
+        // fallible call in `format_debug_escape_into` is to `write!` which
         // never `panic!`s for a `String` formatter, which we are using here.
-        let _ = format_unicode_debug_into(&mut pattern, self.source.pattern());
+        let _ = format_debug_escape_into(&mut pattern, self.source.pattern());
         debug.push_str(pattern.replace('/', r"\/").as_str());
         debug.push('/');
         debug.push_str(self.source.options().as_display_modifier());

@@ -4,6 +4,7 @@ use std::fmt::Write as _;
 
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::prelude::*;
+use crate::fmt::WriteError;
 
 pub fn acos(interp: &mut Artichoke, value: Value) -> Result<f64, Error> {
     let value = interp.coerce_to_float(value)?;

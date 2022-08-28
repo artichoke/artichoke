@@ -28,13 +28,14 @@ dependencies = [
  "clap",
  "log",
  "rustyline",
+ "scolapasta-string-escape",
  "termcolor",
  "tz-rs",
 ]
 
 [[package]]
 name = "artichoke-backend"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "artichoke-core",
  "artichoke-load-path",

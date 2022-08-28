@@ -4,6 +4,7 @@ use std::ops::Deref;
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string, UnboxedValueGuard};
 use crate::extn::prelude::*;
+use crate::fmt::WriteError;
 
 pub mod args;
 mod ffi;

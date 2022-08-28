@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-backend"
-version = "0.15.0"
+version = "0.16.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
 rust-version = "1.63.0"

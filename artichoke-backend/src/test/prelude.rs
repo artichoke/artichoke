@@ -22,7 +22,6 @@ pub use crate::ffi::InterpreterExtractError;
 pub use crate::module;
 pub use crate::prelude::*;
 pub use crate::state::parser::Context;
-pub use crate::string::{format_unicode_debug_into, WriteError};
 pub use crate::sys;
 pub use crate::value::Value;
 
