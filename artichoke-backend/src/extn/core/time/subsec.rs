@@ -82,7 +82,7 @@ impl Subsec {
     /// various accuracies, and can overflow. e.g. 1001 milliseconds, is 1
     /// second, and `1_000_000` nanoseconds.
     #[must_use]
-    pub fn to_tuple(&self) -> (i64, u32) {
+    pub fn to_tuple(self) -> (i64, u32) {
         (self.secs, self.nanos)
     }
 }
