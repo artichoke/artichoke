@@ -141,7 +141,10 @@ impl ValueCore for Value {
         block: Option<Self::Block>,
     ) -> Result<Self::Value, Self::Error> {
         if self.is_dead(interp) {
-            return Err(Fatal::from("Value receiver for function call is dead. This indicates a bug in the mruby garbage collector. Please leave a comment at https://github.com/artichoke/artichoke/issues/1336.").into());
+            let message = "Value receiver for function call is dead. \
+                           This indicates a bug in the mruby garbage collector. \
+                           Please leave a comment at https://github.com/artichoke/artichoke/issues/1336.";
+            return Err(Fatal::with_message(message).into());
         }
         if let Ok(arg_count_error) = ArgCountError::try_from(args) {
             emit_fatal_warning!("Value::funcall invoked with too many arguments: {}", arg_count_error);
