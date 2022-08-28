@@ -113,7 +113,7 @@ pub mod macros;
 mod artichoke;
 pub mod block;
 pub mod class;
-pub mod class_registry;
+mod class_registry;
 mod coerce_to_numeric;
 mod constant;
 pub mod convert;
@@ -135,7 +135,7 @@ mod load;
 pub mod load_path;
 pub mod method;
 pub mod module;
-pub mod module_registry;
+mod module_registry;
 mod parser;
 mod platform_string;
 #[cfg(feature = "core-random")]
