@@ -137,7 +137,7 @@ pub mod method;
 pub mod module;
 pub mod module_registry;
 mod parser;
-pub mod platform_string;
+mod platform_string;
 #[cfg(feature = "core-random")]
 mod prng;
 mod regexp;

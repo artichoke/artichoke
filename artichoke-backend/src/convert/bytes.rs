@@ -2,12 +2,12 @@ use core::mem;
 use std::borrow::Cow;
 use std::ffi::{OsStr, OsString};
 
+use scolapasta_path::{os_str_to_bytes, os_string_to_bytes};
 use spinoso_string::String;
 
 use crate::convert::BoxUnboxVmValue;
 use crate::core::TryConvertMut;
 use crate::error::Error;
-use crate::platform_string::{os_str_to_bytes, os_string_to_bytes};
 use crate::value::Value;
 use crate::Artichoke;
 
