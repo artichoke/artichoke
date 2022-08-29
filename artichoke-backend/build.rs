@@ -40,6 +40,7 @@ mod libs {
     use std::path::PathBuf;
     use std::process::{Command, ExitStatus, Stdio};
     use std::str;
+    use std::thread;
 
     use super::paths;
     use crate::Wasm;
@@ -311,15 +312,18 @@ mod libs {
     }
 
     pub fn build(wasm: Option<Wasm>, out_dir: &OsStr) {
-        staticlib(
-            wasm,
-            "libartichokemruby.a",
-            mruby_include_dirs()
-                .chain(mrbgems_include_dirs())
-                .chain(mrbsys_include_dirs()),
-            mruby_sources().chain(mrbgems_sources()).chain(mrbsys_sources()),
-        );
-        bindgen(wasm, out_dir);
+        thread::scope(|s| {
+            s.spawn(|| {
+                let include_dirs = mruby_include_dirs()
+                    .chain(mrbgems_include_dirs())
+                    .chain(mrbsys_include_dirs());
+                let sources = mruby_sources().chain(mrbgems_sources()).chain(mrbsys_sources());
+                staticlib(wasm, "libartichokemruby.a", include_dirs, sources);
+            });
+            s.spawn(|| {
+                bindgen(wasm, out_dir);
+            });
+        });
     }
 }
 
