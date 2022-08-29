@@ -37,8 +37,8 @@ where
     let hint = iter.size_hint();
     let modifiers = options.as_inline_modifier();
     let mut parsed = Vec::with_capacity(2 + modifiers.len() + 2 + hint.1.unwrap_or(hint.0));
-    parsed.extend(b"(?");
-    parsed.extend(modifiers.as_bytes());
+    parsed.extend_from_slice(b"(?");
+    parsed.extend_from_slice(modifiers.as_bytes());
     parsed.push(b':');
     parsed.extend(iter);
     parsed.push(b')');

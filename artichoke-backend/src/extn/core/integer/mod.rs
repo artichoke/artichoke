@@ -101,7 +101,7 @@ impl Integer {
         if let Some(encoding) = encoding {
             let mut message = b"encoding parameter of Integer#chr (given ".to_vec();
             message.extend(encoding.inspect(interp));
-            message.extend(b") not supported");
+            message.extend_from_slice(b") not supported");
             Err(NotImplementedError::from(message).into())
         } else {
             // When no encoding is supplied, MRI assumes the encoding is
