@@ -195,7 +195,7 @@ impl System {
             }
             if name.find_byte(b'=').is_some() {
                 let mut message = b"Invalid argument - setenv(".to_vec();
-                message.extend(name.to_vec());
+                message.extend_from_slice(name);
                 message.push(b')');
                 return Err(InvalidError::from(message).into());
             }
