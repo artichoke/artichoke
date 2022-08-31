@@ -46,6 +46,7 @@ dependencies = [
  "bstr",
  "cc",
  "intaglio",
+ "once_cell",
  "onig",
  "qed",
  "regex",
