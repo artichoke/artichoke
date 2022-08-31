@@ -15,6 +15,7 @@ mod array;
 mod boolean;
 mod boxing;
 mod bytes;
+mod conv;
 mod fixnum;
 mod float;
 mod float_to_int;
@@ -25,6 +26,9 @@ mod nilable;
 mod string;
 
 pub use boxing::{BoxUnboxVmValue, HeapAllocated, HeapAllocatedData, Immediate, UnboxedValueGuard};
+#[allow(clippy::module_name_repetitions)]
+#[allow(clippy::useless_attribute)]
+pub use conv::{convert_type, ConvertOnError};
 pub use float_to_int::float_to_int;
 pub use implicit::{
     implicitly_convert_to_int, implicitly_convert_to_nilable_string, implicitly_convert_to_spinoso_string,
