@@ -561,9 +561,9 @@ checksum = "30605ed38110721cffe812de8f878a1418a310831a3afd73e294b912222cd7c0"
 
 [[package]]
 name = "raw-parts"
-version = "1.1.1"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d684eb692d561551750a408e516759f550d51033179e7d2f676efc4495b3d4e"
+checksum = "b1e22ce49f28be0887a992cf42172c8c75facdb74e3e1a7eb0f459cf2fcc95d7"
 
 [[package]]
 name = "regex"
