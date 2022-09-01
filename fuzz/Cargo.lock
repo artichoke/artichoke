@@ -143,9 +143,9 @@ dependencies = [
 
 [[package]]
 name = "intaglio"
-version = "1.6.1"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd49aef5b63b46af0844b99cea402c3063d9a052249265d322657d83cf464211"
+checksum = "1665db2526543d5fca893c1004e6a908953fb6c64c44b03b2f41267f89e5f881"
 
 [[package]]
 name = "jobserver"
