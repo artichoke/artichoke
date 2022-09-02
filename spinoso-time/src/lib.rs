@@ -34,18 +34,15 @@
 //! ```
 //!
 //! This implementation of `Time` is dependent on the selected feature. The
-//! **chrono** feature uses the [`chrono`] crate, and the **tzrs** feature uses
-//! the [`tzdb`] crate for getting the local timezone information, and combines
-//! with the [`tz-rs`] crate to generate the time.
+//! **tzrs** feature uses the [`tzdb`] crate for getting the local timezone
+//! information, and combines with the [`tz-rs`] crate to generate the time.
 //!
 //! # Crate features
 //!
-//! This crate supports two backends which are independent of each other. The
-//! availability of different backends is controlled by Cargo features, all of
-//! which are enabled by default:
+//! This crate supports several backends which are independent of each other.
+//! The availability of different backends is controlled by Cargo features, all
+//! of which are enabled by default:
 //!
-//! - **chrono**: Enable a `Time` backend which is implemented with the
-//!   [`chrono`] crate.
 //! - **tzrs**: Enable a `Time` backend which is implemented by the [`tz-rs`] and
 //!   [`tzdb`] crates.
 //!
@@ -61,12 +58,11 @@
 //! This crate requires [`std`], the Rust Standard Library.
 //!
 //! [`Time`]: https://ruby-doc.org/core-3.1.2/Time.html
-//! [`chrono`]: https://crates.io/crates/chrono
 //! [`tz-rs`]: https://crates.io/crates/tz-rs
 //! [`tzdb`]: https://crates.io/crates/tzdb
 
 // Ensure code blocks in `README.md` compile
-#[cfg(all(doctest, feature = "chrono"))]
+#[cfg(all(doctest, feature = "tzrs"))]
 #[doc = include_str!("../README.md")]
 mod readme {}
 
@@ -77,8 +73,6 @@ pub use strftime;
 
 mod time;
 
-#[cfg(feature = "chrono")]
-pub use time::chrono;
 #[cfg(feature = "tzrs")]
 pub use time::tzrs;
 

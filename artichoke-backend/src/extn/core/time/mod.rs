@@ -14,11 +14,11 @@
 //! ```
 //!
 //! This implementation of `Time` supports the system clock via the
-//! [`chrono`] and [`chrono-tz`] crates.
+//! [`tz-rs`] and [`tzdb`] crates.
 //!
 //! [`Time`]: https://ruby-doc.org/core-3.1.2/Time.html
-//! [`chrono`]: https://crates.io/crates/chrono
-//! [`chrono-tz`]: https://crates.io/crates/chrono-tz
+//! [`tz-rs`]: https://crates.io/crates/tz-rs
+//! [`tzdb`]: https://crates.io/crates/tzdb
 
 use crate::convert::HeapAllocatedData;
 use crate::extn::prelude::*;

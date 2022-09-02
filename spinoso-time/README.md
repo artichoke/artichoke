@@ -23,10 +23,9 @@ class, it is globally available:
 Time.now
 ```
 
-This implementation of `Time` is dependent on the selected feature. The
-**chrono** feature uses the [`chrono`] crate, and the **tzrs** feature uses the
-[`tzdb`] crate for getting the local timezone information, and combines with the
-[`tz-rs`] crate to generate the time.
+This implementation of `Time` is dependent on the selected feature. The **tzrs**
+feature uses the [`tzdb`] crate for getting the local timezone information, and
+combines with the [`tz-rs`] crate to generate the time.
 
 _Spinoso_ refers to _Carciofo spinoso di Sardegna_, the thorny artichoke of
 Sardinia. The data structures defined in the `spinoso` family of crates form the
@@ -38,19 +37,19 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-time = { version = "0.6.0", features = ["chrono"] }
+spinoso-time = { version = "0.7.0", features = ["tzrs"] }
 ```
 
 ## Examples
 
-Assuming feature `chrono` is selected:
+Assuming feature `tzrs` is selected:
 
 ```rust
-use spinoso_time::chrono::Time;
+use spinoso_time::tzrs::Time;
 // Get a local time set to the current time.
-let now = Time::now();
+let now = Time::now().unwrap();
 // Convert the local time to UTC.
-let utc = now.to_utc();
+let utc = now.to_utc().unwrap();
 assert!(utc.is_utc());
 // Extract the Unix timestamp.
 let timestamp = utc.to_int();
@@ -58,12 +57,10 @@ let timestamp = utc.to_int();
 
 ## Crate features
 
-This crate supports two backends which are independent of each other. The
+This crate supports several backends which are independent of each other. The
 availability of different backends is controlled by Cargo features, all of which
 are enabled by default:
 
-- **chrono**: Enable a `Time` backend which is implemented with the [`chrono`]
-  crate.
 - **tzrs**: Enable a `Time` backend which is implemented by the [`tz-rs`] and
   [`tzdb`] crates.
 
@@ -83,7 +80,6 @@ This crate requires [`std`], the Rust Standard Library.
 `spinoso-time` is licensed with the [MIT License](LICENSE) (c) Ryan Lopopolo.
 
 [`time`]: https://ruby-doc.org/core-3.1.2/Time.html
-[`chrono`]: https://crates.io/crates/chrono
 [`tz-rs`]: https://crates.io/crates/tz-rs
 [`tzdb`]: https://crates.io/crates/tzdb
 [`std`]: https://doc.rust-lang.org/stable/std/
