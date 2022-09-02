@@ -39,7 +39,7 @@ pub(in crate::extn) mod mruby;
 /// [`RubyException` in spinoso-exception]: spinoso_exception::RubyException
 /// [backtraces]: RubyException::vm_backtrace
 macro_rules! ruby_exception_impl {
-    ($exc:ident) => {
+    ($exc:ty) => {
         impl From<$exc> for Error {
             fn from(exception: $exc) -> Error {
                 let err: Box<dyn RubyException> = Box::new(exception);
