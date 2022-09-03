@@ -3,6 +3,7 @@ accepted = [
   "Apache-2.0",
   "Apache-2.0 WITH LLVM-exception",
   "BSL-1.0",
+  "Unicode-DFS-2016",
 ]
 targets = [
   "x86_64-unknown-linux-gnu",

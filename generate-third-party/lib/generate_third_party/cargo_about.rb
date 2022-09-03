@@ -30,9 +30,10 @@ module Artichoke
           command = ['cargo', 'about', 'generate', @template, '--manifest-path', manifest_path, '--config', @config]
           out, err, status = Open3.capture3(command.shelljoin)
 
+          warn err unless err.strip.empty?
+
           unless status.success?
             warn 'Generate failed'
-            warn err
             exit 1
           end
 
