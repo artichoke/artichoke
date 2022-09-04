@@ -1,5 +1,10 @@
 use std::ffi::{OsStr, OsString};
+#[cfg(unix)]
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
+#[cfg(target_os = "wasi")]
+use std::os::wasi::ffi::{OsStrExt, OsStringExt};
+#[cfg(not(any(unix, target_os = "wasi")))]
+error!("Internal: This module can only be compiled on unix and wasi");
 
 use super::ConvertBytesError;
 
@@ -21,7 +26,10 @@ pub fn os_string_to_bytes(os_string: OsString) -> Result<Vec<u8>, ConvertBytesEr
 #[cfg(test)]
 mod tests {
     use std::ffi::OsString;
+    #[cfg(unix)]
     use std::os::unix::ffi::OsStringExt;
+    #[cfg(target_os = "wasi")]
+    use std::os::wasi::ffi::OsStringExt;
     use std::str;
 
     use super::{bytes_to_os_str, os_str_to_bytes, os_string_to_bytes};

@@ -9,15 +9,15 @@
 use std::path::{Path, PathBuf};
 
 mod default;
-#[cfg(unix)]
-mod unix;
+#[cfg(any(unix, target_os = "wasi"))]
+mod unix_wasi;
 #[cfg(windows)]
 mod windows;
 
-#[cfg(not(any(unix, windows)))]
+#[cfg(not(any(unix, windows, target_os = "wasi")))]
 use default as imp;
-#[cfg(unix)]
-use unix as imp;
+#[cfg(any(unix, target_os = "wasi"))]
+use unix_wasi as imp;
 #[cfg(windows)]
 use windows as imp;
 

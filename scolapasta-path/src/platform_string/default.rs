@@ -69,4 +69,10 @@ mod tests {
             assert_eq!(os_string_to_bytes(os_string).unwrap(), bytes);
         }
     }
+
+    #[test]
+    fn architecture_specific_impl() {
+        #[cfg(any(unix, windows, target_os = "wasi"))]
+        unreachable!("Shouldn't be using default imp on this architecture")
+    }
 }
