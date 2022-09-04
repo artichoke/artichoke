@@ -1919,20 +1919,15 @@ impl String {
     /// # Examples
     ///
     /// ```
-    /// use core::ops::Range;
     /// use spinoso_string::String;
     ///
+    /// let s = String::ascii(b"abc".to_vec());
+    /// assert_eq!(s.get_char_slice(1..3), Some("bc".as_bytes()));
+    /// assert_eq!(s.get_char_slice(10..15), None);
+    ///
     /// let s = String::utf8(b"abc\xF0\x9F\x92\x8E\xFF".to_vec()); // "abc💎\xFF"
-    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  1 }), Some(&b"a"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  3 }), Some(&b"abc"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  4 }), Some("abc💎".as_bytes()));
-    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  5 }), Some(&b"abc\xF0\x9F\x92\x8E\xFF"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start:  3, end: 10 }), Some(&b"\xF0\x9F\x92\x8E\xFF"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start:  4, end: 10 }), Some(&b"\xFF"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start: 10, end: 15 }), None);
-    /// assert_eq!(s.get_char_slice(Range { start: 15, end: 10 }), None);
-    /// assert_eq!(s.get_char_slice(Range { start: 15, end:  1 }), None);
-    /// assert_eq!(s.get_char_slice(Range { start:  4, end:  1 }), Some(&b""[..]));
+    /// assert_eq!(s.get_char_slice(1..4), Some("bc💎".as_bytes()));
+    /// assert_eq!(s.get_char_slice(4..1), Some("".as_bytes()));
     /// ```
     ///
     /// [UTF-8 encoding]: crate::Encoding::Utf8
