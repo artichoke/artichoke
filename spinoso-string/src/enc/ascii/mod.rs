@@ -198,7 +198,15 @@ impl AsciiString {
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
         let Range { start, end } = range;
 
-        self.inner.get(start..end).or_else(|| self.inner.get(start..))
+        self.inner.get(start..end).or_else(|| {
+            if start > self.inner.len() {
+                None
+            } else if end <= start {
+                Some(&[])
+            } else {
+                self.inner.get(start..)
+            }
+        })
     }
 
     #[inline]
@@ -538,10 +546,6 @@ mod tests {
         assert_eq!(s.get_char_slice(4..5), None);
         assert_eq!(s.get_char_slice(4..1), None);
         assert_eq!(s.get_char_slice(3..1), Some(&b""[..]));
-
-        // FIXME: Before removing fast path in get_char_slice from String, this:
-        assert_eq!(s.get_char_slice(2..1), Some(&b"c"[..]));
-        // ... should become this:
-        // assert_eq!(s.get_char_slice(2..1), Some(&b""[..]));
+        assert_eq!(s.get_char_slice(2..1), Some(&b""[..]));
     }
 }
