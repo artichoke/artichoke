@@ -1,5 +1,8 @@
 use std::ffi::{OsStr, OsString};
+#[cfg(unix)]
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
+#[cfg(target_os = "wasi")]
+use std::os::wasi::ffi::{OsStrExt, OsStringExt};
 use std::path::PathBuf;
 
 use super::is_explicit_relative_bytes;
@@ -18,7 +21,10 @@ pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, PathBuf> {
 #[cfg(test)]
 mod tests {
     use std::ffi::{OsStr, OsString};
+    #[cfg(unix)]
     use std::os::unix::ffi::{OsStrExt, OsStringExt};
+    #[cfg(target_os = "wasi")]
+    use std::os::wasi::ffi::{OsStrExt, OsStringExt};
     use std::path::PathBuf;
 
     use super::{is_explicit_relative, normalize_slashes};
