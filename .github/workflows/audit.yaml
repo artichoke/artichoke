@@ -30,6 +30,14 @@ jobs:
   rust:
     name: Audit Rust Dependencies
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        checks:
+          - advisories
+          - bans licenses sources
+
+    # Prevent sudden announcement of a new advisory from failing ci:
+    continue-on-error: ${{ matrix.checks == 'advisories' }}
 
     steps:
       - name: Checkout repository
@@ -41,7 +49,6 @@ jobs:
           rustup toolchain install stable --profile minimal
           echo "::endgroup::"
           echo "::group::set default toolchain"
-          rm -rf rust-toolchain
           rustup default stable
           echo "::endgroup::"
           echo "::group::rustup version"
@@ -60,11 +67,8 @@ jobs:
             cargo +stable generate-lockfile --verbose
           fi
 
-      - name: Setup cargo-deny
-        run: curl -sL "https://github.com/EmbarkStudios/cargo-deny/releases/download/0.11.3/cargo-deny-0.11.3-x86_64-unknown-linux-musl.tar.gz" | sudo tar xvz -C /usr/local/bin/ --strip-components=1
-
-      - name: Show cargo-deny version
-        run: cargo-deny --version
-
-      - name: Run cargo-deny
-        run: cargo-deny --locked check --show-stats
+      - uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          arguments: --locked --all-features
+          command: check ${{ matrix.checks }}
+          command-arguments: --show-stats
