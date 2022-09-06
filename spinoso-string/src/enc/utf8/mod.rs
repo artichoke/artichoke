@@ -285,8 +285,116 @@ impl Utf8String {
     #[inline]
     #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
-        // TODO: use fast path rejection from `get_char` here too
         let Range { start, end } = range;
+
+        // Fast path the lookup if the end of the range is before the start.
+        if end < start {
+            // Yes, these types of ranges are allowed and they return `""`.
+            //
+            // ```
+            // [3.0.1] > "aaa"[1..0]
+            // => ""
+            // [3.0.1] > "aaa"[2..0]
+            // => ""
+            // [3.0.1] > "aaa"[2..1]
+            // => ""
+            // [3.0.1] > "💎🦀😅"[2..1]
+            // => ""
+            // [3.0.1] > "💎🦀😅"[3..0]
+            // => ""
+            // ```
+            //
+            // but only if `start` is within the string.
+            //
+            // ```
+            // [3.0.1] > "aaa"[10..4]
+            // => nil
+            // [3.0.1] > "aaa"[10..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[10..4]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[10..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[6..0]
+            // => nil
+            // [3.0.1] > "💎🦀😅"[4..0]
+            // => nil
+            // ```
+            //
+            // attempt to short-circuit with a cheap length retrieval
+            if start > self.len() || start > self.char_len() {
+                return None;
+            }
+            return Some(&[]);
+        }
+
+        // If the start of the range is beyond the character count of the
+        // string, the whole lookup must fail.
+        //
+        // Slice lookups where the start is just beyond the last character index
+        // always return an empty slice.
+        //
+        // ```
+        // [3.0.1] > "aaa"[10, 0]
+        // => nil
+        // [3.0.1] > "aaa"[10, 7]
+        // => nil
+        // [3.0.1] > "aaa"[3, 7]
+        // => ""
+        // [3.0.1] > "🦀💎"[2, 0]
+        // => ""
+        // [3.0.1] > "🦀💎"[3, 1]
+        // => nil
+        // [3.0.1] > "🦀💎"[2, 1]
+        // => ""
+        // ```
+        //
+        // Fast path rejection for indexes beyond bytesize, which is cheap to
+        // retrieve.
+        if start > self.len() {
+            return None;
+        }
+        match self.char_len() {
+            char_length if start > char_length => return None,
+            char_length if start == char_length => return Some(&[]),
+            _ => {}
+        }
+
+        // The span is guaranteed to at least partially overlap now.
+        match end - start {
+            // Empty substrings are present in all strings, even empty ones.
+            //
+            // ```
+            // [3.0.1] > "aaa"[""]
+            // => ""
+            // [3.0.1] > ""[""]
+            // => ""
+            // [3.0.1] > ""[0, 0]
+            // => ""
+            // [3.0.1] > "aaa"[0, 0]
+            // => ""
+            // [3.0.1] > "aaa"[2, 0]
+            // => ""
+            // [3.0.1] > "🦀💎"[1, 0]
+            // => ""
+            // [3.0.1] > "🦀💎"[2, 0]
+            // => ""
+            // ```
+            0 => return Some(&[]),
+            // Delegate to the specialized single char lookup, which allows the
+            // remainder of this routine to fall back to the general case of
+            // multi-character spans.
+            //
+            // ```
+            // [3.0.1] > "abc"[2, 1]
+            // => "c"
+            // [3.0.1] > "🦀💎"[1, 1]
+            // => "💎"
+            // ```
+            1 => return self.get_char(start),
+            _ => {}
+        }
+
         // Fast path for trying to treat the conventionally UTF-8 string
         // as entirely ASCII.
         //
@@ -1081,5 +1189,32 @@ mod tests {
         // which demonstrates the "substitution of maximal subparts" strategy.
         let s = Utf8String::from(b"\xF0\x9F\x87");
         assert_eq!(s.chr(), b"\xF0");
+    }
+
+    #[test]
+    fn get_char_slice_valid_range() {
+        let s = Utf8String::from(b"a\xF0\x9F\x92\x8E\xFF".to_vec()); // "a💎\xFF"
+        assert_eq!(s.get_char_slice(0..0), Some(&b""[..]));
+        assert_eq!(s.get_char_slice(0..1), Some(&b"a"[..]));
+        assert_eq!(s.get_char_slice(0..2), Some("a💎".as_bytes()));
+        assert_eq!(s.get_char_slice(0..3), Some(&b"a\xF0\x9F\x92\x8E\xFF"[..]));
+        assert_eq!(s.get_char_slice(0..4), Some(&b"a\xF0\x9F\x92\x8E\xFF"[..]));
+        assert_eq!(s.get_char_slice(1..1), Some(&b""[..]));
+        assert_eq!(s.get_char_slice(1..2), Some("💎".as_bytes()));
+        assert_eq!(s.get_char_slice(1..3), Some(&b"\xF0\x9F\x92\x8E\xFF"[..]));
+    }
+
+    #[test]
+    #[allow(clippy::reversed_empty_ranges)]
+    fn get_char_slice_invalid_range() {
+        let s = Utf8String::from(b"a\xF0\x9F\x92\x8E\xFF".to_vec()); // "a💎\xFF"
+        assert_eq!(s.get_char_slice(4..5), None);
+        assert_eq!(s.get_char_slice(4..1), None);
+        assert_eq!(s.get_char_slice(3..1), Some(&b""[..]));
+        assert_eq!(s.get_char_slice(2..1), Some(&b""[..]));
+        assert_eq!(s.get_char_slice(7..10), None);
+        assert_eq!(s.get_char_slice(10..8), None);
+        assert_eq!(s.get_char_slice(10..5), None);
+        assert_eq!(s.get_char_slice(10..2), None);
     }
 }

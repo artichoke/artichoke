@@ -196,7 +196,15 @@ impl BinaryString {
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
         let Range { start, end } = range;
 
-        self.inner.get(start..end).or_else(|| self.inner.get(start..))
+        self.inner.get(start..end).or_else(|| {
+            if start > self.inner.len() {
+                None
+            } else if end <= start {
+                Some(&[])
+            } else {
+                self.inner.get(start..)
+            }
+        })
     }
 
     #[inline]
@@ -500,5 +508,28 @@ mod tests {
         let mut s = BinaryString::from("�");
         s.make_capitalized();
         assert_eq!(s, "�");
+    }
+
+    #[test]
+    fn get_char_slice_valid_range() {
+        let s = BinaryString::from("abc");
+        assert_eq!(s.get_char_slice(0..0), Some(&b""[..]));
+        assert_eq!(s.get_char_slice(0..1), Some(&b"a"[..]));
+        assert_eq!(s.get_char_slice(0..2), Some(&b"ab"[..]));
+        assert_eq!(s.get_char_slice(0..3), Some(&b"abc"[..]));
+        assert_eq!(s.get_char_slice(0..4), Some(&b"abc"[..]));
+        assert_eq!(s.get_char_slice(1..1), Some(&b""[..]));
+        assert_eq!(s.get_char_slice(1..2), Some(&b"b"[..]));
+        assert_eq!(s.get_char_slice(1..3), Some(&b"bc"[..]));
+    }
+
+    #[test]
+    #[allow(clippy::reversed_empty_ranges)]
+    fn get_char_slice_invalid_range() {
+        let s = BinaryString::from("abc");
+        assert_eq!(s.get_char_slice(4..5), None);
+        assert_eq!(s.get_char_slice(4..1), None);
+        assert_eq!(s.get_char_slice(3..1), Some(&b""[..]));
+        assert_eq!(s.get_char_slice(2..1), Some(&b""[..]));
     }
 }

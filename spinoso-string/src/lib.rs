@@ -1919,20 +1919,15 @@ impl String {
     /// # Examples
     ///
     /// ```
-    /// use core::ops::Range;
     /// use spinoso_string::String;
     ///
+    /// let s = String::ascii(b"abc".to_vec());
+    /// assert_eq!(s.get_char_slice(1..3), Some("bc".as_bytes()));
+    /// assert_eq!(s.get_char_slice(10..15), None);
+    ///
     /// let s = String::utf8(b"abc\xF0\x9F\x92\x8E\xFF".to_vec()); // "abc💎\xFF"
-    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  1 }), Some(&b"a"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  3 }), Some(&b"abc"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  4 }), Some("abc💎".as_bytes()));
-    /// assert_eq!(s.get_char_slice(Range { start:  0, end:  5 }), Some(&b"abc\xF0\x9F\x92\x8E\xFF"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start:  3, end: 10 }), Some(&b"\xF0\x9F\x92\x8E\xFF"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start:  4, end: 10 }), Some(&b"\xFF"[..]));
-    /// assert_eq!(s.get_char_slice(Range { start: 10, end: 15 }), None);
-    /// assert_eq!(s.get_char_slice(Range { start: 15, end: 10 }), None);
-    /// assert_eq!(s.get_char_slice(Range { start: 15, end:  1 }), None);
-    /// assert_eq!(s.get_char_slice(Range { start:  4, end:  1 }), Some(&b""[..]));
+    /// assert_eq!(s.get_char_slice(1..4), Some("bc💎".as_bytes()));
+    /// assert_eq!(s.get_char_slice(4..1), Some("".as_bytes()));
     /// ```
     ///
     /// [UTF-8 encoding]: crate::Encoding::Utf8
@@ -1942,120 +1937,6 @@ impl String {
     #[inline]
     #[must_use]
     pub fn get_char_slice(&self, range: Range<usize>) -> Option<&'_ [u8]> {
-        let Range { start, end } = range;
-
-        // Fast path the lookup if the end of the range is before the start.
-        if end < start {
-            // Yes, these types of ranges are allowed and they return `""`.
-            //
-            // ```
-            // [3.0.1] > "aaa"[1..0]
-            // => ""
-            // [3.0.1] > "aaa"[2..0]
-            // => ""
-            // [3.0.1] > "aaa"[2..1]
-            // => ""
-            // [3.0.1] > "aaa"[3..0]
-            // => ""
-            // [3.0.1] > "💎🦀😅"[2..1]
-            // => ""
-            // [3.0.1] > "💎🦀😅"[3..0]
-            // => ""
-            // ```
-            //
-            // but only if `start` is within the string.
-            //
-            // ```
-            // [3.0.1] > "aaa"[10..4]
-            // => nil
-            // [3.0.1] > "aaa"[10..4]
-            // => nil
-            // [3.0.1] > "aaa"[10..0]
-            // => nil
-            // [3.0.1] > "💎🦀😅"[10..4]
-            // => nil
-            // [3.0.1] > "💎🦀😅"[10..0]
-            // => nil
-            // [3.0.1] > "💎🦀😅"[6..0]
-            // => nil
-            // [3.0.1] > "💎🦀😅"[4..0]
-            // => nil
-            // ```
-            //
-            // attempt to short-circuit with a cheap length retrieval
-            if start > self.len() || start > self.char_len() {
-                return None;
-            }
-            return Some(&[]);
-        }
-
-        // If the start of the range is beyond the character count of the
-        // string, the whole lookup must fail.
-        //
-        // Slice lookups where the start is just beyond the last character index
-        // always return an empty slice.
-        //
-        // ```
-        // [3.0.1] > "aaa"[10, 0]
-        // => nil
-        // [3.0.1] > "aaa"[10, 7]
-        // => nil
-        // [3.0.1] > "aaa"[3, 7]
-        // => ""
-        // [3.0.1] > "🦀💎"[2, 0]
-        // => ""
-        // [3.0.1] > "🦀💎"[3, 1]
-        // => nil
-        // [3.0.1] > "🦀💎"[2, 1]
-        // => ""
-        // ```
-        //
-        // Fast path rejection for indexes beyond bytesize, which is cheap to
-        // retrieve.
-        if start > self.len() {
-            return None;
-        }
-        match self.char_len() {
-            char_length if start > char_length => return None,
-            char_length if start == char_length => return Some(&[]),
-            _ => {}
-        }
-
-        // The span is guaranteed to at least partially overlap now.
-        match end - start {
-            // Empty substrings are present in all strings, even empty ones.
-            //
-            // ```
-            // [3.0.1] > "aaa"[""]
-            // => ""
-            // [3.0.1] > ""[""]
-            // => ""
-            // [3.0.1] > ""[0, 0]
-            // => ""
-            // [3.0.1] > "aaa"[0, 0]
-            // => ""
-            // [3.0.1] > "aaa"[2, 0]
-            // => ""
-            // [3.0.1] > "🦀💎"[1, 0]
-            // => ""
-            // [3.0.1] > "🦀💎"[2, 0]
-            // => ""
-            // ```
-            0 => return Some(&[]),
-            // Delegate to the specialized single char lookup, which allows the
-            // remainder of this routine to fall back to the general case of
-            // multi-character spans.
-            //
-            // ```
-            // [3.0.1] > "abc"[2, 1]
-            // => "c"
-            // [3.0.1] > "🦀💎"[1, 1]
-            // => "💎"
-            // ```
-            1 => return self.get_char(start),
-            _ => {}
-        }
-
         self.inner.get_char_slice(range)
     }
 
