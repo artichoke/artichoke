@@ -14,7 +14,7 @@ keywords = ["artichoke", "escape", "no_std", "ruby"]
 categories = ["encoding", "no-std", "parser-implementations"]
 
 [dependencies]
-bstr = { version = "0.2.9", default-features = false }
+bstr = { version = "1.0.0", default-features = false }
 
 [features]
 default = ["std"]
