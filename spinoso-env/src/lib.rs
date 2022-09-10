@@ -66,13 +66,17 @@
 //! process:
 //!
 //! ```
+//! # #[cfg(feature = "system-env")]
 //! # use spinoso_env::System;
+//! # #[cfg(feature = "system-env")]
 //! const ENV: System = System::new();
+//! # #[cfg(feature = "system-env")]
 //! # fn example() -> Result<(), spinoso_env::Error> {
 //! ENV.put(b"RUBY", Some(b"Artichoke"))?;
 //! assert!(ENV.get(b"PATH")?.is_some());
 //! # Ok(())
 //! # }
+//! # #[cfg(feature = "system-env")]
 //! # example().unwrap()
 //! ```
 //!
@@ -91,7 +95,7 @@
 //! [`std::env`]: module@std::env
 
 // Ensure code blocks in `README.md` compile
-#[cfg(doctest)]
+#[cfg(all(doctest, feature = "system-env"))]
 #[doc = include_str!("../README.md")]
 mod readme {}
 
@@ -99,6 +103,8 @@ use core::fmt;
 use std::borrow::Cow;
 use std::error;
 
+#[cfg(feature = "system-env")]
+use scolapasta_path::ConvertBytesError;
 use scolapasta_string_escape::format_debug_escape_into;
 
 mod env;
@@ -136,6 +142,13 @@ pub enum Error {
     ///
     /// See [`InvalidError`].
     Invalid(InvalidError),
+}
+
+#[cfg(feature = "system-env")]
+impl From<ConvertBytesError> for Error {
+    fn from(err: ConvertBytesError) -> Self {
+        Self::Argument(err.into())
+    }
 }
 
 impl From<ArgumentError> for Error {
@@ -196,6 +209,13 @@ impl From<&'static str> for ArgumentError {
     #[inline]
     fn from(message: &'static str) -> Self {
         Self::with_message(message)
+    }
+}
+
+#[cfg(feature = "system-env")]
+impl From<ConvertBytesError> for ArgumentError {
+    fn from(_err: ConvertBytesError) -> Self {
+        Self::with_message("bytes could not be converted to a platform string")
     }
 }
 

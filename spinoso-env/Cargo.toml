@@ -15,13 +15,14 @@ categories = ["os", "wasm"]
 
 [dependencies]
 bstr = { version = "1.0.0", default-features = false }
+scolapasta-path = { version = "0.3.0", path = "../scolapasta-path", optional = true }
 scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
 
 [features]
 default = ["system-env"]
 # Enable an `ENV` implementation that access the system environment via
 # `std::env::var_os`. These APIs enable Ruby to manipulate the host system.
-system-env = ["bstr/std"]
+system-env = ["dep:scolapasta-path"]
 
 [package.metadata.docs.rs]
 all-features = true

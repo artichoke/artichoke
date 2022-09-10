@@ -11,7 +11,7 @@ repository = "https://github.com/artichoke/artichoke"
 readme = "README.md"
 license = "MIT"
 keywords = ["filesystem", "path"]
-categories = ["filesystem"]
+categories = ["filesystem", "wasm"]
 
 [dependencies]
 
