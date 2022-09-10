@@ -2,7 +2,8 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::env;
 
-use bstr::{ByteSlice, ByteVec};
+use bstr::ByteSlice;
+use scolapasta_path::{bytes_to_os_str, os_string_to_bytes};
 
 use crate::{ArgumentError, Error, InvalidError};
 
@@ -123,11 +124,9 @@ impl System {
             // `nil` since these names are invalid at the OS level.
             Ok(None)
         } else {
-            let name = name
-                .to_os_str()
-                .map_err(|_| ArgumentError::with_message("name could not be converted to a platform string"))?;
+            let name = bytes_to_os_str(name)?;
             if let Some(value) = env::var_os(name) {
-                let value = Vec::from_os_string(value).map(Cow::Owned);
+                let value = os_string_to_bytes(value).map(Cow::Owned);
                 Ok(value.ok())
             } else {
                 Ok(None)
@@ -203,20 +202,14 @@ impl System {
                 let message = "Invalid argument - setenv()";
                 return Err(InvalidError::with_message(message).into());
             }
-            let name = name
-                .to_os_str()
-                .map_err(|_| ArgumentError::with_message("name could not be converted to a platform string"))?;
-            let value = value
-                .to_os_str()
-                .map_err(|_| ArgumentError::with_message("value could not be converted to a platform string"))?;
+            let name = bytes_to_os_str(name)?;
+            let value = bytes_to_os_str(value)?;
             env::set_var(name, value);
             Ok(())
         } else if name.is_empty() || name.find_byte(b'=').is_some() {
             Ok(())
         } else {
-            let name = name
-                .to_os_str()
-                .map_err(|_| ArgumentError::with_message("name could not be converted to a platform string"))?;
+            let name = bytes_to_os_str(name)?;
             env::remove_var(name);
             Ok(())
         }
@@ -255,10 +248,8 @@ impl System {
     pub fn to_map(self) -> Result<HashMap<Bytes, Bytes>, ArgumentError> {
         let mut map = HashMap::new();
         for (name, value) in env::vars_os() {
-            let name = Vec::from_os_string(name)
-                .map_err(|_| ArgumentError::with_message("name could not be converted to a platform string"))?;
-            let value = Vec::from_os_string(value)
-                .map_err(|_| ArgumentError::with_message("value could not be converted to a platform string"))?;
+            let name = os_string_to_bytes(name)?;
+            let value = os_string_to_bytes(value)?;
             map.insert(name, value);
         }
         Ok(map)

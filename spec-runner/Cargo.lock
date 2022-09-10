@@ -675,6 +675,7 @@ name = "spinoso-env"
 version = "0.2.0"
 dependencies = [
  "bstr",
+ "scolapasta-path",
  "scolapasta-string-escape",
 ]
 
