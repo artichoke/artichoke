@@ -21,7 +21,7 @@ termcolor = "1.1.0"
 toml = { version = "0.5.8", default-features = false }
 
 [dev-dependencies]
-bstr = { version = "0.2.9", default-features = false }
+bstr = { version = "1.0.0", default-features = false }
 
 # `spec-runner` is a regression testing tool
 # Remove it from the main artichoke workspace.
