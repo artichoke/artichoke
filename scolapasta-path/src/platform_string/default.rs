@@ -8,6 +8,11 @@ pub fn bytes_to_os_str(bytes: &[u8]) -> Result<&OsStr, ConvertBytesError> {
     Ok(OsStr::new(s))
 }
 
+pub fn bytes_to_os_string(bytes: Vec<u8>) -> Result<OsString, ConvertBytesError> {
+    let s = String::from_utf8(bytes).map_err(|_| ConvertBytesError::new())?;
+    Ok(OsString::from(s))
+}
+
 pub fn os_str_to_bytes(os_str: &OsStr) -> Result<&[u8], ConvertBytesError> {
     let s = os_str.to_str().ok_or_else(ConvertBytesError::new)?;
     Ok(s.as_bytes())
@@ -23,13 +28,14 @@ mod tests {
     use std::ffi::OsString;
     use std::str;
 
-    use super::{bytes_to_os_str, os_str_to_bytes, os_string_to_bytes};
+    use super::{bytes_to_os_str, bytes_to_os_string, os_str_to_bytes, os_string_to_bytes};
 
     #[test]
     fn utf8_bytes_convert_to_os_str() {
         let test_cases: &[&[u8]] = &[b"", b"abc", b"abc\0", b"\0abc", b"abc/xyz"];
         for &bytes in test_cases {
             bytes_to_os_str(bytes).unwrap();
+            bytes_to_os_string(bytes.to_vec()).unwrap();
         }
     }
 
@@ -38,6 +44,7 @@ mod tests {
         let test_cases: &[&[u8]] = &[b"\xFF", b"\xFE", b"abc/\xFF/\xFE", b"\0\xFF", b"\xFF\0"];
         for &bytes in test_cases {
             bytes_to_os_str(bytes).unwrap_err();
+            bytes_to_os_string(bytes.to_vec()).unwrap_err();
         }
     }
 
@@ -64,8 +71,7 @@ mod tests {
     fn bytes_os_string_round_trip() {
         let test_cases: &[&[u8]] = &[b"", b"abc", b"abc\0", b"\0abc", b"abc/xyz"];
         for &bytes in test_cases {
-            let s = str::from_utf8(bytes).unwrap();
-            let os_string = OsString::from(s.to_owned());
+            let os_string = bytes_to_os_string(bytes.to_owned()).unwrap();
             assert_eq!(os_string_to_bytes(os_string).unwrap(), bytes);
         }
     }

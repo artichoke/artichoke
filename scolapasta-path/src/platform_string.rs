@@ -44,6 +44,30 @@ pub fn bytes_to_os_str(bytes: &[u8]) -> Result<&OsStr, ConvertBytesError> {
     imp::bytes_to_os_str(bytes)
 }
 
+/// Convert a byte vec to a platform-specific [`OsString`].
+///
+/// Unsupported platforms fallback to converting through [`String`].
+///
+/// # Examples
+///
+/// ```
+/// # use std::ffi::OsString;
+/// # use scolapasta_path::bytes_to_os_string;
+/// let bytes = b"/etc/passwd".to_vec();
+/// assert_eq!(bytes_to_os_string(bytes), Ok(OsString::from("/etc/passwd")));
+/// ```
+///
+/// # Errors
+///
+/// On unix-like platforms, this function is infallible.
+///
+/// On Windows, if the given byte slice does not contain valid UTF-8, an error
+/// is returned.
+#[inline]
+pub fn bytes_to_os_string(bytes: Vec<u8>) -> Result<OsString, ConvertBytesError> {
+    imp::bytes_to_os_string(bytes)
+}
+
 /// Convert a platform-specific [`OsStr`] to a byte slice.
 ///
 /// Unsupported platforms fallback to converting through [`str`].
