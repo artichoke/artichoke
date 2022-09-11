@@ -120,6 +120,7 @@ pub fn convert_type(
     convert_to: Ruby,
     type_name: &str,
     method: &str,
+    raise: ConvertOnError,
 ) -> Result<Value, Error> {
     if value.ruby_type() == convert_to {
         return Ok(value);
@@ -130,7 +131,7 @@ pub fn convert_type(
             .find(|conversion| conversion.method == method)
             .unwrap_or_else(|| panic!("{method} is not a valid conversion method"));
 
-        convert_type_inner(interp, value, type_name, conversion, ConvertOnError::Raise)?
+        convert_type_inner(interp, value, type_name, conversion, raise)?
     };
 
     if converted.ruby_type() != convert_to {
@@ -207,7 +208,7 @@ pub fn check_convert_type(
             .find(|conversion| conversion.method == method)
             .unwrap_or_else(|| panic!("{method} is not a valid conversion method"));
 
-        convert_type_inner(interp, value, type_name, conversion, ConvertOnError::Raise)?
+        convert_type_inner(interp, value, type_name, conversion, ConvertOnError::ReturnNil)?
     };
 
     match converted.ruby_type() {
@@ -269,6 +270,16 @@ fn conversion_mismatch(
     TypeError::from(message)
 }
 
+#[inline]
+fn try_to_int(interp: &mut Artichoke, val: Value, method: &str, raise: ConvertOnError) -> Result<Value, Error> {
+    let conversion = conv_method_table(interp)
+        .iter()
+        .find(|conversion| conversion.method == method)
+        .unwrap_or_else(|| panic!("{method} is not a valid conversion method"));
+
+    convert_type_inner(interp, val, "Integer", conversion, raise)
+}
+
 /// Fallible conversion of the given value to a Ruby `Integer` via `#to_int`.
 ///
 /// If the given value is an integer, it is returned. If the give value responds
@@ -288,7 +299,7 @@ pub fn to_int(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
     if let Ruby::Fixnum = value.ruby_type() {
         return Ok(value);
     }
-    convert_type(interp, value, Ruby::Fixnum, "Integer", "to_int")
+    convert_type(interp, value, Ruby::Fixnum, "Integer", "to_int", ConvertOnError::Raise)
 }
 
 /// Fallible conversion of the given value to a Ruby `Integer` or `nil` via
@@ -311,7 +322,12 @@ pub fn check_to_int(interp: &mut Artichoke, value: Value) -> Result<Value, Error
     if let Ruby::Fixnum = value.ruby_type() {
         return Ok(value);
     }
-    check_convert_type(interp, value, Ruby::Fixnum, "Integer", "to_int")
+    let value = try_to_int(interp, value, "to_int", ConvertOnError::ReturnNil)?;
+    if let Ruby::Fixnum = value.ruby_type() {
+        Ok(value)
+    } else {
+        Ok(Value::nil())
+    }
 }
 
 /// Fallible coercion of the given value to a Ruby `Integer` via `#to_i`.
@@ -332,7 +348,7 @@ pub fn to_i(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
     if let Ruby::Fixnum = value.ruby_type() {
         return Ok(value);
     }
-    convert_type(interp, value, Ruby::Fixnum, "Integer", "to_i")
+    convert_type(interp, value, Ruby::Fixnum, "Integer", "to_i", ConvertOnError::Raise)
 }
 
 // NOTE: A `check_to_i` variant is only used in `Kernel#Integer`.
@@ -344,12 +360,13 @@ pub fn to_i(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
 /*
 #[inline(always)]
 pub(crate) fn check_to_i(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
+    // Fast path (no additional funcalls) for values that are already integers.
     if let Ruby::Fixnum = value.ruby_type() {
         return Ok(value);
     }
-    let converted = check_convert_type(interp, value, Ruby::Fixnum, "Integer", "to_i")?;
-    if let Ruby::Fixnum = converted.ruby_type() {
-        Ok(converted)
+    let val = try_to_int(interp, val, "to_i", ConvertOnError::ReturnNil)?;
+    if let Ruby::Fixnum = val.ruby_type() {
+        Ok(val)
     } else {
         Ok(Value::nil())
     }
@@ -370,7 +387,7 @@ pub(crate) fn check_to_i(interp: &mut Artichoke, value: Value) -> Result<Value, 
 /// - If the call to `#to_str` returns anything other than a `String`, a
 ///   [`TypeError`] is returned.
 pub fn to_str(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
-    convert_type(interp, value, Ruby::String, "String", "to_str")
+    convert_type(interp, value, Ruby::String, "String", "to_str", ConvertOnError::Raise)
 }
 
 /// Fallible conversion of the given value to a Ruby `String` or `nil` via
@@ -391,6 +408,10 @@ pub fn check_to_str(interp: &mut Artichoke, value: Value) -> Result<Value, Error
     check_convert_type(interp, value, Ruby::String, "String", "to_str")
 }
 
+pub fn check_string_type(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
+    check_convert_type(interp, value, Ruby::String, "String", "to_str")
+}
+
 /// Fallible conversion of the given value to a Ruby `Array` via `#to_ary`.
 ///
 /// If the given value is a array, it is returned. If the give value responds
@@ -405,7 +426,7 @@ pub fn check_to_str(interp: &mut Artichoke, value: Value) -> Result<Value, Error
 /// - If the call to `#to_ary` returns anything other than an `Array`, a
 ///   [`TypeError`] is returned.
 pub fn to_ary(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
-    convert_type(interp, value, Ruby::Array, "Array", "to_ary")
+    convert_type(interp, value, Ruby::Array, "Array", "to_ary", ConvertOnError::Raise)
 }
 
 /// Fallible conversion of the given value to a Ruby `Array` or `nil` via
@@ -440,7 +461,7 @@ pub fn check_to_ary(interp: &mut Artichoke, value: Value) -> Result<Value, Error
 /// - If the call to `#to_a` returns anything other than an `Array`, a
 ///   [`TypeError`] is returned.
 pub fn to_a(interp: &mut Artichoke, value: Value) -> Result<Value, Error> {
-    convert_type(interp, value, Ruby::Array, "Array", "to_a")
+    convert_type(interp, value, Ruby::Array, "Array", "to_a", ConvertOnError::Raise)
 }
 
 /// Fallible coercion of the given value to a Ruby `Array` or `nil` via `#to_a`.
@@ -464,7 +485,7 @@ pub fn check_to_a(interp: &mut Artichoke, value: Value) -> Result<Value, Error> 
 mod tests {
     use bstr::ByteSlice;
 
-    use super::{conv_method_table, convert_type, to_int};
+    use super::{conv_method_table, convert_type, to_int, ConvertOnError};
     use crate::test::prelude::*;
 
     #[test]
@@ -620,7 +641,8 @@ mod tests {
     fn implicit_to_int_reflexive() {
         let mut interp = interpreter();
         let i = interp.convert(17);
-        let converted = convert_type(&mut interp, i, Ruby::Fixnum, "Integer", "to_int").unwrap();
+        let converted =
+            convert_type(&mut interp, i, Ruby::Fixnum, "Integer", "to_int", ConvertOnError::Raise).unwrap();
         let converted = converted.try_convert_into::<i64>(&interp).unwrap();
         assert_eq!(17, converted);
     }
@@ -630,7 +652,15 @@ mod tests {
         let mut interp = interpreter();
         interp.eval(b"class A; def to_int; 17; end; end").unwrap();
         let value = interp.eval(b"A.new").unwrap();
-        let converted = convert_type(&mut interp, value, Ruby::Fixnum, "Integer", "to_int").unwrap();
+        let converted = convert_type(
+            &mut interp,
+            value,
+            Ruby::Fixnum,
+            "Integer",
+            "to_int",
+            ConvertOnError::Raise,
+        )
+        .unwrap();
         let converted = converted.try_convert_into::<i64>(&interp).unwrap();
         assert_eq!(17, converted);
     }
@@ -648,7 +678,15 @@ mod tests {
     fn implicit_to_int_true_type_error() {
         let mut interp = interpreter();
         let value = interp.convert(true);
-        let err = convert_type(&mut interp, value, Ruby::Fixnum, "Integer", "to_int").unwrap_err();
+        let err = convert_type(
+            &mut interp,
+            value,
+            Ruby::Fixnum,
+            "Integer",
+            "to_int",
+            ConvertOnError::Raise,
+        )
+        .unwrap_err();
         assert_eq!(err.name(), "TypeError");
         assert_eq!(
             err.message().as_bstr(),
@@ -669,7 +707,15 @@ mod tests {
     fn implicit_to_int_false_type_error() {
         let mut interp = interpreter();
         let value = interp.convert(false);
-        let err = convert_type(&mut interp, value, Ruby::Fixnum, "Integer", "to_int").unwrap_err();
+        let err = convert_type(
+            &mut interp,
+            value,
+            Ruby::Fixnum,
+            "Integer",
+            "to_int",
+            ConvertOnError::Raise,
+        )
+        .unwrap_err();
         assert_eq!(err.name(), "TypeError");
         assert_eq!(
             err.message().as_bstr(),
@@ -690,7 +736,15 @@ mod tests {
     fn implicit_to_int_object_type_error() {
         let mut interp = interpreter();
         let value = interp.eval(b"Object.new").unwrap();
-        let err = convert_type(&mut interp, value, Ruby::Fixnum, "Integer", "to_int").unwrap_err();
+        let err = convert_type(
+            &mut interp,
+            value,
+            Ruby::Fixnum,
+            "Integer",
+            "to_int",
+            ConvertOnError::Raise,
+        )
+        .unwrap_err();
         assert_eq!(err.name(), "TypeError");
         assert_eq!(
             err.message().as_bstr(),
@@ -715,7 +769,15 @@ mod tests {
         // define class
         interp.eval(b"class C; def to_int; nil; end; end").unwrap();
         let value = interp.eval(b"C.new").unwrap();
-        let err = convert_type(&mut interp, value, Ruby::Fixnum, "Integer", "to_int").unwrap_err();
+        let err = convert_type(
+            &mut interp,
+            value,
+            Ruby::Fixnum,
+            "Integer",
+            "to_int",
+            ConvertOnError::Raise,
+        )
+        .unwrap_err();
         assert_eq!(err.name(), "TypeError");
         assert_eq!(
             err.message().as_bstr(),
@@ -740,7 +802,15 @@ mod tests {
         // define class
         interp.eval(b"class D; def to_int; 'not an integer'; end; end").unwrap();
         let value = interp.eval(b"D.new").unwrap();
-        let err = convert_type(&mut interp, value, Ruby::Fixnum, "Integer", "to_int").unwrap_err();
+        let err = convert_type(
+            &mut interp,
+            value,
+            Ruby::Fixnum,
+            "Integer",
+            "to_int",
+            ConvertOnError::Raise,
+        )
+        .unwrap_err();
         assert_eq!(err.name(), "TypeError");
         assert_eq!(
             err.message().as_bstr(),
@@ -767,7 +837,15 @@ mod tests {
             .eval(b"class F; def to_int; raise ArgumentError, 'not an integer'; end; end")
             .unwrap();
         let value = interp.eval(b"F.new").unwrap();
-        let err = convert_type(&mut interp, value, Ruby::Fixnum, "Integer", "to_int").unwrap_err();
+        let err = convert_type(
+            &mut interp,
+            value,
+            Ruby::Fixnum,
+            "Integer",
+            "to_int",
+            ConvertOnError::Raise,
+        )
+        .unwrap_err();
         assert_eq!(err.name(), "ArgumentError");
         assert_eq!(err.message().as_bstr(), b"not an integer".as_bstr());
     }

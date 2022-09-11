@@ -1,6 +1,4 @@
-use crate::convert::{
-    float_to_int, implicitly_convert_to_int, implicitly_convert_to_string, maybe_to_int, MaybeToInt,
-};
+use crate::convert::{check_string_type, check_to_int, to_i};
 use crate::extn::core::kernel;
 use crate::extn::core::kernel::require::RelativePath;
 use crate::extn::prelude::*;
@@ -29,76 +27,87 @@ use crate::extn::prelude::*;
 //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
 //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
 // ```
-pub fn integer(interp: &mut Artichoke, mut subject: Value, base: Option<Value>) -> Result<Value, Error> {
-    // Flatten explicit `nil` argument with missing argument
-    let base = base.and_then(|base| interp.convert(base));
-
-    let result = if subject.is_nil() {
-        if let Some(base) = base {
-            if matches!(maybe_to_int(interp, base)?, MaybeToInt::Int(..)) {
-                return Err(ArgumentError::with_message("base specified for non string value").into());
-            }
-        }
-        return Err(TypeError::with_message("can't convert nil into Integer").into());
-    } else if let Ok(subject) = subject.try_convert_into_mut::<&[u8]>(interp) {
-        let base = if let Some(base) = base {
-            if let MaybeToInt::Int(int) = maybe_to_int(interp, base)? {
-                Some(int)
-            } else {
-                None
-            }
-        } else {
+pub fn integer(interp: &mut Artichoke, mut val: Value, base: Option<Value>) -> Result<Value, Error> {
+    let base = if let Some(base) = base {
+        let converted_base = check_to_int(interp, base)?;
+        if converted_base.is_nil() {
             None
-        };
-        scolapasta_int_parse::parse(subject, base)?
-    } else if let Ok(float) = subject.try_convert_into::<f64>(interp) {
-        if let Some(base) = base {
-            if matches!(maybe_to_int(interp, base)?, MaybeToInt::Int(..)) {
-                return Err(ArgumentError::with_message("base specified for non string value").into());
-            }
-        }
-        float_to_int(float)?
-    } else if let Some(base) = base {
-        let base = if let MaybeToInt::Int(int) = maybe_to_int(interp, base)? {
-            Some(int)
         } else {
-            None
-        };
-        if let Some(base) = base {
-            if let Ok(s) = subject.try_convert_into_mut::<&[u8]>(interp) {
-                scolapasta_int_parse::parse(s, Some(base))?
-            } else if subject.respond_to(interp, "to_str")? {
-                // SAFETY: the extracted byte slice is used and discarded before
-                // the interpreter is accessed again.
-                let s = unsafe { implicitly_convert_to_string(interp, &mut subject)? };
-                scolapasta_int_parse::parse(s, Some(base))?
-            } else {
-                return Err(ArgumentError::with_message("base specified for non string value").into());
-            }
-        } else {
-            implicitly_convert_to_int(interp, subject).map_err(|_| {
-                let message = format!("can't convert {} into Integer", interp.class_name_for_value(subject));
-                TypeError::from(message)
-            })?
+            Some(converted_base.try_convert_into::<i64>(interp)?)
         }
     } else {
-        match maybe_to_int(interp, subject) {
-            Ok(MaybeToInt::Int(int)) => int,
-            Ok(MaybeToInt::Err(err)) => return Err(err.into()),
-            Ok(MaybeToInt::UncriticalReturn(result)) => {
-                let class = interp.class_name_for_value(subject).to_owned();
-                let result = interp.class_name_for_value(result);
-                let message = format!("can't convert {class} to Integer ({class}#to_i gives {result})");
-                return Err(TypeError::from(message).into());
-            }
-            Ok(MaybeToInt::NotApplicable) | Err(_) => {
-                let message = format!("can't convert {} into Integer", interp.class_name_for_value(subject));
-                return Err(TypeError::from(message).into());
-            }
-        }
+        None
     };
+    // The below routine is a port of `rb_convert_to_integer` from MRI 3.1.2.
+    //
+    // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3109-L3155
 
-    Ok(interp.convert(result))
+    // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3114-L3126
+    if base.is_some() {
+        let tmp = check_string_type(interp, val)?;
+        if tmp.is_nil() {
+            // TODO: handle exception kwarg and return nil here if it is false.
+            return Err(ArgumentError::with_message("base specified for non string value").into());
+        }
+        val = tmp;
+    }
+
+    // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3127-L3132
+    if let Ok(f) = val.try_convert_into::<f64>(interp) {
+        // TODO: handle exception kwarg and return `nil` if it is false and f is not finite.
+        // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3129
+
+        // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3131
+        // https://github.com/ruby/ruby/blob/v3_1_2/bignum.c#L5230-L5235
+        if f.is_infinite() {
+            return Err(
+                FloatDomainError::with_message(if f.is_sign_negative() { "-Infinity" } else { "Infinity" }).into(),
+            );
+        }
+        // https://github.com/ruby/ruby/blob/v3_1_2/bignum.c#L5233-L5235
+        if f.is_nan() {
+            return Err(FloatDomainError::with_message("NaN").into());
+        }
+
+        // TODO: this should check to see if `f` is in range for `i64`. MRI calls
+        // this check "is fixable" / `FIXABLE`. If `f` is not fixable, it should
+        // be converted to a bignum.
+        #[allow(clippy::cast_possible_truncation)]
+        return Ok(interp.convert(f as i64));
+    }
+
+    // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3133-L3135
+    if let Ruby::Fixnum = val.ruby_type() {
+        return Ok(val);
+    }
+
+    // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3136-L3138
+    if let Ok(subject) = unsafe { spinoso_string::String::unbox_from_value(&mut val, interp) } {
+        // https://github.com/ruby/ruby/blob/v3_1_2/bignum.c#L4257-L4277
+        //
+        // TODO: handle exception kwarg and return nil here if it is false and
+        // `parse` returns an error.
+        //
+        // TODO: handle bignum.
+        let i = scolapasta_int_parse::parse(subject.as_slice(), base)?;
+        return Ok(interp.convert(i));
+    }
+
+    // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3139-L3142
+    if val.is_nil() {
+        // TODO: handle exception kwarg and return nil here if it is false.
+        return Err(TypeError::with_message("can't convert nil into Integer").into());
+    }
+
+    match check_to_int(interp, val) {
+        Ok(tmp) if tmp.ruby_type() == Ruby::Fixnum => return Ok(tmp),
+        _ => {}
+    }
+
+    // https://github.com/ruby/ruby/blob/v3_1_2/object.c#L3148-L3154
+    //
+    // TODO: handle exception kwarg and return nil here if it is false.
+    to_i(interp, val)
 }
 
 pub fn load(interp: &mut Artichoke, path: Value) -> Result<Value, Error> {
