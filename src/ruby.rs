@@ -84,6 +84,15 @@ impl Args {
     }
 }
 
+/// Result-like enum for calls to eval code on a Ruby interpreter.
+#[derive(Debug)]
+pub enum ExecutionResult {
+    /// Call to the Ruby interpreter succeeded without error.
+    Success,
+    /// Call to the Ruby interpreter raised an exception.
+    Error(Error),
+}
+
 /// Main entry point for Artichoke's version of the `ruby` CLI.
 ///
 /// This entry point handles allocating, intitializing, and closing an Artichoke
@@ -92,7 +101,7 @@ impl Args {
 /// # Errors
 ///
 /// If an exception is raised on the interpreter, then an error is returned.
-pub fn run<R, W>(args: Args, input: R, error: W) -> Result<Result<(), ()>, Box<dyn error::Error>>
+pub fn run<R, W>(args: Args, input: R, error: W) -> Result<ExecutionResult, Box<dyn error::Error>>
 where
     R: io::Read,
     W: io::Write + WriteColor,
@@ -108,14 +117,14 @@ fn entrypoint<R, W>(
     args: Args,
     mut input: R,
     error: W,
-) -> Result<Result<(), ()>, Box<dyn error::Error>>
+) -> Result<ExecutionResult, Box<dyn error::Error>>
 where
     R: io::Read,
     W: io::Write + WriteColor,
 {
     if args.copyright {
         interp.eval(b"puts RUBY_COPYRIGHT")?;
-        return Ok(Ok(()));
+        return Ok(ExecutionResult::Success);
     }
 
     // Inject ARGV global.
@@ -138,11 +147,11 @@ where
         input
             .read_to_end(&mut program)
             .map_err(|_| IOError::from("Could not read program from STDIN"))?;
-        if let Err(ref exc) = interp.eval(program.as_slice()) {
-            backtrace::format_cli_trace_into(error, interp, exc)?;
-            return Ok(Err(()));
+        if let Err(exc) = interp.eval(program.as_slice()) {
+            backtrace::format_cli_trace_into(error, interp, &exc)?;
+            return Ok(ExecutionResult::Error(exc));
         }
-        Ok(Ok(()))
+        Ok(ExecutionResult::Success)
     }
 }
 
@@ -151,7 +160,7 @@ fn execute_inline_eval<W>(
     error: W,
     commands: Vec<OsString>,
     fixture: Option<&Path>,
-) -> Result<Result<(), ()>, Box<dyn error::Error>>
+) -> Result<ExecutionResult, Box<dyn error::Error>>
 where
     W: io::Write + WriteColor,
 {
@@ -166,18 +175,18 @@ where
     let mut buf = if let Some(command) = commands.next() {
         command
     } else {
-        return Ok(Ok(()));
+        return Ok(ExecutionResult::Success);
     };
     for command in commands {
         buf.push("\n");
         buf.push(command);
     }
-    if let Err(ref exc) = interp.eval_os_str(&buf) {
-        backtrace::format_cli_trace_into(error, interp, exc)?;
+    if let Err(exc) = interp.eval_os_str(&buf) {
+        backtrace::format_cli_trace_into(error, interp, &exc)?;
         // short circuit, but don't return an error since we already printed it
-        return Ok(Err(()));
+        return Ok(ExecutionResult::Error(exc));
     }
-    Ok(Ok(()))
+    Ok(ExecutionResult::Success)
 }
 
 fn execute_program_file<W>(
@@ -185,18 +194,18 @@ fn execute_program_file<W>(
     error: W,
     programfile: &Path,
     fixture: Option<&Path>,
-) -> Result<Result<(), ()>, Box<dyn error::Error>>
+) -> Result<ExecutionResult, Box<dyn error::Error>>
 where
     W: io::Write + WriteColor,
 {
     if let Some(fixture) = fixture {
         setup_fixture_hack(interp, fixture)?;
     }
-    if let Err(ref exc) = interp.eval_file(programfile) {
-        backtrace::format_cli_trace_into(error, interp, exc)?;
-        return Ok(Err(()));
+    if let Err(exc) = interp.eval_file(programfile) {
+        backtrace::format_cli_trace_into(error, interp, &exc)?;
+        return Ok(ExecutionResult::Error(exc));
     }
-    Ok(Ok(()))
+    Ok(ExecutionResult::Success)
 }
 
 fn load_error<P: AsRef<OsStr>>(file: P, message: &str) -> Result<String, Error> {
@@ -232,14 +241,14 @@ mod tests {
 
     use termcolor::Ansi;
 
-    use super::{run, Args};
+    use super::{run, Args, ExecutionResult};
 
     #[test]
     fn run_with_copyright() {
         let args = Args::empty().with_copyright(true);
         let input = Vec::<u8>::new();
         let mut err = Ansi::new(Vec::new());
-        assert!(matches!(run(args, &input[..], &mut err), Ok(Ok(_))));
+        assert!(matches!(run(args, &input[..], &mut err), Ok(ExecutionResult::Success)));
     }
 
     #[test]
@@ -247,7 +256,7 @@ mod tests {
         let args = Args::empty().with_programfile(Some(PathBuf::from("-")));
         let input = b"2 + 7";
         let mut err = Ansi::new(Vec::new());
-        assert!(matches!(run(args, &input[..], &mut err), Ok(Ok(_))));
+        assert!(matches!(run(args, &input[..], &mut err), Ok(ExecutionResult::Success)));
     }
 
     #[test]
@@ -255,7 +264,10 @@ mod tests {
         let args = Args::empty().with_programfile(Some(PathBuf::from("-")));
         let input = b"raise ArgumentError";
         let mut err = Ansi::new(Vec::new());
-        assert!(matches!(run(args, &input[..], &mut err), Ok(Err(_))));
+        assert!(matches!(
+            run(args, &input[..], &mut err),
+            Ok(ExecutionResult::Error(..))
+        ));
     }
 
     #[test]
@@ -263,7 +275,7 @@ mod tests {
         let args = Args::empty();
         let input = b"2 + 7";
         let mut err = Ansi::new(Vec::new());
-        assert!(matches!(run(args, &input[..], &mut err), Ok(Ok(_))));
+        assert!(matches!(run(args, &input[..], &mut err), Ok(ExecutionResult::Success)));
     }
 
     #[test]
@@ -271,7 +283,10 @@ mod tests {
         let args = Args::empty();
         let input = b"raise ArgumentError";
         let mut err = Ansi::new(Vec::new());
-        assert!(matches!(run(args, &input[..], &mut err), Ok(Err(_))));
+        assert!(matches!(
+            run(args, &input[..], &mut err),
+            Ok(ExecutionResult::Error(..))
+        ));
     }
 
     #[test]
@@ -279,7 +294,10 @@ mod tests {
         let args = Args::empty().with_commands(vec![OsString::from("2 + 7")]);
         let input = Vec::<u8>::new();
         let mut err = Ansi::new(Vec::new());
-        assert!(matches!(run(args, input.as_slice(), &mut err), Ok(Ok(_))));
+        assert!(matches!(
+            run(args, input.as_slice(), &mut err),
+            Ok(ExecutionResult::Success)
+        ));
     }
 
     #[test]
@@ -287,6 +305,9 @@ mod tests {
         let args = Args::empty().with_commands(vec![OsString::from("raise ArgumentError")]);
         let input = Vec::<u8>::new();
         let mut err = Ansi::new(Vec::new());
-        assert!(matches!(run(args, &input[..], &mut err), Ok(Err(_))));
+        assert!(matches!(
+            run(args, &input[..], &mut err),
+            Ok(ExecutionResult::Error(..))
+        ));
     }
 }

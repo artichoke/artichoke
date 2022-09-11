@@ -47,7 +47,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process;
 
-use artichoke::ruby::{self, Args};
+use artichoke::ruby::{self, Args, ExecutionResult};
 use clap::builder::ArgAction;
 use clap::{Arg, ArgMatches, Command};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
@@ -67,8 +67,8 @@ fn main() {
 
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
     match ruby::run(args, io::stdin(), &mut stderr) {
-        Ok(Ok(())) => {}
-        Ok(Err(())) => process::exit(1),
+        Ok(ExecutionResult::Success) => {}
+        Ok(ExecutionResult::Error(..)) => process::exit(1),
         Err(err) => {
             // Reset colors and write the error message to stderr.
             //
