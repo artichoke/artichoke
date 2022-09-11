@@ -458,13 +458,13 @@ mrb_sys_value_is_dead(mrb_state *mrb, mrb_value value)
   // immediate values such as Fixnums and Symbols are never garbage
   // collected, so they are never dead. See `mrb_gc_protect` in gc.c.
   if (mrb_immediate_p(value)) {
-    return FALSE;
+    return false;
   }
 
   struct RBasic *ptr = mrb_basic_ptr(value);
 
   if (ptr == NULL) {
-    return TRUE;
+    return true;
   }
 
   return mrb_object_dead_p(mrb, ptr);

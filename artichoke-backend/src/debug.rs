@@ -1,6 +1,9 @@
+use std::ffi::CStr;
+
 use artichoke_core::debug::Debug;
 use artichoke_core::value::Value as _;
 
+use crate::sys;
 use crate::types::Ruby;
 use crate::value::Value;
 use crate::Artichoke;
@@ -19,14 +22,13 @@ impl Debug for Artichoke {
     }
 
     fn class_name_for_value(&mut self, value: Self::Value) -> &str {
-        if let Ok(class) = value.funcall(self, "class", &[], None) {
-            if let Ok(class) = class.funcall(self, "name", &[], None) {
-                if let Ok(class) = class.try_convert_into_mut(self) {
-                    return class;
-                }
-            }
-        }
-        ""
+        let class = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_obj_classname(mrb, value.inner())) };
+        let class = if let Ok(class) = class {
+            unsafe { CStr::from_ptr(class) }
+        } else {
+            Default::default()
+        };
+        class.to_str().unwrap_or_default()
     }
 }
 

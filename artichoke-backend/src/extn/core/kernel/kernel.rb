@@ -61,8 +61,12 @@ module Kernel
     raise TypeError, "can't convert #{classname} into Hash"
   end
 
-  def Integer(arg, base = nil, exception: true) # rubocop:disable Naming/MethodName
-    ::Artichoke::Kernel.Integer(arg, base)
+  def Integer(arg, base = (not_set = true), exception: true) # rubocop:disable Naming/MethodName
+    if not_set == true
+      ::Artichoke::Kernel.Integer(arg)
+    else
+      ::Artichoke::Kernel.Integer(arg, base)
+    end
   rescue StandardError => e
     return nil if exception.equal?(false)
 
