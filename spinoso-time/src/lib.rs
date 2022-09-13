@@ -39,9 +39,9 @@
 //!
 //! # Crate features
 //!
-//! This crate supports several backends which are independent of each other.
-//! The availability of different backends is controlled by Cargo features, all
-//! of which are enabled by default:
+//! This crate can support several backends, which are designed to be
+//! independent of each other. The availability of different backends is
+//! controlled by Cargo features, all of which are enabled by default:
 //!
 //! - **tzrs**: Enable a `Time` backend which is implemented by the [`tz-rs`] and
 //!   [`tzdb`] crates.

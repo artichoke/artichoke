@@ -14,11 +14,9 @@
 //! ```
 //!
 //! This implementation of `Time` supports the system clock via the
-//! [`tz-rs`] and [`tzdb`] crates.
+//! [`spinoso-time`] crate.
 //!
 //! [`Time`]: https://ruby-doc.org/core-3.1.2/Time.html
-//! [`tz-rs`]: https://crates.io/crates/tz-rs
-//! [`tzdb`]: https://crates.io/crates/tzdb
 
 use crate::convert::HeapAllocatedData;
 use crate::extn::prelude::*;
