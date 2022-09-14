@@ -95,7 +95,7 @@ impl<'a> Builder<'a> {
             super_class
         } else {
             // SAFETY: Although this direct access of the `mrb` property on the
-            // interp does not go through `Artichoke::with_ffi_boundary`, no
+            // interpreter does not go through `Artichoke::with_ffi_boundary`, no
             // `MRB_API` functions are called, which means it is not required to
             // re-box the Artichoke `State` into the `mrb_state->ud` pointer.
             //

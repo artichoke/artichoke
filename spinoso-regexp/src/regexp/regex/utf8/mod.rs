@@ -37,7 +37,7 @@ impl Utf8 {
     /// The constructed regexp is Unicode aware. All character classes used in
     /// patterns other than POSIX character classes support all of Unicode.
     ///
-    /// `Utf8` regexes require their patterns and haystacks to be valid UTF-8.
+    /// `Utf8` regexps require their patterns and haystacks to be valid UTF-8.
     ///
     /// # Examples
     ///
@@ -411,7 +411,7 @@ mod tests {
             (B("\0"), r"/\x00/m", Options::from(Flags::MULTILINE)),
             (B(b"\x0a"), "/\n/", Options::default()),
             (B("\x0B"), "/\x0B/", Options::default()),
-            // NOTE: the control chacters, not a raw string, are in the debug output.
+            // NOTE: the control characters, not a raw string, are in the debug output.
             (B("\n\r\t"), "/\n\r\t/", Options::default()),
             (B("\n\r\t"), "/\n\r\t/mix", Options::from(Flags::ALL_REGEXP_OPTS)),
             (

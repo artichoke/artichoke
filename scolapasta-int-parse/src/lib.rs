@@ -20,8 +20,7 @@
 
 //! Parse a given byte string and optional radix into an [`i64`].
 //!
-//! [`parse`] wraps [`i64::from_str_radix`] by performing normalizations on the
-//! input byte string:
+//! [`parse`] wraps [`i64::from_str_radix`] by normalizing the input byte string:
 //!
 //! - Assert the byte string is ASCII and does not contain NUL bytes.
 //! - Parse the radix to ensure it is in range and valid for the given input
@@ -60,8 +59,8 @@ use subject::IntegerString;
 
 /// Parse a given byte string and optional [`Radix`] into an [`i64`].
 ///
-/// This function wraps [`i64::from_str_radix`] by performing normalizations on
-/// the input byte string:
+/// This function wraps [`i64::from_str_radix`] by normalizing the input byte
+/// string:
 ///
 /// - Assert the byte string is ASCII and does not contain NUL bytes.
 /// - Parse the radix to ensure it is in range and valid for the given input
@@ -97,7 +96,7 @@ use subject::IntegerString;
 /// - The input radix is out of range of [`i32`].
 /// - The input radix is negative (if the input byte string does not have an
 ///   `0x`-style prefix) and out of range `-36..=-2`.
-/// - The input raidx is out of range of `2..=36`.
+/// - The input radix is out of range of `2..=36`.
 ///
 /// See [`ArgumentError`] and [`InvalidRadixError`] for more details.
 ///

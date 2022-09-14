@@ -46,9 +46,9 @@ impl<'a> State<'a> {
         // => 21
         // ```
         //
-        // In bases below 10, the string repr for large numbers will be longer,
-        // but pre-allocating for these uncommon cases seems wasteful. The
-        // `String` will reallocate if it needs to in these pathological cases.
+        // In bases below 10, the string representation for large numbers will
+        // be longer, but pre-allocating for these uncommon cases seems wasteful.
+        // The `String` will reallocate if it needs to in these pathological cases.
         const PRE_ALLOCATED_DIGIT_CAPACITY: usize = 21;
 
         match self {

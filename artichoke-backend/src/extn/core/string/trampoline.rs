@@ -238,10 +238,10 @@ pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Res
             }
         }
         // If the receiver is an empty string with `Encoding::Binary` encoding
-        // and the argument is non-ASCII, take on the encoding of the arugment.
+        // and the argument is non-ASCII, take on the encoding of the argument.
         //
         // This requires the implicit conversion to string to return the
-        // underlying spinoso string.
+        // underlying Spinoso string.
         //
         // ```
         // [3.1.2] > be = "".b

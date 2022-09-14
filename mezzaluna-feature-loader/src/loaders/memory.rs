@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 /// A Ruby source code loader that loads sources directly from an in-memory
-/// virtual filesystem.
+/// virtual file system.
 ///
 /// The memory loader has a hard-coded load path and only supports loading paths
 /// that are relative or absolute within this loader's [load path].

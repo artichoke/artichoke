@@ -23,7 +23,7 @@ pub const MAX_OFFSET_SECONDS: i32 = SECONDS_IN_DAY - 1;
 /// The maximum allowed offset in seconds from UTC in the past for a fixed
 /// offset.
 ///
-/// This constant has magitude of the number of seconds in 1 day, minus 1.
+/// This constant has magnitude of the number of seconds in 1 day, minus 1.
 pub const MIN_OFFSET_SECONDS: i32 = -MAX_OFFSET_SECONDS;
 
 /// `tzdb` provides [`local_tz`] to get the local system timezone. If this ever

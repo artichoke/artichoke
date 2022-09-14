@@ -393,7 +393,7 @@ impl Buf {
     }
 }
 
-// bstr bytevec impls
+// `bstr::ByteVec` impls
 impl Buf {
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {

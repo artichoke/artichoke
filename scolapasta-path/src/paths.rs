@@ -170,7 +170,7 @@ pub fn is_explicit_relative_bytes<P: AsRef<[u8]>>(path: P) -> bool {
 ///
 /// # Errors
 ///
-/// On unix systems, this function is infallible. On all other platforms,
+/// On Unix platforms, this function is infallible. On all other platforms,
 /// including Windows, if the given [`PathBuf`] is not valid UTF-8, the original
 /// `PathBuf` is returned as an error. See [`Path::to_str`] for details.
 pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, PathBuf> {

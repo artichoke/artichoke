@@ -146,7 +146,7 @@ impl Utf8String {
         } else {
             return bytes.len();
         };
-        // SAFETY: `ByteSlice::find_non_ascii_byte` gurantees that the index is
+        // SAFETY: `ByteSlice::find_non_ascii_byte` guarantees that the index is
         // in range for slicing if `Some(_)` is returned.
         bytes = unsafe { bytes.get_unchecked(tail..) };
         if simdutf8::basic::from_utf8(bytes).is_ok() {
@@ -662,7 +662,7 @@ impl Utf8String {
         // `String`.
         //
         // Use a `Vec` here instead of a `Buf` to ensure at most one alloc
-        // fixup happens instead of alloc fixups being O(chars).
+        // fix-up happens instead of alloc fix-ups being O(chars).
         let mut replacement = Vec::with_capacity(self.len());
         let mut bytes = self.inner.as_slice();
 
@@ -707,7 +707,7 @@ impl Utf8String {
         // `char`s do not change the length of the `String`.
         //
         // Use a `Vec` here instead of a `Buf` to ensure at most one alloc
-        // fixup happens instead of alloc fixups being O(chars).
+        // fix-up happens instead of alloc fix-ups being O(chars).
         let mut replacement = Vec::with_capacity(self.len());
         let mut bytes = self.inner.as_slice();
 
@@ -735,7 +735,7 @@ impl Utf8String {
         // `char`s do not change the length of the `String`.
         //
         // Use a `Vec` here instead of a `Buf` to ensure at most one alloc
-        // fixup happens instead of alloc fixups being O(chars).
+        // fix-up happens instead of alloc fix-ups being O(chars).
         let mut replacement = Vec::with_capacity(self.len());
         let mut bytes = self.inner.as_slice();
 
@@ -796,7 +796,7 @@ impl Utf8String {
         // `DoubleEndedIterator`.
         let chars = ConventionallyUtf8::from(&self.inner[..]).collect::<Vec<_>>();
         // Use a `Vec` here instead of a `Buf` to ensure at most one alloc
-        // fixup happens instead of alloc fixups being O(chars).
+        // fix-up happens instead of alloc fix-ups being O(chars).
         let mut replacement = Vec::with_capacity(self.inner.len());
         for &bytes in chars.iter().rev() {
             replacement.extend_from_slice(bytes);
