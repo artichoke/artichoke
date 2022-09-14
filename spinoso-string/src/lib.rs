@@ -1098,7 +1098,7 @@ impl String {
     }
 
     /// A more permissive version of [`try_push_codepoint`] which can alter the
-    /// receiver's encoding to accomodate the given byte.
+    /// receiver's encoding to accommodate the given byte.
     ///
     /// # Errors
     ///

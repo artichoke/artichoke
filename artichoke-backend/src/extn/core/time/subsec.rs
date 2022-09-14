@@ -120,7 +120,7 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                 }
 
                 // These conversions are luckily not lossy. `seconds_base`
-                // and `multiplier_nanos` are gauranteed to be represented
+                // and `multiplier_nanos` are guaranteed to be represented
                 // without loss in a f64.
                 #[allow(clippy::cast_precision_loss)]
                 let seconds_base = seconds_base as f64;
@@ -130,7 +130,7 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                 let mut secs = subsec / seconds_base;
                 let mut nanos = (subsec % seconds_base) * multiplier_nanos;
 
-                // is_sign_negative() is not enough here, since this logic
+                // `is_sign_negative()` is not enough here, since this logic
                 // should also be skilled for negative zero.
                 if subsec < -0.0 {
                     // Nanos always needs to be a positive u32. If subsec
@@ -160,8 +160,8 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                 let subsec: i64 = implicitly_convert_to_int(self, subsec)?;
 
                 // The below calculations should always be safe. The
-                // multiplier is gauranteed to not be 0, the remainder
-                // should never overflow, and is gauranteed to be less
+                // multiplier is guaranteed to not be 0, the remainder
+                // should never overflow, and is guaranteed to be less
                 // than u32::MAX.
                 let mut secs = subsec / seconds_base;
                 let mut nanos = (subsec % seconds_base) * multiplier_nanos;
@@ -180,7 +180,8 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
                     }
                 }
 
-                // Cast to u32 is safe since it will always be less than NANOS_IN_SECOND due to modulo and negative adjustments.
+                // Cast to u32 is safe since it will always be less than
+                // `NANOS_IN_SECOND` due to modulo and negative adjustments.
                 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                 Ok(Subsec {
                     secs,

@@ -146,7 +146,7 @@ impl Artichoke {
             } = *state;
 
             // SAFETY: This deallocation and drop order ensures that no dangling
-            // references and pointers are visible during teardown:
+            // references and pointers are visible during tear-down:
             //
             // - The parser must be deallocated to free the associated
             //   `mrbc_context`.

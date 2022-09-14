@@ -72,7 +72,7 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
             Ruby::Float => {
                 // This impl differs from MRI. MRI supports any float value and
                 // will set an offset with subsec fractions however this is not
-                // supported in spinoso_time with the `tzrs` feature.
+                // supported in `spinoso_time` with the `tzrs` feature.
                 let offset_seconds: f64 = self.try_convert(in_value)?;
 
                 if (MIN_FLOAT_OFFSET..=MAX_FLOAT_OFFSET).contains(&offset_seconds) {

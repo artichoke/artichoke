@@ -58,7 +58,7 @@ pub fn at(
     //
     // The below logic:
     // - ensures the third parameter is a Ruby::Hash if provided.
-    // - if third param is not options, check the second paramter, if it is a
+    // - if third param is not options, check the second parameter, if it is a
     //   Ruby::Hash then assume this is the options hash, and clear out the
     //   second parameter.
     // - if second param is not options, check the first param, if it is a

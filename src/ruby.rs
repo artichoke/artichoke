@@ -95,7 +95,7 @@ pub enum ExecutionResult {
 
 /// Main entry point for Artichoke's version of the `ruby` CLI.
 ///
-/// This entry point handles allocating, intitializing, and closing an Artichoke
+/// This entry point handles allocating, initializing, and closing an Artichoke
 /// interpreter.
 ///
 /// # Errors

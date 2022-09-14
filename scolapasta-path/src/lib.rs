@@ -18,7 +18,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 
-//! Functions for working with filesystem paths and loading Ruby source code.
+//! Functions for working with file system paths and loading Ruby source code.
 //!
 //! # Examples
 //!

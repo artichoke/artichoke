@@ -12,7 +12,7 @@ use crate::state::parser::Context;
 
 pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<Loaded, Error> {
     // SAFETY: The extracted byte slice is converted to an owned `Vec<u8>`
-    // before the interp is used again which protects against a garbage
+    // before the interpreter is used again which protects against a garbage
     // collection invalidating the pointer.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
@@ -42,7 +42,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<Loaded, Error
 
 pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<Required, Error> {
     // SAFETY: The extracted byte slice is converted to an owned `Vec<u8>`
-    // before the interp is used again which protects against a garbage
+    // before the interpreter is used again which protects against a garbage
     // collection invalidating the pointer.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
@@ -73,7 +73,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<Required, 
 #[allow(clippy::module_name_repetitions)]
 pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: RelativePath) -> Result<Required, Error> {
     // SAFETY: The extracted byte slice is converted to an owned `Vec<u8>`
-    // before the interp is used again which protects against a garbage
+    // before the interpreter is used again which protects against a garbage
     // collection invalidating the pointer.
     let filename = unsafe { implicitly_convert_to_string(interp, &mut filename)? };
     if filename.find_byte(b'\0').is_some() {
