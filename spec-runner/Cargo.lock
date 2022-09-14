@@ -64,6 +64,7 @@ dependencies = [
  "spinoso-string",
  "spinoso-symbol",
  "spinoso-time",
+ "strftime-ruby",
 ]
 
 [[package]]

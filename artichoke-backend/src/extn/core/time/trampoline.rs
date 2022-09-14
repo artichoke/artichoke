@@ -227,23 +227,18 @@ pub fn asctime(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-pub fn to_string(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = time;
-    // XXX: This function is used to implement `Time#inspect`. Raising in an
-    // `#inspect` implementation interacts poorly with the locals table when
-    // running Artichoke in a REPL.
-    //
-    // Rather than fix this, which will involve deep diving into mruby, work
-    // around this by returning a `String` that says `Time#inspect` is not
-    // implemented. This allows us to uphold the API contract without
-    // implementing `strftime`.
-    //
-    // This hack replaces this code:
-    //
-    // ```rust
-    // Err(NotImplementedError::new().into())
-    // ```
-    interp.try_convert_mut("Time<Time#inspect is not implemented>")
+pub fn to_string(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    // %z will always display a +/-HHMM value, however it's expected that UTC
+    // is shown if it is UTC Time.
+    let format = if unsafe { Time::unbox_from_value(&mut time, interp)? }.is_utc() {
+        "%Y-%m-%d %H:%M:%S UTC"
+    } else {
+        "%Y-%m-%d %H:%M:%S %z"
+    };
+
+    let format = interp.try_convert_mut(format)?;
+
+    strftime(interp, time, format)
 }
 
 pub fn to_array(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
@@ -472,10 +467,30 @@ pub fn subsec(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
 
 // Time format
 
-pub fn strftime(interp: &mut Artichoke, time: Value, format: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    let _ = format;
-    // Requires a parser.
-    Err(NotImplementedError::new().into())
+pub fn strftime(interp: &mut Artichoke, mut time: Value, format: Value) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+    let format = interp.try_convert_mut(format)?;
+
+    let bytes: Vec<u8> = time.strftime(format).map_err(|e| {
+        // InvalidFormatString is the only true ArgumentError, where as the
+        // rest that can be thrown from strftime are runtime failures.
+        //
+        // ```console
+        // [3.1.2]> Time.now.strftime("%")
+        // (irb):1:in `strftime': invalid format: % (ArgumentError)
+        //      from (irb):1:in `<main>'
+        //	    from /home/ben/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        //	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `load'
+        //	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // ```
+        if let strftime::Error::InvalidFormatString = e {
+            let mut message = br#"invalid format: "#.to_vec();
+            message.extend_from_slice(format);
+            Error::from(ArgumentError::from(message))
+        } else {
+            Error::from(RuntimeError::with_message("Unexpected failure"))
+        }
+    })?;
+
+    interp.try_convert_mut(&bytes[..])
 }
