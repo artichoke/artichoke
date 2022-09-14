@@ -133,8 +133,8 @@ core-regexp = ["artichoke-backend/core-regexp"]
 # backend they execute on. The `regex` crate backend remains the default as long
 # as it can parse the given pattern.
 core-regexp-oniguruma = ["core-regexp", "artichoke-backend/core-regexp-oniguruma"]
-# Implement the `Time` core class. This feature adds dependencies on `chrono`
-# and `chrono-tz`.
+# Implement the `Time` core class. This feature adds dependencies on `tz-rs` and
+# `tzdb`.
 core-time = ["artichoke-backend/core-time"]
 
 # Extend the Artichoke virtual file system to have native/host access.

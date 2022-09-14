@@ -15,5 +15,8 @@
         "Accept": "text/html"
       }
     }
-  ]
+  ],
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "60s"
 }
