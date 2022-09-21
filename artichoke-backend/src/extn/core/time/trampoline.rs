@@ -1,7 +1,8 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
 use spinoso_time::strftime::{
-    Error::FormattedStringTooLarge, Error::InvalidFormatString, Error::WriteZero, ASCTIME_FORMAT_STRING,
+    Error::{FormattedStringTooLarge, InvalidFormatString, WriteZero},
+    ASCTIME_FORMAT_STRING,
 };
 
 use crate::convert::implicitly_convert_to_int;
