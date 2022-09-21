@@ -3,6 +3,8 @@
 use spinoso_time::strftime::Error::InvalidFormatString;
 
 use crate::convert::implicitly_convert_to_int;
+use crate::convert::to_str;
+use crate::extn::core::string::{Encoding, String};
 use crate::extn::core::time::{subsec::Subsec, Offset, Time};
 use crate::extn::prelude::*;
 
@@ -154,7 +156,7 @@ pub fn cmp(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<
         let cmp = time.cmp(&other);
         Ok(interp.convert(cmp as i32))
     } else {
-        let mut message = String::from("comparison of Time with ");
+        let mut message = std::string::String::from("comparison of Time with ");
         message.push_str(interp.inspect_type_name_for_value(other));
         message.push_str(" failed");
         Err(ArgumentError::from(message).into())
@@ -233,9 +235,7 @@ pub fn asctime(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
     // - `%Y` is the current year, padded to 4 digits, e.g. `0512`.
     let format = "%c";
 
-    let format = interp.try_convert_mut(format)?;
-
-    strftime(interp, time, format)
+    strftime_with_encoding(interp, time, format.as_bytes(), Encoding::Utf8)
 }
 
 pub fn to_string(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
@@ -247,9 +247,7 @@ pub fn to_string(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error
         "%Y-%m-%d %H:%M:%S %z"
     };
 
-    let format = interp.try_convert_mut(format)?;
-
-    strftime(interp, time, format)
+    strftime_with_encoding(interp, time, format.as_bytes(), Encoding::Utf8)
 }
 
 pub fn to_array(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
@@ -477,10 +475,13 @@ pub fn subsec(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
 }
 
 // Time format
-
-pub fn strftime(interp: &mut Artichoke, mut time: Value, format: Value) -> Result<Value, Error> {
+fn strftime_with_encoding(
+    interp: &mut Artichoke,
+    mut time: Value,
+    format: &[u8],
+    encoding: Encoding,
+) -> Result<Value, Error> {
     let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
-    let format = interp.try_convert_mut(format)?;
 
     let bytes: Vec<u8> = time.strftime(format).map_err(|e| {
         // InvalidFormatString is the only true ArgumentError, where as the
@@ -508,5 +509,15 @@ pub fn strftime(interp: &mut Artichoke, mut time: Value, format: Value) -> Resul
         }
     })?;
 
-    interp.try_convert_mut(&bytes[..])
+    let result = String::with_bytes_and_encoding(bytes, encoding);
+
+    String::alloc_value(result, interp)
+}
+
+pub fn strftime(interp: &mut Artichoke, time: Value, format: Value) -> Result<Value, Error> {
+    let mut format = to_str(interp, format)?;
+
+    let format = unsafe { String::unbox_from_value(&mut format, interp)? };
+
+    strftime_with_encoding(interp, time, &format, format.encoding())
 }
