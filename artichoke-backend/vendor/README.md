@@ -29,9 +29,9 @@ patches][ruby-patches].
 
 [ruby]: https://github.com/ruby/ruby
 [ruby-fork]: https://github.com/artichoke/ruby/tree/artichoke-vendor
-[ruby-forked-from]: https://github.com/ruby/ruby/tree/v2_6_3
+[ruby-forked-from]: https://github.com/ruby/ruby/tree/v3_1_2
 [ruby-patches]:
-  https://github.com/artichoke/ruby/compare/v2_6_3...artichoke:artichoke-vendor?expand=1
+  https://github.com/artichoke/ruby/compare/v3_1_2...artichoke:artichoke-vendor?expand=1
 
 # Emscripten headers
 
