@@ -39,7 +39,6 @@ spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", op
 spinoso-string = { version = "0.20.0", path = "../spinoso-string", features = ["always-nul-terminated-c-string-compat"] }
 spinoso-symbol = { version = "0.3.0", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.7.0", path = "../spinoso-time", features = ["tzrs"], default-features = false, optional = true }
-strftime-ruby = { version = "1.0.0", optional = true }
 
 [dev-dependencies]
 quickcheck = { version = "1.0.3", default-features = false }
@@ -70,7 +69,7 @@ core-math-full = ["core-math", "spinoso-math?/full"]
 core-random = ["dep:spinoso-random"]
 core-regexp = ["dep:spinoso-regexp"]
 core-regexp-oniguruma = ["core-regexp", "spinoso-regexp?/oniguruma", "dep:onig"]
-core-time = ["dep:spinoso-time", "dep:strftime-ruby"]
+core-time = ["dep:spinoso-time"]
 
 load-path-native-file-system-loader = ["artichoke-load-path/native-file-system-loader"]
 load-path-rubylib-native-file-system-loader = ["load-path-native-file-system-loader", "artichoke-load-path/rubylib-native-file-system-loader"]
