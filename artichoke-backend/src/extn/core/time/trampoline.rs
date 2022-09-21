@@ -1,5 +1,7 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
+use spinoso_time::strftime::Error::InvalidFormatString;
+
 use crate::convert::implicitly_convert_to_int;
 use crate::extn::core::time::{subsec::Subsec, Offset, Time};
 use crate::extn::prelude::*;
@@ -483,12 +485,17 @@ pub fn strftime(interp: &mut Artichoke, mut time: Value, format: Value) -> Resul
         //	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `load'
         //	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `<main>'
         // ```
-        if let strftime::Error::InvalidFormatString = e {
-            let mut message = br#"invalid format: "#.to_vec();
-            message.extend_from_slice(format);
-            Error::from(ArgumentError::from(message))
-        } else {
-            Error::from(RuntimeError::with_message("Unexpected failure"))
+        //
+        // Note: The errors which are re-thrown as RuntimeError include (but is
+        // not limited to: `InvalidTime`, `FormattedStringTooLarge`,
+        // `WriteZero`, `FmtError(Error)`, `OutOfMemory(TryReserveError)`
+        match e {
+            InvalidFormatString => {
+                let mut message = br#"invalid format: "#.to_vec();
+                message.extend_from_slice(format);
+                Error::from(ArgumentError::from(message))
+            }
+            _ => Error::from(RuntimeError::with_message("Unexpected failure")),
         }
     })?;
 
