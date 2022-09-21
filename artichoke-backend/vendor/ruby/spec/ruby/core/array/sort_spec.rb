@@ -58,15 +58,15 @@ describe "Array#sort" do
     b = ArraySpecs::MockForCompared.new
     c = ArraySpecs::MockForCompared.new
 
-    ArraySpecs::MockForCompared.compared?.should == false
+    ArraySpecs::MockForCompared.should_not.compared?
     [a, b, c].sort.should == [c, b, a]
-    ArraySpecs::MockForCompared.compared?.should == true
+    ArraySpecs::MockForCompared.should.compared?
   end
 
   it "does not deal with exceptions raised by unimplemented or incorrect #<=>" do
     o = Object.new
 
-    lambda {
+    -> {
       [o, 1].sort
     }.should raise_error(ArgumentError)
   end
@@ -78,7 +78,7 @@ describe "Array#sort" do
   end
 
   it "raises an error when a given block returns nil" do
-    lambda { [1, 2].sort {} }.should raise_error(ArgumentError)
+    -> { [1, 2].sort {} }.should raise_error(ArgumentError)
   end
 
   it "does not call #<=> on contained objects when invoked with a block" do
@@ -104,17 +104,17 @@ describe "Array#sort" do
 
   it "does not freezes self during being sorted" do
     a = [1, 2, 3]
-    a.sort { |x,y| a.frozen?.should == false; x <=> y }
+    a.sort { |x,y| a.should_not.frozen?; x <=> y }
   end
 
   it "returns the specified value when it would break in the given block" do
     [1, 2, 3].sort{ break :a }.should == :a
   end
 
-  it "uses the sign of Bignum block results as the sort result" do
+  it "uses the sign of Integer block results as the sort result" do
     a = [1, 2, 5, 10, 7, -4, 12]
     begin
-      class Bignum;
+      class Integer
         alias old_spaceship <=>
         def <=>(other)
           raise
@@ -122,7 +122,7 @@ describe "Array#sort" do
       end
       a.sort {|n, m| (n - m) * (2 ** 200)}.should == [-4, 1, 2, 5, 7, 10, 12]
     ensure
-      class Bignum
+      class Integer
         alias <=> old_spaceship
       end
     end
@@ -132,9 +132,9 @@ describe "Array#sort" do
     a = [1, 2, 5, 10, 7, -4, 12]
     a.sort { |n, m| n - m }.should == [-4, 1, 2, 5, 7, 10, 12]
     a.sort { |n, m|
-      ArraySpecs::ComparableWithFixnum.new(n-m)
+      ArraySpecs::ComparableWithInteger.new(n-m)
     }.should == [-4, 1, 2, 5, 7, 10, 12]
-    lambda {
+    -> {
       a.sort { |n, m| (n - m).to_s }
     }.should raise_error(ArgumentError)
   end
@@ -155,7 +155,7 @@ describe "Array#sort" do
 
   it "raises an error if objects can't be compared" do
     a=[ArraySpecs::Uncomparable.new, ArraySpecs::Uncomparable.new]
-    lambda {a.sort}.should raise_error(ArgumentError)
+    -> {a.sort}.should raise_error(ArgumentError)
   end
 
   # From a strange Rubinius bug
@@ -207,9 +207,9 @@ describe "Array#sort!" do
     b = ArraySpecs::MockForCompared.new
     c = ArraySpecs::MockForCompared.new
 
-    ArraySpecs::MockForCompared.compared?.should == false
+    ArraySpecs::MockForCompared.should_not.compared?
     [a, b, c].sort!.should == [c, b, a]
-    ArraySpecs::MockForCompared.compared?.should == true
+    ArraySpecs::MockForCompared.should.compared?
   end
 
   it "does not call #<=> on contained objects when invoked with a block" do
@@ -233,8 +233,8 @@ describe "Array#sort!" do
     a.sort!{ -1 }.should be_an_instance_of(Array)
   end
 
-  it "raises a #{frozen_error_class} on a frozen array" do
-    lambda { ArraySpecs.frozen_array.sort! }.should raise_error(frozen_error_class)
+  it "raises a FrozenError on a frozen array" do
+    -> { ArraySpecs.frozen_array.sort! }.should raise_error(FrozenError)
   end
 
   it "returns the specified value when it would break in the given block" do

@@ -13,7 +13,7 @@ describe "IO.sysopen" do
 
   it "returns the file descriptor for a given path" do
     @fd = IO.sysopen(@filename, "w")
-    @fd.should be_kind_of(Fixnum)
+    @fd.should be_kind_of(Integer)
     @fd.should_not equal(0)
   end
 
@@ -21,7 +21,7 @@ describe "IO.sysopen" do
   platform_is_not :windows do
     it "works on directories" do
       @fd = IO.sysopen(tmp(""))    # /tmp
-      @fd.should be_kind_of(Fixnum)
+      @fd.should be_kind_of(Integer)
       @fd.should_not equal(0)
     end
   end
@@ -33,7 +33,7 @@ describe "IO.sysopen" do
   end
 
   it "accepts a mode as second argument" do
-    lambda { @fd = IO.sysopen(@filename, "w") }.should_not raise_error
+    -> { @fd = IO.sysopen(@filename, "w") }.should_not raise_error
     @fd.should_not equal(0)
   end
 

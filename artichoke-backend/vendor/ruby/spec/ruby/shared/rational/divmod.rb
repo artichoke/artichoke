@@ -9,8 +9,8 @@ describe :rational_divmod_rat, shared: true do
     Rational(bignum_value, 4).divmod(Rational(4, 3)).should eql([1729382256910270464, Rational(0, 1)])
   end
 
-  it "raises a ZeroDivisonError when passed a Rational with a numerator of 0" do
-    lambda { Rational(7, 4).divmod(Rational(0, 3)) }.should raise_error(ZeroDivisionError)
+  it "raises a ZeroDivisionError when passed a Rational with a numerator of 0" do
+    -> { Rational(7, 4).divmod(Rational(0, 3)) }.should raise_error(ZeroDivisionError)
   end
 end
 
@@ -23,7 +23,7 @@ describe :rational_divmod_int, shared: true do
   end
 
   it "raises a ZeroDivisionError when passed 0" do
-    lambda { Rational(7, 4).divmod(0) }.should raise_error(ZeroDivisionError)
+    -> { Rational(7, 4).divmod(0) }.should raise_error(ZeroDivisionError)
   end
 end
 
@@ -37,6 +37,6 @@ describe :rational_divmod_float, shared: true do
   end
 
   it "raises a ZeroDivisionError when passed 0" do
-    lambda { Rational(7, 4).divmod(0.0) }.should raise_error(ZeroDivisionError)
+    -> { Rational(7, 4).divmod(0.0) }.should raise_error(ZeroDivisionError)
   end
 end

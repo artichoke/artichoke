@@ -1,5 +1,5 @@
 #! /your/favourite/path/to/ruby
-# -*- mode: ruby; coding: utf-8; indent-tabs-mode: nil; ruby-indent-level: 2 -*-
+# -*- Ruby -*-
 # -*- frozen_string_literal: true; -*-
 # -*- warn_indent: true; -*-
 #
@@ -20,7 +20,8 @@ class RubyVM::Scanner
   attr_reader :__LINE__
 
   def initialize path
-    src       = Pathname.new(__FILE__).relative_path_from(Pathname.pwd).dirname
+    src       = Pathname.new(__FILE__)
+    src       = (src.relative_path_from(Pathname.pwd) rescue src).dirname
     src      += path
     @__LINE__ = 1
     @__FILE__ = src.to_path

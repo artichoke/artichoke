@@ -34,8 +34,10 @@ describe 'Socket#listen' do
         @server.close
       end
 
-      it 'raises Errno::EOPNOTSUPP' do
-        lambda { @server.listen(1) }.should raise_error(Errno::EOPNOTSUPP)
+      it 'raises Errno::EOPNOTSUPP or Errno::EACCES' do
+        -> { @server.listen(1) }.should raise_error { |e|
+          [Errno::EOPNOTSUPP, Errno::EACCES].should.include?(e.class)
+        }
       end
     end
 
@@ -57,7 +59,7 @@ describe 'Socket#listen' do
       end
 
       it "raises when the given argument can't be coerced to an Integer" do
-        lambda { @server.listen('cats') }.should raise_error(TypeError)
+        -> { @server.listen('cats') }.should raise_error(TypeError)
       end
     end
   end

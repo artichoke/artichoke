@@ -5,7 +5,7 @@ require "set"
 
 module Bundler
   class CompactIndexClient
-    DEBUG_MUTEX = Mutex.new
+    DEBUG_MUTEX = Thread::Mutex.new
     def self.debug
       return unless ENV["DEBUG_COMPACT_INDEX"]
       DEBUG_MUTEX.synchronize { warn("[#{self}] #{yield}") }
@@ -13,15 +13,10 @@ module Bundler
 
     class Error < StandardError; end
 
-    require "bundler/compact_index_client/cache"
-    require "bundler/compact_index_client/updater"
+    require_relative "compact_index_client/cache"
+    require_relative "compact_index_client/updater"
 
     attr_reader :directory
-
-    # @return [Lambda] A lambda that takes an array of inputs and a block, and
-    #         maps the inputs with the block in parallel.
-    #
-    attr_accessor :in_parallel
 
     def initialize(directory, fetcher)
       @directory = Pathname.new(directory)
@@ -30,8 +25,29 @@ module Bundler
       @endpoints = Set.new
       @info_checksums_by_name = {}
       @parsed_checksums = false
-      @mutex = Mutex.new
-      @in_parallel = lambda do |inputs, &blk|
+      @mutex = Thread::Mutex.new
+    end
+
+    def execution_mode=(block)
+      Bundler::CompactIndexClient.debug { "execution_mode=" }
+      @endpoints = Set.new
+
+      @execution_mode = block
+    end
+
+    # @return [Lambda] A lambda that takes an array of inputs and a block, and
+    #         maps the inputs with the block in parallel.
+    #
+    def execution_mode
+      @execution_mode || sequentially
+    end
+
+    def sequential_execution_mode!
+      self.execution_mode = sequentially
+    end
+
+    def sequentially
+      @sequentially ||= lambda do |inputs, &blk|
         inputs.map(&blk)
       end
     end
@@ -51,16 +67,10 @@ module Bundler
 
     def dependencies(names)
       Bundler::CompactIndexClient.debug { "dependencies(#{names})" }
-      in_parallel.call(names) do |name|
+      execution_mode.call(names) do |name|
         update_info(name)
         @cache.dependencies(name).map {|d| d.unshift(name) }
       end.flatten(1)
-    end
-
-    def spec(name, version, platform = nil)
-      Bundler::CompactIndexClient.debug { "spec(name = #{name}, version = #{version}, platform = #{platform})" }
-      update_info(name)
-      @cache.specific_dependency(name, version, platform)
     end
 
     def update_and_parse_checksums!
@@ -71,7 +81,7 @@ module Bundler
       @parsed_checksums = true
     end
 
-  private
+    private
 
     def update(local_path, remote_path)
       Bundler::CompactIndexClient.debug { "update(#{local_path}, #{remote_path})" }

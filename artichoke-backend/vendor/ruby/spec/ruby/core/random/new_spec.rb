@@ -4,7 +4,7 @@ describe "Random.new" do
   end
 
   it "uses a random seed value if none is supplied" do
-    Random.new.seed.should be_an_instance_of(Bignum)
+    Random.new.seed.should be_an_instance_of(Integer)
   end
 
   it "returns Random instances initialized with different seeds" do
@@ -30,7 +30,7 @@ describe "Random.new" do
   end
 
   it "raises a RangeError if passed a Complex (with imaginary part) seed value as an argument" do
-    lambda do
+    -> do
       Random.new(Complex(20,2))
     end.should raise_error(RangeError)
   end

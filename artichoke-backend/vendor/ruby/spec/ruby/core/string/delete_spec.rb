@@ -14,7 +14,7 @@ describe "String#delete" do
   end
 
   it "raises an ArgumentError when given no arguments" do
-    lambda { "hell yeah".delete }.should raise_error(ArgumentError)
+    -> { "hell yeah".delete }.should raise_error(ArgumentError)
   end
 
   it "negates sets starting with ^" do
@@ -62,17 +62,19 @@ describe "String#delete" do
     not_supported_on :opal do
       xFF = [0xFF].pack('C')
       range = "\x00 - #{xFF}".force_encoding('utf-8')
-      lambda { "hello".delete(range).should == "" }.should raise_error(ArgumentError)
+      -> { "hello".delete(range).should == "" }.should raise_error(ArgumentError)
     end
-    lambda { "hello".delete("h-e") }.should raise_error(ArgumentError)
-    lambda { "hello".delete("^h-e") }.should raise_error(ArgumentError)
+    -> { "hello".delete("h-e") }.should raise_error(ArgumentError)
+    -> { "hello".delete("^h-e") }.should raise_error(ArgumentError)
   end
 
-  it "taints result when self is tainted" do
-    "hello".taint.delete("e").tainted?.should == true
-    "hello".taint.delete("a-z").tainted?.should == true
+  ruby_version_is ''...'2.7' do
+    it "taints result when self is tainted" do
+      "hello".taint.delete("e").should.tainted?
+      "hello".taint.delete("a-z").should.tainted?
 
-    "hello".delete("e".taint).tainted?.should == false
+      "hello".delete("e".taint).should_not.tainted?
+    end
   end
 
   it "tries to convert each set arg to a string using to_str" do
@@ -86,13 +88,21 @@ describe "String#delete" do
   end
 
   it "raises a TypeError when one set arg can't be converted to a string" do
-    lambda { "hello world".delete(100)       }.should raise_error(TypeError)
-    lambda { "hello world".delete([])        }.should raise_error(TypeError)
-    lambda { "hello world".delete(mock('x')) }.should raise_error(TypeError)
+    -> { "hello world".delete(100)       }.should raise_error(TypeError)
+    -> { "hello world".delete([])        }.should raise_error(TypeError)
+    -> { "hello world".delete(mock('x')) }.should raise_error(TypeError)
   end
 
-  it "returns subclass instances when called on a subclass" do
-    StringSpecs::MyString.new("oh no!!!").delete("!").should be_an_instance_of(StringSpecs::MyString)
+  ruby_version_is ''...'3.0' do
+    it "returns subclass instances when called on a subclass" do
+      StringSpecs::MyString.new("oh no!!!").delete("!").should be_an_instance_of(StringSpecs::MyString)
+    end
+  end
+
+  ruby_version_is '3.0' do
+    it "returns String instances when called on a subclass" do
+      StringSpecs::MyString.new("oh no!!!").delete("!").should be_an_instance_of(String)
+    end
   end
 end
 
@@ -109,11 +119,11 @@ describe "String#delete!" do
     a.should == "hello"
   end
 
-  it "raises a #{frozen_error_class} when self is frozen" do
+  it "raises a FrozenError when self is frozen" do
     a = "hello"
     a.freeze
 
-    lambda { a.delete!("")            }.should raise_error(frozen_error_class)
-    lambda { a.delete!("aeiou", "^e") }.should raise_error(frozen_error_class)
+    -> { a.delete!("")            }.should raise_error(FrozenError)
+    -> { a.delete!("aeiou", "^e") }.should raise_error(FrozenError)
   end
 end

@@ -268,8 +268,10 @@ assert_equal %q{}, %q{
   defined?(@@a)
 }
 assert_equal %q{class variable}, %q{
-  @@a = 1
-  defined?(@@a)
+  class A
+    @@a = 1
+    defined?(@@a)
+  end
 }
 assert_equal %q{}, %q{
   defined?($a)
@@ -626,7 +628,7 @@ assert_equal '2', %q{
 }
 
 assert_match /invalid multibyte char/, %q{
-  STDERR.reopen(STDOUT)
+  $stderr = STDOUT
   eval("\"\xf0".force_encoding("utf-8"))
 }, '[ruby-dev:32429]'
 

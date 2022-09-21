@@ -1,22 +1,24 @@
 # frozen_string_literal: true
 
+require "tmpdir"
+require "tempfile"
+
 RSpec.describe "Bundler.setup" do
   describe "with no arguments" do
     it "makes all groups available" do
       install_gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :group => :test
       G
 
       ruby <<-RUBY
-        require 'rubygems'
         require 'bundler'
         Bundler.setup
 
         require 'rack'
         puts RACK
       RUBY
-      expect(err).to lack_errors
+      expect(err).to be_empty
       expect(out).to eq("1.0.0")
     end
   end
@@ -24,7 +26,7 @@ RSpec.describe "Bundler.setup" do
   describe "when called with groups" do
     before(:each) do
       install_gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "yard"
         gem "rack", :group => :test
       G
@@ -32,7 +34,6 @@ RSpec.describe "Bundler.setup" do
 
     it "doesn't make all groups available" do
       ruby <<-RUBY
-        require 'rubygems'
         require 'bundler'
         Bundler.setup(:default)
 
@@ -42,26 +43,24 @@ RSpec.describe "Bundler.setup" do
           puts "WIN"
         end
       RUBY
-      expect(err).to lack_errors
+      expect(err).to be_empty
       expect(out).to eq("WIN")
     end
 
     it "accepts string for group name" do
       ruby <<-RUBY
-        require 'rubygems'
         require 'bundler'
         Bundler.setup(:default, 'test')
 
         require 'rack'
         puts RACK
       RUBY
-      expect(err).to lack_errors
+      expect(err).to be_empty
       expect(out).to eq("1.0.0")
     end
 
     it "leaves all groups available if they were already" do
       ruby <<-RUBY
-        require 'rubygems'
         require 'bundler'
         Bundler.setup
         Bundler.setup(:default)
@@ -69,13 +68,12 @@ RSpec.describe "Bundler.setup" do
         require 'rack'
         puts RACK
       RUBY
-      expect(err).to lack_errors
+      expect(err).to be_empty
       expect(out).to eq("1.0.0")
     end
 
     it "leaves :default available if setup is called twice" do
       ruby <<-RUBY
-        require 'rubygems'
         require 'bundler'
         Bundler.setup(:default)
         Bundler.setup(:default, :test)
@@ -87,12 +85,12 @@ RSpec.describe "Bundler.setup" do
           puts "FAIL"
         end
       RUBY
-      expect(err).to lack_errors
+      expect(err).to be_empty
       expect(out).to match("WIN")
     end
 
     it "handles multiple non-additive invocations" do
-      ruby <<-RUBY
+      ruby <<-RUBY, :raise_on_error => false
         require 'bundler'
         Bundler.setup(:default, :test)
         Bundler.setup(:default)
@@ -109,27 +107,21 @@ RSpec.describe "Bundler.setup" do
 
   context "load order" do
     def clean_load_path(lp)
-      without_bundler_load_path = ruby!("puts $LOAD_PATH").split("\n")
-      lp = lp - [
-        bundler_path.to_s,
-        bundler_path.join("gems/bundler-#{Bundler::VERSION}/lib").to_s,
-        tmp("rubygems/lib").to_s,
-        root.join("../lib").expand_path.to_s,
-      ] - without_bundler_load_path
-      lp.map! {|p| p.sub(/^#{Regexp.union system_gem_path.to_s, default_bundle_path.to_s}/i, "") }
+      without_bundler_load_path = ruby("puts $LOAD_PATH").split("\n")
+      lp -= [*without_bundler_load_path, lib_dir.to_s]
+      lp.map! {|p| p.sub(system_gem_path.to_s, "") }
     end
 
     it "puts loaded gems after -I and RUBYLIB", :ruby_repo do
       install_gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack"
       G
 
-      ENV["RUBYOPT"] = "-Idash_i_dir"
+      ENV["RUBYOPT"] = "#{ENV["RUBYOPT"]} -Idash_i_dir"
       ENV["RUBYLIB"] = "rubylib_dir"
 
       ruby <<-RUBY
-        require 'rubygems'
         require 'bundler'
         Bundler.setup
         puts $LOAD_PATH
@@ -138,30 +130,26 @@ RSpec.describe "Bundler.setup" do
       load_path = out.split("\n")
       rack_load_order = load_path.index {|path| path.include?("rack") }
 
-      expect(err).to eq("")
-      expect(load_path[1]).to include "dash_i_dir"
-      expect(load_path[2]).to include "rubylib_dir"
+      expect(err).to be_empty
+      expect(load_path).to include(a_string_ending_with("dash_i_dir"), "rubylib_dir")
       expect(rack_load_order).to be > 0
     end
 
     it "orders the load path correctly when there are dependencies" do
+      bundle "config set path.system true"
+
       install_gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rails"
       G
 
-      ruby! <<-RUBY
-        require 'rubygems'
+      ruby <<-RUBY
         require 'bundler'
         Bundler.setup
         puts $LOAD_PATH
       RUBY
 
       load_path = clean_load_path(out.split("\n"))
-
-      unless Bundler.load.specs["bundler"].empty?
-        load_path.delete_if {|path| path =~ /bundler/ }
-      end
 
       expect(load_path).to start_with(
         "/gems/rails-2.3.2/lib",
@@ -170,20 +158,21 @@ RSpec.describe "Bundler.setup" do
         "/gems/actionpack-2.3.2/lib",
         "/gems/actionmailer-2.3.2/lib",
         "/gems/activesupport-2.3.2/lib",
-        "/gems/rake-10.0.2/lib"
+        "/gems/rake-13.0.1/lib"
       )
     end
 
     it "falls back to order the load path alphabetically for backwards compatibility" do
-      install_gemfile! <<-G
-        source "file://#{gem_repo1}"
+      bundle "config set path.system true"
+
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem "weakling"
         gem "duradura"
         gem "terranova"
       G
 
-      ruby! <<-RUBY
-        require 'rubygems'
+      ruby <<-RUBY
         require 'bundler/setup'
         puts $LOAD_PATH
       RUBY
@@ -200,13 +189,12 @@ RSpec.describe "Bundler.setup" do
 
   it "raises if the Gemfile was not yet installed" do
     gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack"
     G
 
     ruby <<-R
-      require 'rubygems'
-      require 'bundler'
+      require '#{entrypoint}'
 
       begin
         Bundler.setup
@@ -221,68 +209,66 @@ RSpec.describe "Bundler.setup" do
 
   it "doesn't create a Gemfile.lock if the setup fails" do
     gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack"
     G
 
-    ruby <<-R
-      require 'rubygems'
+    ruby <<-R, :raise_on_error => false
       require 'bundler'
 
       Bundler.setup
     R
 
-    expect(bundled_app("Gemfile.lock")).not_to exist
+    expect(bundled_app_lock).not_to exist
   end
 
   it "doesn't change the Gemfile.lock if the setup fails" do
     install_gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack"
     G
 
-    lockfile = File.read(bundled_app("Gemfile.lock"))
+    lockfile = File.read(bundled_app_lock)
 
     gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack"
       gem "nosuchgem", "10.0"
     G
 
-    ruby <<-R
-      require 'rubygems'
+    ruby <<-R, :raise_on_error => false
       require 'bundler'
 
       Bundler.setup
     R
 
-    expect(File.read(bundled_app("Gemfile.lock"))).to eq(lockfile)
+    expect(File.read(bundled_app_lock)).to eq(lockfile)
   end
 
   it "makes a Gemfile.lock if setup succeeds" do
     install_gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack"
     G
 
-    File.read(bundled_app("Gemfile.lock"))
+    File.read(bundled_app_lock)
 
-    FileUtils.rm(bundled_app("Gemfile.lock"))
+    FileUtils.rm(bundled_app_lock)
 
     run "1"
-    expect(bundled_app("Gemfile.lock")).to exist
+    expect(bundled_app_lock).to exist
   end
 
   describe "$BUNDLE_GEMFILE" do
     context "user provides an absolute path" do
       it "uses BUNDLE_GEMFILE to locate the gemfile if present" do
         gemfile <<-G
-          source "file://#{gem_repo1}"
+          source "#{file_uri_for(gem_repo1)}"
           gem "rack"
         G
 
         gemfile bundled_app("4realz"), <<-G
-          source "file://#{gem_repo1}"
+          source "#{file_uri_for(gem_repo1)}"
           gem "activesupport", "2.3.5"
         G
 
@@ -294,17 +280,16 @@ RSpec.describe "Bundler.setup" do
     end
 
     context "an absolute path is not provided" do
-      it "uses BUNDLE_GEMFILE to locate the gemfile if present" do
+      it "uses BUNDLE_GEMFILE to locate the gemfile if present and doesn't fail in deployment mode" do
         gemfile <<-G
-          source "file://#{gem_repo1}"
+          source "#{file_uri_for(gem_repo1)}"
         G
 
         bundle "install"
-        bundle "install --deployment"
+        bundle "config set --local deployment true"
 
         ENV["BUNDLE_GEMFILE"] = "Gemfile"
         ruby <<-R
-          require 'rubygems'
           require 'bundler'
 
           begin
@@ -323,7 +308,7 @@ RSpec.describe "Bundler.setup" do
   it "prioritizes gems in BUNDLE_PATH over gems in GEM_HOME" do
     ENV["BUNDLE_PATH"] = bundled_app(".bundle").to_s
     install_gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack", "1.0.0"
     G
 
@@ -338,7 +323,7 @@ RSpec.describe "Bundler.setup" do
     describe "by replacing #gem" do
       before :each do
         install_gemfile <<-G
-          source "file://#{gem_repo1}"
+          source "#{file_uri_for(gem_repo1)}"
           gem "rack", "0.9.1"
         G
       end
@@ -366,7 +351,7 @@ RSpec.describe "Bundler.setup" do
           end
         R
 
-        expect(err).to lack_errors
+        expect(err).to be_empty
       end
 
       it "replaces #gem but raises when the version is wrong" do
@@ -392,7 +377,7 @@ RSpec.describe "Bundler.setup" do
           end
         R
 
-        expect(err).to lack_errors
+        expect(err).to be_empty
       end
     end
 
@@ -400,7 +385,7 @@ RSpec.describe "Bundler.setup" do
       before :each do
         system_gems "activesupport-2.3.5"
         install_gemfile <<-G
-          source "file://#{gem_repo1}"
+          source "#{file_uri_for(gem_repo1)}"
           gem "yard"
         G
       end
@@ -429,7 +414,7 @@ RSpec.describe "Bundler.setup" do
       end
 
       gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         path "#{lib_path("rack-1.0.0")}" do
           gem "rack"
         end
@@ -445,12 +430,13 @@ RSpec.describe "Bundler.setup" do
       build_git "rack", "1.0.0"
 
       gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :git => "#{lib_path("rack-1.0.0")}"
       G
     end
 
     it "provides a useful exception when the git repo is not checked out yet" do
-      run "1"
+      run "1", :raise_on_error => false
       expect(err).to match(/the git source #{lib_path('rack-1.0.0')} is not yet checked out. Please run `bundle install`/i)
     end
 
@@ -460,7 +446,6 @@ RSpec.describe "Bundler.setup" do
       break_git!
 
       ruby <<-R
-        require 'rubygems'
         require 'bundler'
 
         begin
@@ -477,13 +462,12 @@ RSpec.describe "Bundler.setup" do
     it "provides a good exception if the lockfile is unavailable" do
       bundle "install"
 
-      FileUtils.rm(bundled_app("Gemfile.lock"))
+      FileUtils.rm(bundled_app_lock)
 
       break_git!
 
       ruby <<-R
-        require "rubygems"
-        require "bundler"
+        require "#{entrypoint}"
 
         begin
           Bundler.setup
@@ -493,29 +477,32 @@ RSpec.describe "Bundler.setup" do
         end
       R
 
-      run "puts 'FAIL'"
+      run "puts 'FAIL'", :raise_on_error => false
 
       expect(err).not_to include "This is not the git you are looking for"
     end
 
     it "works even when the cache directory has been deleted" do
-      bundle! :install, forgotten_command_line_options(:path => "vendor/bundle")
+      bundle "config set --local path vendor/bundle"
+      bundle :install
       FileUtils.rm_rf vendored_gems("cache")
       expect(the_bundle).to include_gems "rack 1.0.0"
     end
 
     it "does not randomly change the path when specifying --path and the bundle directory becomes read only" do
-      bundle! :install, forgotten_command_line_options(:path => "vendor/bundle")
+      bundle "config set --local path vendor/bundle"
+      bundle :install
 
-      with_read_only("**/*") do
+      with_read_only("#{bundled_app}/**/*") do
         expect(the_bundle).to include_gems "rack 1.0.0"
       end
     end
 
     it "finds git gem when default bundle path becomes read only" do
+      bundle "config set --local path .bundle"
       bundle "install"
 
-      with_read_only("#{Bundler.bundle_path}/**/*") do
+      with_read_only("#{bundled_app(".bundle")}/**/*") do
         expect(the_bundle).to include_gems "rack 1.0.0"
       end
     end
@@ -528,15 +515,15 @@ RSpec.describe "Bundler.setup" do
       FileUtils.cp_r("#{lib_path("rack-0.8")}/.", lib_path("local-rack"))
 
       gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :git => "#{lib_path("rack-0.8")}", :branch => "master"
       G
 
-      bundle %(config local.rack #{lib_path("local-rack")})
-      bundle! :install
+      bundle %(config set local.rack #{lib_path("local-rack")})
+      bundle :install
 
       FileUtils.rm_rf(lib_path("local-rack"))
-      run "require 'rack'"
+      run "require 'rack'", :raise_on_error => false
       expect(err).to match(/Cannot use local override for rack-0.8 because #{Regexp.escape(lib_path('local-rack').to_s)} does not exist/)
     end
 
@@ -546,19 +533,19 @@ RSpec.describe "Bundler.setup" do
       FileUtils.cp_r("#{lib_path("rack-0.8")}/.", lib_path("local-rack"))
 
       gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :git => "#{lib_path("rack-0.8")}", :branch => "master"
       G
 
-      bundle %(config local.rack #{lib_path("local-rack")})
-      bundle! :install
+      bundle %(config set local.rack #{lib_path("local-rack")})
+      bundle :install
 
       gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :git => "#{lib_path("rack-0.8")}"
       G
 
-      run "require 'rack'"
+      run "require 'rack'", :raise_on_error => false
       expect(err).to match(/because :branch is not specified in Gemfile/)
     end
 
@@ -568,19 +555,19 @@ RSpec.describe "Bundler.setup" do
       FileUtils.cp_r("#{lib_path("rack-0.8")}/.", lib_path("local-rack"))
 
       gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :git => "#{lib_path("rack-0.8")}", :branch => "master"
       G
 
-      bundle %(config local.rack #{lib_path("local-rack")})
-      bundle! :install
+      bundle %(config set local.rack #{lib_path("local-rack")})
+      bundle :install
 
       gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :git => "#{lib_path("rack-0.8")}", :branch => "changed"
       G
 
-      run "require 'rack'"
+      run "require 'rack'", :raise_on_error => false
       expect(err).to match(/is using branch master but Gemfile specifies changed/)
     end
 
@@ -590,25 +577,26 @@ RSpec.describe "Bundler.setup" do
       FileUtils.cp_r("#{lib_path("rack-0.8")}/.", lib_path("local-rack"))
 
       install_gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :git => "#{lib_path("rack-0.8")}", :ref => "master", :branch => "master"
       G
 
       gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", :git => "#{lib_path("rack-0.8")}", :ref => "master", :branch => "nonexistant"
       G
 
-      bundle %(config local.rack #{lib_path("local-rack")})
-      run "require 'rack'"
+      bundle %(config set local.rack #{lib_path("local-rack")})
+      run "require 'rack'", :raise_on_error => false
       expect(err).to match(/is using branch master but Gemfile specifies nonexistant/)
     end
   end
 
   describe "when excluding groups" do
     it "doesn't change the resolve if --without is used" do
-      install_gemfile <<-G, forgotten_command_line_options(:without => :rails)
-        source "file://#{gem_repo1}"
+      bundle "config set --local without rails"
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem "activesupport"
 
         group :rails do
@@ -616,14 +604,15 @@ RSpec.describe "Bundler.setup" do
         end
       G
 
-      install_gems "activesupport-2.3.5"
+      system_gems "activesupport-2.3.5"
 
       expect(the_bundle).to include_gems "activesupport 2.3.2", :groups => :default
     end
 
     it "remembers --without and does not bail on bare Bundler.setup" do
-      install_gemfile <<-G, forgotten_command_line_options(:without => :rails)
-        source "file://#{gem_repo1}"
+      bundle "config set --local without rails"
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem "activesupport"
 
         group :rails do
@@ -631,14 +620,54 @@ RSpec.describe "Bundler.setup" do
         end
       G
 
-      install_gems "activesupport-2.3.5"
+      system_gems "activesupport-2.3.5"
 
       expect(the_bundle).to include_gems "activesupport 2.3.2"
     end
 
+    it "remembers --without and does not bail on bare Bundler.setup, even in the case of path gems no longer available" do
+      bundle "config set --local without development"
+
+      path = bundled_app(File.join("vendor", "foo"))
+      build_lib "foo", :path => path
+
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
+        gem "activesupport", "2.3.2"
+        gem 'foo', :path => 'vendor/foo', :group => :development
+      G
+
+      FileUtils.rm_rf(path)
+
+      ruby "require 'bundler'; Bundler.setup", :env => { "DEBUG" => "1" }
+      expect(out).to include("Assuming that source at `vendor/foo` has not changed since fetching its specs errored")
+      expect(out).to include("Found no changes, using resolution from the lockfile")
+      expect(err).to be_empty
+    end
+
+    it "doesn't re-resolve when a pre-release bundler is used and a dependency includes a dependency on bundler" do
+      system_gems "bundler-9.99.9.beta1"
+
+      build_repo4 do
+        build_gem "depends_on_bundler", "1.0" do |s|
+          s.add_dependency "bundler", ">= 1.5.0"
+        end
+      end
+
+      install_gemfile <<~G
+        source "#{file_uri_for(gem_repo4)}"
+        gem "depends_on_bundler"
+      G
+
+      ruby "require '#{system_gem_path("gems/bundler-9.99.9.beta1/lib/bundler.rb")}'; Bundler.setup", :env => { "DEBUG" => "1" }
+      expect(out).to include("Found no changes, using resolution from the lockfile")
+      expect(err).to be_empty
+    end
+
     it "remembers --without and does not include groups passed to Bundler.setup" do
-      install_gemfile <<-G, forgotten_command_line_options(:without => :rails)
-        source "file://#{gem_repo1}"
+      bundle "config set --local without rails"
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem "activesupport"
 
         group :rack do
@@ -655,69 +684,13 @@ RSpec.describe "Bundler.setup" do
     end
   end
 
-  # Unfortunately, gem_prelude does not record the information about
-  # activated gems, so this test cannot work on 1.9 :(
-  if RUBY_VERSION < "1.9"
-    describe "preactivated gems" do
-      it "raises an exception if a pre activated gem conflicts with the bundle" do
-        system_gems "thin-1.0", "rack-1.0.0"
-        build_gem "thin", "1.1", :to_system => true do |s|
-          s.add_dependency "rack"
-        end
-
-        gemfile <<-G
-          gem "thin", "1.0"
-        G
-
-        ruby <<-R
-          require 'rubygems'
-          gem "thin"
-          require 'bundler'
-          begin
-            Bundler.setup
-            puts "FAIL"
-          rescue Gem::LoadError => e
-            puts e.message
-          end
-        R
-
-        expect(out).to eq("You have already activated thin 1.1, but your Gemfile requires thin 1.0. Prepending `bundle exec` to your command may solve this.")
-      end
-
-      it "version_requirement is now deprecated in rubygems 1.4.0+" do
-        system_gems "thin-1.0", "rack-1.0.0"
-        build_gem "thin", "1.1", :to_system => true do |s|
-          s.add_dependency "rack"
-        end
-
-        gemfile <<-G
-          gem "thin", "1.0"
-        G
-
-        ruby <<-R
-          require 'rubygems'
-          gem "thin"
-          require 'bundler'
-          begin
-            Bundler.setup
-            puts "FAIL"
-          rescue Gem::LoadError => e
-            puts e.message
-          end
-        R
-
-        expect(err).to lack_errors
-      end
-    end
-  end
-
   # RubyGems returns loaded_from as a string
   it "has loaded_from as a string on all specs" do
     build_git "foo"
     build_git "no-gemspec", :gemspec => false
 
     install_gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack"
       gem "foo", :git => "#{lib_path("foo-1.0")}"
       gem "no-gemspec", "1.0", :git => "#{lib_path("no-gemspec-1.0")}"
@@ -732,13 +705,13 @@ RSpec.describe "Bundler.setup" do
     expect(out).to be_empty
   end
 
-  it "does not load all gemspecs", :rubygems => ">= 2.3" do
-    install_gemfile! <<-G
-      source "file://#{gem_repo1}"
+  it "does not load all gemspecs" do
+    install_gemfile <<-G
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack"
     G
 
-    run! <<-R
+    run <<-R
       File.open(File.join(Gem.dir, "specifications", "broken.gemspec"), "w") do |f|
         f.write <<-RUBY
 # -*- encoding: utf-8 -*-
@@ -753,7 +726,7 @@ end
       end
     R
 
-    run! <<-R
+    run <<-R
       puts "WIN"
     R
 
@@ -762,51 +735,78 @@ end
 
   it "ignores empty gem paths" do
     install_gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "rack"
     G
 
     ENV["GEM_HOME"] = ""
-    bundle %(exec ruby -e "require 'set'"), :env => { :RUBYOPT => "-r#{spec_dir.join("support/hax")}" }
+    bundle %(exec ruby -e "require 'set'")
 
-    expect(err).to lack_errors
+    expect(err).to be_empty
   end
 
-  describe "$MANPATH" do
-    before do
+  context "when the user has `MANPATH` set", :man do
+    before { ENV["MANPATH"] = "/foo#{File::PATH_SEPARATOR}" }
+
+    it "adds the gem's man dir to the MANPATH" do
       build_repo4 do
         build_gem "with_man" do |s|
           s.write("man/man1/page.1", "MANPAGE")
         end
       end
+
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo4)}"
+        gem "with_man"
+      G
+
+      run "puts ENV['MANPATH']"
+      expect(out).to eq("#{default_bundle_path("gems/with_man-1.0/man")}#{File::PATH_SEPARATOR}/foo")
     end
+  end
 
-    context "when the user has one set" do
-      before { ENV["MANPATH"] = "/foo:" }
+  context "when the user does not have `MANPATH` set", :man do
+    before { ENV.delete("MANPATH") }
 
-      it "adds the gem's man dir to the MANPATH" do
-        install_gemfile! <<-G
-          source "file:#{gem_repo4}"
-          gem "with_man"
-        G
+    it "adds the gem's man dir to the MANPATH, leaving : in the end so that system man pages still work" do
+      build_repo4 do
+        build_gem "with_man" do |s|
+          s.write("man/man1/page.1", "MANPAGE")
+        end
 
-        run! "puts ENV['MANPATH']"
-        expect(out).to eq("#{default_bundle_path("gems/with_man-1.0/man")}:/foo")
+        build_gem "with_man_overriding_system_man" do |s|
+          s.write("man/man1/ls.1", "LS MANPAGE")
+        end
       end
-    end
 
-    context "when the user does not have one set" do
-      before { ENV.delete("MANPATH") }
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo4)}"
+        gem "with_man"
+      G
 
-      it "adds the gem's man dir to the MANPATH" do
-        install_gemfile! <<-G
-          source "file:#{gem_repo4}"
-          gem "with_man"
-        G
+      run <<~RUBY
+        puts ENV['MANPATH']
+        require "open3"
+        puts Open3.capture2e("man", "ls")[1].success?
+      RUBY
 
-        run! "puts ENV['MANPATH']"
-        expect(out).to eq(default_bundle_path("gems/with_man-1.0/man").to_s)
-      end
+      expect(out).to eq("#{default_bundle_path("gems/with_man-1.0/man")}#{File::PATH_SEPARATOR}\ntrue")
+
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo4)}"
+        gem "with_man_overriding_system_man"
+      G
+
+      run <<~RUBY
+        puts ENV['MANPATH']
+        require "open3"
+        puts Open3.capture2e("man", "ls")[0]
+      RUBY
+
+      lines = out.split("\n")
+
+      expect(lines).to include("#{default_bundle_path("gems/with_man_overriding_system_man-1.0/man")}#{File::PATH_SEPARATOR}")
+      expect(lines).to include("LS MANPAGE")
     end
   end
 
@@ -820,7 +820,7 @@ end
     end
 
     install_gemfile <<-G
-      source "file://#{gem_repo2}"
+      source "#{file_uri_for(gem_repo2)}"
       gem "requirepaths", :require => nil
     G
 
@@ -831,22 +831,20 @@ end
   it "should clean $LOAD_PATH properly", :ruby_repo do
     gem_name = "very_simple_binary"
     full_gem_name = gem_name + "-1.0"
-    ext_dir = File.join(tmp "extenstions", full_gem_name)
+    ext_dir = File.join(tmp("extensions", full_gem_name))
 
-    install_gem full_gem_name
+    system_gems full_gem_name
 
     install_gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
     G
 
     ruby <<-R
-      if Gem::Specification.method_defined? :extension_dir
-        s = Gem::Specification.find_by_name '#{gem_name}'
-        s.extension_dir = '#{ext_dir}'
+      s = Gem::Specification.find_by_name '#{gem_name}'
+      s.extension_dir = '#{ext_dir}'
 
-        # Don't build extensions.
-        s.class.send(:define_method, :build_extensions) { nil }
-      end
+      # Don't build extensions.
+      s.class.send(:define_method, :build_extensions) { nil }
 
       require 'bundler'
       gem '#{gem_name}'
@@ -863,67 +861,70 @@ end
 
   context "with bundler is located in symlinked GEM_HOME" do
     let(:gem_home) { Dir.mktmpdir }
-    let(:symlinked_gem_home) { Tempfile.new("gem_home") }
-    let(:bundler_dir) { ruby_core? ? File.expand_path("../../../..", __FILE__) : File.expand_path("../../..", __FILE__) }
-    let(:bundler_lib) { File.join(bundler_dir, "lib") }
+    let(:symlinked_gem_home) { Tempfile.new("gem_home").path }
+    let(:full_name) { "bundler-#{Bundler::VERSION}" }
 
     before do
-      FileUtils.ln_sf(gem_home, symlinked_gem_home.path)
+      skip "symlink destination exists" if Gem.win_platform?
+
+      FileUtils.ln_sf(gem_home, symlinked_gem_home)
       gems_dir = File.join(gem_home, "gems")
       specifications_dir = File.join(gem_home, "specifications")
       Dir.mkdir(gems_dir)
       Dir.mkdir(specifications_dir)
 
-      FileUtils.ln_s(bundler_dir, File.join(gems_dir, "bundler-#{Bundler::VERSION}"))
+      FileUtils.ln_s(source_root, File.join(gems_dir, full_name))
 
-      gemspec_file = ruby_core? ? "#{bundler_dir}/lib/bundler.gemspec" : "#{bundler_dir}/bundler.gemspec"
-      gemspec = File.read(gemspec_file).
-                sub("Bundler::VERSION", %("#{Bundler::VERSION}"))
-      gemspec = gemspec.lines.reject {|line| line =~ %r{lib/bundler/version} }.join
+      gemspec_content = File.binread(gemspec).
+                sub("Bundler::VERSION", %("#{Bundler::VERSION}")).
+                lines.reject {|line| line =~ %r{lib/bundler/version} }.join
 
-      File.open(File.join(specifications_dir, "bundler.gemspec"), "wb") do |f|
-        f.write(gemspec)
+      File.open(File.join(specifications_dir, "#{full_name}.gemspec"), "wb") do |f|
+        f.write(gemspec_content)
       end
     end
 
-    it "should succesfully require 'bundler/setup'", :ruby_repo do
-      install_gemfile ""
+    it "should not remove itself from the LOAD_PATH and require a different copy of 'bundler/setup'" do
+      install_gemfile "source \"#{file_uri_for(gem_repo1)}\""
 
-      ENV["GEM_PATH"] = symlinked_gem_home.path
-
-      ruby <<-R
-        if $LOAD_PATH.include?("#{bundler_lib}")
-          # We should use bundler from GEM_PATH for this test, so we should
-          # remove path to the bundler source tree
-          $LOAD_PATH.delete("#{bundler_lib}")
-        else
-          raise "We don't have #{bundler_lib} in $LOAD_PATH"
+      ruby <<-R, :env => { "GEM_PATH" => symlinked_gem_home }
+        TracePoint.trace(:class) do |tp|
+          if tp.path.include?("bundler") && !tp.path.start_with?("#{source_root}")
+            puts "OMG. Defining a class from another bundler at \#{tp.path}:\#{tp.lineno}"
+          end
         end
-        puts (require 'bundler/setup')
+        gem 'bundler', '#{Bundler::VERSION}'
+        require 'bundler/setup'
       R
 
-      expect(out).to eql("true")
+      expect(out).to be_empty
     end
   end
 
-  it "stubs out Gem.refresh so it does not reveal system gems" do
+  it "does not reveal system gems even when Gem.refresh is called" do
     system_gems "rack-1.0.0"
 
     install_gemfile <<-G
-      source "file://#{gem_repo1}"
+      source "#{file_uri_for(gem_repo1)}"
       gem "activesupport"
     G
 
     run <<-R
-      puts Bundler.rubygems.find_name("rack").inspect
+      puts Bundler.rubygems.all_specs.map(&:name)
       Gem.refresh
-      puts Bundler.rubygems.find_name("rack").inspect
+      puts Bundler.rubygems.all_specs.map(&:name)
     R
 
-    expect(out).to eq("[]\n[]")
+    expect(out).to eq("activesupport\nbundler\nactivesupport\nbundler")
   end
 
   describe "when a vendored gem specification uses the :path option" do
+    let(:filesystem_root) do
+      current = Pathname.new(Dir.pwd)
+      current = current.parent until current == current.parent
+      current
+    end
+
     it "should resolve paths relative to the Gemfile" do
       path = bundled_app(File.join("vendor", "foo"))
       build_lib "foo", :path => path
@@ -933,19 +934,18 @@ end
       FileUtils.rm(File.join(path, "foo.gemspec"))
 
       install_gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem 'foo', '1.2.3', :path => 'vendor/foo'
       G
 
-      Dir.chdir(bundled_app.parent) do
-        run <<-R, :env => { "BUNDLE_GEMFILE" => bundled_app("Gemfile") }
-          require 'foo'
-        R
-      end
-      expect(err).to lack_errors
+      run <<-R, :env => { "BUNDLE_GEMFILE" => bundled_app_gemfile.to_s }, :dir => bundled_app.parent
+        require 'foo'
+      R
+      expect(err).to be_empty
     end
 
     it "should make sure the Bundler.root is really included in the path relative to the Gemfile" do
-      relative_path = File.join("vendor", Dir.pwd[1..-1], "foo")
+      relative_path = File.join("vendor", Dir.pwd.gsub(/^#{filesystem_root}/, ""))
       absolute_path = bundled_app(relative_path)
       FileUtils.mkdir_p(absolute_path)
       build_lib "foo", :path => absolute_path
@@ -955,34 +955,34 @@ end
       FileUtils.rm(File.join(absolute_path, "foo.gemspec"))
 
       gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem 'foo', '1.2.3', :path => '#{relative_path}'
       G
 
       bundle :install
 
-      Dir.chdir(bundled_app.parent) do
-        run <<-R, :env => { "BUNDLE_GEMFILE" => bundled_app("Gemfile") }
-          require 'foo'
-        R
-      end
+      run <<-R, :env => { "BUNDLE_GEMFILE" => bundled_app_gemfile.to_s }, :dir => bundled_app.parent
+        require 'foo'
+      R
 
-      expect(err).to lack_errors
+      expect(err).to be_empty
     end
   end
 
   describe "with git gems that don't have gemspecs" do
     before :each do
-      build_git "no-gemspec", :gemspec => false
+      build_git "no_gemspec", :gemspec => false
 
       install_gemfile <<-G
-        gem "no-gemspec", "1.0", :git => "#{lib_path("no-gemspec-1.0")}"
+        source "#{file_uri_for(gem_repo1)}"
+        gem "no_gemspec", "1.0", :git => "#{lib_path("no_gemspec-1.0")}"
       G
     end
 
     it "loads the library via a virtual spec" do
       run <<-R
-        require 'no-gemspec'
-        puts NOGEMSPEC
+        require 'no_gemspec'
+        puts NO_GEMSPEC
       R
 
       expect(out).to eq("1.0")
@@ -994,7 +994,7 @@ end
       system_gems "rack-1.0.0"
 
       install_gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
 
         gem "activesupport", "2.3.5"
       G
@@ -1002,8 +1002,6 @@ end
 
     it "does not pull in system gems" do
       run <<-R
-        require 'rubygems'
-
         begin;
           require 'rack'
         rescue LoadError
@@ -1044,11 +1042,11 @@ end
 
   describe "with system gems in the bundle" do
     before :each do
-      bundle! "config path.system true"
+      bundle "config set path.system true"
       system_gems "rack-1.0.0"
 
       install_gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack", "1.0.0"
         gem "activesupport", "2.3.5"
       G
@@ -1066,9 +1064,7 @@ end
       build_git "bar", :gemspec => false do |s|
         s.write "lib/bar/version.rb", %(BAR_VERSION = '1.0')
         s.write "bar.gemspec", <<-G
-          lib = File.expand_path('../lib/', __FILE__)
-          $:.unshift lib unless $:.include?(lib)
-          require 'bar/version'
+          require_relative 'lib/bar/version'
 
           Gem::Specification.new do |s|
             s.name        = 'bar'
@@ -1081,6 +1077,7 @@ end
       end
 
       gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem "bar", :git => "#{lib_path("bar-1.0")}"
       G
     end
@@ -1092,14 +1089,15 @@ end
     end
 
     it "error intelligently if the gemspec has a LoadError" do
+      skip "whitespace issue?" if Gem.win_platform?
+
       ref = update_git "bar", :gemspec => false do |s|
         s.write "bar.gemspec", "require 'foobarbaz'"
       end.ref_for("HEAD")
-      bundle :install
+      bundle :install, :raise_on_error => false
 
-      expect(out.lines.map(&:chomp)).to include(
+      expect(err.lines.map(&:chomp)).to include(
         a_string_starting_with("[!] There was an error while loading `bar.gemspec`:"),
-        RUBY_VERSION >= "1.9" ? a_string_starting_with("Does it try to require a relative path? That's been removed in Ruby 1.9.") : "",
         " #  from #{default_bundle_path "bundler", "gems", "bar-1.0-#{ref[0, 12]}", "bar.gemspec"}:1",
         " >  require 'foobarbaz'"
       )
@@ -1110,33 +1108,36 @@ end
 
       ruby <<-RUBY
         require 'bundler'
+        bundler_module = class << Bundler; self; end
+        bundler_module.send(:remove_method, :require)
         def Bundler.require(path)
           raise "LOSE"
         end
         Bundler.load
       RUBY
 
-      expect(err).to lack_errors
-      expect(out).to eq("")
+      expect(err).to be_empty
+      expect(out).to be_empty
     end
   end
 
   describe "when Bundler is bundled" do
     it "doesn't blow up" do
       install_gemfile <<-G
-        gem "bundler", :path => "#{File.expand_path("..", lib)}"
+        source "#{file_uri_for(gem_repo1)}"
+        gem "bundler", :path => "#{root}"
       G
 
-      bundle %(exec ruby -e "require 'bundler'; Bundler.setup"), :env => { :RUBYOPT => "-r#{spec_dir.join("support/hax")}" }
-      expect(err).to lack_errors
+      bundle %(exec ruby -e "require 'bundler'; Bundler.setup")
+      expect(err).to be_empty
     end
   end
 
   describe "when BUNDLED WITH" do
     def lock_with(bundler_version = nil)
-      lock = <<-L
+      lock = <<~L
         GEM
-          remote: file:#{gem_repo1}/
+          remote: #{file_uri_for(gem_repo1)}/
           specs:
             rack (1.0.0)
 
@@ -1148,15 +1149,17 @@ end
       L
 
       if bundler_version
-        lock += "\n        BUNDLED WITH\n           #{bundler_version}\n"
+        lock += "\nBUNDLED WITH\n   #{bundler_version}\n"
       end
 
       lock
     end
 
     before do
+      bundle "config set --local path.system true"
+
       install_gemfile <<-G
-        source "file://#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack"
       G
     end
@@ -1164,8 +1167,8 @@ end
     context "is not present" do
       it "does not change the lock" do
         lockfile lock_with(nil)
-        ruby "require 'bundler/setup'"
-        lockfile_should_be lock_with(nil)
+        ruby "require '#{entrypoint}/setup'"
+        expect(lockfile).to eq lock_with(nil)
       end
     end
 
@@ -1173,17 +1176,18 @@ end
       it "does not change the lock or warn" do
         lockfile lock_with(Bundler::VERSION.succ)
         ruby "require 'bundler/setup'"
-        expect(out).to eq("")
-        expect(err).to eq("")
-        lockfile_should_be lock_with(Bundler::VERSION.succ)
+        expect(out).to be_empty
+        expect(err).to be_empty
+        expect(lockfile).to eq lock_with(Bundler::VERSION.succ)
       end
     end
 
     context "is older" do
       it "does not change the lock" do
+        system_gems "bundler-1.10.1"
         lockfile lock_with("1.10.1")
-        ruby "require 'bundler/setup'"
-        lockfile_should_be lock_with("1.10.1")
+        ruby "require '#{entrypoint}/setup'"
+        expect(lockfile).to eq lock_with("1.10.1")
       end
     end
   end
@@ -1192,9 +1196,9 @@ end
     let(:ruby_version) { nil }
 
     def lock_with(ruby_version = nil)
-      lock = <<-L
+      lock = <<~L
         GEM
-          remote: file://localhost#{gem_repo1}/
+          remote: #{file_uri_for(gem_repo1)}/
           specs:
             rack (1.0.0)
 
@@ -1206,22 +1210,22 @@ end
       L
 
       if ruby_version
-        lock += "\n        RUBY VERSION\n           ruby #{ruby_version}\n"
+        lock += "\nRUBY VERSION\n   ruby #{ruby_version}\n"
       end
 
-      lock += <<-L
+      lock += <<~L
 
         BUNDLED WITH
            #{Bundler::VERSION}
       L
 
-      normalize_uri_file(lock)
+      lock
     end
 
     before do
       install_gemfile <<-G
         ruby ">= 0"
-        source "file://localhost#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack"
       G
       lockfile lock_with(ruby_version)
@@ -1229,32 +1233,67 @@ end
 
     context "is not present" do
       it "does not change the lock" do
-        expect { ruby! "require 'bundler/setup'" }.not_to change { lockfile }
+        expect { ruby "require 'bundler/setup'" }.not_to change { lockfile }
       end
     end
 
     context "is newer" do
       let(:ruby_version) { "5.5.5" }
       it "does not change the lock or warn" do
-        expect { ruby! "require 'bundler/setup'" }.not_to change { lockfile }
-        expect(out).to eq("")
-        expect(err).to eq("")
+        expect { ruby "require 'bundler/setup'" }.not_to change { lockfile }
+        expect(out).to be_empty
+        expect(err).to be_empty
       end
     end
 
     context "is older" do
       let(:ruby_version) { "1.0.0" }
       it "does not change the lock" do
-        expect { ruby! "require 'bundler/setup'" }.not_to change { lockfile }
+        expect { ruby "require 'bundler/setup'" }.not_to change { lockfile }
       end
     end
   end
 
   describe "with gemified standard libraries" do
-    it "does not load Psych", :ruby => "~> 2.2" do
-      gemfile ""
+    it "does not load Digest", :ruby_repo do
+      skip "Only for Ruby 3.0+" unless RUBY_VERSION >= "3.0"
+
+      build_git "bar", :gemspec => false do |s|
+        s.write "lib/bar/version.rb", %(BAR_VERSION = '1.0')
+        s.write "bar.gemspec", <<-G
+          require_relative 'lib/bar/version'
+
+          Gem::Specification.new do |s|
+            s.name        = 'bar'
+            s.version     = BAR_VERSION
+            s.summary     = 'Bar'
+            s.files       = Dir["lib/**/*.rb"]
+            s.author      = 'no one'
+
+            s.add_runtime_dependency 'digest'
+          end
+        G
+      end
+
+      gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
+        gem "bar", :git => "#{lib_path("bar-1.0")}"
+      G
+
+      bundle :install
+
       ruby <<-RUBY
-        require 'bundler/setup'
+        require '#{entrypoint}/setup'
+        puts defined?(::Digest) ? "Digest defined" : "Digest undefined"
+        require 'digest'
+      RUBY
+      expect(out).to eq("Digest undefined")
+    end
+
+    it "does not load Psych" do
+      gemfile "source \"#{file_uri_for(gem_repo1)}\""
+      ruby <<-RUBY
+        require '#{entrypoint}/setup'
         puts defined?(Psych::VERSION) ? Psych::VERSION : "undefined"
         require 'psych'
         puts Psych::VERSION
@@ -1265,8 +1304,8 @@ end
     end
 
     it "does not load openssl" do
-      install_gemfile! ""
-      ruby! <<-RUBY
+      install_gemfile "source \"#{file_uri_for(gem_repo1)}\""
+      ruby <<-RUBY
         require "bundler/setup"
         puts defined?(OpenSSL) || "undefined"
         require "openssl"
@@ -1277,28 +1316,33 @@ end
 
     describe "default gem activation" do
       let(:exemptions) do
-        if Gem::Version.new(Gem::VERSION) >= Gem::Version.new("2.7") || ENV["RGV"] == "master"
-          []
+        exempts = if Gem.rubygems_version >= Gem::Version.new("2.7")
+          %w[did_you_mean]
         else
           %w[io-console openssl]
         end << "bundler"
+        exempts << "fiddle" if Gem.win_platform? && Gem.rubygems_version >= Gem::Version.new("2.7")
+        exempts << "uri" if Gem.ruby_version >= Gem::Version.new("2.7")
+        exempts << "pathname" if Gem.ruby_version >= Gem::Version.new("3.0")
+        exempts << "set" unless Gem.rubygems_version >= Gem::Version.new("3.2.6")
+        exempts << "tsort" unless Gem.rubygems_version >= Gem::Version.new("3.2.31")
+        exempts << "error_highlight" # added in Ruby 3.1 as a default gem
+        exempts << "ruby2_keywords" # added in Ruby 3.1 as a default gem
+        exempts
       end
 
       let(:activation_warning_hack) { strip_whitespace(<<-RUBY) }
         require #{spec_dir.join("support/hax").to_s.dump}
-        require "rubygems"
 
-        if Gem::Specification.instance_methods.map(&:to_sym).include?(:activate)
-          Gem::Specification.send(:alias_method, :bundler_spec_activate, :activate)
-          Gem::Specification.send(:define_method, :activate) do
-            unless #{exemptions.inspect}.include?(name)
-              warn '-' * 80
-              warn "activating \#{full_name}"
-              warn *caller
-              warn '*' * 80
-            end
-            bundler_spec_activate
+        Gem::Specification.send(:alias_method, :bundler_spec_activate, :activate)
+        Gem::Specification.send(:define_method, :activate) do
+          unless #{exemptions.inspect}.include?(name)
+            warn '-' * 80
+            warn "activating \#{full_name}"
+            warn(*caller)
+            warn '*' * 80
           end
+          bundler_spec_activate
         end
       RUBY
 
@@ -1308,7 +1352,6 @@ end
       end
 
       let(:code) { strip_whitespace(<<-RUBY) }
-        require "bundler/setup"
         require "pp"
         loaded_specs = Gem.loaded_specs.dup
         #{exemptions.inspect}.each {|s| loaded_specs.delete(s) }
@@ -1322,86 +1365,91 @@ end
       RUBY
 
       it "activates no gems with -rbundler/setup" do
-        install_gemfile! ""
-        ruby! code, :env => { :RUBYOPT => activation_warning_hack_rubyopt }
-        expect(last_command.stdout).to eq("{}")
+        install_gemfile "source \"#{file_uri_for(gem_repo1)}\""
+        ruby code, :env => { "RUBYOPT" => activation_warning_hack_rubyopt + " -rbundler/setup" }
+        expect(out).to eq("{}")
       end
 
       it "activates no gems with bundle exec" do
-        install_gemfile! ""
-        # ensure we clean out the default gems, bceause bundler's allowed to be activated
+        install_gemfile "source \"#{file_uri_for(gem_repo1)}\""
         create_file("script.rb", code)
-        bundle! "exec ruby ./script.rb", :env => { :RUBYOPT => activation_warning_hack_rubyopt + " -rbundler/setup" }
-        expect(last_command.stdout).to eq("{}")
+        bundle "exec ruby ./script.rb", :env => { "RUBYOPT" => activation_warning_hack_rubyopt }
+        expect(out).to eq("{}")
       end
 
       it "activates no gems with bundle exec that is loaded" do
-        # TODO: remove once https://github.com/erikhuda/thor/pull/539 is released
-        exemptions << "io-console"
+        skip "not executable" if Gem.win_platform?
 
-        install_gemfile! ""
+        install_gemfile "source \"#{file_uri_for(gem_repo1)}\""
         create_file("script.rb", "#!/usr/bin/env ruby\n\n#{code}")
         FileUtils.chmod(0o777, bundled_app("script.rb"))
-        bundle! "exec ./script.rb", :artifice => nil, :env => { :RUBYOPT => activation_warning_hack_rubyopt }
-        expect(last_command.stdout).to eq("{}")
+        bundle "exec ./script.rb", :artifice => nil, :env => { "RUBYOPT" => activation_warning_hack_rubyopt }
+        expect(out).to eq("{}")
       end
 
-      let(:default_gems) do
-        ruby!(<<-RUBY).split("\n")
-          if Gem::Specification.is_a?(Enumerable)
-            puts Gem::Specification.select(&:default_gem?).map(&:name)
-          end
-        RUBY
-      end
-
-      it "activates newer versions of default gems" do
+      it "does not load net-http-pipeline too early" do
         build_repo4 do
-          default_gems.each do |g|
+          build_gem "net-http-pipeline", "1.0.1"
+        end
+
+        system_gems "net-http-pipeline-1.0.1", :gem_repo => gem_repo4
+
+        gemfile <<-G
+          source "#{file_uri_for(gem_repo4)}"
+          gem "net-http-pipeline", "1.0.1"
+        G
+
+        bundle "config set --local path vendor/bundle"
+
+        bundle :install
+
+        bundle :check
+
+        expect(out).to eq("The Gemfile's dependencies are satisfied")
+      end
+
+      Gem::Specification.select(&:default_gem?).map(&:name).each do |g|
+        it "activates newer versions of #{g}", :ruby_repo do
+          skip if exemptions.include?(g)
+
+          build_repo4 do
             build_gem g, "999999"
           end
+
+          install_gemfile <<-G
+            source "#{file_uri_for(gem_repo4)}"
+            gem "#{g}", "999999"
+          G
+
+          expect(the_bundle).to include_gem("#{g} 999999", :env => { "RUBYOPT" => activation_warning_hack_rubyopt })
         end
 
-        default_gems.reject! {|g| exemptions.include?(g) }
+        it "activates older versions of #{g}", :ruby_repo do
+          skip if exemptions.include?(g)
 
-        install_gemfile! <<-G
-          source "file:#{gem_repo4}"
-          #{default_gems}.each do |g|
-            gem g, "999999"
-          end
-        G
-
-        expect(the_bundle).to include_gems(*default_gems.map {|g| "#{g} 999999" })
-      end
-
-      it "activates older versions of default gems" do
-        build_repo4 do
-          default_gems.each do |g|
+          build_repo4 do
             build_gem g, "0.0.0.a"
           end
+
+          install_gemfile <<-G
+            source "#{file_uri_for(gem_repo4)}"
+            gem "#{g}", "0.0.0.a"
+          G
+
+          expect(the_bundle).to include_gem("#{g} 0.0.0.a", :env => { "RUBYOPT" => activation_warning_hack_rubyopt })
         end
-
-        default_gems.reject! {|g| exemptions.include?(g) }
-
-        install_gemfile! <<-G
-          source "file:#{gem_repo4}"
-          #{default_gems}.each do |g|
-            gem g, "0.0.0.a"
-          end
-        G
-
-        expect(the_bundle).to include_gems(*default_gems.map {|g| "#{g} 0.0.0.a" })
       end
     end
   end
 
   describe "after setup" do
-    it "allows calling #gem on random objects", :bundler => "< 2" do
+    it "allows calling #gem on random objects", :bundler => "< 3" do
       install_gemfile <<-G
-        source "file:#{gem_repo1}"
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack"
       G
 
-      ruby! <<-RUBY
+      ruby <<-RUBY
         require "bundler/setup"
         Object.new.gem "rack"
         puts Gem.loaded_specs["rack"].full_name
@@ -1410,36 +1458,81 @@ end
       expect(out).to eq("rack-1.0.0")
     end
 
-    it "keeps Kernel#gem private", :bundler => "2" do
-      install_gemfile! <<-G
-        source "file:#{gem_repo1}"
+    it "keeps Kernel#gem private", :bundler => "3" do
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack"
       G
 
-      ruby <<-RUBY
+      ruby <<-RUBY, :raise_on_error => false
         require "bundler/setup"
         Object.new.gem "rack"
         puts "FAIL"
       RUBY
 
       expect(last_command.stdboth).not_to include "FAIL"
-      expect(last_command.stderr).to include "private method `gem'"
+      expect(err).to include "private method `gem'"
     end
 
     it "keeps Kernel#require private" do
-      install_gemfile! <<-G
-        source "file:#{gem_repo1}"
+      install_gemfile <<-G
+        source "#{file_uri_for(gem_repo1)}"
         gem "rack"
       G
 
-      ruby <<-RUBY
+      ruby <<-RUBY, :raise_on_error => false
         require "bundler/setup"
         Object.new.require "rack"
         puts "FAIL"
       RUBY
 
       expect(last_command.stdboth).not_to include "FAIL"
-      expect(last_command.stderr).to include "private method `require'"
+      expect(err).to include "private method `require'"
+    end
+
+    it "takes care of requiring rubygems" do
+      sys_exec("#{Gem.ruby} -I#{lib_dir} -rbundler/setup -e'puts true'", :env => { "RUBYOPT" => opt_add("--disable=gems", ENV["RUBYOPT"]) })
+
+      expect(last_command.stdboth).to eq("true")
+    end
+
+    it "memoizes initial set of specs when requiring bundler/setup, so that even if further code mutates dependencies, Bundler.definition.specs is not affected" do
+      install_gemfile <<~G
+        source "#{file_uri_for(gem_repo1)}"
+        gem "yard"
+        gem "rack", :group => :test
+      G
+
+      ruby <<-RUBY, :raise_on_error => false
+        require "bundler/setup"
+        Bundler.require(:test).select! {|d| (d.groups & [:test]).any? }
+        puts Bundler.definition.specs.map(&:name).join(", ")
+      RUBY
+
+      expect(out).to include("rack, yard")
+    end
+
+    it "does not cause double loads when higher versions of default gems are activated before bundler" do
+      build_repo2 do
+        build_gem "json", "999.999.999" do |s|
+          s.write "lib/json.rb", <<~RUBY
+            module JSON
+              VERSION = "999.999.999"
+            end
+          RUBY
+        end
+      end
+
+      system_gems "json-999.999.999", :gem_repo => gem_repo2
+
+      install_gemfile "source \"#{file_uri_for(gem_repo1)}\""
+      ruby <<-RUBY
+        require "json"
+        require "bundler/setup"
+        require "json"
+      RUBY
+
+      expect(err).to be_empty
     end
   end
 end

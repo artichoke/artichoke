@@ -70,7 +70,7 @@ static size_t
 digit_span(const char *s, const char *e)
 {
     size_t i = 0;
-    while (s + i < e && isdigit(s[i])) i++;
+    while (s + i < e && isdigit((unsigned char)s[i])) i++;
     return i;
 }
 
@@ -110,7 +110,7 @@ s3e(VALUE hash, VALUE y, VALUE m, VALUE d, int bc)
 
 	s = RSTRING_PTR(y);
 	ep = RSTRING_END(y);
-	while (s < ep && !issign(*s) && !isdigit(*s))
+	while (s < ep && !issign(*s) && !isdigit((unsigned char)*s))
 	    s++;
 	if (s >= ep) goto no_date;
 	bp = s;
@@ -162,7 +162,7 @@ s3e(VALUE hash, VALUE y, VALUE m, VALUE d, int bc)
 
 	s = RSTRING_PTR(y);
 	ep = RSTRING_END(y);
-	while (s < ep && !issign(*s) && !isdigit(*s))
+	while (s < ep && !issign(*s) && !isdigit((unsigned char)*s))
 	    s++;
 	if (s >= ep) goto no_year;
 	bp = s;
@@ -199,7 +199,7 @@ s3e(VALUE hash, VALUE y, VALUE m, VALUE d, int bc)
 
 	s = RSTRING_PTR(m);
 	ep = RSTRING_END(m);
-	while (s < ep && !isdigit(*s))
+	while (s < ep && !isdigit((unsigned char)*s))
 	    s++;
 	if (s >= ep) goto no_month;
 	bp = s;
@@ -225,7 +225,7 @@ s3e(VALUE hash, VALUE y, VALUE m, VALUE d, int bc)
 
 	s = RSTRING_PTR(d);
 	ep = RSTRING_END(d);
-	while (s < ep && !isdigit(*s))
+	while (s < ep && !isdigit((unsigned char)*s))
 	    s++;
 	if (s >= ep) goto no_mday;
 	bp = s;
@@ -276,6 +276,7 @@ regcomp(const char *source, long len, int opt)
     VALUE pat;
 
     pat = rb_reg_new(source, len, opt);
+    rb_obj_freeze(pat);
     rb_gc_register_mark_object(pat);
     return pat;
 }
@@ -361,10 +362,49 @@ do { \
 #include "zonetab.h"
 
 static int
-str_end_with(const char *s, long l, const char *w)
+str_end_with_word(const char *s, long l, const char *w)
 {
     int n = (int)strlen(w);
-    return (l >= n && strncmp(s - n, w, n) == 0);
+    if (l <= n || !isspace((unsigned char)s[l - n - 1])) return 0;
+    if (strncasecmp(&s[l - n], w, n)) return 0;
+    do ++n; while (l > n && isspace((unsigned char)s[l - n - 1]));
+    return n;
+}
+
+static long
+shrunk_size(const char *s, long l)
+{
+    long i, ni;
+    int sp = 0;
+    for (i = ni = 0; i < l; ++i) {
+	if (!isspace((unsigned char)s[i])) {
+	    if (sp) ni++;
+	    sp = 0;
+	    ni++;
+	}
+	else {
+	    sp = 1;
+	}
+    }
+    return ni < l ? ni : 0;
+}
+
+static long
+shrink_space(char *d, const char *s, long l)
+{
+    long i, ni;
+    int sp = 0;
+    for (i = ni = 0; i < l; ++i) {
+	if (!isspace((unsigned char)s[i])) {
+	    if (sp) d[ni++] = ' ';
+	    sp = 0;
+	    d[ni++] = s[i];
+	}
+	else {
+	    sp = 1;
+	}
+    }
+    return ni;
 }
 
 VALUE
@@ -372,55 +412,40 @@ date_zone_to_diff(VALUE str)
 {
     VALUE offset = Qnil;
     VALUE vbuf = 0;
+    long l = RSTRING_LEN(str);
+    const char *s = RSTRING_PTR(str);
 
-    long l, i;
-    char *s, *dest, *d;
-    int sp = 1;
-
-    l = RSTRING_LEN(str);
-    s = RSTRING_PTR(str);
-
-    dest = d = ALLOCV_N(char, vbuf, l + 1);
-
-    for (i = 0; i < l; i++) {
-	if (isspace((unsigned char)s[i]) || s[i] == '\0') {
-	    if (!sp)
-		*d++ = ' ';
-	    sp = 1;
-	}
-	else {
-	    if (isalpha((unsigned char)s[i]))
-		*d++ = tolower((unsigned char)s[i]);
-	    else
-		*d++ = s[i];
-	    sp = 0;
-	}
-    }
-    if (d > dest) {
-	if (*(d - 1) == ' ')
-	    --d;
-	*d = '\0';
-    }
-    l = d - dest;
-    s = dest;
     {
-	static const char STD[] = " standard time";
-	static const char DST1[] = " daylight time";
-	static const char DST2[] = " dst";
 	int dst = 0;
+	int w;
 
-	if (str_end_with(d, l, STD)) {
-	    l -= sizeof(STD) - 1;
+	if ((w = str_end_with_word(s, l, "time")) > 0) {
+	    int wtime = w;
+	    l -= w;
+	    if ((w = str_end_with_word(s, l, "standard")) > 0) {
+		l -= w;
+	    }
+	    else if ((w = str_end_with_word(s, l, "daylight")) > 0) {
+		l -= w;
+		dst = 1;
+	    }
+	    else {
+		l += wtime;
+	    }
 	}
-	else if (str_end_with(d, l, DST1)) {
-	    l -= sizeof(DST1) - 1;
-	    dst = 1;
-	}
-	else if (str_end_with(d, l, DST2)) {
-	    l -= sizeof(DST2) - 1;
+	else if ((w = str_end_with_word(s, l, "dst")) > 0) {
+	    l -= w;
 	    dst = 1;
 	}
 	{
+	    long sl = shrunk_size(s, l);
+	    if (sl > 0 && sl <= MAX_WORD_LENGTH) {
+		char *d = ALLOCV_N(char, vbuf, sl);
+		l = shrink_space(d, s, l);
+		s = d;
+	    }
+	}
+	if (l > 0 && l <= MAX_WORD_LENGTH) {
 	    const struct zone *z = zonetab(s, (unsigned int)l);
 	    if (z) {
 		int d = z->offset;
@@ -436,8 +461,8 @@ date_zone_to_diff(VALUE str)
 	    long hour = 0, min = 0, sec = 0;
 
 	    if (l > 3 &&
-		(strncmp(s, "gmt", 3) == 0 ||
-		 strncmp(s, "utc", 3) == 0)) {
+		(strncasecmp(s, "gmt", 3) == 0 ||
+		 strncasecmp(s, "utc", 3) == 0)) {
 		s += 3;
 		l -= 3;
 	    }
@@ -730,8 +755,8 @@ check_year_width(VALUE y)
     l = RSTRING_LEN(y);
     if (l < 2) return 0;
     s = RSTRING_PTR(y);
-    if (!isdigit(s[1])) return 0;
-    return (l == 2 || !isdigit(s[2]));
+    if (!isdigit((unsigned char)s[1])) return 0;
+    return (l == 2 || !isdigit((unsigned char)s[2]));
 }
 
 static int
@@ -2262,8 +2287,8 @@ iso8601_ext_datetime_cb(VALUE m, VALUE hash)
 	    s[i] = rb_reg_nth_match(i, m);
     }
 
-    if (!NIL_P(s[3])) {
-	set_hash("mday", str2num(s[3]));
+    if (!NIL_P(s[1])) {
+	if (!NIL_P(s[3])) set_hash("mday", str2num(s[3]));
 	if (strcmp(RSTRING_PTR(s[1]), "-") != 0) {
 	    y = str2num(s[1]);
 	    if (RSTRING_LEN(s[1]) < 4)
@@ -2320,7 +2345,7 @@ static int
 iso8601_ext_datetime(VALUE str, VALUE hash)
 {
     static const char pat_source[] =
-	"\\A\\s*(?:([-+]?\\d{2,}|-)-(\\d{2})?-(\\d{2})|"
+	"\\A\\s*(?:([-+]?\\d{2,}|-)-(\\d{2})?(?:-(\\d{2}))?|"
 		"([-+]?\\d{2,})?-(\\d{3})|"
 		"(\\d{4}|\\d{2})?-w(\\d{2})-(\\d)|"
 		"-w-(\\d))"

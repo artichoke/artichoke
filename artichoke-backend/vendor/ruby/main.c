@@ -9,6 +9,14 @@
 
 **********************************************************************/
 
+/*!
+ * \mainpage Developers' documentation for Ruby
+ *
+ * This documentation is produced by applying Doxygen to
+ * <a href="https://github.com/ruby/ruby">Ruby's source code</a>.
+ * It is still under construction (and even not well-maintained).
+ * If you are familiar with Ruby's source code, please improve the doc.
+ */
 #undef RUBY_EXPORT
 #include "ruby.h"
 #include "vm_debug.h"
@@ -20,9 +28,6 @@
 #endif
 #if defined RUBY_DEBUG_ENV && !RUBY_DEBUG_ENV
 # undef RUBY_DEBUG_ENV
-#endif
-#ifdef RUBY_DEBUG_ENV
-#include <stdlib.h>
 #endif
 
 int

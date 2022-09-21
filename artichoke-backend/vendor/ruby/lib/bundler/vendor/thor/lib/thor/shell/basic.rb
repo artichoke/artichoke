@@ -1,6 +1,8 @@
 class Bundler::Thor
   module Shell
     class Basic
+      DEFAULT_TERMINAL_WIDTH = 80
+
       attr_accessor :base
       attr_reader   :padding
 
@@ -45,6 +47,10 @@ class Bundler::Thor
 
       # Asks something to the user and receives a response.
       #
+      # If a default value is specified it will be presented to the user
+      # and allows them to select that value with an empty response. This
+      # option is ignored when limited answers are supplied.
+      #
       # If asked to limit the correct responses, you can pass in an
       # array of acceptable answers.  If one of those is not supplied,
       # they will be shown a message stating that one of those answers
@@ -60,6 +66,8 @@ class Bundler::Thor
       #
       # ==== Example
       # ask("What is your name?")
+      #
+      # ask("What is the planet furthest from the sun?", :default => "Pluto")
       #
       # ask("What is your favorite Neopolitan flavor?", :limited_to => ["strawberry", "chocolate", "vanilla"])
       #
@@ -86,11 +94,30 @@ class Bundler::Thor
       # say("I know you knew that.")
       #
       def say(message = "", color = nil, force_new_line = (message.to_s !~ /( |\t)\Z/))
+        return if quiet?
+
         buffer = prepare_message(message, *color)
         buffer << "\n" if force_new_line && !message.to_s.end_with?("\n")
 
         stdout.print(buffer)
         stdout.flush
+      end
+
+      # Say (print) an error to the user. If the sentence ends with a whitespace
+      # or tab character, a new line is not appended (print + flush). Otherwise
+      # are passed straight to puts (behavior got from Highline).
+      #
+      # ==== Example
+      # say_error("error: something went wrong")
+      #
+      def say_error(message = "", color = nil, force_new_line = (message.to_s !~ /( |\t)\Z/))
+        return if quiet?
+
+        buffer = prepare_message(message, *color)
+        buffer << "\n" if force_new_line && !message.to_s.end_with?("\n")
+
+        stderr.print(buffer)
+        stderr.flush
       end
 
       # Say a status with the given color and appends the message. Since this
@@ -101,13 +128,14 @@ class Bundler::Thor
       def say_status(status, message, log_status = true)
         return if quiet? || log_status == false
         spaces = "  " * (padding + 1)
-        color  = log_status.is_a?(Symbol) ? log_status : :green
-
         status = status.to_s.rjust(12)
+        margin = " " * status.length + spaces
+
+        color  = log_status.is_a?(Symbol) ? log_status : :green
         status = set_color status, color, true if color
 
-        buffer = "#{status}#{spaces}#{message}"
-        buffer = "#{buffer}\n" unless buffer.end_with?("\n")
+        message = message.to_s.chomp.gsub(/(?<!\A)^/, margin)
+        buffer = "#{status}#{spaces}#{message}\n"
 
         stdout.print(buffer)
         stdout.flush
@@ -222,8 +250,21 @@ class Bundler::Thor
         paras = message.split("\n\n")
 
         paras.map! do |unwrapped|
-          unwrapped.strip.tr("\n", " ").squeeze(" ").gsub(/.{1,#{width}}(?:\s|\Z)/) { ($& + 5.chr).gsub(/\n\005/, "\n").gsub(/\005/, "\n") }
-        end
+          words = unwrapped.split(" ")
+          counter = words.first.length
+          words.inject do |memo, word|
+            word = word.gsub(/\n\005/, "\n").gsub(/\005/, "\n")
+            counter = 0 if word.include? "\n"
+            if (counter + word.length + 1) < width
+              memo = "#{memo} #{word}"
+              counter += (word.length + 1)
+            else
+              memo = "#{memo}\n#{word}"
+              counter = word.length
+            end
+            memo
+          end
+        end.compact!
 
         paras.each do |para|
           para.split("\n").each do |line|
@@ -239,11 +280,11 @@ class Bundler::Thor
       #
       # ==== Parameters
       # destination<String>:: the destination file to solve conflicts
-      # block<Proc>:: an optional block that returns the value to be used in diff
+      # block<Proc>:: an optional block that returns the value to be used in diff and merge
       #
       def file_collision(destination)
         return true if @always_force
-        options = block_given? ? "[Ynaqdh]" : "[Ynaqh]"
+        options = block_given? ? "[Ynaqdhm]" : "[Ynaqh]"
 
         loop do
           answer = ask(
@@ -267,6 +308,13 @@ class Bundler::Thor
           when is?(:diff)
             show_diff(destination, yield) if block_given?
             say "Retrying..."
+          when is?(:merge)
+            if block_given? && !merge_tool.empty?
+              merge(destination, yield)
+              return nil
+            end
+
+            say "Please specify merge tool to `THOR_MERGE` env."
           else
             say file_collision_help
           end
@@ -279,11 +327,11 @@ class Bundler::Thor
         result = if ENV["THOR_COLUMNS"]
           ENV["THOR_COLUMNS"].to_i
         else
-          unix? ? dynamic_width : 80
+          unix? ? dynamic_width : DEFAULT_TERMINAL_WIDTH
         end
-        result < 10 ? 80 : result
+        result < 10 ? DEFAULT_TERMINAL_WIDTH : result
       rescue
-        80
+        DEFAULT_TERMINAL_WIDTH
       end
 
       # Called if something goes wrong during the execution. This is used by Bundler::Thor
@@ -344,6 +392,7 @@ class Bundler::Thor
         q - quit, abort
         d - diff, show the differences between the old and the new
         h - help, show this help
+        m - merge, run merge tool
         HELP
       end
 
@@ -423,14 +472,40 @@ class Bundler::Thor
 
       def ask_filtered(statement, color, options)
         answer_set = options[:limited_to]
+        case_insensitive = options.fetch(:case_insensitive, false)
         correct_answer = nil
         until correct_answer
           answers = answer_set.join(", ")
           answer = ask_simply("#{statement} [#{answers}]", color, options)
-          correct_answer = answer_set.include?(answer) ? answer : nil
+          correct_answer = answer_match(answer_set, answer, case_insensitive)
           say("Your response must be one of: [#{answers}]. Please try again.") unless correct_answer
         end
         correct_answer
+      end
+
+      def answer_match(possibilities, answer, case_insensitive)
+        if case_insensitive
+          possibilities.detect{ |possibility| possibility.downcase == answer.downcase }
+        else
+          possibilities.detect{ |possibility| possibility == answer }
+        end
+      end
+
+      def merge(destination, content) #:nodoc:
+        require "tempfile"
+        Tempfile.open([File.basename(destination), File.extname(destination)], File.dirname(destination)) do |temp|
+          temp.write content
+          temp.rewind
+          system %(#{merge_tool} "#{temp.path}" "#{destination}")
+        end
+      end
+
+      def merge_tool #:nodoc:
+        @merge_tool ||= ENV["THOR_MERGE"] || git_merge_tool
+      end
+
+      def git_merge_tool #:nodoc:
+        `git config merge.tool`.rstrip rescue ""
       end
     end
   end

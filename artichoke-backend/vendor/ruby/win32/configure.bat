@@ -101,8 +101,7 @@ goto :loop ;
 :target
   echo>> ~tmp~.mak 	"%~2" \
   echo>>confargs.tmp --target=%2 \
-  if "%~2" == "x64-mswin64" goto target2
-  if NOT "%~2" == "ia64-mswin64" goto target3
+  if NOT "%~2" == "x64-mswin64" goto target3
 :target2
   echo>> ~tmp~.mak 	"TARGET_OS=mswin64" \
 :target3
@@ -111,57 +110,57 @@ goto :loop ;
 goto :loop ;
 :extstatic
   echo>> ~tmp~.mak 	"EXTSTATIC=static" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :enable-rdoc
   echo>> ~tmp~.mak 	"RDOCTARGET=rdoc" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :disable-rdoc
   echo>> ~tmp~.mak 	"RDOCTARGET=nodoc" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :enable-lib
   echo>> ~tmp~.mak 	"INSTALL_STATIC_LIBRARY=yes" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :disable-lib
   echo>> ~tmp~.mak 	"INSTALL_STATIC_LIBRARY=no" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :enable-debug-env
   echo>> ~tmp~.mak 	"ENABLE_DEBUG_ENV=yes" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :disable-debug-env
   echo>> ~tmp~.mak 	"ENABLE_DEBUG_ENV=no" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :enable-rubygems
   echo>> ~tmp~.mak 	"USE_RUBYGEMS=yes" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :disable-rubygems
   echo>> ~tmp~.mak 	"USE_RUBYGEMS=no" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :enable-mjit-support
   echo>> ~tmp~.mak 	"MJIT_SUPPORT=yes" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :disable-mjit-support
   echo>> ~tmp~.mak 	"MJIT_SUPPORT=no" \
-  echo>>confargs.tmp %1 \
+  echo>>confargs.tmp  %1 \
   shift
 goto :loop ;
 :ntver

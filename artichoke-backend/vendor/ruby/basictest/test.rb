@@ -35,7 +35,7 @@ class Progress
       # dircolors-like style
       colors = (colors = ENV['TEST_COLORS']) ? Hash[colors.scan(/(\w+)=([^:\n]*)/)] : {}
       begin
-        File.read(File.join(__dir__, "../test/colors")).scan(/(\w+)=([^:\n]*)/) do |n, c|
+        File.read(File.join(__dir__, "../tool/colors")).scan(/(\w+)=([^:\n]*)/) do |n, c|
           colors[n] ||= c
         end
       rescue
@@ -984,13 +984,6 @@ test_ok($z == 0)
 
 test_check "iterator"
 
-test_ok(!iterator?)
-
-def ttt
-  test_ok(iterator?)
-end
-ttt{}
-
 # yield at top level
 test_ok(!defined?(yield))
 
@@ -1432,9 +1425,6 @@ marity_test(:test_ok)
 marity_test(:marity_test)
 marity_test(:p)
 
-lambda(&method(:test_ok)).call(true)
-lambda(&block_get{|a,n| test_ok(a,n)}).call(true, 2)
-
 class ITER_TEST1
    def a
      block_given?
@@ -1739,7 +1729,7 @@ a = nil
 test_ok(defined?(a))
 test_ok(a == nil)
 
-# multiple asignment
+# multiple assignment
 a, b = 1, 2
 test_ok(a == 1 && b == 2)
 
@@ -2147,7 +2137,7 @@ $_ = foobar
 test_ok($_ == foobar)
 
 class Gods
-  @@rule = "Uranus"		# private to Gods
+  @@rule = "Uranus"
   def ruler0
     @@rule
   end
@@ -2170,7 +2160,7 @@ module Olympians
 end
 
 class Titans < Gods
-  @@rule = "Cronus"		# do not affect @@rule in Gods
+  @@rule = "Cronus"		# modifies @@rule in Gods
   include Olympians
   def ruler4
     @@rule
@@ -2185,7 +2175,14 @@ test_ok(Titans.ruler2 == "Cronus")
 atlas = Titans.new
 test_ok(atlas.ruler0 == "Cronus")
 test_ok(atlas.ruler3 == "Zeus")
-test_ok(atlas.ruler4 == "Cronus")
+begin
+  atlas.ruler4
+rescue RuntimeError => e
+  test_ok(e.message.include?("class variable @@rule of Olympians is overtaken by Gods"))
+else
+  test_ok(false)
+end
+test_ok(atlas.ruler3 == "Zeus")
 
 test_check "trace"
 $x = 1234

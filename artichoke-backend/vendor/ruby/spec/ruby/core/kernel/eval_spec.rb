@@ -24,7 +24,7 @@ describe "Kernel#eval" do
     EvalSpecs::A::B.name.should == "EvalSpecs::A::B"
   end
 
-  it "evaluates such that consts are scoped to the class of the eval" do
+  it "evaluates such that constants are scoped to the class of the eval" do
     EvalSpecs::A::C.name.should == "EvalSpecs::A::C"
   end
 
@@ -76,12 +76,12 @@ describe "Kernel#eval" do
     x = 1
     bind = proc {}
 
-    lambda { eval("x", bind) }.should raise_error(TypeError)
+    -> { eval("x", bind) }.should raise_error(TypeError)
   end
 
   it "does not make Proc locals visible to evaluated code" do
     bind = proc { inner = 4 }
-    lambda { eval("inner", bind.binding) }.should raise_error(NameError)
+    -> { eval("inner", bind.binding) }.should raise_error(NameError)
   end
 
   # REWRITE ME: This obscures the real behavior of where locals are stored
@@ -134,7 +134,7 @@ describe "Kernel#eval" do
 
   it "includes file and line information in syntax error" do
     expected = 'speccing.rb'
-    lambda {
+    -> {
       eval('if true',TOPLEVEL_BINDING, expected)
     }.should raise_error(SyntaxError) { |e|
       e.message.should =~ /#{expected}:1:.+/
@@ -143,7 +143,7 @@ describe "Kernel#eval" do
 
   it "evaluates string with given filename and negative linenumber" do
     expected_file = 'speccing.rb'
-    lambda {
+    -> {
       eval('if true',TOPLEVEL_BINDING, expected_file, -100)
     }.should raise_error(SyntaxError) { |e|
       e.message.should =~ /#{expected_file}:-100:.+/
@@ -159,13 +159,37 @@ describe "Kernel#eval" do
     end
   end
 
-  it "uses the filename of the binding if none is provided" do
-    eval("__FILE__").should == "(eval)"
-    eval("__FILE__", binding).should == __FILE__
-    eval("__FILE__", binding, "success").should == "success"
-    eval("eval '__FILE__', binding").should == "(eval)"
-    eval("eval '__FILE__', binding", binding).should == __FILE__
-    eval("eval '__FILE__', binding", binding, 'success').should == 'success'
+  ruby_version_is ""..."3.0" do
+    it "uses the filename of the binding if none is provided" do
+      eval("__FILE__").should == "(eval)"
+      suppress_warning {eval("__FILE__", binding)}.should == __FILE__
+      eval("__FILE__", binding, "success").should == "success"
+      suppress_warning {eval("eval '__FILE__', binding")}.should == "(eval)"
+      suppress_warning {eval("eval '__FILE__', binding", binding)}.should == __FILE__
+      suppress_warning {eval("eval '__FILE__', binding", binding, 'success')}.should == 'success'
+    end
+
+    it 'uses the given binding file and line for __FILE__ and __LINE__' do
+      suppress_warning {
+        eval("[__FILE__, __LINE__]", binding).should == [__FILE__, __LINE__]
+      }
+    end
+  end
+
+  ruby_version_is "3.0" do
+    it "uses (eval) filename if none is provided" do
+      eval("__FILE__").should == "(eval)"
+      eval("__FILE__", binding).should == "(eval)"
+      eval("__FILE__", binding, "success").should == "success"
+      eval("eval '__FILE__', binding").should == "(eval)"
+      eval("eval '__FILE__', binding", binding).should == "(eval)"
+      eval("eval '__FILE__', binding", binding, 'success').should == '(eval)'
+      eval("eval '__FILE__', binding, 'success'", binding).should == 'success'
+    end
+
+    it 'uses (eval) for __FILE__ and 1 for __LINE__ with a binding argument' do
+      eval("[__FILE__, __LINE__]", binding).should == ["(eval)", 1]
+    end
   end
 
   # Found via Rubinius bug github:#149
@@ -195,13 +219,13 @@ describe "Kernel#eval" do
   end
 
   it "does not pass the block to the method being eval'ed" do
-    lambda {
+    -> {
       eval('KernelSpecs::EvalTest.call_yield') { "content" }
     }.should raise_error(LocalJumpError)
   end
 
   it "returns from the scope calling #eval when evaluating 'return'" do
-    lambda { eval("return :eval") }.call.should == :eval
+    -> { eval("return :eval") }.call.should == :eval
   end
 
   it "unwinds through a Proc-style closure and returns from a lambda-style closure in the closure chain" do
@@ -212,6 +236,17 @@ describe "Kernel#eval" do
   it "raises a LocalJumpError if there is no lambda-style closure in the chain" do
     code = fixture __FILE__, "eval_return_without_lambda.rb"
     ruby_exe(code).chomp.should == "a,b,c,e,LocalJumpError,f"
+  end
+
+  it "can be called with Method#call" do
+    method(:eval).call("2 * 3").should == 6
+  end
+
+  it "has the correct default definee when called through Method#call" do
+    class EvalSpecs
+      method(:eval).call("def eval_spec_method_call; end")
+      EvalSpecs.should have_instance_method(:eval_spec_method_call)
+    end
   end
 
   # See language/magic_comment_spec.rb for more magic comments specs
@@ -340,6 +375,65 @@ CODE
       value.should == "frozen"
       value.encoding.should == Encoding::BINARY
       value.frozen?.should be_true
+    end
+
+    it "ignores the frozen_string_literal magic comment if it appears after a token and warns if $VERBOSE is true" do
+      code = <<CODE
+some_token_before_magic_comment = :anything
+# frozen_string_literal: true
+class EvalSpecs
+  Vπstring_not_frozen = "not frozen"
+end
+CODE
+      -> { eval(code) }.should complain(/warning: `frozen_string_literal' is ignored after any tokens/, verbose: true)
+      EvalSpecs::Vπstring_not_frozen.frozen?.should be_false
+      EvalSpecs.send :remove_const, :Vπstring_not_frozen
+
+      -> { eval(code) }.should_not complain(verbose: false)
+      EvalSpecs::Vπstring_not_frozen.frozen?.should be_false
+      EvalSpecs.send :remove_const, :Vπstring_not_frozen
+    end
+  end
+
+  describe 'with refinements' do
+    it "activates refinements from the eval scope" do
+      refinery = Module.new do
+        refine EvalSpecs::A do
+          def foo
+            "bar"
+          end
+        end
+      end
+
+      result = nil
+
+      Module.new do
+        using refinery
+
+        result = eval "EvalSpecs::A.new.foo"
+      end
+
+      result.should == "bar"
+    end
+
+    it "activates refinements from the binding" do
+      refinery = Module.new do
+        refine EvalSpecs::A do
+          def foo
+            "bar"
+          end
+        end
+      end
+
+      b = nil
+      m = Module.new do
+        using refinery
+        b = binding
+      end
+
+      result = eval "EvalSpecs::A.new.foo", b
+
+      result.should == "bar"
     end
   end
 end

@@ -493,7 +493,7 @@ onig_print_names(FILE* fp, regex_t* reg)
 
   if (IS_NOT_NULL(t)) {
     fprintf(fp, "name table\n");
-    onig_st_foreach(t, i_print_name_entry, (HashDataType )fp);
+    onig_st_foreach(t, (st_foreach_callback_func *)i_print_name_entry, (HashDataType )fp);
     fputs("\n", fp);
   }
   return 0;
@@ -516,7 +516,7 @@ names_clear(regex_t* reg)
   NameTable* t = (NameTable* )reg->name_table;
 
   if (IS_NOT_NULL(t)) {
-    onig_st_foreach(t, i_free_name_entry, 0);
+    onig_st_foreach(t, (st_foreach_callback_func *)i_free_name_entry, 0);
   }
   return 0;
 }
@@ -585,7 +585,7 @@ onig_foreach_name(regex_t* reg,
     narg.reg  = reg;
     narg.arg  = arg;
     narg.enc  = reg->enc; /* should be pattern encoding. */
-    onig_st_foreach(t, i_names, (HashDataType )&narg);
+    onig_st_foreach(t, (st_foreach_callback_func *)i_names, (HashDataType )&narg);
   }
   return narg.ret;
 }
@@ -613,7 +613,7 @@ onig_renumber_name_table(regex_t* reg, GroupNumRemap* map)
   NameTable* t = (NameTable* )reg->name_table;
 
   if (IS_NOT_NULL(t)) {
-    onig_st_foreach(t, i_renumber_name, (HashDataType )map);
+    onig_st_foreach(t, (st_foreach_callback_func *)i_renumber_name, (HashDataType )map);
   }
   return 0;
 }
@@ -2187,7 +2187,6 @@ enum ReduceType {
   RQ_AQ,       /* to '*?'   */
   RQ_QQ,       /* to '??'   */
   RQ_P_QQ,     /* to '+)??' */
-  RQ_PQ_Q      /* to '+?)?' */
 };
 
 static enum ReduceType const ReduceTypeTable[6][6] = {
@@ -2197,7 +2196,7 @@ static enum ReduceType const ReduceTypeTable[6][6] = {
   {RQ_A,    RQ_A,    RQ_DEL, RQ_ASIS, RQ_P_QQ, RQ_DEL},  /* '+'  */
   {RQ_DEL,  RQ_AQ,   RQ_AQ,  RQ_DEL,  RQ_AQ,   RQ_AQ},   /* '??' */
   {RQ_DEL,  RQ_DEL,  RQ_DEL, RQ_DEL,  RQ_DEL,  RQ_DEL},  /* '*?' */
-  {RQ_ASIS, RQ_PQ_Q, RQ_DEL, RQ_AQ,   RQ_AQ,   RQ_DEL}   /* '+?' */
+  {RQ_ASIS, RQ_ASIS, RQ_ASIS, RQ_AQ,  RQ_AQ,   RQ_DEL}   /* '+?' */
 };
 
 extern void
@@ -2232,12 +2231,6 @@ onig_reduce_nested_quantifier(Node* pnode, Node* cnode)
     p->target = cnode;
     p->lower  = 0;  p->upper = 1;  p->greedy = 0;
     c->lower  = 1;  c->upper = REPEAT_INFINITE;  c->greedy = 1;
-    return ;
-    break;
-  case RQ_PQ_Q:
-    p->target = cnode;
-    p->lower  = 0;  p->upper = 1;  p->greedy = 1;
-    c->lower  = 1;  c->upper = REPEAT_INFINITE;  c->greedy = 0;
     return ;
     break;
   case RQ_ASIS:
@@ -2840,6 +2833,10 @@ fetch_name(OnigCodePoint start_code, UChar** src, UChar* end,
 #endif /* USE_NAMED_GROUP */
 
 
+#ifdef PRINTF_ARGS
+PRINTF_ARGS(static void onig_syntax_warn(ScanEnv *env, const char *fmt, ...), 2, 3);
+#endif
+
 static void
 onig_syntax_warn(ScanEnv *env, const char *fmt, ...)
 {
@@ -2848,7 +2845,7 @@ onig_syntax_warn(ScanEnv *env, const char *fmt, ...)
     va_start(args, fmt);
     onig_vsnprintf_with_pattern(buf, WARN_BUFSIZE, env->enc,
 		env->pattern, env->pattern_end,
-		(const UChar *)fmt, args);
+		fmt, args);
     va_end(args);
 #ifdef RUBY
     if (env->sourcefile == NULL)
@@ -4348,7 +4345,7 @@ fetch_char_property_to_ctype(UChar** src, UChar* end, ScanEnv* env)
   OnigEncoding enc = env->enc;
   UChar *prev, *start, *p = *src;
 
-  r = 0;
+  r = ONIGERR_INVALID_CHAR_PROPERTY_NAME;
   start = prev = p;
 
   while (!PEND) {
@@ -4362,7 +4359,6 @@ fetch_char_property_to_ctype(UChar** src, UChar* end, ScanEnv* env)
       return r;
     }
     else if (c == '(' || c == ')' || c == '{' || c == '|') {
-      r = ONIGERR_INVALID_CHAR_PROPERTY_NAME;
       break;
     }
   }
@@ -4663,7 +4659,7 @@ parse_char_class(Node** np, Node** asc_np, OnigToken* tok, UChar** src, UChar* e
 	  p = psave;
 	  for (i = 1; i < len; i++) {
 	    (void)fetch_token_in_cc(tok, &p, end, env);
-	    /* no need to check the retun value (already checked above) */
+	    /* no need to check the return value (already checked above) */
 	  }
 	  fetched = 0;
 	}
@@ -5961,6 +5957,10 @@ node_extended_grapheme_cluster(Node** np, ScanEnv* env)
         if (ONIGENC_MBC_MINLEN(env->enc) > 1) { /* UTF-16/UTF-32 */
           BBuf *inverted_buf = NULL;
 
+          /* TODO: fix false warning */
+          const int dup_not_warned = env->warnings_flag | ~ONIG_SYN_WARN_CC_DUP;
+          env->warnings_flag |= ONIG_SYN_WARN_CC_DUP;
+
           /* Start with a positive buffer and invert at the end.
            * Otherwise, adding single-character ranges work the wrong way. */
           R_ERR(add_property_to_cc(cc, "Grapheme_Cluster_Break=Control", 0, env));
@@ -5968,6 +5968,8 @@ node_extended_grapheme_cluster(Node** np, ScanEnv* env)
           R_ERR(add_code_range(&(cc->mbuf), env, 0x000D, 0x000D)); /* LF */
           R_ERR(not_code_range_buf(env->enc, cc->mbuf, &inverted_buf, env));
           cc->mbuf = inverted_buf; /* TODO: check what to do with buffer before inversion */
+
+          env->warnings_flag &= dup_not_warned; /* TODO: fix false warning */
         }
         else {
           R_ERR(add_property_to_cc(cc, "Grapheme_Cluster_Break=Control", 1, env));

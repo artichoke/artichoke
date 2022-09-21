@@ -21,11 +21,11 @@ describe "BasicObject#instance_eval" do
   end
 
   it "expects a block with no arguments" do
-    lambda { "hola".instance_eval }.should raise_error(ArgumentError)
+    -> { "hola".instance_eval }.should raise_error(ArgumentError)
   end
 
   it "takes no arguments with a block" do
-    lambda { "hola".instance_eval(4, 5) {|a,b| a + b } }.should raise_error(ArgumentError)
+    -> { "hola".instance_eval(4, 5) {|a,b| a + b } }.should raise_error(ArgumentError)
   end
 
   it "yields the object to the block" do
@@ -45,7 +45,7 @@ describe "BasicObject#instance_eval" do
       end
     end
     f.foo.should == 1
-    lambda { Object.new.foo }.should raise_error(NoMethodError)
+    -> { Object.new.foo }.should raise_error(NoMethodError)
   end
 
   it "preserves self in the original block when passed a block argument" do
@@ -122,31 +122,31 @@ describe "BasicObject#instance_eval" do
   end
 
   it "raises a TypeError when defining methods on an immediate" do
-    lambda do
+    -> do
       1.instance_eval { def foo; end }
     end.should raise_error(TypeError)
-    lambda do
+    -> do
       :foo.instance_eval { def foo; end }
     end.should raise_error(TypeError)
   end
 
 quarantine! do # Not clean, leaves cvars lying around to break other specs
-  it "scopes class var accesses in the caller when called on a Fixnum" do
-    # Fixnum can take instance vars
-    Fixnum.class_eval "@@__tmp_instance_eval_spec = 1"
+  it "scopes class var accesses in the caller when called on an Integer" do
+    # Integer can take instance vars
+    Integer.class_eval "@@__tmp_instance_eval_spec = 1"
     (defined? @@__tmp_instance_eval_spec).should be_nil
 
     @@__tmp_instance_eval_spec = 2
     1.instance_eval { @@__tmp_instance_eval_spec }.should == 2
-    Fixnum.__send__(:remove_class_variable, :@@__tmp_instance_eval_spec)
+    Integer.__send__(:remove_class_variable, :@@__tmp_instance_eval_spec)
   end
 end
 
   it "raises a TypeError when defining methods on numerics" do
-    lambda do
+    -> do
       (1.0).instance_eval { def foo; end }
     end.should raise_error(TypeError)
-    lambda do
+    -> do
       (1 << 64).instance_eval { def foo; end }
     end.should raise_error(TypeError)
   end

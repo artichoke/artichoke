@@ -61,14 +61,34 @@ require 'prettyprint'
 # Tanaka Akira <akr@fsij.org>
 
 class PP < PrettyPrint
+  # Returns the usable width for +out+.
+  # As the width of +out+:
+  # 1. If +out+ is assigned to a tty device, its width is used.
+  # 2. Otherwise, or it could not get the value, the +COLUMN+
+  #    environment variable is assumed to be set to the width.
+  # 3. If +COLUMN+ is not set to a non-zero number, 80 is assumed.
+  #
+  # And finally, returns the above width value - 1.
+  # * This -1 is for Windows command prompt, which moves the cursor to
+  #   the next line if it reaches the last column.
+  def PP.width_for(out)
+    begin
+      require 'io/console'
+      _, width = out.winsize
+    rescue LoadError, NoMethodError, SystemCallError
+    end
+    (width || ENV['COLUMNS']&.to_i&.nonzero? || 80) - 1
+  end
+
   # Outputs +obj+ to +out+ in pretty printed format of
   # +width+ columns in width.
   #
   # If +out+ is omitted, <code>$></code> is assumed.
-  # If +width+ is omitted, 79 is assumed.
+  # If +width+ is omitted, the width of +out+ is assumed (see
+  # width_for).
   #
   # PP.pp returns +out+.
-  def PP.pp(obj, out=$>, width=79)
+  def PP.pp(obj, out=$>, width=width_for(out))
     q = PP.new(out, width)
     q.guard_inspect_key {q.pp obj}
     q.flush
@@ -89,15 +109,29 @@ class PP < PrettyPrint
 
   # :stopdoc:
   def PP.mcall(obj, mod, meth, *args, &block)
-    mod.instance_method(meth).bind(obj).call(*args, &block)
+    mod.instance_method(meth).bind_call(obj, *args, &block)
   end
   # :startdoc:
 
-  @sharing_detection = false
-  class << self
-    # Returns the sharing detection flag as a boolean value.
-    # It is false by default.
-    attr_accessor :sharing_detection
+  if defined? ::Ractor
+    class << self
+      # Returns the sharing detection flag as a boolean value.
+      # It is false (nil) by default.
+      def sharing_detection
+        Ractor.current[:pp_sharing_detection]
+      end
+      # Sets the sharing detection flag to b.
+      def sharing_detection=(b)
+        Ractor.current[:pp_sharing_detection] = b
+      end
+    end
+  else
+    @sharing_detection = false
+    class << self
+      # Returns the sharing detection flag as a boolean value.
+      # It is false by default.
+      attr_accessor :sharing_detection
+    end
   end
 
   module PPMethods
@@ -106,17 +140,17 @@ class PP < PrettyPrint
     # and preserves the previous set of objects being printed.
     def guard_inspect_key
       if Thread.current[:__recursive_key__] == nil
-        Thread.current[:__recursive_key__] = {}.taint
+        Thread.current[:__recursive_key__] = {}.compare_by_identity
       end
 
       if Thread.current[:__recursive_key__][:inspect] == nil
-        Thread.current[:__recursive_key__][:inspect] = {}.taint
+        Thread.current[:__recursive_key__][:inspect] = {}.compare_by_identity
       end
 
       save = Thread.current[:__recursive_key__][:inspect]
 
       begin
-        Thread.current[:__recursive_key__][:inspect] = {}.taint
+        Thread.current[:__recursive_key__][:inspect] = {}.compare_by_identity
         yield
       ensure
         Thread.current[:__recursive_key__][:inspect] = save
@@ -149,18 +183,20 @@ class PP < PrettyPrint
     # Object#pretty_print_cycle is used when +obj+ is already
     # printed, a.k.a the object reference chain has a cycle.
     def pp(obj)
-      id = obj.object_id
+      # If obj is a Delegator then use the object being delegated to for cycle
+      # detection
+      obj = obj.__getobj__ if defined?(::Delegator) and obj.is_a?(::Delegator)
 
-      if check_inspect_key(id)
+      if check_inspect_key(obj)
         group {obj.pretty_print_cycle self}
         return
       end
 
       begin
-        push_inspect_key(id)
+        push_inspect_key(obj)
         group {obj.pretty_print self}
       ensure
-        pop_inspect_key(id) unless PP.sharing_detection
+        pop_inspect_key(obj) unless PP.sharing_detection
       end
     end
 
@@ -174,7 +210,7 @@ class PP < PrettyPrint
     # A convenience method, like object_group, but also reformats the Object's
     # object_id.
     def object_address_group(obj, &block)
-      str = Kernel.instance_method(:to_s).bind(obj).call
+      str = Kernel.instance_method(:to_s).bind_call(obj)
       str.chomp!('>')
       group(1, str, '>', &block)
     end
@@ -221,7 +257,7 @@ class PP < PrettyPrint
         else
           sep.call
         end
-        yield(*v)
+        RUBY_VERSION >= "3.0" ? yield(*v, **{}) : yield(*v)
       }
     end
 
@@ -279,9 +315,9 @@ class PP < PrettyPrint
     # This module provides predefined #pretty_print methods for some of
     # the most commonly used built-in classes for convenience.
     def pretty_print(q)
-      method_method = Object.instance_method(:method).bind(self)
+      umethod_method = Object.instance_method(:method)
       begin
-        inspect_method = method_method.call(:inspect)
+        inspect_method = umethod_method.bind_call(self, :inspect)
       rescue NameError
       end
       if inspect_method && inspect_method.owner != Kernel
@@ -318,7 +354,7 @@ class PP < PrettyPrint
     # However, doing this requires that every class that #inspect is called on
     # implement #pretty_print, or a RuntimeError will be raised.
     def pretty_print_inspect
-      if Object.instance_method(:method).bind(self).call(:pretty_print).owner == PP::ObjectMixin
+      if Object.instance_method(:method).bind_call(self, :pretty_print).owner == PP::ObjectMixin
         raise "pretty_print is not overridden for #{self.class}"
       end
       PP.singleline_pp(self, ''.dup)
@@ -408,7 +444,7 @@ end
 class File < IO # :nodoc:
   class Stat # :nodoc:
     def pretty_print(q) # :nodoc:
-      require 'etc.so'
+      require 'etc'
       q.object_group(self) {
         q.breakable
         q.text sprintf("dev=0x%x", self.dev); q.comma_breakable
@@ -514,33 +550,39 @@ class MatchData # :nodoc:
   end
 end
 
-class RubyVM::AbstractSyntaxTree::Node
-  def pretty_print_children(q, names = [])
-    children.zip(names) do |c, n|
-      if n
-        q.breakable
-        q.text "#{n}:"
-      end
-      q.group(2) do
-        q.breakable
-        q.pp c
+if defined?(RubyVM::AbstractSyntaxTree)
+  class RubyVM::AbstractSyntaxTree::Node
+    def pretty_print_children(q, names = [])
+      children.zip(names) do |c, n|
+        if n
+          q.breakable
+          q.text "#{n}:"
+        end
+        q.group(2) do
+          q.breakable
+          q.pp c
+        end
       end
     end
-  end
 
-  def pretty_print(q)
-    q.group(1, "(#{type}@#{first_lineno}:#{first_column}-#{last_lineno}:#{last_column}", ")") {
-      case type
-      when :SCOPE
-        pretty_print_children(q, %w"tbl args body")
-      when :ARGS
-        pretty_print_children(q, %w[pre_num pre_init opt first_post post_num post_init rest kw kwrest block])
-      when :DEFN
-        pretty_print_children(q, %w[mid body])
-      else
-        pretty_print_children(q)
-      end
-    }
+    def pretty_print(q)
+      q.group(1, "(#{type}@#{first_lineno}:#{first_column}-#{last_lineno}:#{last_column}", ")") {
+        case type
+        when :SCOPE
+          pretty_print_children(q, %w"tbl args body")
+        when :ARGS
+          pretty_print_children(q, %w[pre_num pre_init opt first_post post_num post_init rest kw kwrest block])
+        when :DEFN
+          pretty_print_children(q, %w[mid body])
+        when :ARYPTN
+          pretty_print_children(q, %w[const pre rest post])
+        when :HSHPTN
+          pretty_print_children(q, %w[const kw kwrest])
+        else
+          pretty_print_children(q)
+        end
+      }
+    end
   end
 end
 

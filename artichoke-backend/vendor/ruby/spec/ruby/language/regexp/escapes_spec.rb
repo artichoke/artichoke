@@ -48,7 +48,7 @@ describe "Regexps with escape characters" do
     /\x0AA/.match("\nA").to_a.should == ["\nA"]
     /\xAG/.match("\nG").to_a.should == ["\nG"]
     # Non-matches
-    lambda { eval('/\xG/') }.should raise_error(SyntaxError)
+    -> { eval('/\xG/') }.should raise_error(SyntaxError)
 
     # \x{7HHHHHHH} wide hexadecimal char (character code point value)
   end
@@ -67,15 +67,31 @@ describe "Regexps with escape characters" do
     /\cJ/.match("\r").should be_nil
 
     # Parsing precedence
-    /\cJ+/.match("\n\n").to_a.should == ["\n\n"] # Quantifers apply to entire escape sequence
+    /\cJ+/.match("\n\n").to_a.should == ["\n\n"] # Quantifiers apply to entire escape sequence
     /\\cJ/.match("\\cJ").to_a.should == ["\\cJ"]
-    lambda { eval('/[abc\x]/') }.should raise_error(SyntaxError) # \x is treated as a escape sequence even inside a character class
+    -> { eval('/[abc\x]/') }.should raise_error(SyntaxError) # \x is treated as a escape sequence even inside a character class
     # Syntax error
-    lambda { eval('/\c/') }.should raise_error(SyntaxError)
+    -> { eval('/\c/') }.should raise_error(SyntaxError)
 
     # \cx          control char          (character code point value)
     # \C-x         control char          (character code point value)
     # \M-x         meta  (x|0x80)        (character code point value)
     # \M-\C-x      meta control char     (character code point value)
+  end
+
+  it "handles three digit octal escapes starting with 0" do
+    /[\000-\b]/.match("\x00")[0].should == "\x00"
+  end
+
+  it "handles control escapes with \\C-x syntax" do
+    /\C-*\C-J\C-j/.match("\n\n\n")[0].should == "\n\n\n"
+  end
+
+  it "supports the \\K keep operator" do
+    /a\Kb/.match("ab")[0].should == "b"
+  end
+
+  it "supports the \\R line break escape" do
+    /\R/.match("\n")[0].should == "\n"
   end
 end

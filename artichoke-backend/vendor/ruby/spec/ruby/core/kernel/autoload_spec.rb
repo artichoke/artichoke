@@ -56,9 +56,24 @@ describe "Kernel#autoload" do
     end
   end
 
+  describe "inside a Class.new method body" do
+    # NOTE: this spec is being discussed in https://github.com/ruby/spec/pull/839
+    it "should define on the new anonymous class" do
+      cls = Class.new do
+        def go
+          autoload :Object, 'bogus'
+          autoload? :Object
+        end
+      end
+
+      cls.new.go.should == 'bogus'
+      cls.autoload?(:Object).should == 'bogus'
+    end
+  end
+
   describe "when Object is frozen" do
     it "raises a FrozenError before defining the constant" do
-      ruby_exe(fixture(__FILE__, "autoload_frozen.rb")).should == "#{frozen_error_class} - nil"
+      ruby_exe(fixture(__FILE__, "autoload_frozen.rb")).should == "FrozenError - nil"
     end
   end
 
@@ -72,7 +87,7 @@ describe "Kernel#autoload" do
       KernelSpecs::AutoloadMethod.autoload?(:AutoloadFromIncludedModule).should == @path
     end
 
-    it "the autoload is reacheable from the class too" do
+    it "the autoload is reachable from the class too" do
       KernelSpecs::AutoloadMethodIncluder.autoload?(:AutoloadFromIncludedModule).should == @path
     end
 
@@ -138,7 +153,7 @@ describe "Kernel.autoload" do
       KernelSpecs::AutoloadMethod2.autoload?(:AutoloadFromIncludedModule2).should == @path
     end
 
-    it "the autoload is reacheable from the class too" do
+    it "the autoload is reachable from the class too" do
       KernelSpecs::AutoloadMethodIncluder2.autoload?(:AutoloadFromIncludedModule2).should == @path
     end
 

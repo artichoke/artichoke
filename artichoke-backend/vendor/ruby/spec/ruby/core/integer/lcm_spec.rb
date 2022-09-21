@@ -33,26 +33,26 @@ describe "Integer#lcm" do
 
   it "accepts a Bignum argument" do
     bignum = 9999**99
-    bignum.should be_kind_of(Bignum)
+    bignum.should be_kind_of(Integer)
     99.lcm(bignum).should == bignum
   end
 
   it "works if self is a Bignum" do
     bignum = 9999**99
-    bignum.should be_kind_of(Bignum)
+    bignum.should be_kind_of(Integer)
     bignum.lcm(99).should == bignum
   end
 
   it "raises an ArgumentError if not given an argument" do
-    lambda { 12.lcm }.should raise_error(ArgumentError)
+    -> { 12.lcm }.should raise_error(ArgumentError)
   end
 
   it "raises an ArgumentError if given more than one argument" do
-    lambda { 12.lcm(30, 20) }.should raise_error(ArgumentError)
+    -> { 12.lcm(30, 20) }.should raise_error(ArgumentError)
   end
 
   it "raises a TypeError unless the argument is an Integer" do
-    lambda { 39.lcm(3.8)   }.should raise_error(TypeError)
-    lambda { 45872.lcm([]) }.should raise_error(TypeError)
+    -> { 39.lcm(3.8)   }.should raise_error(TypeError)
+    -> { 45872.lcm([]) }.should raise_error(TypeError)
   end
 end

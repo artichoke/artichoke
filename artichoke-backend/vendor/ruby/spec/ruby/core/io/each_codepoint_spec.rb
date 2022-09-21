@@ -4,7 +4,7 @@ require_relative 'shared/codepoints'
 
 # See redmine #1667
 describe "IO#each_codepoint" do
-  it_behaves_like :io_codepoints, :codepoints
+  it_behaves_like :io_codepoints, :each_codepoint
 end
 
 describe "IO#each_codepoint" do
@@ -38,6 +38,6 @@ describe "IO#each_codepoint" do
   end
 
   it "raises an exception at incomplete character before EOF when conversion takes place" do
-    lambda { @io.each_codepoint {} }.should raise_error(ArgumentError)
+    -> { @io.each_codepoint {} }.should raise_error(ArgumentError)
   end
 end

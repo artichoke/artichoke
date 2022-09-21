@@ -6,21 +6,11 @@ describe "Enumerable#chunk" do
     ScratchPad.record []
   end
 
-  ruby_version_is ""..."2.4" do
-    it "raises an ArgumentError if called without a block" do
-      lambda do
-        EnumerableSpecs::Numerous.new.chunk
-      end.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "2.4" do
-    it "returns an Enumerator if called without a block" do
-      chunk = EnumerableSpecs::Numerous.new(1, 2, 3, 1, 2).chunk
-      chunk.should be_an_instance_of(Enumerator)
-      result = chunk.with_index {|elt, i| elt - i }.to_a
-      result.should == [[1, [1, 2, 3]], [-2, [1, 2]]]
-    end
+  it "returns an Enumerator if called without a block" do
+    chunk = EnumerableSpecs::Numerous.new(1, 2, 3, 1, 2).chunk
+    chunk.should be_an_instance_of(Enumerator)
+    result = chunk.with_index {|elt, i| elt - i }.to_a
+    result.should == [[1, [1, 2, 3]], [-2, [1, 2]]]
   end
 
   it "returns an Enumerator if given a block" do
@@ -45,6 +35,11 @@ describe "Enumerable#chunk" do
     result.should == [[:_alone, [1]], [false, [2, 3, 2]], [:_alone, [1]]]
   end
 
+  it "yields Arrays as a single argument to a rest argument" do
+    e = EnumerableSpecs::Numerous.new([1, 2])
+    result = e.chunk { |*x| x.should == [[1,2]] }.to_a
+  end
+
   it "does not return elements for which the block returns :_separator" do
     e = EnumerableSpecs::Numerous.new(1, 2, 3, 3, 2, 1)
     result = e.chunk { |x| x == 2 ? :_separator : 1 }.to_a
@@ -59,12 +54,12 @@ describe "Enumerable#chunk" do
 
   it "raises a RuntimeError if the block returns a Symbol starting with an underscore other than :_alone or :_separator" do
     e = EnumerableSpecs::Numerous.new(1, 2, 3, 2, 1)
-    lambda { e.chunk { |x| :_arbitrary }.to_a }.should raise_error(RuntimeError)
+    -> { e.chunk { |x| :_arbitrary }.to_a }.should raise_error(RuntimeError)
   end
 
   it "does not accept arguments" do
     e = EnumerableSpecs::Numerous.new(1, 2, 3)
-    lambda {
+    -> {
       e.chunk(1) {}
     }.should raise_error(ArgumentError)
   end

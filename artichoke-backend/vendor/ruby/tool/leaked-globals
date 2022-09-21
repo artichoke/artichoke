@@ -1,0 +1,65 @@
+#!/usr/bin/ruby
+require_relative 'lib/colorize'
+
+until ARGV.empty?
+  case ARGV[0]
+  when /\ASYMBOL_PREFIX=(.*)/
+    SYMBOL_PREFIX = $1
+  when /\ANM=(.*)/              # may be multiple words
+    NM = $1
+  when /\APLATFORM=(.+)?/
+    platform = $1
+  else
+    break
+  end
+  ARGV.shift
+end
+
+config = ARGV.shift
+count = 0
+col = Colorize.new
+config_code = File.read(config)
+REPLACE = config_code.scan(/\bAC_(?:REPLACE|CHECK)_FUNCS?\((\w+)/).flatten
+# REPLACE << 'memcmp' if /\bAC_FUNC_MEMCMP\b/ =~ config_code
+REPLACE.push('main', 'DllMain')
+if platform and !platform.empty?
+  begin
+    h = File.read(platform)
+  rescue Errno::ENOENT
+  else
+    REPLACE.concat(
+      h .gsub(%r[/\*.*?\*/]m, " ") # delete block comments
+        .gsub(%r[//.*], ' ')       # delete oneline comments
+        .gsub(/^\s*#.*(?:\\\n.*)*/, "") # delete preprocessor directives
+        .scan(/\b((?!rb_|DEPRECATED|_)\w+)\s*\(.*\);/)
+        .flatten)
+  end
+end
+missing = File.dirname(config) + "/missing/"
+ARGV.reject! do |n|
+  unless (src = Dir.glob(missing + File.basename(n, ".*") + ".[cS]")).empty?
+    puts "Ignore #{n} because of #{src.map {|s| File.basename(s)}.join(', ')} under missing"
+    true
+  end
+end
+print "Checking leaked global symbols..."
+STDOUT.flush
+IO.foreach("|#{NM} -Pgp #{ARGV.join(' ')}") do |line|
+  n, t, = line.split
+  next unless /[A-TV-Z]/ =~ t
+  next unless n.sub!(/^#{SYMBOL_PREFIX}/o, "")
+  next if n.include?(".")
+  next if /\A(?:Init_|InitVM_|RUBY_|ruby_|rb_|[Oo]nig|dln_|mjit_|coroutine_)/ =~ n
+  next if REPLACE.include?(n)
+  puts col.fail("leaked") if count.zero?
+  count += 1
+  puts "  #{n}"
+end
+case count
+when 0
+  puts col.pass("none")
+when 1
+  abort col.fail("1 un-prefixed symbol leaked")
+else
+  abort col.fail("#{count} un-prefixed symbols leaked")
+end

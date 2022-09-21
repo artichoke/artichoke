@@ -58,36 +58,39 @@ describe "Integer#>> (with n >> m)" do
 
     it "returns an Bignum == fixnum_max * 2 when fixnum_max >> -1 and n > 0" do
       result = fixnum_max >> -1
-      result.should be_an_instance_of(Bignum)
+      result.should be_an_instance_of(Integer)
       result.should == fixnum_max * 2
     end
 
     it "returns an Bignum == fixnum_min * 2 when fixnum_min >> -1 and n < 0" do
       result = fixnum_min >> -1
-      result.should be_an_instance_of(Bignum)
+      result.should be_an_instance_of(Integer)
       result.should == fixnum_min * 2
     end
 
     it "calls #to_int to convert the argument to an Integer" do
       obj = mock("2")
       obj.should_receive(:to_int).and_return(2)
-
       (8 >> obj).should == 2
+
+      obj = mock("to_int_bignum")
+      obj.should_receive(:to_int).and_return(bignum_value)
+      (8 >> obj).should == 0
     end
 
     it "raises a TypeError when #to_int does not return an Integer" do
       obj = mock("a string")
       obj.should_receive(:to_int).and_return("asdf")
 
-      lambda { 3 >> obj }.should raise_error(TypeError)
+      -> { 3 >> obj }.should raise_error(TypeError)
     end
 
     it "raises a TypeError when passed nil" do
-      lambda { 3 >> nil }.should raise_error(TypeError)
+      -> { 3 >> nil }.should raise_error(TypeError)
     end
 
     it "raises a TypeError when passed a String" do
-      lambda { 3 >> "4" }.should raise_error(TypeError)
+      -> { 3 >> "4" }.should raise_error(TypeError)
     end
   end
 
@@ -156,13 +159,13 @@ describe "Integer#>> (with n >> m)" do
 
     it "returns a Fixnum == fixnum_max when (fixnum_max * 2) >> 1 and n > 0" do
       result = (fixnum_max * 2) >> 1
-      result.should be_an_instance_of(Fixnum)
+      result.should be_an_instance_of(Integer)
       result.should == fixnum_max
     end
 
     it "returns a Fixnum == fixnum_min when (fixnum_min * 2) >> 1 and n < 0" do
       result = (fixnum_min * 2) >> 1
-      result.should be_an_instance_of(Fixnum)
+      result.should be_an_instance_of(Integer)
       result.should == fixnum_min
     end
 
@@ -177,15 +180,15 @@ describe "Integer#>> (with n >> m)" do
       obj = mock("a string")
       obj.should_receive(:to_int).and_return("asdf")
 
-      lambda { @bignum >> obj }.should raise_error(TypeError)
+      -> { @bignum >> obj }.should raise_error(TypeError)
     end
 
     it "raises a TypeError when passed nil" do
-      lambda { @bignum >> nil }.should raise_error(TypeError)
+      -> { @bignum >> nil }.should raise_error(TypeError)
     end
 
     it "raises a TypeError when passed a String" do
-      lambda { @bignum >> "4" }.should raise_error(TypeError)
+      -> { @bignum >> "4" }.should raise_error(TypeError)
     end
   end
 end

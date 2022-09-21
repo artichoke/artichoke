@@ -50,6 +50,11 @@ describe "IO#sysread on a file" do
     @file.sysread(5).should == "56789"
   end
 
+  it "raises an error when called after buffered reads" do
+    @file.readline
+    -> { @file.sysread(5) }.should raise_error(IOError)
+  end
+
   it "reads normally even when called immediately after a buffered IO#read" do
     @file.read(15)
     @file.sysread(5).should == "56789"
@@ -58,13 +63,13 @@ describe "IO#sysread on a file" do
   it "does not raise error if called after IO#read followed by IO#write" do
     @file.read(5)
     @file.write("abcde")
-    lambda { @file.sysread(5) }.should_not raise_error(IOError)
+    -> { @file.sysread(5) }.should_not raise_error(IOError)
   end
 
   it "does not raise error if called after IO#read followed by IO#syswrite" do
     @file.read(5)
     @file.syswrite("abcde")
-    lambda { @file.sysread(5) }.should_not raise_error(IOError)
+    -> { @file.sysread(5) }.should_not raise_error(IOError)
   end
 
   it "reads updated content after the flushed buffered IO#write" do
@@ -77,7 +82,7 @@ describe "IO#sysread on a file" do
   end
 
   it "raises IOError on closed stream" do
-    lambda { IOSpecs.closed_io.sysread(5) }.should raise_error(IOError)
+    -> { IOSpecs.closed_io.sysread(5) }.should raise_error(IOError)
   end
 end
 

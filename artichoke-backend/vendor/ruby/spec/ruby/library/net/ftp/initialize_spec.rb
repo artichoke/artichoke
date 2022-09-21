@@ -1,95 +1,94 @@
 require_relative '../../../spec_helper'
-require_relative 'spec_helper'
 
-describe "Net::FTP#initialize" do
-  before :each do
-    @ftp = Net::FTP.allocate
-    @ftp.stub!(:connect)
-    @port_args = []
-    ruby_version_is "2.5" do
+ruby_version_is ""..."3.1" do
+  require_relative 'spec_helper'
+
+  describe "Net::FTP#initialize" do
+    before :each do
+      @ftp = Net::FTP.allocate
+      @ftp.stub!(:connect)
+      @port_args = []
       @port_args << 21
     end
-  end
 
-  it "is private" do
-    Net::FTP.should have_private_instance_method(:initialize)
-  end
+    it "is private" do
+      Net::FTP.should have_private_instance_method(:initialize)
+    end
 
-  it "sets self into binary mode" do
-    @ftp.binary.should be_nil
-    @ftp.send(:initialize)
-    @ftp.binary.should be_true
-  end
-
-  it "sets self into active mode" do
-    @ftp.passive.should be_nil
-    @ftp.send(:initialize)
-    @ftp.passive.should be_false
-  end
-
-  it "sets self into non-debug mode" do
-    @ftp.debug_mode.should be_nil
-    @ftp.send(:initialize)
-    @ftp.debug_mode.should be_false
-  end
-
-  it "sets self to not resume file uploads/downloads" do
-    @ftp.resume.should be_nil
-    @ftp.send(:initialize)
-    @ftp.resume.should be_false
-  end
-
-  describe "when passed no arguments" do
-    it "does not try to connect" do
-      @ftp.should_not_receive(:connect)
+    it "sets self into binary mode" do
+      @ftp.binary.should be_nil
       @ftp.send(:initialize)
-    end
-  end
-
-  describe "when passed host" do
-    it "tries to connect to the passed host" do
-      @ftp.should_receive(:connect).with("localhost", *@port_args)
-      @ftp.send(:initialize, "localhost")
-    end
-  end
-
-  describe "when passed host, user" do
-    it "tries to connect to the passed host" do
-      @ftp.should_receive(:connect).with("localhost", *@port_args)
-      @ftp.send(:initialize, "localhost")
+      @ftp.binary.should be_true
     end
 
-    it "tries to login with the passed username" do
-      @ftp.should_receive(:login).with("rubyspec", nil, nil)
-      @ftp.send(:initialize, "localhost", "rubyspec")
-    end
-  end
-
-  describe "when passed host, user, password" do
-    it "tries to connect to the passed host" do
-      @ftp.should_receive(:connect).with("localhost", *@port_args)
-      @ftp.send(:initialize, "localhost")
+    it "sets self into active mode" do
+      @ftp.passive.should be_nil
+      @ftp.send(:initialize)
+      @ftp.passive.should be_false
     end
 
-    it "tries to login with the passed username and password" do
-      @ftp.should_receive(:login).with("rubyspec", "rocks", nil)
-      @ftp.send(:initialize, "localhost", "rubyspec", "rocks")
-    end
-  end
-
-  describe "when passed host, user" do
-    it "tries to connect to the passed host" do
-      @ftp.should_receive(:connect).with("localhost", *@port_args)
-      @ftp.send(:initialize, "localhost")
+    it "sets self into non-debug mode" do
+      @ftp.debug_mode.should be_nil
+      @ftp.send(:initialize)
+      @ftp.debug_mode.should be_false
     end
 
-    it "tries to login with the passed username, password and account" do
-      @ftp.should_receive(:login).with("rubyspec", "rocks", "account")
-      @ftp.send(:initialize, "localhost", "rubyspec", "rocks", "account")
+    it "sets self to not resume file uploads/downloads" do
+      @ftp.resume.should be_nil
+      @ftp.send(:initialize)
+      @ftp.resume.should be_false
     end
-  end
 
-  ruby_version_is '2.4' do
+    describe "when passed no arguments" do
+      it "does not try to connect" do
+        @ftp.should_not_receive(:connect)
+        @ftp.send(:initialize)
+      end
+    end
+
+    describe "when passed host" do
+      it "tries to connect to the passed host" do
+        @ftp.should_receive(:connect).with("localhost", *@port_args)
+        @ftp.send(:initialize, "localhost")
+      end
+    end
+
+    describe "when passed host, user" do
+      it "tries to connect to the passed host" do
+        @ftp.should_receive(:connect).with("localhost", *@port_args)
+        @ftp.send(:initialize, "localhost")
+      end
+
+      it "tries to login with the passed username" do
+        @ftp.should_receive(:login).with("rubyspec", nil, nil)
+        @ftp.send(:initialize, "localhost", "rubyspec")
+      end
+    end
+
+    describe "when passed host, user, password" do
+      it "tries to connect to the passed host" do
+        @ftp.should_receive(:connect).with("localhost", *@port_args)
+        @ftp.send(:initialize, "localhost")
+      end
+
+      it "tries to login with the passed username and password" do
+        @ftp.should_receive(:login).with("rubyspec", "rocks", nil)
+        @ftp.send(:initialize, "localhost", "rubyspec", "rocks")
+      end
+    end
+
+    describe "when passed host, user" do
+      it "tries to connect to the passed host" do
+        @ftp.should_receive(:connect).with("localhost", *@port_args)
+        @ftp.send(:initialize, "localhost")
+      end
+
+      it "tries to login with the passed username, password and account" do
+        @ftp.should_receive(:login).with("rubyspec", "rocks", "account")
+        @ftp.send(:initialize, "localhost", "rubyspec", "rocks", "account")
+      end
+    end
+
     before :each do
       @ftp.stub!(:login)
     end

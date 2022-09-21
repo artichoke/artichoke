@@ -9,6 +9,8 @@
 /* vim: ft=css et sw=2 ts=2 sts=2 */
 /* Base Green is: #6C8C22 */
 
+.hide { display: none !important; }
+
 * { padding: 0; margin: 0; }
 
 body {
@@ -48,6 +50,16 @@ h6:hover span {
   display: inline;
 }
 
+h1:target,
+h2:target,
+h3:target,
+h4:target,
+h5:target,
+h6:target {
+  margin-left: -10px;
+  border-left: 10px solid #f1edba;
+}
+
 :link,
 :visited {
   color: #6C8C22;
@@ -62,6 +74,28 @@ h6:hover span {
 code,
 pre {
   font-family: "Source Code Pro", Monaco, monospace;
+  background-color: rgba(27,31,35,0.05);
+  padding: 0em 0.2em;
+  border-radius: 0.2em;
+}
+
+table {
+  margin: 0;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+table tr th, table tr td {
+  padding: 0.2em 0.4em;
+  border: 1px solid #ccc;
+}
+
+table tr th {
+  background-color: #eceaed;
+}
+
+table tr:nth-child(even) td {
+  background-color: #f5f4f6;
 }
 
 /* @group Generic Classes */
@@ -91,7 +125,7 @@ pre {
 
 .missing-docs {
   font-size: 120%;
-  background: white url(images/wrench_orange.png) no-repeat 4px center;
+  background: white url(../images/wrench_orange.png) no-repeat 4px center;
   color: #ccc;
   line-height: 2em;
   border: 1px solid #d00;
@@ -135,11 +169,11 @@ pre {
 .table-of-contents li .toc-toggle {
   width: 16px;
   height: 16px;
-  background: url(images/add.png) no-repeat;
+  background: url(../images/add.png) no-repeat;
 }
 
 .table-of-contents li .toc-toggle.open {
-  background: url(images/delete.png) no-repeat;
+  background: url(../images/delete.png) no-repeat;
 }
 
 /* @end */
@@ -151,6 +185,7 @@ nav {
   width: 260px;
   font-family: Helvetica, sans-serif;
   font-size: 14px;
+  border-right: 1px solid #ccc;
 }
 
 main {
@@ -261,8 +296,13 @@ ul.link-list .type {
   -webkit-border-radius: 5px;
 }
 
+dl.note-list dt {
+  float: left;
+  margin-right: 1em;
+}
+
 .calls-super {
-  background: url(images/arrow_up.png) no-repeat right center;
+  background: url(../images/arrow_up.png) no-repeat right center;
 }
 
 /* @end */
@@ -441,7 +481,16 @@ main header h3 {
 /* @group Method Details */
 
 main .method-source-code {
-  display: none;
+  max-height: 0;
+  overflow: hidden;
+  transition-duration: 200ms;
+  transition-delay: 0ms;
+  transition-property: all;
+  transition-timing-function: ease-in-out;
+}
+
+main .method-source-code.active-menu {
+  max-height: 100vh;
 }
 
 main .method-description .method-calls-super {
@@ -479,7 +528,7 @@ main .method-click-advice {
   visibility: hidden;
   padding-right: 20px;
   line-height: 20px;
-  background: url(images/zoom.png) no-repeat right top;
+  background: url(../images/zoom.png) no-repeat right top;
 }
 main .method-heading:hover .method-click-advice {
   visibility: visible;

@@ -1,4 +1,4 @@
-/* -*- mode:c; style:ruby; coding: utf-8 -*-
+/* -*- C -*-
   insns.def - YARV instruction definitions
 
   $Author: $
@@ -188,6 +188,8 @@ getspecial
 (rb_num_t key, rb_num_t type)
 ()
 (VALUE val)
+/* `$~ = MatchData.allocate; $&` can raise. */
+// attr bool leaf = (type == 0) ? true : false;
 {
     val = vm_getspecial(ec, GET_LEP(), key, type);
 }
@@ -205,63 +207,65 @@ setspecial
 /* Get value of instance variable id of self. */
 DEFINE_INSN
 getinstancevariable
-(ID id, IC ic)
+(ID id, IVC ic)
 ()
 (VALUE val)
-/* "instance variable not initialized" warning can be hooked. */
-// attr bool leaf = false; /* has rb_warning() */
+/* Ractor crashes when it accesses class/module-level instances variables. */
+// attr bool leaf = false; /* has IVAR_ACCESSOR_SHOULD_BE_MAIN_RACTOR() */
 {
-    val = vm_getinstancevariable(GET_SELF(), id, ic);
+    val = vm_getinstancevariable(GET_ISEQ(), GET_SELF(), id, ic);
 }
 
 /* Set value of instance variable id of self to val. */
 DEFINE_INSN
 setinstancevariable
-(ID id, IC ic)
+(ID id, IVC ic)
 (VALUE val)
 ()
+// attr bool leaf = false; /* has rb_check_frozen_internal() */
 {
-    vm_setinstancevariable(GET_SELF(), id, val, ic);
+    vm_setinstancevariable(GET_ISEQ(), GET_SELF(), id, val, ic);
 }
 
 /* Get value of class variable id of klass as val. */
 DEFINE_INSN
 getclassvariable
-(ID id)
+(ID id, IVC ic)
 ()
 (VALUE val)
 /* "class variable access from toplevel" warning can be hooked. */
 // attr bool leaf = false; /* has rb_warning() */
 {
-    val = rb_cvar_get(vm_get_cvar_base(rb_vm_get_cref(GET_EP()), GET_CFP()), id);
+    rb_control_frame_t *cfp = GET_CFP();
+    val = vm_getclassvariable(GET_ISEQ(), cfp, id, (ICVARC)ic);
 }
 
 /* Set value of class variable id of klass as val. */
 DEFINE_INSN
 setclassvariable
-(ID id)
+(ID id, IVC ic)
 (VALUE val)
 ()
 /* "class variable access from toplevel" warning can be hooked. */
 // attr bool leaf = false; /* has rb_warning() */
 {
     vm_ensure_not_refinement_module(GET_SELF());
-    rb_cvar_set(vm_get_cvar_base(rb_vm_get_cref(GET_EP()), GET_CFP()), id, val);
+    vm_setclassvariable(GET_ISEQ(), GET_CFP(), id,  val, (ICVARC)ic);
 }
 
-/* Get constant variable id. If klass is Qnil, constants
+/* Get constant variable id. If klass is Qnil and allow_nil is Qtrue, constants
    are searched in the current scope. Otherwise, get constant under klass
    class or module.
  */
 DEFINE_INSN
 getconstant
 (ID id)
-(VALUE klass)
+(VALUE klass, VALUE allow_nil)
 (VALUE val)
 /* getconstant can kick autoload */
 // attr bool leaf = false; /* has rb_autoload_load() */
 {
-    val = vm_get_ev_const(ec, klass, id, 0);
+    val = vm_get_ev_const(ec, klass, id, allow_nil == Qtrue, 0);
 }
 
 /* Set constant variable id under cbase class or module.
@@ -285,23 +289,23 @@ setconstant
 /* get global variable id. */
 DEFINE_INSN
 getglobal
-(GENTRY entry)
+(ID gid)
 ()
 (VALUE val)
-// attr bool leaf = leafness_of_getglobal(entry);
+// attr bool leaf = false;
 {
-    val = GET_GLOBAL((VALUE)entry);
+    val = rb_gvar_get(gid);
 }
 
 /* set global variable id as val. */
 DEFINE_INSN
 setglobal
-(GENTRY entry)
+(ID gid)
 (VALUE val)
 ()
-// attr bool leaf = leafness_of_setglobal(entry);
+// attr bool leaf = false;
 {
-    SET_GLOBAL((VALUE)entry, val);
+    rb_gvar_set(gid, val);
 }
 
 /**********************************************************/
@@ -346,22 +350,12 @@ putspecialobject
 (rb_num_t value_type)
 ()
 (VALUE val)
+// attr bool leaf = (value_type == VM_SPECIAL_OBJECT_VMCORE); /* others may raise when allocating singleton */
 {
     enum vm_special_object_type type;
 
     type = (enum vm_special_object_type)value_type;
     val = vm_get_special_object(GET_EP(), type);
-}
-
-/* put iseq value. */
-DEFINE_INSN
-putiseq
-(ISEQ iseq)
-()
-(VALUE ret)
-// attr bool handles_sp = false; /* of course it doesn't */
-{
-    ret = (VALUE)iseq;
 }
 
 /* put string val. string will be copied. */
@@ -371,7 +365,7 @@ putstring
 ()
 (VALUE val)
 {
-    val = rb_str_resurrect(str);
+    val = rb_ec_str_resurrect(ec, str);
 }
 
 /* put concatenate strings */
@@ -380,29 +374,23 @@ concatstrings
 (rb_num_t num)
 (...)
 (VALUE val)
+/* This instruction can concat UTF-8 and binary strings, resulting in
+ * Encoding::CompatibilityError. */
+// attr bool leaf = false; /* has rb_enc_cr_str_buf_cat() */
 // attr rb_snum_t sp_inc = 1 - (rb_snum_t)num;
 {
     val = rb_str_concat_literals(num, STACK_ADDR_FROM_TOP(num));
 }
 
-/* push the result of to_s. */
+/* Convert the result to string if not already a string.
+   This is used as a backup if to_s does not return a string. */
 DEFINE_INSN
-tostring
+anytostring
 ()
 (VALUE val, VALUE str)
 (VALUE val)
 {
     val = rb_obj_as_string_result(str, val);
-}
-
-/* Freeze (dynamically) created strings. if debug_info is given, set it. */
-DEFINE_INSN
-freezestring
-(VALUE debug_info)
-(VALUE str)
-(VALUE str)
-{
-    vm_freezestring(str, debug_info);
 }
 
 /* compile str to Regexp and push it.
@@ -413,9 +401,9 @@ toregexp
 (rb_num_t opt, rb_num_t cnt)
 (...)
 (VALUE val)
-/* This instruction has StringValue(), which is a method call.  But it
- * seems that path is never covered. */
-// attr bool leaf = true; /* yes it is */
+/* This instruction can raise RegexpError, thus can call
+ * RegexpError#initialize */
+// attr bool leaf = false;
 // attr rb_snum_t sp_inc = 1 - (rb_snum_t)cnt;
 {
     const VALUE ary = rb_ary_tmp_new_from_values(0, cnt, STACK_ADDR_FROM_TOP(cnt));
@@ -441,7 +429,27 @@ newarray
 (VALUE val)
 // attr rb_snum_t sp_inc = 1 - (rb_snum_t)num;
 {
-    val = rb_ary_new4(num, STACK_ADDR_FROM_TOP(num));
+    val = rb_ec_ary_new_from_values(ec, num, STACK_ADDR_FROM_TOP(num));
+}
+
+/* put new array initialized with num values on the stack. There
+   should be at least one element on the stack, and the top element
+   should be a hash.  If the top element is empty, it is not
+   included in the array.
+ */
+DEFINE_INSN
+newarraykwsplat
+(rb_num_t num)
+(...)
+(VALUE val)
+// attr rb_snum_t sp_inc = 1 - (rb_snum_t)num;
+{
+    if (RHASH_EMPTY_P(*STACK_ADDR_FROM_TOP(1))) {
+        val = rb_ary_new4(num-1, STACK_ADDR_FROM_TOP(num));
+    }
+    else {
+        val = rb_ary_new4(num, STACK_ADDR_FROM_TOP(num));
+    }
 }
 
 /* dup array */
@@ -519,10 +527,12 @@ newhash
 {
     RUBY_DTRACE_CREATE_HOOK(HASH, num);
 
-    val = rb_hash_new_with_size(num / 2);
-
     if (num) {
+        val = rb_hash_new_with_size(num / 2);
         rb_hash_bulk_insert(num, STACK_ADDR_FROM_TOP(num), val);
+    }
+    else {
+        val = rb_hash_new();
     }
 }
 
@@ -587,27 +597,8 @@ swap
     /* none */
 }
 
-/* reverse stack top N order. */
-DEFINE_INSN
-reverse
-(rb_num_t n)
-(...)
-(...)
-// attr rb_snum_t sp_inc = 0;
-{
-    rb_num_t i;
-    VALUE *sp = STACK_ADDR_FROM_TOP(n);
-
-    for (i=0; i<n/2; i++) {
-	VALUE v0 = sp[i];
-	VALUE v1 = TOPN(i);
-	sp[i] = v1;
-	TOPN(i) = v0;
-    }
-}
-
 /* for stack caching. */
-DEFINE_INSN
+DEFINE_INSN_IF(STACK_CACHING)
 reput
 ()
 (..., VALUE val)
@@ -657,19 +648,22 @@ adjuststack
 /* defined? */
 DEFINE_INSN
 defined
-(rb_num_t op_type, VALUE obj, VALUE needstr)
+(rb_num_t op_type, VALUE obj, VALUE pushval)
 (VALUE v)
 (VALUE val)
 // attr bool leaf = leafness_of_defined(op_type);
 {
-    val = vm_defined(ec, GET_CFP(), op_type, obj, needstr, v);
+    val = Qnil;
+    if (vm_defined(ec, GET_CFP(), op_type, obj, v)) {
+      val = pushval;
+    }
 }
 
 /* check `target' matches `pattern'.
      `flag & VM_CHECKMATCH_TYPE_MASK' describe how to check pattern.
       VM_CHECKMATCH_TYPE_WHEN: ignore target and check pattern is truthy.
       VM_CHECKMATCH_TYPE_CASE: check `patten === target'.
-      VM_CHECKMATCH_TYPE_RESCUE: check `pattern.kind_op?(Module) && pattern === target'.
+      VM_CHECKMATCH_TYPE_RESCUE: check `pattern.kind_of?(Module) && pattern === target'.
      if `flag & VM_CHECKMATCH_ARRAY' is not 0, then `patten' is array of patterns.
  */
 DEFINE_INSN
@@ -707,7 +701,7 @@ checktype
 /**********************************************************/
 
 /* enter class definition scope. if super is Qfalse, and class
-   "klass" is defined, it's redefine. otherwise, define "klass" class.
+   "klass" is defined, it's redefined. Otherwise, define "klass" class.
  */
 DEFINE_INSN
 defineclass
@@ -722,12 +716,30 @@ defineclass
     /* enter scope */
     vm_push_frame(ec, class_iseq, VM_FRAME_MAGIC_CLASS | VM_ENV_FLAG_LOCAL, klass,
 		  GET_BLOCK_HANDLER(),
-		  (VALUE)vm_cref_push(ec, klass, NULL, FALSE),
+		  (VALUE)vm_cref_push(ec, klass, NULL, FALSE, FALSE),
 		  class_iseq->body->iseq_encoded, GET_SP(),
 		  class_iseq->body->local_table_size,
 		  class_iseq->body->stack_max);
     RESTORE_REGS();
     NEXT_INSN();
+}
+
+DEFINE_INSN
+definemethod
+(ID id, ISEQ iseq)
+()
+()
+{
+    vm_define_method(ec, Qnil, id, (VALUE)iseq, FALSE);
+}
+
+DEFINE_INSN
+definesmethod
+(ID id, ISEQ iseq)
+(VALUE obj)
+()
+{
+    vm_define_method(ec, obj, id, (VALUE)iseq, TRUE);
 }
 
 /**********************************************************/
@@ -737,37 +749,58 @@ defineclass
 /* invoke method. */
 DEFINE_INSN
 send
-(CALL_INFO ci, CALL_CACHE cc, ISEQ blockiseq)
+(CALL_DATA cd, ISEQ blockiseq)
 (...)
 (VALUE val)
-// attr rb_snum_t sp_inc = - (int)(ci->orig_argc + ((ci->flag & VM_CALL_ARGS_BLOCKARG) ? 1 : 0));
+// attr rb_snum_t sp_inc = sp_inc_of_sendish(cd->ci);
+// attr rb_snum_t comptime_sp_inc = sp_inc_of_sendish(ci);
 {
-    struct rb_calling_info calling;
+    VALUE bh = vm_caller_setup_arg_block(ec, GET_CFP(), cd->ci, blockiseq, false);
+    val = vm_sendish(ec, GET_CFP(), cd, bh, mexp_search_method);
 
-    calling.block_handler = vm_caller_setup_arg_block(ec, reg_cfp, ci, blockiseq, FALSE);
-    calling.recv = TOPN(calling.argc = ci->orig_argc);
-    vm_search_method(ci, cc, calling.recv);
-    CALL_METHOD(&calling, ci, cc);
+    if (val == Qundef) {
+        RESTORE_REGS();
+        NEXT_INSN();
+    }
 }
 
 /* Invoke method without block */
 DEFINE_INSN
 opt_send_without_block
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (...)
 (VALUE val)
 // attr bool handles_sp = true;
-// attr rb_snum_t sp_inc = -ci->orig_argc;
+// attr rb_snum_t sp_inc = sp_inc_of_sendish(cd->ci);
+// attr rb_snum_t comptime_sp_inc = sp_inc_of_sendish(ci);
 {
-    struct rb_calling_info calling;
-    calling.block_handler = VM_BLOCK_HANDLER_NONE;
-    vm_search_method(ci, cc, calling.recv = TOPN(calling.argc = ci->orig_argc));
-    CALL_METHOD(&calling, ci, cc);
+    VALUE bh = VM_BLOCK_HANDLER_NONE;
+    val = vm_sendish(ec, GET_CFP(), cd, bh, mexp_search_method);
+
+    if (val == Qundef) {
+        RESTORE_REGS();
+        NEXT_INSN();
+    }
+}
+
+/* Convert object to string using to_s or equivalent. */
+DEFINE_INSN
+objtostring
+(CALL_DATA cd)
+(VALUE recv)
+(VALUE val)
+// attr bool leaf = false;
+{
+    val = vm_objtostring(GET_ISEQ(), recv, cd);
+
+    if (val == Qundef) {
+        CALL_SIMPLE_METHOD();
+    }
 }
 
 DEFINE_INSN
 opt_str_freeze
-(VALUE str, CALL_INFO ci, CALL_CACHE cc)
+(VALUE str, CALL_DATA cd)
 ()
 (VALUE val)
 {
@@ -779,9 +812,23 @@ opt_str_freeze
     }
 }
 
+/* optimized nil? */
+DEFINE_INSN
+opt_nil_p
+(CALL_DATA cd)
+(VALUE recv)
+(VALUE val)
+{
+    val = vm_opt_nil_p(GET_ISEQ(), cd, recv);
+
+    if (val == Qundef) {
+        CALL_SIMPLE_METHOD();
+    }
+}
+
 DEFINE_INSN
 opt_str_uminus
-(VALUE str, CALL_INFO ci, CALL_CACHE cc)
+(VALUE str, CALL_DATA cd)
 ()
 (VALUE val)
 {
@@ -805,7 +852,7 @@ opt_newarray_max
 // attr bool leaf = false; /* has rb_funcall() */
 // attr rb_snum_t sp_inc = 1 - (rb_snum_t)num;
 {
-    val = vm_opt_newarray_max(num, STACK_ADDR_FROM_TOP(num));
+    val = vm_opt_newarray_max(ec, num, STACK_ADDR_FROM_TOP(num));
 }
 
 DEFINE_INSN
@@ -817,49 +864,43 @@ opt_newarray_min
 // attr bool leaf = false; /* has rb_funcall() */
 // attr rb_snum_t sp_inc = 1 - (rb_snum_t)num;
 {
-    val = vm_opt_newarray_min(num, STACK_ADDR_FROM_TOP(num));
+    val = vm_opt_newarray_min(ec, num, STACK_ADDR_FROM_TOP(num));
 }
 
 /* super(args) # args.size => num */
 DEFINE_INSN
 invokesuper
-(CALL_INFO ci, CALL_CACHE cc, ISEQ blockiseq)
+(CALL_DATA cd, ISEQ blockiseq)
 (...)
 (VALUE val)
-// attr rb_snum_t sp_inc = - (int)(ci->orig_argc + ((ci->flag & VM_CALL_ARGS_BLOCKARG) ? 1 : 0));
+// attr rb_snum_t sp_inc = sp_inc_of_sendish(cd->ci);
+// attr rb_snum_t comptime_sp_inc = sp_inc_of_sendish(ci);
 {
-    struct rb_calling_info calling;
+    VALUE bh = vm_caller_setup_arg_block(ec, GET_CFP(), cd->ci, blockiseq, true);
+    val = vm_sendish(ec, GET_CFP(), cd, bh, mexp_search_super);
 
-    calling.block_handler = vm_caller_setup_arg_block(ec, reg_cfp, ci, blockiseq, TRUE);
-    calling.recv = TOPN(calling.argc = ci->orig_argc);
-    vm_search_super_method(ec, GET_CFP(), &calling, ci, cc);
-    CALL_METHOD(&calling, ci, cc);
+    if (val == Qundef) {
+        RESTORE_REGS();
+        NEXT_INSN();
+    }
 }
 
 /* yield(args) */
 DEFINE_INSN
 invokeblock
-(CALL_INFO ci)
+(CALL_DATA cd)
 (...)
 (VALUE val)
 // attr bool handles_sp = true;
-// attr rb_snum_t sp_inc = 1 - ci->orig_argc;
+// attr rb_snum_t sp_inc = sp_inc_of_invokeblock(cd->ci);
+// attr rb_snum_t comptime_sp_inc = sp_inc_of_invokeblock(ci);
 {
-    struct rb_calling_info calling;
-    VALUE block_handler;
+    VALUE bh = VM_BLOCK_HANDLER_NONE;
+    val = vm_sendish(ec, GET_CFP(), cd, bh, mexp_search_invokeblock);
 
-    calling.argc = ci->orig_argc;
-    calling.block_handler = VM_BLOCK_HANDLER_NONE;
-    calling.recv = Qundef; /* should not be used */
-
-    block_handler = VM_CF_BLOCK_HANDLER(GET_CFP());
-    if (block_handler == VM_BLOCK_HANDLER_NONE) {
-	rb_vm_localjump_error("no block given (yield)", Qnil, 0);
-    }
-
-    val = vm_invoke_block(ec, GET_CFP(), &calling, ci, block_handler);
     if (val == Qundef) {
-        EXEC_EC_CFP(val);
+        RESTORE_REGS();
+        NEXT_INSN();
     }
 }
 
@@ -876,13 +917,11 @@ leave
 // attr bool handles_sp = true;
 {
     if (OPT_CHECKED_RUN) {
-	const VALUE *const bp = vm_base_ptr(reg_cfp);
-	if (reg_cfp->sp != bp) {
-	    vm_stack_consistency_error(ec, reg_cfp, bp);
+        const VALUE *const bp = vm_base_ptr(GET_CFP());
+        if (GET_SP() != bp) {
+            vm_stack_consistency_error(ec, GET_CFP(), bp);
 	}
     }
-
-    RUBY_VM_CHECK_INTS(ec);
 
     if (vm_pop_frame(ec, GET_CFP(), GET_EP())) {
 #if OPT_CALL_THREADED_CODE
@@ -910,7 +949,6 @@ throw
 /* Same discussion as leave. */
 // attr bool leaf = false; /* has rb_threadptr_execute_interrupts() */
 {
-    RUBY_VM_CHECK_INTS(ec);
     val = vm_throw(ec, GET_CFP(), throw_state, throwobj);
     THROW_EXCEPTION(val);
     /* unreachable */
@@ -927,7 +965,7 @@ jump
 ()
 ()
 /* Same discussion as leave. */
-// attr bool leaf = false; /* has rb_threadptr_execute_interrupts() */
+// attr bool leaf = leafness_of_check_ints; /* has rb_threadptr_execute_interrupts() */
 {
     RUBY_VM_CHECK_INTS(ec);
     JUMP(dst);
@@ -940,7 +978,7 @@ branchif
 (VALUE val)
 ()
 /* Same discussion as jump. */
-// attr bool leaf = false; /* has rb_threadptr_execute_interrupts() */
+// attr bool leaf = leafness_of_check_ints; /* has rb_threadptr_execute_interrupts() */
 {
     if (RTEST(val)) {
 	RUBY_VM_CHECK_INTS(ec);
@@ -955,7 +993,7 @@ branchunless
 (VALUE val)
 ()
 /* Same discussion as jump. */
-// attr bool leaf = false; /* has rb_threadptr_execute_interrupts() */
+// attr bool leaf = leafness_of_check_ints; /* has rb_threadptr_execute_interrupts() */
 {
     if (!RTEST(val)) {
 	RUBY_VM_CHECK_INTS(ec);
@@ -970,7 +1008,7 @@ branchnil
 (VALUE val)
 ()
 /* Same discussion as jump. */
-// attr bool leaf = false; /* has rb_threadptr_execute_interrupts() */
+// attr bool leaf = leafness_of_check_ints; /* has rb_threadptr_execute_interrupts() */
 {
     if (NIL_P(val)) {
 	RUBY_VM_CHECK_INTS(ec);
@@ -989,9 +1027,10 @@ opt_getinlinecache
 ()
 (VALUE val)
 {
-    if (vm_ic_hit_p(ic, GET_EP())) {
-	val = ic->ic_value.value;
-	JUMP(dst);
+    struct iseq_inline_constant_cache_entry *ice = ic->entry;
+    if (ice && vm_ic_hit_p(ice, GET_EP())) {
+        val = ice->value;
+        JUMP(dst);
     }
     else {
 	val = Qnil;
@@ -1004,8 +1043,9 @@ opt_setinlinecache
 (IC ic)
 (VALUE val)
 (VALUE val)
+// attr bool leaf = false;
 {
-    vm_ic_update(ic, val, GET_EP());
+    vm_ic_update(GET_ISEQ(), ic, val, GET_EP());
 }
 
 /* run iseq only once */
@@ -1038,12 +1078,9 @@ opt_case_dispatch
 /* optimized X+Y. */
 DEFINE_INSN
 opt_plus
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
-/* Array + anything can be handled inside of opt_plus, and that
- * anything is converted into array using #to_ary. */
-// attr bool leaf = false; /* has rb_to_array_type() */
 {
     val = vm_opt_plus(recv, obj);
 
@@ -1055,7 +1092,7 @@ opt_plus
 /* optimized X-Y. */
 DEFINE_INSN
 opt_minus
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 {
@@ -1069,7 +1106,7 @@ opt_minus
 /* optimized X*Y. */
 DEFINE_INSN
 opt_mult
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 {
@@ -1083,9 +1120,12 @@ opt_mult
 /* optimized X/Y. */
 DEFINE_INSN
 opt_div
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
+/* In case of division by zero, it raises. Thus
+ * ZeroDivisionError#initialize is called.  */
+// attr bool leaf = false;
 {
     val = vm_opt_div(recv, obj);
 
@@ -1097,9 +1137,11 @@ opt_div
 /* optimized X%Y. */
 DEFINE_INSN
 opt_mod
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
+/* Same discussion as opt_div. */
+// attr bool leaf = false;
 {
     val = vm_opt_mod(recv, obj);
 
@@ -1111,15 +1153,11 @@ opt_mod
 /* optimized X==Y. */
 DEFINE_INSN
 opt_eq
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
-/* This instruction can compare a string with non-string.  This
- * (somewhat) coerces the non-string into a string, via a method
- * call. */
-// attr bool leaf = false; /* has rb_str_equal() */
 {
-    val = opt_eq_func(recv, obj, ci, cc);
+    val = opt_equality(GET_ISEQ(), recv, obj, cd);
 
     if (val == Qundef) {
         CALL_SIMPLE_METHOD();
@@ -1129,13 +1167,11 @@ opt_eq
 /* optimized X!=Y. */
 DEFINE_INSN
 opt_neq
-(CALL_INFO ci_eq, CALL_CACHE cc_eq, CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd_eq, CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
-/* Same discussion as opt_eq. */
-// attr bool leaf = false; /* has rb_str_equal() */
 {
-    val = vm_opt_neq(ci, cc, ci_eq, cc_eq, recv, obj);
+    val = vm_opt_neq(GET_ISEQ(), cd, cd_eq, recv, obj);
 
     if (val == Qundef) {
         CALL_SIMPLE_METHOD();
@@ -1145,7 +1181,7 @@ opt_neq
 /* optimized X<Y. */
 DEFINE_INSN
 opt_lt
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 {
@@ -1159,7 +1195,7 @@ opt_lt
 /* optimized X<=Y. */
 DEFINE_INSN
 opt_le
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 {
@@ -1173,7 +1209,7 @@ opt_le
 /* optimized X>Y. */
 DEFINE_INSN
 opt_gt
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 {
@@ -1187,7 +1223,7 @@ opt_gt
 /* optimized X>=Y. */
 DEFINE_INSN
 opt_ge
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 {
@@ -1201,9 +1237,13 @@ opt_ge
 /* << */
 DEFINE_INSN
 opt_ltlt
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
+/* This instruction can append an integer, as a codepoint, into a
+ * string.  Then what happens if that codepoint does not exist in the
+ * string's encoding?  Of course an exception.  That's not a leaf. */
+// attr bool leaf = false; /* has "invalid codepoint" exception */
 {
     val = vm_opt_ltlt(recv, obj);
 
@@ -1215,7 +1255,7 @@ opt_ltlt
 /* optimized X&Y. */
 DEFINE_INSN
 opt_and
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 {
@@ -1229,7 +1269,7 @@ opt_and
 /* optimized X|Y. */
 DEFINE_INSN
 opt_or
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 {
@@ -1243,7 +1283,7 @@ opt_or
 /* [] */
 DEFINE_INSN
 opt_aref
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj)
 (VALUE val)
 /* This is complicated.  In case of hash, vm_opt_aref() resorts to
@@ -1262,7 +1302,7 @@ opt_aref
 /* recv[obj] = set */
 DEFINE_INSN
 opt_aset
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv, VALUE obj, VALUE set)
 (VALUE val)
 /* This is another story than opt_aref.  When vm_opt_aset() resorts
@@ -1279,7 +1319,7 @@ opt_aset
 /* recv[str] = set */
 DEFINE_INSN
 opt_aset_with
-(VALUE key, CALL_INFO ci, CALL_CACHE cc)
+(VALUE key, CALL_DATA cd)
 (VALUE recv, VALUE val)
 (VALUE val)
 /* Same discussion as opt_aset. */
@@ -1302,7 +1342,7 @@ opt_aset_with
 /* recv[str] */
 DEFINE_INSN
 opt_aref_with
-(VALUE key, CALL_INFO ci, CALL_CACHE cc)
+(VALUE key, CALL_DATA cd)
 (VALUE recv)
 (VALUE val)
 /* Same discussion as opt_aref. */
@@ -1321,7 +1361,7 @@ opt_aref_with
 /* optimized length */
 DEFINE_INSN
 opt_length
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv)
 (VALUE val)
 {
@@ -1335,7 +1375,7 @@ opt_length
 /* optimized size */
 DEFINE_INSN
 opt_size
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv)
 (VALUE val)
 {
@@ -1349,7 +1389,7 @@ opt_size
 /* optimized empty? */
 DEFINE_INSN
 opt_empty_p
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv)
 (VALUE val)
 {
@@ -1363,7 +1403,7 @@ opt_empty_p
 /* optimized succ */
 DEFINE_INSN
 opt_succ
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv)
 (VALUE val)
 {
@@ -1377,34 +1417,24 @@ opt_succ
 /* optimized not */
 DEFINE_INSN
 opt_not
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE recv)
 (VALUE val)
 {
-    val = vm_opt_not(ci, cc, recv);
+    val = vm_opt_not(GET_ISEQ(), cd, recv);
 
     if (val == Qundef) {
         CALL_SIMPLE_METHOD();
     }
 }
 
-/* optimized regexp match */
-DEFINE_INSN
-opt_regexpmatch1
-(VALUE recv)
-(VALUE obj)
-(VALUE val)
-// attr bool leaf = BASIC_OP_UNREDEFINED_P(BOP_MATCH, REGEXP_REDEFINED_OP_FLAG);
-{
-    val = vm_opt_regexpmatch1(recv, obj);
-}
-
 /* optimized regexp match 2 */
 DEFINE_INSN
 opt_regexpmatch2
-(CALL_INFO ci, CALL_CACHE cc)
+(CALL_DATA cd)
 (VALUE obj2, VALUE obj1)
 (VALUE val)
+// attr bool leaf = false; /* match_at() has rb_thread_check_ints() */
 {
     val = vm_opt_regexpmatch2(obj2, obj1);
 
@@ -1414,7 +1444,7 @@ opt_regexpmatch2
 }
 
 /* call native compiled method */
-DEFINE_INSN
+DEFINE_INSN_IF(SUPPORT_CALL_C_FUNCTION)
 opt_call_c_function
 (rb_insn_func_t funcptr)
 ()
@@ -1434,8 +1464,56 @@ opt_call_c_function
     NEXT_INSN();
 }
 
-/* BLT */
+/* call specific function with args */
 DEFINE_INSN
+invokebuiltin
+(RB_BUILTIN bf)
+(...)
+(VALUE val)
+// attr bool leaf = false; /* anything can happen inside */
+// attr rb_snum_t sp_inc = 1 - bf->argc;
+{
+    val = vm_invoke_builtin(ec, reg_cfp, bf, STACK_ADDR_FROM_TOP(bf->argc));
+}
+
+/* call specific function with args (same parameters) */
+DEFINE_INSN
+opt_invokebuiltin_delegate
+(RB_BUILTIN bf, rb_num_t index)
+()
+(VALUE val)
+// attr bool leaf = false; /* anything can happen inside */
+{
+    val = vm_invoke_builtin_delegate(ec, reg_cfp, bf, (unsigned int)index);
+}
+
+/* call specific function with args (same parameters) and leave */
+DEFINE_INSN
+opt_invokebuiltin_delegate_leave
+(RB_BUILTIN bf, rb_num_t index)
+()
+(VALUE val)
+// attr bool leaf = false; /* anything can happen inside */
+{
+    val = vm_invoke_builtin_delegate(ec, reg_cfp, bf, (unsigned int)index);
+
+    /* leave fastpath */
+    /* TracePoint/return fallbacks this insn to opt_invokebuiltin_delegate */
+    if (vm_pop_frame(ec, GET_CFP(), GET_EP())) {
+#if OPT_CALL_THREADED_CODE
+        rb_ec_thread_ptr(ec)->retval = val;
+        return 0;
+#else
+        return val;
+#endif
+    }
+    else {
+        RESTORE_REGS();
+    }
+}
+
+/* BLT */
+DEFINE_INSN_IF(SUPPORT_JOKE)
 bitblt
 ()
 ()
@@ -1445,7 +1523,7 @@ bitblt
 }
 
 /* The Answer to Life, the Universe, and Everything */
-DEFINE_INSN
+DEFINE_INSN_IF(SUPPORT_JOKE)
 answer
 ()
 ()

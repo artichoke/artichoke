@@ -70,15 +70,47 @@ describe 'A class variable definition' do
     c = Class.new(b)
     b.class_variable_set(:@@cv, :value)
 
-    lambda { a.class_variable_get(:@@cv) }.should raise_error(NameError)
+    -> { a.class_variable_get(:@@cv) }.should raise_error(NameError)
     b.class_variable_get(:@@cv).should == :value
     c.class_variable_get(:@@cv).should == :value
 
     # updates the same variable
     c.class_variable_set(:@@cv, :next)
 
-    lambda { a.class_variable_get(:@@cv) }.should raise_error(NameError)
+    -> { a.class_variable_get(:@@cv) }.should raise_error(NameError)
     b.class_variable_get(:@@cv).should == :next
     c.class_variable_get(:@@cv).should == :next
+  end
+end
+
+ruby_version_is "3.0" do
+  describe 'Accessing a class variable' do
+    it "raises a RuntimeError when accessed from the toplevel scope (not in some module or class)" do
+      -> {
+        eval "@@cvar_toplevel1"
+      }.should raise_error(RuntimeError, 'class variable access from toplevel')
+      -> {
+        eval "@@cvar_toplevel2 = 2"
+      }.should raise_error(RuntimeError, 'class variable access from toplevel')
+    end
+
+    it "does not raise an error when checking if defined from the toplevel scope" do
+      -> {
+        eval "defined?(@@cvar_toplevel1)"
+      }.should_not raise_error
+    end
+
+    it "raises a RuntimeError when a class variable is overtaken in an ancestor class" do
+      parent = Class.new()
+      subclass = Class.new(parent)
+      subclass.class_variable_set(:@@cvar_overtaken, :subclass)
+      parent.class_variable_set(:@@cvar_overtaken, :parent)
+
+      -> {
+        subclass.class_variable_get(:@@cvar_overtaken)
+      }.should raise_error(RuntimeError, /class variable @@cvar_overtaken of .+ is overtaken by .+/)
+
+      parent.class_variable_get(:@@cvar_overtaken).should == :parent
+    end
   end
 end

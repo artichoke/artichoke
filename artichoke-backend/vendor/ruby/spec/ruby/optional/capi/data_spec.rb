@@ -30,6 +30,17 @@ describe "CApiWrappedStruct" do
       @s.change_struct(a, 100)
       @s.get_struct(a).should == 100
     end
+
+    it "raises a TypeError if the object does not wrap a struct" do
+      -> { @s.get_struct(Object.new) }.should raise_error(TypeError)
+    end
+  end
+
+  describe "rb_check_type" do
+    it "does not raise an exception when checking data objects" do
+      a = @s.wrap_struct(1024)
+      @s.rb_check_type(a, a).should == true
+    end
   end
 
   describe "DATA_PTR" do

@@ -17,7 +17,7 @@ describe "BasicObject#instance_exec" do
   end
 
   it "raises a LocalJumpError unless given a block" do
-    lambda { "hola".instance_exec }.should raise_error(LocalJumpError)
+    -> { "hola".instance_exec }.should raise_error(LocalJumpError)
   end
 
   it "has an arity of -1" do
@@ -25,7 +25,7 @@ describe "BasicObject#instance_exec" do
   end
 
   it "accepts arguments with a block" do
-    lambda { "hola".instance_exec(4, 5) { |a,b| a + b } }.should_not raise_error
+    -> { "hola".instance_exec(4, 5) { |a,b| a + b } }.should_not raise_error
   end
 
   it "doesn't pass self to the block as an argument" do
@@ -44,7 +44,7 @@ describe "BasicObject#instance_exec" do
       end
     end
     f.foo.should == 1
-    lambda { Object.new.foo }.should raise_error(NoMethodError)
+    -> { Object.new.foo }.should raise_error(NoMethodError)
   end
 
   # TODO: This should probably be replaced with a "should behave like" that uses
@@ -76,31 +76,31 @@ describe "BasicObject#instance_exec" do
   end
 
   it "raises a TypeError when defining methods on an immediate" do
-    lambda do
+    -> do
       1.instance_exec { def foo; end }
     end.should raise_error(TypeError)
-    lambda do
+    -> do
       :foo.instance_exec { def foo; end }
     end.should raise_error(TypeError)
   end
 
 quarantine! do # Not clean, leaves cvars lying around to break other specs
-  it "scopes class var accesses in the caller when called on a Fixnum" do
-    # Fixnum can take instance vars
-    Fixnum.class_eval "@@__tmp_instance_exec_spec = 1"
+  it "scopes class var accesses in the caller when called on an Integer" do
+    # Integer can take instance vars
+    Integer.class_eval "@@__tmp_instance_exec_spec = 1"
     (defined? @@__tmp_instance_exec_spec).should == nil
 
     @@__tmp_instance_exec_spec = 2
     1.instance_exec { @@__tmp_instance_exec_spec }.should == 2
-    Fixnum.__send__(:remove_class_variable, :@@__tmp_instance_exec_spec)
+    Integer.__send__(:remove_class_variable, :@@__tmp_instance_exec_spec)
   end
 end
 
   it "raises a TypeError when defining methods on numerics" do
-    lambda do
+    -> do
       (1.0).instance_exec { def foo; end }
     end.should raise_error(TypeError)
-    lambda do
+    -> do
       (1 << 64).instance_exec { def foo; end }
     end.should raise_error(TypeError)
   end

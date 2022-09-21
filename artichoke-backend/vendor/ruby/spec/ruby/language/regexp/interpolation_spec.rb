@@ -36,14 +36,14 @@ describe "Regexps with interpolation" do
 
   it "gives precedence to escape sequences over substitution" do
     str = "J"
-    /\c#{str}/.to_s.should == '(?-mix:\c#' + '{str})'
+    /\c#{str}/.to_s.should include('{str}')
   end
 
   it "throws RegexpError for malformed interpolation" do
     s = ""
-    lambda { /(#{s}/ }.should raise_error(RegexpError)
+    -> { /(#{s}/ }.should raise_error(RegexpError)
     s = "("
-    lambda { /#{s}/ }.should raise_error(RegexpError)
+    -> { /#{s}/ }.should raise_error(RegexpError)
   end
 
   it "allows interpolation in extended mode" do

@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 require 'net/http'
-require 'time'
-require 'rubygems/user_interaction'
+require_relative 'user_interaction'
 
 class Gem::Request
-
   extend Gem::UserInteraction
   include Gem::UserInteraction
 
@@ -13,12 +11,13 @@ class Gem::Request
   def self.create_with_proxy(uri, request_class, last_modified, proxy) # :nodoc:
     cert_files = get_cert_files
     proxy ||= get_proxy_from_env(uri.scheme)
-    pool       = ConnectionPools.new proxy_uri(proxy), cert_files
+    pool = ConnectionPools.new proxy_uri(proxy), cert_files
 
     new(uri, request_class, last_modified, pool.pool_for(uri))
   end
 
   def self.proxy_uri(proxy) # :nodoc:
+    require "uri"
     case proxy
     when :no_proxy then nil
     when URI::HTTP then proxy
@@ -45,7 +44,8 @@ class Gem::Request
   end
 
   def self.configure_connection_for_https(connection, cert_files)
-    require 'net/https'
+    raise Gem::Exception.new('OpenSSL is not available. Install OpenSSL and rebuild Ruby (preferred) or use non-HTTPS sources') unless Gem::HAVE_OPENSSL
+
     connection.use_ssl = true
     connection.verify_mode =
       Gem.configuration.ssl_verify_mode || OpenSSL::SSL::VERIFY_PEER
@@ -77,12 +77,6 @@ class Gem::Request
     end
 
     connection
-  rescue LoadError => e
-    raise unless (e.respond_to?(:path) && e.path == 'openssl') ||
-                 e.message =~ / -- openssl$/
-
-    raise Gem::Exception.new(
-            'Unable to require openssl, install OpenSSL and rebuild Ruby (preferred) or use non-HTTPS sources')
   end
 
   def self.verify_certificate(store_context)
@@ -102,8 +96,10 @@ class Gem::Request
     return unless cert
     case error_number
     when OpenSSL::X509::V_ERR_CERT_HAS_EXPIRED then
+      require 'time'
       "Certificate #{cert.subject} expired at #{cert.not_after.iso8601}"
     when OpenSSL::X509::V_ERR_CERT_NOT_YET_VALID then
+      require 'time'
       "Certificate #{cert.subject} not valid until #{cert.not_before.iso8601}"
     when OpenSSL::X509::V_ERR_CERT_REJECTED then
       "Certificate #{cert.subject} is rejected"
@@ -131,7 +127,7 @@ class Gem::Request
 
   def connection_for(uri)
     @connection_pool.checkout
-  rescue defined?(OpenSSL::SSL) ? OpenSSL::SSL::SSLError : Errno::EHOSTDOWN,
+  rescue Gem::HAVE_OPENSSL ? OpenSSL::SSL::SSLError : Errno::EHOSTDOWN,
          Errno::EHOSTDOWN => e
     raise Gem::RemoteFetcher::FetchError.new(e.message, uri)
   end
@@ -149,6 +145,7 @@ class Gem::Request
     request.add_field 'Keep-Alive', '30'
 
     if @last_modified
+      require 'time'
       request.add_field 'If-Modified-Since', @last_modified.httpdate
     end
 
@@ -168,9 +165,12 @@ class Gem::Request
 
     no_env_proxy = env_proxy.nil? || env_proxy.empty?
 
-    return get_proxy_from_env 'http' if no_env_proxy and _scheme != 'http'
-    return :no_proxy                 if no_env_proxy
+    if no_env_proxy
+      return (_scheme == 'https' || _scheme == 'http') ?
+        :no_proxy : get_proxy_from_env('http')
+    end
 
+    require "uri"
     uri = URI(Gem::UriFormatter.new(env_proxy).normalize)
 
     if uri and uri.user.nil? and uri.password.nil?
@@ -193,7 +193,7 @@ class Gem::Request
     begin
       @requests[connection.object_id] += 1
 
-      verbose "#{request.method} #{@uri}"
+      verbose "#{request.method} #{Gem::Uri.new(@uri).redacted}"
 
       file_name = File.basename(@uri.path)
       # perform download progress reporter only for gems
@@ -283,13 +283,12 @@ class Gem::Request
     end
     ua << ")"
 
-    ua << " #{RUBY_ENGINE}" if defined?(RUBY_ENGINE) and RUBY_ENGINE != 'ruby'
+    ua << " #{RUBY_ENGINE}" if RUBY_ENGINE != 'ruby'
 
     ua
   end
-
 end
 
-require 'rubygems/request/http_pool'
-require 'rubygems/request/https_pool'
-require 'rubygems/request/connection_pools'
+require_relative 'request/http_pool'
+require_relative 'request/https_pool'
+require_relative 'request/connection_pools'

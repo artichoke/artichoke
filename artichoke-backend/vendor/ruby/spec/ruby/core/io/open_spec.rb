@@ -38,7 +38,7 @@ describe "IO.open" do
   end
 
   it "propagates an exception raised by #close that is not a StandardError" do
-    lambda do
+    -> do
       IO.open(@fd, "w") do |io|
         IOSpecs.io_mock(io, :close) do
           super()
@@ -51,7 +51,7 @@ describe "IO.open" do
   end
 
   it "propagates an exception raised by #close that is a StandardError" do
-    lambda do
+    -> do
       IO.open(@fd, "w") do |io|
         IOSpecs.io_mock(io, :close) do
           super()
@@ -63,7 +63,7 @@ describe "IO.open" do
     ScratchPad.recorded.should == :called
   end
 
-  it "does not propagate a IOError with 'closed stream' message raised by #close" do
+  it "does not propagate an IOError with 'closed stream' message raised by #close" do
     IO.open(@fd, "w") do |io|
       IOSpecs.io_mock(io, :close) do
         super()
@@ -74,7 +74,7 @@ describe "IO.open" do
     ScratchPad.recorded.should == :called
   end
 
-  it "does not set last error when a IOError with 'closed stream' raised by #close" do
+  it "does not set last error when an IOError with 'closed stream' raised by #close" do
     IO.open(@fd, "w") do |io|
       IOSpecs.io_mock(io, :close) do
         super()

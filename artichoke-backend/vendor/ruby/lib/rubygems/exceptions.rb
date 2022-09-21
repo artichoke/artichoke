@@ -1,27 +1,42 @@
 # frozen_string_literal: true
-# TODO: the documentation in here is terrible.
-#
-# Each exception needs a brief description and the scenarios where it is
-# likely to be raised
 
-require 'rubygems/deprecate'
+require_relative 'deprecate'
+require_relative 'unknown_command_spell_checker'
 
 ##
 # Base exception class for RubyGems.  All exception raised by RubyGems are a
 # subclass of this one.
-class Gem::Exception < RuntimeError
-
-  ##
-  #--
-  # TODO: remove in RubyGems 4, nobody sets this
-
-  attr_accessor :source_exception # :nodoc:
-
-  extend Gem::Deprecate
-  deprecate :source_exception, :none, 2018, 12
-end
+class Gem::Exception < RuntimeError; end
 
 class Gem::CommandLineError < Gem::Exception; end
+
+class Gem::UnknownCommandError < Gem::Exception
+  attr_reader :unknown_command
+
+  def initialize(unknown_command)
+    self.class.attach_correctable
+
+    @unknown_command = unknown_command
+    super("Unknown command #{unknown_command}")
+  end
+
+  def self.attach_correctable
+    return if defined?(@attached)
+
+    if defined?(DidYouMean::SPELL_CHECKERS) && defined?(DidYouMean::Correctable)
+      if DidYouMean.respond_to?(:correct_error)
+        DidYouMean.correct_error(Gem::UnknownCommandError, Gem::UnknownCommandSpellChecker)
+      else
+        DidYouMean::SPELL_CHECKERS['Gem::UnknownCommandError'] =
+          Gem::UnknownCommandSpellChecker
+
+        prepend DidYouMean::Correctable
+      end
+    end
+
+    @attached = true
+  end
+end
 
 class Gem::DependencyError < Gem::Exception; end
 
@@ -33,7 +48,6 @@ class Gem::DependencyRemovalException < Gem::Exception; end
 # and #conflicting_dependencies
 
 class Gem::DependencyResolutionError < Gem::DependencyError
-
   attr_reader :conflict
 
   def initialize(conflict)
@@ -46,7 +60,6 @@ class Gem::DependencyResolutionError < Gem::DependencyError
   def conflicting_dependencies
     @conflict.conflicting_dependencies
   end
-
 end
 
 ##
@@ -74,7 +87,6 @@ class Gem::EndOfYAMLException < Gem::Exception; end
 # operating on the given directory.
 
 class Gem::FilePermissionError < Gem::Exception
-
   attr_reader :directory
 
   def initialize(directory)
@@ -82,7 +94,6 @@ class Gem::FilePermissionError < Gem::Exception
 
     super "You don't have write permissions for the #{directory} directory."
   end
-
 end
 
 ##
@@ -97,7 +108,6 @@ class Gem::GemNotFoundException < Gem::Exception; end
 # Raised by the DependencyInstaller when a specific gem cannot be found
 
 class Gem::SpecificGemNotFoundException < Gem::GemNotFoundException
-
   ##
   # Creates a new SpecificGemNotFoundException for a gem with the given +name+
   # and +version+.  Any +errors+ encountered when attempting to find the gem
@@ -125,7 +135,6 @@ class Gem::SpecificGemNotFoundException < Gem::GemNotFoundException
   # Errors encountered attempting to find the gem.
 
   attr_reader :errors
-
 end
 
 ##
@@ -133,7 +142,6 @@ end
 # inability to find a valid possible spec for a request.
 
 class Gem::ImpossibleDependenciesError < Gem::Exception
-
   attr_reader :conflicts
   attr_reader :request
 
@@ -161,7 +169,6 @@ class Gem::ImpossibleDependenciesError < Gem::Exception
   def dependency
     @request.dependency
   end
-
 end
 
 class Gem::InstallError < Gem::Exception; end
@@ -211,7 +218,6 @@ class Gem::VerificationError < Gem::Exception; end
 # exit_code
 
 class Gem::SystemExitException < SystemExit
-
   ##
   # The exit code for the process
 
@@ -223,9 +229,8 @@ class Gem::SystemExitException < SystemExit
   def initialize(exit_code)
     @exit_code = exit_code
 
-    super "Exiting RubyGems with exit_code #{exit_code}"
+    super exit_code, "Exiting RubyGems with exit_code #{exit_code}"
   end
-
 end
 
 ##
@@ -233,7 +238,6 @@ end
 # there is no spec.
 
 class Gem::UnsatisfiableDependencyError < Gem::DependencyError
-
   ##
   # The unsatisfiable dependency.  This is a
   # Gem::Resolver::DependencyRequest, not a Gem::Dependency
@@ -251,7 +255,7 @@ class Gem::UnsatisfiableDependencyError < Gem::DependencyError
 
   def initialize(dep, platform_mismatch=nil)
     if platform_mismatch and !platform_mismatch.empty?
-      plats = platform_mismatch.map { |x| x.platform.to_s }.sort.uniq
+      plats = platform_mismatch.map {|x| x.platform.to_s }.sort.uniq
       super "Unable to resolve dependency: No match for '#{dep}' on this platform. Found: #{plats.join(', ')}"
     else
       if dep.explicit?
@@ -278,10 +282,10 @@ class Gem::UnsatisfiableDependencyError < Gem::DependencyError
   def version
     @dependency.requirement
   end
-
 end
 
 ##
 # Backwards compatible typo'd exception class for early RubyGems 2.0.x
 
 Gem::UnsatisfiableDepedencyError = Gem::UnsatisfiableDependencyError # :nodoc:
+Gem.deprecate_constant :UnsatisfiableDepedencyError
