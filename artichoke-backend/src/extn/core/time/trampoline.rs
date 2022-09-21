@@ -1,6 +1,8 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
-use spinoso_time::strftime::Error::InvalidFormatString;
+use spinoso_time::strftime::{
+    Error::FormattedStringTooLarge, Error::InvalidFormatString, Error::WriteZero, ASCTIME_FORMAT_STRING,
+};
 
 use crate::convert::implicitly_convert_to_int;
 use crate::convert::to_str;
@@ -488,11 +490,42 @@ fn strftime_with_encoding(
         // ```
         //
         // Note: The errors which are re-thrown as RuntimeError include (but is
-        // not limited to: `InvalidTime`, `FormattedStringTooLarge`,
-        // `WriteZero`, `FmtError(Error)`, `OutOfMemory(TryReserveError)`
+        // not limited to: `InvalidTime`, `FmtError(Error)`,
+        // `OutOfMemory(TryReserveError)`
+        #[allow(clippy::match_same_arms)]
         match e {
             InvalidFormatString => {
                 let mut message = br#"invalid format: "#.to_vec();
+                message.extend_from_slice(format);
+                Error::from(ArgumentError::from(message))
+            }
+            FormattedStringTooLarge => {
+                // TODO: This should be an `Errno::ERANGE` not an ArgumentError
+                //
+                // ```console
+                // [3.1.2] > Time.now.strftime "%4718593m"
+                // (irb):28:in `strftime': Result too large - %4718593m (Errno::ERANGE)
+                //      from (irb):28:in `<main>'
+                //      from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+                //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+                //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+                // ```
+                let mut message = br#"Result too large - "#.to_vec();
+                message.extend_from_slice(format);
+                Error::from(ArgumentError::from(message))
+            }
+            WriteZero => {
+                // TODO: This should be an `Errno::ERANGE` not an ArgumentError
+                //
+                // ```console
+                // [3.1.2] > Time.now.strftime "%2147483647m"
+                // (irb):28:in `strftime': Result too large - %2147483647m (Errno::ERANGE)
+                //      from (irb):29:in `<main>'
+                //      from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+                //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+                //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+                // ```
+                let mut message = br#"Result too large - "#.to_vec();
                 message.extend_from_slice(format);
                 Error::from(ArgumentError::from(message))
             }
