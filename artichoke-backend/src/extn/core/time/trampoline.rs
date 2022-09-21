@@ -156,9 +156,9 @@ pub fn cmp(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<
         let cmp = time.cmp(&other);
         Ok(interp.convert(cmp as i32))
     } else {
-        let mut message = std::string::String::from("comparison of Time with ");
-        message.push_str(interp.inspect_type_name_for_value(other));
-        message.push_str(" failed");
+        let mut message = b"comparison of Time with ".to_vec();
+        message.extend_from_slice(interp.inspect_type_name_for_value(other).as_bytes());
+        message.extend_from_slice(b" failed");
         Err(ArgumentError::from(message).into())
     }
 }
