@@ -226,16 +226,7 @@ pub fn as_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
 // Inspect
 
 pub fn asctime(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    // %c is the same as `%a %b %e %T %Y`, where:
-    // - `%a` is a capitalized abbreviated day of week name, e.g. `Sun`.
-    // - `%b` is a capitalized abbreviated month name, e.g. `Sep`.
-    // - `%e` is a a space padded right align day of month, e.g. ` 6`.
-    // - `%T` is a composite field which represents `%H:%M:%S` which represents
-    //   the 24 hour time padded with zeros, e.g. `01:02:03`.
-    // - `%Y` is the current year, padded to 4 digits, e.g. `0512`.
-    let format = "%c";
-
-    strftime_with_encoding(interp, time, format.as_bytes(), Encoding::Utf8)
+    strftime_with_encoding(interp, time, ASCTIME_FORMAT_STRING.as_bytes(), Encoding::Utf8)
 }
 
 pub fn to_string(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
