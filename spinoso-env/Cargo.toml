@@ -3,7 +3,7 @@ name = "spinoso-env"
 version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
-rust-version = "1.63.0"
+rust-version = "1.64.0"
 description = """
 Access to environment variables, system or virtualized, for Artichoke Ruby
 """

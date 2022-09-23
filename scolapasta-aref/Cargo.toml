@@ -3,7 +3,7 @@ name = "scolapasta-aref"
 version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
-rust-version = "1.63.0"
+rust-version = "1.64.0"
 description = """
 Indexing utilities for Ruby containers – `#[]` or "aref"
 """
