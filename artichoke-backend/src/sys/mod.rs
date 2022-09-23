@@ -22,7 +22,6 @@ mod args;
 #[allow(clippy::all)]
 #[allow(clippy::pedantic)]
 #[allow(clippy::restriction)]
-#[cfg_attr(test, allow(deref_nullptr))] // See https://github.com/rust-lang/rust-bindgen/issues/1651.
 mod ffi {
     include!(concat!(env!("OUT_DIR"), "/ffi.rs"));
 }
