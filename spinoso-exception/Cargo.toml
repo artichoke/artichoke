@@ -7,13 +7,13 @@ Ruby Exception error structs
 """
 keywords = ["error", "exception", "no_std", "spinoso"]
 categories = ["rust-patterns"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }

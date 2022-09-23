@@ -7,13 +7,13 @@ Implementation of the Ruby Math module
 """
 keywords = ["libm", "math", "no_std", "spinoso"]
 categories = ["algorithms", "no-std"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 libm = { version = "0.2.5", optional = true }

@@ -7,13 +7,13 @@ Access to environment variables, system or virtualized, for Artichoke Ruby
 """
 keywords = ["artichoke", "env", "environ", "spinoso"]
 categories = ["os", "wasm"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 bstr = { version = "1.0.0", default-features = false }

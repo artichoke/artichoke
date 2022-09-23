@@ -5,13 +5,13 @@ authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Embeddable VM implementation for Artichoke Ruby"
 keywords = ["artichoke", "artichoke-ruby", "mruby", "ruby"]
 categories = ["api-bindings"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 artichoke-core = { version = "0.12.0", path = "../artichoke-core" }

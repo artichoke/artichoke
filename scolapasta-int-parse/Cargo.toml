@@ -7,13 +7,13 @@ no_std integer parser for Ruby-formatted numeric byte strings.
 """
 keywords = ["integer", "no_std", "radix", "ruby"]
 categories = ["encoding", "no-std", "parser-implementations", "no-std"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 posix-space = "1.0.0"

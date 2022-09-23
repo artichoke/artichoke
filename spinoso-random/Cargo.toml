@@ -7,13 +7,13 @@ Implementation of Ruby Random Core class.
 """
 keywords = ["random", "rand", "rng", "mt", "spinoso"]
 categories = ["algorithms", "no-std"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 getrandom = { version = "0.2.0", default-features = false }

@@ -5,13 +5,13 @@ authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Core traits for implementing an Artichoke Ruby interpreter"
 keywords = ["artichoke", "artichoke-ruby", "ruby"]
 categories = ["data-structures", "no-std", "rust-patterns"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 

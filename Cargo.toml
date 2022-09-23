@@ -10,13 +10,13 @@ Windows, macOS, and Linux, as well as WebAssembly via Emscripten.
 """
 keywords = ["artichoke", "artichoke-ruby", "mri", "cruby", "ruby"]
 categories = ["command-line-utilities"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 clap = { version = "3.2.5", optional = true, default-features = false, features = ["std", "suggestions"] }
@@ -84,7 +84,6 @@ license = "MIT"
 repository = "https://github.com/artichoke/artichoke"
 homepage = "https://github.com/artichoke/artichoke"
 documentation = "https://artichoke.github.io/artichoke/artichoke/"
-readme = "README.md"
 
 [profile.release]
 codegen-units = 1

@@ -7,13 +7,13 @@ Growable vector backends for the Ruby Array core type in Artichoke Ruby
 """
 keywords = ["array", "no_std", "spinoso", "vec", "vector"]
 categories = ["data-structures", "no-std"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 raw-parts = "1.1.2"

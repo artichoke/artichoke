@@ -7,13 +7,13 @@ String escape code and debug formatting utility package for Artichoke Ruby.
 """
 keywords = ["artichoke", "escape", "no_std", "ruby"]
 categories = ["encoding", "no-std", "parser-implementations"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 bstr = { version = "1.0.0", default-features = false }

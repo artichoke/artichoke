@@ -7,13 +7,13 @@ Symbol implementation for Ruby Symbol core type in Artichoke Ruby
 """
 keywords = ["ident", "intern", "no_std", "spinoso", "symbol"]
 categories = ["data-structures", "no-std", "parser-implementations"]
+readme = "README.md"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
-readme.workspace = true
 
 [dependencies]
 artichoke-core = { version = "0.12.0", path = "../artichoke-core", optional = true, default-features = false }
