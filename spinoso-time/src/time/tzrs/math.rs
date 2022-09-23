@@ -27,8 +27,6 @@ impl Time {
     /// ```
     ///
     /// [`Time#round`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-round
-    #[allow(clippy::cast_possible_truncation)]
-    #[allow(clippy::cast_sign_loss)]
     #[inline]
     pub fn round(&self, digits: u32) -> Self {
         match digits {

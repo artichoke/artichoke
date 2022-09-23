@@ -5,9 +5,7 @@ use crate::extn::core::symbol::Symbol;
 use crate::extn::core::time::Offset;
 use crate::extn::prelude::*;
 
-#[allow(clippy::cast_precision_loss)]
 const MAX_FLOAT_OFFSET: f64 = i32::MAX as f64;
-#[allow(clippy::cast_precision_loss)]
 const MIN_FLOAT_OFFSET: f64 = i32::MIN as f64;
 
 impl TryConvertMut<Value, Option<Offset>> for Artichoke {

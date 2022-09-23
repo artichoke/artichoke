@@ -19,7 +19,6 @@ use crate::{Encoding, String};
 ///
 /// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 /// [`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CodepointsError {
     /// Error returned when calling [`String::codepoints`] on a [`String`] with
@@ -59,7 +58,6 @@ impl CodepointsError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "invalid byte sequence in UTF-8"
     }

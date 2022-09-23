@@ -20,5 +20,4 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
 pub struct Set;
 
 #[derive(Debug, Clone, Copy)]
-#[allow(clippy::module_name_repetitions)]
 pub struct SortedSet;

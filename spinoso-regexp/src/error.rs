@@ -78,7 +78,6 @@ impl error::Error for Error {
 ///
 /// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(clippy::module_name_repetitions)]
 pub struct ArgumentError(Cow<'static, str>);
 
 impl From<&'static str> for ArgumentError {
@@ -190,7 +189,6 @@ impl ArgumentError {
 /// [`Regexp::compile`]: https://ruby-doc.org/core-3.1.2/Regexp.html#method-c-compile
 /// [Ruby `RegexpError` Exception class]: https://ruby-doc.org/core-3.1.2/RegexpError.html
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(clippy::module_name_repetitions)]
 pub struct RegexpError(Cow<'static, str>);
 
 impl From<&'static str> for RegexpError {
@@ -285,7 +283,6 @@ impl RegexpError {
 ///
 /// [Ruby `SyntaxError` Exception class]: https://ruby-doc.org/core-3.1.2/SyntaxError.html
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(clippy::module_name_repetitions)]
 pub struct SyntaxError(Cow<'static, str>);
 
 impl From<&'static str> for SyntaxError {

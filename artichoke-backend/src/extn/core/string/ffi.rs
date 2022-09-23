@@ -85,7 +85,6 @@ unsafe extern "C" fn mrb_str_new_static(mrb: *mut sys::mrb_state, p: *const c_ch
 // MRB_API mrb_int mrb_str_index(mrb_state *mrb, mrb_value str, const char *sptr, mrb_int slen, mrb_int offset)
 // ```
 #[no_mangle]
-#[allow(clippy::similar_names)]
 unsafe extern "C" fn mrb_str_index(
     mrb: *mut sys::mrb_state,
     s: sys::mrb_value,
@@ -117,9 +116,9 @@ unsafe extern "C" fn mrb_str_index(
     len = RSTRING_LEN(str) - offset;
     */
     let mut offset = isize::try_from(offset).unwrap_or(0);
-    let len = isize::try_from(string.len()).unwrap_or(0);
+    let length = isize::try_from(string.len()).unwrap_or(0);
     if offset < 0 {
-        offset += len;
+        offset += length;
     }
     let offset = if let Ok(offset) = usize::try_from(offset) {
         offset

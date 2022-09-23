@@ -97,7 +97,6 @@ impl Interrupt {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn name(&self) -> &'static str {
         "Interrupt"
     }

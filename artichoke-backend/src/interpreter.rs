@@ -32,7 +32,6 @@ pub fn interpreter() -> Result<Artichoke, Error> {
 /// This function takes a customizable configuration for embedding metadata
 /// about how Artichoke was built. Otherwise, it behaves identically to the
 /// [`interpreter`] function.
-#[allow(clippy::module_name_repetitions)]
 pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke, Error> {
     let state = State::new()?;
     let state = Box::new(state);
@@ -77,7 +76,6 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
 }
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(clippy::module_name_repetitions)]
 pub struct InterpreterAllocError {
     _private: (),
 }

@@ -50,7 +50,6 @@ pub fn element_reference(
     }
 }
 
-#[allow(clippy::missing_panics_doc)]
 pub fn element_assignment(
     interp: &mut Artichoke,
     first: Value,

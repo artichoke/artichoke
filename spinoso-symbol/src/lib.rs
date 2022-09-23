@@ -243,7 +243,7 @@ impl Symbol {
     #[must_use]
     #[cfg(feature = "artichoke")]
     #[cfg_attr(docsrs, doc(cfg(feature = "artichoke")))]
-    #[allow(clippy::len_without_is_empty)]
+    #[allow(clippy::len_without_is_empty)] // https://github.com/rust-lang/rust-clippy/issues/9520
     pub fn len<T, U>(self, interner: &T) -> usize
     where
         T: Intern<Symbol = U>,

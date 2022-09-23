@@ -43,7 +43,6 @@ impl Io for Artichoke {
 }
 
 #[derive(Debug)]
-#[allow(clippy::module_name_repetitions)]
 pub struct IoError(io::Error);
 
 impl From<io::Error> for IoError {

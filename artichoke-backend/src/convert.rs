@@ -26,8 +26,6 @@ mod nilable;
 mod string;
 
 pub use boxing::{BoxUnboxVmValue, HeapAllocated, HeapAllocatedData, Immediate, UnboxedValueGuard};
-#[allow(clippy::module_name_repetitions)]
-#[allow(clippy::useless_attribute)]
 pub use conv::{
     check_string_type, check_to_a, check_to_ary, check_to_int, check_to_str, convert_type, to_a, to_ary, to_i, to_int,
     to_str, ConvertOnError,

@@ -9,7 +9,6 @@ use crate::value::Value;
 ///
 /// Constants can be an arbitrary Ruby value. Constants can be defined globally,
 /// on a class, or on a module.
-#[allow(clippy::module_name_repetitions)]
 pub trait DefineConstant {
     /// Concrete type for Ruby values.
     type Value: Value;

@@ -17,7 +17,6 @@ pub trait Convert<T, U> {
 ///
 /// See [`core::convert::TryFrom`].
 /// See [`TryConvertMut`].
-#[allow(clippy::module_name_repetitions)]
 pub trait TryConvert<T, U> {
     /// Error type for failed conversions.
     type Error;
@@ -37,7 +36,6 @@ pub trait TryConvert<T, U> {
 ///
 /// See [`core::convert::From`].
 /// See [`Convert`].
-#[allow(clippy::module_name_repetitions)]
 pub trait ConvertMut<T, U> {
     /// Performs the infallible conversion.
     fn convert_mut(&mut self, from: T) -> U;
