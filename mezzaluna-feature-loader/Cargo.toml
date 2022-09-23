@@ -2,14 +2,16 @@
 name = "mezzaluna-feature-loader"
 version = "0.5.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.64.0"
 description = "Source and extension loaders for a managing a Ruby $LOAD_PATH"
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
 categories = ["filesystem"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme.workspace = true
 
 [dependencies]
 scolapasta-path = { version = "0.4.0", path = "../scolapasta-path" }

@@ -2,16 +2,18 @@
 name = "spinoso-math"
 version = "0.3.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.64.0"
 description = """
 Implementation of the Ruby Math module
 """
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["libm", "math", "no_std", "spinoso"]
 categories = ["algorithms", "no-std"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme.workspace = true
 
 [dependencies]
 libm = { version = "0.2.5", optional = true }

@@ -2,16 +2,18 @@
 name = "spinoso-securerandom"
 version = "0.2.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.64.0"
 description = """
 Secure PRNG backend for Artichoke Ruby, implements 'securerandom' package
 """
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["artichoke", "rand", "random", "rng", "spinoso"]
 categories = ["algorithms"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme.workspace = true
 
 [dependencies]
 base64 = { version = "0.13.0", default-features = false, features = ["alloc"] }

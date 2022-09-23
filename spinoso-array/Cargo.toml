@@ -2,16 +2,18 @@
 name = "spinoso-array"
 version = "0.9.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.64.0"
 description = """
 Growable vector backends for the Ruby Array core type in Artichoke Ruby
 """
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["array", "no_std", "spinoso", "vec", "vector"]
 categories = ["data-structures", "no-std"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme.workspace = true
 
 [dependencies]
 raw-parts = "1.1.2"

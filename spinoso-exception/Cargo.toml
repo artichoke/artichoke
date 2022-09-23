@@ -2,16 +2,18 @@
 name = "spinoso-exception"
 version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.64.0"
 description = """
 Ruby Exception error structs
 """
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["error", "exception", "no_std", "spinoso"]
 categories = ["rust-patterns"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme.workspace = true
 
 [dependencies]
 scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }

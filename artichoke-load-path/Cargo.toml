@@ -2,14 +2,16 @@
 name = "artichoke-load-path"
 version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.64.0"
 description = "Source and extension loaders for a managing a Ruby $LOAD_PATH"
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
 categories = ["filesystem"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme.workspace = true
 
 [dependencies]
 same-file = { version = "1.0.6", optional = true }
