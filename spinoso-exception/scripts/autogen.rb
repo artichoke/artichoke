@@ -4,9 +4,6 @@
 require 'fileutils'
 
 def render(exc:, type:)
-  clippy_suppressions = nil
-  clippy_suppressions = "\n#[allow(clippy::upper_case_acronyms)]" if type =~ /[A-Z]{2}/
-
   <<~AUTOGEN
     // @generated
 
@@ -33,7 +30,7 @@ def render(exc:, type:)
     /// [`Exception`]: https://ruby-doc.org/core-3.1.2/Exception.html
     /// [`Kernel#raise`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-raise
     /// [`NameError#name`]: https://ruby-doc.org/core-3.1.2/NameError.html#method-i-name
-    #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]#{clippy_suppressions}
+    #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
     pub struct #{type} {
         message: Cow<'static, [u8]>,
     }
@@ -107,7 +104,6 @@ def render(exc:, type:)
         /// ```
         #[inline]
         #[must_use]
-        #[allow(clippy::unused_self)]
         pub const fn name(&self) -> &'static str {
             "#{exc}"
         }
