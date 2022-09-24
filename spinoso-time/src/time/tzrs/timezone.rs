@@ -13,12 +13,13 @@ impl Time {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_time::tzrs::{Time, TimeError};
+    /// use tzdb::time_zone::europe::AMSTERDAM;
+    /// # use spinoso_time::tzrs::{Offset, Time, TimeError};
     /// # fn example() -> Result<(), TimeError> {
-    /// let local_offset = Time::now()?.utc_offset();
+    /// let ams_offset = Offset::from(AMSTERDAM);
     /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
-    /// let now_local = now_utc.to_local()?;
-    /// assert_eq!(now_local.utc_offset(), local_offset);
+    /// let now_ams = now_utc.to_offset(ams_offset)?;
+    /// assert!(!now_ams.is_utc());
     /// # Ok(())
     /// # }
     /// # example().unwrap()
@@ -48,6 +49,7 @@ impl Time {
     /// let now_local = Time::now()?;
     /// let now_utc = now_local.to_utc()?;
     /// assert_eq!(now_utc.utc_offset(), 0);
+    /// assert!(now_utc.is_utc());
     /// # Ok(())
     /// # }
     /// # example().unwrap()
@@ -134,7 +136,7 @@ impl Time {
     }
 
     /// Converts _time_ to local time (using the local time zone in effective at
-    /// the creation time of _time_) modifying the receiver.
+    /// the creation time of _time_), modifying the receiver.
     ///
     /// Can be used to implement [`Time#localtime`] without a parameter.
     ///
@@ -146,6 +148,7 @@ impl Time {
     /// let mut now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
     /// let now_utc_unix = now.to_int();
     /// now.set_local();
+    /// assert!(!now.is_utc());
     /// let now_local_unix = now.to_int();
     /// assert_eq!(now_utc_unix, now_local_unix);
     /// # Ok(())
@@ -176,7 +179,8 @@ impl Time {
     /// # fn example() -> Result<(), TimeError> {
     /// let mut now = Time::local(2022, 7, 8, 12, 34, 56, 0)?;
     /// let now_local_unix = now.to_int();
-    /// now.set_local();
+    /// now.set_utc();
+    /// assert!(now.is_utc());
     /// let now_utc_unix = now.to_int();
     /// assert_eq!(now_local_unix, now_utc_unix);
     /// # Ok(())

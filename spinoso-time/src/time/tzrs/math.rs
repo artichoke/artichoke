@@ -11,9 +11,10 @@ impl Time {
     /// default). It returns a new Time object. `ndigits` should be zero or a
     /// positive integer.
     ///
-    /// Can be used to implement [`Time#round`]
+    /// Can be used to implement [`Time#round`].
     ///
     /// # Examples
+    ///
     /// ```
     /// # use spinoso_time::tzrs::{Time, TimeError};
     /// # fn example() -> Result<(), TimeError> {
@@ -28,8 +29,8 @@ impl Time {
     ///
     /// [`Time#round`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-round
     #[inline]
-    pub fn round(&self, digits: u32) -> Self {
-        match digits {
+    pub fn round(&self, ndigits: u32) -> Self {
+        match ndigits {
             9..=u32::MAX => *self,
             // Does integer truncation with round up at 5.
             //
@@ -48,15 +49,15 @@ impl Time {
             // 8: 123456790
             // 9: 123456789
             // ```
-            digits => {
+            num_digits => {
                 let local_time_type = *self.inner.local_time_type();
                 let mut unix_time = self.to_int();
                 let nanos = self.nanoseconds();
 
                 // `digits` is guaranteed to be at most `8` so these subtractions
                 // can never underflow.
-                let truncating_divisor = 10_u64.pow(9 - digits - 1);
-                let rounding_multiple = 10_u64.pow(9 - digits);
+                let truncating_divisor = 10_u64.pow(9 - num_digits - 1);
+                let rounding_multiple = 10_u64.pow(9 - num_digits);
 
                 let truncated = u64::from(nanos) / truncating_divisor;
                 let mut new_nanos = if truncated % 10 >= 5 {
