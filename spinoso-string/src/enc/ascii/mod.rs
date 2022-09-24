@@ -20,7 +20,6 @@ mod io;
 pub use inspect::Inspect;
 
 #[repr(transparent)]
-#[allow(clippy::module_name_repetitions)]
 #[derive(Default, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AsciiString {
     inner: Buf,

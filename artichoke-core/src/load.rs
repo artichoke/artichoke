@@ -114,7 +114,6 @@ impl From<Loaded> for bool {
 }
 
 /// Load Ruby sources and Rust extensions into an interpreter.
-#[allow(clippy::module_name_repetitions)]
 pub trait LoadSources {
     /// Concrete type for interpreter.
     type Artichoke;

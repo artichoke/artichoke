@@ -1504,15 +1504,13 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
         squeezed = true;
     }
     // Trim leading literal specifier but only if there was a leading 0.
-    if squeezed {
-        #[allow(clippy::match_same_arms)]
-        match (base, slice.first().copied()) {
-            (2, Some(b'b' | b'B')) => slice = &slice[1..],
-            (8, Some(b'o' | b'O')) => slice = &slice[1..],
-            (10, Some(b'd' | b'D')) => slice = &slice[1..],
-            (16, Some(b'x' | b'X')) => slice = &slice[1..],
-            _ => {}
-        }
+    if squeezed
+        && matches!(
+            (base, slice.first().copied()),
+            (2, Some(b'b' | b'B')) | (8, Some(b'o' | b'O')) | (10, Some(b'd' | b'D')) | (16, Some(b'x' | b'X'))
+        )
+    {
+        slice = &slice[1..];
     }
 
     if slice.is_empty() {

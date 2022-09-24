@@ -17,7 +17,6 @@ use crate::chars::Chars;
 /// [`String::center`]: crate::String::center
 /// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
 /// [`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CenterError {
     /// Error returned when calling [`String::center`] with an empty padding
@@ -57,7 +56,6 @@ impl CenterError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "zero width padding"
     }

@@ -317,7 +317,6 @@ impl RandomBytesError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "OS Error: Failed to generate random bytes"
     }
@@ -374,7 +373,6 @@ impl DomainError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "Numerical argument out of domain"
     }

@@ -131,7 +131,6 @@ impl<'a> ExactSizeIterator for Iter<'a> {}
 /// [`String`]: crate::String
 /// [`iter_mut`]: crate::String::iter_mut
 #[derive(Debug)]
-#[allow(clippy::module_name_repetitions)]
 pub struct IterMut<'a>(slice::IterMut<'a, u8>);
 
 impl<'a> IterMut<'a> {
@@ -229,7 +228,6 @@ impl<'a> ExactSizeIterator for IterMut<'a> {}
 /// let iter: spinoso_string::IntoIter = s.into_iter();
 /// ```
 #[derive(Debug)]
-#[allow(clippy::module_name_repetitions)]
 pub struct IntoIter(vec::IntoIter<u8>);
 
 impl IntoIter {

@@ -2,13 +2,6 @@
 name = "artichoke"
 version = "0.1.0-pre.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-license = "MIT"
-edition = "2021"
-rust-version = "1.63.0"
-readme = "README.md"
-repository = "https://github.com/artichoke/artichoke"
-documentation = "https://artichoke.github.io/artichoke/artichoke/"
-homepage = "https://github.com/artichoke/artichoke"
 description = """
 artichoke is a Ruby 2.6.3 implementation. Artichoke supports embedding and
 conditional compilation of the VM and standard library. Artichoke can be used to
@@ -17,6 +10,13 @@ Windows, macOS, and Linux, as well as WebAssembly via Emscripten.
 """
 keywords = ["artichoke", "artichoke-ruby", "mri", "cruby", "ruby"]
 categories = ["command-line-utilities"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
 
 [dependencies]
 clap = { version = "3.2.5", optional = true, default-features = false, features = ["std", "suggestions"] }
@@ -76,6 +76,14 @@ members = [
   "spinoso-symbol",
   "spinoso-time",
 ]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.64.0"
+license = "MIT"
+repository = "https://github.com/artichoke/artichoke"
+homepage = "https://github.com/artichoke/artichoke"
+documentation = "https://artichoke.github.io/artichoke/artichoke/"
 
 [profile.release]
 codegen-units = 1

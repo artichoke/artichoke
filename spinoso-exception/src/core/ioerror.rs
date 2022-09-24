@@ -24,7 +24,6 @@ use crate::RubyException;
 /// [`Kernel#raise`]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-raise
 /// [`NameError#name`]: https://ruby-doc.org/core-3.1.2/NameError.html#method-i-name
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(clippy::upper_case_acronyms)]
 pub struct IOError {
     message: Cow<'static, [u8]>,
 }
@@ -98,7 +97,6 @@ impl IOError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn name(&self) -> &'static str {
         "IOError"
     }

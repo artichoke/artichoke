@@ -2,16 +2,18 @@
 name = "spinoso-regexp"
 version = "0.4.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.63.0"
 description = """
 Regex implementation for Ruby Regexp core type in Artichoke Ruby
 """
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["artichoke", "onig", "regex", "regexp", "ruby"]
 categories = ["data-structures", "parser-implementations"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
 
 [dependencies]
 bitflags = "1.3.0"

@@ -1,13 +1,11 @@
 [package]
 name = "spec-runner"
 version = "0.6.1"
-authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 edition = "2021"
-rust-version = "1.63.0"
-description = "Binary for running Ruby Specs with Artichoke Ruby"
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
+rust-version = "1.64.0"
 license = "MIT"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+description = "Binary for running Ruby Specs with Artichoke Ruby"
 keywords = ["artichoke", "artichoke-ruby", "ruby", "ruby-spec", "testing"]
 categories = ["development-tools::testing"]
 

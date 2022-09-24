@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use core::fmt::{self, Write as _};
 
 use scolapasta_string_escape::format_debug_escape_into;
@@ -83,7 +85,6 @@ impl<'a> std::error::Error for Error<'a> {}
 ///
 /// [`parse`]: crate::parse
 /// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
-#[allow(clippy::module_name_repetitions)]
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ArgumentError<'a> {
     subject: &'a [u8],
@@ -206,7 +207,6 @@ pub enum InvalidRadixExceptionKind {
 /// ```
 ///
 /// [`parse`]: crate::parse
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InvalidRadixError {
     kind: InvalidRadixErrorKind,

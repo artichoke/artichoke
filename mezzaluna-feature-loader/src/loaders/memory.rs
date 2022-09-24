@@ -223,7 +223,6 @@ impl Memory {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub fn load_path(&self) -> &'static Path {
         if cfg!(windows) {
             Path::new("c:/artichoke/virtual_root/src/lib")

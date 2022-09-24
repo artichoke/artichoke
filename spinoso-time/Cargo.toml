@@ -2,16 +2,18 @@
 name = "spinoso-time"
 version = "0.7.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.63.0"
 description = """
 Datetime handling for Artichoke Ruby
 """
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["artichoke", "date", "datetime", "spinoso", "time"]
 categories = ["date-and-time"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
 
 [features]
 default = ["tzrs", "tzrs-local"]

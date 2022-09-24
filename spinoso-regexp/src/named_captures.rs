@@ -82,7 +82,6 @@ impl ExactSizeIterator for NamedCaptures {}
 impl FusedIterator for NamedCaptures {}
 
 #[derive(Default, Debug, Clone)]
-#[allow(clippy::module_name_repetitions)]
 pub struct NamedCapturesForHaystack {
     matches: HashMap<Vec<u8>, Option<Vec<u8>>>,
 }

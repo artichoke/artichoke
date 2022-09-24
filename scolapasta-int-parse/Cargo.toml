@@ -2,16 +2,18 @@
 name = "scolapasta-int-parse"
 version = "0.2.2"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.63.0"
 description = """
 no_std integer parser for Ruby-formatted numeric byte strings.
 """
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["integer", "no_std", "radix", "ruby"]
 categories = ["encoding", "no-std", "parser-implementations", "no-std"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
 
 [dependencies]
 posix-space = "1.0.0"

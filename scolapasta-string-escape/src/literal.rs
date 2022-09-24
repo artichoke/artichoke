@@ -398,7 +398,6 @@ impl ByteSequenceTooLongError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "Invalid UTF-8 byte literal sequences can be at most three bytes long"
     }

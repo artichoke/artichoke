@@ -1,3 +1,5 @@
+#![allow(clippy::module_name_repetitions)]
+
 use core::fmt;
 use core::num::TryFromIntError;
 use std::error;
@@ -6,7 +8,6 @@ use std::str::Utf8Error;
 use tz::error::{DateTimeError, ProjectDateTimeError, TzError};
 
 /// A wrapper around some of the errors provided by `tz-rs`.
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug)]
 pub enum TimeError {
     /// Created when trying to create a `DateTime`, however the projection to a
@@ -158,7 +159,6 @@ impl From<IntOverflowError> for TimeError {
 /// of a timezone.
 ///
 /// This error is returned by [`Offset::try_from`].
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzStringError {
     _private: (),
@@ -189,7 +189,6 @@ impl From<Utf8Error> for TzStringError {
 /// allowed range.
 ///
 /// This error is returned by [`Offset::try_from`].
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzOutOfRangeError {
     _private: (),
@@ -211,7 +210,6 @@ impl TzOutOfRangeError {
 }
 
 /// Error that indicates a given operation has resulted in an integer overflow.
-#[allow(clippy::module_name_repetitions)]
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct IntOverflowError {
     _private: (),

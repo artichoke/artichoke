@@ -124,7 +124,6 @@ where
 /// All types that implement `RubyException` can be raised with
 /// [`error::raise`](raise). Rust code can re-raise a trait object to
 /// propagate exceptions from native code back into the interpreter.
-#[allow(clippy::module_name_repetitions)]
 pub trait RubyException: error::Error + 'static {
     /// Message of the `Exception`.
     ///

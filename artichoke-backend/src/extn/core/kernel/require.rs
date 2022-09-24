@@ -70,7 +70,6 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<Required, 
     Err(LoadError::from(message).into())
 }
 
-#[allow(clippy::module_name_repetitions)]
 pub fn require_relative(interp: &mut Artichoke, mut filename: Value, base: RelativePath) -> Result<Required, Error> {
     // SAFETY: The extracted byte slice is converted to an owned `Vec<u8>`
     // before the interpreter is used again which protects against a garbage

@@ -2,16 +2,18 @@
 name = "spinoso-random"
 version = "0.3.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-edition = "2021"
-rust-version = "1.63.0"
 description = """
 Implementation of Ruby Random Core class.
 """
-repository = "https://github.com/artichoke/artichoke"
-readme = "README.md"
-license = "MIT"
 keywords = ["random", "rand", "rng", "mt", "spinoso"]
 categories = ["algorithms", "no-std"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
 
 [dependencies]
 getrandom = { version = "0.2.0", default-features = false }

@@ -16,7 +16,6 @@ use crate::Artichoke;
 ///
 /// This error is returned by [`ArenaIndex::new`].
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
-#[allow(clippy::module_name_repetitions)]
 pub struct ArenaSavepointError {
     _private: (),
 }
@@ -83,7 +82,6 @@ impl From<ArenaSavepointError> for Error {
 ///
 /// [arena]: https://github.com/mruby/mruby/blob/master/doc/guides/gc-arena-howto.md
 #[derive(Debug)]
-#[allow(clippy::module_name_repetitions)]
 pub struct ArenaIndex<'a> {
     index: i32,
     interp: &'a mut Artichoke,

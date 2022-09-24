@@ -97,7 +97,6 @@ impl Exception {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn name(&self) -> &'static str {
         "Exception"
     }

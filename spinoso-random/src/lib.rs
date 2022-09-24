@@ -241,7 +241,6 @@ impl InitializeError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "failed to get urandom"
     }
@@ -308,7 +307,6 @@ impl UrandomError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "failed to get urandom"
     }
@@ -375,7 +373,6 @@ impl NewSeedError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "failed to get urandom"
     }

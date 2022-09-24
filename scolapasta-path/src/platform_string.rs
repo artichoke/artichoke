@@ -159,7 +159,6 @@ impl ConvertBytesError {
     /// ```
     #[inline]
     #[must_use]
-    #[allow(clippy::unused_self)]
     pub const fn message(self) -> &'static str {
         "Could not convert between bytes and platform string"
     }

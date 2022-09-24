@@ -52,7 +52,6 @@ impl Builder {
 /// An `Exception` rescued with [`sys::mrb_protect`].
 ///
 /// `CaughtException` is re-raiseable because it implements [`RubyException`].
-#[allow(clippy::module_name_repetitions)]
 #[derive(Default, Debug, Clone)]
 pub struct CaughtException {
     value: Value,

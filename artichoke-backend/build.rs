@@ -231,7 +231,7 @@ mod libs {
             return;
         }
         // Install bindgen
-        // cargo install --root target/bindgen --version 0.59.1 bindgen
+        // cargo install --root target/bindgen --version 0.60.1 bindgen
         let bindgen_install_dir = PathBuf::from(out_dir).join("bindgen");
         let status = Command::new(env::var_os("CARGO").unwrap())
             .stdin(Stdio::null())
@@ -241,7 +241,7 @@ mod libs {
             .arg("--root")
             .arg(&bindgen_install_dir)
             .arg("--version")
-            .arg("0.59.1")
+            .arg("0.60.1")
             .arg("bindgen")
             .status()
             .unwrap();

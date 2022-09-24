@@ -205,7 +205,7 @@ namespace :toolchain do
       regexp = /^rust-version = "(.*)"$/
       next_rust_version = "rust-version = \"#{rust_toolchain}\""
 
-      pkg_files = FileList.new('*/Cargo.toml').include('Cargo.toml')
+      pkg_files = FileList.new(['Cargo.toml', 'fuzz/Cargo.toml', 'spec-runner/Cargo.toml', 'ui-tests/Cargo.toml'])
 
       failures = pkg_files.map do |file|
         contents = File.read(file)

@@ -103,7 +103,6 @@ impl System {
     ///
     /// [platform string]: std::ffi::OsString
     #[inline]
-    #[allow(clippy::unused_self)]
     pub fn get(self, name: &[u8]) -> Result<Option<Cow<'static, [u8]>>, ArgumentError> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
@@ -175,7 +174,6 @@ impl System {
     ///
     /// [platform string]: std::ffi::OsString
     #[inline]
-    #[allow(clippy::unused_self)]
     pub fn put(self, name: &[u8], value: Option<&[u8]>) -> Result<(), Error> {
         // Per Rust docs for `std::env::set_var` and `std::env::remove_var`:
         // https://doc.rust-lang.org/std/env/fn.set_var.html
@@ -244,7 +242,6 @@ impl System {
     ///
     /// [platform string]: std::ffi::OsString
     #[inline]
-    #[allow(clippy::unused_self)]
     pub fn to_map(self) -> Result<HashMap<Bytes, Bytes>, ArgumentError> {
         let mut map = HashMap::new();
         for (name, value) in env::vars_os() {
