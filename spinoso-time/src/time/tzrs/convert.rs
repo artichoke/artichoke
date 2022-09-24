@@ -37,8 +37,8 @@ impl fmt::Display for Time {
 impl Time {
     /// Formats _time_ according to the directives in the given format string.
     ///
-    /// Can be used to implement [`Time#strftime`]. The resulting string should be
-    /// treated as an ASCII-encoded string.
+    /// Can be used to implement [`Time#strftime`]. The resulting byte string
+    /// will have the same encoding as the format byte slice.
     ///
     /// # Examples
     ///

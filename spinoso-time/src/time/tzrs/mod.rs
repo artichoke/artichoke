@@ -340,7 +340,7 @@ impl Time {
     /// This function can be used in combination with [`to_int`] to implement
     /// [`Time#to_r`].
     ///
-    /// #Examples
+    /// # Examples
     ///
     /// ```
     /// # use spinoso_time::tzrs::{Time, Offset, TimeError};

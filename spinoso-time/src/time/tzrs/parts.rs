@@ -58,7 +58,7 @@ impl Time {
         self.inner.nanoseconds() / MICROS_IN_NANO
     }
 
-    /// Returns the second of the minute (0..60) for _time_.
+    /// Returns the second of the minute `0..=60` for _time_.
     ///
     /// Seconds range from zero to 60 to allow the system to inject [leap
     /// seconds].
@@ -86,7 +86,7 @@ impl Time {
         self.inner.second()
     }
 
-    /// Returns the minute of the hour (0..59) for _time_.
+    /// Returns the minute of the hour `0..=59` for _time_.
     ///
     /// Can be used to implement [`Time#min`].
     ///
@@ -103,16 +103,16 @@ impl Time {
     /// # example().unwrap()
     /// ```
     ///
-    /// [`Time#minute`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-min
+    /// [`Time#min`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-min
     #[inline]
     #[must_use]
     pub fn minute(&self) -> u8 {
         self.inner.minute()
     }
 
-    /// Returns the hour of the day (0..23) for _time_.
+    /// Returns the hour of the day `0..=23` for _time_.
     ///
-    /// Can be used to implement [`Time#min`].
+    /// Can be used to implement [`Time#hour`].
     ///
     /// # Examples
     ///
@@ -134,7 +134,7 @@ impl Time {
         self.inner.hour()
     }
 
-    /// Returns the day of the month (1..n) for _time_.
+    /// Returns the day of the month `1..=n` for _time_.
     ///
     /// Can be used to implement [`Time#day`] and [`Time#mday`].
     ///
@@ -159,7 +159,7 @@ impl Time {
         self.inner.month_day()
     }
 
-    /// Returns the month of the year (1..12) for _time_.
+    /// Returns the month of the year `1..=12` for _time_.
     ///
     /// Can be used to implement [`Time#mon`] and [`Time#month`].
     ///
@@ -316,15 +316,14 @@ impl Time {
         self.inner.local_time_type().is_dst()
     }
 
-    /// Returns an integer representing the day of the week, `0..=6`, with Sunday
-    /// == 0.
+    /// Returns an integer representing the day of the week, `0..=6`, with
+    /// `Sunday == 0`.
     ///
     /// Can be used to implement [`Time#wday`].
     ///
     /// # Examples
     ///
     /// ```
-    ///
     /// # use spinoso_time::tzrs::{Time, TimeError};
     /// # fn example() -> Result<(), TimeError> {
     /// let now = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
