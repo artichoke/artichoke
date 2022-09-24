@@ -1,9 +1,9 @@
 describe :float_quo, shared: true do
-  it "performs floating-point division between self and a Fixnum" do
+  it "performs floating-point division between self and an Integer" do
     8.9.send(@method, 7).should == 1.2714285714285716
   end
 
-  it "performs floating-point division between self and a Bignum" do
+  it "performs floating-point division between self and an Integer" do
     8.9.send(@method, 9999999999999**9).should == 8.900000000008011e-117
   end
 
@@ -50,10 +50,10 @@ describe :float_quo, shared: true do
   end
 
   it "raises a TypeError when argument isn't numeric" do
-    lambda { 27292.2.send(@method, mock('non-numeric')) }.should raise_error(TypeError)
+    -> { 27292.2.send(@method, mock('non-numeric')) }.should raise_error(TypeError)
   end
 
   it "raises an ArgumentError when passed multiple arguments" do
-    lambda { 272.221.send(@method, 6,0.2) }.should raise_error(ArgumentError)
+    -> { 272.221.send(@method, 6,0.2) }.should raise_error(ArgumentError)
   end
 end

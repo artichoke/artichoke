@@ -9,8 +9,10 @@ RSpec.describe Bundler::GemHelper do
   let(:app_gemspec_path) { app_path.join("#{app_name}.gemspec") }
 
   before(:each) do
-    global_config "BUNDLE_GEM__MIT" => "false", "BUNDLE_GEM__TEST" => "false", "BUNDLE_GEM__COC" => "false"
+    global_config "BUNDLE_GEM__MIT" => "false", "BUNDLE_GEM__TEST" => "false", "BUNDLE_GEM__COC" => "false", "BUNDLE_GEM__LINTER" => "false",
+                  "BUNDLE_GEM__CI" => "false", "BUNDLE_GEM__CHANGELOG" => "false"
     bundle "gem #{app_name}"
+    prepare_gemspec(app_gemspec_path)
   end
 
   context "determining gemspec" do
@@ -29,15 +31,6 @@ RSpec.describe Bundler::GemHelper do
     end
 
     context "interpolates the name" do
-      before do
-        # Remove exception that prevents public pushes on older RubyGems versions
-        if Gem::Version.new(Gem::VERSION) < Gem::Version.new("2.0")
-          content = File.read(app_gemspec_path)
-          content.sub!(/raise "RubyGems 2\.0 or newer.*/, "")
-          File.open(app_gemspec_path, "w") {|f| f.write(content) }
-        end
-      end
-
       it "when there is only one gemspec" do
         expect(subject.gemspec.name).to eq(app_name)
       end
@@ -68,25 +61,27 @@ RSpec.describe Bundler::GemHelper do
       mock_confirm_message message
     end
 
+    def mock_checksum_message(name, version)
+      message = "#{name} #{version} checksum written to checksums/#{name}-#{version}.gem.sha512."
+      mock_confirm_message message
+    end
+
+    def sha512_hexdigest(path)
+      Digest::SHA512.file(path).hexdigest
+    end
+
     subject! { Bundler::GemHelper.new(app_path) }
     let(:app_version) { "0.1.0" }
     let(:app_gem_dir) { app_path.join("pkg") }
     let(:app_gem_path) { app_gem_dir.join("#{app_name}-#{app_version}.gem") }
-    let(:app_gemspec_content) { remove_push_guard(File.read(app_gemspec_path)) }
+    let(:app_sha_path) { app_path.join("checksums", "#{app_name}-#{app_version}.gem.sha512") }
+    let(:app_gemspec_content) { File.read(app_gemspec_path) }
 
     before(:each) do
       content = app_gemspec_content.gsub("TODO: ", "")
       content.sub!(/homepage\s+= ".*"/, 'homepage = ""')
       content.gsub!(/spec\.metadata.+\n/, "")
       File.open(app_gemspec_path, "w") {|file| file << content }
-    end
-
-    def remove_push_guard(gemspec_content)
-      # Remove exception that prevents public pushes on older RubyGems versions
-      if Gem::Version.new(Gem::VERSION) < Gem::Version.new("2.0")
-        gemspec_content.sub!(/raise "RubyGems 2\.0 or newer.*/, "")
-      end
-      gemspec_content
     end
 
     it "uses a shell UI for output" do
@@ -113,6 +108,7 @@ RSpec.describe Bundler::GemHelper do
         context "before installation" do
           it "raises an error with appropriate message" do
             task_names.each do |name|
+              skip "Rake::FileTask '#{name}' exists" if File.exist?(name)
               expect { Rake.application[name] }.
                 to raise_error(/^Don't know how to build task '#{name}'/)
             end
@@ -154,6 +150,68 @@ RSpec.describe Bundler::GemHelper do
           expect(app_gem_path).to exist
         end
       end
+
+      context "when building in the current working directory" do
+        it "creates .gem file" do
+          mock_build_message app_name, app_version
+          Dir.chdir app_path do
+            Bundler::GemHelper.new.build_gem
+          end
+          expect(app_gem_path).to exist
+        end
+      end
+
+      context "when building in a location relative to the current working directory" do
+        it "creates .gem file" do
+          mock_build_message app_name, app_version
+          Dir.chdir File.dirname(app_path) do
+            Bundler::GemHelper.new(File.basename(app_path)).build_gem
+          end
+          expect(app_gem_path).to exist
+        end
+      end
+    end
+
+    describe "#build_checksum" do
+      it "calculates SHA512 of the content" do
+        FileUtils.mkdir_p(app_gem_dir)
+        File.write(app_gem_path, "")
+        mock_checksum_message app_name, app_version
+        subject.build_checksum(app_gem_path)
+        expect(File.read(app_sha_path).chomp).to eql(Digest::SHA512.hexdigest(""))
+      end
+
+      context "when build was successful" do
+        it "creates .sha512 file" do
+          mock_build_message app_name, app_version
+          mock_checksum_message app_name, app_version
+          subject.build_checksum
+          expect(app_sha_path).to exist
+          expect(File.read(app_sha_path).chomp).to eql(sha512_hexdigest(app_gem_path))
+        end
+      end
+      context "when building in the current working directory" do
+        it "creates a .sha512 file" do
+          mock_build_message app_name, app_version
+          mock_checksum_message app_name, app_version
+          Dir.chdir app_path do
+            Bundler::GemHelper.new.build_checksum
+          end
+          expect(app_sha_path).to exist
+          expect(File.read(app_sha_path).chomp).to eql(sha512_hexdigest(app_gem_path))
+        end
+      end
+      context "when building in a location relative to the current working directory" do
+        it "creates a .sha512 file" do
+          mock_build_message app_name, app_version
+          mock_checksum_message app_name, app_version
+          Dir.chdir File.dirname(app_path) do
+            Bundler::GemHelper.new(File.basename(app_path)).build_checksum
+          end
+          expect(app_sha_path).to exist
+          expect(File.read(app_sha_path).chomp).to eql(sha512_hexdigest(app_gem_path))
+        end
+      end
     end
 
     describe "#install_gem" do
@@ -163,7 +221,7 @@ RSpec.describe Bundler::GemHelper do
           mock_confirm_message "#{app_name} (#{app_version}) installed."
           subject.install_gem(nil, :local)
           expect(app_gem_path).to exist
-          gem_command! :list
+          gem_command :list
           expect(out).to include("#{app_name} (#{app_version})")
         end
       end
@@ -176,7 +234,7 @@ RSpec.describe Bundler::GemHelper do
             FileUtils.touch app_gem_path
             app_gem_path
           end
-          expect { subject.install_gem }.to raise_error(/Couldn't install gem/)
+          expect { subject.install_gem }.to raise_error(/Running `#{gem_bin} install #{app_gem_path}` failed/)
         end
       end
     end
@@ -194,12 +252,11 @@ RSpec.describe Bundler::GemHelper do
       end
 
       before do
-        Dir.chdir(app_path) do
-          `git init`
-          `git config user.email "you@example.com"`
-          `git config user.name "name"`
-          `git config push.default simple`
-        end
+        sys_exec("git init", :dir => app_path)
+        sys_exec("git config user.email \"you@example.com\"", :dir => app_path)
+        sys_exec("git config user.name \"name\"", :dir => app_path)
+        sys_exec("git config commit.gpgsign false", :dir => app_path)
+        sys_exec("git config push.default simple", :dir => app_path)
 
         # silence messages
         allow(Bundler.ui).to receive(:confirm)
@@ -213,35 +270,81 @@ RSpec.describe Bundler::GemHelper do
         end
 
         it "when there are uncommitted files" do
-          Dir.chdir(app_path) { `git add .` }
+          sys_exec("git add .", :dir => app_path)
           expect { Rake.application["release"].invoke }.
             to raise_error("There are files that need to be committed first.")
         end
 
         it "when there is no git remote" do
-          Dir.chdir(app_path) { `git commit -a -m "initial commit"` }
+          sys_exec("git commit -a -m \"initial commit\"", :dir => app_path)
           expect { Rake.application["release"].invoke }.to raise_error(RuntimeError)
         end
       end
 
       context "succeeds" do
+        let(:repo) { build_git("foo", :bare => true) }
+
         before do
-          Dir.chdir(gem_repo1) { `git init --bare` }
-          Dir.chdir(app_path) do
-            `git remote add origin file://#{gem_repo1}`
-            `git commit -a -m "initial commit"`
+          sys_exec("git remote add origin #{file_uri_for(repo.path)}", :dir => app_path)
+          sys_exec('git commit -a -m "initial commit"', :dir => app_path)
+        end
+
+        context "on releasing" do
+          before do
+            mock_build_message app_name, app_version
+            mock_confirm_message "Tagged v#{app_version}."
+            mock_confirm_message "Pushed git commits and release tag."
+
+            sys_exec("git push -u origin master", :dir => app_path)
+          end
+
+          it "calls rubygem_push with proper arguments" do
+            expect(subject).to receive(:rubygem_push).with(app_gem_path.to_s)
+
+            Rake.application["release"].invoke
+          end
+
+          it "uses Kernel.system" do
+            cmd = gem_bin.shellsplit
+            expect(Kernel).to receive(:system).with(*cmd, "push", app_gem_path.to_s, "--host", "http://example.org").and_return(true)
+
+            Rake.application["release"].invoke
+          end
+
+          it "also works when releasing from an ambiguous reference" do
+            # Create a branch with the same name as the tag
+            sys_exec("git checkout -b v#{app_version}", :dir => app_path)
+            sys_exec("git push -u origin v#{app_version}", :dir => app_path)
+
+            expect(subject).to receive(:rubygem_push).with(app_gem_path.to_s)
+
+            Rake.application["release"].invoke
+          end
+
+          it "also works with releasing from a branch not yet pushed" do
+            sys_exec("git checkout -b module_function", :dir => app_path)
+
+            expect(subject).to receive(:rubygem_push).with(app_gem_path.to_s)
+
+            Rake.application["release"].invoke
           end
         end
 
-        it "on releasing" do
-          mock_build_message app_name, app_version
-          mock_confirm_message "Tagged v#{app_version}."
-          mock_confirm_message "Pushed git commits and tags."
-          expect(subject).to receive(:rubygem_push).with(app_gem_path.to_s)
+        context "on releasing with a custom tag prefix" do
+          before do
+            Bundler::GemHelper.tag_prefix = "foo-"
+            mock_build_message app_name, app_version
+            mock_confirm_message "Pushed git commits and release tag."
 
-          Dir.chdir(app_path) { sys_exec("git push -u origin master") }
+            sys_exec("git push -u origin master", :dir => app_path)
+            expect(subject).to receive(:rubygem_push).with(app_gem_path.to_s)
+          end
 
-          Rake.application["release"].invoke
+          it "prepends the custom prefix to the tag" do
+            mock_confirm_message "Tagged foo-v#{app_version}."
+
+            Rake.application["release"].invoke
+          end
         end
 
         it "even if tag already exists" do
@@ -249,9 +352,7 @@ RSpec.describe Bundler::GemHelper do
           mock_confirm_message "Tag v#{app_version} has already been created."
           expect(subject).to receive(:rubygem_push).with(app_gem_path.to_s)
 
-          Dir.chdir(app_path) do
-            `git tag -a -m \"Version #{app_version}\" v#{app_version}`
-          end
+          sys_exec("git tag -a -m \"Version #{app_version}\" v#{app_version}", :dir => app_path)
 
           Rake.application["release"].invoke
         end
@@ -264,7 +365,7 @@ RSpec.describe Bundler::GemHelper do
       before(:each) do
         Rake.application = Rake::Application.new
         subject.install
-        allow(subject).to receive(:sh)
+        allow(subject).to receive(:sh_with_input)
       end
 
       after(:each) do
@@ -272,12 +373,10 @@ RSpec.describe Bundler::GemHelper do
       end
 
       before do
-        Dir.chdir(app_path) do
-          `git init`
-          `git config user.email "you@example.com"`
-          `git config user.name "name"`
-          `git config push.default simple`
-        end
+        sys_exec("git init", :dir => app_path)
+        sys_exec("git config user.email \"you@example.com\"", :dir => app_path)
+        sys_exec("git config user.name \"name\"", :dir => app_path)
+        sys_exec("git config push.gpgsign simple", :dir => app_path)
 
         # silence messages
         allow(Bundler.ui).to receive(:confirm)

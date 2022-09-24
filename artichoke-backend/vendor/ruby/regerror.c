@@ -312,7 +312,7 @@ onig_error_code_to_str(UChar* s, OnigPosition code, ...)
 
 void
 onig_vsnprintf_with_pattern(UChar buf[], int bufsize, OnigEncoding enc,
-                           UChar* pat, UChar* pat_end, const UChar *fmt, va_list args)
+                           UChar* pat, UChar* pat_end, const char *fmt, va_list args)
 {
   size_t need;
   int n, len;
@@ -356,7 +356,8 @@ onig_vsnprintf_with_pattern(UChar buf[], int bufsize, OnigEncoding enc,
 	*s++ = *p++;
       }
       else if (!ONIGENC_IS_CODE_PRINT(enc, *p) &&
-	       !ONIGENC_IS_CODE_SPACE(enc, *p)) {
+	       (!ONIGENC_IS_CODE_SPACE(enc, *p) ||
+                ONIGENC_IS_CODE_CNTRL(enc, *p))) {
 	sprint_byte_with_x((char* )bs, (unsigned int )(*p++));
 	len = onigenc_str_bytelen_null(ONIG_ENCODING_ASCII, bs);
         bp = bs;
@@ -375,7 +376,7 @@ onig_vsnprintf_with_pattern(UChar buf[], int bufsize, OnigEncoding enc,
 #if 0 /* unused */
 void
 onig_snprintf_with_pattern(UChar buf[], int bufsize, OnigEncoding enc,
-                           UChar* pat, UChar* pat_end, const UChar *fmt, ...)
+                           UChar* pat, UChar* pat_end, const char *fmt, ...)
 {
   va_list args;
   va_start(args, fmt);

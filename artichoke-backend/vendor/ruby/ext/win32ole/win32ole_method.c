@@ -437,7 +437,7 @@ ole_method_invoke_kind(ITypeInfo *pTypeInfo, UINT method_index)
 
 /*
  *   call-seq:
- *      WIN32OLE_MTHOD#invkind
+ *      WIN32OLE_METHOD#invkind
  *
  *   Returns the method invoke kind.
  *     tobj = WIN32OLE_TYPE.new('Microsoft Excel 9.0 Object Library', 'Workbooks')
@@ -922,6 +922,8 @@ folemethod_inspect(VALUE self)
 {
     return default_inspect(self, "WIN32OLE_METHOD");
 }
+
+VALUE cWIN32OLE_METHOD;
 
 void Init_win32ole_method(void)
 {

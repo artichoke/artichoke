@@ -22,9 +22,9 @@ describe "String#bytes" do
     @utf8_ascii.bytes.to_a.size.should == @utf8_ascii.bytesize
   end
 
-  it "returns bytes as Fixnums" do
-    @ascii.bytes.to_a.each {|b| b.should be_an_instance_of(Fixnum)}
-    @utf8_ascii.bytes { |b| b.should be_an_instance_of(Fixnum) }
+  it "returns bytes as Integers" do
+    @ascii.bytes.to_a.each {|b| b.should be_an_instance_of(Integer)}
+    @utf8_ascii.bytes { |b| b.should be_an_instance_of(Integer) }
   end
 
   it "agrees with #unpack('C*')" do
@@ -36,22 +36,20 @@ describe "String#bytes" do
   end
 end
 
-with_feature :encoding do
-  describe "String#bytes" do
-    before :each do
-      @utf8 = "東京"
-      @ascii = 'Tokyo'
-      @utf8_ascii = @utf8 + @ascii
-    end
+describe "String#bytes" do
+  before :each do
+    @utf8 = "東京"
+    @ascii = 'Tokyo'
+    @utf8_ascii = @utf8 + @ascii
+  end
 
-    it "agrees with #getbyte" do
-      @utf8_ascii.bytes.to_a.each_with_index do |byte,index|
-        byte.should == @utf8_ascii.getbyte(index)
-      end
+  it "agrees with #getbyte" do
+    @utf8_ascii.bytes.to_a.each_with_index do |byte,index|
+      byte.should == @utf8_ascii.getbyte(index)
     end
+  end
 
-    it "is unaffected by #force_encoding" do
-      @utf8.force_encoding('ASCII').bytes.to_a.should == @utf8.bytes.to_a
-    end
+  it "is unaffected by #force_encoding" do
+    @utf8.force_encoding('ASCII').bytes.to_a.should == @utf8.bytes.to_a
   end
 end

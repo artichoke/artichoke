@@ -29,6 +29,56 @@ describe "Enumerable#grep" do
     ary.grep(/a(b)a/) { $1 }.should == ["b", "b"]
   end
 
+  it "sets $~ in the block" do
+    "z" =~ /z/ # Reset $~
+    ["abc", "def"].grep(/b/) { |e|
+      e.should == "abc"
+      $&.should == "b"
+    }
+
+    # Set by the failed match of "def"
+    $~.should == nil
+  end
+
+  ruby_version_is ""..."3.0.0" do
+    it "sets $~ to the last match when given no block" do
+      "z" =~ /z/ # Reset $~
+      ["abc", "def"].grep(/b/).should == ["abc"]
+
+      # Set by the failed match of "def"
+      $~.should == nil
+
+      ["abc", "def"].grep(/e/)
+      $&.should == "e"
+    end
+  end
+
+  ruby_version_is "3.0.0" do
+    it "does not set $~ when given no block" do
+      "z" =~ /z/ # Reset $~
+      ["abc", "def"].grep(/b/).should == ["abc"]
+      $&.should == "z"
+    end
+
+    it "does not modify Regexp.last_match without block" do
+      "z" =~ /z/ # Reset last match
+      ["abc", "def"].grep(/b/).should == ["abc"]
+      Regexp.last_match[0].should == "z"
+    end
+
+    it "correctly handles non-string elements" do
+      'set last match' =~ /set last (.*)/
+      [:a, 'b', 'z', :c, 42, nil].grep(/[a-d]/).should == [:a, 'b', :c]
+      $1.should == 'match'
+
+      o = Object.new
+      def o.to_str
+        'hello'
+      end
+      [o].grep(/ll/).first.should.equal?(o)
+    end
+  end
+
   describe "with a block" do
     before :each do
       @numerous = EnumerableSpecs::Numerous.new(*(0..9).to_a)

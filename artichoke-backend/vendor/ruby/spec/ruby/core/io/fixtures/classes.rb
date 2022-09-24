@@ -1,6 +1,9 @@
 # -*- encoding: utf-8 -*-
 
 module IOSpecs
+  THREAD_CLOSE_RETRIES = 10
+  THREAD_CLOSE_ERROR_MESSAGE = 'stream closed in another thread'
+
   class SubIO < IO
   end
 
@@ -118,10 +121,10 @@ module IOSpecs
 
   # Creates an IO instance for an existing fixture file. The
   # file should obviously not be deleted.
-  def self.io_fixture(name, options_or_mode="r:utf-8")
+  def self.io_fixture(name, mode = "r:utf-8")
     path = fixture __FILE__, name
     name = path if File.exist? path
-    new_io name, options_or_mode
+    new_io(name, mode)
   end
 
   # Returns a closed instance of IO that was opened to reference
@@ -164,7 +167,7 @@ module IOSpecs
       @io = io
     end
 
-    def read(size, buf=nil)
+    def read(size, buf)
       @io.read size, buf
     end
 
@@ -178,7 +181,7 @@ module IOSpecs
       @io = io
     end
 
-    def readpartial(size, buf=nil)
+    def readpartial(size, buf)
       @io.readpartial size, buf
     end
 

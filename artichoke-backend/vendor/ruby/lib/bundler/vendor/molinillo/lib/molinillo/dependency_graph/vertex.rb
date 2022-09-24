@@ -50,14 +50,25 @@ module Bundler::Molinillo
         incoming_edges.map(&:origin)
       end
 
-      # @return [Array<Vertex>] the vertices of {#graph} where `self` is a
+      # @return [Set<Vertex>] the vertices of {#graph} where `self` is a
       #   {#descendent?}
       def recursive_predecessors
-        vertices = predecessors
-        vertices += Compatibility.flat_map(vertices, &:recursive_predecessors)
-        vertices.uniq!
+        _recursive_predecessors
+      end
+
+      # @param [Set<Vertex>] vertices the set to add the predecessors to
+      # @return [Set<Vertex>] the vertices of {#graph} where `self` is a
+      #   {#descendent?}
+      def _recursive_predecessors(vertices = new_vertex_set)
+        incoming_edges.each do |edge|
+          vertex = edge.origin
+          next unless vertices.add?(vertex)
+          vertex._recursive_predecessors(vertices)
+        end
+
         vertices
       end
+      protected :_recursive_predecessors
 
       # @return [Array<Vertex>] the vertices of {#graph} that have an edge with
       #   `self` as their {Edge#origin}
@@ -65,14 +76,25 @@ module Bundler::Molinillo
         outgoing_edges.map(&:destination)
       end
 
-      # @return [Array<Vertex>] the vertices of {#graph} where `self` is an
+      # @return [Set<Vertex>] the vertices of {#graph} where `self` is an
       #   {#ancestor?}
       def recursive_successors
-        vertices = successors
-        vertices += Compatibility.flat_map(vertices, &:recursive_successors)
-        vertices.uniq!
+        _recursive_successors
+      end
+
+      # @param [Set<Vertex>] vertices the set to add the successors to
+      # @return [Set<Vertex>] the vertices of {#graph} where `self` is an
+      #   {#ancestor?}
+      def _recursive_successors(vertices = new_vertex_set)
+        outgoing_edges.each do |edge|
+          vertex = edge.destination
+          next unless vertices.add?(vertex)
+          vertex._recursive_successors(vertices)
+        end
+
         vertices
       end
+      protected :_recursive_successors
 
       # @return [String] a string suitable for debugging
       def inspect
@@ -106,7 +128,7 @@ module Bundler::Molinillo
 
       # Is there a path from `self` to `other` following edges in the
       # dependency graph?
-      # @return true iff there is a path following edges within this {#graph}
+      # @return whether there is a path following edges within this {#graph}
       def path_to?(other)
         _path_to?(other)
       end
@@ -116,7 +138,7 @@ module Bundler::Molinillo
       # @param [Vertex] other the vertex to check if there's a path to
       # @param [Set<Vertex>] visited the vertices of {#graph} that have been visited
       # @return [Boolean] whether there is a path to `other` from `self`
-      def _path_to?(other, visited = Set.new)
+      def _path_to?(other, visited = new_vertex_set)
         return false unless visited.add?(self)
         return true if equal?(other)
         successors.any? { |v| v._path_to?(other, visited) }
@@ -125,12 +147,18 @@ module Bundler::Molinillo
 
       # Is there a path from `other` to `self` following edges in the
       # dependency graph?
-      # @return true iff there is a path following edges within this {#graph}
+      # @return whether there is a path following edges within this {#graph}
       def ancestor?(other)
         other.path_to?(self)
       end
 
       alias is_reachable_from? ancestor?
+
+      def new_vertex_set
+        require 'set'
+        Set.new
+      end
+      private :new_vertex_set
     end
   end
 end

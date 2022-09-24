@@ -1,7 +1,7 @@
 # frozen_string_literal: true
-require 'rubygems/command'
-require 'rubygems/version_option'
-require 'rubygems/uninstaller'
+require_relative '../command'
+require_relative '../version_option'
+require_relative '../uninstaller'
 require 'fileutils'
 
 ##
@@ -10,7 +10,6 @@ require 'fileutils'
 # See `gem help uninstall`
 
 class Gem::Commands::UninstallCommand < Gem::Command
-
   include Gem::VersionOption
 
   def initialize
@@ -82,7 +81,7 @@ class Gem::Commands::UninstallCommand < Gem::Command
                'Uninstall gem from the vendor directory.',
                'Only for use by gem repackagers.') do |value, options|
       unless Gem.vendor_dir
-        raise OptionParser::InvalidOption.new 'your platform is not supported'
+        raise Gem::OptionParser::InvalidOption.new 'your platform is not supported'
       end
 
       alert_warning 'Use your OS package manager to uninstall vendor gems'
@@ -136,22 +135,25 @@ that is a dependency of an existing gem.  You can use the
   end
 
   def uninstall_all
-    specs = Gem::Specification.reject { |spec| spec.default_gem? }
+    specs = Gem::Specification.reject {|spec| spec.default_gem? }
 
     specs.each do |spec|
       options[:version] = spec.version
       uninstall_gem spec.name
     end
 
-    alert "Uninstalled all gems in #{options[:install_dir]}"
+    alert "Uninstalled all gems in #{options[:install_dir] || Gem.dir}"
   end
 
   def uninstall_specific
     deplist = Gem::DependencyList.new
+    original_gem_version = {}
 
     get_all_gem_names_and_versions.each do |name, version|
-      requirement = Array(version || options[:version])
-      gem_specs = Gem::Specification.find_all_by_name(name, *requirement)
+      original_gem_version[name] = version || options[:version]
+
+      gem_specs = Gem::Specification.find_all_by_name(name, original_gem_version[name])
+
       say("Gem '#{name}' is not installed") if gem_specs.empty?
       gem_specs.each do |spec|
         deplist.add spec
@@ -160,16 +162,23 @@ that is a dependency of an existing gem.  You can use the
 
     deps = deplist.strongly_connected_components.flatten.reverse
 
+    gems_to_uninstall = {}
+
     deps.each do |dep|
-      options[:version] = dep.version
-      uninstall_gem(dep.name)
+      unless gems_to_uninstall[dep.name]
+        gems_to_uninstall[dep.name] = true
+
+        unless original_gem_version[dep.name] == Gem::Requirement.default
+          options[:version] = dep.version
+        end
+
+        uninstall_gem(dep.name)
+      end
     end
   end
 
   def uninstall_gem(gem_name)
     uninstall(gem_name)
-  rescue Gem::InstallError
-    nil
   rescue Gem::GemNotInHomeException => e
     spec = e.spec
     alert("In order to remove #{spec.name}, please execute:\n" +

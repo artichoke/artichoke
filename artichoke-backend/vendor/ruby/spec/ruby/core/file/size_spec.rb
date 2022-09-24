@@ -59,8 +59,8 @@ describe "File#size" do
     @file.respond_to?(:size).should be_true
   end
 
-  it "returns the file's size as a Fixnum" do
-    @file.size.should be_an_instance_of(Fixnum)
+  it "returns the file's size as an Integer" do
+    @file.size.should be_an_instance_of(Integer)
   end
 
   it "returns the file's size in bytes" do
@@ -81,7 +81,7 @@ describe "File#size" do
 
   it "raises an IOError on a closed file" do
     @file.close
-    lambda { @file.size }.should raise_error(IOError)
+    -> { @file.size }.should raise_error(IOError)
   end
 
   platform_is_not :windows do

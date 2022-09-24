@@ -10,24 +10,24 @@ describe "Enumerable#each_slice" do
 
   it "passes element groups to the block" do
     acc = []
-    @enum.each_slice(3){|g| acc << g}.should be_nil
+    @enum.each_slice(3){|g| acc << g}
     acc.should == @sliced
   end
 
   it "raises an ArgumentError if there is not a single parameter > 0" do
-    lambda{ @enum.each_slice(0){}    }.should raise_error(ArgumentError)
-    lambda{ @enum.each_slice(-2){}   }.should raise_error(ArgumentError)
-    lambda{ @enum.each_slice{}       }.should raise_error(ArgumentError)
-    lambda{ @enum.each_slice(2,2){}  }.should raise_error(ArgumentError)
-    lambda{ @enum.each_slice(0)      }.should raise_error(ArgumentError)
-    lambda{ @enum.each_slice(-2)     }.should raise_error(ArgumentError)
-    lambda{ @enum.each_slice         }.should raise_error(ArgumentError)
-    lambda{ @enum.each_slice(2,2)    }.should raise_error(ArgumentError)
+    ->{ @enum.each_slice(0){}    }.should raise_error(ArgumentError)
+    ->{ @enum.each_slice(-2){}   }.should raise_error(ArgumentError)
+    ->{ @enum.each_slice{}       }.should raise_error(ArgumentError)
+    ->{ @enum.each_slice(2,2){}  }.should raise_error(ArgumentError)
+    ->{ @enum.each_slice(0)      }.should raise_error(ArgumentError)
+    ->{ @enum.each_slice(-2)     }.should raise_error(ArgumentError)
+    ->{ @enum.each_slice         }.should raise_error(ArgumentError)
+    ->{ @enum.each_slice(2,2)    }.should raise_error(ArgumentError)
   end
 
   it "tries to convert n to an Integer using #to_int" do
     acc = []
-    @enum.each_slice(3.3){|g| acc << g}.should == nil
+    @enum.each_slice(3.3){|g| acc << g}
     acc.should == @sliced
 
     obj = mock('to_int')

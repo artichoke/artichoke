@@ -1,11 +1,10 @@
 # frozen_string_literal: true
-require 'rubygems/command'
-require 'rubygems/local_remote_options'
-require 'rubygems/gemcutter_utilities'
-require 'rubygems/text'
+require_relative '../command'
+require_relative '../local_remote_options'
+require_relative '../gemcutter_utilities'
+require_relative '../text'
 
 class Gem::Commands::OwnerCommand < Gem::Command
-
   include Gem::Text
   include Gem::LocalRemoteOptions
   include Gem::GemcutterUtilities
@@ -54,7 +53,7 @@ permission to.
   def execute
     @host = options[:host]
 
-    sign_in
+    sign_in(scope: get_owner_scope)
     name = get_one_gem_name
 
     add_owners    name, options[:add]
@@ -63,6 +62,8 @@ permission to.
   end
 
   def show_owners(name)
+    Gem.load_yaml
+
     response = rubygems_api_request :get, "api/v1/gems/#{name}/owners.yaml" do |request|
       request.add_field "Authorization", api_key
     end
@@ -89,11 +90,6 @@ permission to.
     owners.each do |owner|
       begin
         response = send_owner_request(method, name, owner)
-
-        if need_otp? response
-          response = send_owner_request(method, name, owner, true)
-        end
-
         action = method == :delete ? "Removing" : "Adding"
 
         with_response response, "#{action} #{owner}"
@@ -105,12 +101,18 @@ permission to.
 
   private
 
-  def send_owner_request(method, name, owner, use_otp = false)
-    rubygems_api_request method, "api/v1/gems/#{name}/owners" do |request|
+  def send_owner_request(method, name, owner)
+    rubygems_api_request method, "api/v1/gems/#{name}/owners", scope: get_owner_scope(method: method) do |request|
       request.set_form_data 'email' => owner
       request.add_field "Authorization", api_key
-      request.add_field "OTP", options[:otp] if use_otp
     end
   end
 
+  def get_owner_scope(method: nil)
+    if method == :post || options.any? && options[:add].any?
+      :add_owner
+    elsif method == :delete || options.any? && options[:remove].any?
+      :remove_owner
+    end
+  end
 end

@@ -1,17 +1,16 @@
-require "uri"
-require "bundler/vendor/thor/lib/thor/core_ext/io_binary_read"
-require "bundler/vendor/thor/lib/thor/actions/create_file"
-require "bundler/vendor/thor/lib/thor/actions/create_link"
-require "bundler/vendor/thor/lib/thor/actions/directory"
-require "bundler/vendor/thor/lib/thor/actions/empty_directory"
-require "bundler/vendor/thor/lib/thor/actions/file_manipulation"
-require "bundler/vendor/thor/lib/thor/actions/inject_into_file"
+require_relative "actions/create_file"
+require_relative "actions/create_link"
+require_relative "actions/directory"
+require_relative "actions/empty_directory"
+require_relative "actions/file_manipulation"
+require_relative "actions/inject_into_file"
 
 class Bundler::Thor
   module Actions
     attr_accessor :behavior
 
     def self.included(base) #:nodoc:
+      super(base)
       base.extend ClassMethods
     end
 
@@ -113,8 +112,10 @@ class Bundler::Thor
     # the script started).
     #
     def relative_to_original_destination_root(path, remove_dot = true)
-      path = path.dup
-      if path.gsub!(@destination_stack[0], ".")
+      root = @destination_stack[0]
+      if path.start_with?(root) && [File::SEPARATOR, File::ALT_SEPARATOR, nil, ''].include?(path[root.size..root.size])
+        path = path.dup
+        path[0...root.size] = '.'
         remove_dot ? (path[2..-1] || "") : path
       else
         path
@@ -160,6 +161,8 @@ class Bundler::Thor
     # to the block you provide. The path is set back to the previous path when
     # the method exits.
     #
+    # Returns the value yielded by the block.
+    #
     # ==== Parameters
     # dir<String>:: the directory to move to.
     # config<Hash>:: give :verbose => true to log and use padding.
@@ -178,16 +181,18 @@ class Bundler::Thor
         FileUtils.mkdir_p(destination_root)
       end
 
+      result = nil
       if pretend
         # In pretend mode, just yield down to the block
-        block.arity == 1 ? yield(destination_root) : yield
+        result = block.arity == 1 ? yield(destination_root) : yield
       else
         require "fileutils"
-        FileUtils.cd(destination_root) { block.arity == 1 ? yield(destination_root) : yield }
+        FileUtils.cd(destination_root) { result = block.arity == 1 ? yield(destination_root) : yield }
       end
 
       @destination_stack.pop
       shell.padding -= 1 if verbose
+      result
     end
 
     # Goes to the root and execute the given block.
@@ -217,7 +222,8 @@ class Bundler::Thor
       shell.padding += 1 if verbose
 
       contents = if is_uri
-        open(path, "Accept" => "application/x-thor-template", &:read)
+        require "open-uri"
+        URI.open(path, "Accept" => "application/x-thor-template", &:read)
       else
         open(path, &:read)
       end
@@ -252,9 +258,22 @@ class Bundler::Thor
 
       say_status :run, desc, config.fetch(:verbose, true)
 
-      unless options[:pretend]
-        config[:capture] ? `#{command}` : system(command.to_s)
+      return if options[:pretend]
+
+      env_splat = [config[:env]] if config[:env]
+
+      if config[:capture]
+        require "open3"
+        result, status = Open3.capture2e(*env_splat, command.to_s)
+        success = status.success?
+      else
+        result = system(*env_splat, command.to_s)
+        success = result
       end
+
+      abort if !success && config.fetch(:abort_on_failure, self.class.exit_on_failure?)
+
+      result
     end
 
     # Executes a ruby script (taking into account WIN32 platform quirks).

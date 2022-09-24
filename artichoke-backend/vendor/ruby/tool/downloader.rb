@@ -51,7 +51,12 @@ class Downloader
   class GNU < self
     def self.download(name, *rest)
       if https?
-        super("https://raw.githubusercontent.com/gcc-mirror/gcc/master/#{name}", name, *rest)
+        begin
+          super("https://cdn.jsdelivr.net/gh/gcc-mirror/gcc@master/#{name}", name, *rest)
+        rescue => e
+          STDERR.puts "Download failed (#{e.message}), try another URL"
+          super("https://raw.githubusercontent.com/gcc-mirror/gcc/master/#{name}", name, *rest)
+        end
       else
         super("https://repo.or.cz/official-gcc.git/blob_plain/HEAD:/#{name}", name, *rest)
       end
@@ -71,7 +76,7 @@ class Downloader
 
   class Unicode < self
     INDEX = {}  # cache index file information across files in the same directory
-    UNICODE_PUBLIC = "http://www.unicode.org/Public/"
+    UNICODE_PUBLIC = "https://www.unicode.org/Public/"
 
     def self.download(name, dir = nil, since = true, options = {})
       options = options.dup
@@ -81,18 +86,20 @@ class Downloader
         if INDEX.size == 0
           index_options = options.dup
           index_options[:cache_save] = false # TODO: make sure caching really doesn't work for index file
+          index_data = File.read(under(dir, "index.html")) rescue nil
           index_file = super(UNICODE_PUBLIC+name_dir_part, "#{name_dir_part}index.html", dir, true, index_options)
-          INDEX[:index] = IO.read index_file
+          INDEX[:index] = File.read(index_file)
+          since = true unless INDEX[:index] == index_data
         end
         file_base = File.basename(name, '.txt')
         return if file_base == '.' # Use pre-generated headers and tables
         beta_name = INDEX[:index][/#{Regexp.quote(file_base)}(-[0-9.]+d\d+)?\.txt/]
         # make sure we always check for new versions of files,
         # because they can easily change in the beta period
-        super(UNICODE_PUBLIC+name_dir_part+beta_name, name, dir, true, options)
+        super(UNICODE_PUBLIC+name_dir_part+beta_name, name, dir, since, options)
       else
         index_file = Pathname.new(under(dir, name_dir_part+'index.html'))
-        if index_file.exist?
+        if index_file.exist? and name_dir_part !~ /^(12\.1\.0|emoji\/12\.0)/
           raise "Although Unicode is not in beta, file #{index_file} exists. " +
                 "Remove all files in this directory and in .downloaded-cache/ " +
                 "because they may be leftovers from the beta period."
@@ -119,8 +126,23 @@ class Downloader
         options['If-Modified-Since'] = since
       end
     end
-    options['Accept-Encoding'] = '*' # to disable Net::HTTP::GenericRequest#decode_content
+    options['Accept-Encoding'] = 'identity' # to disable Net::HTTP::GenericRequest#decode_content
     options
+  end
+
+  def self.httpdate(date)
+    Time.httpdate(date)
+  rescue ArgumentError => e
+    # Some hosts (e.g., zlib.net) return similar to RFC 850 but 4
+    # digit year, sometimes.
+    /\A\s*
+     (?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day,\x20
+     (\d\d)-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})\x20
+     (\d\d):(\d\d):(\d\d)\x20
+     GMT
+     \s*\z/ix =~ date or raise
+    warn e.message
+    Time.utc($3, $2, $1, $4, $5, $6)
   end
 
   # Downloader.download(url, name, [dir, [since]])
@@ -189,9 +211,15 @@ class Downloader
       $stdout.print "downloading #{name} ... "
       $stdout.flush
     end
+    mtime = nil
+    options = options.merge(http_options(file, since.nil? ? true : since))
     begin
-      data = with_retry(6) do
-        url.read(options.merge(http_options(file, since.nil? ? true : since)))
+      data = with_retry(10) do
+        data = url.read(options)
+        if mtime = data.meta["last-modified"]
+          mtime = Time.httpdate(mtime)
+        end
+        data
       end
     rescue OpenURI::HTTPError => http_error
       if http_error.message =~ /^304 / # 304 Not Modified
@@ -215,16 +243,13 @@ class Downloader
       end
       raise
     end
-    mtime = nil
     dest = (cache_save && cache && !cache.exist? ? cache : file)
     dest.parent.mkpath
     dest.open("wb", 0600) do |f|
       f.write(data)
       f.chmod(mode_for(data))
-      mtime = data.meta["last-modified"]
     end
     if mtime
-      mtime = Time.httpdate(mtime)
       dest.utime(mtime, mtime)
     end
     if $VERBOSE
@@ -306,7 +331,7 @@ class Downloader
     times = 0
     begin
       block.call
-    rescue Errno::ETIMEDOUT, SocketError, OpenURI::HTTPError, Net::ReadTimeout, Net::OpenTimeout => e
+    rescue Errno::ETIMEDOUT, SocketError, OpenURI::HTTPError, Net::ReadTimeout, Net::OpenTimeout, ArgumentError => e
       raise if e.is_a?(OpenURI::HTTPError) && e.message !~ /^50[023] / # retry only 500, 502, 503 for http error
       times += 1
       if times <= max_times

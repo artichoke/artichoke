@@ -291,7 +291,14 @@ x509name_print(VALUE self, unsigned long iflag)
  * * OpenSSL::X509::Name::MULTILINE
  *
  * If _format_ is omitted, the largely broken and traditional OpenSSL format
- * is used.
+ * (<tt>X509_NAME_oneline()</tt> format) is chosen.
+ *
+ * <b>Use of this method is discouraged.</b> None of the formats other than
+ * OpenSSL::X509::Name::RFC2253 is standardized and may show an inconsistent
+ * behavior through \OpenSSL versions.
+ *
+ * It is recommended to use #to_utf8 instead, which is equivalent to calling
+ * <tt>name.to_s(OpenSSL::X509::Name::RFC2253).force_encoding("UTF-8")</tt>.
  */
 static VALUE
 ossl_x509name_to_s(int argc, VALUE *argv, VALUE self)
@@ -387,16 +394,20 @@ ossl_x509name_cmp0(VALUE self, VALUE other)
 
 /*
  * call-seq:
- *    name.cmp(other) -> -1 | 0 | 1
- *    name <=> other  -> -1 | 0 | 1
+ *    name.cmp(other) -> -1 | 0 | 1 | nil
+ *    name <=> other  -> -1 | 0 | 1 | nil
  *
  * Compares this Name with _other_ and returns +0+ if they are the same and +-1+
  * or ++1+ if they are greater or less than each other respectively.
+ * Returns +nil+ if they are not comparable (i.e. different types).
  */
 static VALUE
 ossl_x509name_cmp(VALUE self, VALUE other)
 {
     int result;
+
+    if (!rb_obj_is_kind_of(other, cX509Name))
+	return Qnil;
 
     result = ossl_x509name_cmp0(self, other);
     if (result < 0) return INT2FIX(-1);
@@ -494,7 +505,7 @@ ossl_x509name_to_der(VALUE self)
  * You can create a Name by parsing a distinguished name String or by
  * supplying the distinguished name as an Array.
  *
- *   name = OpenSSL::X509::Name.parse 'CN=nobody/DC=example'
+ *   name = OpenSSL::X509::Name.parse_rfc2253 'DC=example,CN=nobody'
  *
  *   name = OpenSSL::X509::Name.new [['CN', 'nobody'], ['DC', 'example']]
  */

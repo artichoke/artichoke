@@ -64,13 +64,10 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
 
   describe "#global_config_file" do
     context "when $HOME is not accessible" do
-      context "when $TMPDIR is not writable" do
-        it "does not raise" do
-          expect(Bundler.rubygems).to receive(:user_home).twice.and_return(nil)
-          expect(FileUtils).to receive(:mkpath).twice.with(File.join(Dir.tmpdir, "bundler", "home")).and_raise(Errno::EROFS, "Read-only file system @ dir_s_mkdir - /tmp/bundler")
+      it "does not raise" do
+        expect(Bundler.rubygems).to receive(:user_home).twice.and_return(nil)
 
-          expect(subject.send(:global_config_file)).to be_nil
-        end
+        expect(subject.send(:global_config_file)).to be_nil
       end
     end
   end
@@ -120,7 +117,7 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
 
     context "when it's not possible to write to the file" do
       it "raises an PermissionError with explanation" do
-        expect(bundler_fileutils).to receive(:mkdir_p).with(settings.send(:local_config_file).dirname).
+        expect(::Bundler::FileUtils).to receive(:mkdir_p).with(settings.send(:local_config_file).dirname).
           and_raise(Errno::EACCES)
         expect { settings.set_local :frozen, "1" }.
           to raise_error(Bundler::PermissionError, /config/)
@@ -130,13 +127,17 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
 
   describe "#temporary" do
     it "reset after used" do
-      Bundler.settings.set_local :no_install, true
+      allow(Bundler::SharedHelpers).to receive(:find_gemfile).and_return(bundled_app_gemfile)
+
+      Bundler.settings.set_command_option :no_install, true
 
       Bundler.settings.temporary(:no_install => false) do
         expect(Bundler.settings[:no_install]).to eq false
       end
 
       expect(Bundler.settings[:no_install]).to eq true
+
+      Bundler.settings.set_command_option :no_install, nil
     end
 
     it "returns the return value of the block" do
@@ -159,7 +160,7 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
   describe "#set_global" do
     context "when it's not possible to write to the file" do
       it "raises an PermissionError with explanation" do
-        expect(bundler_fileutils).to receive(:mkdir_p).with(settings.send(:global_config_file).dirname).
+        expect(::Bundler::FileUtils).to receive(:mkdir_p).with(settings.send(:global_config_file).dirname).
           and_raise(Errno::EACCES)
         expect { settings.set_global(:frozen, "1") }.
           to raise_error(Bundler::PermissionError, %r{\.bundle/config})
@@ -178,7 +179,7 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
   end
 
   describe "#mirror_for" do
-    let(:uri) { URI("https://rubygems.org/") }
+    let(:uri) { Bundler::URI("https://rubygems.org/") }
 
     context "with no configured mirror" do
       it "returns the original URI" do
@@ -191,7 +192,7 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
     end
 
     context "with a configured mirror" do
-      let(:mirror_uri) { URI("https://rubygems-mirror.org/") }
+      let(:mirror_uri) { Bundler::URI("https://rubygems-mirror.org/") }
 
       before { settings.set_local "mirror.https://rubygems.org/", mirror_uri.to_s }
 
@@ -212,7 +213,7 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
       end
 
       context "with a file URI" do
-        let(:mirror_uri) { URI("file:/foo/BAR/baz/qUx/") }
+        let(:mirror_uri) { Bundler::URI("file:/foo/BAR/baz/qUx/") }
 
         it "returns the mirror URI" do
           expect(settings.mirror_for(uri)).to eq(mirror_uri)
@@ -230,7 +231,7 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
   end
 
   describe "#credentials_for" do
-    let(:uri) { URI("https://gemserver.example.org/") }
+    let(:uri) { Bundler::URI("https://gemserver.example.org/") }
     let(:credentials) { "username:password" }
 
     context "with no configured credentials" do
@@ -290,7 +291,7 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
     it "reads older keys without trailing slashes" do
       settings.set_local "mirror.https://rubygems.org", "http://rubygems-mirror.org"
       expect(settings.mirror_for("https://rubygems.org/")).to eq(
-        URI("http://rubygems-mirror.org/")
+        Bundler::URI("http://rubygems-mirror.org/")
       )
     end
 
@@ -308,14 +309,24 @@ that would suck --ehhh=oh geez it looks like i might have broken bundler somehow
   describe "BUNDLE_ keys format" do
     let(:settings) { described_class.new(bundled_app(".bundle")) }
 
-    it "converts older keys without double dashes" do
+    it "converts older keys without double underscore" do
       config("BUNDLE_MY__PERSONAL.RACK" => "~/Work/git/rack")
       expect(settings["my.personal.rack"]).to eq("~/Work/git/rack")
     end
 
-    it "converts older keys without trailing slashes and double dashes" do
+    it "converts older keys without trailing slashes and double underscore" do
       config("BUNDLE_MIRROR__HTTPS://RUBYGEMS.ORG" => "http://rubygems-mirror.org")
       expect(settings["mirror.https://rubygems.org/"]).to eq("http://rubygems-mirror.org")
+    end
+
+    it "converts older keys with dashes" do
+      config("BUNDLE_MY-PERSONAL-SERVER__ORG" => "my-personal-server.org")
+      expect(Bundler.ui).to receive(:warn).with(
+        "Your #{bundled_app(".bundle/config")} config includes `BUNDLE_MY-PERSONAL-SERVER__ORG`, which contains the dash character (`-`).\n" \
+        "This is deprecated, because configuration through `ENV` should be possible, but `ENV` keys cannot include dashes.\n" \
+        "Please edit #{bundled_app(".bundle/config")} and replace any dashes in configuration keys with a triple underscore (`___`)."
+      )
+      expect(settings["my-personal-server.org"]).to eq("my-personal-server.org")
     end
 
     it "reads newer keys format properly" do

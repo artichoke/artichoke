@@ -5,9 +5,8 @@
 # See LICENSE.txt for permissions.
 #++
 
-require 'rubygems/util'
-require 'rubygems/deprecate'
-require 'rubygems/text'
+require_relative 'deprecate'
+require_relative 'text'
 
 ##
 # Module that defines the default UserInteraction.  Any class including this
@@ -173,7 +172,6 @@ end
 # Gem::StreamUI implements a simple stream based user interface.
 
 class Gem::StreamUI
-
   extend Gem::Deprecate
 
   ##
@@ -230,7 +228,7 @@ class Gem::StreamUI
     @outs.puts question
 
     list.each_with_index do |item, index|
-      @outs.puts " #{index+1}. #{item}"
+      @outs.puts " #{index + 1}. #{item}"
     end
 
     @outs.print "> "
@@ -260,23 +258,23 @@ class Gem::StreamUI
     end
 
     default_answer = case default
-                     when nil
-                       'yn'
-                     when true
-                       'Yn'
-                     else
-                       'yN'
-                     end
+    when nil
+      'yn'
+    when true
+      'Yn'
+    else
+      'yN'
+    end
 
     result = nil
 
     while result.nil? do
       result = case ask "#{question} [#{default_answer}]"
-               when /^y/i then true
-               when /^n/i then false
-               when /^$/  then default
-               else            nil
-               end
+      when /^y/i then true
+      when /^n/i then false
+      when /^$/  then default
+      else            nil
+      end
     end
 
     return result
@@ -323,7 +321,7 @@ class Gem::StreamUI
 
   def _gets_noecho
     require_io_console
-    @ins.noecho {@ins.gets}
+    @ins.noecho { @ins.gets }
   end
 
   ##
@@ -359,14 +357,6 @@ class Gem::StreamUI
   end
 
   ##
-  # Display a debug message on the same location as error messages.
-
-  def debug(statement)
-    @errs.puts statement
-  end
-  deprecate :debug, :none, 2018, 12
-
-  ##
   # Terminate the application with exit code +status+, running any exit
   # handlers that might have been defined.
 
@@ -396,7 +386,6 @@ class Gem::StreamUI
   # An absolutely silent progress reporter.
 
   class SilentProgressReporter
-
     ##
     # The count of items is never updated for the silent progress reporter.
 
@@ -427,7 +416,6 @@ class Gem::StreamUI
   # A basic dotted progress reporter.
 
   class SimpleProgressReporter
-
     include Gem::DefaultUserInteraction
 
     ##
@@ -465,14 +453,12 @@ class Gem::StreamUI
     def done
       @out.puts "\n#{@terminal_message}"
     end
-
   end
 
   ##
   # A progress reporter that prints out messages about the current progress.
 
   class VerboseProgressReporter
-
     include Gem::DefaultUserInteraction
 
     ##
@@ -526,7 +512,6 @@ class Gem::StreamUI
   # An absolutely silent download reporter.
 
   class SilentDownloadReporter
-
     ##
     # The silent download reporter ignores all arguments
 
@@ -558,8 +543,7 @@ class Gem::StreamUI
   # A progress reporter that behaves nicely with threaded downloading.
 
   class ThreadedDownloadReporter
-
-    MUTEX = Mutex.new
+    MUTEX = Thread::Mutex.new
 
     ##
     # The current file name being displayed
@@ -601,6 +585,7 @@ class Gem::StreamUI
     end
 
     private
+
     def locked_puts(message)
       MUTEX.synchronize do
         @out.puts message
@@ -614,7 +599,6 @@ end
 # STDOUT, and STDERR.
 
 class Gem::ConsoleUI < Gem::StreamUI
-
   ##
   # The Console UI has no arguments as it defaults to reading input from
   # stdin, output to stdout and warnings or errors to stderr.
@@ -628,7 +612,6 @@ end
 # SilentUI is a UI choice that is absolutely silent.
 
 class Gem::SilentUI < Gem::StreamUI
-
   ##
   # The SilentUI has no arguments as it does not use any stream.
 

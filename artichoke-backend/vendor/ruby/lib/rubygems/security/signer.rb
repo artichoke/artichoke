@@ -2,10 +2,9 @@
 ##
 # Basic OpenSSL-based package signing class.
 
-require "rubygems/user_interaction"
+require_relative "../user_interaction"
 
 class Gem::Security::Signer
-
   include Gem::UserInteraction
 
   ##
@@ -35,11 +34,11 @@ class Gem::Security::Signer
   attr_reader :options
 
   DEFAULT_OPTIONS = {
-    expiration_length_days: 365
+    expiration_length_days: 365,
   }.freeze
 
   ##
-  # Attemps to re-sign an expired cert with a given private key
+  # Attempts to re-sign an expired cert with a given private key
   def self.re_sign_cert(expired_cert, expired_cert_path, private_key)
     return unless expired_cert.not_after < Time.now
 
@@ -72,7 +71,7 @@ class Gem::Security::Signer
     @options = DEFAULT_OPTIONS.merge(options)
 
     unless @key
-      default_key  = File.join Gem.default_key_path
+      default_key = File.join Gem.default_key_path
       @key = default_key if File.exist? default_key
     end
 
@@ -81,12 +80,11 @@ class Gem::Security::Signer
       @cert_chain = [default_cert] if File.exist? default_cert
     end
 
-    @digest_algorithm = Gem::Security::DIGEST_ALGORITHM
     @digest_name      = Gem::Security::DIGEST_NAME
+    @digest_algorithm = Gem::Security.create_digest(@digest_name)
 
-    if @key && !@key.is_a?(OpenSSL::PKey::RSA)
-      @passphrase ||= ask_for_password("Enter PEM pass phrase:")
-      @key = OpenSSL::PKey::RSA.new(File.read(@key), @passphrase)
+    if @key && !@key.is_a?(OpenSSL::PKey::PKey)
+      @key = OpenSSL::PKey.read(File.read(@key), @passphrase)
     end
 
     if @cert_chain
@@ -107,10 +105,10 @@ class Gem::Security::Signer
   # this value is preferred, otherwise the subject is used.
 
   def extract_name(cert) # :nodoc:
-    subject_alt_name = cert.extensions.find { |e| 'subjectAltName' == e.oid }
+    subject_alt_name = cert.extensions.find {|e| 'subjectAltName' == e.oid }
 
     if subject_alt_name
-      /\Aemail:/ =~ subject_alt_name.value
+      /\Aemail:/ =~ subject_alt_name.value # rubocop:disable Performance/StartWith
 
       $' || subject_alt_name.value
     else
@@ -144,6 +142,8 @@ class Gem::Security::Signer
     raise Gem::Security::Exception, 'no certs provided' if @cert_chain.empty?
 
     if @cert_chain.length == 1 and @cert_chain.last.not_after < Time.now
+      alert("Your certificate has expired, trying to re-sign it...")
+
       re_sign_key(
         expiration_length: (Gem::Security::ONE_DAY * options[:expiration_length_days])
       )
@@ -177,8 +177,7 @@ class Gem::Security::Signer
     disk_cert = File.read(disk_cert_path) rescue nil
 
     disk_key_path = File.join(Gem.default_key_path)
-    disk_key =
-      OpenSSL::PKey::RSA.new(File.read(disk_key_path), @passphrase) rescue nil
+    disk_key = OpenSSL::PKey.read(File.read(disk_key_path), @passphrase) rescue nil
 
     return unless disk_key
 
@@ -201,5 +200,4 @@ class Gem::Security::Signer
       end
     end
   end
-
 end

@@ -2,11 +2,11 @@ require 'bigdecimal'
 
 describe :bigdecimal_to_int , shared: true do
   it "raises FloatDomainError if BigDecimal is infinity or NaN" do
-    lambda { BigDecimal("Infinity").send(@method) }.should raise_error(FloatDomainError)
-    lambda { BigDecimal("NaN").send(@method) }.should raise_error(FloatDomainError)
+    -> { BigDecimal("Infinity").send(@method) }.should raise_error(FloatDomainError)
+    -> { BigDecimal("NaN").send(@method) }.should raise_error(FloatDomainError)
   end
 
-  it "returns Integer or Bignum otherwise" do
+  it "returns Integer otherwise" do
     BigDecimal("3E-20001").send(@method).should == 0
     BigDecimal("2E4000").send(@method).should == 2 * 10 ** 4000
     BigDecimal("2").send(@method).should == 2

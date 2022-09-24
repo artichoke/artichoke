@@ -1,7 +1,7 @@
 require_relative '../../spec_helper'
 
-platform_is_not :windows do
-  describe "Process.setrlimit" do
+describe "Process.setrlimit" do
+  platform_is_not :windows do
     context "when passed an Object" do
       before do
         @resource = Process::RLIMIT_CORE
@@ -16,7 +16,7 @@ platform_is_not :windows do
         obj = mock("process getrlimit integer")
         obj.should_receive(:to_int).and_return(nil)
 
-        lambda { Process.setrlimit(obj, @limit, @max) }.should raise_error(TypeError)
+        -> { Process.setrlimit(obj, @limit, @max) }.should raise_error(TypeError)
       end
 
       it "calls #to_int to convert the soft limit to an Integer" do
@@ -27,7 +27,7 @@ platform_is_not :windows do
         obj = mock("process getrlimit integer")
         obj.should_receive(:to_int).and_return(nil)
 
-        lambda { Process.setrlimit(@resource, obj, @max) }.should raise_error(TypeError)
+        -> { Process.setrlimit(@resource, obj, @max) }.should raise_error(TypeError)
       end
 
       it "calls #to_int to convert the hard limit to an Integer" do
@@ -38,7 +38,7 @@ platform_is_not :windows do
         obj = mock("process getrlimit integer")
         obj.should_receive(:to_int).and_return(nil)
 
-        lambda { Process.setrlimit(@resource, @limit, obj) }.should raise_error(TypeError)
+        -> { Process.setrlimit(@resource, @limit, obj) }.should raise_error(TypeError)
       end
     end
 
@@ -120,7 +120,7 @@ platform_is_not :windows do
       end
 
       it "raises ArgumentError when passed an unknown resource" do
-        lambda { Process.setrlimit(:FOO, 1, 1) }.should raise_error(ArgumentError)
+        -> { Process.setrlimit(:FOO, 1, 1) }.should raise_error(ArgumentError)
       end
     end
 
@@ -202,7 +202,7 @@ platform_is_not :windows do
       end
 
       it "raises ArgumentError when passed an unknown resource" do
-        lambda { Process.setrlimit("FOO", 1, 1) }.should raise_error(ArgumentError)
+        -> { Process.setrlimit("FOO", 1, 1) }.should raise_error(ArgumentError)
       end
     end
 
@@ -227,6 +227,15 @@ platform_is_not :windows do
 
         Process.setrlimit(obj, @limit, @max).should be_nil
       end
+    end
+  end
+
+  platform_is :windows do
+    it "is not implemented" do
+      Process.respond_to?(:setrlimit).should be_false
+      -> do
+        Process.setrlimit(nil, nil)
+      end.should raise_error NotImplementedError
     end
   end
 end

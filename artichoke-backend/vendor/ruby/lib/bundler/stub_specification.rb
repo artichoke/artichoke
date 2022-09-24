@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "bundler/remote_specification"
-
 module Bundler
   class StubSpecification < RemoteSpecification
     def self.from_stub(stub)
@@ -13,17 +11,13 @@ module Bundler
 
     attr_accessor :stub, :ignored
 
-    # Pre 2.2.0 did not include extension_dir
-    # https://github.com/rubygems/rubygems/commit/9485ca2d101b82a946d6f327f4bdcdea6d4946ea
-    if Bundler.rubygems.provides?(">= 2.2.0")
-      def source=(source)
-        super
-        # Stub has no concept of source, which means that extension_dir may be wrong
-        # This is the case for git-based gems. So, instead manually assign the extension dir
-        return unless source.respond_to?(:extension_dir_name)
-        path = File.join(stub.extensions_dir, source.extension_dir_name)
-        stub.extension_dir = File.expand_path(path)
-      end
+    def source=(source)
+      super
+      # Stub has no concept of source, which means that extension_dir may be wrong
+      # This is the case for git-based gems. So, instead manually assign the extension dir
+      return unless source.respond_to?(:extension_dir_name)
+      path = File.join(stub.extensions_dir, source.extension_dir_name)
+      stub.extension_dir = File.expand_path(path)
     end
 
     def to_yaml
@@ -32,11 +26,21 @@ module Bundler
 
     # @!group Stub Delegates
 
-    if Bundler.rubygems.provides?(">= 2.3")
-      # This is defined directly to avoid having to load every installed spec
-      def missing_extensions?
-        stub.missing_extensions?
-      end
+    def manually_installed?
+      # This is for manually installed gems which are gems that were fixed in place after a
+      # failed installation. Once the issue was resolved, the user then manually created
+      # the gem specification using the instructions provided by `gem help install`
+      installed_by_version == Gem::Version.new(0)
+    end
+
+    # This is defined directly to avoid having to loading the full spec
+    def missing_extensions?
+      return false if default_gem?
+      return false if extensions.empty?
+      return false if File.exist? gem_build_complete_path
+      return false if manually_installed?
+
+      true
     end
 
     def activated
@@ -47,8 +51,16 @@ module Bundler
       stub.instance_variable_set(:@activated, activated)
     end
 
-    def default_gem
-      stub.default_gem
+    def extensions
+      stub.extensions
+    end
+
+    def gem_build_complete_path
+      File.join(extension_dir, "gem.build_complete")
+    end
+
+    def default_gem?
+      stub.default_gem?
     end
 
     def full_gem_path
@@ -57,33 +69,27 @@ module Bundler
       stub.full_gem_path || method_missing(:full_gem_path)
     end
 
-    if Bundler.rubygems.provides?(">= 2.2.0")
-      def full_require_paths
-        stub.full_require_paths
-      end
+    def full_require_paths
+      stub.full_require_paths
+    end
 
-      # This is what we do in bundler/rubygems_ext
-      # full_require_paths is always implemented in >= 2.2.0
-      def load_paths
-        full_require_paths
-      end
+    def load_paths
+      full_require_paths
     end
 
     def loaded_from
       stub.loaded_from
     end
 
-    if Bundler.rubygems.stubs_provide_full_functionality?
-      def matches_for_glob(glob)
-        stub.matches_for_glob(glob)
-      end
+    def matches_for_glob(glob)
+      stub.matches_for_glob(glob)
     end
 
     def raw_require_paths
       stub.raw_require_paths
     end
 
-  private
+    private
 
     def _remote_specification
       @_remote_specification ||= begin

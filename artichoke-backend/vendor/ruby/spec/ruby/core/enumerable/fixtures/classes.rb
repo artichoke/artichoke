@@ -118,7 +118,7 @@ module EnumerableSpecs
     end
   end
 
-  class ArrayConvertable
+  class ArrayConvertible
     attr_accessor :called
     def initialize(*values)
       @values = values
@@ -135,7 +135,7 @@ module EnumerableSpecs
     end
   end
 
-  class EnumConvertable
+  class EnumConvertible
     attr_accessor :called
     attr_accessor :sym
     def initialize(delegate)
@@ -251,7 +251,7 @@ module EnumerableSpecs
     end
   end
 
-  class ComparableWithFixnum
+  class ComparableWithInteger
     include Comparable
     def initialize(num)
       @num = num

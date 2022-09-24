@@ -189,6 +189,47 @@ class CGI
     end
     private :create_new_id
 
+
+    # Create a new file to store the session data.
+    #
+    # This file will be created if it does not exist, or opened if it
+    # does.
+    #
+    # This path is generated under _tmpdir_ from _prefix_, the
+    # digested session id, and _suffix_.
+    #
+    # +option+ is a hash of options for the initializer.  The
+    # following options are recognised:
+    #
+    # tmpdir:: the directory to use for storing the FileStore
+    #          file.  Defaults to Dir::tmpdir (generally "/tmp"
+    #          on Unix systems).
+    # prefix:: the prefix to add to the session id when generating
+    #          the filename for this session's FileStore file.
+    #          Defaults to "cgi_sid_".
+    # suffix:: the prefix to add to the session id when generating
+    #          the filename for this session's FileStore file.
+    #          Defaults to the empty string.
+    def new_store_file(option={}) # :nodoc:
+      dir = option['tmpdir'] || Dir::tmpdir
+      prefix = option['prefix']
+      suffix = option['suffix']
+      require 'digest/md5'
+      md5 = Digest::MD5.hexdigest(session_id)[0,16]
+      path = dir+"/"
+      path << prefix if prefix
+      path << md5
+      path << suffix if suffix
+      if File::exist? path
+        hash = nil
+      elsif new_session
+        hash = {}
+      else
+        raise NoSession, "uninitialized session"
+      end
+      return path, hash
+    end
+
     # Create a new CGI::Session object for +request+.
     #
     # +request+ is an instance of the +CGI+ class (see cgi.rb).
@@ -373,21 +414,8 @@ class CGI
       # This session's FileStore file will be created if it does
       # not exist, or opened if it does.
       def initialize(session, option={})
-        dir = option['tmpdir'] || Dir::tmpdir
-        prefix = option['prefix'] || 'cgi_sid_'
-        suffix = option['suffix'] || ''
-        id = session.session_id
-        require 'digest/md5'
-        md5 = Digest::MD5.hexdigest(id)[0,16]
-        @path = dir+"/"+prefix+md5+suffix
-        if File::exist? @path
-          @hash = nil
-        else
-          unless session.new_session
-            raise CGI::Session::NoSession, "uninitialized session"
-          end
-          @hash = {}
-        end
+        option = {'prefix' => 'cgi_sid_'}.update(option)
+        @path, @hash = session.new_store_file(option)
       end
 
       # Restore session state from the session's FileStore file.
@@ -403,7 +431,7 @@ class CGI
             for line in f
               line.chomp!
               k, v = line.split('=',2)
-              @hash[CGI::unescape(k)] = Marshal.restore(CGI::unescape(v))
+              @hash[CGI.unescape(k)] = Marshal.restore(CGI.unescape(v))
             end
           ensure
             f&.close
@@ -421,7 +449,7 @@ class CGI
           lockf.flock File::LOCK_EX
           f = File.open(@path+".new", File::CREAT|File::TRUNC|File::WRONLY, 0600)
           for k,v in @hash
-            f.printf "%s=%s\n", CGI::escape(k), CGI::escape(String(Marshal.dump(v)))
+            f.printf "%s=%s\n", CGI.escape(k), CGI.escape(String(Marshal.dump(v)))
           end
           f.close
           File.rename @path+".new", @path

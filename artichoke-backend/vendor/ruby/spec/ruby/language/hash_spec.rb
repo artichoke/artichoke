@@ -1,5 +1,5 @@
 require_relative '../spec_helper'
-require_relative 'fixtures/hash_strings_ascii8bit'
+require_relative 'fixtures/hash_strings_binary'
 require_relative 'fixtures/hash_strings_utf8'
 require_relative 'fixtures/hash_strings_usascii'
 
@@ -38,7 +38,7 @@ describe "Hash literal" do
     key.reverse!
     h["foo"].should == "bar"
     h.keys.first.should == "foo"
-    h.keys.first.frozen?.should == true
+    h.keys.first.should.frozen?
     key.should == "oof"
   end
 
@@ -48,6 +48,26 @@ describe "Hash literal" do
     }.should complain(/key :foo is duplicated|duplicated key/)
     @h.keys.size.should == 1
     @h.should == {foo: :foo}
+    -> {
+      @h = eval "{%q{a} => :bar, %q{a} => :foo}"
+    }.should complain(/key "a" is duplicated|duplicated key/)
+    @h.keys.size.should == 1
+    @h.should == {%q{a} => :foo}
+    -> {
+      @h = eval "{1000 => :bar, 1000 => :foo}"
+    }.should complain(/key 1000 is duplicated|duplicated key/)
+    @h.keys.size.should == 1
+    @h.should == {1000 => :foo}
+  end
+
+  ruby_version_is "3.1" do
+    it "checks duplicated float keys on initialization" do
+      -> {
+        @h = eval "{1.0 => :bar, 1.0 => :foo}"
+      }.should complain(/key 1.0 is duplicated|duplicated key/)
+      @h.keys.size.should == 1
+      @h.should == {1.0 => :foo}
+    end
   end
 
   it "accepts a hanging comma" do
@@ -63,7 +83,7 @@ describe "Hash literal" do
   end
 
   it "with '==>' in the middle raises SyntaxError" do
-    lambda { eval("{:a ==> 1}") }.should raise_error(SyntaxError)
+    -> { eval("{:a ==> 1}") }.should raise_error(SyntaxError)
   end
 
   it "constructs a new hash with the given elements" do
@@ -128,27 +148,120 @@ describe "Hash literal" do
     {a: 1, **obj, c: 3}.should == {a:1, b: 2, c: 3, d: 4}
   end
 
-  it "raises a TypeError if any splatted elements keys are not symbols" do
-    h = {1 => 2, b: 3}
-    lambda { {a: 1, **h} }.should raise_error(TypeError)
+  ruby_version_is ""..."2.7" do
+    it "raises a TypeError if any splatted elements keys are not symbols" do
+      h = {1 => 2, b: 3}
+      -> { {a: 1, **h} }.should raise_error(TypeError)
+    end
+  end
+
+  ruby_version_is "2.7" do
+    it "allows splatted elements keys that are not symbols" do
+      h = {1 => 2, b: 3}
+      {a: 1, **h}.should == {a: 1, 1 => 2, b: 3}
+    end
   end
 
   it "raises a TypeError if #to_hash does not return a Hash" do
     obj = mock("hash splat")
     obj.should_receive(:to_hash).and_return(obj)
 
-    lambda { {**obj} }.should raise_error(TypeError)
+    -> { {**obj} }.should raise_error(TypeError)
+  end
+
+  it "raises a TypeError if the object does not respond to #to_hash" do
+    obj = 42
+    -> { {**obj} }.should raise_error(TypeError)
+    -> { {a: 1, **obj} }.should raise_error(TypeError)
   end
 
   it "does not change encoding of literal string keys during creation" do
-    ascii8bit_hash = HashStringsASCII8BIT.literal_hash
+    binary_hash = HashStringsBinary.literal_hash
     utf8_hash = HashStringsUTF8.literal_hash
     usascii_hash = HashStringsUSASCII.literal_hash
 
-    ascii8bit_hash.keys.first.encoding.should == Encoding::ASCII_8BIT
-    ascii8bit_hash.keys.first.should == utf8_hash.keys.first
+    binary_hash.keys.first.encoding.should == Encoding::BINARY
+    binary_hash.keys.first.should == utf8_hash.keys.first
     utf8_hash.keys.first.encoding.should == Encoding::UTF_8
     utf8_hash.keys.first.should == usascii_hash.keys.first
     usascii_hash.keys.first.encoding.should == Encoding::US_ASCII
+  end
+end
+
+describe "The ** operator" do
+  it "makes a copy when calling a method taking a keyword rest argument" do
+    def m(**h)
+      h.delete(:one); h
+    end
+
+    h = { one: 1, two: 2 }
+    m(**h).should == { two: 2 }
+    m(**h).should_not.equal?(h)
+    h.should == { one: 1, two: 2 }
+  end
+
+  ruby_version_is ""..."3.0" do
+    it "makes a caller-side copy when calling a method taking a positional Hash" do
+      def m(h)
+        h.delete(:one); h
+      end
+
+      h = { one: 1, two: 2 }
+      m(**h).should == { two: 2 }
+      m(**h).should_not.equal?(h)
+      h.should == { one: 1, two: 2 }
+    end
+  end
+
+  ruby_version_is "3.0" do
+    it "does not copy when calling a method taking a positional Hash" do
+      def m(h)
+        h.delete(:one); h
+      end
+
+      h = { one: 1, two: 2 }
+      m(**h).should == { two: 2 }
+      m(**h).should.equal?(h)
+      h.should == { two: 2 }
+    end
+  end
+
+  ruby_version_is "3.1" do
+    describe "hash with omitted value" do
+      it "accepts short notation 'key' for 'key: value' syntax" do
+        a, b, c = 1, 2, 3
+        h = eval('{a:}')
+        {a: 1}.should == h
+        h = eval('{a:, b:, c:}')
+        {a: 1, b: 2, c: 3}.should == h
+      end
+
+      it "ignores hanging comma on short notation" do
+        a, b, c = 1, 2, 3
+        h = eval('{a:, b:, c:,}')
+        {a: 1, b: 2, c: 3}.should == h
+      end
+
+      it "accepts mixed syntax" do
+        a, e = 1, 5
+        h = eval('{a:, b: 2, "c" => 3, :d => 4, e:}')
+        eval('{a: 1, :b => 2, "c" => 3, "d": 4, e: 5}').should == h
+      end
+
+      it "works with methods and local vars" do
+        a = Class.new
+        a.class_eval(<<-RUBY)
+          def bar
+            "baz"
+          end
+
+          def foo(val)
+            {bar:, val:}
+          end
+        RUBY
+
+        a.new.foo(1).should == {bar: "baz", val: 1}
+      end
+    end
   end
 end

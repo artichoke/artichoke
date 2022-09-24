@@ -54,7 +54,7 @@ describe "CApiModule" do
 
     it "raises a TypeError if the constant is not a module" do
       ::CApiModuleSpecsGlobalConst = 7
-      lambda { @m.rb_define_module("CApiModuleSpecsGlobalConst") }.should raise_error(TypeError)
+      -> { @m.rb_define_module("CApiModuleSpecsGlobalConst") }.should raise_error(TypeError)
       Object.send :remove_const, :CApiModuleSpecsGlobalConst
     end
 
@@ -134,8 +134,12 @@ describe "CApiModule" do
       @m.rb_const_get(CApiModuleSpecs::A, :X).should == 1
     end
 
+    it "returns a constant defined in the module for multiple constants" do
+      [:Q, :R, :S, :T].each { |x| @m.rb_const_get(CApiModuleSpecs::A, x).should == CApiModuleSpecs::A.const_get(x) }
+    end
+
     it "returns a constant defined at toplevel" do
-      @m.rb_const_get(CApiModuleSpecs::A, :Fixnum).should == Fixnum
+      @m.rb_const_get(CApiModuleSpecs::A, :Integer).should == Integer
     end
 
     it "returns a constant defined in a superclass" do
@@ -176,8 +180,8 @@ describe "CApiModule" do
     end
 
     it "calls #const_missing if the constant is not defined in the class or ancestors" do
-      CApiModuleSpecs::M.should_receive(:const_missing).with(:Fixnum)
-      @m.rb_const_get_from(CApiModuleSpecs::M, :Fixnum)
+      CApiModuleSpecs::M.should_receive(:const_missing).with(:Integer)
+      @m.rb_const_get_from(CApiModuleSpecs::M, :Integer)
     end
 
     it "resolves autoload constants" do
@@ -242,10 +246,40 @@ describe "CApiModule" do
       cls.new.test_method.should == :test_method
     end
 
+    it "returns the correct arity when argc of the method in class is 0" do
+      cls = Class.new
+      @m.rb_define_method(cls, "test_method")
+      cls.new.method(:test_method).arity.should == 0
+    end
+
+    it "returns the correct arity when argc of the method in class is -1" do
+      cls = Class.new
+      @m.rb_define_method_c_array(cls, "test_method_c_array")
+      cls.new.method(:test_method_c_array).arity.should == -1
+    end
+
+    it "returns the correct arity when argc of the method in class is -2" do
+      cls = Class.new
+      @m.rb_define_method_ruby_array(cls, "test_method_ruby_array")
+      cls.new.method(:test_method_ruby_array).arity.should == -1
+    end
+
+    it "returns the correct arity when argc of the method in class is 2" do
+      cls = Class.new
+      @m.rb_define_method_2required(cls, "test_method_2required")
+      cls.new.method(:test_method_2required).arity.should == 2
+    end
+
     it "defines a method on a module" do
       mod = Module.new
       @m.rb_define_method(mod, "test_method")
       mod.should have_instance_method(:test_method)
+    end
+
+    it "returns the correct arity of the method in module" do
+      mod = Module.new
+      @m.rb_define_method(mod, "test_method")
+      mod.instance_method(:test_method).arity.should == 0
     end
   end
 
@@ -259,11 +293,22 @@ describe "CApiModule" do
       @mod.test_module_function.should == :test_method
     end
 
+    it "returns the correct arity of the module function" do
+      @mod.method(:test_module_function).arity.should == 0
+    end
+
     it "defines a private instance method" do
       cls = Class.new
       cls.include(@mod)
 
       cls.should have_private_instance_method(:test_module_function)
+    end
+
+    it "returns the correct arity for private instance method" do
+      cls = Class.new
+      cls.include(@mod)
+
+      @mod.instance_method(:test_module_function).arity.should == 0
     end
   end
 
@@ -303,7 +348,7 @@ describe "CApiModule" do
       a = cls.new
       @m.rb_define_singleton_method a, "module_specs_singleton_method"
       a.module_specs_singleton_method.should == :test_method
-      lambda { cls.new.module_specs_singleton_method }.should raise_error(NoMethodError)
+      -> { cls.new.module_specs_singleton_method }.should raise_error(NoMethodError)
     end
   end
 
@@ -322,8 +367,13 @@ describe "CApiModule" do
       @class.should_not have_instance_method(:ruby_test_method)
     end
 
+    it "undefines private methods also" do
+      @m.rb_undef_method @class, "initialize_copy"
+      -> { @class.new.dup }.should raise_error(NoMethodError)
+    end
+
     it "does not raise exceptions when passed a missing name" do
-      lambda { @m.rb_undef_method @class, "not_exist" }.should_not raise_error
+      -> { @m.rb_undef_method @class, "not_exist" }.should_not raise_error
     end
 
     describe "when given a frozen Class" do
@@ -331,12 +381,12 @@ describe "CApiModule" do
         @frozen = @class.dup.freeze
       end
 
-      it "raises a #{frozen_error_class} when passed a name" do
-        lambda { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(frozen_error_class)
+      it "raises a FrozenError when passed a name" do
+        -> { @m.rb_undef_method @frozen, "ruby_test_method" }.should raise_error(FrozenError)
       end
 
-      it "raises a #{frozen_error_class} when passed a missing name" do
-        lambda { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(frozen_error_class)
+      it "raises a FrozenError when passed a missing name" do
+        -> { @m.rb_undef_method @frozen, "not_exist" }.should raise_error(FrozenError)
       end
     end
   end

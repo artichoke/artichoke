@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #endif
 
+#undef NDEBUG
 #define NDEBUG
 #include <assert.h>
 
@@ -22,6 +23,7 @@
 
 static ID id_cmp, id_le_p, id_ge_p, id_eqeq_p;
 static VALUE cDate, cDateTime;
+static VALUE eDateError;
 static VALUE half_days_in_day, day_in_nanoseconds;
 static double positive_inf, negative_inf;
 
@@ -51,8 +53,18 @@ static double positive_inf, negative_inf;
 #define f_add3(x,y,z) f_add(f_add(x, y), z)
 #define f_sub3(x,y,z) f_sub(f_sub(x, y), z)
 
+#define f_frozen_ary(...) rb_obj_freeze(rb_ary_new3(__VA_ARGS__))
+
 static VALUE date_initialize(int argc, VALUE *argv, VALUE self);
 static VALUE datetime_initialize(int argc, VALUE *argv, VALUE self);
+
+#define RETURN_FALSE_UNLESS_NUMERIC(obj) if(!RTEST(rb_obj_is_kind_of((obj), rb_cNumeric))) return Qfalse
+inline static void
+check_numeric(VALUE obj, const char* field) {
+    if(!RTEST(rb_obj_is_kind_of(obj, rb_cNumeric))) {
+        rb_raise(rb_eTypeError, "invalid %s (not numeric)", field);
+    }
+}
 
 inline static int
 f_cmp(VALUE x, VALUE y)
@@ -2470,6 +2482,7 @@ date_s_valid_jd_p(int argc, VALUE *argv, VALUE klass)
 
     rb_scan_args(argc, argv, "11", &vjd, &vsg);
 
+    RETURN_FALSE_UNLESS_NUMERIC(vjd);
     argv2[0] = vjd;
     if (argc < 2)
 	argv2[1] = INT2FIX(DEFAULT_SG);
@@ -2545,9 +2558,12 @@ date_s__valid_civil_p(int argc, VALUE *argv, VALUE klass)
  *    Date.valid_date?(year, month, mday[, start=Date::ITALY])   ->  bool
  *
  * Returns true if the given calendar date is valid, and false if not.
+ * Valid in this context is whether the arguments passed to this
+ * method would be accepted by ::new.
  *
  *    Date.valid_date?(2001,2,3)	#=> true
  *    Date.valid_date?(2001,2,29)	#=> false
+ *    Date.valid_date?(2001,2,-1)	#=> true
  *
  * See also ::jd and ::civil.
  */
@@ -2559,6 +2575,9 @@ date_s_valid_civil_p(int argc, VALUE *argv, VALUE klass)
 
     rb_scan_args(argc, argv, "31", &vy, &vm, &vd, &vsg);
 
+    RETURN_FALSE_UNLESS_NUMERIC(vy);
+    RETURN_FALSE_UNLESS_NUMERIC(vm);
+    RETURN_FALSE_UNLESS_NUMERIC(vd);
     argv2[0] = vy;
     argv2[1] = vm;
     argv2[2] = vd;
@@ -2640,6 +2659,8 @@ date_s_valid_ordinal_p(int argc, VALUE *argv, VALUE klass)
 
     rb_scan_args(argc, argv, "21", &vy, &vd, &vsg);
 
+    RETURN_FALSE_UNLESS_NUMERIC(vy);
+    RETURN_FALSE_UNLESS_NUMERIC(vd);
     argv2[0] = vy;
     argv2[1] = vd;
     if (argc < 3)
@@ -2722,6 +2743,9 @@ date_s_valid_commercial_p(int argc, VALUE *argv, VALUE klass)
 
     rb_scan_args(argc, argv, "31", &vy, &vw, &vd, &vsg);
 
+    RETURN_FALSE_UNLESS_NUMERIC(vy);
+    RETURN_FALSE_UNLESS_NUMERIC(vw);
+    RETURN_FALSE_UNLESS_NUMERIC(vd);
     argv2[0] = vy;
     argv2[1] = vw;
     argv2[2] = vd;
@@ -2903,6 +2927,7 @@ date_s_julian_leap_p(VALUE klass, VALUE y)
     VALUE nth;
     int ry;
 
+    check_numeric(y, "year");
     decode_year(y, +1, &nth, &ry);
     return f_boolcast(c_julian_leap_p(ry));
 }
@@ -2924,6 +2949,7 @@ date_s_gregorian_leap_p(VALUE klass, VALUE y)
     VALUE nth;
     int ry;
 
+    check_numeric(y, "year");
     decode_year(y, -1, &nth, &ry);
     return f_boolcast(c_gregorian_leap_p(ry));
 }
@@ -2947,11 +2973,15 @@ d_lite_memsize(const void *ptr)
     return complex_dat_p(dat) ? sizeof(struct ComplexDateData) : sizeof(struct SimpleDateData);
 }
 
+#ifndef HAVE_RB_EXT_RACTOR_SAFE
+#   define RUBY_TYPED_FROZEN_SHAREABLE 0
+#endif
+
 static const rb_data_type_t d_lite_type = {
     "Date",
     {d_lite_gc_mark, RUBY_TYPED_DEFAULT_FREE, d_lite_memsize,},
     0, 0,
-    RUBY_TYPED_FREE_IMMEDIATELY|RUBY_TYPED_WB_PROTECTED,
+    RUBY_TYPED_FREE_IMMEDIATELY|RUBY_TYPED_WB_PROTECTED|RUBY_TYPED_FROZEN_SHAREABLE,
 };
 
 inline static VALUE
@@ -3047,7 +3077,7 @@ old_to_new(VALUE ajd, VALUE of, VALUE sg,
     *rsg = NUM2DBL(sg);
 
     if (*rdf < 0 || *rdf >= DAY_IN_SECONDS)
-	rb_raise(rb_eArgError, "invalid day fraction");
+	rb_raise(eDateError, "invalid day fraction");
 
     if (f_lt_p(*rsf, INT2FIX(0)) ||
 	f_ge_p(*rsf, INT2FIX(SECOND_IN_NANOSECONDS)))
@@ -3209,7 +3239,7 @@ do {\
     s = s##_trunc(v##s, &fr);\
     if (f_nonzero_p(fr)) {\
 	if (argc > n)\
-	    rb_raise(rb_eArgError, "invalid fraction");\
+	    rb_raise(eDateError, "invalid fraction");\
 	fr2 = fr;\
     }\
 } while (0)
@@ -3219,7 +3249,7 @@ do {\
     s = NUM2INT(s##_trunc(v##s, &fr));\
     if (f_nonzero_p(fr)) {\
 	if (argc > n)\
-	    rb_raise(rb_eArgError, "invalid fraction");\
+	    rb_raise(eDateError, "invalid fraction");\
 	fr2 = fr;\
     }\
 } while (0)
@@ -3278,6 +3308,7 @@ date_s_jd(int argc, VALUE *argv, VALUE klass)
       case 2:
 	val2sg(vsg, sg);
       case 1:
+        check_numeric(vjd, "jd");
 	num2num_with_frac(jd, positive_inf);
     }
 
@@ -3330,8 +3361,10 @@ date_s_ordinal(int argc, VALUE *argv, VALUE klass)
       case 3:
 	val2sg(vsg, sg);
       case 2:
+        check_numeric(vd, "yday");
 	num2int_with_frac(d, positive_inf);
       case 1:
+        check_numeric(vy, "year");
 	y = vy;
     }
 
@@ -3343,7 +3376,7 @@ date_s_ordinal(int argc, VALUE *argv, VALUE klass)
 			     &nth, &ry,
 			     &rd, &rjd,
 			     &ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 
 	ret = d_simple_new_internal(klass,
 				     nth, rjd,
@@ -3410,10 +3443,13 @@ date_initialize(int argc, VALUE *argv, VALUE self)
       case 4:
 	val2sg(vsg, sg);
       case 3:
+        check_numeric(vd, "day");
 	num2int_with_frac(d, positive_inf);
       case 2:
+        check_numeric(vm, "month");
 	m = NUM2INT(vm);
       case 1:
+        check_numeric(vy, "year");
 	y = vy;
     }
 
@@ -3424,7 +3460,7 @@ date_initialize(int argc, VALUE *argv, VALUE self)
 	if (!valid_gregorian_p(y, m, d,
 			       &nth, &ry,
 			       &rm, &rd))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 
 	set_to_simple(self, dat, nth, 0, sg, ry, rm, rd, HAVE_CIVIL);
     }
@@ -3436,7 +3472,7 @@ date_initialize(int argc, VALUE *argv, VALUE self)
 			   &nth, &ry,
 			   &rm, &rd, &rjd,
 			   &ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 
 	set_to_simple(self, dat, nth, rjd, sg, ry, rm, rd, HAVE_JD | HAVE_CIVIL);
     }
@@ -3480,10 +3516,13 @@ date_s_commercial(int argc, VALUE *argv, VALUE klass)
       case 4:
 	val2sg(vsg, sg);
       case 3:
+        check_numeric(vd, "cwday");
 	num2int_with_frac(d, positive_inf);
       case 2:
+        check_numeric(vw, "cweek");
 	w = NUM2INT(vw);
       case 1:
+        check_numeric(vy, "year");
 	y = vy;
     }
 
@@ -3495,7 +3534,7 @@ date_s_commercial(int argc, VALUE *argv, VALUE klass)
 				&nth, &ry,
 				&rw, &rd, &rjd,
 				&ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 
 	ret = d_simple_new_internal(klass,
 				    nth, rjd,
@@ -3545,7 +3584,7 @@ date_s_weeknum(int argc, VALUE *argv, VALUE klass)
 			     &nth, &ry,
 			     &rw, &rd, &rjd,
 			     &ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 
 	ret = d_simple_new_internal(klass,
 				    nth, rjd,
@@ -3594,7 +3633,7 @@ date_s_nth_kday(int argc, VALUE *argv, VALUE klass)
 			      &nth, &ry,
 			      &rm, &rn, &rk, &rjd,
 			      &ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 
 	ret = d_simple_new_internal(klass,
 				    nth, rjd,
@@ -3734,89 +3773,89 @@ rt_complete_frags(VALUE klass, VALUE hash)
     VALUE k, a, d;
 
     if (NIL_P(tab)) {
-	tab = rb_ary_new3(11,
-			  rb_ary_new3(2,
+	tab = f_frozen_ary(11,
+			  f_frozen_ary(2,
 				      sym("time"),
-				      rb_ary_new3(3,
+				      f_frozen_ary(3,
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      Qnil,
-				      rb_ary_new3(1,
+				      f_frozen_ary(1,
 						  sym("jd"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      sym("ordinal"),
-				      rb_ary_new3(5,
+				      f_frozen_ary(5,
 						  sym("year"),
 						  sym("yday"),
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      sym("civil"),
-				      rb_ary_new3(6,
+				      f_frozen_ary(6,
 						  sym("year"),
 						  sym("mon"),
 						  sym("mday"),
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      sym("commercial"),
-				      rb_ary_new3(6,
+				      f_frozen_ary(6,
 						  sym("cwyear"),
 						  sym("cweek"),
 						  sym("cwday"),
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      sym("wday"),
-				      rb_ary_new3(4,
+				      f_frozen_ary(4,
 						  sym("wday"),
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      sym("wnum0"),
-				      rb_ary_new3(6,
+				      f_frozen_ary(6,
 						  sym("year"),
 						  sym("wnum0"),
 						  sym("wday"),
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      sym("wnum1"),
-				      rb_ary_new3(6,
+				      f_frozen_ary(6,
 						  sym("year"),
 						  sym("wnum1"),
 						  sym("wday"),
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      Qnil,
-				      rb_ary_new3(6,
+				      f_frozen_ary(6,
 						  sym("cwyear"),
 						  sym("cweek"),
 						  sym("wday"),
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      Qnil,
-				      rb_ary_new3(6,
+				      f_frozen_ary(6,
 						  sym("year"),
 						  sym("wnum0"),
 						  sym("cwday"),
 						  sym("hour"),
 						  sym("min"),
 						  sym("sec"))),
-			  rb_ary_new3(2,
+			  f_frozen_ary(2,
 				      Qnil,
-				      rb_ary_new3(6,
+				      f_frozen_ary(6,
 						  sym("year"),
 						  sym("wnum1"),
 						  sym("cwday"),
@@ -4141,7 +4180,7 @@ d_new_by_frags(VALUE klass, VALUE hash, VALUE sg)
     }
 
     if (NIL_P(hash))
-	rb_raise(rb_eArgError, "invalid date");
+	rb_raise(eDateError, "invalid date");
 
     if (NIL_P(ref_hash("jd")) &&
 	NIL_P(ref_hash("yday")) &&
@@ -4158,7 +4197,7 @@ d_new_by_frags(VALUE klass, VALUE hash, VALUE sg)
     }
 
     if (NIL_P(jd))
-	rb_raise(rb_eArgError, "invalid date");
+	rb_raise(eDateError, "invalid date");
     {
 	VALUE nth;
 	int rjd;
@@ -4213,12 +4252,10 @@ date_s__strptime_internal(int argc, VALUE *argv, VALUE klass,
 
 	if (!NIL_P(zone)) {
 	    rb_enc_copy(zone, vstr);
-	    OBJ_INFECT(zone, vstr);
 	    set_hash("zone", zone);
 	}
 	if (!NIL_P(left)) {
 	    rb_enc_copy(left, vstr);
-	    OBJ_INFECT(left, vstr);
 	    set_hash("leftover", left);
 	}
     }
@@ -4291,12 +4328,40 @@ date_s_strptime(int argc, VALUE *argv, VALUE klass)
 
 VALUE date__parse(VALUE str, VALUE comp);
 
+static size_t
+get_limit(VALUE opt)
+{
+    if (!NIL_P(opt)) {
+        VALUE limit = rb_hash_aref(opt, ID2SYM(rb_intern("limit")));
+        if (NIL_P(limit)) return SIZE_MAX;
+        return NUM2SIZET(limit);
+    }
+    return 128;
+}
+
+static void
+check_limit(VALUE str, VALUE opt)
+{
+    if (NIL_P(str)) return;
+    if (SYMBOL_P(str)) str = rb_sym2str(str);
+
+    StringValue(str);
+    size_t slen = RSTRING_LEN(str);
+    size_t limit = get_limit(opt);
+    if (slen > limit) {
+	rb_raise(rb_eArgError,
+		 "string length (%"PRI_SIZE_PREFIX"u) exceeds the limit %"PRI_SIZE_PREFIX"u", slen, limit);
+    }
+}
+
 static VALUE
 date_s__parse_internal(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE vstr, vcomp, hash;
+    VALUE vstr, vcomp, hash, opt;
 
-    rb_scan_args(argc, argv, "11", &vstr, &vcomp);
+    rb_scan_args(argc, argv, "11:", &vstr, &vcomp, &opt);
+    if (!NIL_P(opt)) argc--;
+    check_limit(vstr, opt);
     StringValue(vstr);
     if (!rb_enc_str_asciicompat_p(vstr))
 	rb_raise(rb_eArgError,
@@ -4311,17 +4376,25 @@ date_s__parse_internal(int argc, VALUE *argv, VALUE klass)
 
 /*
  * call-seq:
- *    Date._parse(string[, comp=true])  ->  hash
+ *    Date._parse(string[, comp=true], limit: 128)  ->  hash
  *
  * Parses the given representation of date and time, and returns a
- * hash of parsed elements.  This method does not function as a
- * validator.
+ * hash of parsed elements.
+ *
+ * This method *does not* function as a validator.  If the input
+ * string does not match valid formats strictly, you may get a cryptic
+ * result.  Should consider to use `Date._strptime` or
+ * `DateTime._strptime` instead of this method as possible.
  *
  * If the optional second argument is true and the detected year is in
  * the range "00" to "99", considers the year a 2-digit form and makes
  * it full.
  *
  *    Date._parse('2001-02-03')	#=> {:year=>2001, :mon=>2, :mday=>3}
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 date_s__parse(int argc, VALUE *argv, VALUE klass)
@@ -4331,10 +4404,15 @@ date_s__parse(int argc, VALUE *argv, VALUE klass)
 
 /*
  * call-seq:
- *    Date.parse(string='-4712-01-01'[, comp=true[, start=Date::ITALY]])  ->  date
+ *    Date.parse(string='-4712-01-01'[, comp=true[, start=Date::ITALY]], limit: 128)  ->  date
  *
  * Parses the given representation of date and time, and creates a
- * date object.  This method does not function as a validator.
+ * date object.
+ *
+ * This method *does not* function as a validator.  If the input
+ * string does not match valid formats strictly, you may get a cryptic
+ * result.  Should consider to use `Date.strptime` instead of this
+ * method as possible.
  *
  * If the optional second argument is true and the detected year is in
  * the range "00" to "99", considers the year a 2-digit form and makes
@@ -4343,13 +4421,18 @@ date_s__parse(int argc, VALUE *argv, VALUE klass)
  *    Date.parse('2001-02-03')		#=> #<Date: 2001-02-03 ...>
  *    Date.parse('20010203')		#=> #<Date: 2001-02-03 ...>
  *    Date.parse('3rd Feb 2001')	#=> #<Date: 2001-02-03 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 date_s_parse(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, comp, sg;
+    VALUE str, comp, sg, opt;
 
-    rb_scan_args(argc, argv, "03", &str, &comp, &sg);
+    rb_scan_args(argc, argv, "03:", &str, &comp, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -4361,11 +4444,12 @@ date_s_parse(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE argv2[2], hash;
-
-	argv2[0] = str;
-	argv2[1] = comp;
-	hash = date_s__parse(2, argv2, klass);
+        int argc2 = 2;
+	VALUE argv2[3];
+        argv2[0] = str;
+        argv2[1] = comp;
+        if (!NIL_P(opt)) argv2[argc2++] = opt;
+	VALUE hash = date_s__parse(argc2, argv2, klass);
 	return d_new_by_frags(klass, hash, sg);
     }
 }
@@ -4379,19 +4463,28 @@ VALUE date__jisx0301(VALUE);
 
 /*
  * call-seq:
- *    Date._iso8601(string)  ->  hash
+ *    Date._iso8601(string, limit: 128)  ->  hash
  *
  * Returns a hash of parsed elements.
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
-date_s__iso8601(VALUE klass, VALUE str)
+date_s__iso8601(int argc, VALUE *argv, VALUE klass)
 {
+    VALUE str, opt;
+
+    rb_scan_args(argc, argv, "1:", &str, &opt);
+    check_limit(str, opt);
+
     return date__iso8601(str);
 }
 
 /*
  * call-seq:
- *    Date.iso8601(string='-4712-01-01'[, start=Date::ITALY])  ->  date
+ *    Date.iso8601(string='-4712-01-01'[, start=Date::ITALY], limit: 128)  ->  date
  *
  * Creates a new Date object by parsing from a string according to
  * some typical ISO 8601 formats.
@@ -4399,13 +4492,18 @@ date_s__iso8601(VALUE klass, VALUE str)
  *    Date.iso8601('2001-02-03')	#=> #<Date: 2001-02-03 ...>
  *    Date.iso8601('20010203')		#=> #<Date: 2001-02-03 ...>
  *    Date.iso8601('2001-W05-6')	#=> #<Date: 2001-02-03 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 date_s_iso8601(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -4415,38 +4513,56 @@ date_s_iso8601(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__iso8601(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        if (!NIL_P(opt)) argv2[argc2++] = opt;
+	VALUE hash = date_s__iso8601(argc2, argv2, klass);
 	return d_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    Date._rfc3339(string)  ->  hash
+ *    Date._rfc3339(string, limit: 128)  ->  hash
  *
  * Returns a hash of parsed elements.
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
-date_s__rfc3339(VALUE klass, VALUE str)
+date_s__rfc3339(int argc, VALUE *argv, VALUE klass)
 {
+    VALUE str, opt;
+
+    rb_scan_args(argc, argv, "1:", &str, &opt);
+    check_limit(str, opt);
+
     return date__rfc3339(str);
 }
 
 /*
  * call-seq:
- *    Date.rfc3339(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY])  ->  date
+ *    Date.rfc3339(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY], limit: 128)  ->  date
  *
  * Creates a new Date object by parsing from a string according to
  * some typical RFC 3339 formats.
  *
  *    Date.rfc3339('2001-02-03T04:05:06+07:00')	#=> #<Date: 2001-02-03 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 date_s_rfc3339(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -4456,38 +4572,56 @@ date_s_rfc3339(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__rfc3339(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        if (!NIL_P(opt)) argv2[argc2++] = opt;
+	VALUE hash = date_s__rfc3339(argc2, argv2, klass);
 	return d_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    Date._xmlschema(string)  ->  hash
+ *    Date._xmlschema(string, limit: 128)  ->  hash
  *
  * Returns a hash of parsed elements.
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
-date_s__xmlschema(VALUE klass, VALUE str)
+date_s__xmlschema(int argc, VALUE *argv, VALUE klass)
 {
+    VALUE str, opt;
+
+    rb_scan_args(argc, argv, "1:", &str, &opt);
+    check_limit(str, opt);
+
     return date__xmlschema(str);
 }
 
 /*
  * call-seq:
- *    Date.xmlschema(string='-4712-01-01'[, start=Date::ITALY])  ->  date
+ *    Date.xmlschema(string='-4712-01-01'[, start=Date::ITALY], limit: 128)  ->  date
  *
  * Creates a new Date object by parsing from a string according to
  * some typical XML Schema formats.
  *
  *    Date.xmlschema('2001-02-03')	#=> #<Date: 2001-02-03 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 date_s_xmlschema(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -4497,41 +4631,58 @@ date_s_xmlschema(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__xmlschema(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        if (!NIL_P(opt)) argv2[argc2++] = opt;
+	VALUE hash = date_s__xmlschema(argc2, argv2, klass);
 	return d_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    Date._rfc2822(string)  ->  hash
- *    Date._rfc822(string)   ->  hash
+ *    Date._rfc2822(string, limit: 128)  ->  hash
+ *    Date._rfc822(string, limit: 128)   ->  hash
  *
  * Returns a hash of parsed elements.
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
-date_s__rfc2822(VALUE klass, VALUE str)
+date_s__rfc2822(int argc, VALUE *argv, VALUE klass)
 {
+    VALUE str, opt;
+
+    rb_scan_args(argc, argv, "1:", &str, &opt);
+    check_limit(str, opt);
+
     return date__rfc2822(str);
 }
 
 /*
  * call-seq:
- *    Date.rfc2822(string='Mon, 1 Jan -4712 00:00:00 +0000'[, start=Date::ITALY])  ->  date
- *    Date.rfc822(string='Mon, 1 Jan -4712 00:00:00 +0000'[, start=Date::ITALY])   ->  date
+ *    Date.rfc2822(string='Mon, 1 Jan -4712 00:00:00 +0000'[, start=Date::ITALY], limit: 128)  ->  date
+ *    Date.rfc822(string='Mon, 1 Jan -4712 00:00:00 +0000'[, start=Date::ITALY], limit: 128)   ->  date
  *
  * Creates a new Date object by parsing from a string according to
  * some typical RFC 2822 formats.
  *
  *    Date.rfc2822('Sat, 3 Feb 2001 00:00:00 +0000')
  *						#=> #<Date: 2001-02-03 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 date_s_rfc2822(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
 
     switch (argc) {
       case 0:
@@ -4541,39 +4692,56 @@ date_s_rfc2822(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__rfc2822(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        if (!NIL_P(opt)) argv2[argc2++] = opt;
+	VALUE hash = date_s__rfc2822(argc2, argv2, klass);
 	return d_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    Date._httpdate(string)  ->  hash
+ *    Date._httpdate(string, limit: 128)  ->  hash
  *
  * Returns a hash of parsed elements.
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
-date_s__httpdate(VALUE klass, VALUE str)
+date_s__httpdate(int argc, VALUE *argv, VALUE klass)
 {
+    VALUE str, opt;
+
+    rb_scan_args(argc, argv, "1:", &str, &opt);
+    check_limit(str, opt);
+
     return date__httpdate(str);
 }
 
 /*
  * call-seq:
- *    Date.httpdate(string='Mon, 01 Jan -4712 00:00:00 GMT'[, start=Date::ITALY])  ->  date
+ *    Date.httpdate(string='Mon, 01 Jan -4712 00:00:00 GMT'[, start=Date::ITALY], limit: 128)  ->  date
  *
  * Creates a new Date object by parsing from a string according to
  * some RFC 2616 format.
  *
  *    Date.httpdate('Sat, 03 Feb 2001 00:00:00 GMT')
  *						#=> #<Date: 2001-02-03 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 date_s_httpdate(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
 
     switch (argc) {
       case 0:
@@ -4583,26 +4751,39 @@ date_s_httpdate(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__httpdate(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        if (!NIL_P(opt)) argv2[argc2++] = opt;
+	VALUE hash = date_s__httpdate(argc2, argv2, klass);
 	return d_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    Date._jisx0301(string)  ->  hash
+ *    Date._jisx0301(string, limit: 128)  ->  hash
  *
  * Returns a hash of parsed elements.
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
-date_s__jisx0301(VALUE klass, VALUE str)
+date_s__jisx0301(int argc, VALUE *argv, VALUE klass)
 {
+    VALUE str, opt;
+
+    rb_scan_args(argc, argv, "1:", &str, &opt);
+    check_limit(str, opt);
+
     return date__jisx0301(str);
 }
 
 /*
  * call-seq:
- *    Date.jisx0301(string='-4712-01-01'[, start=Date::ITALY])  ->  date
+ *    Date.jisx0301(string='-4712-01-01'[, start=Date::ITALY], limit: 128)  ->  date
  *
  * Creates a new Date object by parsing from a string according to
  * some typical JIS X 0301 formats.
@@ -4612,13 +4793,18 @@ date_s__jisx0301(VALUE klass, VALUE str)
  * For no-era year, legacy format, Heisei is assumed.
  *
  *    Date.jisx0301('13.02.03') 		#=> #<Date: 2001-02-03 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 date_s_jisx0301(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -4628,7 +4814,11 @@ date_s_jisx0301(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__jisx0301(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        if (!NIL_P(opt)) argv2[argc2++] = opt;
+	VALUE hash = date_s__jisx0301(argc2, argv2, klass);
 	return d_new_by_frags(klass, hash, sg);
     }
 }
@@ -4702,7 +4892,6 @@ d_lite_initialize(int argc, VALUE *argv, VALUE self)
     double sg;
 
     rb_check_frozen(self);
-    rb_check_trusted(self);
 
     rb_scan_args(argc, argv, "05", &vjd, &vdf, &vsf, &vof, &vsg);
 
@@ -4721,11 +4910,11 @@ d_lite_initialize(int argc, VALUE *argv, VALUE self)
 	sf = vsf;
 	if (f_lt_p(sf, INT2FIX(0)) ||
 	    f_ge_p(sf, INT2FIX(SECOND_IN_NANOSECONDS)))
-	    rb_raise(rb_eArgError, "invalid second fraction");
+	    rb_raise(eDateError, "invalid second fraction");
       case 2:
 	df = NUM2INT(vdf);
 	if (df < 0 || df >= DAY_IN_SECONDS)
-	    rb_raise(rb_eArgError, "invalid day fraction");
+	    rb_raise(eDateError, "invalid day fraction");
       case 1:
 	jd = vjd;
     }
@@ -4758,7 +4947,6 @@ static VALUE
 d_lite_initialize_copy(VALUE copy, VALUE date)
 {
     rb_check_frozen(copy);
-    rb_check_trusted(copy);
 
     if (copy == date)
 	return copy;
@@ -6036,7 +6224,7 @@ d_lite_rshift(VALUE self, VALUE other)
 			  &rm, &rd, &rjd, &ns))
 	    break;
 	if (--d < 1)
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
     }
     encode_jd(nth, rjd, &rjd2);
     return d_lite_plus(self, f_sub(rjd2, m_real_local_jd(dat)));
@@ -6560,9 +6748,9 @@ mk_inspect(union DateData *x, VALUE klass, VALUE to_s)
  * Returns the value as a string for inspection.
  *
  *    Date.new(2001,2,3).inspect
- *		#=> "#<Date: 2001-02-03 ((2451944j,0s,0n),+0s,2299161j)>"
+ *		#=> "#<Date: 2001-02-03>"
  *    DateTime.new(2001,2,3,4,5,6,'-7').inspect
- *		#=> "#<DateTime: 2001-02-03T04:05:06-07:00 ((2451944j,39906s,0n),-25200s,2299161j)>"
+ *		#=> "#<DateTime: 2001-02-03T04:05:06-07:00>"
  */
 static VALUE
 d_lite_inspect(VALUE self)
@@ -6731,7 +6919,6 @@ date_strftime_internal(int argc, VALUE *argv, VALUE self,
 	    if (p > fmt) rb_str_cat(str, fmt, p - fmt);
 	}
 	rb_enc_copy(str, vfmt);
-	OBJ_INFECT(str, vfmt);
 	return str;
     }
     else
@@ -6740,7 +6927,6 @@ date_strftime_internal(int argc, VALUE *argv, VALUE self,
     str = rb_str_new(buf, len);
     if (buf != buffer) xfree(buf);
     rb_enc_copy(str, vfmt);
-    OBJ_INFECT(str, vfmt);
     return str;
 }
 
@@ -6858,7 +7044,7 @@ date_strftime_internal(int argc, VALUE *argv, VALUE self,
  *      %c - date and time (%a %b %e %T %Y)
  *      %D - Date (%m/%d/%y)
  *      %F - The ISO 8601 date format (%Y-%m-%d)
- *      %v - VMS date (%e-%b-%Y)
+ *      %v - VMS date (%e-%^b-%Y)
  *      %x - Same as %D
  *      %X - Same as %T
  *      %r - 12-hour time (%I:%M:%S %p)
@@ -7131,7 +7317,6 @@ d_lite_marshal_load(VALUE self, VALUE a)
     get_d1(self);
 
     rb_check_frozen(self);
-    rb_check_trusted(self);
 
     if (!RB_TYPE_P(a, T_ARRAY))
 	rb_raise(rb_eTypeError, "expected an array");
@@ -7176,11 +7361,14 @@ d_lite_marshal_load(VALUE self, VALUE a)
 
     if (simple_dat_p(dat)) {
 	if (df || !f_zero_p(sf) || of) {
-	    rb_raise(rb_eArgError,
-		     "cannot load complex into simple");
+	    /* loading a fractional date; promote to complex */
+	    dat = ruby_xrealloc(dat, sizeof(struct ComplexDateData));
+	    RTYPEDDATA(self)->data = dat;
+	    goto complex_data;
 	}
 	set_to_simple(self, &dat->s, nth, jd, sg, 0, 0, 0, HAVE_JD);
     } else {
+      complex_data:
 	set_to_complex(self, &dat->c, nth, jd, df, sf, of, sg,
 		       0, 0, 0, 0, 0, 0,
 		       HAVE_JD | HAVE_DF);
@@ -7241,12 +7429,16 @@ datetime_s_jd(int argc, VALUE *argv, VALUE klass)
       case 5:
 	val2off(vof, rof);
       case 4:
+        check_numeric(vs, "second");
 	num2int_with_frac(s, positive_inf);
       case 3:
+        check_numeric(vmin, "minute");
 	num2int_with_frac(min, 3);
       case 2:
+        check_numeric(vh, "hour");
 	num2int_with_frac(h, 2);
       case 1:
+        check_numeric(vjd, "jd");
 	num2num_with_frac(jd, 1);
     }
 
@@ -7255,7 +7447,7 @@ datetime_s_jd(int argc, VALUE *argv, VALUE klass)
 	int rh, rmin, rs, rjd, rjd2;
 
 	if (!c_valid_time_p(h, min, s, &rh, &rmin, &rs))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	canon24oc();
 
 	decode_jd(jd, &nth, &rjd);
@@ -7310,14 +7502,19 @@ datetime_s_ordinal(int argc, VALUE *argv, VALUE klass)
       case 6:
 	val2off(vof, rof);
       case 5:
+        check_numeric(vs, "second");
 	num2int_with_frac(s, positive_inf);
       case 4:
+        check_numeric(vmin, "minute");
 	num2int_with_frac(min, 4);
       case 3:
+        check_numeric(vh, "hour");
 	num2int_with_frac(h, 3);
       case 2:
+        check_numeric(vd, "yday");
 	num2int_with_frac(d, 2);
       case 1:
+        check_numeric(vy, "year");
 	y = vy;
     }
 
@@ -7329,9 +7526,9 @@ datetime_s_ordinal(int argc, VALUE *argv, VALUE klass)
 			     &nth, &ry,
 			     &rd, &rjd,
 			     &ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	if (!c_valid_time_p(h, min, s, &rh, &rmin, &rs))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	canon24oc();
 
 	rjd2 = jd_local_to_utc(rjd,
@@ -7398,16 +7595,22 @@ datetime_initialize(int argc, VALUE *argv, VALUE self)
       case 7:
 	val2off(vof, rof);
       case 6:
+        check_numeric(vs, "second");
 	num2int_with_frac(s, positive_inf);
       case 5:
+        check_numeric(vmin, "minute");
 	num2int_with_frac(min, 5);
       case 4:
+        check_numeric(vh, "hour");
 	num2int_with_frac(h, 4);
       case 3:
+        check_numeric(vd, "day");
 	num2int_with_frac(d, 3);
       case 2:
+        check_numeric(vm, "month");
 	m = NUM2INT(vm);
       case 1:
+        check_numeric(vy, "year");
 	y = vy;
     }
 
@@ -7418,9 +7621,9 @@ datetime_initialize(int argc, VALUE *argv, VALUE self)
 	if (!valid_gregorian_p(y, m, d,
 			       &nth, &ry,
 			       &rm, &rd))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	if (!c_valid_time_p(h, min, s, &rh, &rmin, &rs))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	canon24oc();
 
 	set_to_complex(self, dat,
@@ -7439,9 +7642,9 @@ datetime_initialize(int argc, VALUE *argv, VALUE self)
 			   &nth, &ry,
 			   &rm, &rd, &rjd,
 			   &ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	if (!c_valid_time_p(h, min, s, &rh, &rmin, &rs))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	canon24oc();
 
 	rjd2 = jd_local_to_utc(rjd,
@@ -7496,16 +7699,22 @@ datetime_s_commercial(int argc, VALUE *argv, VALUE klass)
       case 7:
 	val2off(vof, rof);
       case 6:
+        check_numeric(vs, "second");
 	num2int_with_frac(s, positive_inf);
       case 5:
+        check_numeric(vmin, "minute");
 	num2int_with_frac(min, 5);
       case 4:
+        check_numeric(vh, "hour");
 	num2int_with_frac(h, 4);
       case 3:
+        check_numeric(vd, "cwday");
 	num2int_with_frac(d, 3);
       case 2:
+        check_numeric(vw, "cweek");
 	w = NUM2INT(vw);
       case 1:
+        check_numeric(vy, "year");
 	y = vy;
     }
 
@@ -7517,9 +7726,9 @@ datetime_s_commercial(int argc, VALUE *argv, VALUE klass)
 				&nth, &ry,
 				&rw, &rd, &rjd,
 				&ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	if (!c_valid_time_p(h, min, s, &rh, &rmin, &rs))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	canon24oc();
 
 	rjd2 = jd_local_to_utc(rjd,
@@ -7588,9 +7797,9 @@ datetime_s_weeknum(int argc, VALUE *argv, VALUE klass)
 			     &nth, &ry,
 			     &rw, &rd, &rjd,
 			     &ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	if (!c_valid_time_p(h, min, s, &rh, &rmin, &rs))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	canon24oc();
 
 	rjd2 = jd_local_to_utc(rjd,
@@ -7657,9 +7866,9 @@ datetime_s_nth_kday(int argc, VALUE *argv, VALUE klass)
 			      &nth, &ry,
 			      &rm, &rn, &rk, &rjd,
 			      &ns))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	if (!c_valid_time_p(h, min, s, &rh, &rmin, &rs))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 	canon24oc();
 
 	rjd2 = jd_local_to_utc(rjd,
@@ -7732,7 +7941,7 @@ datetime_s_now(int argc, VALUE *argv, VALUE klass)
 #ifdef HAVE_STRUCT_TM_TM_GMTOFF
     of = tm.tm_gmtoff;
 #elif defined(HAVE_TIMEZONE)
-#ifdef HAVE_ALTZONE
+#if defined(HAVE_ALTZONE) && !defined(_AIX)
     of = (long)-((tm.tm_isdst > 0) ? altzone : timezone);
 #else
     of = (long)-timezone;
@@ -7802,7 +8011,7 @@ dt_new_by_frags(VALUE klass, VALUE hash, VALUE sg)
     }
 
     if (NIL_P(hash))
-	rb_raise(rb_eArgError, "invalid date");
+	rb_raise(eDateError, "invalid date");
 
     if (NIL_P(ref_hash("jd")) &&
 	NIL_P(ref_hash("yday")) &&
@@ -7829,7 +8038,7 @@ dt_new_by_frags(VALUE klass, VALUE hash, VALUE sg)
     }
 
     if (NIL_P(jd))
-	rb_raise(rb_eArgError, "invalid date");
+	rb_raise(eDateError, "invalid date");
 
     {
 	int rh, rmin, rs;
@@ -7838,7 +8047,7 @@ dt_new_by_frags(VALUE klass, VALUE hash, VALUE sg)
 			    NUM2INT(ref_hash("min")),
 			    NUM2INT(ref_hash("sec")),
 			    &rh, &rmin, &rs))
-	    rb_raise(rb_eArgError, "invalid date");
+	    rb_raise(eDateError, "invalid date");
 
 	df = time_to_df(rh, rmin, rs);
     }
@@ -7948,10 +8157,15 @@ datetime_s_strptime(int argc, VALUE *argv, VALUE klass)
 
 /*
  * call-seq:
- *    DateTime.parse(string='-4712-01-01T00:00:00+00:00'[, comp=true[, start=Date::ITALY]])  ->  datetime
+ *    DateTime.parse(string='-4712-01-01T00:00:00+00:00'[, comp=true[, start=Date::ITALY]], limit: 128)  ->  datetime
  *
  * Parses the given representation of date and time, and creates a
- * DateTime object.  This method does not function as a validator.
+ * DateTime object.
+ *
+ * This method *does not* function as a validator.  If the input
+ * string does not match valid formats strictly, you may get a cryptic
+ * result.  Should consider to use `DateTime.strptime` instead of this
+ * method as possible.
  *
  * If the optional second argument is true and the detected year is in
  * the range "00" to "99", makes it full.
@@ -7962,13 +8176,18 @@ datetime_s_strptime(int argc, VALUE *argv, VALUE klass)
  *				#=> #<DateTime: 2001-02-03T04:05:06+07:00 ...>
  *    DateTime.parse('3rd Feb 2001 04:05:06 PM')
  *				#=> #<DateTime: 2001-02-03T16:05:06+00:00 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 datetime_s_parse(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, comp, sg;
+    VALUE str, comp, sg, opt;
 
-    rb_scan_args(argc, argv, "03", &str, &comp, &sg);
+    rb_scan_args(argc, argv, "03:", &str, &comp, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -7980,18 +8199,20 @@ datetime_s_parse(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE argv2[2], hash;
-
-	argv2[0] = str;
-	argv2[1] = comp;
-	hash = date_s__parse(2, argv2, klass);
+        int argc2 = 2;
+        VALUE argv2[3];
+        argv2[0] = str;
+        argv2[1] = comp;
+        argv2[2] = opt;
+        if (!NIL_P(opt)) argc2++;
+	VALUE hash = date_s__parse(argc2, argv2, klass);
 	return dt_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    DateTime.iso8601(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY])  ->  datetime
+ *    DateTime.iso8601(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY], limit: 128)  ->  datetime
  *
  * Creates a new DateTime object by parsing from a string according to
  * some typical ISO 8601 formats.
@@ -8002,13 +8223,18 @@ datetime_s_parse(int argc, VALUE *argv, VALUE klass)
  *				#=> #<DateTime: 2001-02-03T04:05:06+07:00 ...>
  *    DateTime.iso8601('2001-W05-6T04:05:06+07:00')
  *				#=> #<DateTime: 2001-02-03T04:05:06+07:00 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 datetime_s_iso8601(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -8018,27 +8244,37 @@ datetime_s_iso8601(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__iso8601(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        argv2[1] = opt;
+        if (!NIL_P(opt)) argc2--;
+	VALUE hash = date_s__iso8601(argc2, argv2, klass);
 	return dt_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    DateTime.rfc3339(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY])  ->  datetime
+ *    DateTime.rfc3339(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY], limit: 128)  ->  datetime
  *
  * Creates a new DateTime object by parsing from a string according to
  * some typical RFC 3339 formats.
  *
  *    DateTime.rfc3339('2001-02-03T04:05:06+07:00')
  *				#=> #<DateTime: 2001-02-03T04:05:06+07:00 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 datetime_s_rfc3339(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -8048,27 +8284,37 @@ datetime_s_rfc3339(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__rfc3339(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        argv2[1] = opt;
+        if (!NIL_P(opt)) argc2++;
+	VALUE hash = date_s__rfc3339(argc2, argv2, klass);
 	return dt_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    DateTime.xmlschema(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY])  ->  datetime
+ *    DateTime.xmlschema(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY], limit: 128)  ->  datetime
  *
  * Creates a new DateTime object by parsing from a string according to
  * some typical XML Schema formats.
  *
  *    DateTime.xmlschema('2001-02-03T04:05:06+07:00')
  *				#=> #<DateTime: 2001-02-03T04:05:06+07:00 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 datetime_s_xmlschema(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -8078,28 +8324,38 @@ datetime_s_xmlschema(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__xmlschema(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        argv2[1] = opt;
+        if (!NIL_P(opt)) argc2++;
+	VALUE hash = date_s__xmlschema(argc2, argv2, klass);
 	return dt_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    DateTime.rfc2822(string='Mon, 1 Jan -4712 00:00:00 +0000'[, start=Date::ITALY])  ->  datetime
- *    DateTime.rfc822(string='Mon, 1 Jan -4712 00:00:00 +0000'[, start=Date::ITALY])   ->  datetime
+ *    DateTime.rfc2822(string='Mon, 1 Jan -4712 00:00:00 +0000'[, start=Date::ITALY], limit: 128)  ->  datetime
+ *    DateTime.rfc822(string='Mon, 1 Jan -4712 00:00:00 +0000'[, start=Date::ITALY], limit: 128)   ->  datetime
  *
  * Creates a new DateTime object by parsing from a string according to
  * some typical RFC 2822 formats.
  *
  *     DateTime.rfc2822('Sat, 3 Feb 2001 04:05:06 +0700')
  *				#=> #<DateTime: 2001-02-03T04:05:06+07:00 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 datetime_s_rfc2822(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -8109,7 +8365,12 @@ datetime_s_rfc2822(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__rfc2822(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        argv2[1] = opt;
+        if (!NIL_P(opt)) argc2++;
+	VALUE hash = date_s__rfc2822(argc2, argv2, klass);
 	return dt_new_by_frags(klass, hash, sg);
     }
 }
@@ -8123,13 +8384,18 @@ datetime_s_rfc2822(int argc, VALUE *argv, VALUE klass)
  *
  *    DateTime.httpdate('Sat, 03 Feb 2001 04:05:06 GMT')
  *				#=> #<DateTime: 2001-02-03T04:05:06+00:00 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 datetime_s_httpdate(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -8139,14 +8405,19 @@ datetime_s_httpdate(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__httpdate(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        argv2[1] = opt;
+        if (!NIL_P(opt)) argc2++;
+	VALUE hash = date_s__httpdate(argc2, argv2, klass);
 	return dt_new_by_frags(klass, hash, sg);
     }
 }
 
 /*
  * call-seq:
- *    DateTime.jisx0301(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY])  ->  datetime
+ *    DateTime.jisx0301(string='-4712-01-01T00:00:00+00:00'[, start=Date::ITALY], limit: 128)  ->  datetime
  *
  * Creates a new DateTime object by parsing from a string according to
  * some typical JIS X 0301 formats.
@@ -8158,13 +8429,18 @@ datetime_s_httpdate(int argc, VALUE *argv, VALUE klass)
  *
  *    DateTime.jisx0301('13.02.03T04:05:06+07:00')
  *				#=> #<DateTime: 2001-02-03T04:05:06+07:00 ...>
+ *
+ * Raise an ArgumentError when the string length is longer than _limit_.
+ * You can stop this check by passing `limit: nil`, but note that
+ * it may take a long time to parse.
  */
 static VALUE
 datetime_s_jisx0301(int argc, VALUE *argv, VALUE klass)
 {
-    VALUE str, sg;
+    VALUE str, sg, opt;
 
-    rb_scan_args(argc, argv, "02", &str, &sg);
+    rb_scan_args(argc, argv, "02:", &str, &sg, &opt);
+    if (!NIL_P(opt)) argc--;
 
     switch (argc) {
       case 0:
@@ -8174,7 +8450,12 @@ datetime_s_jisx0301(int argc, VALUE *argv, VALUE klass)
     }
 
     {
-	VALUE hash = date_s__jisx0301(klass, str);
+        int argc2 = 1;
+        VALUE argv2[2];
+        argv2[0] = str;
+        argv2[1] = opt;
+        if (!NIL_P(opt)) argc2++;
+	VALUE hash = date_s__jisx0301(argc2, argv2, klass);
 	return dt_new_by_frags(klass, hash, sg);
     }
 }
@@ -8310,7 +8591,7 @@ dt_lite_to_s(VALUE self)
  *      %c - date and time (%a %b %e %T %Y)
  *      %D - Date (%m/%d/%y)
  *      %F - The ISO 8601 date format (%Y-%m-%d)
- *      %v - VMS date (%e-%b-%Y)
+ *      %v - VMS date (%e-%^b-%Y)
  *      %x - Same as %D
  *      %X - Same as %T
  *      %r - 12-hour time (%I:%M:%S %p)
@@ -8552,17 +8833,24 @@ time_to_datetime(VALUE self)
  * call-seq:
  *    d.to_time  ->  time
  *
- * Returns a Time object which denotes self.
+ * Returns a Time object which denotes self. If self is a julian date,
+ * convert it to a gregorian date before converting it to Time.
  */
 static VALUE
 date_to_time(VALUE self)
 {
-    get_d1(self);
+    get_d1a(self);
+
+    if (m_julian_p(adat)) {
+        VALUE tmp = d_lite_gregorian(self);
+        get_d1b(tmp);
+        adat = bdat;
+    }
 
     return f_local3(rb_cTime,
-		    m_real_year(dat),
-		    INT2FIX(m_mon(dat)),
-		    INT2FIX(m_mday(dat)));
+        m_real_year(adat),
+        INT2FIX(m_mon(adat)),
+        INT2FIX(m_mday(adat)));
 }
 
 /*
@@ -9045,13 +9333,13 @@ d_lite_zero(VALUE x)
 void
 Init_date_core(void)
 {
-#undef rb_intern
-#define rb_intern(str) rb_intern_const(str)
-
-    id_cmp = rb_intern("<=>");
-    id_le_p = rb_intern("<=");
-    id_ge_p = rb_intern(">=");
-    id_eqeq_p = rb_intern("==");
+    #ifdef HAVE_RB_EXT_RACTOR_SAFE
+	RB_EXT_RACTOR_SAFE(true);
+    #endif
+    id_cmp = rb_intern_const("<=>");
+    id_le_p = rb_intern_const("<=");
+    id_ge_p = rb_intern_const(">=");
+    id_eqeq_p = rb_intern_const("==");
 
     half_days_in_day = rb_rational_new2(INT2FIX(1), INT2FIX(2));
 
@@ -9219,6 +9507,7 @@ Init_date_core(void)
      *
      */
     cDate = rb_define_class("Date", rb_cObject);
+    eDateError = rb_define_class_under(cDate, "Error", rb_eArgError);
 
     rb_include_module(cDate, rb_mComparable);
 
@@ -9325,19 +9614,19 @@ Init_date_core(void)
     rb_define_singleton_method(cDate, "strptime", date_s_strptime, -1);
     rb_define_singleton_method(cDate, "_parse", date_s__parse, -1);
     rb_define_singleton_method(cDate, "parse", date_s_parse, -1);
-    rb_define_singleton_method(cDate, "_iso8601", date_s__iso8601, 1);
+    rb_define_singleton_method(cDate, "_iso8601", date_s__iso8601, -1);
     rb_define_singleton_method(cDate, "iso8601", date_s_iso8601, -1);
-    rb_define_singleton_method(cDate, "_rfc3339", date_s__rfc3339, 1);
+    rb_define_singleton_method(cDate, "_rfc3339", date_s__rfc3339, -1);
     rb_define_singleton_method(cDate, "rfc3339", date_s_rfc3339, -1);
-    rb_define_singleton_method(cDate, "_xmlschema", date_s__xmlschema, 1);
+    rb_define_singleton_method(cDate, "_xmlschema", date_s__xmlschema, -1);
     rb_define_singleton_method(cDate, "xmlschema", date_s_xmlschema, -1);
-    rb_define_singleton_method(cDate, "_rfc2822", date_s__rfc2822, 1);
-    rb_define_singleton_method(cDate, "_rfc822", date_s__rfc2822, 1);
+    rb_define_singleton_method(cDate, "_rfc2822", date_s__rfc2822, -1);
+    rb_define_singleton_method(cDate, "_rfc822", date_s__rfc2822, -1);
     rb_define_singleton_method(cDate, "rfc2822", date_s_rfc2822, -1);
     rb_define_singleton_method(cDate, "rfc822", date_s_rfc2822, -1);
-    rb_define_singleton_method(cDate, "_httpdate", date_s__httpdate, 1);
+    rb_define_singleton_method(cDate, "_httpdate", date_s__httpdate, -1);
     rb_define_singleton_method(cDate, "httpdate", date_s_httpdate, -1);
-    rb_define_singleton_method(cDate, "_jisx0301", date_s__jisx0301, 1);
+    rb_define_singleton_method(cDate, "_jisx0301", date_s__jisx0301, -1);
     rb_define_singleton_method(cDate, "jisx0301", date_s_jisx0301, -1);
 
     rb_define_method(cDate, "initialize", date_initialize, -1);
@@ -9457,6 +9746,8 @@ Init_date_core(void)
      * A subclass of Date that easily handles date, hour, minute, second,
      * and offset.
      *
+     * DateTime class is considered deprecated. Use Time class.
+     *
      * DateTime does not consider any leap seconds, does not track
      * any summer time rules.
      *
@@ -9517,18 +9808,18 @@ Init_date_core(void)
      * === When should you use DateTime and when should you use Time?
      *
      * It's a common misconception that
-     * {William Shakespeare}[http://en.wikipedia.org/wiki/William_Shakespeare]
+     * {William Shakespeare}[https://en.wikipedia.org/wiki/William_Shakespeare]
      * and
-     * {Miguel de Cervantes}[http://en.wikipedia.org/wiki/Miguel_de_Cervantes]
+     * {Miguel de Cervantes}[https://en.wikipedia.org/wiki/Miguel_de_Cervantes]
      * died on the same day in history -
      * so much so that UNESCO named April 23 as
-     * {World Book Day because of this fact}[http://en.wikipedia.org/wiki/World_Book_Day].
+     * {World Book Day because of this fact}[https://en.wikipedia.org/wiki/World_Book_Day].
      * However, because England hadn't yet adopted the
-     * {Gregorian Calendar Reform}[http://en.wikipedia.org/wiki/Gregorian_calendar#Gregorian_reform]
-     * (and wouldn't until {1752}[http://en.wikipedia.org/wiki/Calendar_(New_Style)_Act_1750])
+     * {Gregorian Calendar Reform}[https://en.wikipedia.org/wiki/Gregorian_calendar#Gregorian_reform]
+     * (and wouldn't until {1752}[https://en.wikipedia.org/wiki/Calendar_(New_Style)_Act_1750])
      * their deaths are actually 10 days apart.
      * Since Ruby's Time class implements a
-     * {proleptic Gregorian calendar}[http://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar]
+     * {proleptic Gregorian calendar}[https://en.wikipedia.org/wiki/Proleptic_Gregorian_calendar]
      * and has no concept of calendar reform there's no way
      * to express this with Time objects. This is where DateTime steps in:
      *
@@ -9572,7 +9863,7 @@ Init_date_core(void)
      *      #=> Fri, 04 May 1753 00:00:00 +0000
      *
      * As you can see, if we're accurately tracking the number of
-     * {solar years}[http://en.wikipedia.org/wiki/Tropical_year]
+     * {solar years}[https://en.wikipedia.org/wiki/Tropical_year]
      * since Shakespeare's birthday then the correct anniversary date
      * would be the 4th May and not the 23rd April.
      *
@@ -9584,10 +9875,10 @@ Init_date_core(void)
      * making the same mistakes as UNESCO. If you also have to deal
      * with timezones then best of luck - just bear in mind that
      * you'll probably be dealing with
-     * {local solar times}[http://en.wikipedia.org/wiki/Solar_time],
+     * {local solar times}[https://en.wikipedia.org/wiki/Solar_time],
      * since it wasn't until the 19th century that the introduction
      * of the railways necessitated the need for
-     * {Standard Time}[http://en.wikipedia.org/wiki/Standard_time#Great_Britain]
+     * {Standard Time}[https://en.wikipedia.org/wiki/Standard_time#Great_Britain]
      * and eventually timezones.
      */
 

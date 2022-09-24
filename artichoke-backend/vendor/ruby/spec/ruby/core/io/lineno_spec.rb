@@ -11,7 +11,25 @@ describe "IO#lineno" do
   end
 
   it "raises an IOError on a closed stream" do
-    lambda { IOSpecs.closed_io.lineno }.should raise_error(IOError)
+    -> { IOSpecs.closed_io.lineno }.should raise_error(IOError)
+  end
+
+  it "raises an IOError on a write-only stream" do
+    name = tmp("io_lineno.txt")
+    begin
+      File.open(name, 'w') do |f|
+        -> { f.lineno }.should raise_error(IOError)
+      end
+    ensure
+      rm_r name
+    end
+  end
+
+  it "raises an IOError on a duplexed stream with the read side closed" do
+    IO.popen('cat', 'r+') do |p|
+      p.close_read
+      -> { p.lineno }.should raise_error(IOError)
+    end
   end
 
   it "returns the current line number" do
@@ -37,7 +55,25 @@ describe "IO#lineno=" do
   end
 
   it "raises an IOError on a closed stream" do
-    lambda { IOSpecs.closed_io.lineno = 5 }.should raise_error(IOError)
+    -> { IOSpecs.closed_io.lineno = 5 }.should raise_error(IOError)
+  end
+
+  it "raises an IOError on a write-only stream" do
+    name = tmp("io_lineno.txt")
+    begin
+      File.open(name, 'w') do |f|
+        -> { f.lineno = 0 }.should raise_error(IOError)
+      end
+    ensure
+      rm_r name
+    end
+  end
+
+  it "raises an IOError on a duplexed stream with the read side closed" do
+    IO.popen('cat', 'r+') do |p|
+      p.close_read
+      -> { p.lineno = 0 }.should raise_error(IOError)
+    end
   end
 
   it "calls #to_int on a non-numeric argument" do
@@ -57,7 +93,7 @@ describe "IO#lineno=" do
   end
 
   it "raises TypeError on nil argument" do
-    lambda { @io.lineno = nil }.should raise_error(TypeError)
+    -> { @io.lineno = nil }.should raise_error(TypeError)
   end
 
   it "sets the current line number to the given value" do

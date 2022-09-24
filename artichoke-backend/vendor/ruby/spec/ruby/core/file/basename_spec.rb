@@ -105,10 +105,10 @@ describe "File.basename" do
   end
 
   it "raises a TypeError if the arguments are not String types" do
-    lambda { File.basename(nil)          }.should raise_error(TypeError)
-    lambda { File.basename(1)            }.should raise_error(TypeError)
-    lambda { File.basename("bar.txt", 1) }.should raise_error(TypeError)
-    lambda { File.basename(true)         }.should raise_error(TypeError)
+    -> { File.basename(nil)          }.should raise_error(TypeError)
+    -> { File.basename(1)            }.should raise_error(TypeError)
+    -> { File.basename("bar.txt", 1) }.should raise_error(TypeError)
+    -> { File.basename(true)         }.should raise_error(TypeError)
   end
 
   it "accepts an object that has a #to_path method" do
@@ -116,7 +116,7 @@ describe "File.basename" do
   end
 
   it "raises an ArgumentError if passed more than two arguments" do
-    lambda { File.basename('bar.txt', '.txt', '.txt') }.should raise_error(ArgumentError)
+    -> { File.basename('bar.txt', '.txt', '.txt') }.should raise_error(ArgumentError)
   end
 
   # specific to MS Windows
@@ -153,18 +153,31 @@ describe "File.basename" do
     end
   end
 
-  with_feature :encoding do
 
-    it "returns the extension for a multibyte filename" do
-      File.basename('/path/Офис.m4a').should == "Офис.m4a"
+  it "returns the extension for a multibyte filename" do
+    File.basename('/path/Офис.m4a').should == "Офис.m4a"
+  end
+
+  it "returns the basename with the same encoding as the original" do
+    basename = File.basename('C:/Users/Scuby Pagrubý'.encode(Encoding::Windows_1250))
+    basename.should == 'Scuby Pagrubý'.encode(Encoding::Windows_1250)
+    basename.encoding.should == Encoding::Windows_1250
+  end
+
+  it "returns a new unfrozen String" do
+    exts = [nil, '.rb', '.*', '.txt']
+    ['foo.rb','//', '/test/', 'test'].each do |example|
+      exts.each do |ext|
+        original = example.freeze
+        result = if ext
+                   File.basename(original, ext)
+                 else
+                   File.basename(original)
+                 end
+        result.should_not equal(original)
+        result.frozen?.should == false
+      end
     end
-
-    it "returns the basename with the same encoding as the original" do
-      basename = File.basename('C:/Users/Scuby Pagrubý'.encode(Encoding::Windows_1250))
-      basename.should == 'Scuby Pagrubý'.encode(Encoding::Windows_1250)
-      basename.encoding.should == Encoding::Windows_1250
-    end
-
   end
 
 end

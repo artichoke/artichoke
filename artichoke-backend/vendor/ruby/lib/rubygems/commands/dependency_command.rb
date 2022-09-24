@@ -1,10 +1,9 @@
 # frozen_string_literal: true
-require 'rubygems/command'
-require 'rubygems/local_remote_options'
-require 'rubygems/version_option'
+require_relative '../command'
+require_relative '../local_remote_options'
+require_relative '../version_option'
 
 class Gem::Commands::DependencyCommand < Gem::Command
-
   include Gem::LocalRemoteOptions
   include Gem::VersionOption
 
@@ -54,45 +53,45 @@ use with other commands.
     "#{program_name} REGEXP"
   end
 
-  def fetch_remote_specs(dependency) # :nodoc:
+  def fetch_remote_specs(name, requirement, prerelease) # :nodoc:
     fetcher = Gem::SpecFetcher.fetcher
 
-    ss, = fetcher.spec_for_dependency dependency
+    specs_type = prerelease ? :complete : :released
 
-    ss.map { |spec, _| spec }
+    ss = if name.nil?
+      fetcher.detect(specs_type) { true }
+    else
+      fetcher.detect(specs_type) do |name_tuple|
+        name === name_tuple.name && requirement.satisfied_by?(name_tuple.version)
+      end
+    end
+
+    ss.map {|tuple, source| source.fetch_spec(tuple) }
   end
 
-  def fetch_specs(name_pattern, dependency) # :nodoc:
+  def fetch_specs(name_pattern, requirement, prerelease) # :nodoc:
     specs = []
 
     if local?
-      specs.concat Gem::Specification.stubs.find_all { |spec|
-        name_pattern =~ spec.name and
-          dependency.requirement.satisfied_by? spec.version
+      specs.concat Gem::Specification.stubs.find_all {|spec|
+        name_matches = name_pattern ? name_pattern =~ spec.name : true
+        version_matches = requirement.satisfied_by?(spec.version)
+
+        name_matches and version_matches
       }.map(&:to_spec)
     end
 
-    specs.concat fetch_remote_specs dependency if remote?
+    specs.concat fetch_remote_specs name_pattern, requirement, prerelease if remote?
 
     ensure_specs specs
 
     specs.uniq.sort
   end
 
-  def gem_dependency(pattern, version, prerelease) # :nodoc:
-    dependency = Gem::Deprecate.skip_during {
-      Gem::Dependency.new pattern, version
-    }
-
-    dependency.prerelease = prerelease
-
-    dependency
-  end
-
   def display_pipe(specs) # :nodoc:
     specs.each do |spec|
       unless spec.dependencies.empty?
-        spec.dependencies.sort_by { |dep| dep.name }.each do |dep|
+        spec.dependencies.sort_by {|dep| dep.name }.each do |dep|
           say "#{dep.name} --version '#{dep.requirement}'"
         end
       end
@@ -120,11 +119,9 @@ use with other commands.
     ensure_local_only_reverse_dependencies
 
     pattern = name_pattern options[:args]
+    requirement = Gem::Requirement.new options[:version]
 
-    dependency =
-      gem_dependency pattern, options[:version], options[:prerelease]
-
-    specs = fetch_specs pattern, dependency
+    specs = fetch_specs pattern, requirement, options[:prerelease]
 
     reverse = reverse_dependencies specs
 
@@ -156,23 +153,15 @@ use with other commands.
     response = String.new
     response << '  ' * level + "Gem #{spec.full_name}\n"
     unless spec.dependencies.empty?
-      spec.dependencies.sort_by { |dep| dep.name }.each do |dep|
+      spec.dependencies.sort_by {|dep| dep.name }.each do |dep|
         response << '  ' * level + "  #{dep}\n"
       end
     end
     response
   end
 
-  def remote_specs(dependency) # :nodoc:
-    fetcher = Gem::SpecFetcher.fetcher
-
-    ss, _ = fetcher.spec_for_dependency dependency
-
-    ss.map { |s,o| s }
-  end
-
   def reverse_dependencies(specs) # :nodoc:
-    reverse = Hash.new { |h, k| h[k] = [] }
+    reverse = Hash.new {|h, k| h[k] = [] }
 
     return reverse unless options[:reverse_dependencies]
 
@@ -206,9 +195,9 @@ use with other commands.
   private
 
   def name_pattern(args)
-    args << '' if args.empty?
+    return if args.empty?
 
-    if args.length == 1 and args.first =~ /\A\/(.*)\/(i)?\z/m
+    if args.length == 1 and args.first =~ /\A(.*)(i)?\z/m
       flags = $2 ? Regexp::IGNORECASE : nil
       Regexp.new $1, flags
     else

@@ -17,11 +17,11 @@ describe "Kernel#singleton_class" do
     false.singleton_class.should == FalseClass
   end
 
-  it "raises TypeError for Fixnum" do
-    lambda { 123.singleton_class }.should raise_error(TypeError)
+  it "raises TypeError for Integer" do
+    -> { 123.singleton_class }.should raise_error(TypeError)
   end
 
   it "raises TypeError for Symbol" do
-    lambda { :foo.singleton_class }.should raise_error(TypeError)
+    -> { :foo.singleton_class }.should raise_error(TypeError)
   end
 end

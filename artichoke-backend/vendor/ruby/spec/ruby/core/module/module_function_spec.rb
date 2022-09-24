@@ -12,11 +12,11 @@ describe "Module#module_function" do
     end
 
     it "raises a TypeError if calling after rebinded to Class" do
-      lambda {
+      -> {
         Module.instance_method(:module_function).bind(Class.new).call
       }.should raise_error(TypeError)
 
-      lambda {
+      -> {
         Module.instance_method(:module_function).bind(Class.new).call :foo
       }.should raise_error(TypeError)
     end
@@ -38,14 +38,23 @@ describe "Module#module_function with specific method names" do
     m.respond_to?(:test3).should == false
   end
 
-  it "returns the current module" do
-    x = nil
-    m = Module.new do
-      def test()  end
-      x = module_function :test
+  ruby_version_is ""..."3.1" do
+    it "returns self" do
+      Module.new do
+        def foo; end
+        module_function(:foo).should equal(self)
+      end
     end
+  end
 
-    x.should == m
+  ruby_version_is "3.1" do
+    it "returns argument or arguments if given" do
+      Module.new do
+        def foo; end
+        module_function(:foo).should equal(:foo)
+        module_function(:foo, :foo).should == [:foo, :foo]
+      end
+    end
   end
 
   it "creates an independent copy of the method, not a redirect" do
@@ -87,7 +96,7 @@ describe "Module#module_function with specific method names" do
     o.respond_to?(:test).should == false
     m.should have_private_instance_method(:test)
     o.send(:test).should == "hello"
-    lambda { o.test }.should raise_error(NoMethodError)
+    -> { o.test }.should raise_error(NoMethodError)
   end
 
   it "makes the new Module methods public" do
@@ -116,10 +125,10 @@ describe "Module#module_function with specific method names" do
   it "raises a TypeError when the given names can't be converted to string using to_str" do
     o = mock('123')
 
-    lambda { Module.new { module_function(o) } }.should raise_error(TypeError)
+    -> { Module.new { module_function(o) } }.should raise_error(TypeError)
 
     o.should_receive(:to_str).and_return(123)
-    lambda { Module.new { module_function(o) } }.should raise_error(TypeError)
+    -> { Module.new { module_function(o) } }.should raise_error(TypeError)
   end
 
   it "can make accessible private methods" do # JRUBY-4214
@@ -160,13 +169,20 @@ describe "Module#module_function as a toggle (no arguments) in a Module body" do
     m.respond_to?(:test2).should == true
   end
 
-  it "returns the current module" do
-    x = nil
-    m = Module.new {
-      x = module_function
-    }
+  ruby_version_is ""..."3.1" do
+    it "returns self" do
+      Module.new do
+        module_function.should equal(self)
+      end
+    end
+  end
 
-    x.should == m
+  ruby_version_is "3.1" do
+    it "returns nil" do
+      Module.new do
+        module_function.should equal(nil)
+      end
+    end
   end
 
   it "stops creating module functions if the body encounters another toggle " \

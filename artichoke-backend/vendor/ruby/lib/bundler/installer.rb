@@ -1,11 +1,9 @@
 # frozen_string_literal: true
 
-require "erb"
-require "rubygems/dependency_installer"
-require "bundler/worker"
-require "bundler/installer/parallel_installer"
-require "bundler/installer/standalone"
-require "bundler/installer/gem_installer"
+require_relative "worker"
+require_relative "installer/parallel_installer"
+require_relative "installer/standalone"
+require_relative "installer/gem_installer"
 
 module Bundler
   class Installer
@@ -83,13 +81,14 @@ module Bundler
 
         if resolve_if_needed(options)
           ensure_specs_are_compatible!
-          warn_on_incompatible_bundler_deps
           load_plugins
           options.delete(:jobs)
         else
           options[:jobs] = 1 # to avoid the overhead of Bundler::Worker
         end
         install(options)
+
+        Gem::Specification.reset # invalidate gem specification cache so that installed gems are immediately available
 
         lock unless Bundler.frozen_bundle?
         Standalone.new(options[:standalone], @definition).generate if options[:standalone]
@@ -135,12 +134,18 @@ module Bundler
           next
         end
 
-        File.open(binstub_path, "w", 0o777 & ~File.umask) do |f|
-          if RUBY_VERSION >= "2.6"
-            f.puts ERB.new(template, :trim_mode => "-").result(binding)
-          else
-            f.puts ERB.new(template, nil, "-").result(binding)
-          end
+        mode = Gem.win_platform? ? "wb:UTF-8" : "w"
+        require "erb"
+        content = if RUBY_VERSION >= "2.6"
+          ERB.new(template, :trim_mode => "-").result(binding)
+        else
+          ERB.new(template, nil, "-").result(binding)
+        end
+
+        File.write(binstub_path, content, :mode => mode, :perm => 0o777 & ~File.umask)
+        if Gem.win_platform? || options[:all_platforms]
+          prefix = "@ruby -x \"%~f0\" %*\n@exit /b %ERRORLEVEL%\n\n"
+          File.write("#{binstub_path}.cmd", prefix + content, :mode => mode)
         end
       end
 
@@ -159,7 +164,7 @@ module Bundler
       end
     end
 
-    def generate_standalone_bundler_executable_stubs(spec)
+    def generate_standalone_bundler_executable_stubs(spec, options = {})
       # double-assignment to avoid warnings about variables that will be used by ERB
       bin_path = Bundler.bin_path
       unless path = Bundler.settings[:path]
@@ -175,17 +180,24 @@ module Bundler
         next if executable == "bundle"
         executable_path = Pathname(spec.full_gem_path).join(spec.bindir, executable).relative_path_from(bin_path)
         executable_path = executable_path
-        File.open "#{bin_path}/#{executable}", "w", 0o755 do |f|
-          if RUBY_VERSION >= "2.6"
-            f.puts ERB.new(template, :trim_mode => "-").result(binding)
-          else
-            f.puts ERB.new(template, nil, "-").result(binding)
-          end
+
+        mode = Gem.win_platform? ? "wb:UTF-8" : "w"
+        require "erb"
+        content = if RUBY_VERSION >= "2.6"
+          ERB.new(template, :trim_mode => "-").result(binding)
+        else
+          ERB.new(template, nil, "-").result(binding)
+        end
+
+        File.write("#{bin_path}/#{executable}", content, :mode => mode, :perm => 0o755)
+        if Gem.win_platform? || options[:all_platforms]
+          prefix = "@ruby -x \"%~f0\" %*\n@exit /b %ERRORLEVEL%\n\n"
+          File.write("#{bin_path}/#{executable}.cmd", prefix + content, :mode => mode)
         end
       end
     end
 
-  private
+    private
 
     # the order that the resolver provides is significant, since
     # dependencies might affect the installation of a gem.
@@ -202,27 +214,11 @@ module Bundler
         return jobs
       end
 
-      return 1 unless can_install_in_parallel?
-
-      auto_config_jobs = Bundler.feature_flag.auto_config_jobs?
       if jobs = Bundler.settings[:jobs]
-        if auto_config_jobs
-          jobs
-        else
-          [jobs.pred, 1].max
-        end
-      elsif auto_config_jobs
-        processor_count
-      else
-        1
+        return jobs
       end
-    end
 
-    def processor_count
-      require "etc"
-      Etc.nprocessors
-    rescue
-      1
+      Bundler.settings.processor_count
     end
 
     def load_plugins
@@ -238,11 +234,12 @@ module Bundler
         end
       end.flatten
       Bundler.rubygems.load_plugin_files(path_plugin_files)
+      Bundler.rubygems.load_env_plugins
     end
 
     def ensure_specs_are_compatible!
       system_ruby = Bundler::RubyVersion.system
-      rubygems_version = Gem::Version.create(Gem::VERSION)
+      rubygems_version = Bundler.rubygems.version
       @definition.specs.each do |spec|
         if required_ruby_version = spec.required_ruby_version
           unless required_ruby_version.satisfied_by?(system_ruby.gem_version)
@@ -255,33 +252,6 @@ module Bundler
           raise InstallError, "#{spec.full_name} requires rubygems version #{required_rubygems_version}, " \
             "which is incompatible with the current version, #{rubygems_version}"
         end
-      end
-    end
-
-    def warn_on_incompatible_bundler_deps
-      bundler_version = Gem::Version.create(Bundler::VERSION)
-      @definition.specs.each do |spec|
-        spec.dependencies.each do |dep|
-          next if dep.type == :development
-          next unless dep.name == "bundler".freeze
-          next if dep.requirement.satisfied_by?(bundler_version)
-
-          Bundler.ui.warn "#{spec.name} (#{spec.version}) has dependency" \
-            " #{SharedHelpers.pretty_dependency(dep)}" \
-            ", which is unsatisfied by the current bundler version #{VERSION}" \
-            ", so the dependency is being ignored"
-        end
-      end
-    end
-
-    def can_install_in_parallel?
-      if Bundler.rubygems.provides?(">= 2.1.0")
-        true
-      else
-        Bundler.ui.warn "RubyGems #{Gem::VERSION} is not threadsafe, so your "\
-          "gems will be installed one at a time. Upgrade to RubyGems 2.1.0 " \
-          "or higher to enable parallel gem installation."
-        false
       end
     end
 

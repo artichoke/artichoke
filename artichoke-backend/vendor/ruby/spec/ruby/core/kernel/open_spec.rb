@@ -2,7 +2,6 @@ require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
 describe "Kernel#open" do
-
   before :each do
     @name = tmp("kernel_open.txt")
     @content = "This is a test"
@@ -45,8 +44,10 @@ describe "Kernel#open" do
     end
 
     it "opens an io for writing" do
-      bytes = open("|cat", "w") { |io| io.write(".") }
-      bytes.should == 1
+      -> do
+        bytes = open("|cat", "w") { |io| io.write(".") }
+        bytes.should == 1
+      end.should output_to_fd(".")
     end
   end
 
@@ -68,7 +69,7 @@ describe "Kernel#open" do
   end
 
   it "raises an ArgumentError if not passed one argument" do
-    lambda { open }.should raise_error(ArgumentError)
+    -> { open }.should raise_error(ArgumentError)
   end
 
   describe "when given an object that responds to to_open" do
@@ -127,13 +128,37 @@ describe "Kernel#open" do
 
   it "raises a TypeError if passed a non-String that does not respond to #to_open" do
     obj = mock('non-fileish')
-    lambda { open(obj) }.should raise_error(TypeError)
-    lambda { open(nil) }.should raise_error(TypeError)
-    lambda { open(7)   }.should raise_error(TypeError)
+    -> { open(obj) }.should raise_error(TypeError)
+    -> { open(nil) }.should raise_error(TypeError)
+    -> { open(7)   }.should raise_error(TypeError)
   end
 
   it "accepts nil for mode and permission" do
     open(@name, nil, nil) { |f| f.gets }.should == @content
+  end
+
+  ruby_version_is ""..."3.0" do
+    it "works correctly when redefined by open-uri" do
+      code = <<~RUBY
+      require 'open-uri'
+      obj = Object.new
+      def obj.to_open; self; end
+      p open(obj) == obj
+      RUBY
+      ruby_exe(code, args: "2>&1").should == "true\n"
+    end
+  end
+
+  ruby_version_is "3.0" do
+    it "is not redefined by open-uri" do
+      code = <<~RUBY
+        before = Kernel.instance_method(:open)
+        require 'open-uri'
+        after = Kernel.instance_method(:open)
+        p before == after
+      RUBY
+      ruby_exe(code, args: "2>&1").should == "true\n"
+    end
   end
 end
 

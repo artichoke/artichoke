@@ -18,7 +18,7 @@ describe "Module#protected" do
       protected :protected_method_1
     end
 
-    lambda { ModuleSpecs::Parent.protected_method_1 }.should raise_error(NoMethodError)
+    -> { ModuleSpecs::Parent.protected_method_1 }.should raise_error(NoMethodError)
   end
 
   it "makes a public Object instance method protected in a new module" do
@@ -39,16 +39,30 @@ describe "Module#protected" do
                   :module_specs_public_method_on_object_for_kernel_protected)
   end
 
-  it "returns self" do
-    (class << Object.new; self; end).class_eval do
-      def foo; end
-      protected(:foo).should equal(self)
-      protected.should equal(self)
+  ruby_version_is ""..."3.1" do
+    it "returns self" do
+      (class << Object.new; self; end).class_eval do
+        def foo; end
+        protected(:foo).should equal(self)
+        protected.should equal(self)
+      end
+    end
+  end
+
+  ruby_version_is "3.1" do
+    it "returns argument or arguments if given" do
+      (class << Object.new; self; end).class_eval do
+        def foo; end
+        protected(:foo).should equal(:foo)
+        protected([:foo, :foo]).should == [:foo, :foo]
+        protected(:foo, :foo).should == [:foo, :foo]
+        protected.should equal(nil)
+      end
     end
   end
 
   it "raises a NameError when given an undefined name" do
-    lambda do
+    -> do
       Module.new.send(:protected, :undefined)
     end.should raise_error(NameError)
   end

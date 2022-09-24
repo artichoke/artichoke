@@ -14,7 +14,7 @@ describe "Range#max" do
   end
 
   it "raises TypeError when called on an exclusive range and a non Integer value" do
-    lambda { (303.20...908.1111).max }.should raise_error(TypeError)
+    -> { (303.20...908.1111).max }.should raise_error(TypeError)
   end
 
   it "returns nil when the endpoint is less than the start point" do
@@ -43,7 +43,24 @@ describe "Range#max" do
   it "raises TypeError when called on a Time...Time(excluded end point)" do
     time_start = Time.now
     time_end = Time.now + 1.0
-    lambda { (time_start...time_end).max  }.should raise_error(TypeError)
+    -> { (time_start...time_end).max  }.should raise_error(TypeError)
+  end
+
+  it "raises RangeError when called on an endless range" do
+    -> { eval("(1..)").max }.should raise_error(RangeError)
+  end
+
+  ruby_version_is "3.0" do
+    it "returns the end point for beginless ranges" do
+      eval("(..1)").max.should == 1
+      eval("(..1.0)").max.should == 1.0
+    end
+
+    it "raises for an exclusive beginless range" do
+      -> {
+        eval("(...1)").max
+      }.should raise_error(TypeError, 'cannot exclude end value with non Integer begin value')
+    end
   end
 end
 
@@ -78,5 +95,11 @@ describe "Range#max given a block" do
     (100..10).max {|x,y| x <=> y}.should be_nil
     ('z'..'l').max {|x,y| x <=> y}.should be_nil
     (5...5).max {|x,y| x <=> y}.should be_nil
+  end
+
+  ruby_version_is "2.7" do
+    it "raises RangeError when called with custom comparison method on an beginless range" do
+      -> { eval("(..1)").max {|a, b| a} }.should raise_error(RangeError)
+    end
   end
 end

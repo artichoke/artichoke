@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "uri"
-
 module Bundler
   module Plugin
     class API
@@ -37,7 +35,7 @@ module Bundler
       #
       # @!attribute [rw] dependency_names
       #   @return [Array<String>] Names of dependencies that the source should
-      #     try to resolve. It is not necessary to use this list intenally. This
+      #     try to resolve. It is not necessary to use this list internally. This
       #     is present to be compatible with `Definition` and is used by
       #     rubygems source.
       module Source
@@ -108,7 +106,7 @@ module Bundler
         def install_path
           @install_path ||=
             begin
-              base_name = File.basename(URI.parse(uri).normalize.path)
+              base_name = File.basename(Bundler::URI.parse(uri).normalize.path)
 
               gem_install_dir.join("#{base_name}-#{uri_hash[0..11]}")
             end
@@ -142,6 +140,13 @@ module Bundler
           end
         end
 
+        # Set internal representation to fetch the gems/specs locally.
+        #
+        # When this is called, the source should try to fetch the specs and
+        # install from the local system.
+        def local!
+        end
+
         # Set internal representation to fetch the gems/specs from remote.
         #
         # When this is called, the source should try to fetch the specs and
@@ -170,7 +175,7 @@ module Bundler
         #
         # This is used by `app_cache_path`
         def app_cache_dirname
-          base_name = File.basename(URI.parse(uri).normalize.path)
+          base_name = File.basename(Bundler::URI.parse(uri).normalize.path)
           "#{base_name}-#{uri_hash}"
         end
 
@@ -196,7 +201,7 @@ module Bundler
         # This shall check if two source object represent the same source.
         #
         # The comparison shall take place only on the attribute that can be
-        # inferred from the options passed from Gemfile and not on attibutes
+        # inferred from the options passed from Gemfile and not on attributes
         # that are used to pin down the gem to specific version (e.g. Git
         # sources should compare on branch and tag but not on commit hash)
         #
@@ -239,6 +244,20 @@ module Bundler
           specs.unmet_dependency_names
         end
 
+        # Used by definition.
+        #
+        # Note: Do not override if you don't know what you are doing.
+        def spec_names
+          specs.spec_names
+        end
+
+        # Used by definition.
+        #
+        # Note: Do not override if you don't know what you are doing.
+        def add_dependency_names(names)
+          @dependencies |= Array(names)
+        end
+
         # Note: Do not override if you don't know what you are doing.
         def can_lock?(spec)
           spec.source == self
@@ -262,8 +281,9 @@ module Bundler
         end
 
         def to_s
-          "plugin source for #{options[:type]} with uri #{uri}"
+          "plugin source for #{@type} with uri #{@uri}"
         end
+        alias_method :identifier, :to_s
 
         # Note: Do not override if you don't know what you are doing.
         def include?(other)

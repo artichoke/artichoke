@@ -26,6 +26,7 @@ module MethodSpecs
     end
 
     alias bar foo
+    alias baz bar
 
     def same_as_foo
       true
@@ -49,6 +50,8 @@ module MethodSpecs
     def one_req(a); end
     def two_req(a, b); end
 
+    def one_req_named(a:); end
+
     def zero_with_block(&blk); end
     def one_req_with_block(a, &blk); end
     def two_req_with_block(a, b, &blk); end
@@ -57,6 +60,8 @@ module MethodSpecs
     def one_req_one_opt(a, b=nil); end
     def one_req_two_opt(a, b=nil, c=nil); end
     def two_req_one_opt(a, b, c=nil); end
+
+    def one_opt_named(a: nil); end
 
     def one_opt_with_block(a=nil, &blk); end
     def one_req_one_opt_with_block(a, b=nil, &blk); end
@@ -69,6 +74,8 @@ module MethodSpecs
     def one_req_one_opt_with_splat(a, b=nil, *c); end
     def two_req_one_opt_with_splat(a, b, c=nil, *d); end
     def one_req_two_opt_with_splat(a, b=nil, c=nil, *d); end
+
+    def zero_with_double_splat(**a); end
 
     def zero_with_splat_and_block(*a, &blk); end
     def one_req_with_splat_and_block(a, *b, &blk); end
@@ -181,4 +188,29 @@ module MethodSpecs
     end
   end
 
+  class Composition
+    def upcase(s)
+      s.upcase
+    end
+
+    def succ(s)
+      s.succ
+    end
+
+    def pow_2(n)
+      n * n
+    end
+
+    def double(n)
+      n + n
+    end
+
+    def inc(n)
+      n + 1
+    end
+
+    def mul(n, m)
+      n * m
+    end
+  end
 end

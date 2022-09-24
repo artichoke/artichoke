@@ -1,7 +1,12 @@
 # frozen_string_literal: true
+
+version = File.foreach(File.expand_path("../lib/date.rb", __FILE__)).find do |line|
+  /^\s*VERSION\s*=\s*["'](.*)["']/ =~ line and break $1
+end
+
 Gem::Specification.new do |s|
   s.name = "date"
-  s.version = '2.0.0'
+  s.version = version
   s.summary = "A subclass of Object includes Comparable module for handling dates."
   s.description = "A subclass of Object includes Comparable module for handling dates."
 
@@ -17,7 +22,5 @@ Gem::Specification.new do |s|
   s.authors = ["Tadayoshi Funaba"]
   s.email = [nil]
   s.homepage = "https://github.com/ruby/date"
-  s.license = "BSD-2-Clause"
-
-  s.add_development_dependency "rake-compiler"
+  s.licenses = ["Ruby", "BSD-2-Clause"]
 end

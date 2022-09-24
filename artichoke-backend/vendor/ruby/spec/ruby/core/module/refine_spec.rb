@@ -59,7 +59,7 @@ describe "Module#refine" do
   end
 
   it "raises ArgumentError if not passed an argument" do
-    lambda do
+    -> do
       Module.new do
         refine {}
       end
@@ -67,42 +67,53 @@ describe "Module#refine" do
   end
 
   it "raises TypeError if not passed a class" do
-    lambda do
+    -> do
       Module.new do
         refine("foo") {}
       end
     end.should raise_error(TypeError)
   end
 
-  ruby_version_is "" ... "2.4" do
-    it "raises TypeError if passed a module" do
-      lambda do
-        Module.new do
-          refine(Enumerable) {}
+  it "accepts a module as argument" do
+    inner_self = nil
+    Module.new do
+      refine(Enumerable) do
+        def blah
         end
-      end.should raise_error(TypeError)
-    end
-  end
-
-  quarantine! do # https://bugs.ruby-lang.org/issues/14070
-    ruby_version_is "2.4" do
-      it "accepts a module as argument" do
-        inner_self = nil
-        Module.new do
-          refine(Enumerable) do
-            def blah
-            end
-            inner_self = self
-          end
-        end
-
-        inner_self.public_instance_methods.should include(:blah)
+        inner_self = self
       end
     end
+
+    inner_self.public_instance_methods.should include(:blah)
+  end
+
+  it "applies refinements to the module" do
+    refinement = Module.new do
+      refine(Enumerable) do
+        def foo?
+          self.any? ? "yes" : "no"
+        end
+      end
+    end
+
+    foo = Class.new do
+      using refinement
+
+      def initialize(items)
+        @items = items
+      end
+
+      def result
+        @items.foo?
+      end
+    end
+
+    foo.new([]).result.should == "no"
+    foo.new([1]).result.should == "yes"
   end
 
   it "raises ArgumentError if not given a block" do
-    lambda do
+    -> do
       Module.new do
         refine String
       end
@@ -123,7 +134,7 @@ describe "Module#refine" do
   it "doesn't apply refinements outside the refine block" do
     Module.new do
       refine(String) {def foo; "foo"; end}
-      -> () {
+      -> {
         "hello".foo
       }.should raise_error(NoMethodError)
     end
@@ -134,7 +145,7 @@ describe "Module#refine" do
       refine(String) {def foo; 'foo'; end}
     end
 
-    lambda {"hello".foo}.should raise_error(NoMethodError)
+    -> {"hello".foo}.should raise_error(NoMethodError)
   end
 
   # When defining multiple refinements in the same module,
@@ -191,7 +202,7 @@ describe "Module#refine" do
 
     result = nil
 
-    -> () {
+    -> {
       Module.new do
         using refinery_integer
         using refinery_array
@@ -210,8 +221,10 @@ describe "Module#refine" do
   #   * The included modules of C
   describe "method lookup" do
     it "looks in the object singleton class first" do
+      refined_class = ModuleSpecs.build_refined_class
+
       refinement = Module.new do
-        refine ModuleSpecs::ClassWithFoo  do
+        refine refined_class do
           def foo; "foo from refinement"; end
         end
       end
@@ -220,7 +233,7 @@ describe "Module#refine" do
       Module.new do
         using refinement
 
-        obj = ModuleSpecs::ClassWithFoo.new
+        obj = refined_class.new
         class << obj
           def foo; "foo from singleton class"; end
         end
@@ -230,68 +243,133 @@ describe "Module#refine" do
       result.should == "foo from singleton class"
     end
 
-    it "looks in prepended modules from the refinement first" do
-      refinement = Module.new do
-        refine ModuleSpecs::ClassWithFoo  do
-          include ModuleSpecs::IncludedModule
-          prepend ModuleSpecs::PrependedModule
-
-          def foo; "foo from refinement"; end
+    it "looks in the included modules for builtin methods" do
+      result = ruby_exe(<<-RUBY)
+        a = Module.new do
+          def /(other) quo(other) end
         end
-      end
 
-      result = nil
-      Module.new do
-        using refinement
-        result = ModuleSpecs::ClassWithFoo.new.foo
-      end
+        refinement = Module.new do
+          refine Integer do
+            include a
+          end
+        end
 
-      result.should == "foo from prepended module"
+        result = nil
+        Module.new do
+          using refinement
+          result = 1 / 2
+        end
+
+        print result.class
+      RUBY
+
+      result.should == 'Rational'
     end
 
-    it "looks in refinement then" do
-      refinement = Module.new do
-        refine(ModuleSpecs::ClassWithFoo) do
-          include ModuleSpecs::IncludedModule
-
-          def foo; "foo from refinement"; end
+    it "looks in later included modules of the refined module first" do
+      a = Module.new do
+        def foo
+         "foo from A"
         end
       end
+
+      include_me_later = Module.new do
+        def foo
+          "foo from IncludeMeLater"
+        end
+      end
+
+      c = Class.new do
+        include a
+      end
+
+      refinement = Module.new do
+         refine c do; end
+       end
 
       result = nil
       Module.new do
         using refinement
-        result = ModuleSpecs::ClassWithFoo.new.foo
+        c.include include_me_later
+        result = c.new.foo
       end
 
-      result.should == "foo from refinement"
+      result.should == "foo from IncludeMeLater"
     end
 
-    it "looks in included modules from the refinement then" do
-      refinement = Module.new do
-        refine ModuleSpecs::ClassWithFoo  do
-          include ModuleSpecs::IncludedModule
+    ruby_version_is ""..."3.1" do
+      it "looks in prepended modules from the refinement first" do
+        refined_class = ModuleSpecs.build_refined_class
+
+        refinement = Module.new do
+          refine refined_class do
+            include ModuleSpecs::IncludedModule
+            prepend ModuleSpecs::PrependedModule
+
+            def foo; "foo from refinement"; end
+          end
         end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = refined_class.new.foo
+        end
+
+        result.should == "foo from prepended module"
       end
 
-      result = nil
-      Module.new do
-        using refinement
-        result = ModuleSpecs::ClassWithFoo.new.foo
+      it "looks in refinement then" do
+        refined_class = ModuleSpecs.build_refined_class
+
+        refinement = Module.new do
+          refine(refined_class) do
+            include ModuleSpecs::IncludedModule
+
+            def foo; "foo from refinement"; end
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = refined_class.new.foo
+        end
+
+        result.should == "foo from refinement"
       end
 
-      result.should == "foo from included module"
+      it "looks in included modules from the refinement then" do
+        refined_class = ModuleSpecs.build_refined_class
+
+        refinement = Module.new do
+          refine refined_class do
+            include ModuleSpecs::IncludedModule
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = refined_class.new.foo
+        end
+
+        result.should == "foo from included module"
+      end
     end
 
     it "looks in the class then" do
+      refined_class = ModuleSpecs.build_refined_class
+
       refinement = Module.new do
-        refine(ModuleSpecs::ClassWithFoo) { }
+        refine(refined_class) { }
       end
 
       result = nil
       Module.new do
         using refinement
-        result = ModuleSpecs::ClassWithFoo.new.foo
+        result = refined_class.new.foo
       end
 
       result.should == "foo"
@@ -301,12 +379,14 @@ describe "Module#refine" do
 
   # methods in a subclass have priority over refinements in a superclass
   it "does not override methods in subclasses" do
-    subclass = Class.new(ModuleSpecs::ClassWithFoo) do
+    refined_class = ModuleSpecs.build_refined_class
+
+    subclass = Class.new(refined_class) do
       def foo; "foo from subclass"; end
     end
 
     refinement = Module.new do
-      refine ModuleSpecs::ClassWithFoo do
+      refine refined_class do
         def foo; "foo from refinement"; end
       end
     end
@@ -321,166 +401,94 @@ describe "Module#refine" do
   end
 
   context "for methods accessed indirectly" do
-    ruby_version_is "" ... "2.4" do
-      it "is not honored by Kernel#send" do
-        refinement = Module.new do
-          refine ModuleSpecs::ClassWithFoo do
-            def foo; "foo from refinement"; end
-          end
-        end
+    it "is honored by Kernel#send" do
+      refined_class = ModuleSpecs.build_refined_class
 
-        result = nil
-        Module.new do
-          using refinement
-          result = ModuleSpecs::ClassWithFoo.new.send :foo
+      refinement = Module.new do
+        refine refined_class do
+          def foo; "foo from refinement"; end
         end
-
-        result.should == "foo"
       end
 
-      it "is not honored by BasicObject#__send__" do
-        refinement = Module.new do
-          refine ModuleSpecs::ClassWithFoo do
-            def foo; "foo from refinement"; end
-          end
-        end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = ModuleSpecs::ClassWithFoo.new.__send__ :foo
-        end
-
-        result.should == "foo"
+      result = nil
+      Module.new do
+        using refinement
+        result = refined_class.new.send :foo
       end
 
-      it "is not honored by Symbol#to_proc" do
-        refinement = Module.new do
-          refine Integer do
-            def to_s
-              "(#{super})"
-            end
-          end
-        end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = [1, 2, 3].map(&:to_s)
-        end
-
-        result.should == ["1", "2", "3"]
-      end
+      result.should == "foo from refinement"
     end
 
-    ruby_version_is "2.4" do
-      it "is honored by Kernel#send" do
-        refinement = Module.new do
-          refine ModuleSpecs::ClassWithFoo do
-            def foo; "foo from refinement"; end
-          end
-        end
+    it "is honored by BasicObject#__send__" do
+      refined_class = ModuleSpecs.build_refined_class
 
-        result = nil
-        Module.new do
-          using refinement
-          result = ModuleSpecs::ClassWithFoo.new.send :foo
+      refinement = Module.new do
+        refine refined_class do
+          def foo; "foo from refinement"; end
         end
-
-        result.should == "foo from refinement"
       end
 
-      it "is honored by BasicObject#__send__" do
-        refinement = Module.new do
-          refine ModuleSpecs::ClassWithFoo do
-            def foo; "foo from refinement"; end
-          end
-        end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = ModuleSpecs::ClassWithFoo.new.__send__ :foo
-        end
-
-        result.should == "foo from refinement"
+      result = nil
+      Module.new do
+        using refinement
+        result = refined_class.new.__send__ :foo
       end
 
-      it "is honored by Symbol#to_proc" do
-        refinement = Module.new do
-          refine Integer do
-            def to_s
-              "(#{super})"
-            end
-          end
-        end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = [1, 2, 3].map(&:to_s)
-        end
-
-        result.should == ["(1)", "(2)", "(3)"]
-      end
+      result.should == "foo from refinement"
     end
 
-    ruby_version_is "2.6" do
-      it "is honored by Kernel#public_send" do
-        refinement = Module.new do
-          refine ModuleSpecs::ClassWithFoo do
-            def foo; "foo from refinement"; end
+    it "is honored by Symbol#to_proc" do
+      refinement = Module.new do
+        refine Integer do
+          def to_s
+            "(#{super})"
           end
         end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = ModuleSpecs::ClassWithFoo.new.public_send :foo
-        end
-
-        result.should == "foo from refinement"
       end
+
+      result = nil
+      Module.new do
+        using refinement
+        result = [1, 2, 3].map(&:to_s)
+      end
+
+      result.should == ["(1)", "(2)", "(3)"]
     end
 
-    ruby_version_is "" ... "2.5" do
-      it "is not honored by string interpolation" do
-        refinement = Module.new do
-          refine Integer do
-            def to_s
-              "foo"
-            end
-          end
-        end
+    it "is honored by Kernel#public_send" do
+      refined_class = ModuleSpecs.build_refined_class
 
-        result = nil
-        Module.new do
-          using refinement
-          result = "#{1}"
+      refinement = Module.new do
+        refine refined_class do
+          def foo; "foo from refinement"; end
         end
-
-        result.should == "1"
       end
+
+      result = nil
+      Module.new do
+        using refinement
+        result = refined_class.new.public_send :foo
+      end
+
+      result.should == "foo from refinement"
     end
 
-    ruby_version_is "2.5" do
-      it "is honored by string interpolation" do
-        refinement = Module.new do
-          refine Integer do
-            def to_s
-              "foo"
-            end
+    it "is honored by string interpolation" do
+      refinement = Module.new do
+        refine Integer do
+          def to_s
+            "foo"
           end
         end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = "#{1}"
-        end
-
-        result.should == "foo"
       end
+
+      result = nil
+      Module.new do
+        using refinement
+        result = "#{1}"
+      end
+
+      result.should == "foo"
     end
 
     it "is honored by Kernel#binding" do
@@ -508,7 +516,118 @@ describe "Module#refine" do
       result.should == "hello from refinement"
     end
 
-    it "is not honored by Kernel#method" do
+    ruby_version_is "" ... "2.7" do
+      it "is not honored by Kernel#method" do
+        klass = Class.new
+        refinement = Module.new do
+          refine klass do
+            def foo; end
+          end
+        end
+
+        -> {
+          Module.new do
+            using refinement
+            klass.new.method(:foo)
+          end
+        }.should raise_error(NameError, /undefined method `foo'/)
+      end
+    end
+
+    ruby_version_is "2.7" do
+      it "is honored by Kernel#method" do
+        klass = Class.new
+        refinement = Module.new do
+          refine klass do
+            def foo; end
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = klass.new.method(:foo).class
+        end
+
+        result.should == Method
+      end
+    end
+
+    ruby_version_is "" ... "2.7" do
+      it "is not honored by Kernel#public_method" do
+        klass = Class.new
+        refinement = Module.new do
+          refine klass do
+            def foo; end
+          end
+        end
+
+        -> {
+          Module.new do
+            using refinement
+            klass.new.public_method(:foo)
+          end
+        }.should raise_error(NameError, /undefined method `foo'/)
+      end
+    end
+
+    ruby_version_is "2.7" do
+      it "is honored by Kernel#public_method" do
+        klass = Class.new
+        refinement = Module.new do
+          refine klass do
+            def foo; end
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = klass.new.public_method(:foo).class
+        end
+
+        result.should == Method
+      end
+    end
+
+    ruby_version_is "" ... "2.7" do
+      it "is not honored by Kernel#instance_method" do
+        klass = Class.new
+        refinement = Module.new do
+          refine klass do
+            def foo; end
+          end
+        end
+
+        -> {
+          Module.new do
+            using refinement
+            klass.instance_method(:foo)
+          end
+        }.should raise_error(NameError, /undefined method `foo'/)
+      end
+    end
+
+    ruby_version_is "2.7" do
+      it "is honored by Kernel#instance_method" do
+        klass = Class.new
+        refinement = Module.new do
+          refine klass do
+            def foo; end
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = klass.instance_method(:foo).class
+        end
+
+        result.should == UnboundMethod
+      end
+    end
+
+    it "is honored by Kernel#respond_to?" do
       klass = Class.new
       refinement = Module.new do
         refine klass do
@@ -516,77 +635,64 @@ describe "Module#refine" do
         end
       end
 
-      -> {
-        Module.new do
-          using refinement
-          klass.new.method(:foo)
-        end
-      }.should raise_error(NameError, /undefined method `foo'/)
+      result = nil
+      Module.new do
+        using refinement
+        result = klass.new.respond_to?(:foo)
+      end
+
+      result.should == true
     end
 
-    ruby_version_is "" ... "2.6" do
-      it "is not honored by Kernel#respond_to?" do
-        klass = Class.new
-        refinement = Module.new do
-          refine klass do
-            def foo; end
+    it "is honored by &" do
+      refinement = Module.new do
+        refine String do
+          def to_proc(*args)
+            -> * { 'foo' }
           end
         end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = klass.new.respond_to?(:foo)
-        end
-
-        result.should == false
       end
-    end
 
-    ruby_version_is "2.6" do
-      it "is honored by Kernel#respond_to?" do
-        klass = Class.new
-        refinement = Module.new do
-          refine klass do
-            def foo; end
-          end
-        end
-
-        result = nil
-        Module.new do
-          using refinement
-          result = klass.new.respond_to?(:foo)
-        end
-
-        result.should == true
+      result = nil
+      Module.new do
+        using refinement
+        result = ["hola"].map(&"upcase")
       end
+
+      result.should == ['foo']
     end
   end
 
   context "when super is called in a refinement" do
-    it "looks in the included to refinery module" do
-      refinement = Module.new do
-        refine ModuleSpecs::ClassWithFoo  do
-          include ModuleSpecs::IncludedModule
+    ruby_version_is ""..."3.1" do
+      it "looks in the included to refinery module" do
+        refined_class = ModuleSpecs.build_refined_class
 
-          def foo
-            super
+        refinement = Module.new do
+          refine refined_class do
+            include ModuleSpecs::IncludedModule
+
+            def foo
+              super
+            end
           end
         end
-      end
 
-      result = nil
-      Module.new do
-        using refinement
-        result = ModuleSpecs::ClassWithFoo.new.foo
-      end
+        result = nil
+        Module.new do
+          using refinement
+          result = refined_class.new.foo
+        end
 
-      result.should == "foo from included module"
+        result.should == "foo from included module"
+      end
     end
 
     it "looks in the refined class" do
+      refined_class = ModuleSpecs.build_refined_class
+
       refinement = Module.new do
-        refine ModuleSpecs::ClassWithFoo  do
+        refine refined_class do
           def foo
             super
           end
@@ -596,28 +702,83 @@ describe "Module#refine" do
       result = nil
       Module.new do
         using refinement
-        result = ModuleSpecs::ClassWithFoo.new.foo
+        result = refined_class.new.foo
       end
 
       result.should == "foo"
     end
 
+    ruby_version_is ""..."3.1" do
+      it "looks in the refined class from included module" do
+        refined_class = ModuleSpecs.build_refined_class(for_super: true)
+
+        a = Module.new do
+          def foo
+            [:A] + super
+          end
+        end
+
+        refinement = Module.new do
+          refine refined_class do
+            include a
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+
+          result = refined_class.new.foo
+        end
+
+        result.should == [:A, :C]
+      end
+
+      it "looks in the refined ancestors from included module" do
+        refined_class = ModuleSpecs.build_refined_class(for_super: true)
+        subclass = Class.new(refined_class)
+
+        a = Module.new do
+          def foo
+            [:A] + super
+          end
+        end
+
+        refinement = Module.new do
+          refine refined_class do
+            include a
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+
+          result = subclass.new.foo
+        end
+
+        result.should == [:A, :C]
+      end
+    end
+
     # super in a method of a refinement invokes the method in the refined
     # class even if there is another refinement which has been activated
     # in the same context.
-    it "looks in the refined class even if there is another active refinement" do
+    it "looks in the refined class first if called from refined method" do
+      refined_class = ModuleSpecs.build_refined_class(for_super: true)
+
       refinement = Module.new do
-        refine ModuleSpecs::ClassWithFoo  do
+        refine refined_class do
           def foo
-            "foo from refinement"
+            [:R1]
           end
         end
       end
 
       refinement_with_super = Module.new do
-        refine ModuleSpecs::ClassWithFoo  do
+        refine refined_class do
           def foo
-            super
+            [:R2] + super
           end
         end
       end
@@ -626,10 +787,212 @@ describe "Module#refine" do
       Module.new do
         using refinement
         using refinement_with_super
-        result = ModuleSpecs::ClassWithFoo.new.foo
+        result = refined_class.new.foo
       end
 
-      result.should == "foo"
+      result.should == [:R2, :C]
+    end
+
+    it "looks only in the refined class even if there is another active refinement" do
+      refined_class = ModuleSpecs.build_refined_class(for_super: true)
+
+      refinement = Module.new do
+        refine refined_class do
+          def bar
+            "you cannot see me from super because I belong to another active R"
+          end
+        end
+      end
+
+      refinement_with_super = Module.new do
+        refine refined_class do
+          def bar
+            super
+          end
+        end
+      end
+
+
+      Module.new do
+        using refinement
+        using refinement_with_super
+        -> {
+          refined_class.new.bar
+        }.should raise_error(NoMethodError)
+      end
+    end
+
+    ruby_version_is ""..."3.1" do
+      it "does't have access to active refinements for C from included module" do
+        refined_class = ModuleSpecs.build_refined_class
+
+        a = Module.new do
+          def foo
+            super + bar
+          end
+        end
+
+        refinement = Module.new do
+          refine refined_class do
+            include a
+
+            def bar
+              "bar is not seen from A methods"
+            end
+          end
+        end
+
+        Module.new do
+          using refinement
+          -> {
+            refined_class.new.foo
+          }.should raise_error(NameError) { |e| e.name.should == :bar }
+        end
+      end
+
+      it "does't have access to other active refinements from included module" do
+        refined_class = ModuleSpecs.build_refined_class
+
+        refinement_integer = Module.new do
+          refine Integer do
+            def bar
+              "bar is not seen from A methods"
+            end
+          end
+        end
+
+        a = Module.new do
+          def foo
+            super + 1.bar
+          end
+        end
+
+        refinement = Module.new do
+          refine refined_class do
+            include a
+          end
+        end
+
+        Module.new do
+          using refinement
+          using refinement_integer
+          -> {
+            refined_class.new.foo
+          }.should raise_error(NameError) { |e| e.name.should == :bar }
+        end
+      end
+
+      # https://bugs.ruby-lang.org/issues/16977
+      it "looks in the another active refinement if super called from included modules" do
+        refined_class = ModuleSpecs.build_refined_class(for_super: true)
+
+        a = Module.new do
+          def foo
+            [:A] + super
+          end
+        end
+
+        b = Module.new do
+          def foo
+            [:B] + super
+          end
+        end
+
+        refinement_a = Module.new do
+          refine refined_class do
+            include a
+          end
+        end
+
+        refinement_b = Module.new do
+          refine refined_class do
+            include b
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement_a
+          using refinement_b
+          result = refined_class.new.foo
+        end
+
+        result.should == [:B, :A, :C]
+      end
+
+      it "looks in the current active refinement from included modules" do
+        refined_class = ModuleSpecs.build_refined_class(for_super: true)
+
+        a = Module.new do
+          def foo
+            [:A] + super
+          end
+        end
+
+        b = Module.new do
+          def foo
+            [:B] + super
+          end
+        end
+
+        refinement = Module.new do
+          refine refined_class do
+            def foo
+              [:LAST] + super
+            end
+          end
+        end
+
+        refinement_a_b = Module.new do
+          refine refined_class do
+            include a
+            include b
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          using refinement_a_b
+          result = refined_class.new.foo
+        end
+
+        result.should == [:B, :A, :LAST, :C]
+      end
+
+      it "looks in the lexical scope refinements before other active refinements" do
+        refined_class = ModuleSpecs.build_refined_class(for_super: true)
+
+        refinement_local = Module.new do
+          refine refined_class do
+            def foo
+              [:LOCAL] + super
+            end
+          end
+        end
+
+        a = Module.new do
+          using refinement_local
+
+          def foo
+            [:A] + super
+          end
+        end
+
+        refinement = Module.new do
+          refine refined_class do
+            include a
+          end
+        end
+
+        result = nil
+        Module.new do
+          using refinement
+          result = refined_class.new.foo
+        end
+
+        result.should == [:A, :LOCAL, :C]
+      end
     end
   end
 
@@ -642,7 +1005,7 @@ describe "Module#refine" do
       }
       [1,2].orig_count.should == 2
     end
-    lambda { [1,2].orig_count }.should raise_error(NoMethodError)
+    -> { [1,2].orig_count }.should raise_error(NoMethodError)
   end
 
   it 'and alias_method aliases a method within a refinement module, but not outside it' do
@@ -654,7 +1017,18 @@ describe "Module#refine" do
       }
       [1,2].orig_count.should == 2
     end
-    lambda { [1,2].orig_count }.should raise_error(NoMethodError)
+    -> { [1,2].orig_count }.should raise_error(NoMethodError)
+  end
+
+  it "and instance_methods returns a list of methods including those of the refined module" do
+    methods = Array.instance_methods
+    methods_2 = []
+    Module.new do
+      refine Array do
+        methods_2 = instance_methods
+      end
+    end
+    methods.should == methods_2
   end
 
   # Refinements are inherited by module inclusion.

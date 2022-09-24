@@ -3,7 +3,7 @@
 require "bundler/fetcher"
 
 RSpec.describe Bundler::Fetcher do
-  let(:uri) { URI("https://example.com") }
+  let(:uri) { Bundler::URI("https://example.com") }
   let(:remote) { double("remote", :uri => uri, :original_uri => nil) }
 
   subject(:fetcher) { Bundler::Fetcher.new(remote) }
@@ -26,7 +26,7 @@ RSpec.describe Bundler::Fetcher do
     context "when Gem.configuration specifies http_proxy " do
       let(:proxy) { "http://proxy-example2.com" }
       before do
-        allow(Bundler.rubygems.configuration).to receive(:[]).with(:http_proxy).and_return(proxy)
+        allow(Gem.configuration).to receive(:[]).with(:http_proxy).and_return(proxy)
       end
       it "consider Gem.configuration when determine proxy" do
         expect(fetcher.http_proxy).to match("http://proxy-example2.com")
@@ -45,7 +45,7 @@ RSpec.describe Bundler::Fetcher do
     end
 
     context "when a rubygems source mirror is set" do
-      let(:orig_uri) { URI("http://zombo.com") }
+      let(:orig_uri) { Bundler::URI("http://zombo.com") }
       let(:remote_with_mirror) do
         double("remote", :uri => uri, :original_uri => orig_uri, :anonymized_uri => uri)
       end
@@ -113,7 +113,7 @@ RSpec.describe Bundler::Fetcher do
 
     context "when gem ssl configuration is set" do
       before do
-        allow(Bundler.rubygems.configuration).to receive_messages(
+        allow(Gem.configuration).to receive_messages(
           :http_proxy => nil,
           :ssl_client_cert => "cert",
           :ssl_ca_cert => "ca"
@@ -144,15 +144,16 @@ RSpec.describe Bundler::Fetcher do
     describe "include CI information" do
       it "from one CI" do
         with_env_vars("JENKINS_URL" => "foo") do
-          ci_part = fetcher.user_agent.split(" ").find {|x| x.match(%r{\Aci/}) }
+          ci_part = fetcher.user_agent.split(" ").find {|x| x.start_with?("ci/") }
           expect(ci_part).to match("jenkins")
         end
       end
 
       it "from many CI" do
-        with_env_vars("TRAVIS" => "foo", "CI_NAME" => "my_ci") do
-          ci_part = fetcher.user_agent.split(" ").find {|x| x.match(%r{\Aci/}) }
+        with_env_vars("TRAVIS" => "foo", "GITLAB_CI" => "gitlab", "CI_NAME" => "my_ci") do
+          ci_part = fetcher.user_agent.split(" ").find {|x| x.start_with?("ci/") }
           expect(ci_part).to match("travis")
+          expect(ci_part).to match("gitlab")
           expect(ci_part).to match("my_ci")
         end
       end

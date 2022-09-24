@@ -1,27 +1,12 @@
 # frozen_string_literal: true
-require 'rubygems'
-require 'rubygems/package'
-require 'time'
+require_relative '../rubygems'
+require_relative 'package'
 require 'tmpdir'
-
-rescue_exceptions = [LoadError]
-begin
-  require 'bundler/errors'
-rescue LoadError # this rubygems + old ruby
-else # this rubygems + ruby trunk with bundler
-  rescue_exceptions << Bundler::GemfileNotFound
-end
-begin
-  gem 'builder'
-  require 'builder/xchar'
-rescue *rescue_exceptions
-end
 
 ##
 # Top level class for building the gem repository index.
 
 class Gem::Indexer
-
   include Gem::UserInteraction
 
   ##
@@ -61,11 +46,6 @@ class Gem::Indexer
     require 'fileutils'
     require 'tmpdir'
     require 'zlib'
-
-    unless defined?(Builder::XChar)
-      raise "Gem::Indexer requires that the XML Builder library be installed:" +
-            "\n\tgem install builder"
-    end
 
     options = { :build_modern => true }.merge options
 
@@ -131,7 +111,10 @@ class Gem::Indexer
         marshal_name = File.join @quick_marshal_dir, spec_file_name
 
         marshal_zipped = Gem.deflate Marshal.dump(spec)
-        File.open marshal_name, 'wb' do |io| io.write marshal_zipped end
+
+        File.open marshal_name, 'wb' do |io|
+          io.write marshal_zipped
+        end
 
         files << marshal_name
 
@@ -153,7 +136,7 @@ class Gem::Indexer
     say "Generating #{name} index"
 
     Gem.time "Generated #{name} index" do
-      open(file, 'wb') do |io|
+      File.open(file, 'wb') do |io|
         specs = index.map do |*spec|
           # We have to splat here because latest_specs is an array, while the
           # others are hashes.
@@ -180,9 +163,9 @@ class Gem::Indexer
   # Builds indices for RubyGems 1.2 and newer. Handles full, latest, prerelease
 
   def build_modern_indices(specs)
-    prerelease, released = specs.partition { |s|
+    prerelease, released = specs.partition do |s|
       s.version.prerelease?
-    }
+    end
     latest_specs =
       Gem::Specification._latest_specs specs
 
@@ -200,7 +183,7 @@ class Gem::Indexer
   end
 
   def map_gems_to_specs(gems)
-    gems.map { |gemfile|
+    gems.map do |gemfile|
       if File.size(gemfile) == 0
         alert_warning "Skipping zero-length gem: #{gemfile}"
         next
@@ -223,7 +206,7 @@ class Gem::Indexer
                "\t#{e.backtrace.join "\n\t"}"].join("\n")
         alert_error msg
       end
-    }.compact
+    end.compact
   end
 
   ##
@@ -380,7 +363,7 @@ class Gem::Indexer
     end
 
     specs = map_gems_to_specs updated_gems
-    prerelease, released = specs.partition { |s| s.version.prerelease? }
+    prerelease, released = specs.partition {|s| s.version.prerelease? }
 
     files = build_marshal_gemspecs specs
 

@@ -78,7 +78,7 @@ static ID id_special_prefixes;
 #ifndef HAVE_RL_USERNAME_COMPLETION_FUNCTION
 # define rl_username_completion_function username_completion_function
 #else
-char *rl_username_completion_function(const char *, int);
+RUBY_EXTERN char *rl_username_completion_function(const char *, int);
 #endif
 #ifndef HAVE_RL_COMPLETION_MATCHES
 # define rl_completion_matches completion_matches
@@ -95,7 +95,6 @@ static char **readline_attempted_completion_function(const char *text,
 
 #define OutputStringValue(str) do {\
     StringValueCStr(str);\
-    rb_check_safe_obj(str);\
     (str) = rb_str_conv_enc((str), rb_enc_get(str), rb_locale_encoding());\
 } while (0)\
 
@@ -690,14 +689,13 @@ readline_s_insert_text(VALUE self, VALUE str)
 #endif
 
 #if defined(HAVE_RL_DELETE_TEXT)
-int rl_delete_text(int, int);
+RUBY_EXTERN int rl_delete_text(int, int);
 static const char *
 str_subpos(const char *ptr, const char *end, long beg, long *sublen, rb_encoding *enc)
 {
     VALUE str = rb_enc_str_new_static(ptr, end-ptr, enc);
     OBJ_FREEZE(str);
     ptr = rb_str_subpos(str, beg, sublen);
-    rb_gc_force_recycle(str);
     return ptr;
 }
 
@@ -823,7 +821,7 @@ readline_s_redisplay(VALUE self)
  *
  * When working with auto-complete there are some strategies that work well.
  * To get some ideas you can take a look at the
- * completion.rb[https://svn.ruby-lang.org/repos/ruby/trunk/lib/irb/completion.rb]
+ * completion.rb[https://git.ruby-lang.org/ruby.git/tree/lib/irb/completion.rb]
  * file for irb.
  *
  * The common strategy is to take a list of possible completions and filter it
@@ -1149,7 +1147,7 @@ readline_s_get_screen_size(VALUE self)
 #endif
 
 #ifdef HAVE_RL_VI_EDITING_MODE
-int rl_vi_editing_mode(int, int);
+RUBY_EXTERN int rl_vi_editing_mode(int, int);
 /*
  * call-seq:
  *   Readline.vi_editing_mode -> nil
@@ -1188,7 +1186,7 @@ readline_s_vi_editing_mode_p(VALUE self)
 #endif
 
 #ifdef HAVE_RL_EMACS_EDITING_MODE
-int rl_emacs_editing_mode(int, int);
+RUBY_EXTERN int rl_emacs_editing_mode(int, int);
 /*
  * call-seq:
  *   Readline.emacs_editing_mode -> nil
@@ -1382,7 +1380,7 @@ readline_s_set_basic_word_break_characters(VALUE self, VALUE str)
  * Raises NotImplementedError if the using readline library does not support.
  */
 static VALUE
-readline_s_get_basic_word_break_characters(VALUE self, VALUE str)
+readline_s_get_basic_word_break_characters(VALUE self)
 {
     if (rl_basic_word_break_characters == NULL)
         return Qnil;
@@ -1437,7 +1435,7 @@ readline_s_set_completer_word_break_characters(VALUE self, VALUE str)
  * Raises NotImplementedError if the using readline library does not support.
  */
 static VALUE
-readline_s_get_completer_word_break_characters(VALUE self, VALUE str)
+readline_s_get_completer_word_break_characters(VALUE self)
 {
     if (rl_completer_word_break_characters == NULL)
         return Qnil;
@@ -1552,7 +1550,7 @@ readline_s_set_basic_quote_characters(VALUE self, VALUE str)
  * Raises NotImplementedError if the using readline library does not support.
  */
 static VALUE
-readline_s_get_basic_quote_characters(VALUE self, VALUE str)
+readline_s_get_basic_quote_characters(VALUE self)
 {
     if (rl_basic_quote_characters == NULL)
         return Qnil;
@@ -1608,7 +1606,7 @@ readline_s_set_completer_quote_characters(VALUE self, VALUE str)
  * Raises NotImplementedError if the using readline library does not support.
  */
 static VALUE
-readline_s_get_completer_quote_characters(VALUE self, VALUE str)
+readline_s_get_completer_quote_characters(VALUE self)
 {
     if (rl_completer_quote_characters == NULL)
         return Qnil;
@@ -1662,7 +1660,7 @@ readline_s_set_filename_quote_characters(VALUE self, VALUE str)
  * Raises NotImplementedError if the using readline library does not support.
  */
 static VALUE
-readline_s_get_filename_quote_characters(VALUE self, VALUE str)
+readline_s_get_filename_quote_characters(VALUE self)
 {
     if (rl_filename_quote_characters == NULL)
         return Qnil;
@@ -1673,7 +1671,7 @@ readline_s_get_filename_quote_characters(VALUE self, VALUE str)
 #endif
 
 #ifdef HAVE_RL_REFRESH_LINE
-int rl_refresh_line(int, int);
+RUBY_EXTERN int rl_refresh_line(int, int);
 /*
  * call-seq:
  *   Readline.refresh_line -> nil
@@ -1919,8 +1917,11 @@ username_completion_proc_call(VALUE self, VALUE str)
     return result;
 }
 
+#ifdef HAVE_RL_CATCH_SIGNALS
+RUBY_EXTERN int rl_catch_signals;
+#endif
 #ifdef HAVE_RL_CLEAR_SIGNALS
-int rl_clear_signals(void);
+RUBY_EXTERN int rl_clear_signals(void);
 #endif
 
 #undef rb_intern
@@ -2061,7 +2062,7 @@ Init_readline(void)
      * The history buffer. It extends Enumerable module, so it behaves
      * just like an array.
      * For example, gets the fifth content that the user input by
-     * HISTORY[4].
+     * <code>HISTORY[4]</code>.
      */
     rb_define_const(mReadline, "HISTORY", history);
 
@@ -2089,6 +2090,7 @@ Init_readline(void)
 #if defined HAVE_CLEAR_HISTORY || defined HAVE_REMOVE_HISTORY
     if (strncmp(rl_library_version, EDIT_LINE_LIBRARY_VERSION,
                 strlen(EDIT_LINE_LIBRARY_VERSION)) == 0) {
+        prepare_readline();
         add_history("1");
         if (history_get(history_get_offset_func(0)) == NULL) {
             history_get_offset_func = history_get_offset_0;

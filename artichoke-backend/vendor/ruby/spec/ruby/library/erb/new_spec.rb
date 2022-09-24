@@ -36,12 +36,10 @@ END
     end
   end
 
-  ruby_version_is "2.6" do
-    it "warns invalid trim_mode" do
-      lambda do
-        ERBSpecs.new_erb(@eruby_str, trim_mode: '')
-      end.should complain(/Invalid ERB trim mode/)
-    end
+  it "warns invalid trim_mode" do
+    -> do
+      ERBSpecs.new_erb(@eruby_str, trim_mode: '')
+    end.should complain(/Invalid ERB trim mode/)
   end
 
   it "removes '\n' when trim_mode is 1 or '>'" do
@@ -83,7 +81,7 @@ END
 </p>
 END
 
-    lambda {
+    -> {
       ERBSpecs.new_erb(input, trim_mode: '-').result
     }.should raise_error(SyntaxError)
   end
@@ -120,13 +118,8 @@ END
 
   it "changes '_erbout' variable name in the produced source" do
     input = @eruby_str
-    if RUBY_VERSION >= '2.6'
-      match_erbout = ERB.new(input, trim_mode: nil).src
-      match_buf = ERB.new(input, trim_mode: nil, eoutvar: 'buf').src
-    else
-      match_erbout = ERB.new(input, nil, nil).src
-      match_buf = ERB.new(input, nil, nil, 'buf').src
-    end
+    match_erbout = ERB.new(input, trim_mode: nil).src
+    match_buf = ERB.new(input, trim_mode: nil, eoutvar: 'buf').src
     match_erbout.gsub("_erbout", "buf").should == match_buf
   end
 
@@ -143,6 +136,6 @@ END
 
   it "forget local variables defined previous one" do
     ERB.new(@eruby_str).result
-    lambda{ ERB.new("<%= list %>").result }.should raise_error(NameError)
+    ->{ ERB.new("<%= list %>").result }.should raise_error(NameError)
   end
 end
