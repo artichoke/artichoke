@@ -24,7 +24,7 @@ the base for the implementation of the Ruby Standard Library in
 
 artichoke-backend [vendors](ruby) a [fork of Ruby][ruby-fork].
 
-This fork is based on [Ruby 2.6.3][ruby-forked-from] and [includes some
+This fork is based on [Ruby 3.1.2][ruby-forked-from] and [includes some
 patches][ruby-patches].
 
 [ruby]: https://github.com/ruby/ruby
