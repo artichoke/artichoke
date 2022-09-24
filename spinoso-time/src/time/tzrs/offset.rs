@@ -1,3 +1,4 @@
+use std::io::{self, Write as _};
 use std::slice;
 use std::str;
 
@@ -64,15 +65,14 @@ fn local_time_zone() -> TimeZoneRef<'static> {
 /// Generates a [+/-]HHMM timezone format from a given number of seconds
 /// Note: the actual seconds element is effectively ignored here
 #[inline]
-#[must_use]
-fn offset_hhmm_from_seconds(seconds: i32) -> String {
+fn offset_hhmm_from_seconds(seconds: i32, buf: &mut [u8; 5]) -> io::Result<()> {
     let flag = if seconds < 0 { '-' } else { '+' };
     let minutes = seconds.abs() / 60;
 
     let offset_hours = minutes / 60;
     let offset_minutes = minutes - (offset_hours * 60);
 
-    format!("{}{:0>2}{:0>2}", flag, offset_hours, offset_minutes)
+    write!(buf.as_mut_slice(), "{flag}{offset_hours:0>2}{offset_minutes:0>2}")
 }
 
 /// Represents the number of seconds offset from UTC.
@@ -189,10 +189,12 @@ impl Offset {
             return Err(TzOutOfRangeError::new().into());
         }
 
-        let offset_name = offset_hhmm_from_seconds(offset);
+        let mut offset_name = [0; 5];
+
+        offset_hhmm_from_seconds(offset, &mut offset_name).expect("offset name should be 5 bytes long");
         // Creation of the `LocalTimeType` is never expected to fail, since the
         // bounds we are more restrictive of the values than the struct itself.
-        let local_time_type = LocalTimeType::new(offset, false, Some(offset_name.as_bytes()))
+        let local_time_type = LocalTimeType::new(offset, false, Some(&offset_name[..]))
             .expect("Failed to LocalTimeType for fixed offset");
 
         Ok(Self {
@@ -550,6 +552,28 @@ mod tests {
             offset_seconds_from_fixed_offset("\n+10:00").unwrap_err(),
             TimeError::TzStringError(_)
         ));
+    }
+
+    #[test]
+    fn offset_hhmm_from_seconds_exhaustive_5_bytes() {
+        // Check to make sure that the stack-allocated buffer for writing the
+        // [+/-]HHMM offset is exactly sized for the entire range of valid
+        // offset seconds.
+        for offset in MIN_OFFSET_SECONDS..=MAX_OFFSET_SECONDS {
+            let mut buf = [0xFF; 5];
+            offset_hhmm_from_seconds(offset, &mut buf).unwrap();
+            assert!(buf.into_iter().all(|b| b != 0xFF));
+        }
+    }
+
+    #[test]
+    fn fixed_time_zone_designation_exhaustive_no_panic() {
+        // Check to make sure that the stack-allocated buffer for writing the
+        // [+/-]HHMM offset is sufficiently sized for the entire range of valid
+        // offset seconds.
+        for offset in MIN_OFFSET_SECONDS..=MAX_OFFSET_SECONDS {
+            fixed_offset_name(offset).unwrap();
+        }
     }
 
     #[test]
