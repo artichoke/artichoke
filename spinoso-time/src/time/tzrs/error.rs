@@ -62,12 +62,12 @@ impl PartialEq for TimeError {
 impl error::Error for TimeError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
-            Self::ProjectionError(ref err) => Some(err),
-            Self::ComponentOutOfRangeError(ref err) => Some(err),
-            Self::UnknownTzError(ref err) => Some(err),
-            Self::TzStringError(ref err) => Some(err),
-            Self::TzOutOfRangeError(ref err) => Some(err),
-            Self::IntOverflowError(ref err) => Some(err),
+            Self::ProjectionError(err) => Some(err),
+            Self::ComponentOutOfRangeError(err) => Some(err),
+            Self::UnknownTzError(err) => Some(err),
+            Self::TzStringError(err) => Some(err),
+            Self::TzOutOfRangeError(err) => Some(err),
+            Self::IntOverflowError(err) => Some(err),
             Self::Unknown => None,
         }
     }
@@ -79,8 +79,8 @@ impl fmt::Display for TimeError {
             Self::ProjectionError(error) => error.fmt(f),
             Self::ComponentOutOfRangeError(error) => error.fmt(f),
             Self::UnknownTzError(error) => error.fmt(f),
-            Self::TzStringError(ref error) => error.fmt(f),
-            Self::TzOutOfRangeError(ref error) => error.fmt(f),
+            Self::TzStringError(error) => error.fmt(f),
+            Self::TzOutOfRangeError(error) => error.fmt(f),
             Self::IntOverflowError(error) => error.fmt(f),
             Self::Unknown => write!(f, "An unknown error occurred"),
         }
