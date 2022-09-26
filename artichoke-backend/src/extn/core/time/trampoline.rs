@@ -1,6 +1,13 @@
 //! Glue between mruby FFI and `Time` Rust implementation.
 
+use spinoso_time::strftime::{
+    Error::{FormattedStringTooLarge, InvalidFormatString, WriteZero},
+    ASCTIME_FORMAT_STRING,
+};
+
 use crate::convert::implicitly_convert_to_int;
+use crate::convert::to_str;
+use crate::extn::core::string::{Encoding, String};
 use crate::extn::core::time::{subsec::Subsec, Offset, Time};
 use crate::extn::prelude::*;
 
@@ -152,9 +159,9 @@ pub fn cmp(interp: &mut Artichoke, mut time: Value, mut other: Value) -> Result<
         let cmp = time.cmp(&other);
         Ok(interp.convert(cmp as i32))
     } else {
-        let mut message = String::from("comparison of Time with ");
-        message.push_str(interp.inspect_type_name_for_value(other));
-        message.push_str(" failed");
+        let mut message = b"comparison of Time with ".to_vec();
+        message.extend_from_slice(interp.inspect_type_name_for_value(other).as_bytes());
+        message.extend_from_slice(b" failed");
         Err(ArgumentError::from(message).into())
     }
 }
@@ -222,28 +229,19 @@ pub fn as_utc(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
 // Inspect
 
 pub fn asctime(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    Err(NotImplementedError::new().into())
+    strftime_with_encoding(interp, time, ASCTIME_FORMAT_STRING.as_bytes(), Encoding::Utf8)
 }
 
-pub fn to_string(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
-    let _ = time;
-    // XXX: This function is used to implement `Time#inspect`. Raising in an
-    // `#inspect` implementation interacts poorly with the locals table when
-    // running Artichoke in a REPL.
-    //
-    // Rather than fix this, which will involve deep diving into mruby, work
-    // around this by returning a `String` that says `Time#inspect` is not
-    // implemented. This allows us to uphold the API contract without
-    // implementing `strftime`.
-    //
-    // This hack replaces this code:
-    //
-    // ```rust
-    // Err(NotImplementedError::new().into())
-    // ```
-    interp.try_convert_mut("Time<Time#inspect is not implemented>")
+pub fn to_string(interp: &mut Artichoke, mut time: Value) -> Result<Value, Error> {
+    // %z will always display a +/-HHMM value, however it's expected that UTC
+    // is shown if it is UTC Time.
+    let format = if unsafe { Time::unbox_from_value(&mut time, interp)? }.is_utc() {
+        "%Y-%m-%d %H:%M:%S UTC"
+    } else {
+        "%Y-%m-%d %H:%M:%S %z"
+    };
+
+    strftime_with_encoding(interp, time, format.as_bytes(), Encoding::Utf8)
 }
 
 pub fn to_array(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
@@ -471,11 +469,80 @@ pub fn subsec(interp: &mut Artichoke, time: Value) -> Result<Value, Error> {
 }
 
 // Time format
+fn strftime_with_encoding(
+    interp: &mut Artichoke,
+    mut time: Value,
+    format: &[u8],
+    encoding: Encoding,
+) -> Result<Value, Error> {
+    let time = unsafe { Time::unbox_from_value(&mut time, interp)? };
+
+    let bytes: Vec<u8> = time.strftime(format).map_err(|e| {
+        // InvalidFormatString is the only true ArgumentError, where as the
+        // rest that can be thrown from strftime are runtime failures.
+        //
+        // ```console
+        // [3.1.2]> Time.now.strftime("%")
+        // (irb):1:in `strftime': invalid format: % (ArgumentError)
+        //      from (irb):1:in `<main>'
+        //	    from /home/ben/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        //	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `load'
+        //	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // ```
+        //
+        // Note: The errors which are re-thrown as RuntimeError include (but is
+        // not limited to: `InvalidTime`, `FmtError(Error)`,
+        // `OutOfMemory(TryReserveError)`
+        #[allow(clippy::match_same_arms)]
+        match e {
+            InvalidFormatString => {
+                let mut message = br#"invalid format: "#.to_vec();
+                message.extend_from_slice(format);
+                Error::from(ArgumentError::from(message))
+            }
+            FormattedStringTooLarge => {
+                // TODO: This should be an `Errno::ERANGE` not an ArgumentError
+                //
+                // ```console
+                // [3.1.2] > Time.now.strftime "%4718593m"
+                // (irb):28:in `strftime': Result too large - %4718593m (Errno::ERANGE)
+                //      from (irb):28:in `<main>'
+                //      from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+                //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+                //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+                // ```
+                let mut message = br#"Result too large - "#.to_vec();
+                message.extend_from_slice(format);
+                Error::from(ArgumentError::from(message))
+            }
+            WriteZero => {
+                // TODO: This should be an `Errno::ERANGE` not an ArgumentError
+                //
+                // ```console
+                // [3.1.2] > Time.now.strftime "%2147483647m"
+                // (irb):28:in `strftime': Result too large - %2147483647m (Errno::ERANGE)
+                //      from (irb):29:in `<main>'
+                //      from /usr/local/var/rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+                //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
+                //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+                // ```
+                let mut message = br#"Result too large - "#.to_vec();
+                message.extend_from_slice(format);
+                Error::from(ArgumentError::from(message))
+            }
+            _ => Error::from(RuntimeError::with_message("Unexpected failure")),
+        }
+    })?;
+
+    let result = String::with_bytes_and_encoding(bytes, encoding);
+
+    String::alloc_value(result, interp)
+}
 
 pub fn strftime(interp: &mut Artichoke, time: Value, format: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = time;
-    let _ = format;
-    // Requires a parser.
-    Err(NotImplementedError::new().into())
+    let mut format = to_str(interp, format)?;
+
+    let format = unsafe { String::unbox_from_value(&mut format, interp)? };
+
+    strftime_with_encoding(interp, time, &format, format.encoding())
 }
