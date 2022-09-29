@@ -1,6 +1,7 @@
 //! Embedded copy of ruby/spec suites.
 
 use artichoke::prelude::*;
+use rust_embed::RustEmbed;
 
 /// Load ruby/spec sources into the Artichoke virtual file system.
 ///
