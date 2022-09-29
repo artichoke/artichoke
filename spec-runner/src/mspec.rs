@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use artichoke::backend::load_path::RUBY_LOAD_PATH;
 use artichoke::prelude::*;
+use rust_embed::RustEmbed;
 
 /// Load `MSpec` sources into the Artichoke virtual file system.
 ///

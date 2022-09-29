@@ -16,54 +16,6 @@
 //! `spec-runner` is a wrapper around `MSpec` and ruby/spec that works with the
 //! Artichoke virtual file system. `spec-runner` runs the specs declared in a
 //! manifest file.
-//!
-//! # Spec Manifest
-//!
-//! `spec-runner` is invoked with a YAML manifest that specifies which specs to
-//! run. The manifest can run whole suites, like all of the `StringScanner`
-//! specs, or specific specs, like the `Array#drop` spec. The manifest supports
-//! marking specs as skipped.
-//!
-//! ```toml
-//! [specs.core.array]
-//! include = "set"
-//! specs = [
-//!   "any",
-//!   "append",
-//!   "drop",
-//! ]
-//!
-//! [specs.library.stringscanner]
-//! include = "all"
-//!
-//! [specs.library.time]
-//! include = "none"
-//!
-//! [specs.library.uri]
-//! include = "all"
-//! skip = ["parse"]
-//! ```
-//!
-//! # Usage
-//!
-//! ```console
-//! $ cargo run -q -p spec-runner -- --help
-//! spec-runner 0.6.1
-//! ruby/spec runner for Artichoke.
-//!
-//! USAGE:
-//!     spec-runner [OPTIONS] [config]
-//!
-//! ARGS:
-//!     <config>    Path to TOML config file
-//!
-//! OPTIONS:
-//!     -f, --format <formatter>    Choose an output formatter [default: artichoke] [possible values:
-//!                                 artichoke, summary, tagger, yaml]
-//!     -h, --help                  Print help information
-//!     -q, --quiet                 Suppress spec failures when exiting
-//!     -V, --version               Print version information
-//! ```
 
 #![doc(html_favicon_url = "https://www.artichokeruby.org/favicon-32x32.png")]
 #![doc(html_logo_url = "https://www.artichokeruby.org/artichoke-logo.svg")]
@@ -71,9 +23,6 @@
 #[cfg(feature = "dhat-heap")]
 #[global_allocator]
 static ALLOC: dhat::Alloc = dhat::Alloc;
-
-#[macro_use]
-extern crate rust_embed;
 
 use std::error::Error;
 use std::ffi::OsStr;
@@ -105,21 +54,14 @@ struct Args {
     formatter: Formatter,
 }
 
-/// Main entry point.
-pub fn main() {
-    #[cfg(feature = "dhat-heap")]
-    let profiler = dhat::Profiler::new_heap();
-
-    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
-
-    let command = Command::new("spec-runner")
+fn cli() -> Command {
+    Command::new("spec-runner")
         .about("ruby/spec runner for Artichoke.")
         .version(env!("CARGO_PKG_VERSION"))
         .arg(
             Arg::new("formatter")
                 .long("format")
                 .short('f')
-                .takes_value(true)
                 .value_parser(["artichoke", "summary", "tagger", "yaml"])
                 .default_value("artichoke")
                 .help("Choose an output formatter"),
@@ -135,8 +77,17 @@ pub fn main() {
             Arg::new("config")
                 .value_parser(clap::value_parser!(PathBuf))
                 .help("Path to TOML config file"),
-        );
+        )
+}
 
+/// Main entry point.
+pub fn main() {
+    #[cfg(feature = "dhat-heap")]
+    let profiler = dhat::Profiler::new_heap();
+
+    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+
+    let command = cli();
     let matches = command.get_matches();
 
     let formatter = matches
@@ -270,6 +221,11 @@ pub fn is_require_path(config: &Config, name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn verify_cli() {
+        cli().debug_assert();
+    }
 
     #[test]
     fn argf_spec_is_loaded() {

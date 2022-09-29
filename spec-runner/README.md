@@ -46,22 +46,19 @@ skip = ["parse"]
 ## Usage
 
 ```console
-$ cargo run -q -p spec-runner -- --help
-spec-runner 0.6.1
+$ cargo run -q -- --help
 ruby/spec runner for Artichoke.
 
-USAGE:
-    spec-runner [OPTIONS] [config]
+Usage: spec-runner [OPTIONS] [config]
 
-ARGS:
-    <config>    Path to TOML config file
+Arguments:
+  [config]  Path to TOML config file
 
-OPTIONS:
-    -f, --format <formatter>    Choose an output formatter [default: artichoke] [possible values:
-                                artichoke, summary, tagger, yaml]
-    -h, --help                  Print help information
-    -q, --quiet                 Suppress spec failures when exiting
-    -V, --version               Print version information
+Options:
+  -f, --format <formatter>  Choose an output formatter [default: artichoke] [possible values: artichoke, summary, tagger, yaml]
+  -q, --quiet               Suppress spec failures when exiting
+  -h, --help                Print help information
+  -V, --version             Print version information
 ```
 
 ## Profiling
