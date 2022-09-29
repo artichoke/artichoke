@@ -2,6 +2,7 @@
 
 use std::env;
 use std::ffi::OsString;
+use std::iter;
 use std::path::PathBuf;
 use std::process;
 
@@ -56,8 +57,7 @@ pub fn parse_args() -> Args {
         args = args.with_commands(commands);
         if let Some(first_arg) = matches.get_one::<PathBuf>("programfile").cloned() {
             if let Some(argv) = matches.get_many::<OsString>("arguments") {
-                let ruby_program_argv = [OsString::from(first_arg)]
-                    .into_iter()
+                let ruby_program_argv = iter::once(OsString::from(first_arg))
                     .chain(argv.map(Clone::clone))
                     .collect::<Vec<_>>();
                 args = args.with_argv(ruby_program_argv);
