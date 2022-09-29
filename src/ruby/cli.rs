@@ -101,9 +101,6 @@ where
     // Explicitly ignore any error returned by write!. The most likely error
     // at this point is a broken pipe error, in which case, we want to ignore
     // it and exit quietly.
-    //
-    // (This is the point of this helper function. clap's functionality for
-    // doing this will panic on a broken pipe error.)
     let _ignored = write!(io::stdout(), "{}", err);
     process::exit(0);
 }
