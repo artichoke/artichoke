@@ -28,15 +28,7 @@ use artichoke::ruby::{self, ExecutionResult};
 use termcolor::{ColorChoice, StandardStream, WriteColor};
 
 fn main() {
-    let args = match cli::parse_args() {
-        Ok(args) => args,
-        Err(err) => {
-            // Suppress all errors at this point (e.g. from a broken pipe) since
-            // we're exiting with an error code anyway.
-            let _ignored = writeln!(io::stderr(), "{}", err);
-            process::exit(2);
-        }
-    };
+    let args = cli::parse_args();
 
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
     match ruby::run(args, io::stdin(), &mut stderr) {

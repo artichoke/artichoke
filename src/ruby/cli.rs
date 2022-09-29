@@ -1,9 +1,7 @@
 //! Command line interface parser for the `ruby` binary.
 
 use std::env;
-use std::error::Error;
 use std::ffi::OsString;
-use std::io::{self, Write as _};
 use std::path::PathBuf;
 use std::process;
 
@@ -17,8 +15,9 @@ use super::Args;
 /// # Errors
 ///
 /// If an invalid argument is provided, an error is returned.
-pub fn parse_args() -> Result<Args, Box<dyn Error + Send + Sync + 'static>> {
-    let matches = clap_matches(env::args_os())?;
+#[must_use]
+pub fn parse_args() -> Args {
+    let matches = clap_matches(env::args_os());
 
     let commands = matches
         .get_many::<OsString>("commands")
@@ -68,7 +67,7 @@ pub fn parse_args() -> Result<Args, Box<dyn Error + Send + Sync + 'static>> {
         }
     }
 
-    Ok(args)
+    args
 }
 
 // NOTE: This routine is plucked from `ripgrep` as of commit
@@ -86,22 +85,20 @@ pub fn parse_args() -> Result<Args, Box<dyn Error + Send + Sync + 'static>> {
 /// corresponds to a `--help` or `--version` request. In which case, the
 /// corresponding output is printed and the current process is exited
 /// successfully.
-fn clap_matches<I, T>(args: I) -> Result<ArgMatches, Box<dyn Error + Send + Sync + 'static>>
+#[must_use]
+fn clap_matches<I, T>(args: I) -> ArgMatches
 where
     I: IntoIterator<Item = T>,
     T: Into<OsString> + Clone,
 {
     let err = match cli().try_get_matches_from(args) {
-        Ok(matches) => return Ok(matches),
+        Ok(matches) => return matches,
         Err(err) => err,
     };
-    if err.use_stderr() {
-        return Err(err.into());
-    }
     // Explicitly ignore any error returned by write!. The most likely error
     // at this point is a broken pipe error, in which case, we want to ignore
     // it and exit quietly.
-    let _ignored = write!(io::stdout(), "{}", err);
+    let _ignored = err.print();
     process::exit(0);
 }
 
