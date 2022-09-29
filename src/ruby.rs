@@ -19,6 +19,8 @@ use crate::backtrace;
 use crate::filename::INLINE_EVAL_SWITCH;
 use crate::prelude::*;
 
+pub mod cli;
+
 /// Command line arguments for Artichoke `ruby` frontend.
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Args {

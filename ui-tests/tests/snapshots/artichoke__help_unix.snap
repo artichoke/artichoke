@@ -1,26 +1,22 @@
 ---
 source: tests/artichoke.rs
-assertion_line: 15
 expression: "run(BINARY, &[\"--help\"]).unwrap()"
-
 ---
 call_args = ['--help']
 status = 0
 stdout = '''
-"artichoke 0.1.0-pre.0"
 "Artichoke is a Ruby made with Rust."
 ""
-"USAGE:"
-"    artichoke [OPTIONS] [ARGS]"
+"Usage: artichoke [OPTIONS] [programfile] [arguments]..."
 ""
-"ARGS:"
-"    <programfile>     "
-"    <arguments>...    "
+"Arguments:"
+"  [programfile]   "
+"  [arguments]...  "
 ""
-"OPTIONS:"
-"        --copyright                 print the copyright"
-"    -e <commands>                   one line of script. Several -e\'s allowed. Omit [programfile]"
-"    -h, --help                      Print help information"
-"    -V, --version                   Print version information"
-"        --with-fixture <fixture>    file whose contents will be read into the `$fixture` global"'''
+"Options:"
+"      --copyright               print the copyright"
+"  -e <commands>                 one line of script. Several -e\'s allowed. Omit [programfile]"
+"      --with-fixture <fixture>  file whose contents will be read into the `$fixture` global"
+"  -h, --help                    Print help information"
+"  -V, --version                 Print version information"'''
 stderr = ''
