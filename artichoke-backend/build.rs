@@ -38,7 +38,7 @@ mod libs {
     use std::env;
     use std::ffi::OsStr;
     use std::path::PathBuf;
-    use std::process::{Command, ExitStatus, Stdio};
+    use std::process::{Command, Stdio};
     use std::str;
     use std::thread;
 
@@ -224,11 +224,16 @@ mod libs {
         build.compile(name);
     }
 
-    fn bindgen(wasm: Option<Wasm>, out_dir: &OsStr) {
-        // Try to use an existing global install of bindgen
-        let status = invoke_bindgen(wasm, out_dir, OsStr::new("bindgen"));
+    fn ensure_bindgen(out_dir: &OsStr) -> PathBuf {
+        let status = Command::new("bindgen")
+            .stdin(Stdio::null())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .arg("--version")
+            .status()
+            .ok();
         if matches!(status, Some(status) if status.success()) {
-            return;
+            return PathBuf::from("bindgen");
         }
         // Install bindgen
         // cargo install --root target/bindgen --version 0.60.1 bindgen
@@ -246,16 +251,14 @@ mod libs {
             .status()
             .unwrap();
         assert!(status.success(), "cargo install bindgen failed");
-
-        let status = invoke_bindgen(
-            wasm,
-            out_dir,
-            bindgen_install_dir.join("bin").join("bindgen").as_os_str(),
-        );
-        assert!(status.unwrap().success(), "bindgen failed");
+        bindgen_install_dir.join("bin").join("bindgen")
     }
 
-    pub fn invoke_bindgen(wasm: Option<Wasm>, out_dir: &OsStr, bindgen_executable: &OsStr) -> Option<ExitStatus> {
+    fn bindgen(wasm: Option<Wasm>, out_dir: &OsStr) {
+        // Try to use an existing global install of bindgen or install one to
+        // the target directory if necessary.
+        let bindgen_executable = ensure_bindgen(out_dir);
+
         let bindings_out_path = PathBuf::from(out_dir).join("ffi.rs");
         let mut command = Command::new(bindgen_executable);
         command
@@ -308,7 +311,8 @@ mod libs {
             command.arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
         }
 
-        command.status().ok()
+        let status = command.status().unwrap();
+        assert!(status.success(), "bindgen failed");
     }
 
     pub fn build(wasm: Option<Wasm>, out_dir: &OsStr) {
