@@ -29,7 +29,7 @@ GEM
       rubocop (~> 1.0)
     ruby-progressbar (1.11.0)
     thor (1.2.1)
-    unicode-display_width (2.2.0)
+    unicode-display_width (2.3.0)
 
 PLATFORMS
   ruby
