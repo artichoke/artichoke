@@ -49,14 +49,21 @@ impl TryConvertMut<Option<Value>, SubsecMultiplier> for Artichoke {
             None => return Ok(SubsecMultiplier::Micros),
         };
 
-        let subsec_symbol = unsafe { Symbol::unbox_from_value(&mut subsec_type, self)? }.bytes(self);
-        match subsec_symbol {
+        let subsec_type_symbol = if let Ruby::Symbol = subsec_type.ruby_type() {
+            unsafe { Symbol::unbox_from_value(&mut subsec_type, self)? }.bytes(self)
+        } else {
+            let mut message = b"unexpected unit: ".to_vec();
+            message.extend_from_slice(subsec_type.inspect(self).as_slice());
+            return Err(ArgumentError::from(message).into());
+        };
+
+        match subsec_type_symbol {
             b"milliseconds" => Ok(SubsecMultiplier::Millis),
             b"usec" => Ok(SubsecMultiplier::Micros),
             b"nsec" => Ok(SubsecMultiplier::Nanos),
             _ => {
                 let mut message = b"unexpected unit: ".to_vec();
-                message.extend_from_slice(subsec_symbol);
+                message.extend_from_slice(subsec_type_symbol);
                 Err(ArgumentError::from(message).into())
             }
         }
@@ -603,7 +610,11 @@ mod tests {
     fn subsec_unit_requires_explicit_symbol() {
         let mut interp = interpreter();
 
-        let err = subsec(&mut interp, (Some(b"1"), Some(b"class A; def to_sym; :usec; end; end && A.new"))).unwrap_err();
+        let err = subsec(
+            &mut interp,
+            (Some(b"1"), Some(b"class A; def to_sym; :usec; end; end && A.new")),
+        )
+        .unwrap_err();
 
         assert_eq!(err.name(), "ArgumentError");
         assert!(err
