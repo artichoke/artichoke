@@ -44,20 +44,21 @@ impl TryConvertMut<Option<Value>, SubsecMultiplier> for Artichoke {
     type Error = Error;
 
     fn try_convert_mut(&mut self, subsec_type: Option<Value>) -> Result<SubsecMultiplier, Self::Error> {
-        if let Some(mut subsec_type) = subsec_type {
-            let subsec_symbol = unsafe { Symbol::unbox_from_value(&mut subsec_type, self)? }.bytes(self);
-            match subsec_symbol {
-                b"milliseconds" => Ok(SubsecMultiplier::Millis),
-                b"usec" => Ok(SubsecMultiplier::Micros),
-                b"nsec" => Ok(SubsecMultiplier::Nanos),
-                _ => {
-                    let mut message = b"unexpected unit: ".to_vec();
-                    message.extend_from_slice(subsec_symbol);
-                    Err(ArgumentError::from(message).into())
-                }
+        let mut subsec_type = match subsec_type {
+            Some(t) => t,
+            None => return Ok(SubsecMultiplier::Micros),
+        };
+
+        let subsec_symbol = unsafe { Symbol::unbox_from_value(&mut subsec_type, self)? }.bytes(self);
+        match subsec_symbol {
+            b"milliseconds" => Ok(SubsecMultiplier::Millis),
+            b"usec" => Ok(SubsecMultiplier::Micros),
+            b"nsec" => Ok(SubsecMultiplier::Nanos),
+            _ => {
+                let mut message = b"unexpected unit: ".to_vec();
+                message.extend_from_slice(subsec_symbol);
+                Err(ArgumentError::from(message).into())
             }
-        } else {
-            Ok(SubsecMultiplier::Micros)
         }
     }
 }
