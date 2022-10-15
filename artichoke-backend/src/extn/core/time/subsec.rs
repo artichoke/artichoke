@@ -572,4 +572,43 @@ mod tests {
             b"unexpected unit: bad_unit".as_slice().as_bstr()
         );
     }
+
+    #[test]
+    fn subsec_unit_non_symbol() {
+        let mut interp = interpreter();
+
+        let err = subsec(&mut interp, (Some(b"1"), Some(b":bad_unit"))).unwrap_err();
+
+        assert_eq!(err.name(), "ArgumentError");
+        assert_eq!(
+            err.message().as_bstr(),
+            b"unexpected unit: bad_unit".as_slice().as_bstr()
+        );
+
+        let err = subsec(&mut interp, (Some(b"1"), Some(b"1"))).unwrap_err();
+
+        assert_eq!(err.name(), "ArgumentError");
+        assert_eq!(err.message().as_bstr(), b"unexpected unit: 1".as_slice().as_bstr());
+
+        let err = subsec(&mut interp, (Some(b"1"), Some(b"Object.new"))).unwrap_err();
+
+        assert_eq!(err.name(), "ArgumentError");
+        assert!(err
+            .message()
+            .as_bstr()
+            .starts_with(b"unexpected unit: #<Object:".as_slice().as_bstr()));
+    }
+
+    #[test]
+    fn subsec_unit_requires_explicit_symbol() {
+        let mut interp = interpreter();
+
+        let err = subsec(&mut interp, (Some(b"1"), Some(b"class A; def to_sym; :usec; end; end && A.new"))).unwrap_err();
+
+        assert_eq!(err.name(), "ArgumentError");
+        assert!(err
+            .message()
+            .as_bstr()
+            .starts_with(b"unexpected unit: #<A:".as_slice().as_bstr()));
+    }
 }
