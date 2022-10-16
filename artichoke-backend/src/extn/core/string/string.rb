@@ -574,25 +574,10 @@ class String
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-end_with-3F
-  def end_with?(*suffixes)
-    suffixes.each do |suffix|
-      case suffix
-      when String
-        return true if suffix.empty?
-        return true if self[-suffix.length..-1] == suffix
-      when Regexp
-        m = suffix.match(self)
-        next if m.nil?
-
-        return true if m.end(0) == length
-      else
-        suffix = Artichoke::String.implicit_conversion(suffix)
-        return true if suffix.empty?
-        return true if self[-suffix.length..-1] == suffix
-      end
-    end
-    false
-  end
+  #
+  # NOTE: Implemented in native code.
+  #
+  # def end_with?; end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-eql-3F
   #
@@ -1036,23 +1021,10 @@ class String
   end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-start_with-3F
-  def start_with?(*prefixes)
-    prefixes.each do |prefix|
-      case prefix
-      when String
-        return true if self[0...prefix.length] == prefix
-      when Regexp
-        m = prefix.match(self)
-        next if m.nil?
-
-        return true if m.begin(0).zero?
-      else
-        prefix = Artichoke::String.implicit_conversion(prefix)
-        return true if self[0...prefix.length] == prefix
-      end
-    end
-    false
-  end
+  #
+  # NOTE: Implemented in native code.
+  #
+  # def start_with?; end
 
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-strip
   def strip

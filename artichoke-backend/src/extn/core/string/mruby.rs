@@ -42,6 +42,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("downcase", string_downcase, sys::mrb_args_any())?
         .add_method("downcase!", string_downcase_bang, sys::mrb_args_any())?
         .add_method("empty?", string_empty, sys::mrb_args_none())?
+        .add_method("end_with?", string_end_with, sys::mrb_args_rest())?
         .add_method("eql?", string_eql, sys::mrb_args_req(1))?
         .add_method("getbyte", string_getbyte, sys::mrb_args_req(1))?
         .add_method("hash", string_hash, sys::mrb_args_none())?
@@ -63,6 +64,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("slice", string_aref, sys::mrb_args_req(1))?
         .add_method("slice!", string_slice_bang, sys::mrb_args_req(1))?
         .add_method("split", string_split, sys::mrb_args_opt(2))?
+        .add_method("start_with?", string_start_with, sys::mrb_args_rest())?
         .add_method("to_f", string_to_f, sys::mrb_args_none())?
         .add_method("to_i", string_to_i, sys::mrb_args_opt(1))?
         .add_method("to_s", string_to_s, sys::mrb_args_none())?
@@ -439,6 +441,21 @@ unsafe extern "C" fn string_empty(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     }
 }
 
+unsafe extern "C" fn string_end_with(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let prefixes = mrb_get_args!(mrb, *args);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+
+    for prefix in prefixes.iter().map(|&other| Value::from(other)) {
+        match trampoline::end_with(&mut guard, value, prefix) {
+            Ok(true) => return guard.convert(true).inner(),
+            Ok(false) => {}
+            Err(exception) => error::raise(guard, exception),
+        }
+    }
+    guard.convert(false).inner()
+}
+
 unsafe extern "C" fn string_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
@@ -659,6 +676,21 @@ unsafe extern "C" fn string_split(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
     }
+}
+
+unsafe extern "C" fn string_start_with(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let prefixes = mrb_get_args!(mrb, *args);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+
+    for prefix in prefixes.iter().map(|&other| Value::from(other)) {
+        match trampoline::start_with(&mut guard, value, prefix) {
+            Ok(true) => return guard.convert(true).inner(),
+            Ok(false) => {}
+            Err(exception) => error::raise(guard, exception),
+        }
+    }
+    guard.convert(false).inner()
 }
 
 unsafe extern "C" fn string_to_f(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
