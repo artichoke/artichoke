@@ -93,103 +93,103 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
     fn try_convert_mut(&mut self, params: (Option<Value>, Option<Value>)) -> Result<Subsec, Self::Error> {
         let (subsec, subsec_unit) = params;
 
-        if let Some(subsec) = subsec {
-            let multiplier: SubsecMultiplier = self.try_convert_mut(subsec_unit)?;
-            let multiplier_nanos = multiplier.as_nanos();
-            // `subsec` represents the user provided value in `subsec_unit`
-            // resolution. The base used to derive the number of seconds is
-            // based on the `subsec_unit`. e.g. `1_001` milliseconds is 1
-            // second, and `1_000_000` nanoseconds.
-            let seconds_base = NANOS_IN_SECOND / multiplier_nanos;
+        let subsec = match subsec {
+            Some(subsec) => subsec,
+            None => return Ok(Subsec { secs: 0, nanos: 0 }),
+        };
 
-            if subsec.ruby_type() == Ruby::Float {
-                // FIXME: The below deviates from the MRI implementation of
-                // Time. MRI uses `to_r` for subsec calculation on floats
-                // subsec nanos, and this could result in different values.
+        let multiplier: SubsecMultiplier = self.try_convert_mut(subsec_unit)?;
+        let multiplier_nanos = multiplier.as_nanos();
+        // `subsec` represents the user provided value in `subsec_unit`
+        // resolution. The base used to derive the number of seconds is based
+        // on the `subsec_unit`. e.g. `1_001` milliseconds is 1 second, and
+        // `1_000_000` nanoseconds.
+        let seconds_base = NANOS_IN_SECOND / multiplier_nanos;
 
-                let subsec: f64 = self.try_convert(subsec)?;
+        if subsec.ruby_type() == Ruby::Float {
+            // FIXME: The below deviates from the MRI implementation of Time
+            // MRI uses `to_r` for subsec calculation on floats subsec nanos,
+            // and this could result in different values.
 
-                if subsec.is_nan() {
-                    return Err(FloatDomainError::with_message("NaN").into());
-                }
-                if subsec.is_infinite() {
-                    if subsec.is_sign_negative() {
-                        return Err(FloatDomainError::with_message("-Infinity").into());
-                    }
-                    return Err(FloatDomainError::with_message("Infinity").into());
-                }
+            let subsec: f64 = self.try_convert(subsec)?;
 
-                // These conversions are luckily not lossy. `seconds_base`
-                // and `multiplier_nanos` are guaranteed to be represented
-                // without loss in a f64.
-                #[allow(clippy::cast_precision_loss)]
-                let seconds_base = seconds_base as f64;
-                #[allow(clippy::cast_precision_loss)]
-                let multiplier_nanos = multiplier_nanos as f64;
-
-                let mut secs = subsec / seconds_base;
-                let mut nanos = (subsec % seconds_base) * multiplier_nanos;
-
-                // `is_sign_negative()` is not enough here, since this logic
-                // should also be skilled for negative zero.
-                if subsec < -0.0 {
-                    // Nanos always needs to be a positive u32. If subsec
-                    // is negative, we will always need remove one second.
-                    // Nanos can then be adjusted since it will always be
-                    // the inverse of the total nanos in a second.
-                    secs -= 1.0;
-
-                    #[allow(clippy::cast_precision_loss)]
-                    if nanos != 0.0 && nanos != -0.0 {
-                        nanos += NANOS_IN_SECOND as f64;
-                    }
-                }
-
-                if !(MIN_FLOAT_SECONDS..=MAX_FLOAT_SECONDS).contains(&secs)
-                    || !(MIN_FLOAT_NANOS..=MAX_FLOAT_NANOS).contains(&nanos)
-                {
-                    return Err(ArgumentError::with_message("subsec outside of bounds").into());
-                }
-
-                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                Ok(Subsec {
-                    secs: secs as i64,
-                    nanos: nanos as u32,
-                })
-            } else {
-                let subsec: i64 = implicitly_convert_to_int(self, subsec)?;
-
-                // The below calculations should always be safe. The
-                // multiplier is guaranteed to not be 0, the remainder
-                // should never overflow, and is guaranteed to be less
-                // than u32::MAX.
-                let mut secs = subsec / seconds_base;
-                let mut nanos = (subsec % seconds_base) * multiplier_nanos;
-
-                if subsec.is_negative() {
-                    // Nanos always needs to be a positive u32. If subsec
-                    // is negative, we will always need remove one second.
-                    // Nanos can then be adjusted since it will always be
-                    // the inverse of the total nanos in a second.
-                    secs = secs
-                        .checked_sub(1)
-                        .ok_or(ArgumentError::with_message("Time too small"))?;
-
-                    if nanos.signum() != 0 {
-                        nanos += NANOS_IN_SECOND;
-                    }
-                }
-
-                // Cast to u32 is safe since it will always be less than
-                // `NANOS_IN_SECOND` due to modulo and negative adjustments.
-                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                Ok(Subsec {
-                    secs,
-                    nanos: nanos as u32,
-                })
+            if subsec.is_nan() {
+                return Err(FloatDomainError::with_message("NaN").into());
             }
+            if subsec.is_infinite() {
+                if subsec.is_sign_negative() {
+                    return Err(FloatDomainError::with_message("-Infinity").into());
+                }
+                return Err(FloatDomainError::with_message("Infinity").into());
+            }
+
+            // These conversions are luckily not lossy. `seconds_base` and
+            // `multiplier_nanos` are guaranteed to be represented without loss
+            // in a f64.
+            #[allow(clippy::cast_precision_loss)]
+            let seconds_base = seconds_base as f64;
+            #[allow(clippy::cast_precision_loss)]
+            let multiplier_nanos = multiplier_nanos as f64;
+
+            let mut secs = subsec / seconds_base;
+            let mut nanos = (subsec % seconds_base) * multiplier_nanos;
+
+            // `is_sign_negative()` is not enough here, since this logic should
+            // also be skilled for negative zero.
+            if subsec < -0.0 {
+                // Nanos always needs to be a positive u32. If subsec is
+                // negative, we will always need remove one second.  Nanos can
+                // then be adjusted since it will always be the inverse of the
+                // total nanos in a second.
+                secs -= 1.0;
+
+                #[allow(clippy::cast_precision_loss)]
+                if nanos != 0.0 && nanos != -0.0 {
+                    nanos += NANOS_IN_SECOND as f64;
+                }
+            }
+
+            if !(MIN_FLOAT_SECONDS..=MAX_FLOAT_SECONDS).contains(&secs)
+                || !(MIN_FLOAT_NANOS..=MAX_FLOAT_NANOS).contains(&nanos)
+            {
+                return Err(ArgumentError::with_message("subsec outside of bounds").into());
+            }
+
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            Ok(Subsec {
+                secs: secs as i64,
+                nanos: nanos as u32,
+            })
         } else {
-            Ok(Subsec { secs: 0, nanos: 0 })
+            let subsec: i64 = implicitly_convert_to_int(self, subsec)?;
+
+            // The below calculations should always be safe. The multiplier is
+            // guaranteed to not be 0, the remainder should never overflow, and
+            // is guaranteed to be less than u32::MAX.
+            let mut secs = subsec / seconds_base;
+            let mut nanos = (subsec % seconds_base) * multiplier_nanos;
+
+            if subsec.is_negative() {
+                // Nanos always needs to be a positive u32. If subsec is
+                // negative, we will always need remove one second.  Nanos can
+                // then be adjusted since it will always be the inverse of the
+                // total nanos in a second.
+                secs = secs
+                    .checked_sub(1)
+                    .ok_or(ArgumentError::with_message("Time too small"))?;
+
+                if nanos.signum() != 0 {
+                    nanos += NANOS_IN_SECOND;
+                }
+            }
+
+            // Cast to u32 is safe since it will always be less than
+            // `NANOS_IN_SECOND` due to modulo and negative adjustments.
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            Ok(Subsec {
+                secs,
+                nanos: nanos as u32,
+            })
         }
     }
 }
