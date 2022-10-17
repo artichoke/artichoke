@@ -442,18 +442,14 @@ unsafe extern "C" fn string_empty(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
 }
 
 unsafe extern "C" fn string_end_with(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    let prefixes = mrb_get_args!(mrb, *args);
+    let suffixes = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-
-    for prefix in prefixes.iter().map(|&other| Value::from(other)) {
-        match trampoline::end_with(&mut guard, value, prefix) {
-            Ok(true) => return guard.convert(true).inner(),
-            Ok(false) => {}
-            Err(exception) => error::raise(guard, exception),
-        }
+    let suffixes = suffixes.iter().map(|&other| Value::from(other));
+    match trampoline::end_with(&mut guard, value, suffixes) {
+        Ok(result) => return result.inner(),
+        Err(exception) => error::raise(guard, exception),
     }
-    guard.convert(false).inner()
 }
 
 unsafe extern "C" fn string_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
@@ -682,15 +678,11 @@ unsafe extern "C" fn string_start_with(mrb: *mut sys::mrb_state, slf: sys::mrb_v
     let prefixes = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
-
-    for prefix in prefixes.iter().map(|&other| Value::from(other)) {
-        match trampoline::start_with(&mut guard, value, prefix) {
-            Ok(true) => return guard.convert(true).inner(),
-            Ok(false) => {}
-            Err(exception) => error::raise(guard, exception),
-        }
+    let prefixes = prefixes.iter().map(|&other| Value::from(other));
+    match trampoline::start_with(&mut guard, value, prefixes) {
+        Ok(result) => return result.inner(),
+        Err(exception) => error::raise(guard, exception),
     }
-    guard.convert(false).inner()
 }
 
 unsafe extern "C" fn string_to_f(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
