@@ -183,11 +183,11 @@ mod tests {
         let mut interp = interpreter();
         // Test that regexp matching using start_with? clear the relevant regexp globals
         // This is not tested in the vendored MRI version hence why it is tested here
-        let test = "
-            raise 'start_with? gives incorrect result' unless 'abcd test-123'.start_with?(/test-(\\d+)/) == false;
+        let test = r#"
+            raise 'start_with? gives incorrect result' unless 'abcd test-123'.start_with?(/test-(\d+)/) == false;
             raise 'start_with? should clear Regexp.last_match' unless Regexp.last_match == nil
             raise 'start_with? should clear $1' unless $1 == nil
-        ";
+        "#;
         let result = interp.eval(test.as_bytes());
         unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
     }
