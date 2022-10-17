@@ -1492,16 +1492,17 @@ pub fn start_with(interp: &mut Artichoke, mut value: Value, mut prefix: Value) -
             if inner.is_nil() {
                 return Ok(false);
             }
+
             let match_data = unsafe { MatchData::unbox_from_value(&mut inner, interp)? };
-            if match_data.begin(matchdata::Capture::GroupIndex(0))? != Some(0) {
-                regexp::clear_capture_globals(interp)?;
-                interp.unset_global_variable(regexp::LAST_MATCH)?;
-                interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
-                interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
-                return Ok(false);
-            } else {
+            if match_data.begin(matchdata::Capture::GroupIndex(0))? == Some(0) {
                 return Ok(true);
             }
+
+            regexp::clear_capture_globals(interp)?;
+            interp.unset_global_variable(regexp::LAST_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
+            interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
+            return Ok(false);
         }
 
         // SAFETY: `s` used and discarded immediately  before any intervening operations on the VM.
