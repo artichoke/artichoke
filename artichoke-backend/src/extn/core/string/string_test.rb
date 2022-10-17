@@ -185,19 +185,17 @@ end
 
 def string_end_with
   def assert_raise_type_error
-    begin
-      yield
-    rescue TypeError
-      return
-    else
-      raise
-    end
+    yield
+  rescue TypeError
+    nil
+  else
+    raise
   end
 
-  assert_raise_type_error { "abc".end_with?(/c/) }
-  assert_raise_type_error { "abc".end_with?('e', 'xyz', /c/) }
+  assert_raise_type_error { 'abc'.end_with?(/c/) }
+  assert_raise_type_error { 'abc'.end_with?('e', 'xyz', /c/) }
 
-  "abc".end_with?('e', 'bc', /c/)
+  'abc'.end_with?('e', 'bc', /c/)
 end
 
 spec if $PROGRAM_NAME == __FILE__

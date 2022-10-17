@@ -1063,7 +1063,7 @@ pub fn end_with<T>(interp: &mut Artichoke, mut value: Value, suffixes: T) -> Res
 where
     T: IntoIterator<Item = Value>,
 {
-    for mut suffix in suffixes.into_iter() {
+    for mut suffix in suffixes {
         let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
         // SAFETY: `s` used and discarded immediately  before any intervening operations on the VM.
         // This ensures there are no intervening garbage collections which may free the `RString*` that backs this value.
@@ -1494,7 +1494,7 @@ where
 {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
 
-    for mut prefix in prefixes.into_iter() {
+    for mut prefix in prefixes {
         if prefix.ruby_type() == Ruby::String {
             let needle = unsafe { super::String::unbox_from_value(&mut prefix, interp)? };
             if s.starts_with(needle.as_inner_ref()) {

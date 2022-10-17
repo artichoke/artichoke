@@ -447,7 +447,7 @@ unsafe extern "C" fn string_end_with(mrb: *mut sys::mrb_state, slf: sys::mrb_val
     let value = Value::from(slf);
     let suffixes = suffixes.iter().map(|&other| Value::from(other));
     match trampoline::end_with(&mut guard, value, suffixes) {
-        Ok(result) => return result.inner(),
+        Ok(result) => result.inner(),
         Err(exception) => error::raise(guard, exception),
     }
 }
@@ -680,7 +680,7 @@ unsafe extern "C" fn string_start_with(mrb: *mut sys::mrb_state, slf: sys::mrb_v
     let value = Value::from(slf);
     let prefixes = prefixes.iter().map(|&other| Value::from(other));
     match trampoline::start_with(&mut guard, value, prefixes) {
-        Ok(result) => return result.inner(),
+        Ok(result) => result.inner(),
         Err(exception) => error::raise(guard, exception),
     }
 }
