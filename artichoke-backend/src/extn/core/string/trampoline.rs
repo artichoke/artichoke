@@ -1059,6 +1059,23 @@ pub fn is_empty(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error
     Ok(interp.convert(s.is_empty()))
 }
 
+pub fn end_with<T>(interp: &mut Artichoke, mut value: Value, suffixes: T) -> Result<Value, Error>
+where
+    T: IntoIterator<Item = Value>,
+{
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+
+    for mut suffix in suffixes {
+        // SAFETY: `s` used and discarded immediately before any intervening operations on the VM.
+        // This ensures there are no intervening garbage collections which may free the `RString*` that backs this value.
+        let needle = unsafe { implicitly_convert_to_string(interp, &mut suffix)? };
+        if s.ends_with(needle) {
+            return Ok(interp.convert(true));
+        }
+    }
+    Ok(interp.convert(false))
+}
+
 pub fn eql(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     if let Ok(other) = unsafe { super::String::unbox_from_value(&mut other, interp) } {
@@ -1470,6 +1487,50 @@ pub fn slice_bang(interp: &mut Artichoke, mut value: Value) -> Result<Value, Err
 pub fn split(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let _s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     Err(NotImplementedError::new().into())
+}
+
+pub fn start_with<T>(interp: &mut Artichoke, mut value: Value, prefixes: T) -> Result<Value, Error>
+where
+    T: IntoIterator<Item = Value>,
+{
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+
+    for mut prefix in prefixes {
+        if prefix.ruby_type() == Ruby::String {
+            let needle = unsafe { super::String::unbox_from_value(&mut prefix, interp)? };
+            if s.starts_with(needle.as_inner_ref()) {
+                return Ok(interp.convert(true));
+            }
+        } else {
+            #[cfg(feature = "core-regexp")]
+            if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut prefix, interp) } {
+                let mut inner = regexp.inner().match_(interp, &s, None, None)?;
+                if inner.is_nil() {
+                    continue;
+                }
+
+                let match_data = unsafe { MatchData::unbox_from_value(&mut inner, interp)? };
+                if match_data.begin(matchdata::Capture::GroupIndex(0))? == Some(0) {
+                    return Ok(interp.convert(true));
+                }
+
+                regexp::clear_capture_globals(interp)?;
+                interp.unset_global_variable(regexp::LAST_MATCH)?;
+                interp.unset_global_variable(regexp::STRING_LEFT_OF_MATCH)?;
+                interp.unset_global_variable(regexp::STRING_RIGHT_OF_MATCH)?;
+                continue;
+            }
+
+            // SAFETY: `s` used and discarded immediately before any intervening operations on the VM.
+            // This ensures there are no intervening garbage collections which may free the `RString*` that backs this value.
+            let needle = unsafe { implicitly_convert_to_string(interp, &mut prefix)? };
+            if s.starts_with(needle) {
+                return Ok(interp.convert(true));
+            }
+        }
+    }
+
+    Ok(interp.convert(false))
 }
 
 pub fn to_f(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
