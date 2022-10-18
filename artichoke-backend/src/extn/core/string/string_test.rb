@@ -183,15 +183,15 @@ def string_tr
   raise unless 'abcd'.tr('a-z', 'xxx') == 'xxxx'
 end
 
-def string_end_with
-  def assert_raise_type_error
-    yield
-  rescue TypeError
-    nil
-  else
-    raise
-  end
+def assert_raise_type_error
+  yield
+rescue TypeError
+  nil
+else
+  raise
+end
 
+def string_end_with
   assert_raise_type_error { 'abc'.end_with?(/c/) }
   assert_raise_type_error { 'abc'.end_with?('e', 'xyz', /c/) }
 
