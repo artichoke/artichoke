@@ -1063,8 +1063,9 @@ pub fn end_with<T>(interp: &mut Artichoke, mut value: Value, suffixes: T) -> Res
 where
     T: IntoIterator<Item = Value>,
 {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+
     for mut suffix in suffixes {
-        let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
         // SAFETY: `s` used and discarded immediately  before any intervening operations on the VM.
         // This ensures there are no intervening garbage collections which may free the `RString*` that backs this value.
         let needle = unsafe { implicitly_convert_to_string(interp, &mut suffix)? };
