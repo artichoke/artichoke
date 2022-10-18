@@ -1066,7 +1066,7 @@ where
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
 
     for mut suffix in suffixes {
-        // SAFETY: `s` used and discarded immediately  before any intervening operations on the VM.
+        // SAFETY: `s` used and discarded immediately before any intervening operations on the VM.
         // This ensures there are no intervening garbage collections which may free the `RString*` that backs this value.
         let needle = unsafe { implicitly_convert_to_string(interp, &mut suffix)? };
         if s.ends_with(needle) {
@@ -1521,7 +1521,7 @@ where
                 continue;
             }
 
-            // SAFETY: `s` used and discarded immediately  before any intervening operations on the VM.
+            // SAFETY: `s` used and discarded immediately before any intervening operations on the VM.
             // This ensures there are no intervening garbage collections which may free the `RString*` that backs this value.
             let needle = unsafe { implicitly_convert_to_string(interp, &mut prefix)? };
             if s.starts_with(needle) {
