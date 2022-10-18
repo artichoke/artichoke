@@ -179,6 +179,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "core-regexp")]
     fn start_with_regex() {
         let mut interp = interpreter();
         // Test that regexp matching using start_with? clear the relevant regexp globals
