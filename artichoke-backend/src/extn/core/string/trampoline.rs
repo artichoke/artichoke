@@ -1508,6 +1508,14 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
         slice = &slice[1..];
     }
 
+    if slice.first() == Some(&b'_') {
+        return Ok(interp.convert(0));
+    }
+
+    let mut slice = std::borrow::Cow::from(slice);
+    if slice.find(&"_").is_some() {
+        slice.to_mut().retain(|&c| c != b'_');
+    }
     loop {
         use std::num::IntErrorKind;
         // Try to greedily parse the whole string as an int.
@@ -1522,8 +1530,14 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
             }
             _ => {
                 // if parsing failed, start discarding from the end one byte at a time.
-                let (_, head) = slice.split_last().unwrap();
-                slice = head;
+                match slice {
+                    std::borrow::Cow::Owned(ref mut data) => {
+                        data.pop();
+                    }
+                    std::borrow::Cow::Borrowed(data) => {
+                        slice = std::borrow::Cow::from(&data[..(data.len() - 1)]);
+                    }
+                }
             }
         }
     }
