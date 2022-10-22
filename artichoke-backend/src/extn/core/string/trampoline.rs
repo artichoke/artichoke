@@ -1479,6 +1479,15 @@ pub fn to_f(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 
 pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let mut slice = s.as_slice();
+    // ignore preceding whitespace
+    if let Some(start) = slice.iter().position(|c| !c.is_ascii_whitespace()) {
+        slice = &slice[start..];
+    } else {
+        // All whitespace, but we cant return early because we need to ensure the base is valid too
+        slice = &[];
+    }
+
     let base = if let Some(base) = base {
         let base = implicitly_convert_to_int(interp, base)?;
         let base = u32::try_from(base).map_err(|_| ArgumentError::from(format!("invalid radix {base}")))?;
@@ -1491,7 +1500,6 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
     } else {
         10_u32
     };
-    let mut slice = s.as_slice();
     let mut squeezed = false;
     // squeeze preceding zeros.
     while let Some(&b'0') = slice.first() {
