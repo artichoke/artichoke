@@ -1488,6 +1488,19 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
         slice = &[];
     }
 
+    // Grab sign before prefix matching
+    let sign = match slice.first() {
+        Some(b'+') => {
+            slice = &slice[1..];
+            1
+        }
+        Some(b'-') => {
+            slice = &slice[1..];
+            -1
+        }
+        _ => 1,
+    };
+
     let base = if let Some(base) = base {
         let base = implicitly_convert_to_int(interp, base)?;
         let base = u32::try_from(base).map_err(|_| ArgumentError::from(format!("invalid radix {base}")))?;
@@ -1516,7 +1529,11 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
         slice = &slice[1..];
     }
 
-    if slice.first() == Some(&b'_') {
+    // Check string doesn't start with any special characters
+    //  '_' is invalid because they are stripped out elsewhere in the string, but cannot start a number
+    //  '+' and '-' invalid because we already have the sign prior to the prefix, but they are accepted
+    //  at the begining of a string by str_from_radix, and double sign doesn't make sense
+    if slice.first() == Some(&b'_') || slice.first() == Some(&b'+') || slice.first() == Some(&b'-') {
         return Ok(interp.convert(0));
     }
 
@@ -1531,7 +1548,7 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
             .map_err(|_| IntErrorKind::InvalidDigit)
             .and_then(|s| i64::from_str_radix(s, base).map_err(|err| err.kind().clone()));
         match parsed {
-            Ok(int) => return Ok(interp.convert(int)),
+            Ok(int) => return Ok(interp.convert(sign * int)),
             Err(IntErrorKind::Empty | IntErrorKind::Zero) => return Ok(interp.convert(0)),
             Err(IntErrorKind::PosOverflow | IntErrorKind::NegOverflow) => {
                 return Err(NotImplementedError::new().into())
