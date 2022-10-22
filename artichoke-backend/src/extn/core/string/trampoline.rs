@@ -1504,7 +1504,36 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
     let base = base.map_or(Ok(10), |b| implicitly_convert_to_int(interp, b))?;
     let base = match base {
         x if x < 0 || x == 1 || x > 36 => return Err(ArgumentError::from(format!("invalid radix {base}")).into()),
-        0 => 10,
+        0 => {
+            // Infer base size from prefix
+            if slice.len() < 2 || slice[0] != b'0' {
+                10
+            } else {
+                match &slice[1] {
+                    b'b' | b'B' => {
+                        slice = &slice[2..];
+                        2
+                    }
+                    b'o' | b'O' => {
+                        slice = &slice[2..];
+                        8
+                    }
+                    b'd' | b'D' => {
+                        slice = &slice[2..];
+                        10
+                    }
+                    b'x' | b'X' => {
+                        slice = &slice[2..];
+                        16
+                    }
+                    _ => {
+                        // Numbers that start with 0 are assumed to be octal
+                        slice = &slice[1..];
+                        8
+                    }
+                }
+            }
+        }
         x => {
             // Trim leading literal specifier if it exists
             if slice.len() >= 2
