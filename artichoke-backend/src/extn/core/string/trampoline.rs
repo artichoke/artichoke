@@ -1501,33 +1501,25 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
         _ => 1,
     };
 
-    let base = if let Some(base) = base {
-        let base = implicitly_convert_to_int(interp, base)?;
-        let base = u32::try_from(base).map_err(|_| ArgumentError::from(format!("invalid radix {base}")))?;
-        match base {
-            0 => 10,
-            1 => return Err(ArgumentError::with_message("invalid radix 1").into()),
-            x if x > 36 => return Err(ArgumentError::from(format!("invalid radix {x}")).into()),
-            x => x,
+    let base = base.map_or(Ok(10), |b| implicitly_convert_to_int(interp, b))?;
+    let base = match base {
+        x if x < 0 || x == 1 || x > 36 => return Err(ArgumentError::from(format!("invalid radix {base}")).into()),
+        0 => 10,
+        x => {
+            // Trim leading literal specifier if it exists
+            if slice.len() >= 2
+                && matches!(
+                    (x, &slice[0..2]),
+                    (2, b"0b" | b"0B") | (8, b"0o" | b"0O") | (10, b"0d" | b"0D") | (16, b"0x" | b"0X")
+                )
+            {
+                slice = &slice[2..];
+            };
+
+            // This can only be 2-36 inclusive in this branch, so unwrap is safe
+            u32::try_from(x).unwrap()
         }
-    } else {
-        10_u32
     };
-    let mut squeezed = false;
-    // squeeze preceding zeros.
-    while let Some(&b'0') = slice.first() {
-        slice = &slice[1..];
-        squeezed = true;
-    }
-    // Trim leading literal specifier but only if there was a leading 0.
-    if squeezed
-        && matches!(
-            (base, slice.first().copied()),
-            (2, Some(b'b' | b'B')) | (8, Some(b'o' | b'O')) | (10, Some(b'd' | b'D')) | (16, Some(b'x' | b'X'))
-        )
-    {
-        slice = &slice[1..];
-    }
 
     // Check string doesn't start with any special characters
     //  '_' is invalid because they are stripped out elsewhere in the string, but cannot start a number
