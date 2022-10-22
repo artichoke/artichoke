@@ -246,11 +246,22 @@ mod libs {
             .arg("--root")
             .arg(&bindgen_install_dir)
             .arg("--version")
-            .arg("0.60.1")
-            .arg("bindgen")
+            .arg("0.61.0")
+            .arg("--locked")
+            .arg("bindgen-cli")
             .status()
             .unwrap();
         assert!(status.success(), "cargo install bindgen failed");
+
+        // NOTE: this extensionless binary name also works on Windows even though
+        // `bindgen` is installed with an `.exe` extension:
+        //
+        // ```
+        // PS artichoke> .\target\debug\build\artichoke-backend-10a84ed92b73d6ee\out\bindgen\bin\bindgen.exe --version
+        // bindgen 0.61.0
+        // PS artichoke> .\target\debug\build\artichoke-backend-10a84ed92b73d6ee\out\bindgen\bin\bindgen --version
+        // bindgen 0.61.0
+        // ```
         bindgen_install_dir.join("bin").join("bindgen")
     }
 
