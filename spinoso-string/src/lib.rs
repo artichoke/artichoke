@@ -1402,8 +1402,14 @@ impl String {
     /// let s = String::from("hello");
     ///
     /// assert_eq!(s.center(4, None)?.collect::<Vec<_>>(), b"hello");
-    /// assert_eq!(s.center(20, None)?.collect::<Vec<_>>(), b"       hello        ");
-    /// assert_eq!(s.center(20, Some(&b"123"[..]))?.collect::<Vec<_>>(), b"1231231hello12312312");
+    /// assert_eq!(
+    ///     s.center(20, None)?.collect::<Vec<_>>(),
+    ///     b"       hello        "
+    /// );
+    /// assert_eq!(
+    ///     s.center(20, Some(&b"123"[..]))?.collect::<Vec<_>>(),
+    ///     b"1231231hello12312312"
+    /// );
     /// # Ok(())
     /// # }
     /// # example().unwrap();
@@ -1730,6 +1736,7 @@ impl String {
     ///
     /// ```
     /// use core::str;
+    ///
     /// use spinoso_string::String;
     ///
     /// let s = String::utf8(b"ab\xF0\x9F\x92\x8E\xFF".to_vec());
@@ -1793,7 +1800,10 @@ impl String {
     ///
     /// # fn example() -> Result<(), spinoso_string::CodepointsError> {
     /// let s = String::utf8(b"ab\xF0\x9F\x92\x8E\xFF".to_vec());
-    /// assert!(matches!(s.codepoints(), Err(CodepointsError::InvalidUtf8Codepoint)));
+    /// assert!(matches!(
+    ///     s.codepoints(),
+    ///     Err(CodepointsError::InvalidUtf8Codepoint)
+    /// ));
     ///
     /// let s = String::utf8("💎".as_bytes().to_vec());
     /// let mut codepoints = s.codepoints()?;

@@ -148,9 +148,12 @@ impl Error {
     /// assert_eq!(err.message(), "Math::DomainError");
     ///
     /// let err = Error::from(NotImplementedError::with_message(
-    ///     "Artichoke was not built with Math::erf support"
+    ///     "Artichoke was not built with Math::erf support",
     /// ));
-    /// assert_eq!(err.message(), "Artichoke was not built with Math::erf support");
+    /// assert_eq!(
+    ///     err.message(),
+    ///     "Artichoke was not built with Math::erf support"
+    /// );
     /// ```
     #[inline]
     #[must_use]
@@ -207,10 +210,11 @@ impl error::Error for Error {
 /// let err = DomainError::new();
 /// assert_eq!(err.message(), "Math::DomainError");
 ///
-/// let err = DomainError::with_message(
-///     r#"Numerical argument is out of domain - "acos""#,
+/// let err = DomainError::with_message(r#"Numerical argument is out of domain - "acos""#);
+/// assert_eq!(
+///     err.message(),
+///     r#"Numerical argument is out of domain - "acos""#
 /// );
-/// assert_eq!(err.message(), r#"Numerical argument is out of domain - "acos""#);
 /// ```
 ///
 /// [Ruby `Math::DomainError` Exception class]: https://ruby-doc.org/core-3.1.2/Math/DomainError.html
@@ -250,10 +254,12 @@ impl DomainError {
     ///
     /// ```
     /// # use spinoso_math::DomainError;
-    /// const ERR: DomainError = DomainError::with_message(
-    ///     r#"Numerical argument is out of domain - "acos""#,
+    /// const ERR: DomainError =
+    ///     DomainError::with_message(r#"Numerical argument is out of domain - "acos""#);
+    /// assert_eq!(
+    ///     ERR.message(),
+    ///     r#"Numerical argument is out of domain - "acos""#
     /// );
-    /// assert_eq!(ERR.message(), r#"Numerical argument is out of domain - "acos""#);
     /// ```
     #[inline]
     #[must_use]
@@ -270,10 +276,11 @@ impl DomainError {
     /// let err = DomainError::new();
     /// assert_eq!(err.message(), "Math::DomainError");
     ///
-    /// let err = DomainError::with_message(
-    ///     r#"Numerical argument is out of domain - "acos""#,
+    /// let err = DomainError::with_message(r#"Numerical argument is out of domain - "acos""#);
+    /// assert_eq!(
+    ///     err.message(),
+    ///     r#"Numerical argument is out of domain - "acos""#
     /// );
-    /// assert_eq!(err.message(), r#"Numerical argument is out of domain - "acos""#);
     /// ```
     #[inline]
     #[must_use]
@@ -308,10 +315,11 @@ impl error::Error for DomainError {}
 /// let err = NotImplementedError::new();
 /// assert_eq!(err.message(), "NotImplementedError");
 ///
-/// let err = NotImplementedError::with_message(
+/// let err = NotImplementedError::with_message("Artichoke was not built with Math::erf support");
+/// assert_eq!(
+///     err.message(),
 ///     "Artichoke was not built with Math::erf support"
 /// );
-/// assert_eq!(err.message(), "Artichoke was not built with Math::erf support");
 /// ```
 ///
 /// [Rust core library]: https://doc.rust-lang.org/std/primitive.f64.html
@@ -342,10 +350,12 @@ impl NotImplementedError {
     ///
     /// ```
     /// # use spinoso_math::NotImplementedError;
-    /// const ERR: NotImplementedError = NotImplementedError::with_message(
+    /// const ERR: NotImplementedError =
+    ///     NotImplementedError::with_message("Artichoke was not built with Math::erf support");
+    /// assert_eq!(
+    ///     ERR.message(),
     ///     "Artichoke was not built with Math::erf support"
     /// );
-    /// assert_eq!(ERR.message(), "Artichoke was not built with Math::erf support");
     /// ```
     #[inline]
     #[must_use]
@@ -363,10 +373,11 @@ impl NotImplementedError {
     /// let err = NotImplementedError::new();
     /// assert_eq!(err.message(), "NotImplementedError");
     ///
-    /// let err = NotImplementedError::with_message(
+    /// let err = NotImplementedError::with_message("Artichoke was not built with Math::erf support");
+    /// assert_eq!(
+    ///     err.message(),
     ///     "Artichoke was not built with Math::erf support"
     /// );
-    /// assert_eq!(err.message(), "Artichoke was not built with Math::erf support");
     /// ```
     #[inline]
     #[must_use]

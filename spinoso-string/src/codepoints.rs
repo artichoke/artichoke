@@ -152,13 +152,22 @@ impl std::error::Error for InvalidCodepointError {}
 /// # fn example() -> Result<(), CodepointsError> {
 /// let s = String::from("hello");
 ///
-/// assert_eq!(s.codepoints()?.collect::<Vec<_>>(), [104, 101, 108, 108, 111]);
+/// assert_eq!(
+///     s.codepoints()?.collect::<Vec<_>>(),
+///     [104, 101, 108, 108, 111]
+/// );
 ///
 /// let s = String::utf8(b"abc\xFFxyz".to_vec());
-/// assert!(matches!(s.codepoints(), Err(CodepointsError::InvalidUtf8Codepoint)));
+/// assert!(matches!(
+///     s.codepoints(),
+///     Err(CodepointsError::InvalidUtf8Codepoint)
+/// ));
 ///
 /// let s = String::binary(b"abc\xFFxyz".to_vec());
-/// assert_eq!(s.codepoints()?.collect::<Vec<_>>(), [97, 98, 99, 255, 120, 121, 122]);
+/// assert_eq!(
+///     s.codepoints()?.collect::<Vec<_>>(),
+///     [97, 98, 99, 255, 120, 121, 122]
+/// );
 /// # Ok(())
 /// # }
 /// # example().unwrap();

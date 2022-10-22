@@ -23,6 +23,7 @@ use crate::Symbol;
 /// # extern crate alloc;
 /// use alloc::borrow::Cow;
 /// use alloc::boxed::Box;
+///
 /// use artichoke_core::intern::Intern;
 /// use spinoso_symbol::{InternerAllSymbols, Symbol};
 ///
@@ -36,7 +37,7 @@ use crate::Symbol;
 ///
 ///     fn intern_bytes<T>(&mut self, symbol: T) -> Result<Self::Symbol, Self::Error>
 ///     where
-///         T: Into<Cow<'static, [u8]>>
+///         T: Into<Cow<'static, [u8]>>,
 ///     {
 ///         let boxed = Box::<[u8]>::from(symbol.into());
 ///         Box::leak(boxed);

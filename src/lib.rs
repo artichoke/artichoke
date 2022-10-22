@@ -56,7 +56,12 @@
 //! # fn example() -> Result<(), Error> {
 //! let mut interp = artichoke::interpreter()?;
 //! let s = interp.try_convert_mut("💎")?;
-//! let codepoint = s.funcall(&mut interp, "ord", &[] /* args */, None /* block */)?;
+//! let codepoint = s.funcall(
+//!     &mut interp,
+//!     "ord",
+//!     &[],  /* args */
+//!     None, /* block */
+//! )?;
 //! let codepoint = codepoint.try_convert_into::<u32>(&interp)?;
 //! assert_eq!(128142, codepoint);
 //! # interp.close();

@@ -102,7 +102,10 @@ pub fn os_str_to_bytes(os_str: &OsStr) -> Result<&[u8], ConvertBytesError> {
 /// # use std::ffi::OsString;
 /// # use scolapasta_path::os_string_to_bytes;
 /// let platform_string: OsString = OsString::from("/etc/passwd");
-/// assert_eq!(os_string_to_bytes(platform_string), Ok(b"/etc/passwd".to_vec()));
+/// assert_eq!(
+///     os_string_to_bytes(platform_string),
+///     Ok(b"/etc/passwd".to_vec())
+/// );
 /// ```
 ///
 /// # Errors
@@ -140,7 +143,10 @@ impl ConvertBytesError {
     /// ```
     /// # use scolapasta_path::ConvertBytesError;
     /// const ERR: ConvertBytesError = ConvertBytesError::new();
-    /// assert_eq!(ERR.message(), "Could not convert between bytes and platform string");
+    /// assert_eq!(
+    ///     ERR.message(),
+    ///     "Could not convert between bytes and platform string"
+    /// );
     /// ```
     #[inline]
     #[must_use]
@@ -155,7 +161,10 @@ impl ConvertBytesError {
     /// ```
     /// # use scolapasta_path::ConvertBytesError;
     /// let err = ConvertBytesError::new();
-    /// assert_eq!(err.message(), "Could not convert between bytes and platform string");
+    /// assert_eq!(
+    ///     err.message(),
+    ///     "Could not convert between bytes and platform string"
+    /// );
     /// ```
     #[inline]
     #[must_use]

@@ -245,7 +245,8 @@ impl Time {
     ///
     /// Can be used to implement [`Time#utc?`] and [`Time#gmt?`].
     ///
-    //// # Examples
+    /// # Examples
+    ///
     /// ```
     /// # use spinoso_time::tzrs::{Time, TimeError};
     /// # fn example() -> Result<(), TimeError> {

@@ -8,7 +8,7 @@ use crate::extn::prelude::*;
 
 // ```c
 // MRB_API mrb_sym mrb_intern(mrb_state*,const char*,size_t);
-//
+// ```
 #[no_mangle]
 unsafe extern "C" fn mrb_intern(mrb: *mut sys::mrb_state, name: *const c_char, len: usize) -> sys::mrb_sym {
     let bytes = slice::from_raw_parts(name.cast::<u8>(), len);
