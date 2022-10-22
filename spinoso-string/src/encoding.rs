@@ -28,7 +28,10 @@ const BINARY_NAMES: &[&str] = &["ASCII-8BIT", "BINARY"];
 ///
 /// ```
 /// # use spinoso_string::{Encoding, InvalidEncodingError};
-/// assert_eq!(Encoding::try_from_flag(255), Err(InvalidEncodingError::new()));
+/// assert_eq!(
+///     Encoding::try_from_flag(255),
+///     Err(InvalidEncodingError::new())
+/// );
 /// assert_eq!(Encoding::try_from(255), Err(InvalidEncodingError::new()));
 /// ```
 ///
@@ -200,8 +203,14 @@ impl Encoding {
     /// assert_eq!(Encoding::try_from_flag(2), Ok(Encoding::Utf8));
     /// assert_eq!(Encoding::try_from_flag(4), Ok(Encoding::Ascii));
     /// assert_eq!(Encoding::try_from_flag(8), Ok(Encoding::Binary));
-    /// assert_eq!(Encoding::try_from_flag(2 | 4), Err(InvalidEncodingError::new()));
-    /// assert_eq!(Encoding::try_from_flag(255), Err(InvalidEncodingError::new()));
+    /// assert_eq!(
+    ///     Encoding::try_from_flag(2 | 4),
+    ///     Err(InvalidEncodingError::new())
+    /// );
+    /// assert_eq!(
+    ///     Encoding::try_from_flag(255),
+    ///     Err(InvalidEncodingError::new())
+    /// );
     /// ```
     ///
     /// [`to_flag`]: Self::to_flag
@@ -307,7 +316,10 @@ impl Encoding {
     /// ```
     /// # use spinoso_string::Encoding;
     /// assert_eq!(Encoding::Utf8.names(), ["UTF-8", "CP65001"]);
-    /// assert_eq!(Encoding::Ascii.names(), ["US-ASCII", "ASCII", "ANSI_X3.4-1968", "646"]);
+    /// assert_eq!(
+    ///     Encoding::Ascii.names(),
+    ///     ["US-ASCII", "ASCII", "ANSI_X3.4-1968", "646"]
+    /// );
     /// assert_eq!(Encoding::Binary.names(), ["ASCII-8BIT", "BINARY"]);
     /// ```
     ///

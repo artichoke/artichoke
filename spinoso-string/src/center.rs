@@ -84,8 +84,14 @@ impl std::error::Error for CenterError {}
 /// let s = String::from("hello");
 ///
 /// assert_eq!(s.center(4, None)?.collect::<Vec<_>>(), b"hello");
-/// assert_eq!(s.center(20, None)?.collect::<Vec<_>>(), b"       hello        ");
-/// assert_eq!(s.center(20, Some(&b"123"[..]))?.collect::<Vec<_>>(), b"1231231hello12312312");
+/// assert_eq!(
+///     s.center(20, None)?.collect::<Vec<_>>(),
+///     b"       hello        "
+/// );
+/// assert_eq!(
+///     s.center(20, Some(&b"123"[..]))?.collect::<Vec<_>>(),
+///     b"1231231hello12312312"
+/// );
 /// # Ok(())
 /// # }
 /// # example().unwrap();

@@ -94,7 +94,7 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, SmallArray};
+    /// use spinoso_array::{SmallArray, INLINE_CAPACITY};
     /// let ary: SmallArray<i32> = SmallArray::new();
     /// assert!(ary.is_empty());
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
@@ -143,7 +143,7 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, SmallArray};
+    /// use spinoso_array::{SmallArray, INLINE_CAPACITY};
     /// let ary = SmallArray::assoc(0, 100);
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
     /// assert_eq!(ary.len(), 2);
@@ -313,7 +313,7 @@ impl<T> SmallArray<T> {
     ///
     /// ```
     /// # use smallvec::SmallVec;
-    /// use spinoso_array::{INLINE_CAPACITY, SmallArray};
+    /// use spinoso_array::{SmallArray, INLINE_CAPACITY};
     /// let ary = SmallArray::from(&[1, 2, 4]);
     /// let vec: SmallVec<[i32; INLINE_CAPACITY]> = ary.into_inner();
     /// ```
@@ -370,7 +370,7 @@ impl<T> SmallArray<T> {
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, SmallArray};
+    /// use spinoso_array::{SmallArray, INLINE_CAPACITY};
     /// let ary: SmallArray<i32> = SmallArray::with_capacity(1);
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
     ///
@@ -997,7 +997,7 @@ where
     ///
     /// ```
     /// # use spinoso_array::SmallArray;
-    /// let mut ary = SmallArray::from(&[1, 2 ,4]);
+    /// let mut ary = SmallArray::from(&[1, 2, 4]);
     /// ary.set(1, 11);
     /// assert_eq!(ary, &[1, 11, 4]);
     /// ary.set(5, 263);

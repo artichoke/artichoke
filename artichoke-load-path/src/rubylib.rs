@@ -51,7 +51,7 @@ use same_file::Handle;
 /// // directory.
 /// let fixed_loader = Rubylib::with_rubylib_and_cwd(
 ///     OsStr::new("/home/artichoke/src:/usr/share/artichoke:./_lib"),
-///     Path::new("/home/artichoke")
+///     Path::new("/home/artichoke"),
 /// )?;
 /// # Some(())
 /// # }

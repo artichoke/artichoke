@@ -114,7 +114,10 @@ impl Memory {
     /// # use mezzaluna_feature_loader::loaders::Memory;
     /// # fn example() -> Option<()> {
     /// let mut loader = Memory::new();
-    /// loader.put_file_bytes(PathBuf::from("strscan.rb"), b"class StringScanner; end".to_vec());
+    /// loader.put_file_bytes(
+    ///     PathBuf::from("strscan.rb"),
+    ///     b"class StringScanner; end".to_vec(),
+    /// );
     /// let content = loader.resolve_file(Path::new("strscan.rb"));
     /// assert_eq!(content, Some("class StringScanner; end".as_bytes()));
     /// # Some(())
@@ -201,7 +204,10 @@ impl Memory {
     /// # fn example() -> Option<()> {
     /// let loader = Memory::new();
     /// # #[cfg(not(windows))]
-    /// assert_eq!(loader.load_path(), Path::new("/artichoke/virtual_root/src/lib"));
+    /// assert_eq!(
+    ///     loader.load_path(),
+    ///     Path::new("/artichoke/virtual_root/src/lib")
+    /// );
     /// # Some(())
     /// # }
     /// # example().unwrap();
@@ -216,7 +222,10 @@ impl Memory {
     /// # fn example() -> Option<()> {
     /// let loader = Memory::new();
     /// # #[cfg(windows)]
-    /// assert_eq!(loader.load_path(), Path::new("c://artichoke/virtual_root/src/lib"));
+    /// assert_eq!(
+    ///     loader.load_path(),
+    ///     Path::new("c://artichoke/virtual_root/src/lib")
+    /// );
     /// # Some(())
     /// # }
     /// # example().unwrap();

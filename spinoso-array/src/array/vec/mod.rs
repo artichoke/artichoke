@@ -1028,7 +1028,7 @@ where
     ///
     /// ```
     /// # use spinoso_array::Array;
-    /// let mut ary = Array::from(&[1, 2 ,4]);
+    /// let mut ary = Array::from(&[1, 2, 4]);
     /// ary.set(1, 11);
     /// assert_eq!(ary, &[1, 11, 4]);
     /// ary.set(5, 263);

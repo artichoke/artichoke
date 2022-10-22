@@ -235,6 +235,7 @@ impl<S> LoadedFeatures<S> {
     ///
     /// ```
     /// use std::collections::hash_map::RandomState;
+    ///
     /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
     ///
     /// let s = RandomState::new();
@@ -267,6 +268,7 @@ impl<S> LoadedFeatures<S> {
     ///
     /// ```
     /// use std::collections::hash_map::RandomState;
+    ///
     /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
     ///
     /// let s = RandomState::new();
@@ -286,6 +288,7 @@ impl<S> LoadedFeatures<S> {
     ///
     /// ```
     /// use std::collections::hash_map::RandomState;
+    ///
     /// use mezzaluna_feature_loader::LoadedFeatures;
     ///
     /// let s = RandomState::new();
@@ -341,7 +344,9 @@ where
     /// use mezzaluna_feature_loader::LoadedFeatures;
     ///
     /// let mut features = LoadedFeatures::new();
-    /// features.try_reserve(10).expect("why is this OOMing on 10 features?");
+    /// features
+    ///     .try_reserve(10)
+    ///     .expect("why is this OOMing on 10 features?");
     /// assert!(features.capacity() >= 10);
     /// ```
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {

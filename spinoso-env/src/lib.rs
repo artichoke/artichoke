@@ -195,10 +195,11 @@ impl error::Error for Error {
 /// let err = ArgumentError::new();
 /// assert_eq!(err.message(), "ArgumentError");
 ///
-/// let err = ArgumentError::with_message(
+/// let err = ArgumentError::with_message("bad environment variable name: contains null byte");
+/// assert_eq!(
+///     err.message(),
 ///     "bad environment variable name: contains null byte"
 /// );
-/// assert_eq!(err.message(), "bad environment variable name: contains null byte");
 /// ```
 ///
 /// [Ruby `ArgumentError` Exception class]: https://ruby-doc.org/core-3.1.2/ArgumentError.html
@@ -257,10 +258,12 @@ impl ArgumentError {
     ///
     /// ```
     /// # use spinoso_env::ArgumentError;
-    /// const ERR: ArgumentError = ArgumentError::with_message(
+    /// const ERR: ArgumentError =
+    ///     ArgumentError::with_message("bad environment variable name: contains null byte");
+    /// assert_eq!(
+    ///     ERR.message(),
     ///     "bad environment variable name: contains null byte"
     /// );
-    /// assert_eq!(ERR.message(), "bad environment variable name: contains null byte");
     /// ```
     #[inline]
     #[must_use]
@@ -277,10 +280,11 @@ impl ArgumentError {
     /// let err = ArgumentError::new();
     /// assert_eq!(err.message(), "ArgumentError");
     ///
-    /// let err = ArgumentError::with_message(
+    /// let err = ArgumentError::with_message("bad environment variable name: contains null byte");
+    /// assert_eq!(
+    ///     err.message(),
     ///     "bad environment variable name: contains null byte"
     /// );
-    /// assert_eq!(err.message(), "bad environment variable name: contains null byte");
     /// ```
     #[inline]
     #[must_use]
