@@ -1478,11 +1478,6 @@ pub fn to_f(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 }
 
 pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Result<Value, Error> {
-    fn try_parse(slice: &[u8], base: u32) -> Option<i64> {
-        let s = str::from_utf8(slice).ok()?;
-        i64::from_str_radix(s, base).ok()
-    }
-
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let base = if let Some(base) = base {
         let base = implicitly_convert_to_int(interp, base)?;
@@ -1513,19 +1508,23 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
         slice = &slice[1..];
     }
 
-    if slice.is_empty() {
-        return Ok(interp.convert(0));
-    }
     loop {
+        use std::num::IntErrorKind;
         // Try to greedily parse the whole string as an int.
-        if let Some(int) = try_parse(slice, base) {
-            return Ok(interp.convert(int));
-        }
-        // if parsing failed, start discarding from the end one byte at a time.
-        if let Some((_, head)) = slice.split_last() {
-            slice = head;
-        } else {
-            return Ok(interp.convert(0));
+        let parsed = str::from_utf8(&slice)
+            .map_err(|_| IntErrorKind::InvalidDigit)
+            .and_then(|s| i64::from_str_radix(s, base).map_err(|err| err.kind().clone()));
+        match parsed {
+            Ok(int) => return Ok(interp.convert(int)),
+            Err(IntErrorKind::Empty | IntErrorKind::Zero) => return Ok(interp.convert(0)),
+            Err(IntErrorKind::PosOverflow | IntErrorKind::NegOverflow) => {
+                return Err(NotImplementedError::new().into())
+            }
+            _ => {
+                // if parsing failed, start discarding from the end one byte at a time.
+                let (_, head) = slice.split_last().unwrap();
+                slice = head;
+            }
         }
     }
 }
