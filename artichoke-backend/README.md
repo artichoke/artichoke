@@ -9,7 +9,7 @@
 `artichoke-backend` crate provides a Ruby interpreter. It currently is
 implemented with [mruby] ABI-compatible bindings, some of which are implemented
 in the vendored mruby C and exported by the [`sys`](src/sys) module, others of
-which are implemented in Rust as `#[no_mangle] unsafe extern "C" fn`.
+which are implemented in Rust as `#[no_mangle] unsafe extern "C-unwind" fn`.
 
 `artichoke-backend` is slowly [strangling] its embedded mruby interpreter by
 reimplementing (oxidizing) the APIs in Rust with Artichoke-sourced components.
