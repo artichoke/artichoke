@@ -48,6 +48,7 @@ dependencies = [
  "intaglio",
  "once_cell",
  "onig",
+ "posix-space",
  "qed",
  "regex",
  "scolapasta-aref",

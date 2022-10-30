@@ -45,6 +45,7 @@ dependencies = [
  "intaglio",
  "once_cell",
  "onig",
+ "posix-space",
  "qed",
  "quickcheck",
  "regex",

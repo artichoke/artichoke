@@ -150,6 +150,7 @@ specs = [
   "setbyte",
   "size",
   "start_with",
+  "to_i",
   "tr",
   "tr_s",
 ]

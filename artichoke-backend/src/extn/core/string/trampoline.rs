@@ -1539,54 +1539,119 @@ pub fn to_f(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
 }
 
 pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Result<Value, Error> {
-    fn try_parse(slice: &[u8], base: u32) -> Option<i64> {
-        let s = str::from_utf8(slice).ok()?;
-        i64::from_str_radix(s, base).ok()
-    }
-
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let base = if let Some(base) = base {
-        let base = implicitly_convert_to_int(interp, base)?;
-        let base = u32::try_from(base).map_err(|_| ArgumentError::from(format!("invalid radix {base}")))?;
-        match base {
-            0 => 10,
-            1 => return Err(ArgumentError::with_message("invalid radix 1").into()),
-            x if x > 36 => return Err(ArgumentError::from(format!("invalid radix {x}")).into()),
-            x => x,
-        }
-    } else {
-        10_u32
-    };
     let mut slice = s.as_slice();
-    let mut squeezed = false;
-    // squeeze preceding zeros.
-    while let Some(&b'0') = slice.first() {
-        slice = &slice[1..];
-        squeezed = true;
-    }
-    // Trim leading literal specifier but only if there was a leading 0.
-    if squeezed
-        && matches!(
-            (base, slice.first().copied()),
-            (2, Some(b'b' | b'B')) | (8, Some(b'o' | b'O')) | (10, Some(b'd' | b'D')) | (16, Some(b'x' | b'X'))
-        )
-    {
-        slice = &slice[1..];
+    // ignore preceding whitespace
+    if let Some(start) = slice.iter().position(|&c| !posix_space::is_space(c)) {
+        slice = &slice[start..];
+    } else {
+        // All whitespace, but we cant return early because we need to ensure the base is valid too
+        slice = &[];
     }
 
-    if slice.is_empty() {
+    // Grab sign before prefix matching
+    let sign = match slice.first() {
+        Some(b'+') => {
+            slice = &slice[1..];
+            1
+        }
+        Some(b'-') => {
+            slice = &slice[1..];
+            -1
+        }
+        _ => 1,
+    };
+
+    let base = base.map_or(Ok(10), |b| implicitly_convert_to_int(interp, b))?;
+    let base = match base {
+        x if x < 0 || x == 1 || x > 36 => return Err(ArgumentError::from(format!("invalid radix {base}")).into()),
+        0 => {
+            // Infer base size from prefix
+            if slice.len() < 2 || slice[0] != b'0' {
+                10
+            } else {
+                match &slice[1] {
+                    b'b' | b'B' => {
+                        slice = &slice[2..];
+                        2
+                    }
+                    b'o' | b'O' => {
+                        slice = &slice[2..];
+                        8
+                    }
+                    b'd' | b'D' => {
+                        slice = &slice[2..];
+                        10
+                    }
+                    b'x' | b'X' => {
+                        slice = &slice[2..];
+                        16
+                    }
+                    _ => {
+                        // Numbers that start with 0 are assumed to be octal
+                        slice = &slice[1..];
+                        8
+                    }
+                }
+            }
+        }
+        x => {
+            // Trim leading literal specifier if it exists
+            if slice.len() >= 2
+                && matches!(
+                    (x, &slice[0..2]),
+                    (2, b"0b" | b"0B") | (8, b"0o" | b"0O") | (10, b"0d" | b"0D") | (16, b"0x" | b"0X")
+                )
+            {
+                slice = &slice[2..];
+            };
+
+            // This can only be 2-36 inclusive in this branch, so unwrap is safe
+            u32::try_from(x).unwrap()
+        }
+    };
+
+    // Check string doesn't start with any special characters
+    //  '_' is invalid because they are stripped out elsewhere in the string, but cannot start a number
+    //  '+' and '-' invalid because we already have the sign prior to the prefix, but they are accepted
+    //  at the begining of a string by str_from_radix, and double sign doesn't make sense
+    if matches!(slice.first(), Some(&b'_' | &b'+' | &b'-')) {
         return Ok(interp.convert(0));
     }
+
+    // Double underscores are not valid, and we should stop parsing the string if we encounter one
+    if let Some(double_underscore) = slice.find(&"__") {
+        slice = &slice[..double_underscore];
+    }
+
+    // Single underscores should be ignored
+    let mut slice = std::borrow::Cow::from(slice);
+    if slice.find(&"_").is_some() {
+        slice.to_mut().retain(|&c| c != b'_');
+    }
     loop {
+        use std::num::IntErrorKind;
         // Try to greedily parse the whole string as an int.
-        if let Some(int) = try_parse(slice, base) {
-            return Ok(interp.convert(int));
-        }
-        // if parsing failed, start discarding from the end one byte at a time.
-        if let Some((_, head)) = slice.split_last() {
-            slice = head;
-        } else {
-            return Ok(interp.convert(0));
+        let parsed = str::from_utf8(&slice)
+            .map_err(|_| IntErrorKind::InvalidDigit)
+            .and_then(|s| i64::from_str_radix(s, base).map_err(|err| err.kind().clone()));
+        match parsed {
+            Ok(int) => return Ok(interp.convert(sign * int)),
+            Err(IntErrorKind::Empty | IntErrorKind::Zero) => return Ok(interp.convert(0)),
+            Err(IntErrorKind::PosOverflow | IntErrorKind::NegOverflow) => {
+                return Err(NotImplementedError::new().into())
+            }
+            _ => {
+                // if parsing failed, start discarding from the end one byte at a time.
+                match slice {
+                    std::borrow::Cow::Owned(ref mut data) => {
+                        data.pop();
+                    }
+                    std::borrow::Cow::Borrowed(data) => {
+                        slice = std::borrow::Cow::from(&data[..(data.len() - 1)]);
+                    }
+                }
+            }
         }
     }
 }
