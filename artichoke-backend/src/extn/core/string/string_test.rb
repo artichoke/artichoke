@@ -11,6 +11,7 @@ def spec
   string_reverse
   string_tr
   string_end_with
+  string_to_i
 
   true
 end
@@ -196,6 +197,14 @@ def string_end_with
   assert_raise_type_error { 'abc'.end_with?('e', 'xyz', /c/) }
 
   'abc'.end_with?('e', 'bc', /c/)
+end
+
+def string_to_i
+  # All POSIX whitespace should get trimmed
+  raise unless "\x0B\n\r\t\x0C 123".to_i == 123
+
+  # Only single underscores are valid
+  raise unless '1__23'.to_i == 1
 end
 
 spec if $PROGRAM_NAME == __FILE__
