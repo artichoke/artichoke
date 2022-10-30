@@ -180,9 +180,17 @@ pub fn atan(value: f64) -> f64 {
 /// assert!((math::atan2(1.0, -1.0) - 2.356194490192345).abs() < f64::EPSILON);
 /// assert!((math::atan2(0.0, -1.0) - 3.141592653589793).abs() < f64::EPSILON);
 /// assert!((math::atan2(f64::INFINITY, f64::INFINITY) - 0.7853981633974483).abs() < f64::EPSILON);
-/// assert!((math::atan2(f64::INFINITY, f64::NEG_INFINITY) - 2.356194490192345).abs() < f64::EPSILON);
-/// assert!((math::atan2(f64::NEG_INFINITY, f64::INFINITY) - (-0.7853981633974483)).abs() < f64::EPSILON);
-/// assert!((math::atan2(f64::NEG_INFINITY, f64::NEG_INFINITY) - (-2.356194490192345)).abs() < f64::EPSILON);
+/// assert!(
+///     (math::atan2(f64::INFINITY, f64::NEG_INFINITY) - 2.356194490192345).abs() < f64::EPSILON
+/// );
+/// assert!(
+///     (math::atan2(f64::NEG_INFINITY, f64::INFINITY) - (-0.7853981633974483)).abs()
+///         < f64::EPSILON
+/// );
+/// assert!(
+///     (math::atan2(f64::NEG_INFINITY, f64::NEG_INFINITY) - (-2.356194490192345)).abs()
+///         < f64::EPSILON
+/// );
 /// ```
 #[inline]
 #[must_use]

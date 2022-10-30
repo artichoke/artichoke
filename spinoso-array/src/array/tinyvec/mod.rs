@@ -102,7 +102,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, TinyArray};
+    /// use spinoso_array::{TinyArray, INLINE_CAPACITY};
     /// let ary: TinyArray<i32> = TinyArray::new();
     /// assert!(ary.is_empty());
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
@@ -151,7 +151,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, TinyArray};
+    /// use spinoso_array::{TinyArray, INLINE_CAPACITY};
     /// let ary = TinyArray::assoc(0, 100);
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
     /// assert_eq!(ary.len(), 2);
@@ -298,7 +298,7 @@ where
     ///
     /// ```
     /// # use tinyvec::TinyVec;
-    /// use spinoso_array::{INLINE_CAPACITY, TinyArray};
+    /// use spinoso_array::{TinyArray, INLINE_CAPACITY};
     /// let ary = TinyArray::from(&[1, 2, 4]);
     /// let vec: TinyVec<[i32; INLINE_CAPACITY]> = ary.into_inner();
     /// ```
@@ -365,7 +365,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use spinoso_array::{INLINE_CAPACITY, TinyArray};
+    /// use spinoso_array::{TinyArray, INLINE_CAPACITY};
     /// let ary: TinyArray<i32> = TinyArray::with_capacity(1);
     /// assert_eq!(ary.capacity(), INLINE_CAPACITY);
     ///
@@ -1001,7 +1001,7 @@ where
     ///
     /// ```
     /// # use spinoso_array::TinyArray;
-    /// let mut ary = TinyArray::from(&[1, 2 ,4]);
+    /// let mut ary = TinyArray::from(&[1, 2, 4]);
     /// ary.set(1, 11);
     /// assert_eq!(ary, &[1, 11, 4]);
     /// ary.set(5, 263);

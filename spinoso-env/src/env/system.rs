@@ -40,7 +40,10 @@ type Bytes = Vec<u8>;
 /// const ENV: System = System::new();
 /// # fn example() -> Result<(), spinoso_env::Error> {
 /// ENV.put(b"ENV_BACKEND", Some(b"spinoso_env::System"))?;
-/// assert_eq!(std::env::var("ENV_BACKEND").as_deref(), Ok("spinoso_env::System"));
+/// assert_eq!(
+///     std::env::var("ENV_BACKEND").as_deref(),
+///     Ok("spinoso_env::System")
+/// );
 /// # Ok(())
 /// # }
 /// # example().unwrap()

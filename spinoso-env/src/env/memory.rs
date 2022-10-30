@@ -33,7 +33,10 @@ type Bytes = Vec<u8>;
 /// # fn example() -> Result<(), spinoso_env::Error> {
 /// let mut env = Memory::new();
 /// env.put(b"ENV_BACKEND", Some(b"spinoso_env::Memory"))?;
-/// assert_eq!(env.get(b"ENV_BACKEND")?.as_deref(), Some(&b"spinoso_env::Memory"[..]));
+/// assert_eq!(
+///     env.get(b"ENV_BACKEND")?.as_deref(),
+///     Some(&b"spinoso_env::Memory"[..])
+/// );
 /// # Ok(())
 /// # }
 /// # example().unwrap()

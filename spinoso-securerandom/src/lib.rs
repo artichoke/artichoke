@@ -244,7 +244,8 @@ impl ArgumentError {
     ///
     /// ```
     /// # use spinoso_securerandom::ArgumentError;
-    /// const ERR: ArgumentError = ArgumentError::with_message("negative string size (or size too big)");
+    /// const ERR: ArgumentError =
+    ///     ArgumentError::with_message("negative string size (or size too big)");
     /// assert_eq!(ERR.message(), "negative string size (or size too big)");
     /// ```
     #[inline]

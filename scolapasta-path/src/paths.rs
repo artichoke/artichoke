@@ -35,7 +35,10 @@ use windows as imp;
 /// # use std::path::Path;
 /// # use scolapasta_path::memory_loader_ruby_load_path;
 /// # #[cfg(windows)]
-/// assert_eq!(memory_loader_ruby_load_path(), Path::new("c:/artichoke/virtual_root/src/lib"));
+/// assert_eq!(
+///     memory_loader_ruby_load_path(),
+///     Path::new("c:/artichoke/virtual_root/src/lib")
+/// );
 /// ```
 ///
 /// On non-Windows systems:
@@ -44,7 +47,10 @@ use windows as imp;
 /// # use std::path::Path;
 /// # use scolapasta_path::memory_loader_ruby_load_path;
 /// # #[cfg(not(windows))]
-/// assert_eq!(memory_loader_ruby_load_path(), Path::new("/artichoke/virtual_root/src/lib"));
+/// assert_eq!(
+///     memory_loader_ruby_load_path(),
+///     Path::new("/artichoke/virtual_root/src/lib")
+/// );
 /// ```
 #[must_use]
 pub fn memory_loader_ruby_load_path() -> &'static Path {

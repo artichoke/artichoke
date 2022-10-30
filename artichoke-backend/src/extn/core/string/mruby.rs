@@ -42,6 +42,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("downcase", string_downcase, sys::mrb_args_any())?
         .add_method("downcase!", string_downcase_bang, sys::mrb_args_any())?
         .add_method("empty?", string_empty, sys::mrb_args_none())?
+        .add_method("end_with?", string_end_with, sys::mrb_args_rest())?
         .add_method("eql?", string_eql, sys::mrb_args_req(1))?
         .add_method("getbyte", string_getbyte, sys::mrb_args_req(1))?
         .add_method("hash", string_hash, sys::mrb_args_none())?
@@ -63,6 +64,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("slice", string_aref, sys::mrb_args_req(1))?
         .add_method("slice!", string_slice_bang, sys::mrb_args_req(1))?
         .add_method("split", string_split, sys::mrb_args_opt(2))?
+        .add_method("start_with?", string_start_with, sys::mrb_args_rest())?
         .add_method("to_f", string_to_f, sys::mrb_args_none())?
         .add_method("to_i", string_to_i, sys::mrb_args_opt(1))?
         .add_method("to_s", string_to_s, sys::mrb_args_none())?
@@ -439,6 +441,18 @@ unsafe extern "C" fn string_empty(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     }
 }
 
+unsafe extern "C" fn string_end_with(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let suffixes = mrb_get_args!(mrb, *args);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let suffixes = suffixes.iter().map(|&other| Value::from(other));
+    let result = trampoline::end_with(&mut guard, value, suffixes);
+    match result {
+        Ok(result) => result.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
 unsafe extern "C" fn string_eql(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let other = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
@@ -657,6 +671,18 @@ unsafe extern "C" fn string_split(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     let result = trampoline::split(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_start_with(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let prefixes = mrb_get_args!(mrb, *args);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let prefixes = prefixes.iter().map(|&other| Value::from(other));
+    let result = trampoline::start_with(&mut guard, value, prefixes);
+    match result {
+        Ok(result) => result.inner(),
         Err(exception) => error::raise(guard, exception),
     }
 }

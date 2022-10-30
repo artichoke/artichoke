@@ -355,6 +355,7 @@ impl Config {
 ///
 /// ```
 /// use core::num::NonZeroUsize;
+///
 /// use spinoso_regexp::nth_match_group;
 ///
 /// # fn example() -> Option<()> {
@@ -418,6 +419,7 @@ pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, str> {
 ///
 /// ```
 /// use core::num::NonZeroUsize;
+///
 /// use spinoso_regexp::nth_match_group_bytes;
 ///
 /// # fn example() -> Option<()> {

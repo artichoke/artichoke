@@ -9,33 +9,60 @@
 //!
 //! ```
 //! # use spinoso_symbol::IdentifierType;
-//! assert_eq!("spinoso".parse::<IdentifierType>(), Ok(IdentifierType::Local));
-//! assert_eq!("spinoso_symbol_features".parse::<IdentifierType>(), Ok(IdentifierType::Local));
+//! assert_eq!(
+//!     "spinoso".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Local)
+//! );
+//! assert_eq!(
+//!     "spinoso_symbol_features".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Local)
+//! );
 //! ```
 //!
 //! # Examples – constant
 //!
 //! ```
 //! # use spinoso_symbol::IdentifierType;
-//! assert_eq!("Spinoso".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
-//! assert_eq!("SpinosoSymbol".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
-//! assert_eq!("SPINOSO_SYMBOL_FEATURES".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
+//! assert_eq!(
+//!     "Spinoso".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Constant)
+//! );
+//! assert_eq!(
+//!     "SpinosoSymbol".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Constant)
+//! );
+//! assert_eq!(
+//!     "SPINOSO_SYMBOL_FEATURES".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Constant)
+//! );
 //! ```
 //!
 //! # Examples – global
 //!
 //! ```
 //! # use spinoso_symbol::IdentifierType;
-//! assert_eq!("$use_spinoso_symbol".parse::<IdentifierType>(), Ok(IdentifierType::Global));
-//! assert_eq!("$USE_SPINOSO_SYMBOL".parse::<IdentifierType>(), Ok(IdentifierType::Global));
+//! assert_eq!(
+//!     "$use_spinoso_symbol".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Global)
+//! );
+//! assert_eq!(
+//!     "$USE_SPINOSO_SYMBOL".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Global)
+//! );
 //! ```
 //!
 //! # Examples – instance and class variables
 //!
 //! ```
 //! # use spinoso_symbol::IdentifierType;
-//! assert_eq!("@artichoke".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
-//! assert_eq!("@@rumble".parse::<IdentifierType>(), Ok(IdentifierType::Class));
+//! assert_eq!(
+//!     "@artichoke".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Instance)
+//! );
+//! assert_eq!(
+//!     "@@rumble".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::Class)
+//! );
 //! ```
 //!
 //! # Example – attribute setter
@@ -44,8 +71,14 @@
 //!
 //! ```
 //! # use spinoso_symbol::IdentifierType;
-//! assert_eq!("artichoke=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
-//! assert_eq!("spinoso_symbol=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
+//! assert_eq!(
+//!     "artichoke=".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::AttrSet)
+//! );
+//! assert_eq!(
+//!     "spinoso_symbol=".parse::<IdentifierType>(),
+//!     Ok(IdentifierType::AttrSet)
+//! );
 //! ```
 
 use core::fmt;
@@ -69,33 +102,60 @@ use bstr::ByteSlice;
 ///
 /// ```
 /// # use spinoso_symbol::IdentifierType;
-/// assert_eq!("spinoso".parse::<IdentifierType>(), Ok(IdentifierType::Local));
-/// assert_eq!("spinoso_symbol_features".parse::<IdentifierType>(), Ok(IdentifierType::Local));
+/// assert_eq!(
+///     "spinoso".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Local)
+/// );
+/// assert_eq!(
+///     "spinoso_symbol_features".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Local)
+/// );
 /// ```
 ///
 /// # Examples – constant
 ///
 /// ```
 /// # use spinoso_symbol::IdentifierType;
-/// assert_eq!("Spinoso".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
-/// assert_eq!("SpinosoSymbol".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
-/// assert_eq!("SPINOSO_SYMBOL_FEATURES".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
+/// assert_eq!(
+///     "Spinoso".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Constant)
+/// );
+/// assert_eq!(
+///     "SpinosoSymbol".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Constant)
+/// );
+/// assert_eq!(
+///     "SPINOSO_SYMBOL_FEATURES".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Constant)
+/// );
 /// ```
 ///
 /// # Examples – global
 ///
 /// ```
 /// # use spinoso_symbol::IdentifierType;
-/// assert_eq!("$use_spinoso_symbol".parse::<IdentifierType>(), Ok(IdentifierType::Global));
-/// assert_eq!("$USE_SPINOSO_SYMBOL".parse::<IdentifierType>(), Ok(IdentifierType::Global));
+/// assert_eq!(
+///     "$use_spinoso_symbol".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Global)
+/// );
+/// assert_eq!(
+///     "$USE_SPINOSO_SYMBOL".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Global)
+/// );
 /// ```
 ///
 /// # Examples – instance and class variables
 ///
 /// ```
 /// # use spinoso_symbol::IdentifierType;
-/// assert_eq!("@artichoke".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
-/// assert_eq!("@@rumble".parse::<IdentifierType>(), Ok(IdentifierType::Class));
+/// assert_eq!(
+///     "@artichoke".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Instance)
+/// );
+/// assert_eq!(
+///     "@@rumble".parse::<IdentifierType>(),
+///     Ok(IdentifierType::Class)
+/// );
 /// ```
 ///
 /// # Example – attribute setter
@@ -104,8 +164,14 @@ use bstr::ByteSlice;
 ///
 /// ```
 /// # use spinoso_symbol::IdentifierType;
-/// assert_eq!("artichoke=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
-/// assert_eq!("spinoso_symbol=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
+/// assert_eq!(
+///     "artichoke=".parse::<IdentifierType>(),
+///     Ok(IdentifierType::AttrSet)
+/// );
+/// assert_eq!(
+///     "spinoso_symbol=".parse::<IdentifierType>(),
+///     Ok(IdentifierType::AttrSet)
+/// );
 /// ```
 ///
 /// [`Inspect`]: crate::Inspect
@@ -122,7 +188,10 @@ pub enum IdentifierType {
     /// ```
     /// # use spinoso_symbol::IdentifierType;
     /// assert_eq!("empty?".parse::<IdentifierType>(), Ok(IdentifierType::Junk));
-    /// assert_eq!("flatten!".parse::<IdentifierType>(), Ok(IdentifierType::Junk));
+    /// assert_eq!(
+    ///     "flatten!".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Junk)
+    /// );
     /// assert_eq!("<=>".parse::<IdentifierType>(), Ok(IdentifierType::Junk));
     /// assert_eq!("!~".parse::<IdentifierType>(), Ok(IdentifierType::Junk));
     /// assert_eq!("[]".parse::<IdentifierType>(), Ok(IdentifierType::Junk));
@@ -145,14 +214,23 @@ pub enum IdentifierType {
     ///
     /// ```
     /// # use spinoso_symbol::{IdentifierType, ParseIdentifierError};
-    /// assert_eq!("$".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+    /// assert_eq!(
+    ///     "$".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
     /// assert_eq!("$foo".parse::<IdentifierType>(), Ok(IdentifierType::Global));
-    /// assert_eq!("$@foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+    /// assert_eq!(
+    ///     "$@foo".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
     /// assert_eq!("$0".parse::<IdentifierType>(), Ok(IdentifierType::Global));
     /// assert_eq!("$1".parse::<IdentifierType>(), Ok(IdentifierType::Global));
     /// assert_eq!("$9".parse::<IdentifierType>(), Ok(IdentifierType::Global));
     /// assert_eq!("$-w".parse::<IdentifierType>(), Ok(IdentifierType::Global));
-    /// assert_eq!("$-www".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+    /// assert_eq!(
+    ///     "$-www".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
     /// ```
     Global,
     /// Identifier that is an instance variable name.
@@ -164,17 +242,50 @@ pub enum IdentifierType {
     ///
     /// ```
     /// # use spinoso_symbol::{IdentifierType, ParseIdentifierError};
-    /// assert_eq!("@".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
-    /// assert_eq!("@foo".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
-    /// assert_eq!("@Foo".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
-    /// assert_eq!("@FOO".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
-    /// assert_eq!("@foo_bar".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
-    /// assert_eq!("@FooBar".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
-    /// assert_eq!("@FOO_BAR".parse::<IdentifierType>(), Ok(IdentifierType::Instance));
-    /// assert_eq!("@$foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
-    /// assert_eq!("@0".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
-    /// assert_eq!("@1".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
-    /// assert_eq!("@9".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+    /// assert_eq!(
+    ///     "@".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
+    /// assert_eq!(
+    ///     "@foo".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Instance)
+    /// );
+    /// assert_eq!(
+    ///     "@Foo".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Instance)
+    /// );
+    /// assert_eq!(
+    ///     "@FOO".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Instance)
+    /// );
+    /// assert_eq!(
+    ///     "@foo_bar".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Instance)
+    /// );
+    /// assert_eq!(
+    ///     "@FooBar".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Instance)
+    /// );
+    /// assert_eq!(
+    ///     "@FOO_BAR".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Instance)
+    /// );
+    /// assert_eq!(
+    ///     "@$foo".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
+    /// assert_eq!(
+    ///     "@0".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
+    /// assert_eq!(
+    ///     "@1".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
+    /// assert_eq!(
+    ///     "@9".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
     /// ```
     ///
     /// [`Constant`]: Self::Constant
@@ -189,17 +300,41 @@ pub enum IdentifierType {
     ///
     /// ```
     /// # use spinoso_symbol::{IdentifierType, ParseIdentifierError};
-    /// assert_eq!("@@".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+    /// assert_eq!(
+    ///     "@@".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
     /// assert_eq!("@@foo".parse::<IdentifierType>(), Ok(IdentifierType::Class));
     /// assert_eq!("@@Foo".parse::<IdentifierType>(), Ok(IdentifierType::Class));
     /// assert_eq!("@@FOO".parse::<IdentifierType>(), Ok(IdentifierType::Class));
-    /// assert_eq!("@@foo_bar".parse::<IdentifierType>(), Ok(IdentifierType::Class));
-    /// assert_eq!("@@FooBar".parse::<IdentifierType>(), Ok(IdentifierType::Class));
-    /// assert_eq!("@@FOO_BAR".parse::<IdentifierType>(), Ok(IdentifierType::Class));
-    /// assert_eq!("@@$foo".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
-    /// assert_eq!("@@0".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
-    /// assert_eq!("@@1".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
-    /// assert_eq!("@@9".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+    /// assert_eq!(
+    ///     "@@foo_bar".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Class)
+    /// );
+    /// assert_eq!(
+    ///     "@@FooBar".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Class)
+    /// );
+    /// assert_eq!(
+    ///     "@@FOO_BAR".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Class)
+    /// );
+    /// assert_eq!(
+    ///     "@@$foo".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
+    /// assert_eq!(
+    ///     "@@0".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
+    /// assert_eq!(
+    ///     "@@1".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
+    /// assert_eq!(
+    ///     "@@9".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
     /// ```
     ///
     /// [`Constant`]: Self::Constant
@@ -215,10 +350,22 @@ pub enum IdentifierType {
     ///
     /// ```
     /// # use spinoso_symbol::{IdentifierType, ParseIdentifierError};
-    /// assert_eq!("Foo=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
-    /// assert_eq!("foo=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
-    /// assert_eq!("foo_bar=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
-    /// assert_eq!("foo_bar?=".parse::<IdentifierType>(), Err(ParseIdentifierError::new()));
+    /// assert_eq!(
+    ///     "Foo=".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::AttrSet)
+    /// );
+    /// assert_eq!(
+    ///     "foo=".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::AttrSet)
+    /// );
+    /// assert_eq!(
+    ///     "foo_bar=".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::AttrSet)
+    /// );
+    /// assert_eq!(
+    ///     "foo_bar?=".parse::<IdentifierType>(),
+    ///     Err(ParseIdentifierError::new())
+    /// );
     /// assert_eq!("ω=".parse::<IdentifierType>(), Ok(IdentifierType::AttrSet));
     /// ```
     ///
@@ -234,10 +381,22 @@ pub enum IdentifierType {
     ///
     /// ```
     /// # use spinoso_symbol::{IdentifierType, ParseIdentifierError};
-    /// assert_eq!("Foo".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
-    /// assert_eq!("FOO".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
-    /// assert_eq!("FooBar".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
-    /// assert_eq!("FOO_BAR".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
+    /// assert_eq!(
+    ///     "Foo".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Constant)
+    /// );
+    /// assert_eq!(
+    ///     "FOO".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Constant)
+    /// );
+    /// assert_eq!(
+    ///     "FooBar".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Constant)
+    /// );
+    /// assert_eq!(
+    ///     "FOO_BAR".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Constant)
+    /// );
     /// assert_eq!("Ω".parse::<IdentifierType>(), Ok(IdentifierType::Constant));
     /// ```
     Constant,
@@ -252,8 +411,14 @@ pub enum IdentifierType {
     /// # use spinoso_symbol::{IdentifierType, ParseIdentifierError};
     /// assert_eq!("foo".parse::<IdentifierType>(), Ok(IdentifierType::Local));
     /// assert_eq!("fOO".parse::<IdentifierType>(), Ok(IdentifierType::Local));
-    /// assert_eq!("fooBar".parse::<IdentifierType>(), Ok(IdentifierType::Local));
-    /// assert_eq!("foo_bar".parse::<IdentifierType>(), Ok(IdentifierType::Local));
+    /// assert_eq!(
+    ///     "fooBar".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Local)
+    /// );
+    /// assert_eq!(
+    ///     "foo_bar".parse::<IdentifierType>(),
+    ///     Ok(IdentifierType::Local)
+    /// );
     /// assert_eq!("ω".parse::<IdentifierType>(), Ok(IdentifierType::Local));
     /// ```
     Local,

@@ -36,8 +36,12 @@ use scolapasta_path::is_explicit_relative;
 /// // The relative path `./_lib` is resolved relative to the given working
 /// // directory.
 /// let fixed_loader = Disk::with_load_path_and_cwd(
-///     vec![PathBuf::from("/home/artichoke/src"), PathBuf::from("/usr/share/artichoke"), PathBuf::from("_lib")],
-///     Path::new("/home/artichoke")
+///     vec![
+///         PathBuf::from("/home/artichoke/src"),
+///         PathBuf::from("/usr/share/artichoke"),
+///         PathBuf::from("_lib"),
+///     ],
+///     Path::new("/home/artichoke"),
 /// )?;
 /// # Some(())
 /// # }
@@ -201,12 +205,20 @@ impl Disk {
     /// # use mezzaluna_feature_loader::loaders::Disk;
     /// # fn example() -> Option<()> {
     /// let loader = Disk::with_load_path_and_cwd(
-    ///     vec![PathBuf::from("/home/artichoke/src"), PathBuf::from("/usr/share/artichoke"), PathBuf::from("_lib")],
+    ///     vec![
+    ///         PathBuf::from("/home/artichoke/src"),
+    ///         PathBuf::from("/usr/share/artichoke"),
+    ///         PathBuf::from("_lib"),
+    ///     ],
     ///     Path::new("/home/artichoke"),
     /// )?;
     /// assert_eq!(
     ///     loader.load_path(),
-    ///     &[Path::new("/home/artichoke/src"), Path::new("/usr/share/artichoke"), Path::new("/home/artichoke/_lib")]
+    ///     &[
+    ///         Path::new("/home/artichoke/src"),
+    ///         Path::new("/usr/share/artichoke"),
+    ///         Path::new("/home/artichoke/_lib")
+    ///     ]
     /// );
     /// # Some(())
     /// # }
@@ -230,21 +242,31 @@ impl Disk {
     /// # use mezzaluna_feature_loader::loaders::Disk;
     /// # fn example() -> Option<()> {
     /// let mut loader = Disk::with_load_path_and_cwd(
-    ///     vec![PathBuf::from("/home/artichoke/src"), PathBuf::from("/usr/share/artichoke"), PathBuf::from("_lib")],
+    ///     vec![
+    ///         PathBuf::from("/home/artichoke/src"),
+    ///         PathBuf::from("/usr/share/artichoke"),
+    ///         PathBuf::from("_lib"),
+    ///     ],
     ///     Path::new("/home/artichoke"),
     /// )?;
     /// assert_eq!(
     ///     loader.load_path(),
-    ///     &[Path::new("/home/artichoke/src"), Path::new("/usr/share/artichoke"), Path::new("/home/artichoke/_lib")]
+    ///     &[
+    ///         Path::new("/home/artichoke/src"),
+    ///         Path::new("/usr/share/artichoke"),
+    ///         Path::new("/home/artichoke/_lib")
+    ///     ]
     /// );
     ///
-    /// let old_load_path = loader.set_load_path(
-    ///     vec![PathBuf::from("libpath")],
-    ///     Path::new("/home/app"),
-    /// );
+    /// let old_load_path =
+    ///     loader.set_load_path(vec![PathBuf::from("libpath")], Path::new("/home/app"));
     /// assert_eq!(
     ///     old_load_path,
-    ///     &[Path::new("/home/artichoke/src"), Path::new("/usr/share/artichoke"), Path::new("/home/artichoke/_lib")]
+    ///     &[
+    ///         Path::new("/home/artichoke/src"),
+    ///         Path::new("/usr/share/artichoke"),
+    ///         Path::new("/home/artichoke/_lib")
+    ///     ]
     /// );
     /// assert_eq!(loader.load_path(), [Path::new("/home/app/libpath")]);
     /// # Some(())

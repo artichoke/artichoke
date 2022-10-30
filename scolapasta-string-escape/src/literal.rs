@@ -394,7 +394,10 @@ impl ByteSequenceTooLongError {
     /// ```
     /// # use scolapasta_string_escape::ByteSequenceTooLongError;
     /// let err = ByteSequenceTooLongError::new();
-    /// assert_eq!(err.message(), "Invalid UTF-8 byte literal sequences can be at most three bytes long");
+    /// assert_eq!(
+    ///     err.message(),
+    ///     "Invalid UTF-8 byte literal sequences can be at most three bytes long"
+    /// );
     /// ```
     #[inline]
     #[must_use]

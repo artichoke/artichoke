@@ -69,7 +69,10 @@ impl OrdError {
     /// ```
     /// # use spinoso_string::OrdError;
     ///
-    /// assert_eq!(OrdError::invalid_utf8_byte_sequence().message(), "invalid byte sequence in UTF-8");
+    /// assert_eq!(
+    ///     OrdError::invalid_utf8_byte_sequence().message(),
+    ///     "invalid byte sequence in UTF-8"
+    /// );
     /// assert_eq!(OrdError::empty_string().message(), "empty string");
     /// ```
     ///

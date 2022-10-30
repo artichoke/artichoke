@@ -10,6 +10,7 @@ def spec
   string_unary_minus
   string_reverse
   string_tr
+  string_end_with
 
   true
 end
@@ -180,6 +181,21 @@ end
 
 def string_tr
   raise unless 'abcd'.tr('a-z', 'xxx') == 'xxxx'
+end
+
+def assert_raise_type_error
+  yield
+rescue TypeError
+  nil
+else
+  raise
+end
+
+def string_end_with
+  assert_raise_type_error { 'abc'.end_with?(/c/) }
+  assert_raise_type_error { 'abc'.end_with?('e', 'xyz', /c/) }
+
+  'abc'.end_with?('e', 'bc', /c/)
 end
 
 spec if $PROGRAM_NAME == __FILE__

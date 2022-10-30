@@ -485,9 +485,9 @@ fn strftime_with_encoding(
         // [3.1.2]> Time.now.strftime("%")
         // (irb):1:in `strftime': invalid format: % (ArgumentError)
         //      from (irb):1:in `<main>'
-        //	    from /home/ben/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
-        //	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `load'
-        //	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `<main>'
+        // 	    from /home/ben/.rbenv/versions/3.1.2/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+        // 	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `load'
+        // 	    from /home/ben/.rbenv/versions/3.1.2/bin/irb:25:in `<main>'
         // ```
         //
         // Note: The errors which are re-thrown as RuntimeError include (but is

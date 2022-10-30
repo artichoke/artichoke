@@ -39,7 +39,10 @@ use crate::Artichoke;
 /// let integer = interp.convert(17);
 /// let a = interp.eval(b"class A; def to_int; 3; end; end; A.new")?;
 ///
-/// assert!(matches!(implicitly_convert_to_int(&mut interp, integer), Ok(17)));
+/// assert!(matches!(
+///     implicitly_convert_to_int(&mut interp, integer),
+///     Ok(17)
+/// ));
 /// assert!(matches!(implicitly_convert_to_int(&mut interp, a), Ok(3)));
 ///
 /// // failed conversions
@@ -48,7 +51,8 @@ use crate::Artichoke;
 /// let c = interp.eval(b"class C; def to_int; nil; end; end; C.new")?;
 /// let d = interp.eval(b"class D; def to_int; 'not an integer'; end; end; D.new")?;
 /// let e = interp.eval(b"class E; def to_int; 3.2; end; end; E.new")?;
-/// let f = interp.eval(b"class F; def to_int; raise ArgumentError, 'not an integer'; end; end; F.new")?;
+/// let f = interp
+///     .eval(b"class F; def to_int; raise ArgumentError, 'not an integer'; end; end; F.new")?;
 ///
 /// assert!(implicitly_convert_to_int(&mut interp, nil).is_err());
 /// assert!(implicitly_convert_to_int(&mut interp, b).is_err());
