@@ -1554,7 +1554,7 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
     //  '_' is invalid because they are stripped out elsewhere in the string, but cannot start a number
     //  '+' and '-' invalid because we already have the sign prior to the prefix, but they are accepted
     //  at the begining of a string by str_from_radix, and double sign doesn't make sense
-    if slice.first() == Some(&b'_') || slice.first() == Some(&b'+') || slice.first() == Some(&b'-') {
+    if matches!(slice.first(), Some(&b'_' | &b'+' | &b'-')) {
         return Ok(interp.convert(0));
     }
 
