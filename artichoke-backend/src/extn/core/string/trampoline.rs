@@ -1619,6 +1619,12 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
         return Ok(interp.convert(0));
     }
 
+    // Double underscores are not valid, and we should stop parsing the string if we encounter one
+    if let Some(double_underscore) = slice.find(&"__") {
+        slice = &slice[..double_underscore];
+    }
+
+    // Single underscores should be ignored
     let mut slice = std::borrow::Cow::from(slice);
     if slice.find(&"_").is_some() {
         slice.to_mut().retain(|&c| c != b'_');
