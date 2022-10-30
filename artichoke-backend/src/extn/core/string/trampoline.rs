@@ -1542,7 +1542,7 @@ pub fn to_i(interp: &mut Artichoke, mut value: Value, base: Option<Value>) -> Re
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let mut slice = s.as_slice();
     // ignore preceding whitespace
-    if let Some(start) = slice.iter().position(|c| !c.is_ascii_whitespace()) {
+    if let Some(start) = slice.iter().position(|&c| !posix_space::is_space(c)) {
         slice = &slice[start..];
     } else {
         // All whitespace, but we cant return early because we need to ensure the base is valid too
