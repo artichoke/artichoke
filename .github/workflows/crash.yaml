@@ -34,11 +34,6 @@ jobs:
           cargo version --verbose
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
-        with:
-          key: v3
-          working-directory: "spec-runner"
-
       - name: Compile debug
         run: cargo build --verbose --bin spec-runner
         working-directory: "spec-runner"
