@@ -21,7 +21,7 @@ tzrs = ["dep:once_cell", "dep:regex", "dep:strftime-ruby", "dep:tz-rs", "dep:tzd
 tzrs-local = ["tzrs", "tzdb?/local"]
 
 [dependencies]
-once_cell = { version = "1.12.0", optional = true }
+once_cell = { version = "1.16.0", optional = true }
 regex =  { version = "1.5.5", default-features = false, features = ["std"], optional = true }
 strftime-ruby = { version = "1.0.0", default-features = false, features = ["alloc"], optional = true }
 tz-rs = { version = "0.6.12", default-features = false, features = ["std"], optional = true }
