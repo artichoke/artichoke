@@ -94,7 +94,7 @@ unsafe fn mrb_protect_inner(
             let mrb = interp.mrb.as_ptr();
             (*mrb).exc = ptr::null_mut();
 
-            let exc = if let Ok(payload) = payload.downcast::<ExceptionPayload>() {
+            let exc = if let Some(payload) = payload.downcast_ref::<ExceptionPayload>() {
                 payload.inner
             } else {
                 // Something other than `mrb_raise` resulted in a `panic!`. This
@@ -158,7 +158,7 @@ unsafe fn mrb_ensure_inner(
             Ok(interp.protect(value))
         }
         Ok(Err(payload)) => {
-            if payload.downcast::<ExceptionPayload>().is_err() {
+            if payload.downcast_ref::<ExceptionPayload>().is_none() {
                 // Something other than `mrb_raise` resulted in a `panic!`. This
                 // is likely due to a programming error in Rust code, so propagate
                 // the panic so we can crash the process.
