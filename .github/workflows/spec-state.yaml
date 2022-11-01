@@ -60,10 +60,10 @@ jobs:
           echo "Commit month: ${commit_month}"
           echo "Commit hash: ${commit_hash}"
 
-          echo "::set-output name=date::${commit_date}"
-          echo "::set-output name=year::${commit_year}"
-          echo "::set-output name=month::${commit_month}"
-          echo "::set-output name=hash::${commit_hash}"
+          echo "date=${commit_date}" >> $GITHUB_OUTPUT
+          echo "year=${commit_year}" >> $GITHUB_OUTPUT
+          echo "month=${commit_month}" >> $GITHUB_OUTPUT
+          echo "hash=${commit_hash}" >> $GITHUB_OUTPUT
         working-directory: "artichoke"
 
       - name: Set spec tags artifact paths
@@ -75,8 +75,8 @@ jobs:
           echo "Spec tags YAML: ${yaml}"
           echo "Spec tags JSON: ${json}"
 
-          echo "::set-output name=yaml::${yaml}"
-          echo "::set-output name=json::${json}"
+          echo "yaml=${yaml}" >> $GITHUB_OUTPUT
+          echo "json=${json}" >> $GITHUB_OUTPUT
         working-directory: "artichoke"
 
       - name: Set spec exceptions artifact paths
@@ -88,8 +88,8 @@ jobs:
           echo "Spec exceptions YAML: ${yaml}"
           echo "Spec exceptions JSON: ${json}"
 
-          echo "::set-output name=yaml::${yaml}"
-          echo "::set-output name=json::${json}"
+          echo "yaml=${yaml}" >> $GITHUB_OUTPUT
+          echo "json=${json}" >> $GITHUB_OUTPUT
         working-directory: "artichoke"
 
       - name: Generate spec tags
