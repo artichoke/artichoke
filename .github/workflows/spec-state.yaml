@@ -38,11 +38,6 @@ jobs:
           cargo version --verbose
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
-        with:
-          key: v3
-          working-directory: "artichoke/spec-runner"
-
       - name: Compile spec-runner
         run: cargo build --release --verbose --bin spec-runner
         working-directory: "artichoke/spec-runner"
