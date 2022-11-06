@@ -51,7 +51,7 @@ impl<'a, T> UnboxedValueGuard<'a, T> {
     #[inline]
     #[must_use]
     pub fn as_inner_ref(&self) -> &T {
-        &*self.guarded
+        &self.guarded
     }
 
     /// Get a unique reference to the inner `T`.
@@ -64,7 +64,7 @@ impl<'a, T> UnboxedValueGuard<'a, T> {
     #[inline]
     #[must_use]
     pub unsafe fn as_inner_mut(&mut self) -> &mut T {
-        &mut *self.guarded
+        &mut self.guarded
     }
 
     /// Take the inner `T` out of the guard.

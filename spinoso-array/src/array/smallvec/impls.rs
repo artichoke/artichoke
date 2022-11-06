@@ -37,14 +37,14 @@ impl<T> Deref for SmallArray<T> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &*self.0
+        &self.0
     }
 }
 
 impl<T> DerefMut for SmallArray<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut *self.0
+        &mut self.0
     }
 }
 

@@ -81,7 +81,7 @@ impl Deref for Buf {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &*self.inner
+        &self.inner
     }
 }
 
@@ -90,7 +90,7 @@ impl DerefMut for Buf {
     fn deref_mut(&mut self) -> &mut Self::Target {
         // SAFETY: the mutable reference given out is a slice, NOT the
         // underlying `Vec`, so the allocation cannot change size.
-        &mut *self.inner
+        &mut self.inner
     }
 }
 

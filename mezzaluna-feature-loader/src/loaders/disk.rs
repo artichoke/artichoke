@@ -170,7 +170,7 @@ impl Disk {
     pub fn resolve_file(&self, path: &Path) -> Option<Handle> {
         // Absolute paths do not need to be resolved against the load paths.
         if path.is_absolute() {
-            if let Ok(handle) = Handle::from_path(&path) {
+            if let Ok(handle) = Handle::from_path(path) {
                 return Some(handle);
             }
             return None;

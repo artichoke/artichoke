@@ -386,7 +386,7 @@ impl InvalidError {
     #[inline]
     #[must_use]
     pub fn message(&self) -> &[u8] {
-        &*self.0
+        &self.0
     }
 
     /// Consume this error and return the inner message.

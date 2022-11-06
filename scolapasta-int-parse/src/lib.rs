@@ -265,7 +265,7 @@ fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
 
     // Phase 8: Parse (signed) ASCII alphanumeric string to an `i64`.
     let src = state.into_numeric_string()?;
-    i64::from_str_radix(&*src, radix).map_err(|_| subject.into())
+    i64::from_str_radix(&src, radix).map_err(|_| subject.into())
 }
 
 #[cfg(test)]

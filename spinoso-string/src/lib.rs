@@ -1554,7 +1554,7 @@ impl String {
         let bytes_to_remove = if self.inner.ends_with(b"\r\n") {
             2
         } else if let Encoding::Utf8 = self.encoding() {
-            let (ch, size) = bstr::decode_last_utf8(&self.as_slice());
+            let (ch, size) = bstr::decode_last_utf8(self.as_slice());
             if ch.is_some() {
                 size
             } else {

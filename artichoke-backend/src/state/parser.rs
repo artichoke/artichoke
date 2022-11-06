@@ -184,7 +184,7 @@ impl Context {
     /// Filename of this `Context`.
     #[must_use]
     pub fn filename(&self) -> &[u8] {
-        &*self.filename
+        &self.filename
     }
 
     /// FFI-safe NUL-terminated C String of this `Context`.
@@ -192,7 +192,7 @@ impl Context {
     /// This [`CStr`] is valid as long as this `Context` is not dropped.
     #[must_use]
     pub fn filename_as_c_str(&self) -> &CStr {
-        &*self.filename_cstr
+        &self.filename_cstr
     }
 }
 
