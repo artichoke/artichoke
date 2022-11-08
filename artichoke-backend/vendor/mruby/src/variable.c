@@ -12,6 +12,10 @@
 #include <mruby/variable.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Instance variable table structure */
 typedef struct iv_tbl {
   int size, alloc;
@@ -1140,3 +1144,7 @@ mrb_ident_p(const char *s, mrb_int len)
   }
   return TRUE;
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

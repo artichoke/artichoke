@@ -1,6 +1,10 @@
 #include <mruby.h>
 #include <mruby/variable.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void
 mrb_init_version(mrb_state* mrb)
 {
@@ -15,3 +19,7 @@ mrb_init_version(mrb_state* mrb)
   mrb_define_global_const(mrb, "MRUBY_DESCRIPTION", mrb_str_new_lit(mrb, MRUBY_DESCRIPTION));
   mrb_define_global_const(mrb, "MRUBY_COPYRIGHT", mrb_str_new_lit(mrb, MRUBY_COPYRIGHT));
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

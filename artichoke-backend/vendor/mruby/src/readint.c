@@ -2,6 +2,10 @@
 #include <mruby/numeric.h>
 #include <errno.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* mrb_int_read(): read mrb_int from a string (base 10 only) */
 /* const char *p - string to read                            */
 /* const char *e - end of string                             */
@@ -28,3 +32,7 @@ mrb_int_read(const char *p, const char *e, char **endp)
   if (endp) *endp = (char*)p;
   return n;
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

@@ -12,6 +12,10 @@
 #include <mruby/class.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MRB_NO_PRESYM
 
 #ifndef MRB_PRESYM_SCANNING
@@ -735,4 +739,8 @@ mrb_init_symbol(mrb_state *mrb)
   mrb_undef_class_method(mrb,  sym, "new");
 }
 
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" { */
 #endif

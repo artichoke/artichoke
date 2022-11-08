@@ -17,6 +17,10 @@
 #include <mruby/throw.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static void
 exc_mesg_set(mrb_state *mrb, struct RException *exc, mrb_value mesg)
 {
@@ -694,3 +698,7 @@ mrb_init_exception(mrb_state *mrb)
   mrb->arena_err = mrb_obj_ptr(mrb_exc_new_lit(mrb, nomem_error, "arena overflow error"));
 #endif
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

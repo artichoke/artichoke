@@ -15,6 +15,10 @@
 #include <mruby/istruct.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 MRB_API mrb_bool
 mrb_func_basic_p(mrb_state *mrb, mrb_value obj, mrb_sym mid, mrb_func_t func)
 {
@@ -664,3 +668,7 @@ mrb_init_kernel(mrb_state *mrb)
 
   mrb_include_module(mrb, mrb->object_class, mrb->kernel_module);
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

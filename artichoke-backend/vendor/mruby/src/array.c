@@ -13,6 +13,10 @@
 #include <mruby/presym.h>
 #include "value_array.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ARY_DEFAULT_LEN   4
 #define ARY_SHRINK_RATIO  5 /* must be larger than 2 */
 #define ARY_C_MAX_SIZE (SIZE_MAX / sizeof(mrb_value))
@@ -1369,3 +1373,7 @@ mrb_init_array(mrb_state *mrb)
   mrb_define_method(mrb, a, "__svalue",        mrb_ary_svalue,       MRB_ARGS_NONE());
 #endif
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

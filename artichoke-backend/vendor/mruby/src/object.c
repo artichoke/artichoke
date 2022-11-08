@@ -11,6 +11,10 @@
 #include <mruby/class.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 MRB_API mrb_bool
 mrb_obj_eq(mrb_state *mrb, mrb_value v1, mrb_value v2)
 {
@@ -615,3 +619,7 @@ mrb_eql(mrb_state *mrb, mrb_value obj1, mrb_value obj2)
   if (mrb_obj_eq(mrb, obj1, obj2)) return TRUE;
   return mrb_test(mrb_funcall_id(mrb, obj1, MRB_SYM_Q(eql), 1, obj2));
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

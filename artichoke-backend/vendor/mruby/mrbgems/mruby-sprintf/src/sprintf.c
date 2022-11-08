@@ -12,6 +12,10 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BIT_DIGITS(N)   (((N)*146)/485 + 1)  /* log2(10) =~ 146/485 */
 #define BITSPERDIG MRB_INT_BIT
 #define EXTENDSIGN(n, l) (((~0U << (n)) >> (((n)*(l)) % BITSPERDIG)) & ~(~0U << (n)))
@@ -1112,3 +1116,7 @@ void
 mrb_mruby_sprintf_gem_final(mrb_state *mrb)
 {
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

@@ -15,6 +15,10 @@
 #include <errno.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define INT_OVERFLOW_P(n)  ((n) < MRB_INT_MIN || (n) > MRB_INT_MAX)
 #define UINT_OVERFLOW_P(n) ((n) > MRB_INT_MAX)
 
@@ -1605,3 +1609,7 @@ void
 mrb_mruby_pack_gem_final(mrb_state *mrb)
 {
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

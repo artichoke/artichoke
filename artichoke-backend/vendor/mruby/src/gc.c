@@ -27,6 +27,10 @@
 #include <stdlib.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
   = Tri-color Incremental Garbage Collection
 
@@ -1656,3 +1660,7 @@ mrb_init_gc(mrb_state *mrb)
   mrb_define_class_method(mrb, gc, "generational_mode=", gc_generational_mode_set, MRB_ARGS_REQ(1));
   mrb_define_class_method(mrb, gc, "generational_mode", gc_generational_mode_get, MRB_ARGS_NONE());
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

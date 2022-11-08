@@ -3,6 +3,10 @@
 #include <mruby/irep.h>
 #include <mruby/debug.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static mrb_irep_debug_info_file*
 get_file(mrb_irep_debug_info *info, uint32_t pc)
 {
@@ -242,3 +246,7 @@ mrb_debug_info_free(mrb_state *mrb, mrb_irep_debug_info *d)
   }
   mrb_free(mrb, d);
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

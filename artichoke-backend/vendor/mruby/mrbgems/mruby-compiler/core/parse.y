@@ -24,6 +24,10 @@
 #include <mruby/presym.h>
 #include "node.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define YYLEX_PARAM p
 
 typedef mrb_ast_node node;
@@ -7826,3 +7830,7 @@ mrb_parser_foreach_top_variable(mrb_state *mrb, struct mrb_parser_state *p, mrb_
     }
   }
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

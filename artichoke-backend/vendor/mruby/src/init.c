@@ -6,6 +6,10 @@
 
 #include <mruby.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void mrb_init_symtbl(mrb_state*);
 void mrb_init_class(mrb_state*);
 void mrb_init_object(mrb_state*);
@@ -51,3 +55,7 @@ mrb_init_core(mrb_state *mrb)
   mrb_init_mrblib(mrb); DONE;
 #endif
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

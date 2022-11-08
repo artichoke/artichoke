@@ -12,6 +12,10 @@
 #include <mruby/presym.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MRB_NO_FLOAT
 #ifdef MRB_USE_FLOAT32
 #define trunc(f) truncf(f)
@@ -1909,3 +1913,7 @@ mrb_init_numeric(mrb_state *mrb)
 #endif
 #endif
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

@@ -6,6 +6,10 @@
 #include <mruby/debug.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static mrb_value
 mrb_proc_lambda_p(mrb_state *mrb, mrb_value self)
 {
@@ -200,3 +204,7 @@ void
 mrb_mruby_proc_ext_gem_final(mrb_state* mrb)
 {
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

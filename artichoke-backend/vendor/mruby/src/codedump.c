@@ -6,6 +6,10 @@
 #include <mruby/proc.h>
 #include <mruby/dump.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MRB_NO_STDIO
 static void
 print_r(mrb_state *mrb, const mrb_irep *irep, size_t n)
@@ -633,3 +637,7 @@ mrb_codedump_all(mrb_state *mrb, struct RProc *proc)
   codedump_recur(mrb, proc->body.irep);
 #endif
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

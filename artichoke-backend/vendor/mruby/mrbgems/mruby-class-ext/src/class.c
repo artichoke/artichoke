@@ -3,6 +3,10 @@
 #include "mruby/string.h"
 #include "mruby/proc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static mrb_value
 mrb_mod_name(mrb_state *mrb, mrb_value self)
 {
@@ -71,3 +75,7 @@ void
 mrb_mruby_class_ext_gem_final(mrb_state *mrb)
 {
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

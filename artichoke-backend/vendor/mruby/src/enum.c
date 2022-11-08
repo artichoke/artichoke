@@ -7,6 +7,10 @@
 #include <mruby.h>
 #include <mruby/proc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* internal method `__update_hash(oldhash, index, itemhash)` */
 static mrb_value
 enum_update_hash(mrb_state *mrb, mrb_value self)
@@ -28,3 +32,7 @@ mrb_init_enumerable(mrb_state *mrb)
   enumerable = mrb_define_module(mrb, "Enumerable");  /* 15.3.2 */
   mrb_define_module_function(mrb, enumerable, "__update_hash", enum_update_hash, MRB_ARGS_REQ(3));
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

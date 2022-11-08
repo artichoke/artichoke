@@ -15,6 +15,10 @@
 #include <mruby/endian.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static size_t get_irep_record_size_1(mrb_state *mrb, const mrb_irep *irep);
 
 #if UINT32_MAX > SIZE_MAX
@@ -937,3 +941,7 @@ mrb_dump_irep_cfunc(mrb_state *mrb, const mrb_irep *irep, uint8_t flags, FILE *f
 }
 
 #endif /* MRB_NO_STDIO */
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
