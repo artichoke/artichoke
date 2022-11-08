@@ -124,13 +124,13 @@ impl Deref for BinaryString {
 
     #[inline]
     fn deref(&self) -> &[u8] {
-        &*self.inner
+        &self.inner
     }
 }
 
 impl DerefMut for BinaryString {
     #[inline]
     fn deref_mut(&mut self) -> &mut [u8] {
-        &mut *self.inner
+        &mut self.inner
     }
 }

@@ -22,7 +22,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<Loaded, Error
     let file = bytes_to_os_str(&filename)?;
     let path = Path::new(file);
 
-    if let Some(mut context) = interp.resolve_source_path(&path)? {
+    if let Some(mut context) = interp.resolve_source_path(path)? {
         for byte in &mut context {
             if *byte == b'\\' {
                 *byte = b'/';
@@ -31,7 +31,7 @@ pub fn load(interp: &mut Artichoke, mut filename: Value) -> Result<Loaded, Error
         let context =
             Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         interp.push_context(context)?;
-        let result = interp.load_source(&path);
+        let result = interp.load_source(path);
         interp.pop_context()?;
         return result;
     }
@@ -52,7 +52,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<Required, 
     let file = bytes_to_os_str(&filename)?;
     let path = Path::new(file);
 
-    if let Some(mut context) = interp.resolve_source_path(&path)? {
+    if let Some(mut context) = interp.resolve_source_path(path)? {
         for byte in &mut context {
             if *byte == b'\\' {
                 *byte = b'/';
@@ -61,7 +61,7 @@ pub fn require(interp: &mut Artichoke, mut filename: Value) -> Result<Required, 
         let context =
             Context::new(context).ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         interp.push_context(context)?;
-        let result = interp.require_source(&path);
+        let result = interp.require_source(path);
         interp.pop_context()?;
         return result;
     }

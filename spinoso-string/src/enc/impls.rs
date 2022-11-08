@@ -63,9 +63,9 @@ impl Deref for EncodedString {
     #[inline]
     fn deref(&self) -> &[u8] {
         match self {
-            EncodedString::Ascii(inner) => &**inner,
-            EncodedString::Binary(inner) => &**inner,
-            EncodedString::Utf8(inner) => &**inner,
+            EncodedString::Ascii(inner) => inner,
+            EncodedString::Binary(inner) => inner,
+            EncodedString::Utf8(inner) => inner,
         }
     }
 }

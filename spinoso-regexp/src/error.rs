@@ -259,7 +259,7 @@ impl RegexpError {
     #[inline]
     #[must_use]
     pub fn message(&self) -> &str {
-        &*self.0
+        &self.0
     }
 }
 
@@ -353,6 +353,6 @@ impl SyntaxError {
     #[inline]
     #[must_use]
     pub fn message(&self) -> &str {
-        &*self.0
+        &self.0
     }
 }

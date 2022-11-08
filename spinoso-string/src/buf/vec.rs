@@ -36,14 +36,14 @@ impl Deref for Buf {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &*self.inner
+        &self.inner
     }
 }
 
 impl DerefMut for Buf {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut *self.inner
+        &mut self.inner
     }
 }
 

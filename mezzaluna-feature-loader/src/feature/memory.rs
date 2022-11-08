@@ -11,6 +11,6 @@ impl Feature {
     }
 
     pub fn path(&self) -> &Path {
-        &*self.path
+        &self.path
     }
 }
