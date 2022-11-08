@@ -79,10 +79,9 @@ impl Time {
     /// ```
     /// # use spinoso_time::tzrs::{Time, TimeError};
     /// # fn example() -> Result<(), TimeError> {
-    /// let local_offset = Time::now()?.utc_offset();
     /// let now_utc = Time::utc(2022, 7, 8, 12, 34, 56, 0)?;
-    /// let now_local = now_utc.to_local()?;
-    /// assert_eq!(now_local.utc_offset(), local_offset);
+    /// let now_local = Time::local(2022, 7, 8, 12, 34, 56, 0)?;
+    /// assert_eq!(now_utc.to_local()?.utc_offset(), now_local.utc_offset());
     /// # Ok(())
     /// # }
     /// # example().unwrap()
