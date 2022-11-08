@@ -14,7 +14,7 @@ struct ExceptionPayload {
     inner: Value,
 }
 
-// SAFETY:
+// SAFETY: this panic payload never crosses a thread boundary.
 //
 // - mruby is single threaded and cannot be `Send`.
 // - This struct is used directly in `std::panic::resume_unwind` and is not used
@@ -33,6 +33,8 @@ unsafe impl Send for ExceptionPayload {}
 #[no_mangle]
 unsafe extern "C-unwind" fn artichoke_exc_throw(mrb: *mut sys::mrb_state, exc: sys::mrb_value) -> ! {
     let _ = mrb;
+    // Use `panic::resume_unwind` instead of `panic_any!` here to avoid running
+    // the built-in panic hook and printing stack to stderr.
     panic::resume_unwind(Box::new(ExceptionPayload {
         inner: Value::from(exc),
     }));
