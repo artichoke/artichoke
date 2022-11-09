@@ -40,7 +40,7 @@ fn main() {
             // Suppress all errors at this point (e.g. from a broken pipe) since
             // we're exiting with an error code anyway.
             let _ignored = stderr.reset();
-            let _ignored = writeln!(stderr, "{}", err);
+            let _ignored = writeln!(stderr, "{err}");
             process::exit(1);
         }
     }

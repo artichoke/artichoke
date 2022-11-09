@@ -44,13 +44,13 @@ impl fmt::Debug for mrb_value {
             Ruby::Bool => f.write_str("false"),
             Ruby::Fixnum => {
                 let fixnum = unsafe { mrb_sys_fixnum_to_cint(*self) };
-                write!(f, "{}", fixnum)
+                write!(f, "{fixnum}")
             }
             Ruby::Float => {
                 let float = unsafe { mrb_sys_float_to_cdouble(*self) };
-                write!(f, "{}", float)
+                write!(f, "{float}")
             }
-            type_tag => write!(f, "<{}>", type_tag),
+            type_tag => write!(f, "<{type_tag}>"),
         }
     }
 }

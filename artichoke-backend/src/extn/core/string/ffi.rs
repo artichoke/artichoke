@@ -419,7 +419,7 @@ unsafe extern "C" fn mrb_str_substr(
 unsafe extern "C" fn mrb_ptr_to_str(mrb: *mut sys::mrb_state, p: *mut c_void) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut s = String::with_capacity(16 + 2);
-    let _ignore = write!(s, "{:p}", p);
+    let _ignore = write!(s, "{p:p}");
     String::alloc_value(s, &mut guard).unwrap_or_default().into()
 }
 

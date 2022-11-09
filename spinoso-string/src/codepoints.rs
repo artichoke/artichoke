@@ -121,7 +121,7 @@ impl InvalidCodepointError {
         // and these `String`s will never approach `isize::MAX` bytes.
         //
         // See the `core::fmt::Display` impl for `InvalidCodepointError`.
-        let _ = write!(s, "{}", self);
+        let _ = write!(s, "{self}");
         s
     }
 }
@@ -130,9 +130,9 @@ impl fmt::Display for InvalidCodepointError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
             CodePointRangeError::InvalidUtf8Codepoint(codepoint) => {
-                write!(f, "invalid codepoint {:X} in UTF-8", codepoint)
+                write!(f, "invalid codepoint {codepoint:X} in UTF-8")
             }
-            CodePointRangeError::OutOfRange(codepoint) => write!(f, "{} out of char range", codepoint),
+            CodePointRangeError::OutOfRange(codepoint) => write!(f, "{codepoint} out of char range"),
         }
     }
 }

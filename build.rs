@@ -61,7 +61,7 @@ fn emit<T>(env: &str, value: T)
 where
     T: fmt::Display,
 {
-    println!("cargo:rustc-env={}={}", env, value);
+    println!("cargo:rustc-env={env}={value}");
 }
 
 fn birthdate() -> Date {

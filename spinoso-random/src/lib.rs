@@ -521,7 +521,7 @@ impl fmt::Display for ArgumentError {
         match self.0 {
             ArgumentErrorInner::Default | ArgumentErrorInner::DomainError => f.write_str(self.message()),
             #[cfg(feature = "random-rand")]
-            ArgumentErrorInner::Rand(max) => write!(f, "invalid argument - {}", max),
+            ArgumentErrorInner::Rand(max) => write!(f, "invalid argument - {max}"),
         }
     }
 }
