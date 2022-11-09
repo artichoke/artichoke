@@ -137,8 +137,8 @@ impl Rubylib {
     #[inline]
     #[must_use]
     pub fn with_rubylib_and_cwd(rubylib: &OsStr, cwd: &Path) -> Option<Self> {
-        let load_paths = env::split_paths(&rubylib)
-            .map(|load_path| cwd.join(&load_path))
+        let load_paths = env::split_paths(rubylib)
+            .map(|load_path| cwd.join(load_path))
             .collect::<Box<[_]>>();
 
         // If the `RUBYLIB` env variable is empty or otherwise results in no
@@ -171,7 +171,7 @@ impl Rubylib {
         }
         for load_path in &*self.load_paths {
             let path = load_path.join(path);
-            if let Ok(handle) = Handle::from_path(&path) {
+            if let Ok(handle) = Handle::from_path(path) {
                 return Some(handle);
             }
         }

@@ -144,7 +144,7 @@ impl Disk {
 
         let load_path = load_path
             .into_iter()
-            .map(|load_path| cwd.join(&load_path))
+            .map(|load_path| cwd.join(load_path))
             .collect::<Vec<_>>();
 
         Some(Self { load_path })
@@ -180,7 +180,7 @@ impl Disk {
         if is_explicit_relative(path) {
             let cwd = env::current_dir().ok()?;
             let path = cwd.join(path);
-            if let Ok(handle) = Handle::from_path(&path) {
+            if let Ok(handle) = Handle::from_path(path) {
                 return Some(handle);
             }
             return None;
@@ -188,7 +188,7 @@ impl Disk {
 
         for load_path in &*self.load_path {
             let path = load_path.join(path);
-            if let Ok(handle) = Handle::from_path(&path) {
+            if let Ok(handle) = Handle::from_path(path) {
                 return Some(handle);
             }
         }
@@ -275,7 +275,7 @@ impl Disk {
     /// ```
     #[inline]
     pub fn set_load_path(&mut self, load_path: Vec<PathBuf>, cwd: &Path) -> Vec<PathBuf> {
-        let load_path = load_path.into_iter().map(|load_path| cwd.join(&load_path)).collect();
+        let load_path = load_path.into_iter().map(|load_path| cwd.join(load_path)).collect();
         mem::replace(&mut self.load_path, load_path)
     }
 }
