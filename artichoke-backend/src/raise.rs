@@ -77,6 +77,10 @@ unsafe fn mrb_protect_inner(
 
     let body = body.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
 
+    // stack frame munging
+    let c = (*interp.mrb.as_ptr()).c;
+    let ci_index = (*c).ci.offset_from((*c).cibase);
+
     let result = {
         let mut arena = interp.create_arena_savepoint()?;
         arena.with_ffi_boundary(|mrb| {
@@ -90,11 +94,21 @@ unsafe fn mrb_protect_inner(
     match result {
         Ok(Ok(value)) => Ok(interp.protect(value)),
         Ok(Err(payload)) => {
+            let mrb = interp.mrb.as_ptr();
+            (*mrb).exc = ptr::null_mut();
+
             if !state.is_null() {
                 *state = true.into();
             }
-            let mrb = interp.mrb.as_ptr();
-            (*mrb).exc = ptr::null_mut();
+
+            if (*mrb).c == c {
+                while (*c).ci.offset_from((*c).cibase) > ci_index {
+                    cipop(mrb);
+                }
+            } else {
+                // Fiber code. not implemented.
+                unreachable!("mrb_protect fiber failure pathway");
+            }
 
             let exc = if let Some(payload) = payload.downcast_ref::<ExceptionPayload>() {
                 payload.inner
@@ -144,6 +158,10 @@ unsafe fn mrb_ensure_inner(
     let body = body.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
     let ensure = ensure.ok_or_else(|| Fatal::with_message("null function passed to mrb_protect"))?;
 
+    // stack frame munging
+    let c = (*interp.mrb.as_ptr()).c;
+    let ci_index = (*c).ci.offset_from((*c).cibase);
+
     let mut arena = interp.create_arena_savepoint()?;
 
     let result = arena.with_ffi_boundary(|mrb| {
@@ -160,6 +178,18 @@ unsafe fn mrb_ensure_inner(
             Ok(interp.protect(value))
         }
         Ok(Err(payload)) => {
+            let mrb = arena.interp().mrb.as_ptr();
+            (*mrb).exc = ptr::null_mut();
+
+            if (*mrb).c == c {
+                while (*c).ci.offset_from((*c).cibase) > ci_index {
+                    cipop(mrb);
+                }
+            } else {
+                // Fiber code. not implemented.
+                unreachable!("mrb_protect fiber failure pathway");
+            }
+
             if payload.downcast_ref::<ExceptionPayload>().is_none() {
                 // Something other than `mrb_raise` resulted in a `panic!`. This
                 // is likely due to a programming error in Rust code, so propagate
@@ -173,4 +203,62 @@ unsafe fn mrb_ensure_inner(
         }
         Err(err) => Err(err.into()),
     }
+}
+
+// TODO: not implemented.
+//
+// ```c
+// MRB_API mrb_value
+// mrb_rescue(mrb_state *mrb, mrb_func_t body, mrb_value b_data,
+//            mrb_func_t rescue, mrb_value r_data)
+//
+// MRB_API mrb_value
+// mrb_rescue_exceptions(mrb_state *mrb, mrb_func_t body, mrb_value b_data, mrb_func_t rescue, mrb_value r_data,
+//                       mrb_int len, struct RClass **classes)
+// ```
+
+// ```c
+// static inline mrb_callinfo*
+// cipop(mrb_state *mrb)
+// {
+//   struct mrb_context *c = mrb->c;
+//   struct REnv *env = mrb_vm_ci_env(c->ci);
+//
+//   c->ci--;
+//   if (env) mrb_env_unshare(mrb, env);
+//   return c->ci;
+// }
+// ```
+unsafe fn cipop(mrb: *mut sys::mrb_state) -> *mut sys::mrb_callinfo {
+    let c = (*mrb).c;
+    let env = mrb_vm_ci_env((*c).ci);
+
+    (*c).ci = (*c).ci.offset(-1);
+    if !env.is_null() {
+        sys::mrb_env_unshare(mrb, env);
+    }
+    (*c).ci
+}
+
+// ```c
+// static inline struct REnv *
+// mrb_vm_ci_env(const mrb_callinfo *ci)
+// {
+//   if (ci->u.env && ci->u.env->tt == MRB_TT_ENV) {
+//     return ci->u.env;
+//   }
+//   else {
+//     return NULL;
+//   }
+// }
+// ```
+unsafe fn mrb_vm_ci_env(ci: *const sys::mrb_callinfo) -> *mut sys::REnv {
+    let env = (*ci).u.env;
+    if env.is_null() {
+        return ptr::null_mut();
+    }
+    if (*env).tt() != sys::mrb_vtype::MRB_TT_ENV {
+        return ptr::null_mut();
+    }
+    env
 }
