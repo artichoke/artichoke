@@ -543,7 +543,7 @@ mod tests {
         #[derive(Debug)]
         struct Module;
 
-        extern "C" fn value(_mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        extern "C-unwind" fn value(_mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
                 match slf.tt {
                     sys::mrb_vtype::MRB_TT_CLASS => sys::mrb_sys_fixnum_value(8),

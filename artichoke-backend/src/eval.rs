@@ -102,7 +102,10 @@ mod tests {
         #[derive(Debug)]
         struct NestedEval;
 
-        unsafe extern "C" fn nested_eval_file(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+        unsafe extern "C-unwind" fn nested_eval_file(
+            mrb: *mut sys::mrb_state,
+            _slf: sys::mrb_value,
+        ) -> sys::mrb_value {
             unwrap_interpreter!(mrb, to => guard);
             let result = if let Ok(value) = guard.eval(b"__FILE__") {
                 value
