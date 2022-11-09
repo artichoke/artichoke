@@ -81,6 +81,7 @@ fn cli() -> Command {
 }
 
 /// Main entry point.
+#[allow(clippy::bool_to_int_with_if)]
 pub fn main() {
     #[cfg(feature = "dhat-heap")]
     let profiler = dhat::Profiler::new_heap();
