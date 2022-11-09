@@ -400,7 +400,7 @@ mod tests {
         let data = unsafe { Container::unbox_from_value(&mut value, &mut interp) };
         assert!(data.is_err());
 
-        let flag = Box::new(Flag::default());
+        let flag = Box::default();
         let mut value = Box::<Flag>::alloc_value(flag, &mut interp).unwrap();
         let class = value.funcall(&mut interp, "class", &[], None).unwrap();
         let class_display = class.to_s(&mut interp);
