@@ -283,7 +283,7 @@ impl MatchData {
                     Ok(idx) if idx < captures_len => idx,
                     _ => {
                         let mut message = String::new();
-                        write!(&mut message, "index {} out of matches", index).map_err(WriteError::from)?;
+                        write!(&mut message, "index {index} out of matches").map_err(WriteError::from)?;
                         return Err(IndexError::from(message).into());
                     }
                 }

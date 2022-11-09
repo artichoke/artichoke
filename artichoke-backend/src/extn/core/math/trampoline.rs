@@ -127,12 +127,12 @@ pub fn ldexp(interp: &mut Artichoke, fraction: Value, exponent: Value) -> Result
         }
         Err(_) if exponent < 0 => {
             let mut message = String::new();
-            write!(&mut message, "integer {} too small to convert to `int'", exponent).map_err(WriteError::from)?;
+            write!(&mut message, "integer {exponent} too small to convert to `int'").map_err(WriteError::from)?;
             Err(RangeError::from(message).into())
         }
         Err(_) => {
             let mut message = String::new();
-            write!(&mut message, "integer {} too big to convert to `int'", exponent).map_err(WriteError::from)?;
+            write!(&mut message, "integer {exponent} too big to convert to `int'").map_err(WriteError::from)?;
             Err(RangeError::from(message).into())
         }
     }

@@ -50,8 +50,8 @@ impl<'a> From<InvalidRadixErrorKind> for Error<'a> {
 impl<'a> fmt::Display for Error<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Argument(err) => write!(f, "{}", err),
-            Self::Radix(err) => write!(f, "{}", err),
+            Self::Argument(err) => write!(f, "{err}"),
+            Self::Radix(err) => write!(f, "{err}"),
         }
     }
 }
@@ -245,7 +245,7 @@ impl fmt::Display for InvalidRadixError {
             //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
             //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
             // ```
-            InvalidRadixErrorKind::TooSmall(num) => write!(f, "integer {} too small to convert to `int'", num),
+            InvalidRadixErrorKind::TooSmall(num) => write!(f, "integer {num} too small to convert to `int'"),
             // ```
             // [3.1.2] > Integer "123", (2 ** 31 + 1)
             // (irb):15:in `Integer': integer 2147483649 too big to convert to `int' (RangeError)
@@ -254,7 +254,7 @@ impl fmt::Display for InvalidRadixError {
             //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
             //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
             // ```
-            InvalidRadixErrorKind::TooBig(num) => write!(f, "integer {} too big to convert to `int'", num),
+            InvalidRadixErrorKind::TooBig(num) => write!(f, "integer {num} too big to convert to `int'"),
             // ```
             // [3.1.2] > Integer "123", 1
             // (irb):17:in `Integer': invalid radix 1 (ArgumentError)
@@ -269,7 +269,7 @@ impl fmt::Display for InvalidRadixError {
             //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
             //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
             // ```
-            InvalidRadixErrorKind::Invalid(num) => write!(f, "invalid radix {}", num),
+            InvalidRadixErrorKind::Invalid(num) => write!(f, "invalid radix {num}"),
         }
     }
 }
@@ -340,7 +340,7 @@ mod tests {
             let subject = IntegerString::try_from(input).unwrap();
             let err = ArgumentError::from(subject);
             let mut buf = String::new();
-            write!(&mut buf, "{}", err).unwrap();
+            write!(&mut buf, "{err}").unwrap();
             assert_eq!(&*buf, message, "unexpected value for test case '{input}'");
         }
     }
@@ -356,7 +356,7 @@ mod tests {
         for (input, message) in test_cases.iter().copied() {
             let err = ArgumentError::from(input);
             let mut buf = String::new();
-            write!(&mut buf, "{}", err).unwrap();
+            write!(&mut buf, "{err}").unwrap();
             assert_eq!(&*buf, message, "unexpected value for test case '{input:?}'");
         }
     }

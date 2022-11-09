@@ -133,13 +133,13 @@ pub fn join(interp: &mut Artichoke, ary: &Array, sep: &[u8]) -> Result<Vec<u8>, 
             Ruby::Fixnum => {
                 let mut buf = String::new();
                 let int = unsafe { sys::mrb_sys_fixnum_to_cint(value.inner()) };
-                write!(&mut buf, "{}", int).map_err(WriteError::from)?;
+                write!(&mut buf, "{int}").map_err(WriteError::from)?;
                 out.push(buf.into_bytes());
             }
             Ruby::Float => {
                 let float = unsafe { sys::mrb_sys_float_to_cdouble(value.inner()) };
                 let mut buf = String::new();
-                write!(&mut buf, "{}", float).map_err(WriteError::from)?;
+                write!(&mut buf, "{float}").map_err(WriteError::from)?;
                 out.push(buf.into_bytes());
             }
             _ => {

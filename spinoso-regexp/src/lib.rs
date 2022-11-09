@@ -398,7 +398,7 @@ pub fn nth_match_group(group: NonZeroUsize) -> Cow<'static, str> {
             //
             // In practice `write!` will never error because the `fmt::Write`
             // impl for `String` never panics.
-            let _ = write!(&mut buf, "${}", num);
+            let _ = write!(&mut buf, "${num}");
             Cow::Owned(buf)
         }
     }

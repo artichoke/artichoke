@@ -35,7 +35,7 @@ impl HeapAllocatedData for Time {
 
 impl From<TimeError> for Error {
     fn from(error: TimeError) -> Error {
-        ArgumentError::from(format!("{}", error)).into()
+        ArgumentError::from(format!("{error}")).into()
     }
 }
 

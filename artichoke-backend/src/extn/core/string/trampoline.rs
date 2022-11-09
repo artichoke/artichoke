@@ -1430,7 +1430,7 @@ pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Val
         let mut message = String::from("index ");
         // Suppress error because `String`'s `fmt::Write` impl is infallible.
         // (It will abort on OOM).
-        let _ignored = write!(&mut message, "{} out of string", index);
+        let _ignored = write!(&mut message, "{index} out of string");
         return Err(IndexError::from(message).into());
     };
     // Wrapping when negative is intentional
@@ -1469,7 +1469,7 @@ pub fn setbyte(interp: &mut Artichoke, mut value: Value, index: Value, byte: Val
             let mut message = String::from("index ");
             // Suppress error because `String`'s `fmt::Write` impl is infallible.
             // (It will abort on OOM).
-            let _ignored = write!(&mut message, "{} out of string", index);
+            let _ignored = write!(&mut message, "{index} out of string");
             IndexError::from(message)
         })?;
         *cell = u8_byte;

@@ -81,6 +81,7 @@ fn cli() -> Command {
 }
 
 /// Main entry point.
+#[allow(clippy::bool_to_int_with_if)]
 pub fn main() {
     #[cfg(feature = "dhat-heap")]
     let profiler = dhat::Profiler::new_heap();
@@ -116,7 +117,7 @@ pub fn main() {
         Err(err) => {
             // Suppress all errors at this point (e.g. from a broken pipe) since
             // we're exiting with an error code anyway.
-            let _ignored = writeln!(&mut stderr, "{}", err);
+            let _ignored = writeln!(&mut stderr, "{err}");
             process::exit(1);
         }
     }

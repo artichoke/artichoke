@@ -107,7 +107,7 @@ mod tests {
         match run(&mut interp, formatter, vec![]) {
             Ok(true) => {}
             Ok(false) => {
-                panic!("mspec::run with {:?} formatter failed", formatter);
+                panic!("mspec::run with {formatter:?} formatter failed");
             }
             Err(exc) => {
                 let backtrace = exc.vm_backtrace(&mut interp);

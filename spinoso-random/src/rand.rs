@@ -35,8 +35,8 @@ impl Default for Max {
 impl fmt::Display for Max {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Float(max) => write!(f, "{}", max),
-            Self::Integer(max) => write!(f, "{}", max),
+            Self::Float(max) => write!(f, "{max}"),
+            Self::Integer(max) => write!(f, "{max}"),
             Self::None => f.write_str("Infinity"),
         }
     }

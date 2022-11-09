@@ -63,8 +63,7 @@ pub fn element_assignment(
             start
         } else {
             let mut message = String::new();
-            write!(&mut message, "index {} too small for array; minimum: -{}", start, len)
-                .map_err(WriteError::from)?;
+            write!(&mut message, "index {start} too small for array; minimum: -{len}").map_err(WriteError::from)?;
             return Err(IndexError::from(message).into());
         };
         let slice_len = implicitly_convert_to_int(interp, second)?;
@@ -72,7 +71,7 @@ pub fn element_assignment(
             Ok((start, Some(slice_len), elem))
         } else {
             let mut message = String::new();
-            write!(&mut message, "negative length ({})", slice_len).map_err(WriteError::from)?;
+            write!(&mut message, "negative length ({slice_len})").map_err(WriteError::from)?;
             Err(IndexError::from(message).into())
         }
     } else {
@@ -84,7 +83,7 @@ pub fn element_assignment(
                     Ok((index, None, second))
                 } else {
                     let mut message = String::new();
-                    write!(&mut message, "index {} too small for array; minimum: -{}", index, len)
+                    write!(&mut message, "index {index} too small for array; minimum: -{len}")
                         .map_err(WriteError::from)?;
                     Err(IndexError::from(message).into())
                 }

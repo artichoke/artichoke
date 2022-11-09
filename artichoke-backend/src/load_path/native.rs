@@ -68,7 +68,7 @@ impl Native {
     #[must_use]
     pub fn is_required(&self, path: &Path) -> Option<bool> {
         let path = if let Ok(cwd) = env::current_dir() {
-            absolutize_relative_to(path, &cwd)
+            absolutize_relative_to(path, cwd)
         } else {
             return None;
         };
@@ -91,7 +91,7 @@ impl Native {
     /// [`io::ErrorKind::NotFound`] is returned.
     pub fn mark_required(&mut self, path: &Path) -> io::Result<()> {
         let cwd = env::current_dir()?;
-        let path = absolutize_relative_to(path, &cwd);
+        let path = absolutize_relative_to(path, cwd);
         let path =
             normalize_slashes(path).map_err(|_| io::Error::new(io::ErrorKind::NotFound, ConvertBytesError::new()))?;
         self.loaded_features.insert(path.into());

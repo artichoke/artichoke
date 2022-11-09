@@ -463,7 +463,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, -(2_i64.pow(39))).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "integer -549755813888 too small to convert to `int'");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
     }
@@ -474,7 +474,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, -(2_i64.pow(21))).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "invalid radix 2097152");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
 
@@ -482,7 +482,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, -(2_i64.pow(31))).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "invalid radix -2147483648");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
     }
@@ -508,7 +508,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, -500).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "invalid radix 500");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
 
@@ -516,7 +516,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, -49).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "invalid radix 49");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
     }
@@ -542,7 +542,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, 500).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "invalid radix 500");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
 
@@ -550,7 +550,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, 49).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "invalid radix 49");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::ArgumentError);
     }
@@ -561,7 +561,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, i64::from(i32::MAX) + 1_i64).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "integer 2147483648 too big to convert to `int'");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
 
@@ -569,7 +569,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, 2_i64.pow(32) + 1_i64).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "integer 4294967297 too big to convert to `int'");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
     }
@@ -580,7 +580,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, i64::from(i32::MIN) - 1_i64).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "integer -2147483649 too small to convert to `int'");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
 
@@ -588,7 +588,7 @@ mod tests {
         let err = Radix::try_base_from_str_and_i64(subject, -(2_i64).pow(32) - 1_i64).unwrap_err();
 
         let mut buf = String::new();
-        write!(&mut buf, "{}", err).unwrap();
+        write!(&mut buf, "{err}").unwrap();
         assert_eq!(&*buf, "integer -4294967297 too small to convert to `int'");
         assert_eq!(err.exception_kind(), InvalidRadixExceptionKind::RangeError);
     }
