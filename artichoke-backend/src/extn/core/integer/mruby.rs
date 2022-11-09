@@ -40,7 +40,10 @@ unsafe extern "C-unwind" fn integer_chr(mrb: *mut sys::mrb_state, slf: sys::mrb_
     }
 }
 
-unsafe extern "C-unwind" fn integer_element_reference(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn integer_element_reference(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
     let bit = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);

@@ -64,7 +64,10 @@ unsafe extern "C-unwind" fn matchdata_captures(mrb: *mut sys::mrb_state, slf: sy
     }
 }
 
-unsafe extern "C-unwind" fn matchdata_element_reference(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn matchdata_element_reference(
+    mrb: *mut sys::mrb_state,
+    slf: sys::mrb_value,
+) -> sys::mrb_value {
     let (elem, len) = mrb_get_args!(mrb, required = 1, optional = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
