@@ -24,6 +24,7 @@ use crate::extn::prelude::*;
 pub(in crate::extn) mod mruby;
 pub mod offset;
 pub mod subsec;
+pub mod args;
 pub(super) mod trampoline;
 
 #[doc(inline)]
