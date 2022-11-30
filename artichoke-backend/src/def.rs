@@ -17,7 +17,7 @@ use crate::Artichoke;
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
 /// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
-pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void);
+pub type Free = unsafe extern "C-unwind" fn(mrb: *mut sys::mrb_state, data: *mut c_void);
 
 /// A generic implementation of a [`Free`] function for [`mrb_value`]s that
 /// store an owned copy of a [`Box`] smart pointer.
@@ -38,7 +38,7 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 ///
 /// [`mrb_value`]: sys::mrb_value
 /// [`MRB_TT_DATA`]: sys::mrb_vtype::MRB_TT_DATA
-pub unsafe extern "C" fn box_unbox_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void)
+pub unsafe extern "C-unwind" fn box_unbox_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void)
 where
     T: 'static + BoxUnboxVmValue,
 {
@@ -100,7 +100,7 @@ mod free_test {
 ///
 /// To extract method arguments, use [`mrb_get_args!`] and the supplied
 /// interpreter.
-pub type Method = unsafe extern "C" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
+pub type Method = unsafe extern "C-unwind" fn(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct ClassScope {
@@ -543,7 +543,7 @@ mod tests {
         #[derive(Debug)]
         struct Module;
 
-        extern "C" fn value(_mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+        extern "C-unwind" fn value(_mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
             unsafe {
                 match slf.tt {
                     sys::mrb_vtype::MRB_TT_CLASS => sys::mrb_sys_fixnum_value(8),

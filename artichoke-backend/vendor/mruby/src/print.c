@@ -11,6 +11,10 @@
 #include <mruby/presym.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MRB_NO_STDIO
 static void
 printcstr(const char *str, size_t len, FILE *stream)
@@ -92,4 +96,8 @@ MRB_API void
 mrb_show_copyright(mrb_state *mrb)
 {
 }
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" { */
 #endif

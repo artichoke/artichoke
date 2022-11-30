@@ -16,6 +16,10 @@
 #include <mruby/data.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct backtrace_location {
   int32_t lineno;
   mrb_sym method_id;
@@ -263,3 +267,7 @@ mrb_get_backtrace(mrb_state *mrb)
 {
   return mrb_unpack_backtrace(mrb, packed_backtrace(mrb));
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

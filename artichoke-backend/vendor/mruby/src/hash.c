@@ -13,6 +13,10 @@
 #include <mruby/variable.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * === Glossary
  *
@@ -1806,3 +1810,7 @@ mrb_init_hash(mrb_state *mrb)
   mrb_define_method(mrb, h, "values",          mrb_hash_values,      MRB_ARGS_NONE()); /* 15.2.13.4.28 */
   mrb_define_method(mrb, h, "rehash",          mrb_hash_rehash,      MRB_ARGS_NONE());
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

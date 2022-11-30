@@ -7,6 +7,10 @@
 #include "mruby/string.h"
 #include "mruby/presym.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
   NOEX_PUBLIC    = 0x00,
   NOEX_NOSUPER   = 0x01,
@@ -674,3 +678,7 @@ void
 mrb_mruby_metaprog_gem_final(mrb_state* mrb)
 {
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

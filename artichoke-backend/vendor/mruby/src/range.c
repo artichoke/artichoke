@@ -12,6 +12,10 @@
 #include <mruby/numeric.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RANGE_INITIALIZED_FLAG 1
 #define RANGE_INITIALIZED(p) ((p)->flags |= RANGE_INITIALIZED_FLAG)
 #define RANGE_INITIALIZED_P(p) ((p)->flags & RANGE_INITIALIZED_FLAG)
@@ -512,3 +516,7 @@ mrb_init_range(mrb_state *mrb)
   mrb_define_method(mrb, r, "initialize_copy", range_initialize_copy, MRB_ARGS_REQ(1)); /* 15.2.14.4.15(x) */
   mrb_define_method(mrb, r, "__num_to_a",      range_num_to_a,        MRB_ARGS_NONE());
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

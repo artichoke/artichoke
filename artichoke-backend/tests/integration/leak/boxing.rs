@@ -21,7 +21,7 @@ impl HeapAllocatedData for Container {
     const RUBY_TYPE: &'static str = "Container";
 }
 
-unsafe extern "C" fn container_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn container_initialize(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     let inner = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let slf = Value::from(slf);

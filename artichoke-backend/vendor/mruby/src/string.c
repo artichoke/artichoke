@@ -17,6 +17,10 @@
 #include <mruby/presym.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef ARTICHOKE
 
 typedef struct mrb_shared_string {
@@ -2972,3 +2976,7 @@ mrb_init_string(mrb_state *mrb)
   mrb_define_method(mrb, s, "__sub_replace",   sub_replace,             MRB_ARGS_REQ(3)); /* internal */
 #endif
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

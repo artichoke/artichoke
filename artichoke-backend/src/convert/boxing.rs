@@ -302,7 +302,7 @@ mod tests {
     #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
     struct Container(String);
 
-    unsafe extern "C" fn container_value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C-unwind" fn container_value(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
         unwrap_interpreter!(mrb, to => guard);
 
         let mut value = Value::from(slf);

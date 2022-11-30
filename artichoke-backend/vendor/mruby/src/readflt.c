@@ -24,6 +24,10 @@ Matz (Yukihiro Matsumoto)
 #include <math.h>
 #include <errno.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 MRB_API double
 mrb_float_read(const char *str, char **end)
 {
@@ -116,4 +120,9 @@ done:
     *end = (char*)a;
   return d;
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
+
 #endif

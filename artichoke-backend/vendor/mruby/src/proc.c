@@ -13,6 +13,10 @@
 #include <mruby/array.h>
 #include <mruby/hash.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static const mrb_code call_iseq[] = {
   OP_CALL,
 };
@@ -453,3 +457,7 @@ mrb_init_proc(mrb_state *mrb)
   mrb_define_class_method(mrb, mrb->kernel_module, "lambda", proc_lambda, MRB_ARGS_NONE()|MRB_ARGS_BLOCK()); /* 15.3.1.2.6  */
   mrb_define_method(mrb, mrb->kernel_module,       "lambda", proc_lambda, MRB_ARGS_NONE()|MRB_ARGS_BLOCK()); /* 15.3.1.3.27 */
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

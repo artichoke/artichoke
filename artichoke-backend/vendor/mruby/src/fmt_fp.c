@@ -1,6 +1,10 @@
 #include <mruby.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MRB_NO_FLOAT
 /***********************************************************************
 
@@ -360,4 +364,8 @@ mrb_format_float(mrb_float f, char *buf, size_t buf_size, char fmt, int prec, ch
 
   return s - buf;
 }
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" { */
 #endif

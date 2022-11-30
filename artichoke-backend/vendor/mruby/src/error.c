@@ -17,6 +17,10 @@
 #include <mruby/throw.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static void
 exc_mesg_set(mrb_state *mrb, struct RException *exc, mrb_value mesg)
 {
@@ -217,6 +221,8 @@ mrb_exc_set(mrb_state *mrb, mrb_value exc)
   }
 }
 
+#ifndef ARTICHOKE
+
 static mrb_noreturn void
 exc_throw(mrb_state *mrb, mrb_value exc)
 {
@@ -226,6 +232,13 @@ exc_throw(mrb_state *mrb, mrb_value exc)
   }
   MRB_THROW(mrb->jmp);
 }
+
+#else
+
+mrb_noreturn void artichoke_exc_throw(mrb_state *mrb, mrb_value exc);
+#define exc_throw(mrb, exc) artichoke_exc_throw(mrb, exc)
+
+#endif
 
 MRB_API mrb_noreturn void
 mrb_exc_raise(mrb_state *mrb, mrb_value exc)
@@ -685,3 +698,7 @@ mrb_init_exception(mrb_state *mrb)
   mrb->arena_err = mrb_obj_ptr(mrb_exc_new_lit(mrb, nomem_error, "arena overflow error"));
 #endif
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

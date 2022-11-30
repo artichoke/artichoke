@@ -19,6 +19,10 @@
 #include <ctype.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MRB_CODEGEN_LEVEL_MAX
 #define MRB_CODEGEN_LEVEL_MAX 256
 #endif
@@ -3941,3 +3945,7 @@ mrb_irep_remove_lv(mrb_state *mrb, mrb_irep *irep)
     mrb_irep_remove_lv(mrb, (mrb_irep*)irep->reps[i]);
   }
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

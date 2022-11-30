@@ -3,6 +3,10 @@
 #include <mruby/class.h>
 #include <mruby/proc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define fiber_ptr(o) ((struct RFiber*)mrb_ptr(o))
 
 #define FIBER_STACK_INIT_SIZE 64
@@ -433,3 +437,7 @@ void
 mrb_mruby_fiber_gem_final(mrb_state* mrb)
 {
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

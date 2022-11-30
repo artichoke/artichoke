@@ -55,7 +55,7 @@ where
 }
 
 trait Protect {
-    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value;
+    unsafe extern "C-unwind" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value;
 }
 
 // `Funcall` must be `Copy` because we may unwind past the frames in which
@@ -69,7 +69,7 @@ struct Funcall<'a> {
 }
 
 impl<'a> Protect for Funcall<'a> {
-    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C-unwind" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
         let ptr = sys::mrb_sys_cptr_ptr(data);
         // `protect` must be `Copy` because the call to a function in the
         // `mrb_funcall...` family can unwind with `longjmp` which does not
@@ -102,7 +102,7 @@ struct Eval<'a> {
 }
 
 impl<'a> Protect for Eval<'a> {
-    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C-unwind" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
         let ptr = sys::mrb_sys_cptr_ptr(data);
         let Self { context, code } = *Box::from_raw(ptr.cast::<Self>());
 
@@ -125,7 +125,7 @@ struct BlockYield {
 }
 
 impl Protect for BlockYield {
-    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C-unwind" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
         let ptr = sys::mrb_sys_cptr_ptr(data);
         let Self { block, arg } = *Box::from_raw(ptr.cast::<Self>());
         sys::mrb_yield(mrb, block, arg)
@@ -163,7 +163,7 @@ struct IsRange {
 }
 
 impl Protect for IsRange {
-    unsafe extern "C" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
+    unsafe extern "C-unwind" fn run(mrb: *mut sys::mrb_state, data: sys::mrb_value) -> sys::mrb_value {
         use sys::mrb_range_beg_len::{MRB_RANGE_OK, MRB_RANGE_OUT, MRB_RANGE_TYPE_MISMATCH};
 
         let ptr = sys::mrb_sys_cptr_ptr(data);

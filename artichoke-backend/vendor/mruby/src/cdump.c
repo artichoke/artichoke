@@ -12,6 +12,10 @@
 
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef MRB_NO_STDIO
 
 #ifndef MRB_NO_FLOAT
@@ -465,4 +469,8 @@ mrb_dump_irep_cstruct(mrb_state *mrb, const mrb_irep *irep, uint8_t flags, FILE 
   fputs("}\n", fp);
   return MRB_DUMP_OK;
 }
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" { */
 #endif

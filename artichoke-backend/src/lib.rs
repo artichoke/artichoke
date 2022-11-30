@@ -15,6 +15,7 @@
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_qualifications)]
 #![warn(variant_size_differences)]
+#![feature(c_unwind)]
 
 //! # artichoke-backend
 //!
@@ -141,6 +142,7 @@ mod parser;
 mod platform_string;
 #[cfg(feature = "core-random")]
 mod prng;
+mod raise;
 mod regexp;
 pub mod release_metadata;
 pub mod state;

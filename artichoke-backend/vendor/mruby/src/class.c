@@ -18,6 +18,10 @@
 #include <mruby/opcode.h>
 #include <mruby/presym.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 union mt_ptr {
   struct RProc *proc;
   mrb_func_t func;
@@ -2990,3 +2994,7 @@ mrb_init_class(mrb_state *mrb)
   mrb_define_singleton_method(mrb, mrb->top_self, "to_s", inspect_main, MRB_ARGS_NONE());
   mrb_define_singleton_method(mrb, mrb->top_self, "define_method", top_define_method, MRB_ARGS_ARG(1,1));
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

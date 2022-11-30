@@ -15,6 +15,10 @@
 #include <mruby/endian.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if SIZE_MAX < UINT32_MAX
 # error size_t must be at least 32 bits wide
 #endif
@@ -765,3 +769,7 @@ mrb_load_irep_file(mrb_state *mrb, FILE* fp)
   return mrb_load_irep_file_cxt(mrb, fp, NULL);
 }
 #endif /* MRB_NO_STDIO */
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

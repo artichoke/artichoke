@@ -96,9 +96,9 @@ variables][mruby-globals]. Previous project goals and execution localized mruby
 
 As core APIs and data structures are implemented in _Spinoso_ crates,
 `artichoke-backend` will disable mruby C functions, [reimplement them in
-Rust][artichoke-strangler], and expose `unsafe extern "C" fn` replacements for
-interoperability with the remaining mruby pieces. This process is an application
-of the [Strangler Fig pattern].
+Rust][artichoke-strangler], and expose `unsafe extern "C-unwind" fn`
+replacements for interoperability with the remaining mruby pieces. This process
+is an application of the [Strangler Fig pattern].
 
 [artichoke-backend-docs]:
   https://artichoke.github.io/artichoke/artichoke_backend/

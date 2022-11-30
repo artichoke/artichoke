@@ -13,6 +13,10 @@
 #include <mruby/string.h>
 #include <mruby/class.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void mrb_init_core(mrb_state*);
 void mrb_init_mrbgems(mrb_state*);
 
@@ -239,3 +243,7 @@ mrb_state_atexit(mrb_state *mrb, mrb_atexit_func f)
 
   mrb->atexit_stack[mrb->atexit_stack_len++] = f;
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

@@ -6,6 +6,10 @@
 #include "mruby/string.h"
 #include "mruby/presym.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 mrb_noreturn void mrb_method_missing(mrb_state *mrb, mrb_sym name, mrb_value self, mrb_value args);
 mrb_value mrb_exec_irep(mrb_state *mrb, mrb_value self, struct RProc *p);
 
@@ -555,3 +559,7 @@ void
 mrb_mruby_method_gem_final(mrb_state* mrb)
 {
 }
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

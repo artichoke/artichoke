@@ -7,7 +7,7 @@ use crate::extn::prelude::*;
 // MRB_API mrb_value mrb_ary_new(mrb_state *mrb);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
+unsafe extern "C-unwind" fn mrb_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let result = Array::new();
     let result = Array::alloc_value(result, &mut guard);
@@ -21,7 +21,7 @@ unsafe extern "C" fn mrb_ary_new(mrb: *mut sys::mrb_state) -> sys::mrb_value {
 // MRB_API mrb_value mrb_ary_new_capa(mrb_state*, mrb_int);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_new_capa(mrb: *mut sys::mrb_state, capa: sys::mrb_int) -> sys::mrb_value {
+unsafe extern "C-unwind" fn mrb_ary_new_capa(mrb: *mut sys::mrb_state, capa: sys::mrb_int) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let capacity = usize::try_from(capa).unwrap_or_default();
     let result = Array::with_capacity(capacity);
@@ -36,7 +36,7 @@ unsafe extern "C" fn mrb_ary_new_capa(mrb: *mut sys::mrb_state, capa: sys::mrb_i
 // MRB_API mrb_value mrb_ary_new_from_values(mrb_state *mrb, mrb_int size, const mrb_value *vals);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_new_from_values(
+unsafe extern "C-unwind" fn mrb_ary_new_from_values(
     mrb: *mut sys::mrb_state,
     size: sys::mrb_int,
     vals: *const sys::mrb_value,
@@ -60,7 +60,7 @@ unsafe extern "C" fn mrb_ary_new_from_values(
 // MRB_API mrb_value mrb_assoc_new(mrb_state *mrb, mrb_value car, mrb_value cdr)
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_assoc_new(
+unsafe extern "C-unwind" fn mrb_assoc_new(
     mrb: *mut sys::mrb_state,
     one: sys::mrb_value,
     two: sys::mrb_value,
@@ -82,7 +82,7 @@ unsafe extern "C" fn mrb_assoc_new(
 // MRB_API mrb_value mrb_ary_splat(mrb_state *mrb, mrb_value value);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_splat(mrb: *mut sys::mrb_state, value: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn mrb_ary_splat(mrb: *mut sys::mrb_state, value: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut value = Value::from(value);
     let result = if Array::unbox_from_value(&mut value, &mut guard).is_ok() {
@@ -108,7 +108,7 @@ unsafe extern "C" fn mrb_ary_splat(mrb: *mut sys::mrb_state, value: sys::mrb_val
 //
 // This function corresponds to the `OP_ARYCAT` VM opcode.
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value, other: sys::mrb_value) {
+unsafe extern "C-unwind" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_value, other: sys::mrb_value) {
     unwrap_interpreter!(mrb, to => guard, or_else = ());
     let mut array = Value::from(ary);
     let mut other = Value::from(other);
@@ -138,7 +138,7 @@ unsafe extern "C" fn mrb_ary_concat(mrb: *mut sys::mrb_state, ary: sys::mrb_valu
 // MRB_API mrb_value mrb_ary_pop(mrb_state *mrb, mrb_value ary);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
@@ -163,7 +163,7 @@ unsafe extern "C" fn mrb_ary_pop(mrb: *mut sys::mrb_state, ary: sys::mrb_value) 
 // MRB_API void mrb_ary_push(mrb_state *mrb, mrb_value array, mrb_value value);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value, value: sys::mrb_value) {
+unsafe extern "C-unwind" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value, value: sys::mrb_value) {
     unwrap_interpreter!(mrb, to => guard, or_else = ());
     let mut array = Value::from(ary);
     let value = Value::from(value);
@@ -184,7 +184,7 @@ unsafe extern "C" fn mrb_ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value,
 // MRB_API mrb_value mrb_ary_ref(mrb_state *mrb, mrb_value ary, mrb_int n);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_ref(
+unsafe extern "C-unwind" fn mrb_ary_ref(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     offset: sys::mrb_int,
@@ -204,7 +204,7 @@ unsafe extern "C" fn mrb_ary_ref(
 // MRB_API void mrb_ary_set(mrb_state *mrb, mrb_value ary, mrb_int n, mrb_value val);
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_set(
+unsafe extern "C-unwind" fn mrb_ary_set(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     offset: sys::mrb_int,
@@ -234,7 +234,7 @@ unsafe extern "C" fn mrb_ary_set(
 // MRB_API mrb_value mrb_ary_shift(mrb_state *mrb, mrb_value self)
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+unsafe extern "C-unwind" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
     unwrap_interpreter!(mrb, to => guard);
     let mut array = Value::from(ary);
     let result = if let Ok(mut array) = Array::unbox_from_value(&mut array, &mut guard) {
@@ -259,7 +259,7 @@ unsafe extern "C" fn mrb_ary_shift(mrb: *mut sys::mrb_state, ary: sys::mrb_value
 // MRB_API mrb_value mrb_ary_unshift(mrb_state *mrb, mrb_value self, mrb_value item)
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_ary_unshift(
+unsafe extern "C-unwind" fn mrb_ary_unshift(
     mrb: *mut sys::mrb_state,
     ary: sys::mrb_value,
     value: sys::mrb_value,
@@ -283,7 +283,7 @@ unsafe extern "C" fn mrb_ary_unshift(
 #[no_mangle]
 #[allow(clippy::cast_possible_truncation)]
 #[allow(clippy::cast_sign_loss)]
-unsafe extern "C" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut sys::RArray) {
+unsafe extern "C-unwind" fn mrb_ary_artichoke_free(mrb: *mut sys::mrb_state, ary: *mut sys::RArray) {
     let _ = mrb;
 
     let ptr = (*ary).as_.heap.ptr;

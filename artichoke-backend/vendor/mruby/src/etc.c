@@ -10,6 +10,10 @@
 #include <mruby/class.h>
 #include <mruby/numeric.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 MRB_API struct RData*
 mrb_data_object_alloc(mrb_state *mrb, struct RClass *klass, void *ptr, const mrb_data_type *type)
 {
@@ -268,3 +272,7 @@ mrb_msvc_snprintf(char *s, size_t n, const char *format, ...)
 }
 
 #endif  /* defined _MSC_VER && _MSC_VER < 1900 */
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif

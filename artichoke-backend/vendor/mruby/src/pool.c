@@ -7,6 +7,10 @@
 #include <string.h>
 #include <mruby.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* configuration section */
 /* allocated memory address should be multiple of POOL_ALIGNMENT */
 /* or undef it if alignment does not matter */
@@ -204,4 +208,8 @@ main(void)
   mrb_pool_close(pool);
   return 0;
 }
+#endif
+
+#ifdef __cplusplus
+} /* extern "C" { */
 #endif
