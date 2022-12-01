@@ -27,7 +27,7 @@ posix-space = "1.0.0"
 #
 # See: CVE-2022-24713
 # https://github.com/artichoke/artichoke/pull/1729
-regex = "1.5.5"
+regex = "1.7.0"
 scolapasta-aref = { version = "0.1.0", path = "../scolapasta-aref" }
 scolapasta-int-parse = { version = "0.2.2", path = "../scolapasta-int-parse", default-features = false }
 scolapasta-path = { version = "0.4.0", path = "../scolapasta-path" }
