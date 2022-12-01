@@ -47,7 +47,7 @@ spinoso-time = { version = "0.7.0", path = "../spinoso-time", features = ["tzrs"
 quickcheck = { version = "1.0.3", default-features = false }
 
 [build-dependencies]
-cc = { version = "1.0.72", features = ["parallel"] }
+cc = { version = "1.0.77", features = ["parallel"] }
 
 [features]
 default = [
