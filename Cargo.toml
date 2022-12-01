@@ -19,7 +19,7 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-clap = { version = "4.0.2", optional = true }
+clap = { version = "4.0.29", optional = true }
 # XXX: load-bearing unused dependency.
 #
 # `rustyline` improperly declares its minimum version on `log` as `0.4` despite
