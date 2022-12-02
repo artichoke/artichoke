@@ -44,7 +44,7 @@ jobs:
           cargo version --verbose
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: v3
 
@@ -107,7 +107,7 @@ jobs:
           rustfmt +nightly -Vv
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
       - name: Check artichoke formatting
         run: cargo +nightly fmt --check
@@ -156,7 +156,7 @@ jobs:
           cargo version --verbose
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           working-directory: "fuzz"
 
@@ -214,7 +214,7 @@ jobs:
           rustfmt +nightly -Vv
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           working-directory: "spec-runner"
 
@@ -284,11 +284,11 @@ jobs:
           rustfmt +nightly -Vv
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           working-directory: "."
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           working-directory: "ui-tests"
 
@@ -344,7 +344,7 @@ jobs:
           cargo version --verbose
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
       - name: Check artichoke-load-path with no default features
         run: cargo check --verbose --no-default-features --all-targets --profile=test
@@ -546,9 +546,9 @@ jobs:
           cargo +nightly version --verbose
           echo "::endgroup::"
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           working-directory: "spec-runner"
           key: spec-runner
