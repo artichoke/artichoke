@@ -82,10 +82,28 @@
 //!   this feature enables [`std::error::Error`] impls on error types in this
 //!   crate.
 //!
+#![cfg_attr(
+    not(feature = "std"),
+    doc = "[`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html"
+)]
+#![cfg_attr(feature = "rand-traits", doc = "[`RngCore`]: rand_core::RngCore")]
+#![cfg_attr(
+    not(feature = "rand-traits"),
+    doc = "[`RngCore`]: https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html"
+)]
+#![cfg_attr(feature = "rand-traits", doc = "[`rand_core`]: ::rand_core")]
+#![cfg_attr(
+    not(feature = "rand-traits"),
+    doc = "[`rand_core`]: https://docs.rs/rand_core/latest/rand_core/"
+)]
+#![cfg_attr(feature = "random-rand", doc = "[`rand`]: ::rand")]
+#![cfg_attr(not(feature = "random-rand"), doc = "[`rand`]: https://docs.rs/rand/latest/rand/")]
+#![cfg_attr(
+    not(feature = "random-rand"),
+    doc = "[`rand()`]: https://artichoke.github.io/artichoke/spinoso_random/fn.rand.html"
+)]
 //! [ruby-random]: https://ruby-doc.org/core-3.1.2/Random.html
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
-//! [`rand`]: ::rand
-//! [`RngCore`]: rand_core::RngCore
 
 #![no_std]
 
@@ -125,7 +143,10 @@ pub use self::rand::{rand, Max, Rand};
 /// - Constraints for bounding random numbers are invalid.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Error {
-    /// Error that indicates [`rand()`] was passed an invalid constraint.
+    #[cfg_attr(
+        feature = "random-rand",
+        doc = "Error that indicates [`rand()`] was passed an invalid constraint."
+    )]
     ///
     /// See [`ArgumentError`].
     Argument(ArgumentError),
@@ -391,8 +412,10 @@ impl error::Error for NewSeedError {}
 /// Error that indicates a random number could not be generated with the given
 /// bounds.
 ///
-/// This error is returned by [`rand()`]. See its documentation for more
-/// details.
+#[cfg_attr(
+    feature = "random-rand",
+    doc = "This error is returned by [`rand()`]. See its documentation for more details."
+)]
 ///
 /// This error corresponds to the [Ruby `ArgumentError` Exception class].
 ///
@@ -467,11 +490,16 @@ impl ArgumentError {
 
     /// Retrieve the exception message associated with this new seed error.
     ///
-    /// # Implementation notes
-    ///
-    /// Argument errors constructed with [`ArgumentError::with_rand_max`] return
-    /// an incomplete error message. Prefer to use the [`Display`] impl to
-    /// retrieve error messages from [`ArgumentError`].
+    #[cfg_attr(feature = "random-rand", doc = "# Implementation notes")]
+    #[cfg_attr(
+        feature = "random-rand",
+        doc = "Argument errors constructed with [`ArgumentError::with_rand_max`] return"
+    )]
+    #[cfg_attr(
+        feature = "random-rand",
+        doc = "an incomplete error message. Prefer to use the [`Display`] impl to"
+    )]
+    #[cfg_attr(feature = "random-rand", doc = "retrieve error messages from [`ArgumentError`].")]
     ///
     /// # Examples
     ///

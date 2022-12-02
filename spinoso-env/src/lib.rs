@@ -89,6 +89,10 @@
 //! - **system-env** - Enable an `ENV` backend that accesses the host system's
 //!   environment variables via the [`std::env`] module.
 //!
+#![cfg_attr(
+    not(feature = "system-env"),
+    doc = "[`System`]: https://artichoke.github.io/artichoke/spinoso_env/struct.System.html"
+)]
 //! [`ENV`]: https://ruby-doc.org/core-3.1.2/ENV.html
 //! [`HashMap`]: std::collections::HashMap
 //! [Rust Standard Library]: std

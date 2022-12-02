@@ -46,8 +46,7 @@ impl State {
     /// - `Regexp` [global state][regexp-state].
     /// - [In-memory virtual file system].
     /// - [Ruby parser and file context].
-    /// - [Intepreter-level PRNG] (requires activating the `core-random`
-    ///   feature).
+    #[cfg_attr(feature = "core-random", doc = "- [Intepreter-level PRNG].")]
     /// - [IO capturing] strategy.
     ///
     /// # Errors
@@ -61,7 +60,7 @@ impl State {
     /// [regexp-state]: regexp::State
     /// [In-memory virtual file system]: load_path
     /// [Ruby parser and file context]: parser::State
-    /// [Intepreter-level PRNG]: Random
+    #[cfg_attr(feature = "core-random", doc = "[Intepreter-level PRNG]: Random")]
     /// [IO capturing]: output::Strategy
     pub fn new() -> Result<Self, InterpreterAllocError> {
         Ok(Self {

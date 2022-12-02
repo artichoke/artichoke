@@ -23,33 +23,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install nightly Rust toolchain
-        run: |
-          echo "::group::rustup toolchain install"
-          rustup toolchain install nightly --profile minimal
-          echo "::endgroup::"
-          echo "::group::set default toolchain"
-          rm -rf rust-toolchain
-          rustup default nightly
-          echo "::endgroup::"
-          echo "::group::rustup version"
-          rustup -Vv
-          echo "::endgroup::"
-          echo "::group::rustc version"
-          rustc -Vv
-          echo "::endgroup::"
-          echo "::group::cargo version"
-          cargo version --verbose
-          echo "::endgroup::"
+      - name: Install Rust toolchain
+        uses: artichoke/setup-rust/rustdoc@v1
 
-      - uses: Swatinem/rust-cache@v1
+      - name: Check docs with no default features
+        run: cargo doc --workspace --no-default-features
+
+      - name: Clean docs
+        run: cargo clean
 
       - name: Build Documentation
         run: cargo doc --workspace
-
-      # https://github.com/artichoke/artichoke/issues/1826
-      - name: Purge sources from out dir
-        run: find . -path './target/doc/*/target/debug/build/*' | xargs rm -rf
 
       - name: Copy static content
         run: cp --verbose .github/rustdoc/* target/doc/
