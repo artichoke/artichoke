@@ -28,8 +28,8 @@
 //!
 //! - Allocate and return a [`String`]: [`try_encode`].
 //! - Encode into an already allocated [`String`]: [`try_encode_into`].
-//! - Encode into a [`fmt::Write`]: [`format_into`].
-//! - Encode into a [`io::Write`]: [`write_into`].
+//! - Encode into a [`core::fmt::Write`]: [`format_into`].
+//! - Encode into a [`std::io::Write`]: [`write_into`].
 //!
 //! # Examples
 //!
@@ -76,8 +76,15 @@
 //! - **alloc** - Enables a dependency on the Rust [`alloc`] crate. Activating
 //!   this feature enables APIs that require [`alloc::string::String`].
 //!
+#![cfg_attr(
+    not(feature = "std"),
+    doc = "[`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html"
+)]
+#![cfg_attr(
+    not(feature = "std"),
+    doc = "[`write_into`]: https://artichoke.github.io/artichoke/scolapasta_hex/fn.write_into.html"
+)]
 //! [Base 16 encoding]: https://tools.ietf.org/html/rfc4648#section-8
-//! [`io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html
 
 #![no_std]
 
