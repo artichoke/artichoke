@@ -35,7 +35,8 @@ pub use native::Native;
 /// `RUBY_LOAD_PATH` is the default current working directory for
 /// [`Memory`] file systems.
 ///
-/// [`Hybrid`] file systems locate the path on a [`Memory`] file system.
+/// If the `load-path-native-file-system-loader` feature is enabled, the file
+/// system will locate the path on a [`Memory`] file system.
 #[cfg(not(windows))]
 pub const RUBY_LOAD_PATH: &str = "/artichoke/virtual_root/src/lib";
 

@@ -33,12 +33,30 @@
 //!
 //! - [`Array`] is based on [`Vec`] from the Rust `alloc` crate and standard
 //!   library. This Spinoso array type is enabled by default.
-//! - [`SmallArray`] is based on [`SmallVec`] and implements the small vector
-//!   optimization – small arrays are stored inline without a heap allocation.
-//!   This Spinoso array type requires the **small-array** Cargo feature.
-//! - [`TinyArray`] is based on [`TinyVec`] and implements the small vector
-//!   optimization – small arrays are stored inline without a heap allocation.
-//!   This Spinoso array type requires the **tiny-array** Cargo feature.
+#![cfg_attr(
+    feature = "small-array",
+    doc = "- [`SmallArray`] is based on [`SmallVec`] and implements the small vector"
+)]
+#![cfg_attr(
+    feature = "small-array",
+    doc = "  optimization – small arrays are stored inline without a heap allocation."
+)]
+#![cfg_attr(
+    feature = "small-array",
+    doc = "  This Spinoso array type requires the **small-array** Cargo feature."
+)]
+#![cfg_attr(
+    feature = "tiny-array",
+    doc = "- [`TinyArray`] is based on [`TinyVec`] and implements the small vector"
+)]
+#![cfg_attr(
+    feature = "tiny-array",
+    doc = "  optimization – small arrays are stored inline without a heap allocation."
+)]
+#![cfg_attr(
+    feature = "tiny-array",
+    doc = "  This Spinoso array type requires the **tiny-array** Cargo feature."
+)]
 //!
 //!
 //! # `no_std`
@@ -118,8 +136,8 @@
 //! [collection of crates]: https://crates.io/keywords/spinoso
 //! [Artichoke Ruby]: https://www.artichokeruby.org/
 //! [`Vec`]: alloc::vec::Vec
-//! [`SmallVec`]: smallvec::SmallVec
-//! [`TinyVec`]: tinyvec::TinyVec
+#![cfg_attr(feature = "small-array", doc = "[`SmallVec`]: smallvec::SmallVec")]
+#![cfg_attr(feature = "tiny-array", doc = "[`TinyVec`]: tinyvec::TinyVec")]
 //! [`From`]: core::convert::From
 //! [`FromIterator`]: core::iter::FromIterator
 //! [`Index`]: core::ops::Index
