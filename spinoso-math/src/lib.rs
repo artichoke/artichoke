@@ -62,6 +62,7 @@
 //!   implementations in Rust [`core`]. Dropping this feature removes the
 //!   [`libm`] dependency.
 //!
+#![cfg_attr(not(feature = "full"), doc = "[`libm`]: https://docs.rs/libm/latest/libm/")]
 //! [`Float`]: https://ruby-doc.org/core-3.1.2/Float.html
 //! [`NaN`]: f64::NAN
 //! [`alloc`]: https://doc.rust-lang.org/alloc/
