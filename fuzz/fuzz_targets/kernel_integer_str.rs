@@ -1,6 +1,5 @@
 #![no_main]
 use libfuzzer_sys::fuzz_target;
-
 use scolapasta_int_parse::parse;
 
 fuzz_target!(|data: &str| {
