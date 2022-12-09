@@ -69,7 +69,7 @@ impl PartialEq for EncodedString {
         // [3.0.2] > s == t
         // => true
         // ```
-        *self.as_slice() == *other.as_slice()
+        *self.as_slice() == *other.as_slice() && self.char_len() == other.char_len()
     }
 }
 
