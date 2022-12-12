@@ -20,6 +20,8 @@ def spec
   inline_set_slice
   dynamic_set_slice
 
+  push
+
   concat
 
   inline_pop
@@ -311,6 +313,18 @@ def dynamic_set_slice
   a = (1..25).map.to_a
   a[0, 25] = %w[a]
   raise unless a == ['a']
+end
+
+def push
+  a = [1, 2]
+  b = [[3], [4]]
+  a.push b
+  raise unless a == [1, 2, [[3], [4]]]
+
+  a = [1, 2]
+  b = 3
+  a.push b
+  raise unless a == [1, 2, 3]
 end
 
 def concat

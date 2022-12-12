@@ -142,6 +142,25 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     Ok(ary)
 }
 
+pub fn push<I>(interp: &mut Artichoke, mut ary: Value, others: I) -> Result<Value, Error>
+where
+    I: IntoIterator<Item = Value>,
+    I::IntoIter: Clone,
+{
+    if ary.is_frozen(interp) {
+        return Err(FrozenError::with_message("can't modify frozen Array").into());
+    }
+
+    for value in others {
+        match push_single(interp, ary, value) {
+            Ok(new_ary) => ary = new_ary,
+            Err(e) => return Err(e),
+        }
+    }
+
+    Ok(ary)
+}
+
 pub fn concat<I>(interp: &mut Artichoke, mut ary: Value, others: I) -> Result<Value, Error>
 where
     I: IntoIterator<Item = Value>,

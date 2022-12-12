@@ -918,13 +918,6 @@ class Array
     raise NotImplementedError
   end
 
-  def push(*args)
-    raise FrozenError, "can't modify frozen Array" if frozen?
-
-    concat(args)
-    self
-  end
-
   def rassoc(obj)
     idx = 0
     len = length

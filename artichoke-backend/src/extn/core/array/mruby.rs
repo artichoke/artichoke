@@ -17,6 +17,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("+", ary_plus, sys::mrb_args_req(1))?
         .add_method("*", ary_mul, sys::mrb_args_req(1))?
         .add_method("<<", ary_push_single, sys::mrb_args_req(1))?
+        .add_method("push", ary_push, sys::mrb_args_rest())?
         .add_method("[]", ary_element_reference, sys::mrb_args_req_and_opt(1, 1))?
         .add_method("[]=", ary_element_assignment, sys::mrb_args_req_and_opt(2, 1))?
         .add_method("clear", ary_clear, sys::mrb_args_none())?
@@ -100,6 +101,22 @@ unsafe extern "C" fn ary_push_single(mrb: *mut sys::mrb_state, ary: sys::mrb_val
     let array = Value::from(ary);
     let elem = Value::from(elem);
     let result = trampoline::push_single(&mut guard, array, elem);
+    match result {
+        Ok(value) => {
+            let basic = sys::mrb_sys_basic_ptr(ary);
+            sys::mrb_write_barrier(mrb, basic);
+            value.inner()
+        }
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn ary_push(mrb: *mut sys::mrb_state, ary: sys::mrb_value) -> sys::mrb_value {
+    let others = mrb_get_args!(mrb, *args);
+    unwrap_interpreter!(mrb, to => guard);
+    let array = Value::from(ary);
+    let others = others.iter().map(|&other| Value::from(other));
+    let result = trampoline::push(&mut guard, array, others);
     match result {
         Ok(value) => {
             let basic = sys::mrb_sys_basic_ptr(ary);
