@@ -12,6 +12,7 @@ def spec
   string_tr
   string_end_with
   string_to_i
+  string_eq
 
   true
 end
@@ -205,6 +206,10 @@ def string_to_i
 
   # Only single underscores are valid
   raise unless '1__23'.to_i == 1
+end
+
+def string_eq
+  raise unless "太贵了!!" != "太贵了!!".b
 end
 
 spec if $PROGRAM_NAME == __FILE__
