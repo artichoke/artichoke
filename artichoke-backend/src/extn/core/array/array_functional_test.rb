@@ -325,6 +325,21 @@ def push
   b = 3
   a.push b
   raise unless a == [1, 2, 3]
+
+  a = [1, 2]
+  b = [3, 4]
+  a.push b
+  raise unless a == [1, 2, [3, 4]]
+
+  a = []
+  b = []
+  a.push b
+  raise unless a == [[]]
+
+  a = []
+  b = [1,2]
+  a.push b
+  raise unless a == [[1,2]]
 end
 
 def concat

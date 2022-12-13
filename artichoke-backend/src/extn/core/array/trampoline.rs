@@ -151,11 +151,17 @@ where
         return Err(FrozenError::with_message("can't modify frozen Array").into());
     }
 
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+
+    let array_mut = unsafe { array.as_inner_mut() };
+
     for value in others {
-        match push_single(interp, ary, value) {
-            Ok(new_ary) => ary = new_ary,
-            Err(e) => return Err(e),
-        }
+        array_mut.push(value);
+    }
+
+    unsafe {
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
     }
 
     Ok(ary)
