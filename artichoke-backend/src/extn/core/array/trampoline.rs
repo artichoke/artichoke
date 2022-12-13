@@ -153,11 +153,11 @@ where
 
     let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
 
+    // SAFETY: The array is repacked without any intervening interpreter heap
+    // allocations.
     let array_mut = unsafe { array.as_inner_mut() };
 
-    for value in others {
-        array_mut.push(value);
-    }
+    array_mut.extend(others);
 
     unsafe {
         let inner = array.take();

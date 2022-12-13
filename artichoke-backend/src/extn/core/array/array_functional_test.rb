@@ -337,7 +337,7 @@ def push
   raise unless a == [[]]
 
   a = []
-  b = [1,2]
+  b = [1, 2]
   a.push b
   raise unless a == [[1,2]]
 end
