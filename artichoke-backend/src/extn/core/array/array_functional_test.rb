@@ -339,7 +339,7 @@ def push
   a = []
   b = [1, 2]
   a.push b
-  raise unless a == [[1,2]]
+  raise unless a == [[1, 2]]
 end
 
 def concat
