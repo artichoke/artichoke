@@ -27,7 +27,7 @@ jobs:
       - name: Install Rust toolchain
         uses: artichoke/setup-rust/build-and-test@v1
         with:
-          toolchain: "1.65.0"
+          toolchain: "1.66.0"
 
       - name: Compile
         run: cargo build --workspace --verbose
@@ -51,7 +51,7 @@ jobs:
       - name: Install Rust toolchain
         uses: artichoke/setup-rust/lint-and-format@v1
         with:
-          toolchain: "1.65.0"
+          toolchain: "1.66.0"
 
       - name: Check artichoke formatting
         run: cargo +nightly fmt --check
@@ -84,7 +84,7 @@ jobs:
       - name: Install Rust toolchain
         uses: artichoke/setup-rust/lint-and-format@v1
         with:
-          toolchain: "1.65.0"
+          toolchain: "1.66.0"
 
       - name: Check fuzz formatting
         run: cargo +nightly fmt --check
@@ -107,7 +107,7 @@ jobs:
       - name: Install Rust toolchain
         uses: artichoke/setup-rust/lint-and-format@v1
         with:
-          toolchain: "1.65.0"
+          toolchain: "1.66.0"
 
       - name: Check spec-runner formatting
         run: cargo +nightly fmt --check
@@ -138,7 +138,7 @@ jobs:
       - name: Install Rust toolchain
         uses: artichoke/setup-rust/lint-and-format@v1
         with:
-          toolchain: "1.65.0"
+          toolchain: "1.66.0"
 
       - name: Check ui-tests formatting
         run: cargo +nightly fmt --check
@@ -176,7 +176,7 @@ jobs:
       - name: Install Rust toolchain
         uses: artichoke/setup-rust/build-and-test@v1
         with:
-          toolchain: "1.65.0"
+          toolchain: "1.66.0"
 
       - name: Check artichoke-load-path with no default features
         run: cargo check --verbose --no-default-features --all-targets --profile=test
@@ -347,7 +347,7 @@ jobs:
       - name: Install Rust toolchain
         uses: artichoke/setup-rust/check-minimal-versions@v1
         with:
-          toolchain: "1.65.0"
+          toolchain: "1.66.0"
 
       - name: Generate minimal versions lockfile in root workspace
         run: cargo +nightly generate-lockfile -Z minimal-versions
