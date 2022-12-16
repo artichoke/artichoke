@@ -228,8 +228,7 @@ namespace :toolchain do
 
       workflow_files.each do |file|
         contents = File.read(file)
-        contents = contents.gsub(/(rustup toolchain install) \d+\.\d+\.\d+/, "\\1 #{rust_toolchain}")
-        contents = contents.gsub(/(rustup default) \d+\.\d+\.\d+/, "\\1 #{rust_toolchain}")
+        contents = contents.gsub(/(toolchain: "?)\d+\.\d+\.\d+("?)/, "\\1#{rust_toolchain}\\2")
 
         File.write(file, contents)
       end
