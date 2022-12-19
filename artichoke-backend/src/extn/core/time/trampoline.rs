@@ -114,20 +114,18 @@ pub fn at(
     Time::alloc_value(time, interp)
 }
 
-pub fn mkutc<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
-where
-    T: IntoIterator<Item = Value>,
+pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error>
 {
     let args = as_time_args(interp, args)?;
 
     let time = Time::utc(
-        args.year,
-        args.month,
-        args.day,
-        args.hour,
-        args.minute,
-        args.second,
-        args.nanoseconds
+        args.year()?,
+        args.month()?,
+        args.day()?,
+        args.hour()?,
+        args.minute()?,
+        args.second()?,
+        args.nanoseconds()?
     )?;
 
     Time::alloc_value(time, interp)
