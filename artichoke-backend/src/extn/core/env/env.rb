@@ -4,12 +4,12 @@ ENV = Object.new
 
 class << ENV
   def [](name)
-    @backend ||= ::Artichoke::Environ.new
+    @backend ||= ::Artichoke::Environ.new # rubocop:disable Style/RedundantConstantBase
     @backend[name]
   end
 
   def []=(name, value)
-    @backend ||= ::Artichoke::Environ.new
+    @backend ||= ::Artichoke::Environ.new # rubocop:disable Style/RedundantConstantBase
     @backend[name] = value
   end
 
@@ -271,7 +271,7 @@ class << ENV
   end
 
   def to_h
-    @backend ||= ::Artichoke::Environ.new
+    @backend ||= ::Artichoke::Environ.new # rubocop:disable Style/RedundantConstantBase
     h = @backend.to_h
     return h unless block_given?
 
