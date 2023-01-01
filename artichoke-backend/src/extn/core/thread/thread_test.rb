@@ -23,7 +23,7 @@ end
 
 def thread_join_value
   raise unless Thread.new { 2 + 3 }.join.value == 5
-  raise unless Thread.new { 2 + Thread.new { 3 }.join.value }.join.value == 5
+  raise unless Thread.new { Thread.new { 2 }.join.value + 3 }.join.value == 5
 end
 
 def thread_main_running?
