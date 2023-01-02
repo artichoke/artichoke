@@ -22,3 +22,4 @@ mod gc;
 mod leak;
 mod mruby_3_0_regression;
 mod mruby_3_1_regression;
+mod mruby_codegen_regression;
