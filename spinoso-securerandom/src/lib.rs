@@ -668,12 +668,16 @@ pub fn base64(len: Option<i64>) -> Result<String, Error> {
 /// [`RandomBytesError`].
 #[inline]
 pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> {
+    use base64::alphabet::URL_SAFE;
+    use base64::engine::fast_portable::{FastPortable, NO_PAD, PAD};
+
     let bytes = random_bytes(len)?;
-    if padding {
-        Ok(base64::encode_config(bytes, base64::URL_SAFE))
+    let engine = if padding {
+        FastPortable::from(&URL_SAFE, PAD)
     } else {
-        Ok(base64::encode_config(bytes, base64::URL_SAFE_NO_PAD))
-    }
+        FastPortable::from(&URL_SAFE, NO_PAD)
+    };
+    Ok(base64::encode_engine(bytes, &engine))
 }
 
 /// Generate a random sequence of ASCII alphanumeric bytes.
