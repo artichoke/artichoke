@@ -94,8 +94,7 @@ cbrt(double x)
 }
 
 /* Declaration of complementary Error function */
-double
-erfc(double x);
+double erfc(double x);
 
 /*
 ** Implementations of error functions
@@ -117,10 +116,10 @@ erf(double x)
   do {
     term *= xsqr/j;
     sum  -= term/(2*j+1);
-    ++j;
+    j++;
     term *= xsqr/j;
     sum  += term/(2*j+1);
-    ++j;
+    j++;
     if (sum == 0) break;
   } while (fabs(term/sum) > DBL_EPSILON);
   return two_sqrtpi*sum;
@@ -323,8 +322,6 @@ math_atan2(mrb_state *mrb, mrb_value obj)
 
   return mrb_float_value(mrb, x);
 }
-
-
 
 /*
   HYPERBOLIC TRIG FUNCTIONS

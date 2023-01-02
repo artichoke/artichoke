@@ -3,20 +3,21 @@ default_stages: [commit, push]
 default_language_version:
   # force all unspecified Python hooks to run python3
   python: python3
-minimum_pre_commit_version: "1.20.0"
+minimum_pre_commit_version: '2.18.1'
 repos:
   - repo: meta
     hooks:
       - id: identity
       - id: check-hooks-apply
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.3.0
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
       - id: check-executables-have-shebangs
         exclude: ^test/t/lang\.rb$
       - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
       - id: check-vcs-permalinks
       - id: check-yaml
       - id: detect-private-key
@@ -26,20 +27,29 @@ repos:
       - id: fix-byte-order-marker
       - id: mixed-line-ending
       - id: trailing-whitespace
-  # - repo: git://github.com/Lucas-C/pre-commit-hooks
-  #  rev: v1.1.9
-  #  hooks:
-  #    - id: forbid-tabs
-  #    - id: remove-tabs
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.3.1
+    hooks:
+      - id: forbid-tabs
+        exclude: Makefile$|Makefile\..+$|makefile$|\.mk$
+      - id: remove-tabs
+        args: [--whitespaces-count, '2']
+        exclude: Makefile$|Makefile\..+$|makefile$|\.mk$
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.1.0
+    rev: v2.2.2
     hooks:
       - id: codespell
         name: Run codespell
         description: Check spelling with codespell
         entry: codespell --ignore-words=codespell.txt
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: script-must-not-have-extension
+        name: Local policy is to exclude extension from all shell files
+        types: [shell]
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.30.0
+    rev: v0.32.2
     hooks:
       - id: markdownlint
         name: Run markdownlint
@@ -48,7 +58,7 @@ repos:
         types: [markdown]
         files: \.(md|mdown|markdown)$
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.26.3
+    rev: v1.28.0
     hooks:
       - id: yamllint
         name: Run yamllint

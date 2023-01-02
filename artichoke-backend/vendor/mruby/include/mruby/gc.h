@@ -48,7 +48,8 @@ typedef struct mrb_heap_page {
   struct mrb_heap_page *free_next;
   struct mrb_heap_page *free_prev;
   mrb_bool old:1;
-  void *objects[];
+  /* Flexible array members area a C99 feature, not C++ compatible */
+  /* void* objects[]; */
 } mrb_heap_page;
 
 #ifdef _MSC_VER
@@ -84,8 +85,7 @@ typedef struct mrb_gc {
   size_t majorgc_old_threshold;
 } mrb_gc;
 
-MRB_API mrb_bool
-mrb_object_dead_p(struct mrb_state *mrb, struct RBasic *object);
+MRB_API mrb_bool mrb_object_dead_p(struct mrb_state *mrb, struct RBasic *object);
 
 #define MRB_GC_RED 7
 

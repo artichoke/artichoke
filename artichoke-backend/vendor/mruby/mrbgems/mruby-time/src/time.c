@@ -10,6 +10,7 @@
 #include <mruby/numeric.h>
 #include <mruby/time.h>
 #include <mruby/string.h>
+#include <mruby/internal.h>
 #include <mruby/presym.h>
 
 #ifdef MRB_NO_STDIO
@@ -459,7 +460,7 @@ time_mktime(mrb_state *mrb, mrb_int ayear, mrb_int amonth, mrb_int aday,
 #define OUTINT(x) 0
 #endif
 
-  if (OUTINT(ayear-1900) ||
+  if (ayear < 1900 || OUTINT(ayear-1900) ||
       amonth  < 1 || amonth  > 12 ||
       aday    < 1 || aday    > 31 ||
       ahour   < 0 || ahour   > 24 ||
@@ -476,14 +477,21 @@ time_mktime(mrb_state *mrb, mrb_int ayear, mrb_int amonth, mrb_int aday,
   nowtime.tm_sec   = (int)asec;
   nowtime.tm_isdst = -1;
 
+  time_t (*mk)(struct tm*);
   if (timezone == MRB_TIMEZONE_UTC) {
-    nowsecs = timegm(&nowtime);
+    mk = timegm;
   }
   else {
-    nowsecs = mktime(&nowtime);
+    mk = mktime;
   }
+  nowsecs = (*mk)(&nowtime);
   if (nowsecs == (time_t)-1) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "Not a valid time");
+    nowtime.tm_sec += 1;        /* maybe Epoch-1 sec */
+    nowsecs = (*mk)(&nowtime);
+    if (nowsecs != 0) {         /* check if Epoch */
+      mrb_raise(mrb, E_ARGUMENT_ERROR, "Not a valid time");
+    }
+    nowsecs = (time_t)-1;       /* valid Epoch-1 */
   }
 
   return time_alloc_time(mrb, nowsecs, ausec, timezone);
@@ -997,13 +1005,23 @@ mrb_time_to_s(mrb_state *mrb, mrb_value self)
   return str;
 }
 
+static mrb_value
+mrb_time_hash(mrb_state *mrb, mrb_value self)
+{
+  struct mrb_time *tm = time_get_ptr(mrb, self);
+  uint32_t hash = mrb_byte_hash((uint8_t*)&tm->sec, sizeof(time_t));
+  hash = mrb_byte_hash_step((uint8_t*)&tm->usec, sizeof(time_t), hash);
+  hash = mrb_byte_hash_step((uint8_t*)&tm->timezone, sizeof(tm->timezone), hash);
+  return mrb_int_value(mrb, hash);
+}
+
 void
 mrb_mruby_time_gem_init(mrb_state* mrb)
 {
   struct RClass *tc;
   /* ISO 15.2.19.2 */
   tc = mrb_define_class(mrb, "Time", mrb->object_class);
-  MRB_SET_INSTANCE_TT(tc, MRB_TT_DATA);
+  MRB_SET_INSTANCE_TT(tc, MRB_TT_CDATA);
   mrb_include_module(mrb, tc, mrb_module_get(mrb, "Comparable"));
   mrb_define_class_method(mrb, tc, "at", mrb_time_at_m, MRB_ARGS_ARG(1, 1));      /* 15.2.19.6.1 */
   mrb_define_class_method(mrb, tc, "gm", mrb_time_gm, MRB_ARGS_ARG(1,6));       /* 15.2.19.6.2 */
@@ -1012,6 +1030,8 @@ mrb_mruby_time_gem_init(mrb_state* mrb)
   mrb_define_class_method(mrb, tc, "now", mrb_time_now, MRB_ARGS_NONE());       /* 15.2.19.6.5 */
   mrb_define_class_method(mrb, tc, "utc", mrb_time_gm, MRB_ARGS_ARG(1,6));      /* 15.2.19.6.6 */
 
+  mrb_define_method(mrb, tc, "hash"   , mrb_time_hash   , MRB_ARGS_NONE());
+  mrb_define_method(mrb, tc, "eql?"   , mrb_time_eq     , MRB_ARGS_REQ(1));
   mrb_define_method(mrb, tc, "=="     , mrb_time_eq     , MRB_ARGS_REQ(1));
   mrb_define_method(mrb, tc, "<=>"    , mrb_time_cmp    , MRB_ARGS_REQ(1)); /* 15.2.19.7.1 */
   mrb_define_method(mrb, tc, "+"      , mrb_time_plus   , MRB_ARGS_REQ(1)); /* 15.2.19.7.2 */

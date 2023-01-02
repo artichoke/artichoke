@@ -6,7 +6,7 @@ standardised way into mruby. Conventionally, each mrbgem name is prefixed by
 
 ## Usage
 
-You have to activate mrbgems explicitly in your build configuration.  To add
+You have to activate mrbgems explicitly in your build configuration. To add
 a gem, add the following line to your build configuration file, for example:
 
 ```ruby
@@ -21,9 +21,9 @@ conf.gem 'examples/mrbgems/ruby_extension_example'
 
 In that case,
 
-* if your build configuration file is in the `build_config` directory, it's
+- if your build configuration file is in the `build_config` directory, it's
   relative from `MRUBY_ROOT`.
-* otherwise, it is relative from the directory where your build configuration is.
+- otherwise, it is relative from the directory where your build configuration is.
 
 A remote GIT repository location for a GEM is also supported:
 
@@ -32,6 +32,9 @@ conf.gem :git => 'https://github.com/masuidrive/mrbgems-example.git', :branch =>
 conf.gem :github => 'masuidrive/mrbgems-example', :branch => 'master'
 conf.gem :bitbucket => 'mruby/mrbgems-example', :branch => 'master'
 ```
+
+NOTE: `:bitbucket` option supports only git. Hg is unsupported in this
+version.
 
 You can specify the subdirectory of the repository with `:path` option:
 
@@ -55,19 +58,33 @@ conf.gem mgem: 'mruby-redis', checksum_hash: '3446d19fc4a3f9697b5ddbf2a904f301c4
 If there are missing dependencies, mrbgem dependencies solver will reference
 mrbgem from the core or mgem-list.
 
-To pull all gems from remote GIT repository on build, call `rake -p`,
-or `rake --pull-gems`.
+Note that if more than one git-based gem has the same base name
+(i.e. the default checkout directory name), it is (now) an error
+**UNLESS** they have the same repository URL, branch name and
+commit-id (i.e. checksum hash). You can bypass this by explicitly
+importing your preferred version **first** and setting the
+`canonical:` option to `true`:
 
-NOTE: `:bitbucket` option supports only git. Hg is unsupported in this version.
+```ruby
+conf.gem github: 'me/mruby-yaml', branch: 'my-hacked-branch', canonical: true
+```
+
+If you do this, the system will (mostly) silently ignore other
+attempts to clone a gem with this name.
+
+Note that this only affects cloning the gem from git. It does not
+resolve version conflicts. If the version as specified in the gem's
+rakefile is incompatible with a dependency, your build will still
+fail.
 
 ## GemBox
 
 There are instances when you wish to add a collection of mrbgems into mruby at
 once, or be able to substitute mrbgems based on configuration, without having to
-add each gem to your build configuration file.  A packaged collection of mrbgems
-is called a GemBox.  A GemBox is a file that contains a list of mrbgems to load
+add each gem to your build configuration file. A packaged collection of mrbgems
+is called a GemBox. A GemBox is a file that contains a list of mrbgems to load
 into mruby, in the same format as if you were adding them to the build config
-via `config.gem`, but wrapped in an `MRuby::GemBox` object.  GemBoxes are
+via `config.gem`, but wrapped in an `MRuby::GemBox` object. GemBoxes are
 loaded into mruby via `config.gembox 'boxname'`.
 
 Below we have created a GemBox containing `mruby-time` and `mrbgems-example`:
@@ -79,7 +96,7 @@ MRuby::GemBox.new do |conf|
 end
 ```
 
-As mentioned, the GemBox uses the same conventions as `MRuby::Build`.  The GemBox
+As mentioned, the GemBox uses the same conventions as `MRuby::Build`. The GemBox
 must be saved with a `.gembox` extension inside the `mrbgems` directory to be
 picked up by mruby.
 
@@ -94,7 +111,7 @@ conf.gembox 'custom'
 This will cause the `custom` GemBox to be read in during the build process,
 adding `mruby-time` and `mrbgems-example` to the build.
 
-If you want, you can put GemBox outside of mruby directory. In that case you must
+If you want, you can put GemBox outside the mruby directory. In that case you must
 specify an absolute path like below.
 
 ```ruby
@@ -143,7 +160,7 @@ GEM directory. A typical GEM specification could look like this for example:
 MRuby::Gem::Specification.new('c_and_ruby_extension_example') do |spec|
   spec.license = 'MIT'
   spec.author  = 'mruby developers'
-  spec.summary = 'Example mrbgem using C and ruby'
+  spec.summary = 'Example mrbgem using C and Ruby'
 end
 ```
 
@@ -154,15 +171,15 @@ the GEM functionality to tools like `mruby` and `mirb`.
 The following properties can be set inside your `MRuby::Gem::Specification` for
 information purpose:
 
-* `spec.license` or `spec.licenses` (A single license or a list of them under which this GEM is licensed)
-* `spec.author` or `spec.authors` (Developer name or a list of them)
-* `spec.version` (Current version)
-* `spec.description` (Detailed description)
-* `spec.summary`
-  * One line short description of mrbgem.
-  * Printed in build summary of rake when set.
-* `spec.homepage` (Homepage)
-* `spec.requirements` (External requirements as information for user)
+- `spec.license` or `spec.licenses` (A single license or a list of them under which this GEM is licensed)
+- `spec.author` or `spec.authors` (Developer name or a list of them)
+- `spec.version` (Current version)
+- `spec.description` (Detailed description)
+- `spec.summary`
+  - One line short description of mrbgem.
+  - Printed in build summary of rake when set.
+- `spec.homepage` (Homepage)
+- `spec.requirements` (External requirements as information for user)
 
 The `license` and `author` properties are required in every GEM!
 
@@ -193,15 +210,15 @@ The version requirements and default gem information are optional.
 
 Version requirement supports following operators:
 
-* '=': is equal
-* '!=': is not equal
-* '>': is greater
-* '<': is lesser
-* '>=': is equal or greater
-* '<=': is equal or lesser
-* '~>': is equal or greater and is lesser than the next major version
-  * example 1: '~> 2.2.2' means '>= 2.2.2' and '< 2.3.0'
-  * example 2: '~> 2.2'   means '>= 2.2.0' and '< 3.0.0'
+- '=': is equal
+- '!=': is not equal
+- '>': is greater
+- '<': is lesser
+- '>=': is equal or greater
+- '<=': is equal or lesser
+- '~>': is equal or greater and is lesser than the next major version
+  - example 1: '~> 2.2.2' means '>= 2.2.2' and '< 2.3.0'
+  - example 2: '~> 2.2'   means '>= 2.2.0' and '< 3.0.0'
 
 When more than one version requirements is passed, the dependency must satisfy all of it.
 
@@ -214,8 +231,8 @@ use `MRuby::Build#gem` in the build configuration to override default gem.
 
 If you have conflicting GEMs use the following method:
 
-* `spec.add_conflict(gem, *requirements)`
-  * The `requirements` argument is same as in `add_dependency` method.
+- `spec.add_conflict(gem, *requirements)`
+  - The `requirements` argument is same as in `add_dependency` method.
 
 like following code:
 
@@ -234,18 +251,18 @@ end
 In case your GEM has more complex build requirements you can use
 the following options additionally inside your GEM specification:
 
-* `spec.cc.flags` (C compiler flags)
-* `spec.cc.defines` (C compiler defines)
-* `spec.cc.include_paths` (C compiler include paths)
-* `spec.linker.flags` (Linker flags)
-* `spec.linker.libraries` (Linker libraries)
-* `spec.linker.library_paths` (Linker additional library path)
-* `spec.bins` (Generate binary file)
-* `spec.rbfiles` (Ruby files to compile)
-* `spec.objs` (Object files to compile)
-* `spec.test_rbfiles` (Ruby test files for integration into mrbtest)
-* `spec.test_objs` (Object test files for integration into mrbtest)
-* `spec.test_preload` (Initialization files for mrbtest)
+- `spec.cc.flags` (C compiler flags)
+- `spec.cc.defines` (C compiler defines)
+- `spec.cc.include_paths` (C compiler include paths)
+- `spec.linker.flags` (Linker flags)
+- `spec.linker.libraries` (Linker libraries)
+- `spec.linker.library_paths` (Linker additional library path)
+- `spec.bins` (Generate binary file)
+- `spec.rbfiles` (Ruby files to compile)
+- `spec.objs` (Object files to compile)
+- `spec.test_rbfiles` (Ruby test files for integration into mrbtest)
+- `spec.test_objs` (Object test files for integration into mrbtest)
+- `spec.test_preload` (Initialization files for mrbtest)
 
 You also can use `spec.mruby.cc` and `spec.mruby.linker` to add extra global parameters for the compiler and linker.
 
@@ -380,7 +397,7 @@ See C and Ruby example.
 ## Binary gems
 
 Some gems can generate executables under `bin` directory. Those gems are called
-binary gems.  Names of binary gems are conventionally prefixed by `mruby-bin`,
+binary gems. Names of binary gems are conventionally prefixed by `mruby-bin`,
 e.g. `mruby-bin-mirb` and `mruby-bin-strip`.
 
 To specify the name of executable, you need to specify `spec.bins` in the
@@ -397,21 +414,21 @@ binary gems, to separate normal gems and binary gems.
 ```
 +- mruby-bin-example/
     |
-    +- README.md        (Optional)
+    +- README.md          (Optional)
     |
     +- bintest/
     |   |
-    |   +- example.rb   <- Test code for binary gem
+    |   +- example.rb     <- Test code for binary gem
     |
-    +- mrbgem.rake      <- Gem specification
+    +- mrbgem.rake        <- Gem specification
     |
-    +- mrblib/          <- Source for Ruby extension (Optional)
+    +- mrblib/            <- Source for Ruby extension (Optional)
     |
-    +- src/             <- Source for C extension (Optional)
+    +- src/               <- Source for C extension (Optional)
     |
     +- tools/
         |
-        +- example/     <- Executable name directory
-        |
-        +- example.c    <- Source for Executable (includes main)
+        +- example/       <- Executable name directory
+            |
+            +- example.c  <- Source for Executable (includes main)
 ```

@@ -140,9 +140,10 @@ assert('IO#read', '15.2.20.5.14') do
 end
 
 assert "IO#read(n) with n > IO::BUF_SIZE" do
+  buf_size = 4096  # copied from io.c
   skip "pipe is not supported on this platform" if MRubyIOTestUtil.win?
   IO.pipe do |r,w|
-    n = IO::BUF_SIZE+1
+    n = buf_size+1
     w.write 'a'*n
     assert_equal 'a'*n, r.read(n)
   end
@@ -186,8 +187,8 @@ assert('IO#sync=', '15.2.20.5.19') do
 end
 
 assert('IO#write', '15.2.20.5.20') do
-  io = IO.open(IO.sysopen($mrbtest_io_wfname))
-  assert_equal 0, io.write("")
+  io = IO.open(IO.sysopen($mrbtest_io_wfname, "w"), "w")
+  assert_equal 1, io.write("a")
   io.close
 
   io = IO.open(IO.sysopen($mrbtest_io_wfname, "r+"), "r+")
@@ -201,9 +202,9 @@ assert('IO#write', '15.2.20.5.20') do
 end
 
 assert('IO#<<') do
-  io = IO.open(IO.sysopen($mrbtest_io_wfname))
-  io << "" << ""
-  assert_equal 0, io.pos
+  io = IO.open(IO.sysopen($mrbtest_io_wfname, "w"), "w")
+  io << "a" << "b"
+  assert_equal 2, io.pos
   io.close
 end
 
@@ -303,26 +304,11 @@ assert('IO.sysopen, IO#syswrite') do
   io.close
 end
 
-assert('IO#_read_buf') do
-  fd = IO.sysopen $mrbtest_io_rfname
-  io = IO.new fd
-  def io._buf
-    @buf
-  end
-  msg_len = $mrbtest_io_msg.size
-  assert_equal '', io._buf
-  assert_equal $mrbtest_io_msg, io._read_buf
-  assert_equal $mrbtest_io_msg, io._buf
-  assert_equal 'mruby', io.read(5)
-  assert_equal 5, io.pos
-  assert_equal msg_len - 5, io._buf.size
-  assert_equal $mrbtest_io_msg[5,100], io.read
-  assert_equal 0, io._buf.size
-  assert_raise EOFError do
-    io._read_buf
-  end
-  assert_equal true, io.eof
-  assert_equal true, io.eof?
+assert('IO#ungetc') do
+  io = IO.new(IO.sysopen($mrbtest_io_rfname))
+  assert_equal 'm', io.getc
+  assert_nothing_raised{io.ungetc("M")}
+  assert_equal 'M', io.getc
   io.close
 end
 

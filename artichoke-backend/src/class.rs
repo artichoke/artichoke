@@ -87,7 +87,7 @@ impl<'a> Builder<'a> {
     }
 
     pub fn define(self) -> Result<(), NotDefinedError> {
-        use sys::mrb_vtype::MRB_TT_DATA;
+        use sys::mrb_vtype::MRB_TT_CDATA;
 
         let name = self.spec.name_c_str().as_ptr();
 
@@ -139,10 +139,10 @@ impl<'a> Builder<'a> {
         }
 
         // If a `Spec` defines a `Class` whose instances own a pointer to a
-        // Rust object, mark them as `MRB_TT_DATA`.
+        // Rust object, mark them as `MRB_TT_CDATA`.
         if self.is_mrb_tt_data {
             unsafe {
-                sys::mrb_sys_set_instance_tt(rclass.as_mut(), MRB_TT_DATA);
+                sys::mrb_sys_set_instance_tt(rclass.as_mut(), MRB_TT_CDATA);
             }
         }
         Ok(())

@@ -56,7 +56,7 @@ assert('Kernel#instance_variables', '15.3.1.3.23') do
   end
   ivars = o.instance_variables
 
-  assert_equal Array, ivars.class,
+  assert_equal Array, ivars.class
   assert_equal(2, ivars.size)
   assert_true ivars.include?(:@a)
   assert_true ivars.include?(:@b)
@@ -272,13 +272,13 @@ end
 
 assert('Module#instance_methods', '15.2.2.4.33') do
   module Test4InstanceMethodsA
-    def method1()  end
+    def method1() end
   end
   class Test4InstanceMethodsB
-    def method2()  end
+    def method2() end
   end
   class Test4InstanceMethodsC < Test4InstanceMethodsB
-    def method3()  end
+    def method3() end
   end
 
   r = Test4InstanceMethodsC.instance_methods(true)

@@ -5,6 +5,7 @@
 #include <mruby/presym.h>
 #include <mruby/range.h>
 #include <mruby/string.h>
+#include <mruby/internal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -337,21 +338,6 @@ mrb_sys_repack_into_rstring(char *ptr, mrb_int len, mrb_int capa, mrb_value into
   s->as.heap.aux.capa = capa;
 
   return s;
-}
-
-MRB_API mrb_int
-mrb_str_strlen(mrb_state *mrb, struct RString *s)
-{
-  mrb_int i, max = RSTR_LEN(s);
-  char *p = RSTR_PTR(s);
-
-  if (!p) return 0;
-  for (i = 0; i < max; i++) {
-    if (p[i] == '\0') {
-      mrb_raise(mrb, E_ARGUMENT_ERROR, "string contains null byte");
-    }
-  }
-  return max;
 }
 
 MRB_API void

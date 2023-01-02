@@ -5,6 +5,7 @@
 #include <mruby/string.h>
 #include <mruby/proc.h>
 #include <mruby/dump.h>
+#include <mruby/internal.h>
 
 #ifndef MRB_NO_STDIO
 static void
@@ -42,11 +43,12 @@ print_lv_ab(mrb_state *mrb, const mrb_irep *irep, uint16_t a, uint16_t b)
 }
 
 static void
-print_header(mrb_state *mrb, const mrb_irep *irep, uint32_t i)
+print_header(mrb_state *mrb, const mrb_irep *irep, ptrdiff_t i)
 {
   int32_t line;
 
-  line = mrb_debug_get_line(mrb, irep, i);
+  mrb_assert(i <= UINT32_MAX);
+  line = mrb_debug_get_line(mrb, irep, (uint32_t)i);
   if (line < 0) {
     printf("      ");
   }
@@ -58,8 +60,9 @@ print_header(mrb_state *mrb, const mrb_irep *irep, uint32_t i)
 }
 
 static void
-print_args(uint8_t i)
+print_args(uint16_t i)
 {
+  mrb_assert(i <= 255);
   uint8_t n = i&0xf;
   uint8_t nk = (i>>4)&0xf;
 
@@ -78,7 +81,7 @@ print_args(uint8_t i)
       printf("nk=%d", nk);
     }
   }
-  printf(" (0x%02x)\n", i);
+  printf("\n");
 }
 
 #define CASE(insn,ops) case insn: FETCH_ ## ops (); L_ ## insn
@@ -97,11 +100,17 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
 
   if (irep->lv) {
     int i;
+    int head = FALSE;
 
-    printf("local variable names:\n");
-    for (i = 1; i < irep->nlocals; ++i) {
+    for (i = 1; i < irep->nlocals; i++) {
       char const *s = mrb_sym_dump(mrb, irep->lv[i - 1]);
-      printf("  R%d:%s\n", i, s ? s : "");
+      if (s) {
+        if (!head) {
+          head = TRUE;
+          printf("local variable names:\n");
+        }
+        printf("  R%d:%s\n", i, s);
+      }
     }
   }
 
@@ -109,7 +118,7 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
     int i = irep->clen;
     const struct mrb_irep_catch_handler *e = mrb_irep_catch_handler_table(irep);
 
-    for (; i > 0; i --, e ++) {
+    for (; i > 0; i--,e++) {
       uint32_t begin = mrb_irep_catch_handler_unpack(e->begin);
       uint32_t end = mrb_irep_catch_handler_unpack(e->end);
       uint32_t target = mrb_irep_catch_handler_unpack(e->target);
@@ -149,7 +158,7 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
       printf("file: %s\n", next_file);
       file = next_file;
     }
-    print_header(mrb, irep, (uint32_t)i);
+    print_header(mrb, irep, i);
     ins = READ_B();
     switch (ins) {
     CASE(OP_NOP, Z):
@@ -186,7 +195,7 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADINEG, BB):
-      printf("LOADI\tR%d\t-%d\t", a, b);
+      printf("LOADINEG\tR%d\t-%d\t", a, b);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADI16, BS):
@@ -198,7 +207,7 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADI__1, B):
-      printf("LOADI__1\tR%d\t\t", a);
+      printf("LOADI__1\tR%d\t(-1)\t", a);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADI_0, B): goto L_LOADI;
@@ -210,7 +219,8 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
     CASE(OP_LOADI_6, B): goto L_LOADI;
     CASE(OP_LOADI_7, B):
     L_LOADI:
-      printf("LOADI_%d\tR%d\t\t", ins-(int)OP_LOADI_0, a);
+      b = ins-(int)OP_LOADI_0;
+      printf("LOADI_%d\tR%d\t(%d)\t", b, a, b);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADSYM, BB):
@@ -218,19 +228,19 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADNIL, B):
-      printf("LOADNIL\tR%d\t\t", a);
+      printf("LOADNIL\tR%d\t(nil)\t", a);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADSELF, B):
-      printf("LOADSELF\tR%d\t\t", a);
+      printf("LOADSELF\tR%d\t(R0)\t", a);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADT, B):
-      printf("LOADT\t\tR%d\t\t", a);
+      printf("LOADT\t\tR%d\t(true)\t", a);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_LOADF, B):
-      printf("LOADF\t\tR%d\t\t", a);
+      printf("LOADF\t\tR%d\t(false)\t", a);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_GETGV, BB):
@@ -467,8 +477,8 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
       printf("ARYPUSH\tR%d\t%d\t", a, b);
       print_lv_a(mrb, irep, a);
       break;
-    CASE(OP_ARYDUP, B):
-      printf("ARYDUP\tR%d\t", a);
+    CASE(OP_ARYSPLAT, B):
+      printf("ARYSPLAT\tR%d\t", a);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_AREF, BBB):
@@ -494,16 +504,11 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
       break;
     CASE(OP_STRING, BB):
       mrb_assert((irep->pool[b].tt&IREP_TT_NFLAG)==0);
-      if ((irep->pool[b].tt & IREP_TT_NFLAG) == 0) {
-        printf("STRING\tR%d\tL(%d)\t; %s", a, b, irep->pool[b].u.str);
-      }
-      else {
-        printf("STRING\tR%d\tL(%d)\t", a, b);
-      }
+      printf("STRING\tR%d\tL(%d)\t; %s", a, b, irep->pool[b].u.str);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_STRCAT, B):
-      printf("STRCAT\tR%d\tR%d", a, a+1);
+      printf("STRCAT\tR%d\tR%d\t", a, a+1);
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_HASH, BB):
@@ -515,7 +520,7 @@ codedump(mrb_state *mrb, const mrb_irep *irep)
       print_lv_a(mrb, irep, a);
       break;
     CASE(OP_HASHCAT, B):
-      printf("HASHCAT\tR%d\t", a);
+      printf("HASHCAT\tR%d\tR%d\t", a, a+1);
       print_lv_a(mrb, irep, a);
       break;
 

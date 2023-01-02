@@ -35,7 +35,7 @@ def clean(output, stderr = false)
 
   result_text = results.join("\n")
   result_text += "\n" if ends_with_newline
-  return result_text
+  result_text
 end
 
 
@@ -46,7 +46,7 @@ def main
   end
 
   # For simplicity, just read all of stdin into memory and pass that
-  # as an argument when invoking wine.  (Skipped if STDIN was not
+  # as an argument when invoking wine. (Skipped if STDIN was not
   # redirected.)
   if !STDIN.tty?
     input = STDIN.read

@@ -4,6 +4,7 @@
 #include <mruby/class.h>
 #include <mruby/string.h>
 #include <mruby/range.h>
+#include <mruby/internal.h>
 
 #define ENC_ASCII_8BIT "ASCII-8BIT"
 #define ENC_BINARY     "BINARY"
@@ -11,10 +12,6 @@
 
 #define ENC_COMP_P(enc, enc_lit) \
   str_casecmp_p(RSTRING_PTR(enc), RSTRING_LEN(enc), enc_lit, sizeof(enc_lit"")-1)
-
-#ifdef MRB_NO_FLOAT
-# define mrb_float_p(o) FALSE
-#endif
 
 static mrb_bool
 str_casecmp_p(const char *s1, mrb_int len1, const char *s2, mrb_int len2)
@@ -26,8 +23,8 @@ str_casecmp_p(const char *s1, mrb_int len1, const char *s2, mrb_int len2)
   e2 = s2 + len2;
   while (s1 < e1 && s2 < e2) {
     if (*s1 != *s2 && TOUPPER(*s1) != TOUPPER(*s2)) return FALSE;
-    ++s1;
-    ++s2;
+    s1++;
+    s2++;
   }
   return TRUE;
 }
@@ -145,27 +142,9 @@ mrb_str_swapcase(mrb_state *mrb, mrb_value self)
   return str;
 }
 
-/*
- *  call-seq:
- *     str << integer       -> str
- *     str.concat(integer)  -> str
- *     str << obj           -> str
- *     str.concat(obj)      -> str
- *
- *  Append---Concatenates the given object to <i>str</i>. If the object is a
- *  <code>Integer</code>, it is considered as a codepoint, and is converted
- *  to a character before concatenation
- *  (equivalent to <code>str.concat(integer.chr(__ENCODING__))</code>).
- *
- *     a = "hello "
- *     a << "world"   #=> "hello world"
- *     a.concat(33)   #=> "hello world!"
- */
-static mrb_value
-mrb_str_concat_m(mrb_state *mrb, mrb_value self)
+static void
+str_concat(mrb_state *mrb, mrb_value self, mrb_value str)
 {
-  mrb_value str = mrb_get_arg1(mrb);
-
   if (mrb_integer_p(str) || mrb_float_p(str))
 #ifdef MRB_UTF8_STRING
     str = int_chr_utf8(mrb, str);
@@ -175,6 +154,39 @@ mrb_str_concat_m(mrb_state *mrb, mrb_value self)
   else
     mrb_ensure_string_type(mrb, str);
   mrb_str_cat_str(mrb, self, str);
+}
+
+/*
+ *  call-seq:
+ *     str << obj           -> str
+ *     str.concat(*obj)     -> str
+ *
+ *    s = 'foo'
+ *    s.concat('bar', 'baz') # => "foobarbaz"
+ *    s                      # => "foobarbaz"
+ *
+ *  For each given object +object+ that is an \Integer,
+ *  the value is considered a codepoint and converted to a character before concatenation:
+ *
+ *    s = 'foo'
+ *    s.concat(32, 'bar', 32, 'baz') # => "foo bar baz"
+ *
+ */
+static mrb_value
+mrb_str_concat_m(mrb_state *mrb, mrb_value self)
+{
+  if (mrb_get_argc(mrb) == 1) {
+    str_concat(mrb, self, mrb_get_arg1(mrb));
+    return self;
+  }
+
+  mrb_value *args;
+  mrb_int alen;
+
+  mrb_get_args(mrb, "*", &args, &alen);
+  for (mrb_int i=0; i<alen; i++) {
+    str_concat(mrb, self, args[i]);
+  }
   return self;
 }
 
@@ -445,7 +457,7 @@ tr_bitmap_detect(uint8_t bitmap[32], uint8_t ch)
   return FALSE;
 }
 
-/* compile patter to bitmap */
+/* compile pattern to bitmap */
 static void
 tr_compile_pattern(const struct tr_pattern *pat, mrb_value pstr, uint8_t bitmap[32])
 {
@@ -988,28 +1000,18 @@ mrb_str_succ(mrb_state *mrb, mrb_value self)
 }
 
 #ifdef MRB_UTF8_STRING
-static const char utf8len_codepage_zero[256] =
-{
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-  3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,
-};
+extern const char mrb_utf8len_table[];
 
 static mrb_int
-utf8code(unsigned char* p)
+utf8code(unsigned char* p, mrb_int limit)
 {
   mrb_int len;
 
   if (p[0] < 0x80)
     return p[0];
 
-  len = utf8len_codepage_zero[p[0]];
-  if (len > 1 && (p[1] & 0xc0) == 0x80) {
+  len = mrb_utf8len_table[p[0]>>3];
+  if (len <= limit && len > 1 && (p[1] & 0xc0) == 0x80) {
     if (len == 2)
       return ((p[0] & 0x1f) << 6) + (p[1] & 0x3f);
     if ((p[2] & 0xc0) == 0x80) {
@@ -1020,20 +1022,10 @@ utf8code(unsigned char* p)
         if (len == 4)
           return ((p[0] & 0x07) << 18) + ((p[1] & 0x3f) << 12)
             + ((p[2] & 0x3f) << 6) + (p[3] & 0x3f);
-        if ((p[4] & 0xc0) == 0x80) {
-          if (len == 5)
-            return ((p[0] & 0x03) << 24) + ((p[1] & 0x3f) << 18)
-              + ((p[2] & 0x3f) << 12) + ((p[3] & 0x3f) << 6)
-              + (p[4] & 0x3f);
-          if ((p[5] & 0xc0) == 0x80 && len == 6)
-            return ((p[0] & 0x01) << 30) + ((p[1] & 0x3f) << 24)
-              + ((p[2] & 0x3f) << 18) + ((p[3] & 0x3f) << 12)
-              + ((p[4] & 0x3f) << 6) + (p[5] & 0x3f);
-        }
       }
     }
   }
-  return p[0];
+  return -1;
 }
 
 static mrb_value
@@ -1041,7 +1033,9 @@ mrb_str_ord(mrb_state* mrb, mrb_value str)
 {
   if (RSTRING_LEN(str) == 0)
     mrb_raise(mrb, E_ARGUMENT_ERROR, "empty string");
-  return mrb_fixnum_value(utf8code((unsigned char*) RSTRING_PTR(str)));
+  mrb_int c = utf8code((unsigned char*)RSTRING_PTR(str), RSTRING_LEN(str));
+  if (c < 0) mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid UTF-8 byte sequence");
+  return mrb_fixnum_value(c);
 }
 #else
 static mrb_value
@@ -1245,6 +1239,45 @@ mrb_str_lines(mrb_state *mrb, mrb_value self)
   return result;
 }
 
+/*
+ * call-seq:
+ *   +string -> new_string or self
+ *
+ * Returns +self+ if +self+ is not frozen.
+ *
+ * Otherwise returns <tt>self.dup</tt>, which is not frozen.
+ */
+static mrb_value
+mrb_str_uplus(mrb_state *mrb, mrb_value str)
+{
+  if (mrb_frozen_p(mrb_obj_ptr(str))) {
+    return mrb_str_dup(mrb, str);
+  }
+  else {
+    return str;
+  }
+}
+
+/*
+ * call-seq:
+ *   -string -> frozen_string
+ *
+ * Returns a frozen, possibly pre-existing copy of the string.
+ *
+ * The returned \String will be deduplicated as long as it does not have
+ * any instance variables set on it and is not a String subclass.
+ *
+ * String#dedup is an alias for String#-@.
+ */
+static mrb_value
+mrb_str_uminus(mrb_state *mrb, mrb_value str)
+{
+  if (mrb_frozen_p(mrb_obj_ptr(str))) {
+    return str;
+  }
+  return mrb_obj_freeze(mrb, mrb_str_dup(mrb, str));
+}
+
 void
 mrb_mruby_string_ext_gem_init(mrb_state* mrb)
 {
@@ -1280,10 +1313,12 @@ mrb_mruby_string_ext_gem_init(mrb_state* mrb)
   mrb_define_method(mrb, s, "delete_suffix",   mrb_str_del_suffix,      MRB_ARGS_REQ(1));
   mrb_define_method(mrb, s, "casecmp",         mrb_str_casecmp,         MRB_ARGS_REQ(1));
   mrb_define_method(mrb, s, "casecmp?",        mrb_str_casecmp_p,       MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, s, "+@",              mrb_str_uplus,           MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, s, "-@",              mrb_str_uminus,          MRB_ARGS_REQ(1));
 
   mrb_define_method(mrb, s, "__lines",         mrb_str_lines,           MRB_ARGS_NONE());
 
-  mrb_define_method(mrb, mrb_class_get(mrb, "Integer"), "chr", mrb_int_chr, MRB_ARGS_OPT(1));
+  mrb_define_method(mrb, mrb->integer_class, "chr", mrb_int_chr, MRB_ARGS_OPT(1));
 }
 
 void

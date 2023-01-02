@@ -46,6 +46,7 @@
 //#define MRB_NO_METHOD_CACHE
 /* size of the method cache (need to be the power of 2) */
 //#define MRB_METHOD_CACHE_SIZE (1<<8)
+//#define MRB_USE_INLINE_METHOD_CACHE
 
 /* add -DMRB_USE_METHOD_T_STRUCT on machines that use higher bits of function pointers */
 /* no MRB_USE_METHOD_T_STRUCT requires highest 2 bits of function pointers to be zero */
@@ -106,6 +107,16 @@
 
 /* string class to handle UTF-8 encoding */
 //#define MRB_UTF8_STRING
+
+/* maximum length of strings */
+/* the default value is 1MB */
+/* set this value to zero to skip the check */
+//#define MRB_STR_LENGTH_MAX 1048576
+
+/* maximum length of arrays */
+/* the default value is 2**17 entries */
+/* set this value to zero to skip the check */
+//#define MRB_ARY_LENGTH_MAX 131072
 
 /* argv max size in mrb_funcall */
 //#define MRB_FUNCALL_ARGC_MAX 16

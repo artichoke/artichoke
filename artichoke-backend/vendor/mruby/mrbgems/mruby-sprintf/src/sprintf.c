@@ -110,7 +110,7 @@ mrb_uint_to_cstr(char *buf, size_t len, mrb_int num, int base)
 
 #ifndef MRB_NO_FLOAT
 static int
-fmt_float(char *buf, size_t buf_size, char fmt, int flags, mrb_int width, int prec, mrb_float f)
+fmt_float(char *buf, size_t buf_size, char fmt, int flags, int width, int prec, mrb_float f)
 {
   char sign = '\0';
   int left_align = 0;
@@ -153,12 +153,14 @@ fmt_float(char *buf, size_t buf_size, char fmt, int flags, mrb_int width, int pr
 }
 #endif
 
-#define CHECK(l) do {                           \
-  while ((l) >= bsiz - blen) {\
-    if (bsiz > MRB_INT_MAX/2) mrb_raise(mrb, E_ARGUMENT_ERROR, "too big specifier"); \
-    bsiz*=2;\
+#define CHECK(l) do { \
+  if (blen+(l) >= bsiz) {\
+    while (blen+(l) >= bsiz) {\
+      if (bsiz > MRB_INT_MAX/2) mrb_raise(mrb, E_ARGUMENT_ERROR, "too big specifier");\
+      bsiz*=2;\
+    }\
+    mrb_str_resize(mrb, result, bsiz);\
   }\
-  mrb_str_resize(mrb, result, bsiz);\
   buf = RSTRING_PTR(result);\
 } while (0)
 
@@ -235,7 +237,7 @@ check_name_arg(mrb_state *mrb, int posarg, const char *name, size_t len)
 
 #define GETNUM(n, val) do { \
   if (!(p = get_num(mrb, p, end, &(n)))) \
-    mrb_raise(mrb, E_ARGUMENT_ERROR, #val " too big 1"); \
+    mrb_raise(mrb, E_ARGUMENT_ERROR, #val " too big"); \
 } while(0)
 
 #define GETASTER(num) do { \
@@ -249,15 +251,17 @@ check_name_arg(mrb_state *mrb, int posarg, const char *name, size_t len)
     tmp_v = GETNEXTARG(); \
     p = t; \
   } \
-  num = mrb_as_int(mrb, tmp_v); \
+  num = (int)mrb_as_int(mrb, tmp_v); \
 } while (0)
 
-static const char *
+static const char*
 get_num(mrb_state *mrb, const char *p, const char *end, int *valp)
 {
   char *e;
-  mrb_int n = mrb_int_read(p, end, &e);
-  if (e == NULL || n > INT_MAX) return NULL;
+  mrb_int n;
+  if (!mrb_read_int(p, end, &e, &n) || INT_MAX < n) {
+    return NULL;
+  }
   *valp = (int)n;
   return e;
 }
@@ -584,8 +588,8 @@ mrb_str_format(mrb_state *mrb, mrb_int argc, const mrb_value *argv, mrb_value fm
     mrb_raise(mrb, E_ARGUMENT_ERROR, "flag after precision");           \
   }
 
-  ++argc;
-  --argv;
+  argc++;
+  argv--;
   mrb_ensure_string_type(mrb, fmt);
   p = RSTRING_PTR(fmt);
   end = p + RSTRING_LEN(fmt);
@@ -601,7 +605,7 @@ mrb_str_format(mrb_state *mrb, mrb_int argc, const mrb_value *argv, mrb_value fm
     int flags = FNONE;
 
     for (t = p; t < end && *t != '%'; t++) ;
-    if (t + 1 == end) ++t;
+    if (t + 1 == end) t++;
     PUSH(p, t - p);
     if (t >= end)
       goto sprint_exit; /* end of fmt string */
@@ -766,7 +770,7 @@ retry:
           mrb_raise(mrb, E_ARGUMENT_ERROR, "invalid character");
         }
         c = RSTRING_PTR(tmp);
-        n = RSTRING_LEN(tmp);
+        n = (int)RSTRING_LEN(tmp);
         if (!(flags & FWIDTH)) {
           PUSH(c, n);
         }
@@ -842,7 +846,7 @@ retry:
         char sc = 0;
         mrb_int v = 0;
         int base;
-        mrb_int len;
+        int len;
 
         if (flags & FSHARP) {
           switch (*p) {
@@ -920,7 +924,7 @@ retry:
           size_t size;
           size = strlen(s);
           /* PARANOID: assert(size <= MRB_INT_MAX) */
-          len = (mrb_int)size;
+          len = (int)size;
         }
 
         if (*p == 'X') {
@@ -953,7 +957,7 @@ retry:
           size = strlen(prefix);
           /* PARANOID: assert(size <= MRB_INT_MAX).
            *  this check is absolutely paranoid. */
-          width -= (mrb_int)size;
+          width -= (int)size;
         }
 
         if ((flags & (FZERO|FMINUS|FPREC)) == FZERO) {
@@ -1002,12 +1006,14 @@ retry:
       }
       break;
 
-#ifndef MRB_NO_FLOAT
       case 'f':
       case 'g':
       case 'G':
       case 'e':
       case 'E': {
+#ifdef MRB_NO_FLOAT
+        mrb_raisef(mrb, E_ARGUMENT_ERROR, "%%%c not supported with MRB_NO_FLOAT defined", *p);
+#else
         mrb_value val = GETARG();
         double fval;
         mrb_int need = 6;
@@ -1015,7 +1021,7 @@ retry:
         fval = mrb_as_float(mrb, val);
         if (!isfinite(fval)) {
           const char *expr;
-          const mrb_int elen = 3;
+          const int elen = 3;
           char sign = '\0';
 
           if (isnan(fval)) {
@@ -1030,7 +1036,7 @@ retry:
           else if (flags & (FPLUS|FSPACE))
             sign = (flags & FPLUS) ? '+' : ' ';
           if (sign)
-            ++need;
+            need++;
           if ((flags & FWIDTH) && need < width)
             need = width;
 
@@ -1046,7 +1052,7 @@ retry:
           else {
             if (sign)
               buf[blen - elen - 1] = sign;
-            memcpy(&buf[blen - elen], expr, elen);
+            memcpy(&buf[blen - elen], expr, (size_t)elen);
           }
           break;
         }
@@ -1066,7 +1072,7 @@ retry:
         need += (flags&FPREC) ? prec : 6;
         if ((flags&FWIDTH) && need < width)
           need = width;
-        if (need > MRB_INT_MAX - 20) {
+        if ((mrb_int)need > MRB_INT_MAX - 20) {
           goto too_big_width_prec;
         }
         need += 20;
@@ -1077,9 +1083,9 @@ retry:
           mrb_raise(mrb, E_RUNTIME_ERROR, "formatting error");
         }
         blen += n;
+#endif
       }
       break;
-#endif
     }
     flags = FNONE;
   }
@@ -1091,7 +1097,7 @@ retry:
   if (posarg >= 0 && nextarg < argc) {
     const char *mesg = "too many arguments for format string";
     if (mrb_test(ruby_debug)) mrb_raise(mrb, E_ARGUMENT_ERROR, mesg);
-    if (mrb_test(ruby_verbose)) mrb_warn(mrb, "%s", mesg);
+    if (mrb_test(ruby_verbose)) mrb_warn(mrb, mesg);
   }
 #endif
   mrb_str_resize(mrb, result, blen);
