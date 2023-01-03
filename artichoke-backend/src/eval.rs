@@ -2,17 +2,18 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use scolapasta_path::os_str_to_bytes;
-use spinoso_exception::{ArgumentError, Fatal};
+use spinoso_exception::{ArgumentError, Fatal, LoadError};
 
 use crate::core::{Eval, LoadSources, Parser};
 use crate::error::Error;
-use crate::exception_handler;
 use crate::ffi::InterpreterExtractError;
 use crate::state::parser::Context;
 use crate::sys;
 use crate::sys::protect;
 use crate::value::Value;
 use crate::Artichoke;
+use crate::{exception_handler, RubyException};
+use bstr::ByteSlice;
 
 impl Eval for Artichoke {
     type Value = Value;
@@ -56,7 +57,13 @@ impl Eval for Artichoke {
         let context = Context::new(os_str_to_bytes(file.as_os_str())?.to_vec())
             .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         self.push_context(context)?;
-        let code = self.read_source_file_contents(file)?.into_owned();
+        let code = self
+            .read_source_file_contents(file)
+            .map_err(|err| {
+                let message = format!("ruby: {} -- {}", err.message().as_bstr(), file.to_string_lossy());
+                LoadError::from(message)
+            })?
+            .into_owned();
         let result = self.eval(code.as_slice());
         self.pop_context()?;
         result
@@ -65,6 +72,8 @@ impl Eval for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use bstr::ByteSlice;
 
     use crate::test::prelude::*;
@@ -219,5 +228,16 @@ mod tests {
             .unwrap();
         let err = interp.eval(b"require 'fail'").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
+    }
+
+    #[test]
+    fn eval_file_error_file_not_found() {
+        let mut interp = interpreter();
+        let err = interp.eval_file(Path::new("no/such/file.rb")).unwrap_err();
+        assert_eq!("LoadError", err.name().as_ref());
+        assert_eq!(
+            "ruby: file not found in virtual file system -- no/such/file.rb",
+            err.message().as_ref().as_bstr()
+        );
     }
 }
