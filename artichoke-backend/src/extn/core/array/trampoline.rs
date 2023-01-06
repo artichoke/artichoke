@@ -142,6 +142,31 @@ pub fn clear(interp: &mut Artichoke, mut ary: Value) -> Result<Value, Error> {
     Ok(ary)
 }
 
+pub fn push<I>(interp: &mut Artichoke, mut ary: Value, others: I) -> Result<Value, Error>
+where
+    I: IntoIterator<Item = Value>,
+    I::IntoIter: Clone,
+{
+    if ary.is_frozen(interp) {
+        return Err(FrozenError::with_message("can't modify frozen Array").into());
+    }
+
+    let mut array = unsafe { Array::unbox_from_value(&mut ary, interp)? };
+
+    // SAFETY: The array is repacked without any intervening interpreter heap
+    // allocations.
+    let array_mut = unsafe { array.as_inner_mut() };
+
+    array_mut.extend(others);
+
+    unsafe {
+        let inner = array.take();
+        Array::box_into_value(inner, ary, interp)?;
+    }
+
+    Ok(ary)
+}
+
 pub fn concat<I>(interp: &mut Artichoke, mut ary: Value, others: I) -> Result<Value, Error>
 where
     I: IntoIterator<Item = Value>,
