@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
 use std::path::Path;
 
+use bstr::ByteSlice;
 use scolapasta_path::os_str_to_bytes;
 use spinoso_exception::{ArgumentError, Fatal, LoadError};
 
@@ -13,7 +14,6 @@ use crate::sys::protect;
 use crate::value::Value;
 use crate::Artichoke;
 use crate::{exception_handler, RubyException};
-use bstr::ByteSlice;
 
 impl Eval for Artichoke {
     type Value = Value;
