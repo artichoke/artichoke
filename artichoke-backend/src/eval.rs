@@ -72,7 +72,8 @@ impl Eval for Artichoke {
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
+    use std::os::unix::ffi::OsStrExt;
+    use std::{ffi::OsStr, path::Path};
 
     use bstr::ByteSlice;
 
@@ -237,6 +238,19 @@ mod tests {
         assert_eq!("LoadError", err.name().as_ref());
         assert_eq!(
             "ruby: file not found in virtual file system -- no/such/file.rb",
+            err.message().as_ref().as_bstr()
+        );
+    }
+
+    #[test]
+    fn eval_file_error_invalid_path() {
+        let mut interp = interpreter();
+        let err = interp
+            .eval_file(Path::new(OsStr::from_bytes(b"not/valid/utf8/\xff.rb")))
+            .unwrap_err();
+        assert_eq!("LoadError", err.name().as_ref());
+        assert_eq!(
+            "ruby: file not found in virtual file system -- not/valid/utf8/�.rb",
             err.message().as_ref().as_bstr()
         );
     }
