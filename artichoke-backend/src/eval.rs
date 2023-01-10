@@ -72,8 +72,11 @@ impl Eval for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    use std::ffi::OsStr;
+    #[cfg(unix)]
     use std::os::unix::ffi::OsStrExt;
-    use std::{ffi::OsStr, path::Path};
+    use std::path::Path;
 
     use bstr::ByteSlice;
 
@@ -243,6 +246,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(unix)]
     fn eval_file_error_invalid_path() {
         let mut interp = interpreter();
         let err = interp
