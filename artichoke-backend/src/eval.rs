@@ -60,7 +60,7 @@ impl Eval for Artichoke {
         let code = self
             .read_source_file_contents(file)
             .map_err(|err| {
-                let message = format!("ruby: {} -- {}", err.message().as_bstr(), file.to_string_lossy());
+                let message = format!("ruby: {} -- {}", err.message().as_bstr(), file.display());
                 LoadError::from(message)
             })?
             .into_owned();
