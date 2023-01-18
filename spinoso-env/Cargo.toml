@@ -17,7 +17,7 @@ documentation.workspace = true
 
 [dependencies]
 bstr = { version = "1.0.0", default-features = false }
-scolapasta-path = { version = "0.4.0", path = "../scolapasta-path", optional = true }
+scolapasta-path = { version = "0.5.0", path = "../scolapasta-path", optional = true }
 scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
 
 [features]

@@ -25,7 +25,7 @@ posix-space = "1.0.0"
 regex = "1.7.0"
 scolapasta-aref = { version = "0.1.0", path = "../scolapasta-aref" }
 scolapasta-int-parse = { version = "0.2.2", path = "../scolapasta-int-parse", default-features = false }
-scolapasta-path = { version = "0.4.0", path = "../scolapasta-path" }
+scolapasta-path = { version = "0.5.0", path = "../scolapasta-path" }
 scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
 spinoso-array = { version = "0.9.0", path = "../spinoso-array", default-features = false }
 spinoso-env = { version = "0.2.0", path = "../spinoso-env", optional = true, default-features = false }

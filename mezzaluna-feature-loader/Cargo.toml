@@ -14,7 +14,7 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-scolapasta-path = { version = "0.4.0", path = "../scolapasta-path" }
+scolapasta-path = { version = "0.5.0", path = "../scolapasta-path" }
 same-file = { version = "1.0.6", optional = true }
 
 [features]
