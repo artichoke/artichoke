@@ -106,8 +106,8 @@ Options:
       --copyright               print the copyright
   -e <commands>                 one line of script. Several -e's allowed. Omit [programfile]
       --with-fixture <fixture>  file whose contents will be read into the `$fixture` global
-  -h, --help                    Print help information
-  -V, --version                 Print version information
+  -h, --help                    Print help
+  -V, --version                 Print version
 ```
 
 ## Design and Goals

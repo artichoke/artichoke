@@ -57,8 +57,8 @@ Arguments:
 Options:
   -f, --format <formatter>  Choose an output formatter [default: artichoke] [possible values: artichoke, summary, tagger, yaml]
   -q, --quiet               Suppress spec failures when exiting
-  -h, --help                Print help information
-  -V, --version             Print version information
+  -h, --help                Print help
+  -V, --version             Print version
 ```
 
 ## Profiling
