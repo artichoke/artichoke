@@ -1,6 +1,7 @@
 use core::char;
 use core::convert::TryFrom;
 use core::hash::{BuildHasher, Hash, Hasher};
+use core::num::Wrapping;
 use core::ptr;
 use core::slice;
 use core::str;
@@ -664,8 +665,8 @@ unsafe extern "C" fn mrb_str_hash(mrb: *mut sys::mrb_state, s: sys::mrb_value) -
 // uint32_t mrb_byte_hash_step(const uint8_t*, mrb_int, uint32_t);
 // ```
 
-const FNV_32_PRIME: u32 = 0x0100_0193;
-const FNV1_32_INIT: u32 = 0x811c_9dc5;
+const FNV_32_PRIME: Wrapping<u32> = Wrapping(0x0100_0193);
+const FNV1_32_INIT: Wrapping<u32> = Wrapping(0x811c_9dc5);
 
 #[no_mangle]
 unsafe extern "C" fn mrb_byte_hash(s: *const u8, len: sys::mrb_int) -> u32 {
@@ -673,7 +674,7 @@ unsafe extern "C" fn mrb_byte_hash(s: *const u8, len: sys::mrb_int) -> u32 {
 }
 
 #[no_mangle]
-unsafe extern "C" fn mrb_byte_hash_step(s: *const u8, len: sys::mrb_int, mut hval: u32) -> u32 {
+unsafe extern "C" fn mrb_byte_hash_step(s: *const u8, len: sys::mrb_int, mut hval: Wrapping<u32>) -> u32 {
     let slice = slice::from_raw_parts(s, len as usize);
     // FNV-1 hash each octet in the buffer
     for &byte in slice {
@@ -683,7 +684,7 @@ unsafe extern "C" fn mrb_byte_hash_step(s: *const u8, len: sys::mrb_int, mut hva
         hval ^= u32::from(byte);
     }
     // return our new hash value
-    hval
+    hval.0
 }
 
 #[no_mangle]
