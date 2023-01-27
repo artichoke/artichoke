@@ -155,7 +155,7 @@ impl Artichoke {
             // - `classes` and `modules` from the Artichoke Rust `State`
             //   must be live allocations before calling `mrb_close` because
             //   these registries allow resolving the `dfree` free functions
-            //   for Ruby types defined with type tag `MRB_TT_DATA`.
+            //   for Ruby types defined with type tag `MRB_TT_CDATA`.
             unsafe {
                 if let Some(parser) = parser {
                     parser.close(mrb);

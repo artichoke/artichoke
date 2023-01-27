@@ -216,8 +216,8 @@ where
         let embedded_data_ptr =
             interp.with_ffi_boundary(|mrb| sys::mrb_data_check_get_ptr(mrb, value.inner(), data_type))?;
         if embedded_data_ptr.is_null() {
-            // `Object#allocate` can be used to create `MRB_TT_DATA` without calling
-            // `#initialize`. These objects will return a NULL pointer.
+            // `Object#allocate` can be used to create `MRB_TT_CDATA` without
+            // calling `#initialize`. These objects will return a NULL pointer.
             let mut message = String::from("uninitialized ");
             message.push_str(Self::RUBY_TYPE);
             return Err(TypeError::from(message).into());
