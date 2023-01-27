@@ -516,27 +516,26 @@ class String
     end
     start = 0
     string = dup
-    self_len = length
-    sep_len = separator.length
+    self_len = self.bytesize
+    sep_len = separator.bytesize
     should_yield_subclass_instances = self.class != String
 
-    while (pointer = string.index(separator, start))
+    while (pointer = string.byteindex(separator, start))
       pointer += sep_len
-      pointer += 1 while paragraph_mode && string[pointer] == "\n"
-      if should_yield_subclass_instances
-        yield self.class.new(string[start, pointer - start])
-      else
-        yield string[start, pointer - start]
-      end
+      pointer += 1 while paragraph_mode && string.getbyte(pointer) == 10 # 10 == \n
+
+      slice = string.byteslice(start, pointer - start)
+      slice = self.class.new(slice) if should_yield_subclass_instances
+      yield slice
+
       start = pointer
     end
     return self if start == self_len
 
-    if should_yield_subclass_instances
-      yield self.class.new(string[start, self_len - start])
-    else
-      yield string[start, self_len - start]
-    end
+    slice = string.byteslice(start, self_len - start)
+    slice = self.class.new(slice) if should_yield_subclass_instances
+    yield slice
+
     self
   end
 

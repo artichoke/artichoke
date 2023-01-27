@@ -1,5 +1,18 @@
 # frozen_string_literal: true
 
+class Exception
+  ##
+  # call-seq:
+  #   exception.message   ->  string
+  #
+  # Returns the result of invoking <code>exception.to_s</code>.
+  # Normally this returns the exception's message or name.
+  #
+  def message
+    to_s
+  end
+end
+
 class KeyError
   attr_reader :key, :receiver
 
