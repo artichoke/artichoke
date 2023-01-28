@@ -90,6 +90,11 @@ io_get_open_fptr(mrb_state *mrb, mrb_value io)
   return fptr;
 }
 
+#if !defined(MRB_NO_IO_POPEN) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+# define MRB_NO_IO_POPEN 1
+#endif
+
+#ifndef MRB_NO_IO_POEPN
 static void
 io_set_process_status(mrb_state *mrb, pid_t pid, int status)
 {
@@ -110,6 +115,7 @@ io_set_process_status(mrb_state *mrb, pid_t pid, int status)
   }
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), v);
 }
+#endif
 
 static int
 io_modestr_to_flags(mrb_state *mrb, const char *mode)
@@ -301,6 +307,16 @@ io_free(mrb_state *mrb, void *ptr)
   }
 }
 
+static void
+io_buf_init(mrb_state *mrb, struct mrb_io *fptr)
+{
+  if (fptr->readable) {
+    fptr->buf = (struct mrb_io_buf*)mrb_malloc(mrb, sizeof(struct mrb_io_buf));
+    fptr->buf->start = 0;
+    fptr->buf->len = 0;
+  }
+}
+
 static struct mrb_io *
 io_alloc(mrb_state *mrb)
 {
@@ -310,9 +326,11 @@ io_alloc(mrb_state *mrb)
   fptr->fd = -1;
   fptr->fd2 = -1;
   fptr->pid = 0;
+  fptr->buf = 0;
   fptr->readable = 0;
   fptr->writable = 0;
   fptr->sync = 0;
+  fptr->eof = 0;
   fptr->is_socket = 0;
   return fptr;
 }
@@ -321,7 +339,7 @@ io_alloc(mrb_state *mrb)
 #define NOFILE 64
 #endif
 
-#if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#ifdef MRB_NO_IO_POPEN
 # define io_s_popen mrb_notimplement_m
 #else
 static int
@@ -442,15 +460,13 @@ io_s_popen(mrb_state *mrb, mrb_value klass)
     pid = pi.dwProcessId;
   }
 
-  mrb_iv_set(mrb, io, MRB_IVSYM(buf), mrb_str_new_cstr(mrb, ""));
-
   fptr = io_alloc(mrb);
   fptr->fd = _open_osfhandle((intptr_t)ofd[0], 0);
   fptr->fd2 = _open_osfhandle((intptr_t)ifd[1], 0);
   fptr->pid = pid;
   fptr->readable = OPEN_READABLE_P(flags);
   fptr->writable = OPEN_WRITABLE_P(flags);
-  fptr->sync = 0;
+  io_buf_init(mrb, fptr);
 
   DATA_TYPE(io) = &mrb_io_type;
   DATA_PTR(io)  = fptr;
@@ -551,15 +567,13 @@ io_s_popen(mrb_state *mrb, mrb_value klass)
         fd = pw[1];
       }
 
-      mrb_iv_set(mrb, io, MRB_IVSYM(buf), mrb_str_new_cstr(mrb, ""));
-
       fptr = io_alloc(mrb);
       fptr->fd = fd;
       fptr->fd2 = write_fd;
       fptr->pid = pid;
       fptr->readable = OPEN_READABLE_P(flags);
       fptr->writable = OPEN_WRITABLE_P(flags);
-      fptr->sync = 0;
+      io_buf_init(mrb, fptr);
 
       DATA_TYPE(io) = &mrb_io_type;
       DATA_PTR(io)  = fptr;
@@ -600,21 +614,9 @@ symdup(mrb_state *mrb, int fd, mrb_bool *failed)
 }
 
 static mrb_value
-io_buf(mrb_state *mrb, mrb_value io)
-{
-  mrb_value buf = mrb_iv_get(mrb, io, MRB_IVSYM(buf));
-  if (!mrb_string_p(buf)) {
-    buf = mrb_str_new_cstr(mrb, "");
-    mrb_iv_set(mrb, io, MRB_IVSYM(buf), buf);
-  }
-  return buf;
-}
-
-static mrb_value
 io_init_copy(mrb_state *mrb, mrb_value copy)
 {
   mrb_value orig = mrb_get_arg1(mrb);
-  mrb_value buf;
   struct mrb_io *fptr_copy;
   struct mrb_io *fptr_orig;
   mrb_bool failed = TRUE;
@@ -630,9 +632,7 @@ io_init_copy(mrb_state *mrb, mrb_value copy)
 
   DATA_TYPE(copy) = &mrb_io_type;
   DATA_PTR(copy) = fptr_copy;
-
-  buf = io_buf(mrb, orig);
-  mrb_iv_set(mrb, copy, MRB_IVSYM(buf), mrb_str_dup(mrb, buf));
+  io_buf_init(mrb, fptr_copy);
 
   fptr_copy->fd = symdup(mrb, fptr_orig->fd, &failed);
   if (failed) {
@@ -717,8 +717,6 @@ io_init(mrb_state *mrb, mrb_value io)
   }
   flags = io_mode_to_flags(mrb, mode);
 
-  mrb_iv_set(mrb, io, MRB_IVSYM(buf), mrb_str_new_cstr(mrb, ""));
-
   fptr = (struct mrb_io*)DATA_PTR(io);
   if (fptr != NULL) {
     fptr_finalize(mrb, fptr, TRUE);
@@ -732,7 +730,7 @@ io_init(mrb_state *mrb, mrb_value io)
   fptr->fd = (int)fd;
   fptr->readable = OPEN_READABLE_P(flags);
   fptr->writable = OPEN_WRITABLE_P(flags);
-  fptr->sync = 0;
+  io_buf_init(mrb, fptr);
   return io;
 }
 
@@ -772,6 +770,7 @@ fptr_finalize(mrb_state *mrb, struct mrb_io *fptr, int quiet)
     fptr->fd2 = -1;
   }
 
+#ifndef MRB_NO_IO_POPEN
   if (fptr->pid != 0) {
 #if !defined(_WIN32) && !defined(_WIN64)
     pid_t pid;
@@ -793,6 +792,12 @@ fptr_finalize(mrb_state *mrb, struct mrb_io *fptr, int quiet)
     fptr->pid = 0;
     /* Note: we don't raise an exception when waitpid(3) fails */
   }
+#endif
+
+  if (fptr->buf) {
+    mrb_free(mrb, fptr->buf);
+    fptr->buf = NULL;
+  }
 
   if (!quiet && saved_errno != 0) {
     errno = saved_errno;
@@ -810,14 +815,6 @@ io_get_read_fptr(mrb_state *mrb, mrb_value io)
   return fptr;
 }
 
-static mrb_value
-io_check_readable(mrb_state *mrb, mrb_value io)
-{
-  mrb->c->ci->mid = 0;
-  io_get_read_fptr(mrb, io);
-  return mrb_nil_value();
-}
-
 static struct mrb_io*
 io_get_write_fptr(mrb_state *mrb, mrb_value io)
 {
@@ -829,9 +826,8 @@ io_get_write_fptr(mrb_state *mrb, mrb_value io)
 }
 
 static int
-io_get_write_fd(mrb_state *mrb, mrb_value io)
+io_get_write_fd(struct mrb_io *fptr)
 {
-  struct mrb_io *fptr = io_get_write_fptr(mrb, io);
   if (fptr->fd2 == -1) {
     return fptr->fd;
   }
@@ -877,7 +873,7 @@ io_s_sysclose(mrb_state *mrb, mrb_value klass)
 }
 
 static int
-mrb_cloexec_open(mrb_state *mrb, const char *pathname, mrb_int flags, mrb_int mode)
+io_cloexec_open(mrb_state *mrb, const char *pathname, int flags, fmode_t mode)
 {
   int fd, retry = FALSE;
   char* fname = mrb_locale_from_utf8(pathname, -1);
@@ -889,7 +885,7 @@ mrb_cloexec_open(mrb_state *mrb, const char *pathname, mrb_int flags, mrb_int mo
   flags |= O_NOINHERIT;
 #endif
 reopen:
-  fd = open(fname, (int)flags, (fmode_t)mode);
+  fd = open(fname, flags, mode);
   if (fd == -1) {
     if (!retry) {
       switch (errno) {
@@ -927,16 +923,21 @@ io_s_sysopen(mrb_state *mrb, mrb_value klass)
 
   pat = RSTRING_CSTR(mrb, path);
   flags = io_mode_to_flags(mrb, mode);
-  fd = mrb_cloexec_open(mrb, pat, flags, perm);
+  fd = io_cloexec_open(mrb, pat, flags, (fmode_t)perm);
   return mrb_fixnum_value(fd);
 }
 
+static void
+eof_error(mrb_state *mrb)
+{
+  mrb_raise(mrb, E_EOF_ERROR, "end of file reached");
+}
+
 static mrb_value
-io_sysread_common(mrb_state *mrb,
+io_read_common(mrb_state *mrb,
     fssize_t (*readfunc)(int, void*, fsize_t, off_t),
     mrb_value io, mrb_value buf, mrb_int maxlen, off_t offset)
 {
-  struct mrb_io *fptr;
   int ret;
 
   if (maxlen < 0) {
@@ -957,7 +958,7 @@ io_sysread_common(mrb_state *mrb,
     mrb_str_modify(mrb, RSTRING(buf));
   }
 
-  fptr = io_get_read_fptr(mrb, io);
+  struct mrb_io *fptr = io_get_read_fptr(mrb, io);
   ret = readfunc(fptr->fd, RSTRING_PTR(buf), (fsize_t)maxlen, offset);
   if (ret < 0) {
     mrb_sys_fail(mrb, "sysread failed");
@@ -966,7 +967,8 @@ io_sysread_common(mrb_state *mrb,
     buf = mrb_str_resize(mrb, buf, ret);
   }
   if (ret == 0 && maxlen > 0) {
-    mrb_raise(mrb, E_EOF_ERROR, "sysread failed: End of File");
+    fptr->eof = 1;
+    eof_error(mrb);
   }
   return buf;
 }
@@ -985,7 +987,7 @@ io_sysread(mrb_state *mrb, mrb_value io)
 
   mrb_get_args(mrb, "i|S", &maxlen, &buf);
 
-  return io_sysread_common(mrb, sysread, io, buf, maxlen, 0);
+  return io_read_common(mrb, sysread, io, buf, maxlen, 0);
 }
 
 static mrb_value
@@ -1005,6 +1007,7 @@ io_sysseek(mrb_state *mrb, mrb_value io)
   if (pos == -1) {
     mrb_sys_fail(mrb, "sysseek");
   }
+  fptr->eof = 0;
   if (sizeof(off_t) > sizeof(mrb_int) && pos > (off_t)MRB_INT_MAX) {
     mrb_raise(mrb, E_IO_ERROR, "sysseek reached too far for mrb_int");
   }
@@ -1015,21 +1018,24 @@ static mrb_value
 io_seek(mrb_state *mrb, mrb_value io)
 {
   mrb_value pos = io_sysseek(mrb, io);
-  mrb_value buf = io_buf(mrb, io);
-  mrb_str_resize(mrb, buf, 0);
+  struct mrb_io *fptr = io_get_open_fptr(mrb, io);
+  if (fptr->buf) {
+    fptr->buf->start = 0;
+    fptr->buf->len = 0;
+  }
   return pos;
 }
 
 static mrb_value
-io_syswrite_common(mrb_state *mrb,
+io_write_common(mrb_state *mrb,
     fssize_t (*writefunc)(int, const void*, fsize_t, off_t),
-    mrb_value io, mrb_value buf, off_t offset)
+    struct mrb_io *fptr, const void *buf, fsize_t blen, off_t offset)
 {
   int fd;
   fssize_t length;
 
-  fd = io_get_write_fd(mrb, io);
-  length = writefunc(fd, RSTRING_PTR(buf), (fsize_t)RSTRING_LEN(buf), offset);
+  fd = io_get_write_fd(fptr);
+  length = writefunc(fd, buf, blen, offset);
   if (length == -1) {
     mrb_sys_fail(mrb, "syswrite");
   }
@@ -1049,7 +1055,7 @@ io_syswrite(mrb_state *mrb, mrb_value io)
 
   mrb_get_args(mrb, "S", &buf);
 
-  return io_syswrite_common(mrb, syswrite, io, buf, 0);
+  return io_write_common(mrb, syswrite, io_get_write_fptr(mrb, io), RSTRING_PTR(buf), RSTRING_LEN(buf), 0);
 }
 
   /* def write(string) */
@@ -1080,20 +1086,20 @@ fd_write(mrb_state *mrb, int fd, mrb_value str)
 static mrb_value
 io_write(mrb_state *mrb, mrb_value io)
 {
-  int fd = io_get_write_fd(mrb, io);
+  struct mrb_io *fptr = io_get_write_fptr(mrb, io);
+  int fd = io_get_write_fd(fptr);
   mrb_int len = 0;
 
-  mrb_value buf = io_buf(mrb, io);
-  if (RSTRING_LEN(buf) > 0) {
+  if (fptr->buf && fptr->buf->len > 0) {
     off_t n;
 
     /* get current position */
     n = lseek(fd, 0, SEEK_CUR);
     if (n == -1) mrb_sys_fail(mrb, "lseek");
     /* move cursor */
-    n = lseek(fd, n - RSTRING_LEN(buf), SEEK_SET);
+    n = lseek(fd, n - fptr->buf->len, SEEK_SET);
     if (n == -1) mrb_sys_fail(mrb, "lseek(2)");
-    mrb_str_resize(mrb, buf, 0);
+    fptr->buf->start = fptr->buf->len = 0;
   }
 
   if (mrb_get_argc(mrb) == 1) {
@@ -1150,8 +1156,12 @@ io_pos(mrb_state *mrb, mrb_value io)
   off_t pos = lseek(fptr->fd, 0, SEEK_CUR);
   if (pos == -1) mrb_sys_fail(mrb, 0);
 
-  mrb_value buf = io_buf(mrb, io);
-  return mrb_int_value(mrb, pos - RSTRING_LEN(buf));
+  if (fptr->buf) {
+    return mrb_int_value(mrb, pos - fptr->buf->len);
+  }
+  else {
+    return mrb_int_value(mrb, pos);
+  }
 }
 
 static mrb_value
@@ -1192,14 +1202,6 @@ time2timeval(mrb_state *mrb, mrb_value time)
   return t;
 }
 
-static int
-mrb_io_read_data_pending(mrb_state *mrb, mrb_value io)
-{
-  mrb_value buf = io_buf(mrb, io);
-  if (RSTRING_LEN(buf) > 0) return 1;
-  return 0;
-}
-
 #if !defined(_WIN32) && !(defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
 static mrb_value
 io_s_pipe(mrb_state *mrb, mrb_value klass)
@@ -1215,20 +1217,16 @@ io_s_pipe(mrb_state *mrb, mrb_value klass)
   }
 
   r = mrb_obj_value(mrb_data_object_alloc(mrb, mrb_class_ptr(klass), NULL, &mrb_io_type));
-  mrb_iv_set(mrb, r, MRB_IVSYM(buf), mrb_str_new_cstr(mrb, ""));
   fptr_r = io_alloc(mrb);
   fptr_r->fd = pipes[0];
   fptr_r->readable = 1;
-  fptr_r->writable = 0;
-  fptr_r->sync = 0;
   DATA_TYPE(r) = &mrb_io_type;
   DATA_PTR(r)  = fptr_r;
+  io_buf_init(mrb, fptr_r);
 
   w = mrb_obj_value(mrb_data_object_alloc(mrb, mrb_class_ptr(klass), NULL, &mrb_io_type));
-  mrb_iv_set(mrb, w, MRB_IVSYM(buf), mrb_str_new_cstr(mrb, ""));
   fptr_w = io_alloc(mrb);
   fptr_w->fd = pipes[1];
-  fptr_w->readable = 0;
   fptr_w->writable = 1;
   fptr_w->sync = 1;
   DATA_TYPE(w) = &mrb_io_type;
@@ -1237,6 +1235,13 @@ io_s_pipe(mrb_state *mrb, mrb_value klass)
   return mrb_assoc_new(mrb, r, w);
 }
 #endif
+
+static int
+mrb_io_read_data_pending(mrb_state *mrb, struct mrb_io *fptr)
+{
+  if (fptr->buf && fptr->buf->len > 0) return 1;
+  return 0;
+}
 
 static mrb_value
 io_s_select(mrb_state *mrb, mrb_value klass)
@@ -1288,7 +1293,7 @@ io_s_select(mrb_state *mrb, mrb_value klass)
       fptr = io_get_open_fptr(mrb, read_io);
       if (fptr->fd >= FD_SETSIZE) continue;
       FD_SET(fptr->fd, rp);
-      if (mrb_io_read_data_pending(mrb, read_io)) {
+      if (mrb_io_read_data_pending(mrb, fptr)) {
         pending++;
         FD_SET(fptr->fd, &pset);
       }
@@ -1524,7 +1529,7 @@ io_pread(mrb_state *mrb, mrb_value io)
 
   mrb_get_args(mrb, "io|S!", &maxlen, &off, &buf);
 
-  return io_sysread_common(mrb, pread, io, buf, maxlen, value2off(mrb, off));
+  return io_read_common(mrb, pread, io, buf, maxlen, value2off(mrb, off));
 }
 
 /*
@@ -1538,115 +1543,353 @@ io_pwrite(mrb_state *mrb, mrb_value io)
 
   mrb_get_args(mrb, "So", &buf, &off);
 
-  return io_syswrite_common(mrb, pwrite, io, buf, value2off(mrb, off));
+  return io_write_common(mrb, pwrite, io_get_write_fptr(mrb, io), RSTRING_PTR(buf), RSTRING_LEN(buf), value2off(mrb, off));
 }
 #endif /* MRB_WITH_IO_PREAD_PWRITE */
 
 static mrb_value
 io_ungetc(mrb_state *mrb, mrb_value io)
 {
-  mrb_value str, buf;
+  struct mrb_io *fptr = io_get_read_fptr(mrb, io);
+  struct mrb_io_buf *buf = fptr->buf;
+  mrb_value str;
+  mrb_int len;
 
-  io_get_read_fptr(mrb, io);
   mrb_get_args(mrb, "S", &str);
-  buf = io_buf(mrb, io);
-  str = mrb_str_dup(mrb, str);
-  if (RSTRING_LEN(buf) > 0) {
-    mrb_str_cat_str(mrb, str, buf);
+  len = RSTRING_LEN(str);
+  if (len > MRB_IO_BUF_SIZE - buf->len) {
+    fptr->buf = (struct mrb_io_buf*)mrb_realloc(mrb, buf, sizeof(struct mrb_io_buf)+buf->len+len-MRB_IO_BUF_SIZE);
+    buf = fptr->buf;
   }
-  mrb_iv_set(mrb, io, MRB_IVSYM(buf), str);
+  memmove(buf->mem+len, buf->mem+buf->start, buf->len);
+  memcpy(buf->mem, RSTRING_PTR(str), len);
+  buf->start = 0;
+  buf->len += len;
   return mrb_nil_value();
 }
 
 static void
-io_bufshift(mrb_state *mrb, struct RString *s, mrb_int len)
+io_buf_reset(struct mrb_io *fptr)
 {
-  mrb_int newlen = RSTR_LEN(s)-len;
-  char *p = RSTR_PTR(s);
+  struct mrb_io_buf *buf = fptr->buf;
 
-  mrb_str_modify(mrb, s);
-  memmove(p, p+len, newlen);
-  p[newlen] = '\0';
-  RSTR_SET_LEN(s, newlen);
+  buf->start = 0;
+  buf->len = 0;
+}
+
+static void
+io_buf_shift(struct mrb_io *fptr, mrb_int n)
+{
+  struct mrb_io_buf *buf = fptr->buf;
+
+  buf->start += n;
+  buf->len -= n;
+}
+
+#ifdef MRB_UTF8_STRING
+static void
+io_buf_fill_comp(mrb_state *mrb, struct mrb_io *fptr)
+{
+  struct mrb_io_buf *buf = fptr->buf;
+  int keep = buf->len;
+
+  memmove(buf->mem, buf->mem+buf->start, keep);
+  int n = read(fptr->fd, buf->mem+keep, MRB_IO_BUF_SIZE-keep);
+  if (n < 0) mrb_sys_fail(mrb, 0);
+  if (n == 0) fptr->eof = 1;
+  buf->start = 0;
+  buf->len += (short)n;
+}
+#endif
+
+static void
+io_buf_fill(mrb_state *mrb, struct mrb_io *fptr)
+{
+  struct mrb_io_buf *buf = fptr->buf;
+
+  if (buf->len > 0) return;
+
+  int n = read(fptr->fd, buf->mem, MRB_IO_BUF_SIZE);
+  if (n < 0) mrb_sys_fail(mrb, 0);
+  if (n == 0) fptr->eof = 1;
+  buf->start = 0;
+  buf->len = (short)n;
 }
 
 static mrb_value
-io_bufread(mrb_state *mrb, mrb_value str, mrb_int len)
+io_eof(mrb_state *mrb, mrb_value io)
 {
-  mrb_value str2;
-  struct RString *s = RSTRING(str);
+  struct mrb_io *fptr = io_get_read_fptr(mrb, io);
 
-  str2 = mrb_str_new(mrb, RSTR_PTR(s), len);
-  io_bufshift(mrb, s, len);
+  io_buf_fill(mrb, fptr);
+  if (fptr->buf->len > 0) return mrb_false_value();
+  return mrb_bool_value(fptr->eof);
+}
 
-  return str2;
+static void
+io_buf_cat(mrb_state *mrb, mrb_value outbuf, struct mrb_io *fptr, mrb_int n)
+{
+  struct mrb_io_buf *buf = fptr->buf;
+
+  mrb_assert(n <= buf->len);
+  mrb_str_cat(mrb, outbuf, buf->mem+buf->start, n);
+  io_buf_shift(fptr, n);
+}
+
+static void
+io_buf_cat_all(mrb_state *mrb, mrb_value outbuf, struct mrb_io *fptr)
+{
+  struct mrb_io_buf *buf = fptr->buf;
+
+  mrb_str_cat(mrb, outbuf, buf->mem+buf->start, buf->len);
+  io_buf_reset(fptr);
 }
 
 static mrb_value
-io_bufread_m(mrb_state *mrb, mrb_value io)
+io_read_all(mrb_state *mrb, struct mrb_io *fptr, mrb_value outbuf)
 {
-  mrb_value str;
-  mrb_int len;
-
-  mrb->c->ci->mid = 0;
-  mrb_get_args(mrb, "Si", &str, &len);
-  return io_bufread(mrb, str, len);
+  for (;;) {
+    io_buf_fill(mrb, fptr);
+    if (fptr->eof) {
+      return outbuf;
+    }
+    io_buf_cat_all(mrb, outbuf, fptr);
+  }
 }
 
-#define BUF_SIZE 4096
+static mrb_value
+io_read(mrb_state *mrb, mrb_value io)
+{
+  mrb_value outbuf = mrb_nil_value();
+  mrb_value len;
+  mrb_int length = 0;
+  mrb_bool length_given;
+  struct mrb_io *fptr = io_get_read_fptr(mrb, io);
+
+  mrb_get_args(mrb, "|o?S", &len, &length_given, &outbuf);
+  if (length_given) {
+    if (mrb_nil_p(len)) {
+      length_given = FALSE;
+    }
+    else {
+      length = mrb_as_int(mrb, len);
+      if (length < 0) {
+        mrb_raisef(mrb, E_ARGUMENT_ERROR, "negative length %d given", length);
+      }
+      if (length == 0) {
+        return mrb_str_new(mrb, NULL, 0);
+      }
+    }
+  }
+
+  if (mrb_nil_p(outbuf)) {
+    outbuf = mrb_str_new_capa(mrb, MRB_IO_BUF_SIZE);
+  }
+  if (!length_given) {          /* read as much as possible */
+    return io_read_all(mrb, fptr, outbuf);
+  }
+  for (;;) {
+    io_buf_fill(mrb, fptr);
+    if (fptr->eof || length == 0) {
+      if (RSTRING_LEN(outbuf) == 0)
+        return mrb_nil_value();
+      return outbuf;
+    }
+    if (fptr->buf->len < length) {
+      length -= fptr->buf->len;
+      io_buf_cat_all(mrb, outbuf, fptr);
+    }
+    else {
+      io_buf_cat(mrb, outbuf, fptr, length);
+      return outbuf;
+    }
+  }
+}
+
+static mrb_int
+io_find_index(struct mrb_io *fptr, const char *rs, mrb_int rslen)
+{
+  struct mrb_io_buf *buf = fptr->buf;
+
+  mrb_assert(rslen > 0);
+  const char c = rs[0];
+  const mrb_int limit = buf->len - rslen;
+  const char *p = buf->mem+buf->start;
+  for (mrb_int i=0; i<limit; i++) {
+    if (p[i] == c && (rslen == 1 || memcmp(p+i, rs, rslen) == 0)) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 static mrb_value
-io_read_buf(mrb_state *mrb, mrb_value io)
+io_gets(mrb_state *mrb, mrb_value io)
 {
-  mrb->c->ci->mid = 0;
+  mrb_value rs = mrb_nil_value();
+  mrb_int limit;
+  mrb_bool rs_given = FALSE;    /* newline break */
+  mrb_bool limit_given = FALSE; /* no limit */
+  mrb_value outbuf;
+  struct mrb_io *fptr = io_get_read_fptr(mrb, io);
+  struct mrb_io_buf *buf = fptr->buf;
 
-  mrb_value buf = io_buf(mrb, io);
-  if (RSTRING_LEN(buf) > 0) return buf;
-  return io_sysread_common(mrb, sysread, io, buf, BUF_SIZE, 0);
+  mrb_get_args(mrb, "|o?i?", &rs, &rs_given, &limit, &limit_given);
+
+  if (limit_given == FALSE) {
+    if (rs_given) {
+      if (mrb_nil_p(rs)) {
+        rs_given = FALSE;
+      }
+      else if (mrb_integer_p(rs)) {
+        limit = mrb_integer(rs);
+        limit_given = TRUE;
+        rs = mrb_nil_value();
+      }
+      else if (!mrb_string_p(rs)) {
+        mrb_ensure_int_type(mrb, rs);
+      }
+    }
+  }
+  if (rs_given) {
+    if (mrb_nil_p(rs)) {
+      rs_given = FALSE;
+    }
+    else {
+      mrb_ensure_string_type(mrb, rs);
+      if (RSTRING_LEN(rs) == 0) { /* paragraph mode */
+        rs = mrb_str_new_lit(mrb, "\n\n");
+      }
+    }
+  }
+  else {
+    rs = mrb_str_new_lit(mrb, "\n");
+    rs_given = TRUE;
+  }
+
+  /* from now on rs_given==FALSE means no RS */
+  if (mrb_nil_p(rs) && !limit_given) {
+    return io_read_all(mrb, fptr, mrb_str_new_capa(mrb, MRB_IO_BUF_SIZE));
+  }
+
+  io_buf_fill(mrb, fptr);
+  if (fptr->eof) return mrb_nil_value();
+
+  if (limit_given) {
+    if (limit == 0) return mrb_str_new(mrb, NULL, 0);
+    outbuf = mrb_str_new_capa(mrb, limit);
+  }
+  else {
+    outbuf = mrb_str_new(mrb, NULL, 0);
+  }
+
+  for (;;) {
+    if (rs_given) {                /* with RS */
+      int rslen = RSTRING_LEN(rs);
+      mrb_int idx = io_find_index(fptr, RSTRING_PTR(rs), rslen);
+      if (idx >= 0) {              /* found */
+        mrb_int n = idx+rslen;
+        if (limit_given && limit < n) {
+          n = limit;
+        }
+        io_buf_cat(mrb, outbuf, fptr, n);
+      return outbuf;
+      }
+    }
+    if (limit_given) {
+      if (limit <= buf->len) {
+        io_buf_cat(mrb, outbuf, fptr, limit);
+        return outbuf;
+      }
+      limit -= buf->len;
+    }
+    io_buf_cat_all(mrb, outbuf, fptr);
+    io_buf_fill(mrb, fptr);
+    if (fptr->eof) {
+      if (RSTRING_LEN(outbuf) == 0) return mrb_nil_value();
+      return outbuf;
+    }
+  }
+}
+
+static mrb_value
+io_readline(mrb_state *mrb, mrb_value io)
+{
+  mrb_value result = io_gets(mrb, io);
+  if (mrb_nil_p(result)) {
+    eof_error(mrb);
+  }
+  return result;
+}
+
+static mrb_value
+io_readlines(mrb_state *mrb, mrb_value io)
+{
+  mrb_value ary = mrb_ary_new(mrb);
+  for (;;) {
+    mrb_value line = io_gets(mrb, io);
+
+    if (mrb_nil_p(line)) return ary;
+    mrb_ary_push(mrb, ary, line);
+  }
+}
+
+static mrb_value
+io_getc(mrb_state *mrb, mrb_value io)
+{
+  mrb_int len = 1;
+  struct mrb_io *fptr = io_get_read_fptr(mrb, io);
+
+  io_buf_fill(mrb, fptr);
+  if (fptr->eof) return mrb_nil_value();
+#ifdef MRB_UTF8_STRING
+  struct mrb_io_buf *buf = fptr->buf;
+  const char *p = &buf->mem[buf->start];
+  if ((*p) & 0x80) {
+    len = mrb_utf8len(p, p+buf->len);
+    if (len == 1 && buf->len < 4) { /* partial UTF-8 */
+      io_buf_fill_comp(mrb, fptr);
+      p = &buf->mem[buf->start];
+      len = mrb_utf8len(p, p+buf->len);
+    }
+  }
+#endif
+  mrb_value str = mrb_str_new(mrb, fptr->buf->mem+fptr->buf->start, len);
+  io_buf_shift(fptr, len);
+  return str;
 }
 
 static mrb_value
 io_readchar(mrb_state *mrb, mrb_value io)
 {
-  mrb_value buf;
-  mrb_int len = 1;
-#ifdef MRB_UTF8_STRING
-  unsigned char c;
-#endif
-
-  mrb->c->ci->mid = 0;
-  io_read_buf(mrb, io);
-  buf = io_buf(mrb, io);
-#ifdef MRB_UTF8_STRING
-  c = RSTRING_PTR(buf)[0];
-  if (c & 0x80) {
-    len = mrb_utf8len(RSTRING_PTR(buf), RSTRING_END(buf));
-    if (len == 1 && RSTRING_LEN(buf) < 4) { /* partial UTF-8 */
-      mrb_int blen = RSTRING_LEN(buf);
-      ssize_t n;
-      struct mrb_io *fptr = io_get_read_fptr(mrb, io);
-
-      /* refill the buffer */
-      mrb_str_resize(mrb, buf, 4096);
-      n = read(fptr->fd, RSTRING_PTR(buf)+blen, 4096-blen);
-      if (n < 0) mrb_sys_fail(mrb, "sysread failed");
-      mrb_str_resize(mrb, buf, blen+n);
-      len = mrb_utf8len(RSTRING_PTR(buf), RSTRING_END(buf));
-    }
+  mrb_value result = io_getc(mrb, io);
+  if (mrb_nil_p(result)) {
+    eof_error(mrb);
   }
-#endif
-  return io_bufread(mrb, buf, len);
+  return result;
+}
+
+static mrb_value
+io_getbyte(mrb_state *mrb, mrb_value io)
+{
+  struct mrb_io *fptr = io_get_read_fptr(mrb, io);
+
+  io_buf_fill(mrb, fptr);
+  if (fptr->eof) return mrb_nil_value();
+
+  unsigned char c = fptr->buf->mem[fptr->buf->start];
+  io_buf_shift(fptr, 1);
+  return mrb_int_value(mrb, (mrb_int)c);
 }
 
 static mrb_value
 io_readbyte(mrb_state *mrb, mrb_value io)
 {
-  io_read_buf(mrb, io);
-  mrb_value buf = io_buf(mrb, io);
-  struct RString *b = RSTRING(buf);
-  unsigned char c = RSTR_PTR(b)[0];
-  io_bufshift(mrb, b, 1);
-  return mrb_int_value(mrb, (mrb_int)c);
+  mrb_value result = io_getbyte(mrb, io);
+  if (mrb_nil_p(result)) {
+    eof_error(mrb);
+  }
+  return result;
 }
 
 static mrb_value
@@ -1674,12 +1917,18 @@ mrb_init_io(mrb_state *mrb)
   mrb_define_class_method(mrb, io, "_pipe", io_s_pipe, MRB_ARGS_NONE());
 #endif
 
-  mrb_define_method(mrb, io, "initialize",      io_init, MRB_ARGS_ARG(1,2));    /* 15.2.20.5.21 (x)*/
+  mrb_define_method(mrb, io, "initialize",      io_init, MRB_ARGS_ARG(1,2));
   mrb_define_method(mrb, io, "initialize_copy", io_init_copy, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, io, "_check_readable", io_check_readable, MRB_ARGS_NONE());
   mrb_define_method(mrb, io, "isatty",     io_isatty,     MRB_ARGS_NONE());
-  mrb_define_method(mrb, io, "sync",       io_sync,       MRB_ARGS_NONE());
-  mrb_define_method(mrb, io, "sync=",      io_set_sync,   MRB_ARGS_REQ(1));
+  mrb_define_method(mrb, io, "eof?",       io_eof,        MRB_ARGS_NONE());   /* 15.2.20.5.6 */
+  mrb_define_method(mrb, io, "getc",       io_getc,       MRB_ARGS_NONE());   /* 15.2.20.5.8 */
+  mrb_define_method(mrb, io, "gets",       io_gets,       MRB_ARGS_OPT(2));   /* 15.2.20.5.9 */
+  mrb_define_method(mrb, io, "read",       io_read,       MRB_ARGS_OPT(2));   /* 15.2.20.5.14 */
+  mrb_define_method(mrb, io, "readchar",   io_readchar,   MRB_ARGS_NONE());   /* 15.2.20.5.15 */
+  mrb_define_method(mrb, io, "readline",   io_readline,   MRB_ARGS_OPT(2));   /* 15.2.20.5.16 */
+  mrb_define_method(mrb, io, "readlines",  io_readlines,  MRB_ARGS_OPT(2));   /* 15.2.20.5.17 */
+  mrb_define_method(mrb, io, "sync",       io_sync,       MRB_ARGS_NONE());   /* 15.2.20.5.18 */
+  mrb_define_method(mrb, io, "sync=",      io_set_sync,   MRB_ARGS_REQ(1));   /* 15.2.20.5.19 */
   mrb_define_method(mrb, io, "sysread",    io_sysread,    MRB_ARGS_ARG(1,1));
   mrb_define_method(mrb, io, "sysseek",    io_sysseek,    MRB_ARGS_ARG(1,1));
   mrb_define_method(mrb, io, "syswrite",   io_syswrite,   MRB_ARGS_REQ(1));
@@ -1697,13 +1946,10 @@ mrb_init_io(mrb_state *mrb)
   mrb_define_method(mrb, io, "write",      io_write,      MRB_ARGS_ANY());    /* 15.2.20.5.20 */
   mrb_define_method(mrb, io, "pread",      io_pread,      MRB_ARGS_ANY());    /* ruby 2.5 feature */
   mrb_define_method(mrb, io, "pwrite",     io_pwrite,     MRB_ARGS_ANY());    /* ruby 2.5 feature */
-  mrb_define_method(mrb, io, "readchar",   io_readchar,   MRB_ARGS_NONE());   /* 15.2.20.5.15 */
+  mrb_define_method(mrb, io, "getbyte",    io_getbyte,    MRB_ARGS_NONE());
   mrb_define_method(mrb, io, "readbyte",   io_readbyte,   MRB_ARGS_NONE());
 
   mrb_define_const_id(mrb, io, MRB_SYM(SEEK_SET), mrb_fixnum_value(SEEK_SET));
   mrb_define_const_id(mrb, io, MRB_SYM(SEEK_CUR), mrb_fixnum_value(SEEK_CUR));
   mrb_define_const_id(mrb, io, MRB_SYM(SEEK_END), mrb_fixnum_value(SEEK_END));
-
-  mrb_define_method(mrb, io, "_read_buf",  io_read_buf,   MRB_ARGS_NONE());
-  mrb_define_class_method(mrb, io, "_bufread", io_bufread_m, MRB_ARGS_REQ(2));
 }

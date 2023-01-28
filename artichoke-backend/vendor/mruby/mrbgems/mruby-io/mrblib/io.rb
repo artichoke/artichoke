@@ -1,5 +1,7 @@
 ##
 # IO
+#
+# ISO 15.2.20
 
 class IOError < StandardError; end
 class EOFError < IOError; end
@@ -85,16 +87,6 @@ class IO
     self
   end
 
-  def eof?
-    _check_readable
-    begin
-      _read_buf
-      return @buf.empty?
-    rescue EOFError
-      return true
-    end
-  end
-
   alias_method :eof, :eof?
   alias_method :tell, :pos
 
@@ -115,117 +107,6 @@ class IO
     s = " "
     s.setbyte(0,c)
     ungetc s
-  end
-
-  def read(length = nil, outbuf = "")
-    unless length.nil?
-      unless length.is_a? Integer
-        raise TypeError.new "can't convert #{length.class} into Integer"
-      end
-      if length < 0
-        raise ArgumentError.new "negative length: #{length} given"
-      end
-      if length == 0
-        return ""   # easy case
-      end
-    end
-
-    array = []
-    while true
-      begin
-        _read_buf
-      rescue EOFError
-        array = nil if array.empty? and (not length.nil?) and length != 0
-        break
-      end
-
-      if length
-        consume = (length <= @buf.bytesize) ? length : @buf.bytesize
-        array.push IO._bufread(@buf, consume)
-        length -= consume
-        break if length == 0
-      else
-        array.push @buf
-        @buf = ''
-      end
-    end
-
-    if array.nil?
-      outbuf.replace("")
-      nil
-    else
-      outbuf.replace(array.join)
-    end
-  end
-
-  def readline(arg = "\n", limit = nil)
-    case arg
-    when String
-      rs = arg
-    when Integer
-      rs = "\n"
-      limit = arg
-    else
-      raise ArgumentError
-    end
-
-    if rs.nil?
-      return read
-    end
-
-    if rs == ""
-      rs = "\n\n"
-    end
-
-    array = []
-    while true
-      begin
-        _read_buf
-      rescue EOFError
-        array = nil if array.empty?
-        break
-      end
-
-      if limit && limit <= @buf.size
-        array.push @buf[0, limit]
-        @buf[0, limit] = ""
-        break
-      elsif idx = @buf.index(rs)
-        len = idx + rs.size
-        array.push @buf[0, len]
-        @buf[0, len] = ""
-        break
-      else
-        array.push @buf
-        @buf = ''
-      end
-    end
-
-    raise EOFError.new "end of file reached" if array.nil?
-
-    array.join
-  end
-
-  def gets(*args)
-    begin
-      readline(*args)
-    rescue EOFError
-      nil
-    end
-  end
-
-  def getc
-    begin
-      readchar
-    rescue EOFError
-      nil
-    end
-  end
-
-  def getbyte
-    readbyte
-  rescue EOFError
-    nil
   end
 
   # 15.2.20.5.3
@@ -258,14 +139,6 @@ class IO
       block.call(char)
     end
     self
-  end
-
-  def readlines
-    ary = []
-    while (line = gets)
-      ary << line
-    end
-    ary
   end
 
   def puts(*args)

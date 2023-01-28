@@ -562,7 +562,7 @@ prepare_missing(mrb_state *mrb, mrb_callinfo *ci, mrb_value recv, mrb_sym mid, m
   if (mid != missing) {
     ci->u.target_class = mrb_class(mrb, recv);
   }
-  m = mrb_method_search_vm(mrb, &ci->u.target_class, missing);
+  m = mrb_vm_find_method(mrb, ci->u.target_class, &ci->u.target_class, missing);
   if (MRB_METHOD_UNDEF_P(m)) goto method_missing; /* just in case */
   mrb_stack_extend(mrb, 4);
 
@@ -662,7 +662,7 @@ mrb_funcall_with_block(mrb_state *mrb, mrb_value self, mrb_sym mid, mrb_int argc
     ci = cipush(mrb, n, CINFO_DIRECT, NULL, NULL, BLK_PTR(blk), 0, 0);
     funcall_args_capture(mrb, 0, argc, argv, blk, ci);
     ci->u.target_class = mrb_class(mrb, self);
-    m = mrb_method_search_vm(mrb, &ci->u.target_class, mid);
+    m = mrb_vm_find_method(mrb, ci->u.target_class, &ci->u.target_class, mid);
     if (MRB_METHOD_UNDEF_P(m)) {
       m = prepare_missing(mrb, ci, self, mid, mrb_nil_value(), FALSE);
     }
@@ -816,7 +816,7 @@ mrb_f_send(mrb_state *mrb, mrb_value self)
   }
 
   c = mrb_class(mrb, self);
-  m = mrb_method_search_vm(mrb, &c, name);
+  m = mrb_vm_find_method(mrb, c, &c, name);
   if (MRB_METHOD_UNDEF_P(m)) {            /* call method_mising */
     goto funcall;
   }
@@ -1269,6 +1269,13 @@ mrb_vm_run(mrb_state *mrb, const struct RProc *proc, mrb_value self, mrb_int sta
   }
   if (stack_keep > nregs)
     nregs = stack_keep;
+  else {
+    struct REnv *e = CI_ENV(mrb->c->ci);
+    if (stack_keep == 0 || (e && irep->nlocals < MRB_ENV_LEN(e))) {
+      mrb_vm_ci_env_set(mrb->c->ci, NULL);
+      mrb_env_unshare(mrb, e, FALSE);
+    }
+  }
   mrb_stack_extend(mrb, nregs);
   stack_clear(c->ci->stack + stack_keep, nregs - stack_keep);
   c->ci->stack[0] = self;
@@ -1762,7 +1769,7 @@ RETRY_TRY_BLOCK:
       ci = cipush(mrb, a, CINFO_DIRECT, NULL, NULL, BLK_PTR(blk), 0, c);
       recv = regs[0];
       ci->u.target_class = (insn == OP_SUPER) ? CI_TARGET_CLASS(ci - 1)->super : mrb_class(mrb, recv);
-      m = mrb_method_search_vm(mrb, &ci->u.target_class, mid);
+      m = mrb_vm_find_method(mrb, ci->u.target_class, &ci->u.target_class, mid);
       if (MRB_METHOD_UNDEF_P(m)) {
         m = prepare_missing(mrb, ci, recv, mid, blk, (insn == OP_SUPER));
       }
@@ -2170,19 +2177,18 @@ RETRY_TRY_BLOCK:
             }
             pc = ci[0].pc;
           }
+          else if (mrb->c == mrb->root_c) {
+            mrb->c->ci->stack = mrb->c->stbase;
+            goto L_STOP;
+          }
           else {
-            if (mrb->c == mrb->root_c) {
-              mrb->c->ci->stack = mrb->c->stbase;
-              goto L_STOP;
-            }
-            else {
-              struct mrb_context *c = mrb->c;
+            struct mrb_context *c = mrb->c;
 
-              c->status = MRB_FIBER_TERMINATED;
-              mrb->c = c->prev;
-              c->prev = NULL;
-              goto L_RAISE;
-            }
+            c->status = MRB_FIBER_TERMINATED;
+            mrb->c = c->prev;
+            if (!mrb->c) mrb->c = mrb->root_c;
+            else c->prev = NULL;
+            goto L_RAISE;
           }
         }
 
@@ -2258,11 +2264,17 @@ RETRY_TRY_BLOCK:
             struct mrb_context *c;
             c = mrb->c;
 
-            if (!c->prev) { /* toplevel return */
-              regs[irep->nlocals] = v;
-              goto CHECKPOINT_LABEL_MAKE(RBREAK_TAG_STOP);
+            if (!c->prev) {
+              if (c != mrb->root_c) {
+                /* fiber termination should transfer to root */
+                c->prev = mrb->root_c;
+              }
+              else { /* toplevel return */
+                regs[irep->nlocals] = v;
+                goto CHECKPOINT_LABEL_MAKE(RBREAK_TAG_STOP);
+              }
             }
-            if (!c->vmexec && c->prev->ci == c->prev->cibase) {
+            else if (!c->vmexec && c->prev->ci == c->prev->cibase) {
               RAISE_LIT(mrb, E_FIBER_ERROR, "double resume");
             }
             CHECKPOINT_RESTORE(RBREAK_TAG_RETURN_TOPLEVEL) {
@@ -3097,7 +3109,6 @@ mrb_top_run(mrb_state *mrb, const struct RProc *proc, mrb_value self, mrb_int st
     return mrb_vm_run(mrb, proc, self, stack_keep);
   }
   if (mrb->c->ci == mrb->c->cibase) {
-    mrb_vm_ci_env_set(mrb->c->ci, NULL);
     return mrb_vm_run(mrb, proc, self, stack_keep);
   }
   cipush(mrb, 0, CINFO_SKIP, mrb->object_class, NULL, NULL, 0, 0);

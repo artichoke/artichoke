@@ -13207,7 +13207,6 @@ parser_update_cxt(parser_state *p, mrbc_context *cxt)
   }
 }
 
-void mrb_codedump_all(mrb_state*, struct RProc*);
 void mrb_parser_dump(mrb_state *mrb, node *tree, int offset);
 
 MRB_API void
@@ -13344,6 +13343,7 @@ mrbc_cleanup_local_variables(mrb_state *mrb, mrbc_context *c)
     c->syms = NULL;
     c->slen = 0;
   }
+  c->keep_lv = FALSE;
 }
 
 MRB_API void
