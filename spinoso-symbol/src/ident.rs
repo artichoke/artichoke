@@ -1343,8 +1343,7 @@ mod functionals {
         for &sym in IDENTS {
             assert!(
                 sym.parse::<IdentifierType>().is_ok(),
-                "'{}' should parse as a valid identifier, but did not.",
-                sym
+                "'{sym}' should parse as a valid identifier, but did not."
             );
         }
     }
