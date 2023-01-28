@@ -674,6 +674,8 @@ unsafe extern "C" fn mrb_byte_hash(s: *const u8, len: sys::mrb_int) -> u32 {
 }
 
 #[no_mangle]
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_sign_loss)]
 unsafe extern "C" fn mrb_byte_hash_step(s: *const u8, len: sys::mrb_int, mut hval: Wrapping<u32>) -> u32 {
     let slice = slice::from_raw_parts(s, len as usize);
     // FNV-1 hash each octet in the buffer

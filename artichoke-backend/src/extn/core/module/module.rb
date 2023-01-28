@@ -67,8 +67,6 @@ class Module
     end
     self
   end
-
-  alias attr attr_reader
 end
 
 def self.autoload(const, path); end

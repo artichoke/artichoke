@@ -516,7 +516,7 @@ class String
     end
     start = 0
     string = dup
-    self_len = self.bytesize
+    self_len = bytesize
     sep_len = separator.bytesize
     should_yield_subclass_instances = self.class != String
 
