@@ -3,6 +3,7 @@
 #![warn(clippy::cargo)]
 #![allow(unknown_lints)]
 #![warn(missing_docs)]
+#![allow(clippy::manual_let_else)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]
