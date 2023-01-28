@@ -100,7 +100,7 @@ pub fn run(binary_name: &str, call_args: &[&str]) -> Result<CommandOutput, Strin
     let output = Command::new(binary)
         .args(call_args.iter())
         .output()
-        .unwrap_or_else(|_| panic!("Failed to run ruby app {}", binary_name));
+        .unwrap_or_else(|_| panic!("Failed to run ruby app {binary_name}"));
 
     Ok(CommandOutput::new()
         .with_args(call_args)
