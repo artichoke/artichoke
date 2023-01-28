@@ -23,6 +23,18 @@ impl Convert<Option<i64>, Value> for Artichoke {
     }
 }
 
+impl TryConvert<Option<usize>, Value> for Artichoke {
+    type Error = Error;
+
+    fn try_convert(&self, value: Option<usize>) -> Result<Value, Self::Error> {
+        if let Some(value) = value {
+            self.try_convert(value)
+        } else {
+            Ok(Value::nil())
+        }
+    }
+}
+
 impl TryConvertMut<Option<Vec<u8>>, Value> for Artichoke {
     type Error = Error;
 
