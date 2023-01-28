@@ -3,6 +3,7 @@
 #![warn(clippy::cargo)]
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
+#![allow(clippy::manual_let_else)]
 #![allow(clippy::module_name_repetitions)]
 // TODO: warn on missing docs once crate is API-complete.
 // #![warn(missing_docs)]

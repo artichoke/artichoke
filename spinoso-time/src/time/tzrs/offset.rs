@@ -515,8 +515,7 @@ mod tests {
                     Offset::try_from(invalid_string).unwrap_err(),
                     TimeError::TzStringError(_)
                 ),
-                "Expected TimeError::TzStringError for {}",
-                invalid_string,
+                "Expected TimeError::TzStringError for {invalid_string}",
             );
         }
     }

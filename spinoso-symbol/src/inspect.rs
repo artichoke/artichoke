@@ -755,8 +755,7 @@ mod functionals {
             let inspect = Inspect::from(sym).collect::<String>();
             assert_eq!(
                 inspect, expected,
-                "Expected '{}', to be the result of '{}'.inspect; got '{}'",
-                expected, sym, inspect,
+                "Expected '{expected}', to be the result of '{sym}'.inspect; got '{inspect}'",
             );
         }
     }

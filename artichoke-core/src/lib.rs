@@ -2,6 +2,7 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![allow(unknown_lints)]
+#![allow(clippy::manual_let_else)]
 #![allow(clippy::module_name_repetitions)]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]

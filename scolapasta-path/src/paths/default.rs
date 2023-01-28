@@ -86,13 +86,11 @@ mod tests {
         for path in test_cases {
             assert!(
                 !is_explicit_relative(OsStr::new(path)),
-                "expected absolute path '{}' to NOT be explicit relative path",
-                path
+                "expected absolute path '{path}' to NOT be explicit relative path"
             );
             assert!(
                 !is_explicit_relative_bytes(path.as_bytes()),
-                "expected absolute path '{}' to NOT be explicit relative path",
-                path
+                "expected absolute path '{path}' to NOT be explicit relative path"
             );
         }
     }
@@ -103,13 +101,11 @@ mod tests {
         for path in test_cases {
             assert!(
                 !is_explicit_relative(OsStr::new(path)),
-                "expected relative path '{}' to NOT be explicit relative path",
-                path
+                "expected relative path '{path}' to NOT be explicit relative path"
             );
             assert!(
                 !is_explicit_relative_bytes(path.as_bytes()),
-                "expected relative path '{}' to NOT be explicit relative path",
-                path
+                "expected relative path '{path}' to NOT be explicit relative path"
             );
         }
     }
@@ -120,13 +116,11 @@ mod tests {
         for path in test_cases {
             assert!(
                 is_explicit_relative(OsStr::new(path)),
-                "expected relative path '{}' to be explicit relative path",
-                path
+                "expected relative path '{path}' to be explicit relative path"
             );
             assert!(
                 is_explicit_relative_bytes(path.as_bytes()),
-                "expected relative path '{}' to be explicit relative path",
-                path
+                "expected relative path '{path}' to be explicit relative path"
             );
         }
     }
@@ -137,13 +131,11 @@ mod tests {
         for path in test_cases {
             assert!(
                 !is_explicit_relative(OsStr::new(path)),
-                "expected path '{}' to NOT be explicit relative path",
-                path
+                "expected path '{path}' to NOT be explicit relative path"
             );
             assert!(
                 !is_explicit_relative_bytes(path.as_bytes()),
-                "expected path '{}' to NOT be explicit relative path",
-                path
+                "expected path '{path}' to NOT be explicit relative path"
             );
         }
     }
@@ -154,8 +146,7 @@ mod tests {
         for path in test_cases {
             assert!(
                 is_explicit_relative_bytes(path),
-                "expected invalid UTF-8 relative path '{:?}' to be explicit relative path",
-                path
+                "expected invalid UTF-8 relative path '{path:?}' to be explicit relative path"
             );
         }
     }
@@ -166,8 +157,7 @@ mod tests {
         for path in test_cases {
             assert!(
                 !is_explicit_relative_bytes(path),
-                "expected invalid UTF-8 path '{:?}' to NOT be explicit relative path",
-                path
+                "expected invalid UTF-8 path '{path:?}' to NOT be explicit relative path"
             );
         }
     }

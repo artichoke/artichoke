@@ -3,6 +3,7 @@
 #![warn(clippy::cargo)]
 #![cfg_attr(test, allow(clippy::non_ascii_literal))]
 #![allow(unknown_lints)]
+#![allow(clippy::manual_let_else)]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]

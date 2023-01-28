@@ -100,8 +100,7 @@ pub fn mrb_sys_state_debug(mrb: *mut mrb_state) -> String {
     // `fmt::Write` will never panic on its own.
     let _ = write!(
         &mut debug,
-        "{} {} (v{}.{}.{}) interpreter at {:p}",
-        engine, version, MRUBY_RELEASE_MAJOR, MRUBY_RELEASE_MINOR, MRUBY_RELEASE_TEENY, mrb
+        "{engine} {version} (v{MRUBY_RELEASE_MAJOR}.{MRUBY_RELEASE_MINOR}.{MRUBY_RELEASE_TEENY}) interpreter at {mrb:p}"
     );
     debug
 }
