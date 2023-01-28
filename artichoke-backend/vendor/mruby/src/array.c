@@ -10,15 +10,36 @@
 #include <mruby/string.h>
 #include <mruby/range.h>
 #include <mruby/proc.h>
+#include <mruby/internal.h>
 #include <mruby/presym.h>
 #include "value_array.h"
 
 #define ARY_DEFAULT_LEN   4
 #define ARY_SHRINK_RATIO  5 /* must be larger than 2 */
 #define ARY_C_MAX_SIZE (SIZE_MAX / sizeof(mrb_value))
+#ifndef MRB_ARY_LENGTH_MAX
+#define MRB_ARY_LENGTH_MAX 131072
+#endif
 #define ARY_MAX_SIZE ((mrb_int)((ARY_C_MAX_SIZE < (size_t)MRB_INT_MAX) ? ARY_C_MAX_SIZE : MRB_INT_MAX-1))
 
 #ifndef ARTICHOKE
+
+static void
+ary_too_big(mrb_state *mrb)
+{
+  mrb_raise(mrb, E_ARGUMENT_ERROR, "array size too big");
+}
+
+static inline void
+ary_check_too_big(mrb_state *mrb, mrb_int a, mrb_int b)
+{
+  if (a > ARY_MAX_SIZE - b || a < 0)
+    ary_too_big(mrb);
+#if MRB_ARY_LENGTH_MAX != 0
+  if (a > MRB_ARY_LENGTH_MAX - b || a < 0)
+    ary_too_big(mrb);
+#endif
+}
 
 static struct RArray*
 ary_new_capa(mrb_state *mrb, mrb_int capa)
@@ -26,9 +47,7 @@ ary_new_capa(mrb_state *mrb, mrb_int capa)
   struct RArray *a;
   size_t blen;
 
-  if (capa > ARY_MAX_SIZE) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "array size too big");
-  }
+  ary_check_too_big(mrb, capa, 0);
   blen = capa * sizeof(mrb_value);
 
   a = MRB_OBJ_ALLOC(mrb, MRB_TT_ARRAY, mrb->array_class);
@@ -102,10 +121,12 @@ MRB_API mrb_value
 mrb_assoc_new(mrb_state *mrb, mrb_value car, mrb_value cdr)
 {
   struct RArray *a;
+  mrb_value *p;
 
   a = ary_new_capa(mrb, 2);
-  ARY_PTR(a)[0] = car;
-  ARY_PTR(a)[1] = cdr;
+  p = ARY_PTR(a);
+  p[0] = car;
+  p[1] = cdr;
   ARY_SET_LEN(a, 2);
   return mrb_obj_value(a);
 }
@@ -120,11 +141,7 @@ ary_fill_with_nil(mrb_value *ptr, mrb_int size)
   }
 }
 
-static void
-ary_modify_check(mrb_state *mrb, struct RArray *a)
-{
-  mrb_check_frozen(mrb, a);
-}
+#define ary_modify_check(mrb, a) mrb_check_frozen((mrb), (a))
 
 static void
 ary_modify(mrb_state *mrb, struct RArray *a)
@@ -190,11 +207,7 @@ ary_expand_capa(mrb_state *mrb, struct RArray *a, mrb_int len)
 {
   mrb_int capa = ARY_CAPA(a);
 
-  if (len > ARY_MAX_SIZE || len < 0) {
-  size_error:
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "array size too big");
-  }
-
+  ary_check_too_big(mrb, len, 0);
   if (capa < ARY_DEFAULT_LEN) {
     capa = ARY_DEFAULT_LEN;
   }
@@ -207,7 +220,7 @@ ary_expand_capa(mrb_state *mrb, struct RArray *a, mrb_int len)
     }
   }
   if (capa < len || capa > ARY_MAX_SIZE) {
-    goto size_error;
+    ary_too_big(mrb);
   }
 
   if (ARY_EMBED_P(a)) {
@@ -304,9 +317,7 @@ ary_concat(mrb_state *mrb, struct RArray *a, struct RArray *a2)
     ary_replace(mrb, a, a2);
     return;
   }
-  if (ARY_LEN(a2) > ARY_MAX_SIZE - ARY_LEN(a)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "array size too big");
-  }
+  ary_check_too_big(mrb, ARY_LEN(a2), ARY_LEN(a));
   len = ARY_LEN(a) + ARY_LEN(a2);
 
   ary_modify(mrb, a);
@@ -326,13 +337,29 @@ mrb_ary_concat(mrb_state *mrb, mrb_value self, mrb_value other)
   ary_concat(mrb, mrb_ary_ptr(self), a2);
 }
 
+/*
+ *  call-seq:
+ *    array.concat(*other_arrays) -> self
+ *
+ *  Adds to +array+ all elements from each \Array in +other_arrays+; returns +self+:
+ *
+ *    a = [0, 1]
+ *    a.concat([2, 3], [4, 5]) # => [0, 1, 2, 3, 4, 5]
+ */
+
 static mrb_value
 mrb_ary_concat_m(mrb_state *mrb, mrb_value self)
 {
-  mrb_value ary;
+  mrb_value *args;
+  mrb_int len;
 
-  mrb_get_args(mrb, "A", &ary);
-  mrb_ary_concat(mrb, self, ary);
+  mrb_get_args(mrb, "*!", &args, &len);
+  for (int i=0; i<len; i++) {
+    mrb_ensure_array_type(mrb, args[i]);
+  }
+  for (int i=0; i<len; i++) {
+    mrb_ary_concat(mrb, self, args[i]);
+  }
   return self;
 }
 
@@ -345,9 +372,7 @@ mrb_ary_plus(mrb_state *mrb, mrb_value self)
   mrb_int blen, len1;
 
   mrb_get_args(mrb, "a", &ptr, &blen);
-  if (ARY_MAX_SIZE - blen < ARY_LEN(a1)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "array size too big");
-  }
+  ary_check_too_big(mrb, ARY_LEN(a1), blen);
   len1 = ARY_LEN(a1);
   a2 = ary_new_capa(mrb, len1 + blen);
   array_copy(ARY_PTR(a2), ARY_PTR(a1), len1);
@@ -427,8 +452,14 @@ mrb_ary_times(mrb_state *mrb, mrb_value self)
 {
   struct RArray *a1 = mrb_ary_ptr(self);
   struct RArray *a2;
-  mrb_value *ptr;
+  mrb_value *ptr, sep, tmp;
   mrb_int times, len1;
+
+  mrb_get_args(mrb, "o", &sep);
+  tmp = mrb_check_string_type(mrb, sep);
+  if (!mrb_nil_p(tmp)) {
+    return mrb_ary_join(mrb, self, tmp);
+  }
 
   mrb_get_args(mrb, "i", &times);
   if (times < 0) {
@@ -436,7 +467,7 @@ mrb_ary_times(mrb_state *mrb, mrb_value self)
   }
   if (times == 0) return mrb_ary_new(mrb);
   if (ARY_MAX_SIZE / times < ARY_LEN(a1)) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "array size too big");
+    ary_too_big(mrb);
   }
   len1 = ARY_LEN(a1);
   a2 = ary_new_capa(mrb, len1 * times);
@@ -514,15 +545,15 @@ mrb_ary_push_m(mrb_state *mrb, mrb_value self)
   mrb_int len, len2;
   struct RArray *a;
 
-  argc = mrb_get_argc(mrb);
-  argv = mrb_get_argv(mrb);
   a = mrb_ary_ptr(self);
   ary_modify(mrb, a);
+  argc = mrb_get_argc(mrb);
   len = ARY_LEN(a);
   len2 = len + argc;
   if (ARY_CAPA(a) < len2) {
     ary_expand_capa(mrb, a, len2);
   }
+  argv = mrb_get_argv(mrb);
   array_copy(ARY_PTR(a)+len, argv, argc);
   ARY_SET_LEN(a, len2);
   while (argc--) {
@@ -573,7 +604,7 @@ mrb_ary_shift(mrb_state *mrb, mrb_value self)
     val = *ptr;
     while (--size) {
       *ptr = *(ptr+1);
-      ++ptr;
+      ptr++;
     }
     ARY_SET_LEN(a, len-1);
   }
@@ -617,7 +648,7 @@ mrb_ary_shift_m(mrb_state *mrb, mrb_value self)
 
     while (size--) {
       *ptr = *(ptr+n);
-      ++ptr;
+      ptr++;
     }
     ARY_SET_LEN(a, len-n);
   }
@@ -656,6 +687,20 @@ mrb_ary_unshift(mrb_state *mrb, mrb_value self, mrb_value item)
   return self;
 }
 
+/*
+ *  call-seq:
+ *    array.unshift(*objects) -> self
+ *
+ *  Prepends the given +objects+ to +self+:
+ *
+ *    a = [:foo, 'bar', 2]
+ *    a.unshift(:bam, :bat) # => [:bam, :bat, :foo, "bar", 2]
+ *
+ *  Array#prepend is an alias for Array#unshift.
+ *
+ *  Related: #push, #pop, #shift.
+ */
+
 static mrb_value
 mrb_ary_unshift_m(mrb_state *mrb, mrb_value self)
 {
@@ -664,14 +709,15 @@ mrb_ary_unshift_m(mrb_state *mrb, mrb_value self)
   mrb_value *ptr;
   mrb_int alen, len;
 
-  mrb_get_args(mrb, "*!", &vals, &alen);
+  alen = mrb_get_argc(mrb);
+  vals = mrb_get_argv(mrb);
   if (alen == 0) {
     ary_modify_check(mrb, a);
     return self;
   }
   len = ARY_LEN(a);
   if (alen > ARY_MAX_SIZE - len) {
-    mrb_raise(mrb, E_ARGUMENT_ERROR, "array size too big");
+    ary_too_big(mrb);
   }
   if (ARY_SHARED_P(a)
       && a->as.heap.aux.shared->refcnt == 1 /* shared only referenced from this array */
@@ -711,6 +757,9 @@ mrb_ary_set(mrb_state *mrb, mrb_value ary, mrb_int n, mrb_value val)
     if (n < 0) {
       mrb_raisef(mrb, E_INDEX_ERROR, "index %i out of array", n - len);
     }
+  }
+  if (n >= ARY_MAX_SIZE) {
+    mrb_raise(mrb, E_INDEX_ERROR, "index too big");
   }
   if (len <= n) {
     if (ARY_CAPA(a) <= n)
@@ -836,7 +885,7 @@ ary_subseq(mrb_state *mrb, struct RArray *a, mrb_int beg, mrb_int len)
     return mrb_ary_new_from_values(mrb, len, ARY_PTR(a)+beg);
   }
   ary_make_shared(mrb, a);
-  b  = MRB_OBJ_ALLOC(mrb, MRB_TT_ARRAY, mrb->array_class);
+  b = MRB_OBJ_ALLOC(mrb, MRB_TT_ARRAY, mrb->array_class);
   b->as.heap.ptr = a->as.heap.ptr + beg;
   b->as.heap.len = len;
   b->as.heap.aux.shared = a->as.heap.aux.shared;
@@ -1005,7 +1054,7 @@ mrb_ary_aset(mrb_state *mrb, mrb_value self)
   return v3;
 }
 
-static mrb_value
+mrb_value
 mrb_ary_delete_at(mrb_state *mrb, mrb_value self)
 {
   struct RArray *a = mrb_ary_ptr(self);
@@ -1027,7 +1076,7 @@ mrb_ary_delete_at(mrb_state *mrb, mrb_value self)
   len = alen - index;
   while (--len) {
     *ptr = *(ptr+1);
-    ++ptr;
+    ptr++;
   }
   ARY_SET_LEN(a, alen-1);
 

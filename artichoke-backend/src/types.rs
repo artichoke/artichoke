@@ -9,10 +9,11 @@ use crate::sys;
 #[must_use]
 pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
     use sys::mrb_vtype::{
-        MRB_TT_ARRAY, MRB_TT_BREAK, MRB_TT_CLASS, MRB_TT_COMPLEX, MRB_TT_CPTR, MRB_TT_DATA, MRB_TT_ENV,
-        MRB_TT_EXCEPTION, MRB_TT_FALSE, MRB_TT_FIBER, MRB_TT_FLOAT, MRB_TT_FREE, MRB_TT_HASH, MRB_TT_ICLASS,
-        MRB_TT_INTEGER, MRB_TT_ISTRUCT, MRB_TT_MAXDEFINE, MRB_TT_MODULE, MRB_TT_OBJECT, MRB_TT_PROC, MRB_TT_RANGE,
-        MRB_TT_RATIONAL, MRB_TT_SCLASS, MRB_TT_STRING, MRB_TT_STRUCT, MRB_TT_SYMBOL, MRB_TT_TRUE, MRB_TT_UNDEF,
+        MRB_TT_ARRAY, MRB_TT_BIGINT, MRB_TT_BREAK, MRB_TT_CDATA, MRB_TT_CLASS, MRB_TT_COMPLEX, MRB_TT_CPTR,
+        MRB_TT_ENV, MRB_TT_EXCEPTION, MRB_TT_FALSE, MRB_TT_FIBER, MRB_TT_FLOAT, MRB_TT_FREE, MRB_TT_HASH,
+        MRB_TT_ICLASS, MRB_TT_INTEGER, MRB_TT_ISTRUCT, MRB_TT_MAXDEFINE, MRB_TT_MODULE, MRB_TT_OBJECT, MRB_TT_PROC,
+        MRB_TT_RANGE, MRB_TT_RATIONAL, MRB_TT_SCLASS, MRB_TT_STRING, MRB_TT_STRUCT, MRB_TT_SYMBOL, MRB_TT_TRUE,
+        MRB_TT_UNDEF,
     };
 
     // Suppress lint to enumerate match arms in the same order they are defined
@@ -73,10 +74,10 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         // NOTE(lopopolo): This might be an internal closure symbol table,
         // rather than the `ENV` core object.
         MRB_TT_ENV => Ruby::Unreachable,
-        // `MRB_TT_DATA` is a type tag for wrapped C pointers. It is used
+        // `MRB_TT_CDATA` is a type tag for wrapped C pointers. It is used
         // to indicate that an `mrb_value` has an owned pointer to an
         // external data structure stored in its `value.p` field.
-        MRB_TT_DATA => Ruby::Data,
+        MRB_TT_CDATA => Ruby::Data,
         // NOTE(lopopolo): `Fiber`s are unimplemented in Artichoke.
         MRB_TT_FIBER => Ruby::Fiber,
         MRB_TT_STRUCT => Ruby::Unreachable,
@@ -96,6 +97,7 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         MRB_TT_BREAK => Ruby::Unreachable,
         MRB_TT_COMPLEX => Ruby::Unreachable,
         MRB_TT_RATIONAL => Ruby::Unreachable,
+        MRB_TT_BIGINT => Ruby::Unreachable,
         // `MRB_TT_MAXDEFINE` is a marker enum value used by the mruby VM to
         // dynamically check if a type tag is valid using the less than
         // operator. It does not correspond to an instantiated type.

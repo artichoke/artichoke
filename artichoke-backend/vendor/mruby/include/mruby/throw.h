@@ -7,10 +7,8 @@
 #ifndef MRB_THROW_H
 #define MRB_THROW_H
 
-#if defined(MRB_USE_CXX_ABI)
-# if !defined(__cplusplus)
+#if defined(MRB_USE_CXX_ABI) && !defined(__cplusplus)
 #  error Trying to use C++ exception handling in C code
-# endif
 #endif
 
 #if defined(MRB_USE_CXX_EXCEPTION)
@@ -52,14 +50,15 @@ typedef mrb_int mrb_jmpbuf_impl;
 
 #endif
 
+#if defined(MRB_USE_CXX_EXCEPTION)
+extern mrb_int mrb_jmpbuf_id;
+#endif
+
 struct mrb_jmpbuf {
   mrb_jmpbuf_impl impl;
 
 #if defined(MRB_USE_CXX_EXCEPTION)
-  static mrb_int jmpbuf_id;
-# if defined(__cplusplus)
-  mrb_jmpbuf() : impl(jmpbuf_id++) {}
-# endif
+  mrb_jmpbuf() : impl(mrb_jmpbuf_id++) {}
 #endif
 };
 

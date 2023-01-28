@@ -282,15 +282,23 @@ class Hash
     h
   end
 
-  def merge!(other, &block)
-    raise TypeError, "Hash required (#{other.class} given)" unless other.is_a?(Hash)
+  def merge!(*others, &block)
+    i = 0
+    len = others.size
+    return __merge(*others) unless block
 
-    if block
-      other.each_key do |k|
-        self[k] = key?(k) ? block.call(k, self[k], other[k]) : other[k]
+    while i < len
+      other = others[i]
+      i += 1
+      raise TypeError, "Hash required (#{other.class} given)" unless other.is_a?(Hash)
+
+      if block
+        other.each_key do |k|
+          self[k] = key?(k) ? block.call(k, self[k], other[k]) : other[k]
+        end
+      else
+        other.each_key { |k| self[k] = other[k] }
       end
-    else
-      other.each_key { |k| self[k] = other[k] }
     end
     self
   end

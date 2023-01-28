@@ -5,12 +5,6 @@ class IOError < StandardError; end
 class EOFError < IOError; end
 
 class IO
-  SEEK_SET = 0
-  SEEK_CUR = 1
-  SEEK_END = 2
-
-  BUF_SIZE = 4096
-
   def self.open(*args, &block)
     io = self.new(*args)
 
@@ -66,12 +60,8 @@ class IO
     fd = -1
     io = nil
     begin
-      if path[0] == "|"
-        io = IO.popen(path[1..-1], mode)
-      else
-        fd = IO.sysopen(path, mode)
-        io = IO.open(fd, mode)
-      end
+      fd = IO.sysopen(path, mode)
+      io = IO.open(fd, mode)
       io.seek(offset) if offset > 0
       str = io.read(length)
     ensure
@@ -84,27 +74,10 @@ class IO
     str
   end
 
-  def flush
-    # mruby-io always writes immediately (no output buffer).
-    raise IOError, "closed stream" if self.closed?
-    self
-  end
-
   def hash
     # We must define IO#hash here because IO includes Enumerable and
-    # Enumerable#hash will call IO#read...
+    # Enumerable#hash will call IO#read() otherwise
     self.__id__
-  end
-
-  def write(string)
-    str = string.is_a?(String) ? string : string.to_s
-    return 0 if str.empty?
-    unless @buf.empty?
-      # reset real pos ignore buf
-      seek(pos, SEEK_SET)
-    end
-    len = syswrite(str)
-    len
   end
 
   def <<(str)
@@ -121,12 +94,8 @@ class IO
       return true
     end
   end
-  alias_method :eof, :eof?
 
-  def pos
-    raise IOError if closed?
-    sysseek(0, SEEK_CUR) - @buf.bytesize
-  end
+  alias_method :eof, :eof?
   alias_method :tell, :pos
 
   def pos=(i)
@@ -135,28 +104,6 @@ class IO
 
   def rewind
     seek(0, SEEK_SET)
-  end
-
-  def seek(i, whence = SEEK_SET)
-    raise IOError if closed?
-    sysseek(i, whence)
-    @buf = ''
-    0
-  end
-
-  def _read_buf
-    return @buf if @buf && @buf.bytesize > 0
-    sysread(BUF_SIZE, @buf)
-  end
-
-  def ungetc(substr)
-    raise TypeError.new "expect String, got #{substr.class}" unless substr.is_a?(String)
-    if @buf.empty?
-      @buf.replace(substr)
-    else
-      @buf[0,0] = substr
-    end
-    nil
   end
 
   def ungetbyte(c)
@@ -267,22 +214,12 @@ class IO
     end
   end
 
-  def readchar
-    _read_buf
-    _readchar(@buf)
-  end
-
   def getc
     begin
       readchar
     rescue EOFError
       nil
     end
-  end
-
-  def readbyte
-    _read_buf
-    IO._bufread(@buf, 1).getbyte(0)
   end
 
   def getbyte

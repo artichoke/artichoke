@@ -5,7 +5,7 @@
 /***********************************************************************
 
   Routine for converting a single-precision
-  floating point number into a string.
+  floating-point number into a string.
 
   The code in this function was inspired from Fred Bayer's pdouble.c.
   Since pdouble.c was released as Public Domain, I'm releasing this
@@ -78,7 +78,7 @@ static const mrb_float g_neg_pow[] = {
 int
 mrb_format_float(mrb_float f, char *buf, size_t buf_size, char fmt, int prec, char sign) {
   char *s = buf;
-  int buf_remaining = buf_size - 1;
+  int buf_remaining = (int)buf_size - 1;
   int alt_form = 0;
 
   if ((uint8_t)fmt & 0x80) {
@@ -103,7 +103,7 @@ mrb_format_float(mrb_float f, char *buf, size_t buf_size, char fmt, int prec, ch
   } else if (sign) {
     *s++ = sign;
   }
-  buf_remaining -= (s - buf); // Adjust for sign
+  buf_remaining -= (int)(s - buf); // Adjust for sign
 
   {
     char uc = fmt & 0x20;
@@ -118,7 +118,7 @@ mrb_format_float(mrb_float f, char *buf, size_t buf_size, char fmt, int prec, ch
       *s++ = 'N' ^ uc;
     ret:
       *s = '\0';
-      return s - buf;
+      return (int)(s - buf);
     }
   }
 
@@ -254,7 +254,7 @@ mrb_format_float(mrb_float f, char *buf, size_t buf_size, char fmt, int prec, ch
     prec = 0;
   }
 
-  // We now have f as a floating point number between >= 1 and < 10
+  // We now have f as a floating-point number between >= 1 and < 10
   // (or equal to zero), and e contains the absolute value of the power of
   // 10 exponent. and (dec + 1) == the number of dgits before the decimal.
 
@@ -275,7 +275,7 @@ mrb_format_float(mrb_float f, char *buf, size_t buf_size, char fmt, int prec, ch
   }
 
   // Print the digits of the mantissa
-  for (int i = 0; i < num_digits; ++i, --dec) {
+  for (int i = 0; i < num_digits; i++,dec--) {
     int8_t d = (int8_t)((int)f)%10;
     *s++ = '0' + d;
     if (dec == 0 && (prec > 0 || alt_form)) {
@@ -358,6 +358,6 @@ mrb_format_float(mrb_float f, char *buf, size_t buf_size, char fmt, int prec, ch
   }
   *s = '\0';
 
-  return s - buf;
+  return (int)(s - buf);
 }
 #endif

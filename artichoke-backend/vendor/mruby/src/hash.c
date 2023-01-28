@@ -11,6 +11,7 @@
 #include <mruby/hash.h>
 #include <mruby/string.h>
 #include <mruby/variable.h>
+#include <mruby/internal.h>
 #include <mruby/presym.h>
 
 /*
@@ -169,7 +170,7 @@ DEFINE_SWITCHER(ht, HT)
 
 #define ea_each_used(ea, n_used, entry_var, code) do {                        \
   hash_entry *entry_var = ea, *ea_end__ = entry_var + (n_used);               \
-  for (; entry_var < ea_end__; ++entry_var) {                                 \
+  for (; entry_var < ea_end__; entry_var++) {                                 \
     code;                                                                     \
   }                                                                           \
 } while (0)
@@ -177,7 +178,7 @@ DEFINE_SWITCHER(ht, HT)
 #define ea_each(ea, size, entry_var, code) do {                               \
   hash_entry *entry_var = ea;                                                 \
   uint32_t size__ = size;                                                     \
-  for (; 0 < size__; ++entry_var) {                                           \
+  for (; 0 < size__; entry_var++) {                                           \
     if (entry_deleted_p(entry_var)) continue;                                 \
     --size__;                                                                 \
     code;                                                                     \
@@ -293,6 +294,7 @@ static uint32_t ib_bit_to_capa(uint32_t bit);
 static void ht_init(
   mrb_state *mrb, struct RHash *h, uint32_t size,
   hash_entry *ea, uint32_t ea_capa, hash_table *ht, uint32_t ib_bit);
+static void ht_set(mrb_state *mrb, struct RHash *h, mrb_value key, mrb_value val);
 static void ht_set_without_ib_adjustment(
   mrb_state *mrb, struct RHash *h, mrb_value key, mrb_value val);
 
@@ -308,7 +310,7 @@ next_power2(uint32_t v)
   v |= v >> 4;
   v |= v >> 8;
   v |= v >> 16;
-  ++v;
+  v++;
   return v;
 #endif
 }
@@ -424,7 +426,7 @@ ea_compress(hash_entry *ea, uint32_t n_used)
   ea_each_used(ea, n_used, r_entry, {
     if (entry_deleted_p(r_entry)) continue;
     if (r_entry != w_entry) *w_entry = *r_entry;
-    ++w_entry;
+    w_entry++;
   });
 }
 
@@ -530,9 +532,8 @@ ar_set(mrb_state *mrb, struct RHash *h, mrb_value key, mrb_value val)
     if (ea_capa == ea_n_used) {
       if (size == ea_n_used) {
         if (size == AR_MAX_SIZE) {
-          hash_entry *ea = ea_adjust(mrb, ar_ea(h), &ea_capa, EA_MAX_CAPA);
-          ea_set(ea, ea_n_used, key, val);
-          ht_init(mrb, h, ++size, ea, ea_capa, NULL, IB_INIT_BIT);
+          ht_init(mrb, h, size, ar_ea(h), ea_capa, NULL, IB_INIT_BIT);
+          ht_set(mrb, h, key, val);
           return;
         }
         else {
@@ -591,7 +592,7 @@ ar_rehash(mrb_state *mrb, struct RHash *h)
         ea_set(ea, w_size, r_entry->key, r_entry->val);
         entry_delete(r_entry);
       }
-      ++w_size;
+      w_size++;
     }
   });
   mrb_assert(size == w_size);
@@ -783,8 +784,9 @@ ht_init(mrb_state *mrb, struct RHash *h, uint32_t size,
 {
   size_t ib_byte_size = ib_byte_size_for(ib_bit);
   size_t ht_byte_size = sizeof(hash_table) + ib_byte_size;
+  ht = (hash_table*)mrb_realloc(mrb, ht, ht_byte_size);
   h_ht_on(h);
-  h_set_ht(h, (hash_table*)mrb_realloc(mrb, ht, ht_byte_size));
+  h_set_ht(h, ht);
   ht_set_size(h, size);
   ht_set_ea(h, ea);
   ht_set_ea_capa(h, ea_capa);
@@ -1745,6 +1747,19 @@ mrb_hash_merge(mrb_state *mrb, mrb_value hash1, mrb_value hash2)
   });
 }
 
+static mrb_value
+mrb_hash_merge_m(mrb_state *mrb, mrb_value hash)
+{
+  mrb_int argc;
+  mrb_value *argv;
+
+  mrb_get_args(mrb, "*", &argv, &argc);
+  while (argc--) {
+    mrb_hash_merge(mrb, hash, *argv++);
+  }
+  return hash;
+}
+
 /*
  *  call-seq:
  *    hsh.rehash -> hsh
@@ -1805,4 +1820,5 @@ mrb_init_hash(mrb_state *mrb)
   mrb_define_method(mrb, h, "value?",          mrb_hash_has_value,   MRB_ARGS_REQ(1)); /* 15.2.13.4.27 */
   mrb_define_method(mrb, h, "values",          mrb_hash_values,      MRB_ARGS_NONE()); /* 15.2.13.4.28 */
   mrb_define_method(mrb, h, "rehash",          mrb_hash_rehash,      MRB_ARGS_NONE());
+  mrb_define_method(mrb, h, "__merge",         mrb_hash_merge_m,     MRB_ARGS_REQ(1));
 }

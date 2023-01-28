@@ -49,7 +49,7 @@ mrb_proc_inspect(mrb_state *mrb, mrb_value self)
     const mrb_irep *irep = p->body.irep;
     const char *filename;
     int32_t line;
-    mrb_str_cat_lit(mrb, str, "@");
+    mrb_str_cat_lit(mrb, str, " ");
 
     filename = mrb_debug_get_filename(mrb, irep, 0);
     mrb_str_cat_cstr(mrb, str, filename ? filename : "-");
@@ -99,13 +99,13 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
     mrb_sym name;
     int size;
   } *p, parameters_list [] = {
-    {MRB_SYM(req),   0},
-    {MRB_SYM(opt),   0},
-    {MRB_SYM(rest),  0},
-    {MRB_SYM(req),   0},
-    {MRB_SYM(keyrest),   0},
-    {MRB_SYM(block), 0},
-    {MRB_SYM(key),   0},
+    {MRB_SYM(req),    0},
+    {MRB_SYM(opt),    0},
+    {MRB_SYM(rest),   0},
+    {MRB_SYM(req),    0},
+    {MRB_SYM(keyrest),0},
+    {MRB_SYM(block),  0},
+    {MRB_SYM(key),    0},
     {0, 0}
   };
   const struct RProc *proc = mrb_proc_ptr(self);
@@ -115,20 +115,14 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
   mrb_value krest = mrb_nil_value();
   mrb_value block = mrb_nil_value();
   int i, j;
-  int max = -1;
+  int max = 0;
 
   if (MRB_PROC_CFUNC_P(proc)) {
     // TODO cfunc aspec is not implemented yet
     return mrb_ary_new(mrb);
   }
   irep = proc->body.irep;
-  if (!irep) {
-    return mrb_ary_new(mrb);
-  }
-  if (!irep->lv) {
-    return mrb_ary_new(mrb);
-  }
-  if (*irep->iseq != OP_ENTER) {
+  if (!irep || !irep->lv || *irep->iseq != OP_ENTER) {
     return mrb_ary_new(mrb);
   }
 
@@ -146,9 +140,11 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
   parameters_list[5].size = MRB_ASPEC_BLOCK(aspec);
   parameters_list[6].size = MRB_ASPEC_KEY(aspec);
 
-  parameters = mrb_ary_new_capa(mrb, irep->nlocals-1);
+  for (i = 0; parameters_list[i].name; i++) {
+    max += parameters_list[i].size;
+  }
+  parameters = mrb_ary_new_capa(mrb, max);
 
-  max = irep->nlocals-1;
   for (i = 0, p = parameters_list; p->name; p++) {
     mrb_value sname = mrb_symbol_value(p->name);
 
@@ -158,15 +154,7 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
       a = mrb_ary_new(mrb);
       mrb_ary_push(mrb, a, sname);
       if (i < max && irep->lv[i]) {
-        mrb_sym sym = irep->lv[i];
-        const char *name = mrb_sym_name(mrb, sym);
-        switch (name[0]) {
-        case '*': case '&':
-          break;
-        default:
-          mrb_ary_push(mrb, a, mrb_symbol_value(sym));
-          break;
-        }
+        mrb_ary_push(mrb, a, mrb_symbol_value(irep->lv[i]));
       }
       if (p->name == MRB_SYM(block)) {
         block = a; continue;
@@ -176,6 +164,8 @@ mrb_proc_parameters(mrb_state *mrb, mrb_value self)
       }
       mrb_ary_push(mrb, parameters, a);
     }
+    /* need to skip empty block slot */
+    if (p->size == 0 && p->name == MRB_SYM(block)) i++;
   }
   if (!mrb_nil_p(krest)) mrb_ary_push(mrb, parameters, krest);
   if (!mrb_nil_p(block)) mrb_ary_push(mrb, parameters, block);

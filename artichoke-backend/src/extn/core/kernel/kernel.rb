@@ -1,6 +1,15 @@
 # frozen_string_literal: true
 
 module Kernel
+  def extend(*args)
+    args.reverse!
+    args.each do |m|
+      m.extend_object(self)
+      m.extended(self)
+    end
+    self
+  end
+
   # Setup a catch block and wait for an object to be thrown, the
   # catch end without catching anything.
   #

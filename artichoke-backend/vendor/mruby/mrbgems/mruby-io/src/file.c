@@ -261,7 +261,7 @@ mrb_file_realpath(mrb_state *mrb, mrb_value klass)
   result = mrb_str_new_capa(mrb, PATH_MAX);
   if (realpath(cpath, RSTRING_PTR(result)) == NULL) {
     mrb_locale_free(cpath);
-    mrb_sys_fail(mrb, cpath);
+    mrb_sys_fail(mrb, RSTRING_CSTR(mrb, pathname));
     return result;              /* not reached */
   }
   mrb_locale_free(cpath);
@@ -594,7 +594,7 @@ mrb_init_file(mrb_state *mrb)
 
   io   = mrb_class_get_id(mrb, MRB_SYM(IO));
   file = mrb_define_class(mrb, "File", io);
-  MRB_SET_INSTANCE_TT(file, MRB_TT_DATA);
+  MRB_SET_INSTANCE_TT(file, MRB_TT_CDATA);
   mrb_define_class_method(mrb, file, "umask",  mrb_file_s_umask, MRB_ARGS_OPT(1));
   mrb_define_class_method(mrb, file, "delete", mrb_file_s_unlink, MRB_ARGS_ANY());
   mrb_define_class_method(mrb, file, "unlink", mrb_file_s_unlink, MRB_ARGS_ANY());

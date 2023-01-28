@@ -1,6 +1,7 @@
 use core::char;
 use core::convert::TryFrom;
 use core::hash::{BuildHasher, Hash, Hasher};
+use core::num::Wrapping;
 use core::ptr;
 use core::slice;
 use core::str;
@@ -654,6 +655,38 @@ unsafe extern "C" fn mrb_str_hash(mrb: *mut sys::mrb_state, s: sys::mrb_value) -
     #[allow(clippy::cast_possible_truncation)]
     let hash = hasher.finish() as u32;
     hash
+}
+
+// ```c
+// #define FNV_32_PRIME ((uint32_t)0x01000193)
+// #define FNV1_32_INIT ((uint32_t)0x811c9dc5)
+//
+// uint32_t mrb_byte_hash(const uint8_t*, mrb_int);
+// uint32_t mrb_byte_hash_step(const uint8_t*, mrb_int, uint32_t);
+// ```
+
+const FNV_32_PRIME: Wrapping<u32> = Wrapping(0x0100_0193);
+const FNV1_32_INIT: Wrapping<u32> = Wrapping(0x811c_9dc5);
+
+#[no_mangle]
+unsafe extern "C" fn mrb_byte_hash(s: *const u8, len: sys::mrb_int) -> u32 {
+    mrb_byte_hash_step(s, len, FNV1_32_INIT)
+}
+
+#[no_mangle]
+#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_sign_loss)]
+unsafe extern "C" fn mrb_byte_hash_step(s: *const u8, len: sys::mrb_int, mut hval: Wrapping<u32>) -> u32 {
+    let slice = slice::from_raw_parts(s, len as usize);
+    // FNV-1 hash each octet in the buffer
+    for &byte in slice {
+        // multiply by the 32 bit FNV magic prime mod 2^32
+        hval *= FNV_32_PRIME;
+        // xor the bottom with the current octet
+        hval ^= u32::from(byte);
+    }
+    // return our new hash value
+    hval.0
 }
 
 #[no_mangle]

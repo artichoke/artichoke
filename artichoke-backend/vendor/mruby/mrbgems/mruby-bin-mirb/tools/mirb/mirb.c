@@ -18,6 +18,7 @@
 #include <mruby/dump.h>
 #include <mruby/string.h>
 #include <mruby/variable.h>
+#include <mruby/error.h>
 #include <mruby/presym.h>
 
 #include <stdlib.h>
@@ -519,7 +520,7 @@ main(int argc, char **argv)
     fclose(lfp);
     e = mrb_vm_ci_env(mrb->c->cibase);
     mrb_vm_ci_env_set(mrb->c->cibase, NULL);
-    mrb_env_unshare(mrb, e);
+    mrb_env_unshare(mrb, e, FALSE);
     mrbc_cleanup_local_variables(mrb, cxt);
   }
 
@@ -674,6 +675,7 @@ main(int argc, char **argv)
         stack_keep = proc->body.irep->nlocals;
         /* did an exception occur? */
         if (mrb->exc) {
+          MRB_EXC_CHECK_EXIT(mrb, mrb->exc);
           p(mrb, mrb_obj_value(mrb->exc), 0);
           mrb->exc = 0;
         }
@@ -704,7 +706,7 @@ main(int argc, char **argv)
   if (args.rfp) fclose(args.rfp);
   mrb_free(mrb, args.argv);
   if (args.libv) {
-    for (i = 0; i < args.libc; ++i) {
+    for (i = 0; i < args.libc; i++) {
       mrb_free(mrb, args.libv[i]);
     }
     mrb_free(mrb, args.libv);

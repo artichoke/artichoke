@@ -100,9 +100,13 @@ struct mrb_state;
 # define MRB_ENDIAN_LOHI(a,b) b a
 #endif
 
-MRB_API mrb_int mrb_int_read(const char *p, const char *e, char **endp);
+MRB_API mrb_bool mrb_read_int(const char *p, const char *e, char **endp, mrb_int *np);
+/* obsolete; do not use mrb_int_read() */
+MRB_API mrb_int mrb_int_read(const char*, const char*, char**);
 #ifndef MRB_NO_FLOAT
-MRB_API double mrb_float_read(const char*, char**);
+MRB_API mrb_bool mrb_read_float(const char *p, char **endp, double *fp);
+/* obsolete; do not use mrb_float_read() */
+MRB_API double mrb_float_read(const char *p, char **endp);
 #ifdef MRB_USE_FLOAT32
   typedef float mrb_float;
 #else
@@ -148,13 +152,14 @@ static const unsigned int IEEE754_INFINITY_BITS_SINGLE = 0x7F800000;
   f(MRB_TT_RANGE,       struct RRange,      "Range") \
   f(MRB_TT_EXCEPTION,   struct RException,  "Exception") \
   f(MRB_TT_ENV,         struct REnv,        "env") \
-  f(MRB_TT_DATA,        struct RData,       "Data") \
+  f(MRB_TT_CDATA,       struct RData,       "C data") \
   f(MRB_TT_FIBER,       struct RFiber,      "Fiber") \
   f(MRB_TT_STRUCT,      struct RArray,      "Struct") \
   f(MRB_TT_ISTRUCT,     struct RIStruct,    "istruct") \
   f(MRB_TT_BREAK,       struct RBreak,      "break") \
   f(MRB_TT_COMPLEX,     struct RComplex,    "Complex") \
-  f(MRB_TT_RATIONAL,    struct RRational,   "Rational")
+  f(MRB_TT_RATIONAL,    struct RRational,   "Rational") \
+  f(MRB_TT_BIGINT,      struct RBigint,     "Integer")
 
 enum mrb_vtype {
 #define MRB_VTYPE_DEFINE(tt, type, name) tt,
@@ -162,6 +167,9 @@ enum mrb_vtype {
 #undef MRB_VTYPE_DEFINE
   MRB_TT_MAXDEFINE
 };
+
+/* obsolete name for MRB_TT_CDATA */
+#define MRB_TT_DATA MRB_TT_CDATA
 
 #define MRB_VTYPE_TYPEOF(tt) MRB_TYPEOF_##tt
 
@@ -182,8 +190,8 @@ MRB_VTYPE_FOREACH(MRB_VTYPE_TYPEDEF)
  *
  * Actual implementation depends on configured boxing type.
  *
- * @see mruby/boxing_no.h Default boxing representation
- * @see mruby/boxing_word.h Word representation
+ * @see mruby/boxing_word.h Word boxing representation (Default)
+ * @see mruby/boxing_no.h No boxing representation
  * @see mruby/boxing_nan.h Boxed double representation
  */
 typedef void mrb_value;
@@ -237,9 +245,11 @@ struct RCptr {
 #ifndef mrb_true_p
 #define mrb_true_p(o)  (mrb_type(o) == MRB_TT_TRUE)
 #endif
-#ifndef MRB_NO_FLOAT
 #ifndef mrb_float_p
+#ifndef MRB_NO_FLOAT
 #define mrb_float_p(o) (mrb_type(o) == MRB_TT_FLOAT)
+#else
+#define mrb_float_p(o) FALSE
 #endif
 #endif
 #ifndef mrb_array_p
@@ -285,7 +295,7 @@ struct RCptr {
 #define mrb_env_p(o) (mrb_type(o) == MRB_TT_ENV)
 #endif
 #ifndef mrb_data_p
-#define mrb_data_p(o) (mrb_type(o) == MRB_TT_DATA)
+#define mrb_data_p(o) (mrb_type(o) == MRB_TT_CDATA)
 #endif
 #ifndef mrb_fiber_p
 #define mrb_fiber_p(o) (mrb_type(o) == MRB_TT_FIBER)
@@ -300,6 +310,9 @@ struct RCptr {
 #define mrb_bool(o)   (mrb_type(o) != MRB_TT_FALSE)
 #endif
 #define mrb_test(o)   mrb_bool(o)
+#ifndef mrb_bigint_p
+#define mrb_bigint_p(o) (mrb_type(o) == MRB_TT_BIGINT)
+#endif
 
 /**
  * Returns a float in Ruby.
@@ -355,8 +368,6 @@ mrb_obj_value(void *p)
 {
   mrb_value v;
   SET_OBJ_VALUE(v, (struct RBasic*)p);
-  mrb_assert(p == mrb_ptr(v));
-  mrb_assert(((struct RBasic*)p)->tt == mrb_type(v));
   return v;
 }
 
@@ -424,10 +435,20 @@ mrb_ro_data_p(const char *p)
 #elif defined(__APPLE__)
 #define MRB_LINK_TIME_RO_DATA_P
 #include <mach-o/getsect.h>
+#include <crt_externs.h> // for _NSGetMachExecuteHeader
 static inline mrb_bool
 mrb_ro_data_p(const char *p)
 {
-  return (char*)get_etext() < p && p < (char*)get_edata();
+#ifdef __LP64__
+  struct mach_header_64 *mhp;
+#else
+  struct mach_header *mhp;
+#endif
+  mhp = _NSGetMachExecuteHeader();
+  unsigned long textsize, datasize;
+  char *text = (char*)getsegmentdata(mhp, SEG_TEXT, &textsize);
+  char *data = (char*)getsegmentdata(mhp, SEG_DATA, &datasize);
+  return text + textsize < p && p < data + datasize;
 }
 #endif  /* Linux or macOS */
 #endif  /* MRB_NO_DEFAULT_RO_DATA_P */

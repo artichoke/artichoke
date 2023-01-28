@@ -362,9 +362,13 @@ range_num_to_a(mrb_state *mrb, mrb_value range)
       mrb_int len;
 
       if (mrb_int_sub_overflow(b, a, &len)) {
+      too_long:
         mrb_raise(mrb, E_RANGE_ERROR, "integer range too long");
       }
-      if (!RANGE_EXCL(r)) len++;
+      if (!RANGE_EXCL(r)) {
+        if (len == MRB_INT_MAX) goto too_long;
+        len++;
+      }
       ary = mrb_ary_new_capa(mrb, len);
       for (mrb_int i=0; i<len; i++) {
         mrb_ary_push(mrb, ary, mrb_int_value(mrb, a+i));
@@ -403,17 +407,17 @@ mrb_get_values_at(mrb_state *mrb, mrb_value obj, mrb_int olen, mrb_int argc, con
   mrb_value result;
   result = mrb_ary_new(mrb);
 
-  for (i = 0; i < argc; ++i) {
+  for (i = 0; i < argc; i++) {
     if (mrb_integer_p(argv[i])) {
       mrb_ary_push(mrb, result, func(mrb, obj, mrb_integer(argv[i])));
     }
     else if (mrb_range_beg_len(mrb, argv[i], &beg, &len, olen, FALSE) == MRB_RANGE_OK) {
       mrb_int const end = olen < beg + len ? olen : beg + len;
-      for (j = beg; j < end; ++j) {
+      for (j = beg; j < end; j++) {
         mrb_ary_push(mrb, result, func(mrb, obj, j));
       }
 
-      for (; j < beg + len; ++j) {
+      for (; j < beg + len; j++) {
         mrb_ary_push(mrb, result, mrb_nil_value());
       }
     }

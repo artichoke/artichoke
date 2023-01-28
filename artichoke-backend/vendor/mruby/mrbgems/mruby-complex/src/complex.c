@@ -1,6 +1,7 @@
 #include <mruby.h>
 #include <mruby/class.h>
 #include <mruby/numeric.h>
+#include <mruby/internal.h>
 #include <mruby/presym.h>
 
 #ifdef MRB_NO_FLOAT
@@ -45,6 +46,8 @@ struct RComplex {
 #define complex_ptr(mrb, v) (&((struct RComplex*)mrb_obj_ptr(v))->r)
 #endif
 
+mrb_static_assert_object_size(struct RComplex);
+
 static struct RBasic*
 complex_alloc(mrb_state *mrb, struct RClass *c, struct mrb_complex **p)
 {
@@ -81,6 +84,15 @@ mrb_complex_new(mrb_state *mrb, mrb_float real, mrb_float imaginary)
 }
 
 #define complex_new(mrb, real, imag) mrb_complex_new(mrb, real, imag)
+
+void
+mrb_complex_copy(mrb_state *mrb, mrb_value x, mrb_value y)
+{
+  struct mrb_complex *p1 = complex_ptr(mrb, x);
+  struct mrb_complex *p2 = complex_ptr(mrb, y);
+  p1->real = p2->real;
+  p1->imaginary = p2->imaginary;
+}
 
 static mrb_value
 complex_real(mrb_state *mrb, mrb_value self)
@@ -122,9 +134,18 @@ mrb_complex_to_i(mrb_state *mrb, mrb_value self)
 {
   struct mrb_complex *p = complex_ptr(mrb, self);
 
+#ifdef MRB_USE_BIGINT
   if (p->imaginary != 0) {
     mrb_raisef(mrb, E_RANGE_ERROR, "can't convert %v into Integer", self);
   }
+  if (!FIXABLE_FLOAT(p->real)) {
+    return mrb_bint_new_float(mrb, p->real);
+  }
+#else
+  if (p->imaginary != 0 || !FIXABLE_FLOAT(p->real)) {
+    mrb_raisef(mrb, E_RANGE_ERROR, "can't convert %v into Integer", self);
+  }
+#endif
   return mrb_int_value(mrb, (mrb_int)p->real);
 }
 
@@ -168,10 +189,9 @@ complex_eq(mrb_state *mrb, mrb_value x)
   return mrb_bool_value(mrb_complex_eq(mrb, x, y));
 }
 
-static mrb_value
-complex_add(mrb_state *mrb, mrb_value x)
+mrb_value
+mrb_complex_add(mrb_state *mrb, mrb_value x, mrb_value y)
 {
-  mrb_value y = mrb_get_arg1(mrb);
   struct mrb_complex *p1 = complex_ptr(mrb, x);
 
   switch (mrb_type(y)) {
@@ -190,9 +210,15 @@ complex_add(mrb_state *mrb, mrb_value x)
 }
 
 static mrb_value
-complex_sub(mrb_state *mrb, mrb_value x)
+complex_add(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
+  return mrb_complex_add(mrb, x, y);
+}
+
+mrb_value
+mrb_complex_sub(mrb_state *mrb, mrb_value x, mrb_value y)
+{
   struct mrb_complex *p1 = complex_ptr(mrb, x);
 
   switch (mrb_type(y)) {
@@ -211,9 +237,15 @@ complex_sub(mrb_state *mrb, mrb_value x)
 }
 
 static mrb_value
-complex_mul(mrb_state *mrb, mrb_value x)
+complex_sub(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
+  return mrb_complex_sub(mrb, x, y);
+}
+
+mrb_value
+mrb_complex_mul(mrb_state *mrb, mrb_value x, mrb_value y)
+{
   struct mrb_complex *p1 = complex_ptr(mrb, x);
 
   switch (mrb_type(y)) {
@@ -230,6 +262,13 @@ complex_mul(mrb_state *mrb, mrb_value x)
       return mrb_complex_new(mrb, p1->real*z, p1->imaginary*z);
     }
   }
+}
+
+static mrb_value
+complex_mul(mrb_state *mrb, mrb_value x)
+{
+  mrb_value y = mrb_get_arg1(mrb);
+  return mrb_complex_mul(mrb, x, y);
 }
 
 /* Arithmetic on (significand, exponent) pairs avoids premature overflow in
@@ -272,14 +311,16 @@ div_pair(struct float_pair *q, struct float_pair const *a,
   q->x = a->x - b->x;
 }
 
-static mrb_value
-complex_div(mrb_state *mrb, mrb_value self)
+mrb_value
+mrb_complex_div(mrb_state *mrb, mrb_value self, mrb_value rhs)
 {
   struct mrb_complex *a, *b;
-  mrb_value rhs = mrb_get_arg1(mrb);
 
   a = complex_ptr(mrb, self);
   if (mrb_type(rhs) != MRB_TT_COMPLEX) {
+    if (mrb_integer_p(rhs) && mrb_integer(rhs) == 0) {
+      mrb_int_zerodiv(mrb);
+    }
     mrb_float f = mrb_as_float(mrb, rhs);
     return complex_new(mrb, mrb_div_float(a->real, f), mrb_div_float(a->imaginary, f));
   }
@@ -324,87 +365,31 @@ complex_div(mrb_state *mrb, mrb_value self)
   return complex_new(mrb, F(ldexp)(zr.s, zr.x), F(ldexp)(zi.s, zi.x));
 }
 
-mrb_int mrb_div_int(mrb_state *mrb, mrb_int x, mrb_int y);
-mrb_value mrb_rational_new(mrb_state *mrb, mrb_int n, mrb_int d);
-mrb_value mrb_rational_div(mrb_state *mrb, mrb_value x);
-
-/* 15.2.8.3.4  */
-/*
- * redefine Integer#/
- */
 static mrb_value
-cpx_int_div(mrb_state *mrb, mrb_value x)
+complex_div(mrb_state *mrb, mrb_value x)
 {
   mrb_value y = mrb_get_arg1(mrb);
-  mrb_int a = mrb_integer(x);
-
-  if (mrb_integer_p(y)) {
-    mrb_int div = mrb_div_int(mrb, a, mrb_integer(y));
-    return mrb_int_value(mrb, div);
-  }
-  switch (mrb_type(y)) {
-#ifdef MRB_USE_RATIONAL
-  case MRB_TT_RATIONAL:
-    return mrb_rational_div(mrb, mrb_rational_new(mrb, a, 1));
-#endif
-  case MRB_TT_COMPLEX:
-    x = complex_new(mrb, (mrb_float)a, 0);
-    return complex_div(mrb, x);
-  default:
-    return mrb_float_value(mrb, mrb_div_float((mrb_float)a, mrb_as_float(mrb, y)));
-  }
-}
-
-/* 15.2.9.3.19(x) */
-/*
- * redefine Integer#quo
- */
-
-static mrb_value
-cpx_int_quo(mrb_state *mrb, mrb_value x)
-{
-  mrb_value y = mrb_get_arg1(mrb);
-  mrb_int a = mrb_integer(x);
-
-  switch (mrb_type(y)) {
-#ifdef MRB_USE_RATIONAL
-  case MRB_TT_RATIONAL:
-    x = mrb_rational_new(mrb, a, 1);
-    return mrb_funcall_id(mrb, x, MRB_OPSYM(div), 1, y);
-#endif
-  case MRB_TT_COMPLEX:
-    x = complex_new(mrb, (mrb_float)a, 0);
-    return complex_div(mrb, x);
-  default:
-    return mrb_float_value(mrb, mrb_div_float((mrb_float)a, mrb_as_float(mrb, y)));
-  }
+  return mrb_complex_div(mrb, x, y);
 }
 
 static mrb_value
-cpx_flo_div(mrb_state *mrb, mrb_value x)
+complex_hash(mrb_state *mrb, mrb_value cpx)
 {
-  mrb_float a = mrb_float(x);
-  mrb_value y = mrb_get_arg1(mrb);
+  struct mrb_complex *c = complex_ptr(mrb, cpx);
+  uint32_t hash = mrb_byte_hash((uint8_t*)&c->real, sizeof(mrb_float));
+  hash = mrb_byte_hash_step((uint8_t*)&c->imaginary, sizeof(mrb_float), hash);
+  return mrb_int_value(mrb, hash);
+}
 
-  switch(mrb_type(y)) {
-  case MRB_TT_COMPLEX:
-    return complex_div(mrb, complex_new(mrb, a, 0));
-  case MRB_TT_FLOAT:
-    a = mrb_div_float(a, mrb_float(y));
-    return mrb_float_value(mrb, a);
-  default:
-    a = mrb_div_float(a, mrb_as_float(mrb, y));
-    return mrb_float_value(mrb, a);
-  }
+static mrb_value
+nil_to_c(mrb_state *mrb, mrb_value self)
+{
+  return complex_new(mrb, 0, 0);
 }
 
 void mrb_mruby_complex_gem_init(mrb_state *mrb)
 {
   struct RClass *comp;
-
-#ifdef COMPLEX_INLINE
-  mrb_assert(sizeof(struct mrb_complex) < sizeof(void*)*3);
-#endif
 
   comp = mrb_define_class_id(mrb, MRB_SYM(Complex), mrb_class_get_id(mrb, MRB_SYM(Numeric)));
   MRB_SET_INSTANCE_TT(comp, MRB_TT_COMPLEX);
@@ -424,10 +409,8 @@ void mrb_mruby_complex_gem_init(mrb_state *mrb)
   mrb_define_method(mrb, comp, "/", complex_div, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, comp, "quo", complex_div, MRB_ARGS_REQ(1));
   mrb_define_method(mrb, comp, "==", complex_eq, MRB_ARGS_REQ(1));
-  mrb_define_method(mrb, mrb->integer_class, "/", cpx_int_div, MRB_ARGS_REQ(1)); /* override */
-  mrb_define_method(mrb, mrb->integer_class, "quo", cpx_int_quo, MRB_ARGS_REQ(1)); /* override */
-  mrb_define_method(mrb, mrb->float_class, "/", cpx_flo_div, MRB_ARGS_REQ(1)); /* override */
-  mrb_define_method(mrb, mrb->float_class, "quo", cpx_flo_div, MRB_ARGS_REQ(1)); /* override */
+  mrb_define_method(mrb, comp, "hash", complex_hash, MRB_ARGS_NONE());
+  mrb_define_method(mrb, mrb->nil_class, "to_c", nil_to_c, MRB_ARGS_NONE());
 }
 
 void

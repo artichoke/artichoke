@@ -1,10 +1,13 @@
-# coding: utf-8
 ##
 # Array
 #
 # ISO 15.2.12
 class Array
   ##
+  # call-seq:
+  #   array.each {|element| ... } -> self
+  #   array.each -> Enumerator
+  #
   # Calls the given block for each element of +self+
   # and pass the respective element.
   #
@@ -21,6 +24,10 @@ class Array
   end
 
   ##
+  # call-seq:
+  #   array.each_index {|index| ... } -> self
+  #   array.each_index -> Enumerator
+  #
   # Calls the given block for each element of +self+
   # and pass the index of the respective element.
   #
@@ -37,6 +44,10 @@ class Array
   end
 
   ##
+  # call-seq:
+  #   array.collect! {|element| ... } -> self
+  #   array.collect! -> new_enumerator
+  #
   # Calls the given block for each element of +self+
   # and pass the respective element. Each element will
   # be replaced by the resulting values.
@@ -55,6 +66,10 @@ class Array
   end
 
   ##
+  # call-seq:
+  #   array.map! {|element| ... } -> self
+  #   array.map! -> new_enumerator
+  #
   # Alias for collect!
   #
   # ISO 15.2.12.5.20
@@ -110,6 +125,9 @@ class Array
   alias to_s inspect
 
   ##
+  # call-seq:
+  #   array == other   -> true or false
+  #
   #  Equality---Two arrays are equal if they contain the same number
   #  of elements and if each element is equal to (according to
   #  Object.==) the corresponding element in the other array.
@@ -129,6 +147,9 @@ class Array
   end
 
   ##
+  # call-seq:
+  #   array.eql? other_array -> true or false
+  #
   #  Returns <code>true</code> if +self+ and _other_ are the same object,
   #  or are both arrays with the same content.
   #
@@ -147,12 +168,15 @@ class Array
   end
 
   ##
+  # call-seq:
+  #   array <=> other_array -> -1, 0, or 1
+  #
   #  Comparison---Returns an integer (-1, 0, or +1)
   #  if this array is less than, equal to, or greater than <i>other_ary</i>.
   #  Each object in each array is compared (using <=>). If any value isn't
   #  equal, then that inequality is the return value. If all the
   #  values found are equal, then the return is based on a
-  #  comparison of the array lengths.  Thus, two arrays are
+  #  comparison of the array lengths. Thus, two arrays are
   #  "equal" according to <code>Array#<=></code> if and only if they have
   #  the same length and the value of each element is equal to the
   #  value of the corresponding element in the other array.
@@ -167,10 +191,14 @@ class Array
     n = other.size
     len = n if len > n
     i = 0
-    while i < len
-      n = (self[i] <=> other[i])
-      return n if n.nil? || n != 0
-      i += 1
+    begin
+      while i < len
+        n = (self[i] <=> other[i])
+        return n if n.nil? || n != 0
+        i += 1
+      end
+    rescue NoMethodError
+      return nil
     end
     len = self.size - other.size
     if len == 0
@@ -183,6 +211,10 @@ class Array
   end
 
   ##
+  # call-seq:
+  #   array.delete(obj) -> deleted_object
+  #   array.delete(obj) {|nosuch| ... } -> deleted_object or block_return
+  #
   # Delete element with index +key+
   def delete(key, &block)
     while i = self.index(key)
@@ -194,6 +226,10 @@ class Array
   end
 
   ##
+  # call-seq:
+  #   array.sort! -> self
+  #   array.sort! {|a, b| ... } -> self
+  #
   # Sort all elements and replace +self+ with these
   # elements.
   def sort!(&block)
@@ -227,7 +263,7 @@ class Array
         lsize = lary.size
 
         # The entity sharing between lary and self may cause a large memory
-        # copy operation in the merge loop below.  This harmless operation
+        # copy operation in the merge loop below. This harmless operation
         # cancels the sharing and provides a huge performance gain.
         lary[0] = lary[0]
 
@@ -261,10 +297,21 @@ class Array
     self
   end
 
+  ##
+  # call-seq:
+  #   array.sort -> new_array
+  #   array.sort {|a, b| ... } -> new_array
+  #
+  # Returns a new Array whose elements are those from +self+, sorted.
   def sort(&block)
     self.dup.sort!(&block)
   end
 
+  ##
+  # call-seq:
+  #   array.to_a -> self
+  #
+  # Returns self, no need to convert.
   def to_a
     self
   end

@@ -8,14 +8,14 @@ Contributors agree to license their contribution(s) under MIT license.
 To make it easy to review and understand your change please keep the following
 things in mind before submitting your pull request:
 
-* Work on the latest possible state of **mruby/master**
-* Create a branch which is dedicated to your change
-* Test your changes before creating a pull request (`rake test`)
-* If possible write a test case which confirms your change
-* Don't mix several features or bug-fixes in one pull request
-* Create a meaningful commit message
-* Explain your change (i.e. with a link to the issue you are fixing)
-* Use mrbgem to provide non ISO features (classes, modules and methods) unless
+- Work on the latest possible state of **mruby/master**
+- Create a branch which is dedicated to your change
+- Test your changes before creating a pull request (`rake test`)
+- If possible write a test case which confirms your change
+- Don't mix several features or bug-fixes in one pull request
+- Create a meaningful commit message
+- Explain your change (i.e. with a link to the issue you are fixing)
+- Use mrbgem to provide non ISO features (classes, modules and methods) unless
   you have a special reason to implement them in the core
 
 ## pre-commit
@@ -33,9 +33,22 @@ To run a single hook use `pre-commit run --all-files <hook_id>`
 
 To update use `pre-commit autoupdate`
 
-* [Quick start](https://pre-commit.com/#quick-start)
-* [Usage](https://pre-commit.com/#usage)
-* [pre-commit-autoupdate](https://pre-commit.com/#pre-commit-autoupdate)
+Sometimes you might need to skip one or more hooks which can be done with the `SKIP` environment variable.
+
+`$ SKIP=yamllint git commit -m "foo"`
+
+For convenience, we have added `pre-commit run --all-files` and `pre-commit autoupdate`
+to both the Makefile and the Rakefile. Run them with:
+
+- `make check` or `rake check`
+- `make checkupdate` or `rake checkupdate`
+
+### pre-commit quick links
+
+- [Quick start](https://pre-commit.com/#quick-start)
+- [Usage](https://pre-commit.com/#usage)
+- [pre-commit autoupdate](https://pre-commit.com/#pre-commit-autoupdate)
+- [Temporarily disabling hooks](https://pre-commit.com/#temporarily-disabling-hooks)
 
 ## Spell Checking
 
@@ -50,8 +63,8 @@ find . -type f | xargs ./misspell -error
 
 Notable `misspell` help options or flags are:
 
-* `-i` string: ignore the following corrections, comma separated
-* `-w`: Overwrite file with corrections (default is just to display)
+- `-i` string: ignore the following corrections, comma separated
+- `-w`: Overwrite file with corrections (default is just to display)
 
 ## Coding conventions
 
@@ -101,3 +114,16 @@ language itself. Please note the following hints for your Ruby code:
 mruby is currently targeting to execute Ruby code which complies to ISO/IEC
 30170:2012 (<https://www.iso.org/iso/iso_catalogue/catalogue_tc/catalogue_detail.htm?csnumber=59579>),
 unless there's a clear reason, e.g. the latest Ruby has changed behavior from ISO.
+
+## Building documentation
+
+### mruby API
+
+- [YARD](https://yardoc.org/) - YARD is a documentation generation tool for the Ruby programming language
+- [yard-mruby](https://rubygems.org/gems/yard-mruby) - Document MRuby sources with YARD
+- [yard-coderay](https://rubygems.org/gems/yard-coderay) - Adds coderay syntax highlighting to YARD docs
+
+### C API
+
+- [Doxygen](https://www.doxygen.nl/) - Generate documentation from source code
+- [Graphviz](https://graphviz.org/) - Graphviz is open source graph visualization software

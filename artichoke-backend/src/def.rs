@@ -16,7 +16,9 @@ use crate::sys;
 use crate::Artichoke;
 
 /// Typedef for an mruby free function for an [`mrb_value`](sys::mrb_value) with
-/// `tt` [`MRB_TT_DATA`](sys::mrb_vtype::MRB_TT_DATA).
+/// `tt` [`MRB_TT_CDATA`].
+///
+/// [`MRB_TT_CDATA`]: sys::mrb_vtype::MRB_TT_CDATA
 pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void);
 
 /// A generic implementation of a [`Free`] function for [`mrb_value`]s that
@@ -34,10 +36,10 @@ pub type Free = unsafe extern "C" fn(mrb: *mut sys::mrb_state, data: *mut c_void
 /// boxes `T` for the mruby VM like this.
 ///
 /// This function assumes it is called by the mruby VM as a free function for an
-/// [`MRB_TT_DATA`].
+/// [`MRB_TT_CDATA`].
 ///
 /// [`mrb_value`]: sys::mrb_value
-/// [`MRB_TT_DATA`]: sys::mrb_vtype::MRB_TT_DATA
+/// [`MRB_TT_CDATA`]: sys::mrb_vtype::MRB_TT_CDATA
 pub unsafe extern "C" fn box_unbox_free<T>(_mrb: *mut sys::mrb_state, data: *mut c_void)
 where
     T: 'static + BoxUnboxVmValue,
