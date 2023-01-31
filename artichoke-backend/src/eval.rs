@@ -1,7 +1,6 @@
 use std::ffi::OsStr;
 use std::path::Path;
 
-use bstr::ByteSlice;
 use scolapasta_path::os_str_to_bytes;
 use spinoso_exception::{ArgumentError, Fatal, LoadError};
 
@@ -60,7 +59,12 @@ impl Eval for Artichoke {
         let code = self
             .read_source_file_contents(file)
             .map_err(|err| {
-                let message = format!("ruby: {} -- {}", err.message().as_bstr(), file.display());
+                let mut message = b"ruby: ".to_vec();
+                message.extend_from_slice(err.message().as_ref());
+                if let Ok(bytes) = os_str_to_bytes(file.as_os_str()) {
+                    message.extend_from_slice(b" -- ");
+                    message.extend_from_slice(bytes);
+                }
                 LoadError::from(message)
             })?
             .into_owned();
@@ -240,8 +244,8 @@ mod tests {
         let err = interp.eval_file(Path::new("no/such/file.rb")).unwrap_err();
         assert_eq!("LoadError", err.name().as_ref());
         assert_eq!(
-            "ruby: file not found in virtual file system -- no/such/file.rb",
-            err.message().as_ref().as_bstr()
+            b"ruby: file not found in virtual file system -- no/such/file.rb",
+            err.message().as_ref()
         );
     }
 
@@ -254,8 +258,8 @@ mod tests {
             .unwrap_err();
         assert_eq!("LoadError", err.name().as_ref());
         assert_eq!(
-            "ruby: file not found in virtual file system -- not/valid/utf8/�.rb",
-            err.message().as_ref().as_bstr()
+            b"ruby: file not found in virtual file system -- not/valid/utf8/\xFF.rb",
+            err.message().as_ref()
         );
     }
 }
