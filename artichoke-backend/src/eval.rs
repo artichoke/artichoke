@@ -2,17 +2,17 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use scolapasta_path::os_str_to_bytes;
-use spinoso_exception::{ArgumentError, Fatal};
+use spinoso_exception::{ArgumentError, Fatal, LoadError};
 
 use crate::core::{Eval, LoadSources, Parser};
 use crate::error::Error;
-use crate::exception_handler;
 use crate::ffi::InterpreterExtractError;
 use crate::state::parser::Context;
 use crate::sys;
 use crate::sys::protect;
 use crate::value::Value;
 use crate::Artichoke;
+use crate::{exception_handler, RubyException};
 
 impl Eval for Artichoke {
     type Value = Value;
@@ -56,7 +56,18 @@ impl Eval for Artichoke {
         let context = Context::new(os_str_to_bytes(file.as_os_str())?.to_vec())
             .ok_or_else(|| ArgumentError::with_message("path name contains null byte"))?;
         self.push_context(context)?;
-        let code = self.read_source_file_contents(file)?.into_owned();
+        let code = self
+            .read_source_file_contents(file)
+            .map_err(|err| {
+                let mut message = b"ruby: ".to_vec();
+                message.extend_from_slice(err.message().as_ref());
+                if let Ok(bytes) = os_str_to_bytes(file.as_os_str()) {
+                    message.extend_from_slice(b" -- ");
+                    message.extend_from_slice(bytes);
+                }
+                LoadError::from(message)
+            })?
+            .into_owned();
         let result = self.eval(code.as_slice());
         self.pop_context()?;
         result
@@ -65,6 +76,12 @@ impl Eval for Artichoke {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    use std::ffi::OsStr;
+    #[cfg(unix)]
+    use std::os::unix::ffi::OsStrExt;
+    use std::path::Path;
+
     use bstr::ByteSlice;
 
     use crate::test::prelude::*;
@@ -219,5 +236,30 @@ mod tests {
             .unwrap();
         let err = interp.eval(b"require 'fail'").unwrap_err();
         assert_eq!("SyntaxError", err.name().as_ref());
+    }
+
+    #[test]
+    fn eval_file_error_file_not_found() {
+        let mut interp = interpreter();
+        let err = interp.eval_file(Path::new("no/such/file.rb")).unwrap_err();
+        assert_eq!("LoadError", err.name().as_ref());
+        assert_eq!(
+            b"ruby: file not found in virtual file system -- no/such/file.rb",
+            err.message().as_ref()
+        );
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn eval_file_error_invalid_path() {
+        let mut interp = interpreter();
+        let err = interp
+            .eval_file(Path::new(OsStr::from_bytes(b"not/valid/utf8/\xff.rb")))
+            .unwrap_err();
+        assert_eq!("LoadError", err.name().as_ref());
+        assert_eq!(
+            b"ruby: file not found in virtual file system -- not/valid/utf8/\xFF.rb",
+            err.message().as_ref()
+        );
     }
 }
