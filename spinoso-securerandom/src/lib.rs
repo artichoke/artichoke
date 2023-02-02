@@ -639,8 +639,13 @@ pub fn hex(len: Option<i64>) -> Result<String, Error> {
 /// [`RandomBytesError`].
 #[inline]
 pub fn base64(len: Option<i64>) -> Result<String, Error> {
+    // A `GeneralPurpose` engine using the `alphabet::STANDARD` base64 alphabet
+    // and PAD config.
+    use base64::engine::general_purpose::STANDARD;
+    use base64::engine::Engine as _;
+
     let bytes = random_bytes(len)?;
-    Ok(base64::encode(bytes))
+    Ok(STANDARD.encode(bytes))
 }
 
 /// Generate a URL-safe base64-encoded [`String`] of random bytes.
@@ -669,16 +674,12 @@ pub fn base64(len: Option<i64>) -> Result<String, Error> {
 /// [`RandomBytesError`].
 #[inline]
 pub fn urlsafe_base64(len: Option<i64>, padding: bool) -> Result<String, Error> {
-    use base64::alphabet::URL_SAFE;
-    use base64::engine::fast_portable::{FastPortable, NO_PAD, PAD};
+    use base64::engine::general_purpose::{URL_SAFE, URL_SAFE_NO_PAD};
+    use base64::engine::Engine as _;
 
     let bytes = random_bytes(len)?;
-    let engine = if padding {
-        FastPortable::from(&URL_SAFE, PAD)
-    } else {
-        FastPortable::from(&URL_SAFE, NO_PAD)
-    };
-    Ok(base64::encode_engine(bytes, &engine))
+    let engine = if padding { URL_SAFE } else { URL_SAFE_NO_PAD };
+    Ok(engine.encode(bytes))
 }
 
 /// Generate a random sequence of ASCII alphanumeric bytes.
