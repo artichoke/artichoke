@@ -142,7 +142,7 @@ where
 {
     let config = fs::read(&args.config)?;
     let config = str::from_utf8(config.as_slice())?;
-    let config = toml::from_str::<Config>(config)?;
+    let config = basic_toml::from_str::<Config>(config)?;
 
     let mut interp = artichoke::interpreter()?;
 
@@ -232,7 +232,7 @@ mod tests {
     #[test]
     fn argf_spec_is_loaded() {
         let config = "[specs.core.argf]\ninclude = 'all'";
-        let config = toml::from_str::<Config>(config).unwrap();
+        let config = basic_toml::from_str::<Config>(config).unwrap();
 
         assert!(is_require_path(&config, "core/argf/pos_spec.rb"));
     }
@@ -240,7 +240,7 @@ mod tests {
     #[test]
     fn argf_fixture_is_not_loaded() {
         let config = "[specs.core.argf]\ninclude = 'all'";
-        let config = toml::from_str::<Config>(config).unwrap();
+        let config = basic_toml::from_str::<Config>(config).unwrap();
 
         assert!(!is_require_path(&config, "core/argf/fixtures/file1.txt"));
     }

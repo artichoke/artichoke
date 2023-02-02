@@ -11,12 +11,12 @@ categories = ["development-tools::testing"]
 
 [dependencies]
 artichoke = { version = "0.1.0-pre.0", path = "..", default-features = false, features = ["backtrace", "kitchen-sink"] }
+basic-toml = "0.1.1"
 clap = "4.1.0"
 dhat = { version = "0.3.0", optional = true }
 rust-embed = "6.3.0"
 serde = { version = "1.0.136", features = ["derive"] }
 termcolor = "1.1.0"
-toml = { version = "0.5.8", default-features = false }
 
 [dev-dependencies]
 bstr = { version = "1.0.0", default-features = false }
