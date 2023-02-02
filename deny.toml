@@ -19,7 +19,7 @@ default = "deny"
 confidence-threshold = 0.8
 
 [bans]
-multiple-versions = "deny"
+multiple-versions = "warn"
 wildcards = "deny"
 highlight = "all"
 allow = []
