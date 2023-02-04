@@ -1,7 +1,7 @@
 use crate::convert::to_int;
 use crate::extn::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Args {
     year: i64,
     month: i64,
@@ -124,7 +124,17 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
                         2 => result.day = arg,
                         3 => result.hour = arg,
                         4 => result.minute = arg,
-                        5 => result.second = arg,
+                        5 => {
+                            result.second = {
+                                // TODO: This should support f64 seconds and drop
+                                // the remainder into micros.
+                                // ```irb
+                                // 3.1.2 > Time.utc(1, 2, 3, 4, 5, 6.1)
+                                // => 0001-02-03 04:05:06 56294995342131/562949953421312 UTC
+                                // ```
+                                arg
+                            }
+                        }
                         6 => result.micros = arg,
                         7 => {
                             // NOOP
@@ -140,7 +150,9 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
                 }
                 Ok(result)
             }
-            10 => todo!(),
+            10 => {
+                Err(NotImplementedError::with_message("Artichoke does not currently support 10 args for Time").into())
+            }
             _ => unreachable!(),
         }
     }
