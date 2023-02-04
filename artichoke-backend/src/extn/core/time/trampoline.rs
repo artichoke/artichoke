@@ -130,13 +130,20 @@ pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
     Time::alloc_value(time, interp)
 }
 
-pub fn mktime<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
-where
-    T: IntoIterator<Item = Value>,
-{
-    let _ = interp;
-    let _ignored_while_unimplemented = args.into_iter();
-    Err(NotImplementedError::new().into())
+pub fn mktime(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
+    let args: Args = interp.try_convert_mut(args)?;
+
+    let time = Time::local(
+        args.year()?,
+        args.month()?,
+        args.day()?,
+        args.hour()?,
+        args.minute()?,
+        args.second()?,
+        args.nanoseconds()?,
+    )?;
+
+    Time::alloc_value(time, interp)
 }
 
 // Core
