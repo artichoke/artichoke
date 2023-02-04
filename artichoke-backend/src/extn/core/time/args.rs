@@ -120,7 +120,13 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
 
                     match i {
                         0 => result.year = arg,
-                        1 => result.month = arg,
+                        1 => {
+                            result.month = {
+                                // TODO: This should support 3 letter month names
+                                // as per the docs. https://ruby-doc.org/3.1.2/Time.html#method-c-new
+                                arg
+                            }
+                        }
                         2 => result.day = arg,
                         3 => result.hour = arg,
                         4 => result.minute = arg,
