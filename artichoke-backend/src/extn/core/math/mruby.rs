@@ -212,7 +212,7 @@ unsafe extern "C" fn math_frexp(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) 
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
-    let result = trampoline::frexp(&mut guard, value).and_then(|(fraction, exponent)| {
+    let result: Result<Value, Error> = trampoline::frexp(&mut guard, value).and_then(|(fraction, exponent)| {
         let fraction = guard.convert_mut(fraction);
         let exponent = guard.convert(exponent);
         guard.try_convert_mut(&[fraction, exponent][..])
@@ -262,7 +262,7 @@ unsafe extern "C" fn math_lgamma(mrb: *mut sys::mrb_state, _slf: sys::mrb_value)
     let value = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(value);
-    let result = trampoline::lgamma(&mut guard, value).and_then(|(result, sign)| {
+    let result: Result<Value, Error> = trampoline::lgamma(&mut guard, value).and_then(|(result, sign)| {
         let result = guard.convert_mut(result);
         let sign = guard.convert(sign);
         guard.try_convert_mut(&[result, sign][..])

@@ -8,7 +8,7 @@ use spinoso_time::strftime::{
 use crate::convert::implicitly_convert_to_int;
 use crate::convert::to_str;
 use crate::extn::core::string::{Encoding, String};
-use crate::extn::core::time::{subsec::Subsec, Offset, Time, args::as_time_args};
+use crate::extn::core::time::{args::Args, subsec::Subsec, Offset, Time};
 use crate::extn::prelude::*;
 
 // Constructor
@@ -114,9 +114,8 @@ pub fn at(
     Time::alloc_value(time, interp)
 }
 
-pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error>
-{
-    let args = as_time_args(interp, args)?;
+pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
+    let args: Args = interp.try_convert_mut(args)?;
 
     let time = Time::utc(
         args.year()?,
@@ -125,7 +124,7 @@ pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error>
         args.hour()?,
         args.minute()?,
         args.second()?,
-        args.nanoseconds()?
+        args.nanoseconds()?,
     )?;
 
     Time::alloc_value(time, interp)

@@ -2,7 +2,7 @@ use crate::convert::to_int;
 use crate::extn::prelude::*;
 
 #[derive(Debug)]
-pub struct TimeArgs {
+pub struct Args {
     year: i64,
     month: i64,
     day: i64,
@@ -12,9 +12,9 @@ pub struct TimeArgs {
     micros: i64,
 }
 
-impl Default for TimeArgs {
-    fn default() -> TimeArgs {
-        TimeArgs {
+impl Default for Args {
+    fn default() -> Args {
+        Args {
             year: 0,
             month: 1,
             day: 1,
@@ -26,7 +26,7 @@ impl Default for TimeArgs {
     }
 }
 
-impl TimeArgs {
+impl Args {
     pub fn year(&self) -> Result<i32, Error> {
         i32::try_from(self.year).map_err(|_| ArgumentError::with_message("year out of range").into())
     }
@@ -77,7 +77,7 @@ impl TimeArgs {
     }
 
     pub fn nanoseconds(&self) -> Result<u32, Error> {
-        // TimeArgs take a micros parameter, not a nanos value. The below
+        // Args take a micros parameter, not a nanos value. The below
         // multiplication and casting is gauranteed to be inside a `u32`.
         match self.micros {
             #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -87,57 +87,62 @@ impl TimeArgs {
     }
 }
 
-pub fn as_time_args(interp: &mut Artichoke, args: &[Value]) -> Result<TimeArgs, Error> {
-    // TimeArgs are in order of year, month, day, hour, minute, second, micros.
-    // This is unless there are 10 arguments provided (`Time#to_a` format), at
-    // which points it is second, minute, hour, day, month, year. The number of
-    // expected parameters doesn't give this hint though.
+impl TryConvertMut<&[Value], Args> for Artichoke {
+    type Error = Error;
 
-    match args.len() {
-        0 | 9 | 11.. => {
-            let mut message = br#"wrong number of arguments (given "#.to_vec();
-            message.extend(args.len().to_string().bytes());
-            message.extend_from_slice(b", expected 1..8)");
-            Err(ArgumentError::from(message).into())
-        }
-        1..=8 => {
-            // For 0..=7 params, we need to validate to_int
-            let mut result = TimeArgs::default();
-            for (i, arg) in args.iter().enumerate() {
-                // The eighth parameter is never used, and thus no conversion
-                // is needed
-                if i == 7 {
-                    continue;
-                }
+    fn try_convert_mut(&mut self, args: &[Value]) -> Result<Args, Self::Error> {
+        // Args are in order of year, month, day, hour, minute, second, micros.
+        // This is unless there are 10 arguments provided (`Time#to_a` format),
+        // at which points it is second, minute, hour, day, month, year. The
+        // number of expected parameters doesn't give this hint though.
 
-                let arg = to_int(interp, *arg)?;
-                // unwrap is safe since to_int gaurnatees a non nil Ruby::Integer
-                let arg: i64 = arg.try_convert_into::<Option<i64>>(interp)?.unwrap();
-
-                match i {
-                    0 => result.year = arg,
-                    1 => result.month = arg,
-                    2 => result.day = arg,
-                    3 => result.hour = arg,
-                    4 => result.minute = arg,
-                    5 => result.second = arg,
-                    6 => result.micros = arg,
-                    7 => {
-                        // NOOP
-                        // The 8th parameter can be anything, even an error
-                        //
-                        // ```irb
-                        // Time.utc(2022, 1, 1, 0, 0, 0, 0, StandardError)
-                        // => 2022-01-01 00:00:00 UTC
-                        // ```
-                    }
-                    _ => unreachable!(),
-                }
+        match args.len() {
+            0 | 9 | 11.. => {
+                let mut message = br#"wrong number of arguments (given "#.to_vec();
+                message.extend(args.len().to_string().bytes());
+                message.extend_from_slice(b", expected 1..8)");
+                Err(ArgumentError::from(message).into())
             }
-            Ok(result)
+            1..=8 => {
+                // For 0..=7 params, we need to validate to_int
+                let mut result = Args::default();
+                for (i, arg) in args.iter().enumerate() {
+                    // The eighth parameter is never used, and thus no
+                    // conversion is needed
+                    if i == 7 {
+                        continue;
+                    }
+
+                    let arg = to_int(self, *arg)?;
+                    // unwrap is safe since to_int gaurnatees a non nil
+                    // Ruby::Integer
+                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                    match i {
+                        0 => result.year = arg,
+                        1 => result.month = arg,
+                        2 => result.day = arg,
+                        3 => result.hour = arg,
+                        4 => result.minute = arg,
+                        5 => result.second = arg,
+                        6 => result.micros = arg,
+                        7 => {
+                            // NOOP
+                            // The 8th parameter can be anything, even an error
+                            //
+                            // ```irb
+                            // Time.utc(2022, 1, 1, 0, 0, 0, 0, StandardError)
+                            // => 2022-01-01 00:00:00 UTC
+                            // ```
+                        }
+                        _ => unreachable!(),
+                    }
+                }
+                Ok(result)
+            }
+            10 => todo!(),
+            _ => unreachable!(),
         }
-        10 => todo!(),
-        _ => unreachable!(),
     }
 }
 
@@ -145,20 +150,21 @@ pub fn as_time_args(interp: &mut Artichoke, args: &[Value]) -> Result<TimeArgs, 
 mod tests {
     use bstr::ByteSlice;
 
-    use super::as_time_args;
+    use super::Args;
     use crate::test::prelude::*;
 
     #[test]
     fn requires_at_least_one_param() {
         let mut interp = interpreter();
 
-        let raw_args = [];
+        let args = vec![];
 
-        let err = as_time_args(&mut interp, &raw_args).unwrap_err();
+        let result: Result<Args, Error> = interp.try_convert_mut(args.as_slice());
+        let error = result.unwrap_err();
 
-        assert_eq!(err.name(), "ArgumentError");
+        assert_eq!(error.name(), "ArgumentError");
         assert_eq!(
-            err.message().as_bstr(),
+            error.message().as_bstr(),
             b"wrong number of arguments (given 0, expected 1..8)"
                 .as_slice()
                 .as_bstr()
@@ -171,7 +177,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7, nil]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         assert_eq!(2022, result.year().unwrap());
         assert_eq!(2, result.month().unwrap());
         assert_eq!(3, result.day().unwrap());
@@ -187,7 +193,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         assert_eq!(2022, result.year().unwrap());
         assert_eq!(2, result.month().unwrap());
         assert_eq!(3, result.day().unwrap());
@@ -203,7 +209,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         assert_eq!(2022, result.year().unwrap());
         assert_eq!(2, result.month().unwrap());
         assert_eq!(3, result.day().unwrap());
@@ -219,7 +225,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         assert_eq!(2022, result.year().unwrap());
         assert_eq!(2, result.month().unwrap());
         assert_eq!(3, result.day().unwrap());
@@ -235,7 +241,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2, 3, 4]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         assert_eq!(2022, result.year().unwrap());
         assert_eq!(2, result.month().unwrap());
         assert_eq!(3, result.day().unwrap());
@@ -251,7 +257,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2, 3]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         assert_eq!(2022, result.year().unwrap());
         assert_eq!(2, result.month().unwrap());
         assert_eq!(3, result.day().unwrap());
@@ -267,7 +273,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         assert_eq!(2022, result.year().unwrap());
         assert_eq!(2, result.month().unwrap());
         assert_eq!(1, result.day().unwrap());
@@ -283,7 +289,7 @@ mod tests {
 
         let args = interp.eval(b"[2022]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         assert_eq!(2022, result.year().unwrap());
         assert_eq!(1, result.month().unwrap());
         assert_eq!(1, result.day().unwrap());
@@ -299,13 +305,13 @@ mod tests {
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 1]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         let nanos = result.nanoseconds().unwrap();
         assert_eq!(1000, nanos);
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 999_999]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
         let nanos = result.nanoseconds().unwrap();
         assert_eq!(999_999_000, nanos);
     }
@@ -316,14 +322,14 @@ mod tests {
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, -1]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
-        let error = result.nanoseconds().unwrap_err();
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
+        let error = result.unwrap().nanoseconds().unwrap_err();
         assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_slice().as_bstr());
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 1_000_000]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args).unwrap();
-        let error = result.nanoseconds().unwrap_err();
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
+        let error = result.unwrap().nanoseconds().unwrap_err();
         assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_slice().as_bstr());
     }
 
@@ -336,7 +342,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7, nil, 0]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args);
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
         let error = result.unwrap_err();
 
         assert_eq!(
@@ -360,7 +366,7 @@ mod tests {
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7, nil, 0, 0, 0]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result = as_time_args(&mut interp, &ary_args);
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
         let error = result.unwrap_err();
 
         assert_eq!(
