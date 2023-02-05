@@ -130,8 +130,8 @@ unsafe extern "C" fn time_self_at(mrb: *mut sys::mrb_state, _slf: sys::mrb_value
 unsafe extern "C" fn time_self_mkutc(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
-    let args = args.iter().copied().map(Value::from);
-    let result = trampoline::mkutc(&mut guard, args);
+    let args = args.iter().copied().map(Value::from).collect::<Vec<Value>>();
+    let result = trampoline::mkutc(&mut guard, &args);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -141,8 +141,8 @@ unsafe extern "C" fn time_self_mkutc(mrb: *mut sys::mrb_state, _slf: sys::mrb_va
 unsafe extern "C" fn time_self_mktime(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
     let args = mrb_get_args!(mrb, *args);
     unwrap_interpreter!(mrb, to => guard);
-    let args = args.iter().copied().map(Value::from);
-    let result = trampoline::mktime(&mut guard, args);
+    let args = args.iter().copied().map(Value::from).collect::<Vec<Value>>();
+    let result = trampoline::mktime(&mut guard, &args);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),

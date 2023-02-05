@@ -8,7 +8,7 @@ use spinoso_time::strftime::{
 use crate::convert::implicitly_convert_to_int;
 use crate::convert::to_str;
 use crate::extn::core::string::{Encoding, String};
-use crate::extn::core::time::{subsec::Subsec, Offset, Time};
+use crate::extn::core::time::{args::Args, subsec::Subsec, Offset, Time};
 use crate::extn::prelude::*;
 
 // Constructor
@@ -114,22 +114,36 @@ pub fn at(
     Time::alloc_value(time, interp)
 }
 
-pub fn mkutc<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
-where
-    T: IntoIterator<Item = Value>,
-{
-    let _ = interp;
-    let _ignored_while_unimplemented = args.into_iter();
-    Err(NotImplementedError::new().into())
+pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
+    let args: Args = interp.try_convert_mut(args)?;
+
+    let time = Time::utc(
+        args.year()?,
+        args.month()?,
+        args.day()?,
+        args.hour()?,
+        args.minute()?,
+        args.second()?,
+        args.nanoseconds()?,
+    )?;
+
+    Time::alloc_value(time, interp)
 }
 
-pub fn mktime<T>(interp: &mut Artichoke, args: T) -> Result<Value, Error>
-where
-    T: IntoIterator<Item = Value>,
-{
-    let _ = interp;
-    let _ignored_while_unimplemented = args.into_iter();
-    Err(NotImplementedError::new().into())
+pub fn mktime(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
+    let args: Args = interp.try_convert_mut(args)?;
+
+    let time = Time::local(
+        args.year()?,
+        args.month()?,
+        args.day()?,
+        args.hour()?,
+        args.minute()?,
+        args.second()?,
+        args.nanoseconds()?,
+    )?;
+
+    Time::alloc_value(time, interp)
 }
 
 // Core

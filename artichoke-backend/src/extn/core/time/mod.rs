@@ -21,6 +21,7 @@
 use crate::convert::HeapAllocatedData;
 use crate::extn::prelude::*;
 
+pub mod args;
 pub(in crate::extn) mod mruby;
 pub mod offset;
 pub mod subsec;
