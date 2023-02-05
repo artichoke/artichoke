@@ -13,8 +13,8 @@ pub struct Args {
 }
 
 impl Default for Args {
-    fn default() -> Args {
-        Args {
+    fn default() -> Self {
+        Self {
             year: 0,
             month: 1,
             day: 1,
@@ -32,56 +32,44 @@ impl Args {
     }
 
     pub fn month(&self) -> Result<u8, Error> {
-        // 1..=12 is gauranteed to fit into u8, so this cast is safe
-        match self.month {
-            #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            1..=12 => Ok(self.month as u8),
+        match u8::try_from(self.month) {
+            Ok(month @ 1..=12) => Ok(month),
             _ => Err(ArgumentError::with_message("mon out of range").into()),
         }
     }
 
     pub fn day(&self) -> Result<u8, Error> {
-        // 1..=31 is gauranteed to fit into u8, so this cast is safe
-        match self.day {
-            #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            1..=31 => Ok(self.day as u8),
+        match u8::try_from(self.day) {
+            Ok(day @ 1..=31) => Ok(day),
             _ => Err(ArgumentError::with_message("mday out of range").into()),
         }
     }
 
     pub fn hour(&self) -> Result<u8, Error> {
-        // 1..=23 is gauranteed to fit into u8, so this cast is safe
-        match self.hour {
-            #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            0..=23 => Ok(self.hour as u8),
+        match u8::try_from(self.hour) {
+            Ok(hour @ 0..=23) => Ok(hour),
             _ => Err(ArgumentError::with_message("hour out of range").into()),
         }
     }
 
     pub fn minute(&self) -> Result<u8, Error> {
-        // 1..=59 is gauranteed to fit into u8, so this cast is safe
-        match self.minute {
-            #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            0..=59 => Ok(self.minute as u8),
+        match u8::try_from(self.minute) {
+            Ok(minute @ 0..=59) => Ok(minute),
             _ => Err(ArgumentError::with_message("min out of range").into()),
         }
     }
 
     pub fn second(&self) -> Result<u8, Error> {
-        // 1..=60 is gauranteed to fit into u8, so this cast is safe
-        match self.second {
-            #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            0..=60 => Ok(self.second as u8),
+        match u8::try_from(self.second) {
+            Ok(second @ 0..=60) => Ok(second),
             _ => Err(ArgumentError::with_message("sec out of range").into()),
         }
     }
 
     pub fn nanoseconds(&self) -> Result<u32, Error> {
-        // Args take a micros parameter, not a nanos value. The below
-        // multiplication and casting is gauranteed to be inside a `u32`.
-        match self.micros {
-            #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-            0..=999_999 => Ok((self.micros * 1000) as u32),
+        // Args take a micros parameter, not a nanos value.
+        match u32::try_from(self.micros) {
+            Ok(micros @ 0..=999_999) => Ok(micros * 1000),
             _ => Err(ArgumentError::with_message("subsecx out of range").into()),
         }
     }
@@ -106,14 +94,14 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
             1..=8 => {
                 // For 0..=7 params, we need to validate to_int
                 let mut result = Args::default();
-                for (i, arg) in args.iter().enumerate() {
+                for (i, &arg) in args.iter().enumerate() {
                     // The eighth parameter is never used, and thus no
                     // conversion is needed
                     if i == 7 {
                         continue;
                     }
 
-                    let arg = to_int(self, *arg)?;
+                    let arg = to_int(self, arg)?;
                     // unwrap is safe since to_int gaurnatees a non nil
                     // Ruby::Integer
                     let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
@@ -183,9 +171,7 @@ mod tests {
         assert_eq!(error.name(), "ArgumentError");
         assert_eq!(
             error.message().as_bstr(),
-            b"wrong number of arguments (given 0, expected 1..8)"
-                .as_slice()
-                .as_bstr()
+            b"wrong number of arguments (given 0, expected 1..8)".as_bstr()
         );
     }
 
@@ -342,13 +328,13 @@ mod tests {
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
         let error = result.unwrap().nanoseconds().unwrap_err();
-        assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_slice().as_bstr());
+        assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_bstr());
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 1_000_000]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
         let error = result.unwrap().nanoseconds().unwrap_err();
-        assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_slice().as_bstr());
+        assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_bstr());
     }
 
     #[test]
@@ -365,9 +351,7 @@ mod tests {
 
         assert_eq!(
             error.message().as_bstr(),
-            b"wrong number of arguments (given 9, expected 1..8)"
-                .as_slice()
-                .as_bstr()
+            b"wrong number of arguments (given 9, expected 1..8)".as_bstr()
         );
         assert_eq!(error.name(), "ArgumentError");
     }
@@ -389,9 +373,7 @@ mod tests {
 
         assert_eq!(
             error.message().as_bstr(),
-            b"wrong number of arguments (given 11, expected 1..8)"
-                .as_slice()
-                .as_bstr()
+            b"wrong number of arguments (given 11, expected 1..8)".as_bstr()
         );
         assert_eq!(error.name(), "ArgumentError");
     }
