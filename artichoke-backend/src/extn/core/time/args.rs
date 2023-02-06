@@ -145,7 +145,43 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
                 Ok(result)
             }
             10 => {
-                Err(NotImplementedError::with_message("Artichoke does not currently support 10 args for Time").into())
+                let mut result = Args::default();
+
+                // Only arguments in position 0..=6 are parsed.
+                let args = args.iter().enumerate().filter(|&(i, _)| i < 6);
+                for (i, &arg) in args {
+                    let arg = to_int(self, arg)?;
+                    // unwrap is safe since to_int gaurnatees a non nil
+                    // Ruby::Integer
+                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                    match i {
+                        0 => {
+                            result.second = {
+                                // TODO: This should support f64 seconds and drop
+                                // the remainder into micros.
+                                // ```irb
+                                // 3.1.2 > Time.utc(1, 2, 3, 4, 5, 6.1)
+                                // => 0001-02-03 04:05:06 56294995342131/562949953421312 UTC
+                                // ```
+                                arg
+                            }
+                        }
+                        1 => result.minute = arg,
+                        2 => result.hour = arg,
+                        3 => result.day = arg,
+                        4 => {
+                            result.month = {
+                                // TODO: This should support 3 letter month names
+                                // as per the docs. https://ruby-doc.org/3.1.2/Time.html#method-c-new
+                                arg
+                            }
+                        }
+                        5 => result.year = arg,
+                        _ => unreachable!(),
+                    }
+                }
+                Ok(result)
             }
             _ => unreachable!(),
         }
@@ -357,7 +393,20 @@ mod tests {
     }
 
     #[test]
-    fn ten_args_changes_unit_order() {}
+    fn ten_args_changes_unit_order() {
+        let mut interp = interpreter();
+
+        let args = interp.eval(b"[1, 2, 3, 4, 5, 2022, nil, nil, nil, nil]").unwrap();
+        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+
+        assert_eq!(1, result.second().unwrap());
+        assert_eq!(2, result.minute().unwrap());
+        assert_eq!(3, result.hour().unwrap());
+        assert_eq!(4, result.day().unwrap());
+        assert_eq!(5, result.month().unwrap());
+        assert_eq!(2022, result.year().unwrap());
+    }
 
     #[test]
     fn eleven_args_is_too_many() {
