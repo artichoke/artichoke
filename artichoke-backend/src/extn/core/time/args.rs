@@ -360,9 +360,6 @@ mod tests {
     fn ten_args_changes_unit_order() {}
 
     #[test]
-    fn ten_args_removes_micros() {}
-
-    #[test]
     fn eleven_args_is_too_many() {
         let mut interp = interpreter();
 
