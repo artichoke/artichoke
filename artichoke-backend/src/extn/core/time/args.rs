@@ -1,76 +1,189 @@
 use crate::convert::to_int;
 use crate::extn::prelude::*;
 
-#[derive(Debug, Copy, Clone)]
+pub type Year = i32;
+pub type Month = u8;
+pub type Day = u8;
+pub type Hour = u8;
+pub type Minute = u8;
+pub type Second = u8;
+pub type Nanoseconds = u32;
+
+#[derive(Debug, Clone, Copy)]
+pub enum ValueArgPart {
+    Year(Value),
+    Month(Value),
+    Day(Value),
+    Hour(Value),
+    Minute(Value),
+    Second(Value),
+    Micros(Value),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ArgPart {
+    Year(Year),
+    Month(Month),
+    Day(Day),
+    Hour(Hour),
+    Minute(Minute),
+    Second(Second),
+    Nanoseconds(Nanoseconds),
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Args {
-    year: i64,
-    month: i64,
-    day: i64,
-    hour: i64,
-    minute: i64,
-    second: i64,
-    micros: i64,
+    year: ArgPart,
+    month: ArgPart,
+    day: ArgPart,
+    hour: ArgPart,
+    minute: ArgPart,
+    second: ArgPart,
+    nanoseconds: ArgPart,
 }
 
 impl Default for Args {
     fn default() -> Self {
         Self {
-            year: 0,
-            month: 1,
-            day: 1,
-            hour: 0,
-            minute: 0,
-            second: 0,
-            micros: 0,
+            year: ArgPart::Year(0),
+            month: ArgPart::Month(1),
+            day: ArgPart::Day(1),
+            hour: ArgPart::Hour(0),
+            minute: ArgPart::Minute(0),
+            second: ArgPart::Second(0),
+            nanoseconds: ArgPart::Nanoseconds(0),
         }
     }
 }
 
 impl Args {
-    pub fn year(&self) -> Result<i32, Error> {
-        i32::try_from(self.year).map_err(|_| ArgumentError::with_message("year out of range").into())
-    }
-
-    pub fn month(&self) -> Result<u8, Error> {
-        match u8::try_from(self.month) {
-            Ok(month @ 1..=12) => Ok(month),
-            _ => Err(ArgumentError::with_message("mon out of range").into()),
+    pub fn year(&self) -> Year {
+        match self.year {
+            ArgPart::Year(year) => year,
+            _ => unreachable!(),
         }
     }
 
-    pub fn day(&self) -> Result<u8, Error> {
-        match u8::try_from(self.day) {
-            Ok(day @ 1..=31) => Ok(day),
-            _ => Err(ArgumentError::with_message("mday out of range").into()),
+    pub fn month(&self) -> Month {
+        match self.month {
+            ArgPart::Month(month) => month,
+            _ => unreachable!(),
         }
     }
 
-    pub fn hour(&self) -> Result<u8, Error> {
-        match u8::try_from(self.hour) {
-            Ok(hour @ 0..=23) => Ok(hour),
-            _ => Err(ArgumentError::with_message("hour out of range").into()),
+    pub fn day(&self) -> Day {
+        match self.day {
+            ArgPart::Day(day) => day,
+            _ => unreachable!(),
         }
     }
 
-    pub fn minute(&self) -> Result<u8, Error> {
-        match u8::try_from(self.minute) {
-            Ok(minute @ 0..=59) => Ok(minute),
-            _ => Err(ArgumentError::with_message("min out of range").into()),
+    pub fn hour(&self) -> Hour {
+        match self.hour {
+            ArgPart::Hour(hour) => hour,
+            _ => unreachable!(),
         }
     }
 
-    pub fn second(&self) -> Result<u8, Error> {
-        match u8::try_from(self.second) {
-            Ok(second @ 0..=60) => Ok(second),
-            _ => Err(ArgumentError::with_message("sec out of range").into()),
+    pub fn minute(&self) -> Minute {
+        match self.minute {
+            ArgPart::Minute(minute) => minute,
+            _ => unreachable!(),
         }
     }
 
-    pub fn nanoseconds(&self) -> Result<u32, Error> {
-        // Args take a micros parameter, not a nanos value.
-        match u32::try_from(self.micros) {
-            Ok(micros @ 0..=999_999) => Ok(micros * 1000),
-            _ => Err(ArgumentError::with_message("subsecx out of range").into()),
+    pub fn second(&self) -> Second {
+        match self.second {
+            ArgPart::Second(second) => second,
+            _ => unreachable!(),
+        }
+    }
+
+    pub fn nanoseconds(&self) -> Nanoseconds {
+        match self.nanoseconds {
+            ArgPart::Nanoseconds(nanos) => nanos,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl TryConvertMut<ValueArgPart, ArgPart> for Artichoke {
+    type Error = Error;
+
+    fn try_convert_mut(&mut self, value: ValueArgPart) -> Result<ArgPart, Self::Error> {
+        match value {
+            ValueArgPart::Year(value) => {
+                let value = to_int(self, value)?;
+                let value: i64 = value.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                i32::try_from(value)
+                    .map(|value| ArgPart::Year(value))
+                    .map_err(|_| ArgumentError::with_message("year out of range").into())
+            },
+            ValueArgPart::Month(value) => {
+                // TODO: This should support 3 letter month names
+                // as per the docs. https://ruby-doc.org/3.1.2/Time.html#method-c-new
+
+                let value = to_int(self, value)?;
+                let value: i64 = value.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                match u8::try_from(value) {
+                    Ok(month @ 1..=12) => Ok(ArgPart::Month(month)),
+                    _ => Err(ArgumentError::with_message("mon out of range").into()),
+                }
+            },
+            ValueArgPart::Day(value) => {
+                let value = to_int(self, value)?;
+                let value: i64 = value.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                match u8::try_from(value) {
+                    Ok(day @ 1..=31) => Ok(ArgPart::Day(day)),
+                    _ => Err(ArgumentError::with_message("mday out of range").into()),
+                }
+            },
+            ValueArgPart::Hour(value) => {
+                let value = to_int(self, value)?;
+                let value: i64 = value.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                match u8::try_from(value) {
+                    Ok(hour @ 0..=23) => Ok(ArgPart::Hour(hour)),
+                    _ => Err(ArgumentError::with_message("hour out of range").into()),
+                }
+            },
+            ValueArgPart::Minute(value) => {
+                let value = to_int(self, value)?;
+                let value: i64 = value.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                match u8::try_from(value) {
+                    Ok(minute @ 0..=59) => Ok(ArgPart::Minute(minute)),
+                    _ => Err(ArgumentError::with_message("min out of range").into()),
+                }
+            },
+            ValueArgPart::Second(value) => {
+                // TODO: This should support f64 seconds and drop
+                // the remainder into micros.
+                // ```irb
+                // 3.1.2 > Time.utc(1, 2, 3, 4, 5, 6.1)
+                // => 0001-02-03 04:05:06 56294995342131/562949953421312 UTC
+                // ```
+
+                let value = to_int(self, value)?;
+                let value: i64 = value.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                match u8::try_from(value) {
+                    Ok(second @ 0..=60) => Ok(ArgPart::Second(second)),
+                    _ => Err(ArgumentError::with_message("sec out of range").into()),
+                }
+            },
+            ValueArgPart::Micros(value) => {
+                let value = to_int(self, value)?;
+                let value: i64 = value.try_convert_into::<Option<i64>>(self)?.unwrap();
+
+                match u32::try_from(value) {
+                    Ok(micros @ 0..=999_999) => Ok(ArgPart::Nanoseconds(micros * 1000)),
+                    _ => Err(ArgumentError::with_message("subsecx out of range").into()),
+                }
+            }
         }
     }
 }
@@ -101,35 +214,14 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
                         continue;
                     }
 
-                    let arg = to_int(self, arg)?;
-                    // unwrap is safe since to_int gaurnatees a non nil
-                    // Ruby::Integer
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
-
                     match i {
-                        0 => result.year = arg,
-                        1 => {
-                            result.month = {
-                                // TODO: This should support 3 letter month names
-                                // as per the docs. https://ruby-doc.org/3.1.2/Time.html#method-c-new
-                                arg
-                            }
-                        }
-                        2 => result.day = arg,
-                        3 => result.hour = arg,
-                        4 => result.minute = arg,
-                        5 => {
-                            result.second = {
-                                // TODO: This should support f64 seconds and drop
-                                // the remainder into micros.
-                                // ```irb
-                                // 3.1.2 > Time.utc(1, 2, 3, 4, 5, 6.1)
-                                // => 0001-02-03 04:05:06 56294995342131/562949953421312 UTC
-                                // ```
-                                arg
-                            }
-                        }
-                        6 => result.micros = arg,
+                        0 => result.year = self.try_convert_mut(ValueArgPart::Year(arg))?,
+                        1 => result.month = self.try_convert_mut(ValueArgPart::Month(arg))?,
+                        2 => result.day = self.try_convert_mut(ValueArgPart::Day(arg))?,
+                        3 => result.hour = self.try_convert_mut(ValueArgPart::Hour(arg))?,
+                        4 => result.minute = self.try_convert_mut(ValueArgPart::Minute(arg))?,
+                        5 => result.second = self.try_convert_mut(ValueArgPart::Second(arg))?,
+                        6 => result.nanoseconds = self.try_convert_mut(ValueArgPart::Micros(arg))?,
                         7 => {
                             // NOOP
                             // The 8th parameter can be anything, even an error
@@ -150,34 +242,13 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
                 // Only arguments in position 0..=6 are parsed.
                 let args = args.iter().enumerate().filter(|&(i, _)| i < 6);
                 for (i, &arg) in args {
-                    let arg = to_int(self, arg)?;
-                    // unwrap is safe since to_int gaurnatees a non nil
-                    // Ruby::Integer
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
-
                     match i {
-                        0 => {
-                            result.second = {
-                                // TODO: This should support f64 seconds and drop
-                                // the remainder into micros.
-                                // ```irb
-                                // 3.1.2 > Time.utc(1, 2, 3, 4, 5, 6.1)
-                                // => 0001-02-03 04:05:06 56294995342131/562949953421312 UTC
-                                // ```
-                                arg
-                            }
-                        }
-                        1 => result.minute = arg,
-                        2 => result.hour = arg,
-                        3 => result.day = arg,
-                        4 => {
-                            result.month = {
-                                // TODO: This should support 3 letter month names
-                                // as per the docs. https://ruby-doc.org/3.1.2/Time.html#method-c-new
-                                arg
-                            }
-                        }
-                        5 => result.year = arg,
+                        0 => result.second = self.try_convert_mut(ValueArgPart::Second(arg))?,
+                        1 => result.minute = self.try_convert_mut(ValueArgPart::Minute(arg))?,
+                        2 => result.hour = self.try_convert_mut(ValueArgPart::Hour(arg))?,
+                        3 => result.day = self.try_convert_mut(ValueArgPart::Day(arg))?,
+                        4 => result.month = self.try_convert_mut(ValueArgPart::Month(arg))?,
+                        5 => result.year = self.try_convert_mut(ValueArgPart::Year(arg))?,
                         _ => unreachable!(),
                     }
                 }
@@ -218,13 +289,13 @@ mod tests {
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7, nil]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        assert_eq!(2022, result.year().unwrap());
-        assert_eq!(2, result.month().unwrap());
-        assert_eq!(3, result.day().unwrap());
-        assert_eq!(4, result.hour().unwrap());
-        assert_eq!(5, result.minute().unwrap());
-        assert_eq!(6, result.second().unwrap());
-        assert_eq!(7000, result.nanoseconds().unwrap());
+        assert_eq!(2022, result.year());
+        assert_eq!(2, result.month());
+        assert_eq!(3, result.day());
+        assert_eq!(4, result.hour());
+        assert_eq!(5, result.minute());
+        assert_eq!(6, result.second());
+        assert_eq!(7000, result.nanoseconds());
     }
 
     #[test]
@@ -234,13 +305,13 @@ mod tests {
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        assert_eq!(2022, result.year().unwrap());
-        assert_eq!(2, result.month().unwrap());
-        assert_eq!(3, result.day().unwrap());
-        assert_eq!(4, result.hour().unwrap());
-        assert_eq!(5, result.minute().unwrap());
-        assert_eq!(6, result.second().unwrap());
-        assert_eq!(7000, result.nanoseconds().unwrap());
+        assert_eq!(2022, result.year());
+        assert_eq!(2, result.month());
+        assert_eq!(3, result.day());
+        assert_eq!(4, result.hour());
+        assert_eq!(5, result.minute());
+        assert_eq!(6, result.second());
+        assert_eq!(7000, result.nanoseconds());
     }
 
     #[test]
@@ -250,13 +321,13 @@ mod tests {
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        assert_eq!(2022, result.year().unwrap());
-        assert_eq!(2, result.month().unwrap());
-        assert_eq!(3, result.day().unwrap());
-        assert_eq!(4, result.hour().unwrap());
-        assert_eq!(5, result.minute().unwrap());
-        assert_eq!(6, result.second().unwrap());
-        assert_eq!(0, result.nanoseconds().unwrap());
+        assert_eq!(2022, result.year());
+        assert_eq!(2, result.month());
+        assert_eq!(3, result.day());
+        assert_eq!(4, result.hour());
+        assert_eq!(5, result.minute());
+        assert_eq!(6, result.second());
+        assert_eq!(0, result.nanoseconds());
     }
 
     #[test]
@@ -266,13 +337,13 @@ mod tests {
         let args = interp.eval(b"[2022, 2, 3, 4, 5]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        assert_eq!(2022, result.year().unwrap());
-        assert_eq!(2, result.month().unwrap());
-        assert_eq!(3, result.day().unwrap());
-        assert_eq!(4, result.hour().unwrap());
-        assert_eq!(5, result.minute().unwrap());
-        assert_eq!(0, result.second().unwrap());
-        assert_eq!(0, result.nanoseconds().unwrap());
+        assert_eq!(2022, result.year());
+        assert_eq!(2, result.month());
+        assert_eq!(3, result.day());
+        assert_eq!(4, result.hour());
+        assert_eq!(5, result.minute());
+        assert_eq!(0, result.second());
+        assert_eq!(0, result.nanoseconds());
     }
 
     #[test]
@@ -282,13 +353,13 @@ mod tests {
         let args = interp.eval(b"[2022, 2, 3, 4]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        assert_eq!(2022, result.year().unwrap());
-        assert_eq!(2, result.month().unwrap());
-        assert_eq!(3, result.day().unwrap());
-        assert_eq!(4, result.hour().unwrap());
-        assert_eq!(0, result.minute().unwrap());
-        assert_eq!(0, result.second().unwrap());
-        assert_eq!(0, result.nanoseconds().unwrap());
+        assert_eq!(2022, result.year());
+        assert_eq!(2, result.month());
+        assert_eq!(3, result.day());
+        assert_eq!(4, result.hour());
+        assert_eq!(0, result.minute());
+        assert_eq!(0, result.second());
+        assert_eq!(0, result.nanoseconds());
     }
 
     #[test]
@@ -298,13 +369,13 @@ mod tests {
         let args = interp.eval(b"[2022, 2, 3]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        assert_eq!(2022, result.year().unwrap());
-        assert_eq!(2, result.month().unwrap());
-        assert_eq!(3, result.day().unwrap());
-        assert_eq!(0, result.hour().unwrap());
-        assert_eq!(0, result.minute().unwrap());
-        assert_eq!(0, result.second().unwrap());
-        assert_eq!(0, result.nanoseconds().unwrap());
+        assert_eq!(2022, result.year());
+        assert_eq!(2, result.month());
+        assert_eq!(3, result.day());
+        assert_eq!(0, result.hour());
+        assert_eq!(0, result.minute());
+        assert_eq!(0, result.second());
+        assert_eq!(0, result.nanoseconds());
     }
 
     #[test]
@@ -314,13 +385,13 @@ mod tests {
         let args = interp.eval(b"[2022, 2]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        assert_eq!(2022, result.year().unwrap());
-        assert_eq!(2, result.month().unwrap());
-        assert_eq!(1, result.day().unwrap());
-        assert_eq!(0, result.hour().unwrap());
-        assert_eq!(0, result.minute().unwrap());
-        assert_eq!(0, result.second().unwrap());
-        assert_eq!(0, result.nanoseconds().unwrap());
+        assert_eq!(2022, result.year());
+        assert_eq!(2, result.month());
+        assert_eq!(1, result.day());
+        assert_eq!(0, result.hour());
+        assert_eq!(0, result.minute());
+        assert_eq!(0, result.second());
+        assert_eq!(0, result.nanoseconds());
     }
 
     #[test]
@@ -330,13 +401,13 @@ mod tests {
         let args = interp.eval(b"[2022]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        assert_eq!(2022, result.year().unwrap());
-        assert_eq!(1, result.month().unwrap());
-        assert_eq!(1, result.day().unwrap());
-        assert_eq!(0, result.hour().unwrap());
-        assert_eq!(0, result.minute().unwrap());
-        assert_eq!(0, result.second().unwrap());
-        assert_eq!(0, result.nanoseconds().unwrap());
+        assert_eq!(2022, result.year());
+        assert_eq!(1, result.month());
+        assert_eq!(1, result.day());
+        assert_eq!(0, result.hour());
+        assert_eq!(0, result.minute());
+        assert_eq!(0, result.second());
+        assert_eq!(0, result.nanoseconds());
     }
 
     #[test]
@@ -346,13 +417,13 @@ mod tests {
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 1]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        let nanos = result.nanoseconds().unwrap();
+        let nanos = result.nanoseconds();
         assert_eq!(1000, nanos);
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 999_999]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
-        let nanos = result.nanoseconds().unwrap();
+        let nanos = result.nanoseconds();
         assert_eq!(999_999_000, nanos);
     }
 
@@ -363,13 +434,13 @@ mod tests {
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, -1]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
-        let error = result.unwrap().nanoseconds().unwrap_err();
+        let error = result.unwrap_err();
         assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_bstr());
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 1_000_000]").unwrap();
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
-        let error = result.unwrap().nanoseconds().unwrap_err();
+        let error = result.unwrap_err();
         assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_bstr());
     }
 
@@ -400,12 +471,12 @@ mod tests {
         let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
 
-        assert_eq!(1, result.second().unwrap());
-        assert_eq!(2, result.minute().unwrap());
-        assert_eq!(3, result.hour().unwrap());
-        assert_eq!(4, result.day().unwrap());
-        assert_eq!(5, result.month().unwrap());
-        assert_eq!(2022, result.year().unwrap());
+        assert_eq!(1, result.second());
+        assert_eq!(2, result.minute());
+        assert_eq!(3, result.hour());
+        assert_eq!(4, result.day());
+        assert_eq!(5, result.month());
+        assert_eq!(2022, result.year());
     }
 
     #[test]
