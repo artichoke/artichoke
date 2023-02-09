@@ -118,13 +118,13 @@ pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
     let args: Args = interp.try_convert_mut(args)?;
 
     let time = Time::utc(
-        args.year()?,
-        args.month()?,
-        args.day()?,
-        args.hour()?,
-        args.minute()?,
-        args.second()?,
-        args.nanoseconds()?,
+        args.year,
+        args.month,
+        args.day,
+        args.hour,
+        args.minute,
+        args.second,
+        args.nanoseconds,
     )?;
 
     Time::alloc_value(time, interp)
@@ -134,13 +134,13 @@ pub fn mktime(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
     let args: Args = interp.try_convert_mut(args)?;
 
     let time = Time::local(
-        args.year()?,
-        args.month()?,
-        args.day()?,
-        args.hour()?,
-        args.minute()?,
-        args.second()?,
-        args.nanoseconds()?,
+        args.year,
+        args.month,
+        args.day,
+        args.hour,
+        args.minute,
+        args.second,
+        args.nanoseconds,
     )?;
 
     Time::alloc_value(time, interp)
