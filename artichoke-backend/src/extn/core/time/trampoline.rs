@@ -114,7 +114,7 @@ pub fn at(
     Time::alloc_value(time, interp)
 }
 
-pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
+pub fn mkutc(interp: &mut Artichoke, args: &mut [Value]) -> Result<Value, Error> {
     let args: Args = interp.try_convert_mut(args)?;
 
     let time = Time::utc(
@@ -130,7 +130,7 @@ pub fn mkutc(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
     Time::alloc_value(time, interp)
 }
 
-pub fn mktime(interp: &mut Artichoke, args: &[Value]) -> Result<Value, Error> {
+pub fn mktime(interp: &mut Artichoke, args: &mut [Value]) -> Result<Value, Error> {
     let args: Args = interp.try_convert_mut(args)?;
 
     let time = Time::local(

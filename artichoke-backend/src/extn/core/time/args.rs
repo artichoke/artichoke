@@ -26,10 +26,10 @@ impl Default for Args {
     }
 }
 
-impl TryConvertMut<&[Value], Args> for Artichoke {
+impl TryConvertMut<&mut [Value], Args> for Artichoke {
     type Error = Error;
 
-    fn try_convert_mut(&mut self, args: &[Value]) -> Result<Args, Self::Error> {
+    fn try_convert_mut(&mut self, mut args: &mut [Value]) -> Result<Args, Self::Error> {
         // Time args should have a length of 1..=8 or 10. The error does not
         // give a hint that the 10 arg variant is supported however (this is
         // the same in MRI).
@@ -40,8 +40,6 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
             return Err(ArgumentError::from(message).into());
         }
 
-        let mut args = args.to_vec();
-
         // Args are in order of year, month, day, hour, minute, second, micros.
         // This is unless there are 10 arguments provided (`Time#to_a` format),
         // at which points it is second, minute, hour, day, month, year.
@@ -51,7 +49,7 @@ impl TryConvertMut<&[Value], Args> for Artichoke {
             args.swap(2, 3);
             // All arguments after position 5 are ignored in the 10 argument
             // variant.
-            args.truncate(6);
+            args = &mut args[..6];
         }
 
         let mut result = Args::default();
@@ -162,9 +160,9 @@ mod tests {
     fn requires_at_least_one_param() {
         let mut interp = interpreter();
 
-        let args = vec![];
+        let mut args = vec![];
 
-        let result: Result<Args, Error> = interp.try_convert_mut(args.as_slice());
+        let result: Result<Args, Error> = interp.try_convert_mut(args.as_mut_slice());
         let error = result.unwrap_err();
 
         assert_eq!(error.name(), "ArgumentError");
@@ -179,8 +177,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7, nil]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         assert_eq!(2022, result.year);
         assert_eq!(2, result.month);
         assert_eq!(3, result.day);
@@ -195,8 +193,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         assert_eq!(2022, result.year);
         assert_eq!(2, result.month);
         assert_eq!(3, result.day);
@@ -211,8 +209,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         assert_eq!(2022, result.year);
         assert_eq!(2, result.month);
         assert_eq!(3, result.day);
@@ -227,8 +225,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         assert_eq!(2022, result.year);
         assert_eq!(2, result.month);
         assert_eq!(3, result.day);
@@ -243,8 +241,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2, 3, 4]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         assert_eq!(2022, result.year);
         assert_eq!(2, result.month);
         assert_eq!(3, result.day);
@@ -259,8 +257,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2, 3]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         assert_eq!(2022, result.year);
         assert_eq!(2, result.month);
         assert_eq!(3, result.day);
@@ -275,8 +273,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         assert_eq!(2022, result.year);
         assert_eq!(2, result.month);
         assert_eq!(1, result.day);
@@ -291,8 +289,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         assert_eq!(2022, result.year);
         assert_eq!(1, result.month);
         assert_eq!(1, result.day);
@@ -307,14 +305,14 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 1]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         let nanos = result.nanoseconds;
         assert_eq!(1000, nanos);
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 999_999]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
         let nanos = result.nanoseconds;
         assert_eq!(999_999_000, nanos);
     }
@@ -324,14 +322,14 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, -1]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_mut_slice());
         let error = result.unwrap_err();
         assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_bstr());
 
         let args = interp.eval(b"[2022, 1, 1, 0, 0, 0, 1_000_000]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_mut_slice());
         let error = result.unwrap_err();
         assert_eq!(error.message().as_bstr(), b"subsecx out of range".as_bstr());
     }
@@ -344,8 +342,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7, nil, 0]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_mut_slice());
         let error = result.unwrap_err();
 
         assert_eq!(
@@ -360,8 +358,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[1, 2, 3, 4, 5, 2022, nil, nil, nil, nil]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Args = interp.try_convert_mut(ary_args.as_slice()).unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
 
         assert_eq!(1, result.second);
         assert_eq!(2, result.minute);
@@ -376,8 +374,8 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"[2022, 2, 3, 4, 5, 6, 7, nil, 0, 0, 0]").unwrap();
-        let ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
-        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_slice());
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_mut_slice());
         let error = result.unwrap_err();
 
         assert_eq!(
