@@ -58,7 +58,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
             match i {
                 0 => {
                     let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+                    let arg: i64 = arg.try_convert_into(self)?;
 
                     result.year = i32::try_from(arg).map_err(|_| ArgumentError::with_message("year out of range"))?;
                 }
@@ -66,7 +66,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     // TODO: This should support 3 letter month names
                     // as per the docs. https://ruby-doc.org/3.1.2/Time.html#method-c-new
                     let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+                    let arg: i64 = arg.try_convert_into(self)?;
 
                     result.month = match u8::try_from(arg) {
                         Ok(month @ 1..=12) => Ok(month),
@@ -75,7 +75,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                 }
                 2 => {
                     let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+                    let arg: i64 = arg.try_convert_into(self)?;
 
                     result.day = match u8::try_from(arg) {
                         Ok(day @ 1..=31) => Ok(day),
@@ -84,7 +84,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                 }
                 3 => {
                     let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+                    let arg: i64 = arg.try_convert_into(self)?;
 
                     result.hour = match u8::try_from(arg) {
                         Ok(hour @ 0..=59) => Ok(hour),
@@ -93,7 +93,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                 }
                 4 => {
                     let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+                    let arg: i64 = arg.try_convert_into(self)?;
 
                     result.minute = match u8::try_from(arg) {
                         Ok(minute @ 0..=59) => Ok(minute),
@@ -108,7 +108,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     // => 0001-02-03 04:05:06 56294995342131/562949953421312 UTC
                     // ```
                     let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+                    let arg: i64 = arg.try_convert_into(self)?;
 
                     result.second = match u8::try_from(arg) {
                         Ok(second @ 0..=59) => Ok(second),
@@ -117,7 +117,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                 }
                 6 => {
                     let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into::<Option<i64>>(self)?.unwrap();
+                    let arg: i64 = arg.try_convert_into(self)?;
 
                     // Args take a micros parameter, not a nanos value, and
                     // therefore we must multiply the value by 1_000. This is
