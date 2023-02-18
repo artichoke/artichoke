@@ -1,4 +1,4 @@
-use crate::convert::to_int;
+use crate::convert::{to_int, to_str};
 use crate::extn::prelude::*;
 
 #[derive(Debug, Copy, Clone)]
@@ -57,18 +57,52 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
         for (i, &arg) in args.iter().enumerate() {
             match i {
                 0 => {
-                    let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into(self)?;
+                    let arg: i64 = to_int(self, arg).and_then(|arg| arg.try_convert_into(self))?;
 
                     result.year = i32::try_from(arg).map_err(|_| ArgumentError::with_message("year out of range"))?;
                 }
                 1 => {
-                    // TODO: This should support 3 letter month names
-                    // as per the docs. https://ruby-doc.org/3.1.2/Time.html#method-c-new
-                    let arg = to_int(self, arg)?;
-                    let arg: i64 = arg.try_convert_into(self)?;
+                    // ```irb
+                    // 3.1.2 => Time.utc(2022, 2).month
+                    // => 2
+                    // 3.1.2 => class I; def to_int; 2; end; end
+                    // => :to_int
+                    // 3.1.2 => Time.utc(2022, I.new).month
+                    // => 2
+                    // 3.1.2 > Time.utc(2022, "feb").month
+                    // => 2
+                    // 3.1.2 > class A; def to_str; "feb"; end; end
+                    // => :to_str
+                    // 3.1.2 > Time.utc(2022, A.new).month
+                    // => 2
+                    // ```
+                    let month: i64 = if let Ok(month) = to_str(self, arg).and_then(|arg| {
+                        let month_str: &str = arg.try_convert_into_mut(self)?;
+                        match month_str {
+                            "jan" => Ok(1),
+                            "feb" => Ok(2),
+                            "mar" => Ok(3),
+                            "apr" => Ok(4),
+                            "may" => Ok(5),
+                            "jun" => Ok(6),
+                            "jul" => Ok(7),
+                            "aug" => Ok(8),
+                            "sep" => Ok(9),
+                            "oct" => Ok(10),
+                            "nov" => Ok(11),
+                            "dec" => Ok(12),
+                            // This error will never be seen due to the
+                            // fallback of to_int conversion below
+                            _ => Err(ArgumentError::with_message("unsupported mon value").into()),
+                        }
+                    }) {
+                        Ok(month)
+                    } else {
+                        let arg = to_int(self, arg)?;
+                        arg.try_convert_into(self)
+                    }?;
 
-                    result.month = match u8::try_from(arg) {
+                    result.month = match u8::try_from(month) {
                         Ok(month @ 1..=12) => Ok(month),
                         _ => Err(ArgumentError::with_message("mon out of range")),
                     }?;
@@ -298,6 +332,76 @@ mod tests {
         assert_eq!(0, result.minute);
         assert_eq!(0, result.second);
         assert_eq!(0, result.nanoseconds);
+    }
+
+    #[test]
+    fn month_supports_string_values() {
+        let mut interp = interpreter();
+
+        let table = [
+            (b"[2022, \"jan\"]", 1),
+            (b"[2022, \"feb\"]", 2),
+            (b"[2022, \"mar\"]", 3),
+            (b"[2022, \"apr\"]", 4),
+            (b"[2022, \"may\"]", 5),
+            (b"[2022, \"jun\"]", 6),
+            (b"[2022, \"jul\"]", 7),
+            (b"[2022, \"aug\"]", 8),
+            (b"[2022, \"sep\"]", 9),
+            (b"[2022, \"oct\"]", 10),
+            (b"[2022, \"nov\"]", 11),
+            (b"[2022, \"dec\"]", 12),
+        ];
+
+        for (input, expected_month) in table {
+            let args = interp.eval(input).unwrap();
+            let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+            let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
+
+            assert_eq!(expected_month, result.month);
+        }
+    }
+
+    #[test]
+    fn month_supports_string_like_values() {
+        let mut interp = interpreter();
+
+        let args = interp
+            .eval(b"class A; def to_str; \"feb\"; end; end; [2022, A.new]")
+            .unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
+
+        assert_eq!(2, result.month);
+    }
+
+    #[test]
+    fn month_supports_int_like_values() {
+        let mut interp = interpreter();
+
+        let args = interp.eval(b"class A; def to_int; 2; end; end; [2022, A.new]").unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
+
+        assert_eq!(2, result.month);
+    }
+
+    #[test]
+    fn invalid_month_string_responds_with_int_conversion_error() {
+        let mut interp = interpreter();
+
+        let args = interp
+            .eval(b"class A; def to_str; \"aaa\"; end; end; [2022, A.new]")
+            .unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_mut_slice());
+        let error = result.unwrap_err();
+
+        assert_eq!(
+            error.message().as_bstr(),
+            b"no implicit conversion of A into Integer".as_bstr()
+        );
+        assert_eq!(error.name(), "TypeError");
     }
 
     #[test]
