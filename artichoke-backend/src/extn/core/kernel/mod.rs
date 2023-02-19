@@ -3,6 +3,8 @@ pub(in crate::extn) mod mruby;
 pub mod require;
 pub(super) mod trampoline;
 
+pub use trampoline::integer;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Kernel;
 
