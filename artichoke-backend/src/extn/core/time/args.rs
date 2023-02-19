@@ -62,6 +62,16 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
 
                     result.year = i32::try_from(arg).map_err(|_| ArgumentError::with_message("year out of range"))?;
                 }
+                // Short circuit month checking to avoid `to_str` checking.
+                1 if Ruby::Fixnum == arg.ruby_type() => {
+                    let arg = to_int(self, arg)?;
+                    let arg: i64 = arg.try_convert_into(self)?;
+
+                    result.month = match u8::try_from(arg) {
+                        Ok(month @ 1..=12) => month,
+                        _ => return Err(ArgumentError::with_message("mon out of range").into()),
+                    };
+                }
                 1 => {
                     // ```irb
                     // 3.1.2 => Time.utc(2022, 2).month
@@ -81,44 +91,38 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     // 3.1.2 > Time.utc(2022, I.new).month
                     // => 2
                     // ```
-                    let month: i64 = if Ruby::Fixnum == arg.ruby_type() {
-                        // Short circuit to avoid string checking
+                    let month: i64 = if let Ok(arg) = to_str(self, arg) {
+                        let mut month_str: Vec<u8> = arg.try_convert_into_mut(self)?;
+                        month_str.make_ascii_lowercase();
+                        match month_str.as_slice() {
+                            b"jan" => 1,
+                            b"feb" => 2,
+                            b"mar" => 3,
+                            b"apr" => 4,
+                            b"may" => 5,
+                            b"jun" => 6,
+                            b"jul" => 7,
+                            b"aug" => 8,
+                            b"sep" => 9,
+                            b"oct" => 10,
+                            b"nov" => 11,
+                            b"dec" => 12,
+                            _ => {
+                                // Delegate to `Kernel#Integer` as last resort
+                                // to handle Integer strings.
+                                let arg = integer(self, arg, None)?;
+                                arg.try_convert_into(self)?
+                            }
+                        }
+                    } else {
                         let arg = to_int(self, arg)?;
                         arg.try_convert_into(self)?
-                    } else {
-                        if let Ok(arg) = to_str(self, arg) {
-                            let mut month_str: Vec<u8> = arg.try_convert_into_mut(self)?;
-                            month_str.make_ascii_lowercase();
-                            match month_str.as_slice() {
-                                b"jan" => Ok(1),
-                                b"feb" => Ok(2),
-                                b"mar" => Ok(3),
-                                b"apr" => Ok(4),
-                                b"may" => Ok(5),
-                                b"jun" => Ok(6),
-                                b"jul" => Ok(7),
-                                b"aug" => Ok(8),
-                                b"sep" => Ok(9),
-                                b"oct" => Ok(10),
-                                b"nov" => Ok(11),
-                                b"dec" => Ok(12),
-                                _ => {
-                                    // Delegate to `Kernel#Integer` as last
-                                    // resort to handle Integer strings.
-                                    let arg = integer(self, arg, None)?;
-                                    arg.try_convert_into(self)
-                                }
-                            }
-                        } else {
-                            let arg = to_int(self, arg)?;
-                            arg.try_convert_into(self)
-                        }?
                     };
 
                     result.month = match u8::try_from(month) {
-                        Ok(month @ 1..=12) => Ok(month),
-                        _ => Err(ArgumentError::with_message("mon out of range")),
-                    }?;
+                        Ok(month @ 1..=12) => month,
+                        _ => return Err(ArgumentError::with_message("mon out of range").into()),
+                    };
                 }
                 2 => {
                     let arg = to_int(self, arg)?;
