@@ -129,27 +129,27 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     let arg: i64 = arg.try_convert_into(self)?;
 
                     result.day = match u8::try_from(arg) {
-                        Ok(day @ 1..=31) => Ok(day),
-                        _ => Err(ArgumentError::with_message("mday out of range")),
-                    }?;
+                        Ok(day @ 1..=31) => day,
+                        _ => return Err(ArgumentError::with_message("mday out of range").into()),
+                    };
                 }
                 3 => {
                     let arg = to_int(self, arg)?;
                     let arg: i64 = arg.try_convert_into(self)?;
 
                     result.hour = match u8::try_from(arg) {
-                        Ok(hour @ 0..=59) => Ok(hour),
-                        _ => Err(ArgumentError::with_message("hour out of range")),
-                    }?;
+                        Ok(hour @ 0..=59) => hour,
+                        _ => return Err(ArgumentError::with_message("hour out of range").into()),
+                    };
                 }
                 4 => {
                     let arg = to_int(self, arg)?;
                     let arg: i64 = arg.try_convert_into(self)?;
 
                     result.minute = match u8::try_from(arg) {
-                        Ok(minute @ 0..=59) => Ok(minute),
-                        _ => Err(ArgumentError::with_message("min out of range")),
-                    }?;
+                        Ok(minute @ 0..=59) => minute,
+                        _ => return Err(ArgumentError::with_message("min out of range").into()),
+                    };
                 }
                 5 => {
                     // TODO: This should support f64 seconds and drop
@@ -162,9 +162,9 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     let arg: i64 = arg.try_convert_into(self)?;
 
                     result.second = match u8::try_from(arg) {
-                        Ok(second @ 0..=59) => Ok(second),
-                        _ => Err(ArgumentError::with_message("sec out of range")),
-                    }?;
+                        Ok(second @ 0..=59) => second,
+                        _ => return Err(ArgumentError::with_message("sec out of range").into()),
+                    };
                 }
                 6 => {
                     let arg = to_int(self, arg)?;
@@ -174,9 +174,9 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     // therefore we must multiply the value by 1_000. This is
                     // gaurnateed to fit in a u32.
                     result.nanoseconds = match u32::try_from(arg) {
-                        Ok(micros @ 0..=999_999) => Ok(micros * 1000),
-                        _ => Err(ArgumentError::with_message("subsecx out of range")),
-                    }?;
+                        Ok(micros @ 0..=999_999) => micros * 1000,
+                        _ => return Err(ArgumentError::with_message("subsecx out of range").into()),
+                    };
                 }
                 7 => {
                     // NOOP
