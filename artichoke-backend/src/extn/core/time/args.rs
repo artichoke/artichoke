@@ -493,7 +493,20 @@ mod tests {
     }
 
     #[test]
-    fn fractional_seconds_return_nanos() {}
+    #[should_panic]
+    fn fractional_seconds_return_nanos() {
+        // ```irb
+        // 3.1.2 > Time.utc(*[2022, 1, 1, 0, 0, 1.5])
+        // => 2022-01-01 00:00:01.5 UTC
+        // 3.1.2 > Time.utc(*[2022, 1, 1, 0, 0, 1.5]).subsec
+        // => (1/2)
+        // 3.1.2 > Time.utc(*[2022, 1, 1, 0, 0, 1.5]).tv_nsec
+        // => 500000000
+        // 3.1.2 > Time.utc(*[2022, 1, 1, 0, 0, 1.5, 0]).tv_nsec
+        // => 0
+        // ```
+        todo!()
+    }
 
     #[test]
     fn nine_args_not_supported() {
