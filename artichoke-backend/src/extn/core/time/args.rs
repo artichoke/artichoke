@@ -1,4 +1,5 @@
 use crate::convert::{to_int, to_str};
+use crate::extn::core::kernel::integer;
 use crate::extn::prelude::*;
 
 #[derive(Debug, Copy, Clone)]
@@ -75,32 +76,44 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     // => :to_str
                     // 3.1.2 > Time.utc(2022, A.new).month
                     // => 2
+                    // 3.1.2 > class I; def to_str; "2"; end; end
+                    // => :to_str
+                    // 3.1.2 > Time.utc(2022, I.new).month
+                    // => 2
                     // ```
-                    let month: i64 = if let Ok(month) = to_str(self, arg).and_then(|arg| {
-                        let month_str: &str = arg.try_convert_into_mut(self)?;
-                        match month_str {
-                            "jan" => Ok(1),
-                            "feb" => Ok(2),
-                            "mar" => Ok(3),
-                            "apr" => Ok(4),
-                            "may" => Ok(5),
-                            "jun" => Ok(6),
-                            "jul" => Ok(7),
-                            "aug" => Ok(8),
-                            "sep" => Ok(9),
-                            "oct" => Ok(10),
-                            "nov" => Ok(11),
-                            "dec" => Ok(12),
-                            // This error will never be seen due to the
-                            // fallback of to_int conversion below
-                            _ => Err(ArgumentError::with_message("unsupported mon value").into()),
-                        }
-                    }) {
-                        Ok(month)
-                    } else {
+                    let month: i64 = if Ruby::Fixnum == arg.ruby_type() {
+                        // Short circuit to avoid string checking
                         let arg = to_int(self, arg)?;
-                        arg.try_convert_into(self)
-                    }?;
+                        arg.try_convert_into(self)?
+                    } else {
+                        if let Ok(arg) = to_str(self, arg) {
+                            let mut month_str: Vec<u8> = arg.try_convert_into_mut(self)?;
+                            month_str.make_ascii_lowercase();
+                            match month_str.as_slice() {
+                                b"jan" => Ok(1),
+                                b"feb" => Ok(2),
+                                b"mar" => Ok(3),
+                                b"apr" => Ok(4),
+                                b"may" => Ok(5),
+                                b"jun" => Ok(6),
+                                b"jul" => Ok(7),
+                                b"aug" => Ok(8),
+                                b"sep" => Ok(9),
+                                b"oct" => Ok(10),
+                                b"nov" => Ok(11),
+                                b"dec" => Ok(12),
+                                _ => {
+                                    // Delegate to `Kernel#Integer` as last
+                                    // resort to handle Integer strings.
+                                    let arg = integer(self, arg, None)?;
+                                    arg.try_convert_into(self)
+                                }
+                            }
+                        } else {
+                            let arg = to_int(self, arg)?;
+                            arg.try_convert_into(self)
+                        }?
+                    };
 
                     result.month = match u8::try_from(month) {
                         Ok(month @ 1..=12) => Ok(month),
@@ -413,7 +426,9 @@ mod tests {
     fn month_string_can_be_integer_strings() {
         let mut interp = interpreter();
 
-        let args = interp.eval(b"class A; def to_str; '2'; end; end; [2022, A.new]").unwrap();
+        let args = interp
+            .eval(b"class A; def to_str; '2'; end; end; [2022, A.new]")
+            .unwrap();
         let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
 
@@ -433,9 +448,9 @@ mod tests {
 
         assert_eq!(
             error.message().as_bstr(),
-            b"no implicit conversion of A into Integer".as_bstr()
+            br#"invalid value for Integer(): "aaa""#.as_bstr()
         );
-        assert_eq!(error.name(), "TypeError");
+        assert_eq!(error.name(), "ArgumentError");
     }
 
     #[test]
