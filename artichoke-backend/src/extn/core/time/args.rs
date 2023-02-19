@@ -175,6 +175,10 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     // gaurnateed to fit in a u32.
                     result.nanoseconds = match u32::try_from(arg) {
                         Ok(micros @ 0..=999_999) => micros * 1000,
+                        // ```
+                        // [3.1.2] > Time.utc(2022, 12, 31, 13, 24, 55, 100000000000000000)
+                        // (irb):3:in `utc': subsecx out of range (ArgumentError)
+                        // ```
                         _ => return Err(ArgumentError::with_message("subsecx out of range").into()),
                     };
                 }
