@@ -466,6 +466,19 @@ mod tests {
     }
 
     #[test]
+    fn month_downcase_shortcut_does_not_limit_call_to_integer() {
+        let mut interp = interpreter();
+
+        let args = interp
+            .eval(b"class I; def to_str; '0000000002'; end; end; [2022, I.new]")
+            .unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
+
+        assert_eq!(2, result.month);
+    }
+
+    #[test]
     fn subsec_is_valid_micros_not_nanos() {
         let mut interp = interpreter();
 
