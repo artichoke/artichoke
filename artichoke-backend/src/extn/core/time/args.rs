@@ -93,8 +93,15 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     // ```
                     let month: i64 = if let Ok(arg) = to_str(self, arg) {
                         let mut month_str: Vec<u8> = arg.try_convert_into_mut(self)?;
+
+                        // Valid month string args are always 3 bytes long (or 3
+                        // ASCII characters). only downcase the first 3 bytes to
+                        // avoid excessive resource consumption if given a long
+                        // string.
+                        let month_str = month_str.get_mut(..3).unwrap_or_default();
                         month_str.make_ascii_lowercase();
-                        match month_str.as_slice() {
+
+                        match &*month_str {
                             b"jan" => 1,
                             b"feb" => 2,
                             b"mar" => 3,
