@@ -352,6 +352,28 @@ mod tests {
             (b"[2022, 'nov']", 11),
             (b"[2022, 'dec']", 12),
         ];
+
+        for (input, expected_month) in table {
+            let args = interp.eval(input).unwrap();
+            let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+            let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
+
+            assert_eq!(expected_month, result.month);
+        }
+    }
+
+    #[test]
+    fn month_strings_are_case_insensitive() {
+        let mut interp = interpreter();
+
+        let table = [
+            (b"[2022, 'Feb']", 2),
+            (b"[2022, 'fEb']", 2),
+            (b"[2022, 'feB']", 2),
+            (b"[2022, 'FEb']", 2),
+            (b"[2022, 'FeB']", 2),
+            (b"[2022, 'fEB']", 2),
+            (b"[2022, 'FEB']", 2),
         ];
 
         for (input, expected_month) in table {
@@ -381,6 +403,17 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp.eval(b"class A; def to_int; 2; end; end; [2022, A.new]").unwrap();
+        let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
+        let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
+
+        assert_eq!(2, result.month);
+    }
+
+    #[test]
+    fn month_string_can_be_integer_strings() {
+        let mut interp = interpreter();
+
+        let args = interp.eval(b"class A; def to_str; '2'; end; end; [2022, A.new]").unwrap();
         let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
 
