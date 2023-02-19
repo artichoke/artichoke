@@ -161,9 +161,9 @@ impl Time {
         }
 
         if seconds.is_sign_positive() {
-            self.checked_add(Duration::from_secs_f64(seconds))
+            self.checked_add(Duration::try_from_secs_f64(seconds)?)
         } else {
-            self.checked_sub(Duration::from_secs_f64(-seconds))
+            self.checked_sub(Duration::try_from_secs_f64(-seconds)?)
         }
     }
 }
@@ -242,9 +242,9 @@ impl Time {
         }
 
         if seconds.is_sign_positive() {
-            self.checked_sub(Duration::from_secs_f64(seconds))
+            self.checked_sub(Duration::try_from_secs_f64(seconds)?)
         } else {
-            self.checked_add(Duration::from_secs_f64(-seconds))
+            self.checked_add(Duration::try_from_secs_f64(-seconds)?)
         }
     }
 }
@@ -302,6 +302,15 @@ mod tests {
         } else {
             assert!(500_000_000 - succ.nanoseconds() < 50);
         }
+    }
+
+    #[test]
+    fn add_out_of_fixnum_range_float_sec() {
+        let dt = datetime();
+        dt.checked_add_f64(f64::MAX).unwrap_err();
+
+        let dt = datetime();
+        dt.checked_add_f64(f64::MIN).unwrap_err();
     }
 
     #[test]
@@ -391,6 +400,15 @@ mod tests {
         } else {
             assert!(500_000_000 - succ.nanoseconds() < 50);
         }
+    }
+
+    #[test]
+    fn sub_out_of_fixnum_range_float_sec() {
+        let dt = datetime();
+        dt.checked_sub_f64(f64::MAX).unwrap_err();
+
+        let dt = datetime();
+        dt.checked_sub_f64(f64::MIN).unwrap_err();
     }
 
     #[test]

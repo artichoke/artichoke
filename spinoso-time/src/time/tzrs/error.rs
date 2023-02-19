@@ -2,6 +2,7 @@
 
 use core::fmt;
 use core::num::TryFromIntError;
+use core::time::TryFromFloatSecsError;
 use std::error;
 use std::str::Utf8Error;
 
@@ -150,8 +151,14 @@ impl From<TzOutOfRangeError> for TimeError {
 }
 
 impl From<IntOverflowError> for TimeError {
-    fn from(error: IntOverflowError) -> Self {
-        Self::IntOverflowError(error)
+    fn from(err: IntOverflowError) -> Self {
+        Self::IntOverflowError(err)
+    }
+}
+
+impl From<TryFromFloatSecsError> for TimeError {
+    fn from(err: TryFromFloatSecsError) -> Self {
+        Self::TzOutOfRangeError(err.into())
     }
 }
 
@@ -206,6 +213,12 @@ impl TzOutOfRangeError {
     // This error is not to be constructed outside of this crate.
     pub(crate) const fn new() -> Self {
         Self { _private: () }
+    }
+}
+
+impl From<TryFromFloatSecsError> for TzOutOfRangeError {
+    fn from(_err: TryFromFloatSecsError) -> Self {
+        Self::new()
     }
 }
 

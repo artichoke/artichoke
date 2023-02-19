@@ -37,7 +37,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-time = { version = "0.7.0", features = ["tzrs"] }
+spinoso-time = { version = "0.7.1", features = ["tzrs"] }
 ```
 
 ## Examples
