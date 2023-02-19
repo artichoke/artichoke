@@ -339,18 +339,19 @@ mod tests {
         let mut interp = interpreter();
 
         let table = [
-            (b"[2022, \"jan\"]", 1),
-            (b"[2022, \"feb\"]", 2),
-            (b"[2022, \"mar\"]", 3),
-            (b"[2022, \"apr\"]", 4),
-            (b"[2022, \"may\"]", 5),
-            (b"[2022, \"jun\"]", 6),
-            (b"[2022, \"jul\"]", 7),
-            (b"[2022, \"aug\"]", 8),
-            (b"[2022, \"sep\"]", 9),
-            (b"[2022, \"oct\"]", 10),
-            (b"[2022, \"nov\"]", 11),
-            (b"[2022, \"dec\"]", 12),
+            (b"[2022, 'jan']", 1),
+            (b"[2022, 'feb']", 2),
+            (b"[2022, 'mar']", 3),
+            (b"[2022, 'apr']", 4),
+            (b"[2022, 'may']", 5),
+            (b"[2022, 'jun']", 6),
+            (b"[2022, 'jul']", 7),
+            (b"[2022, 'aug']", 8),
+            (b"[2022, 'sep']", 9),
+            (b"[2022, 'oct']", 10),
+            (b"[2022, 'nov']", 11),
+            (b"[2022, 'dec']", 12),
+        ];
         ];
 
         for (input, expected_month) in table {
@@ -367,7 +368,7 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp
-            .eval(b"class A; def to_str; \"feb\"; end; end; [2022, A.new]")
+            .eval(b"class A; def to_str; 'feb'; end; end; [2022, A.new]")
             .unwrap();
         let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
@@ -391,7 +392,7 @@ mod tests {
         let mut interp = interpreter();
 
         let args = interp
-            .eval(b"class A; def to_str; \"aaa\"; end; end; [2022, A.new]")
+            .eval(b"class A; def to_str; 'aaa'; end; end; [2022, A.new]")
             .unwrap();
         let mut ary_args: Vec<Value> = interp.try_convert_mut(args).unwrap();
         let result: Result<Args, Error> = interp.try_convert_mut(ary_args.as_mut_slice());
