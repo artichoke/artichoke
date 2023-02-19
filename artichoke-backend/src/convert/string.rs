@@ -43,7 +43,11 @@ impl TryConvertMut<Value, String> for Artichoke {
     type Error = Error;
 
     fn try_convert_mut(&mut self, value: Value) -> Result<String, Self::Error> {
-        TryConvertMut::<_, &str>::try_convert_mut(self, value).map(String::from)
+        let bytes = self.try_convert_mut(value)?;
+        // This converter requires that the bytes be valid UTF-8 data. If the
+        // `Value` contains binary data, use the `Vec<u8>` or `&[u8]` converter.
+        let string = String::from_utf8(bytes).map_err(|_| UnboxRubyError::new(&value, Rust::String))?;
+        Ok(string)
     }
 }
 

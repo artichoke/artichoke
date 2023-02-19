@@ -321,7 +321,7 @@ pub fn equals_equals(interp: &mut Artichoke, mut value: Value, mut other: Value)
     if value.respond_to(interp, "to_str")? {
         let result = other.funcall(interp, "==", &[value], None)?;
         // any falsy returned value yields `false`, otherwise `true`.
-        if let Ok(result) = TryConvert::<_, Option<bool>>::try_convert(interp, result) {
+        if let Ok(result) = result.try_convert_into::<Option<bool>>(interp) {
             let result = result.unwrap_or_default();
             Ok(interp.convert(result))
         } else {
