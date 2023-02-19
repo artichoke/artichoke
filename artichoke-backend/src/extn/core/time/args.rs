@@ -399,6 +399,7 @@ mod tests {
             let result: Args = interp.try_convert_mut(ary_args.as_mut_slice()).unwrap();
 
             assert_eq!(expected_month, result.month);
+            assert_eq!(2022, result.year);
         }
     }
 
