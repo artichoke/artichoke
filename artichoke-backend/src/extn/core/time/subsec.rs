@@ -559,12 +559,12 @@ mod tests {
         let err = subsec(&mut interp, (Some(b"Float::INFINITY"), None)).unwrap_err();
 
         assert_eq!(err.name(), "FloatDomainError");
-        assert_eq!(err.message().as_bstr(), b"Infinity".as_slice().as_bstr());
+        assert_eq!(err.message().as_bstr(), b"Infinity".as_bstr());
 
         let err = subsec(&mut interp, (Some(b"-Float::INFINITY"), None)).unwrap_err();
 
         assert_eq!(err.name(), "FloatDomainError");
-        assert_eq!(err.message().as_bstr(), b"-Infinity".as_slice().as_bstr());
+        assert_eq!(err.message().as_bstr(), b"-Infinity".as_bstr());
     }
 
     #[test]
@@ -574,10 +574,7 @@ mod tests {
         let err = subsec(&mut interp, (Some(b"1"), Some(b":bad_unit"))).unwrap_err();
 
         assert_eq!(err.name(), "ArgumentError");
-        assert_eq!(
-            err.message().as_bstr(),
-            b"unexpected unit: bad_unit".as_slice().as_bstr()
-        );
+        assert_eq!(err.message().as_bstr(), b"unexpected unit: bad_unit".as_bstr());
     }
 
     #[test]
@@ -587,15 +584,12 @@ mod tests {
         let err = subsec(&mut interp, (Some(b"1"), Some(b":bad_unit"))).unwrap_err();
 
         assert_eq!(err.name(), "ArgumentError");
-        assert_eq!(
-            err.message().as_bstr(),
-            b"unexpected unit: bad_unit".as_slice().as_bstr()
-        );
+        assert_eq!(err.message().as_bstr(), b"unexpected unit: bad_unit".as_bstr());
 
         let err = subsec(&mut interp, (Some(b"1"), Some(b"1"))).unwrap_err();
 
         assert_eq!(err.name(), "ArgumentError");
-        assert_eq!(err.message().as_bstr(), b"unexpected unit: 1".as_slice().as_bstr());
+        assert_eq!(err.message().as_bstr(), b"unexpected unit: 1".as_bstr());
 
         let err = subsec(&mut interp, (Some(b"1"), Some(b"Object.new"))).unwrap_err();
 
@@ -603,7 +597,7 @@ mod tests {
         assert!(err
             .message()
             .as_bstr()
-            .starts_with(b"unexpected unit: #<Object:".as_slice().as_bstr()));
+            .starts_with(b"unexpected unit: #<Object:".as_bstr()));
     }
 
     #[test]
@@ -617,9 +611,6 @@ mod tests {
         .unwrap_err();
 
         assert_eq!(err.name(), "ArgumentError");
-        assert!(err
-            .message()
-            .as_bstr()
-            .starts_with(b"unexpected unit: #<A:".as_slice().as_bstr()));
+        assert!(err.message().as_bstr().starts_with(b"unexpected unit: #<A:".as_bstr()));
     }
 }
