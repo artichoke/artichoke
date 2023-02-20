@@ -6,6 +6,7 @@
 
 use std::error;
 use std::fmt;
+use std::fs;
 use std::io;
 use std::path::PathBuf;
 
@@ -172,8 +173,14 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
 
 fn repl_history_file() -> Option<PathBuf> {
     let dirs = ProjectDirs::from("org", "artichokeruby", "airb")?;
-    let data = dirs.data_dir();
-    Some(data.join("history"))
+
+    let data_dir = dirs.data_dir();
+    // Ensure the data directory exists but ignore failures (e.g. the dir
+    // already exists) because all operations on the history file are best
+    // effort and non-blocking.
+    let _ignored = fs::create_dir(data_dir);
+
+    Some(data_dir.join("history"))
 }
 
 /// Run a REPL for the mruby interpreter exposed by the `mruby` crate.
