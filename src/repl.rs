@@ -253,20 +253,15 @@ where
     let parser = ParserValidator::new(interp).ok_or_else(ParserAllocError::new)?;
     rl.set_helper(Some(parser.clone()));
 
-    // If a code block is open, accumulate code from multiple read lines in this
-    // mutable `String` buffer.
-    let mut buf = String::new();
     loop {
         let readline = rl.readline(config.simple);
         match readline {
-            Ok(line) if line.is_empty() && buf.is_empty() => (),
-            Ok(line) => {
-                buf.push_str(line.as_str());
-
+            Ok(input) if input.is_empty() => {}
+            Ok(input) => {
                 let mut lock = parser.inner.lock().unwrap_or_else(PoisonError::into_inner);
                 let interp = lock.interp();
 
-                match interp.eval(buf.as_bytes()) {
+                match interp.eval(input.as_bytes()) {
                     Ok(value) => {
                         let result = value.inspect(interp);
                         output.write_all(config.result_prefix.as_bytes())?;
@@ -276,18 +271,16 @@ where
                     Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
                 }
 
-                for line in buf.lines() {
-                    rl.add_history_entry(line)?;
-                    interp.add_fetch_lineno(1).map_err(|_| ParserLineCountError::new())?;
-                }
+                interp
+                    .add_fetch_lineno(input.matches('\n').count())
+                    .map_err(|_| ParserLineCountError::new())?;
+                rl.add_history_entry(input)?;
+
                 // Eval successful, so reset the REPL state for the next expression.
                 interp.incremental_gc()?;
-                buf.clear();
             }
-            // Reset the buffer and present the user with a fresh prompt
+            // Reset and present the user with a fresh prompt.
             Err(ReadlineError::Interrupted) => {
-                // Reset buffered code
-                buf.clear();
                 writeln!(output, "^C")?;
             }
             // Gracefully exit on CTRL-D EOF
