@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
-#![allow(clippy::multiple_crate_versions)]
 #![allow(unknown_lints)]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
