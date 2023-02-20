@@ -13,7 +13,7 @@ use rustyline::config::EditMode;
 /// > Do key bindings from a file.  If FILENAME is NULL it defaults
 /// > to the first non-null filename from this list:
 /// >   1. the filename used for the previous call
-/// >   2. the value of the shell variable `INPUTRC'
+/// >   2. the value of the shell variable `INPUTRC`
 /// >   3. ~/.inputrc
 /// >   4. /etc/inputrc
 /// > If the file existed and could be opened and read, 0 is returned,
@@ -56,7 +56,7 @@ pub fn get_readline_edit_mode(contents: impl AsRef<[u8]>) -> Option<EditMode> {
         let line = trim_whitespace_front(line);
 
         // If the line is not a comment, then parse it.
-        if matches!(line.get(0), Some(b'#') | None) {
+        if matches!(line.first(), Some(b'#') | None) {
             continue;
         }
 
