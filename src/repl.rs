@@ -7,7 +7,9 @@
 use std::error;
 use std::fmt;
 use std::io;
+use std::path::PathBuf;
 
+use directories::ProjectDirs;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 use termcolor::WriteColor;
@@ -168,6 +170,12 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
     Ok(buf)
 }
 
+fn repl_history_file() -> Option<PathBuf> {
+    let dirs = ProjectDirs::from("org", "artichokeruby", "airb")?;
+    let data = dirs.data_dir();
+    Some(data.join("history"))
+}
+
 /// Run a REPL for the mruby interpreter exposed by the `mruby` crate.
 ///
 /// # Errors
@@ -195,7 +203,20 @@ where
     let mut interp = crate::interpreter()?;
     let mut rl = DefaultEditor::new().map_err(UnhandledReadlineError)?;
 
+    let hist_file = repl_history_file();
+    if let Some(ref hist_file) = hist_file {
+        // History can fail to load if the file does not exist and is a
+        // non-blocking error.
+        let _ignored = rl.load_history(hist_file);
+    }
+
     let result = repl_loop(&mut interp, &mut rl, output, error, &config.unwrap_or_default());
+
+    if let Some(ref hist_file) = hist_file {
+        // Saving history is not critical and should not abort the REPL if it
+        // fails.
+        let _ignored = rl.save_history(hist_file);
+    }
 
     interp.close();
     result
