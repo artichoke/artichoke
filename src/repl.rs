@@ -193,13 +193,17 @@ where
     Werr: io::Write + WriteColor,
 {
     let mut interp = crate::interpreter()?;
-    let result = repl_loop(&mut interp, output, error, &config.unwrap_or_default());
+    let mut rl = DefaultEditor::new().map_err(UnhandledReadlineError)?;
+
+    let result = repl_loop(&mut interp, &mut rl, output, error, &config.unwrap_or_default());
+
     interp.close();
     result
 }
 
 fn repl_loop<Wout, Werr>(
     interp: &mut Artichoke,
+    rl: &mut DefaultEditor,
     mut output: Wout,
     mut error: Werr,
     config: &PromptConfig<'_, '_, '_>,
@@ -216,7 +220,6 @@ where
     interp.push_context(context)?;
     let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
 
-    let mut rl = DefaultEditor::new().map_err(UnhandledReadlineError)?;
     // If a code block is open, accumulate code from multiple read lines in this
     // mutable `String` buffer.
     let mut buf = String::new();
