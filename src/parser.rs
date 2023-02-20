@@ -6,6 +6,19 @@
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::ptr::NonNull;
+#[cfg(feature = "cli")]
+use std::sync::{Arc, Mutex, PoisonError};
+
+#[cfg(feature = "cli")]
+use rustyline::{
+    completion::Completer,
+    error::ReadlineError,
+    highlight::Highlighter,
+    hint::Hinter,
+    line_buffer::LineBuffer,
+    validate::{ValidationContext, ValidationResult, Validator},
+    Changeset, Helper,
+};
 
 use crate::backend::sys;
 use crate::backend::{Artichoke, Error};
@@ -218,5 +231,69 @@ impl<'a> Drop for Parser<'a> {
         }
         // There is no need to free `context` since it is owned by the
         // Artichoke state.
+    }
+}
+
+/// A rustyline validator that checks whether REPL input parses as valid Ruby
+/// code.
+#[cfg(feature = "cli")]
+#[derive(Debug, Clone)]
+pub struct ParserValidator<'a> {
+    pub(crate) inner: Arc<Mutex<Parser<'a>>>,
+}
+
+#[cfg(feature = "cli")]
+impl<'a> ParserValidator<'a> {
+    /// Create a new parser validator from an interpreter instance.
+    ///
+    /// A parser validator wraps a [`Parser`] and adapts it to [`rustyline`]'s
+    /// [`Validator`] trait.
+    pub fn new(interp: &'a mut Artichoke) -> Option<Self> {
+        let inner = Parser::new(interp)?;
+        let inner = Arc::new(Mutex::new(inner));
+        Some(Self { inner })
+    }
+}
+
+#[cfg(feature = "cli")]
+impl<'a> Helper for ParserValidator<'a> {}
+
+#[cfg(feature = "cli")]
+impl<'a> Completer for ParserValidator<'a> {
+    type Candidate = String;
+
+    fn update(&self, _line: &mut LineBuffer, _start: usize, _elected: &str, _cl: &mut Changeset) {
+        unreachable!();
+    }
+}
+
+#[cfg(feature = "cli")]
+impl<'a> Hinter for ParserValidator<'a> {
+    type Hint = String;
+}
+
+#[cfg(feature = "cli")]
+impl<'a> Highlighter for ParserValidator<'a> {}
+
+#[cfg(feature = "cli")]
+impl<'a> Validator for ParserValidator<'a> {
+    fn validate(&self, ctx: &mut ValidationContext<'_>) -> Result<ValidationResult, ReadlineError> {
+        let mut parser = self.inner.lock().unwrap_or_else(PoisonError::into_inner);
+        let state = if let Ok(state) = parser.parse(ctx.input().as_bytes()) {
+            state
+        } else {
+            return Ok(ValidationResult::Invalid(None));
+        };
+
+        if state.is_code_block_open() {
+            return Ok(ValidationResult::Incomplete);
+        }
+        if state.is_fatal() {
+            return Ok(ValidationResult::Invalid(Some("fatal parsing error".into())));
+        }
+        if state.is_recoverable_error() {
+            return Ok(ValidationResult::Invalid(Some("could not parse input".into())));
+        }
+        Ok(ValidationResult::Valid(None))
     }
 }

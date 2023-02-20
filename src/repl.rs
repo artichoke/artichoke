@@ -9,17 +9,19 @@ use std::fmt;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
+use std::sync::PoisonError;
 
 use directories::ProjectDirs;
 use rustyline::error::ReadlineError;
-use rustyline::DefaultEditor;
+use rustyline::history::FileHistory;
+use rustyline::Editor;
 use termcolor::WriteColor;
 
 use crate::backend::state::parser::Context;
 use crate::backtrace;
 use crate::filename::REPL;
-use crate::parser::{Parser, State};
-use crate::prelude::{Parser as _, *};
+use crate::parser::ParserValidator;
+use crate::prelude::*;
 
 /// Failed to initialize parser during REPL boot.
 ///
@@ -208,7 +210,7 @@ where
     Werr: io::Write + WriteColor,
 {
     let mut interp = crate::interpreter()?;
-    let mut rl = DefaultEditor::new().map_err(UnhandledReadlineError)?;
+    let mut rl = Editor::<ParserValidator<'_>, FileHistory>::new().map_err(UnhandledReadlineError)?;
 
     let hist_file = repl_history_file();
     if let Some(ref hist_file) = hist_file {
@@ -225,13 +227,14 @@ where
         let _ignored = rl.save_history(hist_file);
     }
 
+    drop(rl);
     interp.close();
     result
 }
 
-fn repl_loop<Wout, Werr>(
-    interp: &mut Artichoke,
-    rl: &mut DefaultEditor,
+fn repl_loop<'a, Wout, Werr>(
+    interp: &'a mut Artichoke,
+    rl: &mut Editor<ParserValidator<'a>, FileHistory>,
     mut output: Wout,
     mut error: Werr,
     config: &PromptConfig<'_, '_, '_>,
@@ -246,41 +249,23 @@ where
     // SAFETY: `REPL` has no NUL bytes (asserted by tests).
     let context = unsafe { Context::new_unchecked(REPL.to_vec()) };
     interp.push_context(context)?;
-    let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
+
+    let parser = ParserValidator::new(interp).ok_or_else(ParserAllocError::new)?;
+    rl.set_helper(Some(parser.clone()));
 
     // If a code block is open, accumulate code from multiple read lines in this
     // mutable `String` buffer.
     let mut buf = String::new();
-    let mut parser_state = State::new();
     loop {
-        // Allow shell users to identify that they have an open code block.
-        let prompt = if parser_state.is_code_block_open() {
-            config.continued
-        } else {
-            config.simple
-        };
-
-        let readline = rl.readline(prompt);
+        let readline = rl.readline(config.simple);
         match readline {
             Ok(line) if line.is_empty() && buf.is_empty() => (),
             Ok(line) => {
                 buf.push_str(line.as_str());
-                parser_state = parser.parse(buf.as_bytes())?;
 
-                if parser_state.is_code_block_open() {
-                    buf.push('\n');
-                    continue;
-                }
-                if parser_state.is_fatal() {
-                    return Err(Box::new(ParserInternalError::new()));
-                }
-                if parser_state.is_recoverable_error() {
-                    writeln!(error, "Could not parse input")?;
-                    buf.clear();
-                    continue;
-                }
+                let mut lock = parser.inner.lock().unwrap_or_else(PoisonError::into_inner);
+                let interp = lock.interp();
 
-                let interp = parser.interp();
                 match interp.eval(buf.as_bytes()) {
                     Ok(value) => {
                         let result = value.inspect(interp);
@@ -290,12 +275,12 @@ where
                     }
                     Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
                 }
+
                 for line in buf.lines() {
                     rl.add_history_entry(line)?;
                     interp.add_fetch_lineno(1).map_err(|_| ParserLineCountError::new())?;
                 }
-                // Eval successful, so reset the REPL state for the next
-                // expression.
+                // Eval successful, so reset the REPL state for the next expression.
                 interp.incremental_gc()?;
                 buf.clear();
             }
@@ -303,8 +288,6 @@ where
             Err(ReadlineError::Interrupted) => {
                 // Reset buffered code
                 buf.clear();
-                // clear parser state
-                parser_state = State::new();
                 writeln!(output, "^C")?;
             }
             // Gracefully exit on CTRL-D EOF
