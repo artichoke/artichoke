@@ -6,17 +6,22 @@
 
 use std::error;
 use std::fmt;
+use std::fs;
 use std::io;
+use std::path::PathBuf;
+use std::sync::PoisonError;
 
+use directories::ProjectDirs;
 use rustyline::error::ReadlineError;
+use rustyline::history::FileHistory;
 use rustyline::Editor;
 use termcolor::WriteColor;
 
 use crate::backend::state::parser::Context;
 use crate::backtrace;
 use crate::filename::REPL;
-use crate::parser::{Parser, State};
-use crate::prelude::{Parser as _, *};
+use crate::parser::ParserValidator;
+use crate::prelude::*;
 
 /// Failed to initialize parser during REPL boot.
 ///
@@ -168,6 +173,18 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
     Ok(buf)
 }
 
+fn repl_history_file() -> Option<PathBuf> {
+    let dirs = ProjectDirs::from("org", "artichokeruby", "airb")?;
+
+    let data_dir = dirs.data_dir();
+    // Ensure the data directory exists but ignore failures (e.g. the dir
+    // already exists) because all operations on the history file are best
+    // effort and non-blocking.
+    let _ignored = fs::create_dir(data_dir);
+
+    Some(data_dir.join("history"))
+}
+
 /// Run a REPL for the mruby interpreter exposed by the `mruby` crate.
 ///
 /// # Errors
@@ -193,13 +210,31 @@ where
     Werr: io::Write + WriteColor,
 {
     let mut interp = crate::interpreter()?;
-    let result = repl_loop(&mut interp, output, error, &config.unwrap_or_default());
+    let mut rl = Editor::<ParserValidator<'_>, FileHistory>::new().map_err(UnhandledReadlineError)?;
+
+    let hist_file = repl_history_file();
+    if let Some(ref hist_file) = hist_file {
+        // History can fail to load if the file does not exist and is a
+        // non-blocking error.
+        let _ignored = rl.load_history(hist_file);
+    }
+
+    let result = repl_loop(&mut interp, &mut rl, output, error, &config.unwrap_or_default());
+
+    if let Some(ref hist_file) = hist_file {
+        // Saving history is not critical and should not abort the REPL if it
+        // fails.
+        let _ignored = rl.save_history(hist_file);
+    }
+
+    drop(rl);
     interp.close();
     result
 }
 
-fn repl_loop<Wout, Werr>(
-    interp: &mut Artichoke,
+fn repl_loop<'a, Wout, Werr>(
+    interp: &'a mut Artichoke,
+    rl: &mut Editor<ParserValidator<'a>, FileHistory>,
     mut output: Wout,
     mut error: Werr,
     config: &PromptConfig<'_, '_, '_>,
@@ -214,43 +249,21 @@ where
     // SAFETY: `REPL` has no NUL bytes (asserted by tests).
     let context = unsafe { Context::new_unchecked(REPL.to_vec()) };
     interp.push_context(context)?;
-    let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
 
-    let mut rl = Editor::<()>::new().map_err(UnhandledReadlineError)?;
-    // If a code block is open, accumulate code from multiple read lines in this
-    // mutable `String` buffer.
-    let mut buf = String::new();
-    let mut parser_state = State::new();
+    let parser = ParserValidator::new(interp).ok_or_else(ParserAllocError::new)?;
+    rl.set_helper(Some(parser.clone()));
+
     loop {
-        // Allow shell users to identify that they have an open code block.
-        let prompt = if parser_state.is_code_block_open() {
-            config.continued
-        } else {
-            config.simple
-        };
-
-        let readline = rl.readline(prompt);
+        let readline = rl.readline(config.simple);
         match readline {
-            Ok(line) if line.is_empty() && buf.is_empty() => (),
-            Ok(line) => {
-                buf.push_str(line.as_str());
-                parser_state = parser.parse(buf.as_bytes())?;
+            Ok(input) if input.is_empty() => {}
+            // simulate `Kernel#exit`.
+            Ok(input) if input == "exit" || input == "exit()" => break,
+            Ok(input) => {
+                let mut lock = parser.inner.lock().unwrap_or_else(PoisonError::into_inner);
+                let interp = lock.interp();
 
-                if parser_state.is_code_block_open() {
-                    buf.push('\n');
-                    continue;
-                }
-                if parser_state.is_fatal() {
-                    return Err(Box::new(ParserInternalError::new()));
-                }
-                if parser_state.is_recoverable_error() {
-                    writeln!(error, "Could not parse input")?;
-                    buf.clear();
-                    continue;
-                }
-
-                let interp = parser.interp();
-                match interp.eval(buf.as_bytes()) {
+                match interp.eval(input.as_bytes()) {
                     Ok(value) => {
                         let result = value.inspect(interp);
                         output.write_all(config.result_prefix.as_bytes())?;
@@ -259,21 +272,17 @@ where
                     }
                     Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
                 }
-                for line in buf.lines() {
-                    rl.add_history_entry(line);
-                    interp.add_fetch_lineno(1).map_err(|_| ParserLineCountError::new())?;
-                }
-                // Eval successful, so reset the REPL state for the next
-                // expression.
+
+                interp
+                    .add_fetch_lineno(input.matches('\n').count())
+                    .map_err(|_| ParserLineCountError::new())?;
+                rl.add_history_entry(input)?;
+
+                // Eval successful, so reset the REPL state for the next expression.
                 interp.incremental_gc()?;
-                buf.clear();
             }
-            // Reset the buffer and present the user with a fresh prompt
+            // Reset and present the user with a fresh prompt.
             Err(ReadlineError::Interrupted) => {
-                // Reset buffered code
-                buf.clear();
-                // clear parser state
-                parser_state = State::new();
                 writeln!(output, "^C")?;
             }
             // Gracefully exit on CTRL-D EOF
