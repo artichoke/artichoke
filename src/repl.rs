@@ -257,6 +257,8 @@ where
         let readline = rl.readline(config.simple);
         match readline {
             Ok(input) if input.is_empty() => {}
+            // simulate `Kernel#exit`.
+            Ok(input) if input == "exit" || input == "exit()" => break,
             Ok(input) => {
                 let mut lock = parser.inner.lock().unwrap_or_else(PoisonError::into_inner);
                 let interp = lock.interp();
