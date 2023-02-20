@@ -100,6 +100,8 @@ pub mod backtrace;
 mod filename;
 pub mod parser;
 #[cfg(feature = "cli")]
+mod readline_bind_mode;
+#[cfg(feature = "cli")]
 pub mod repl;
 #[cfg(feature = "cli")]
 pub mod ruby;
