@@ -9,7 +9,7 @@ use std::fmt;
 use std::io;
 
 use rustyline::error::ReadlineError;
-use rustyline::Editor;
+use rustyline::DefaultEditor;
 use termcolor::WriteColor;
 
 use crate::backend::state::parser::Context;
@@ -216,7 +216,7 @@ where
     interp.push_context(context)?;
     let mut parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
 
-    let mut rl = Editor::<()>::new().map_err(UnhandledReadlineError)?;
+    let mut rl = DefaultEditor::new().map_err(UnhandledReadlineError)?;
     // If a code block is open, accumulate code from multiple read lines in this
     // mutable `String` buffer.
     let mut buf = String::new();
@@ -260,7 +260,7 @@ where
                     Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
                 }
                 for line in buf.lines() {
-                    rl.add_history_entry(line);
+                    rl.add_history_entry(line)?;
                     interp.add_fetch_lineno(1).map_err(|_| ParserLineCountError::new())?;
                 }
                 // Eval successful, so reset the REPL state for the next
