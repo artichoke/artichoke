@@ -20,6 +20,7 @@ documentation.workspace = true
 
 [dependencies]
 clap = { version = "4.1.0", optional = true }
+directories = "4.0.1"
 # XXX: load-bearing unused dependency.
 #
 # `rustyline` improperly declares its minimum version on `log` as `0.4` despite
