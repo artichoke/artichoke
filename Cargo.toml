@@ -19,6 +19,7 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
+artichoke-backend = { version = "0.20.0", path = "artichoke-backend", default-features = false }
 clap = { version = "4.1.0", optional = true }
 directories = { version = "4.0.1", optional = true }
 # XXX: load-bearing unused dependency.
@@ -32,15 +33,10 @@ directories = { version = "4.0.1", optional = true }
 #
 # See: https://github.com/kkawakam/rustyline/pull/583
 log = { version = "0.4.5", optional = true }
+rustyline = { version = "11.0.0", optional = true, default-features = false, features = ["with-file-history"] }
 scolapasta-path = { version = "0.5.0", path = "scolapasta-path" }
 scolapasta-string-escape = { version = "0.3.0", path = "scolapasta-string-escape", default-features = false }
-rustyline = { version = "11.0.0", optional = true, default-features = false, features = ["with-file-history"] }
 termcolor = { version = "1.1.0", optional = true }
-
-[dependencies.artichoke-backend]
-version = "0.20.0"
-path = "artichoke-backend"
-default-features = false
 
 [build-dependencies]
 tz-rs = { version = "0.6.12", default-features = false, features = ["std"] }
