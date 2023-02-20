@@ -12,6 +12,7 @@ use std::path::PathBuf;
 use std::sync::PoisonError;
 
 use directories::ProjectDirs;
+use rustyline::config::Builder;
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
 use rustyline::Editor;
@@ -22,6 +23,7 @@ use crate::backtrace;
 use crate::filename::REPL;
 use crate::parser::repl::Parser;
 use crate::prelude::{Parser as _, *};
+use crate::readline_bind_mode::{get_readline_edit_mode, rl_read_init_file};
 
 /// Failed to initialize parser during REPL boot.
 ///
@@ -244,8 +246,18 @@ where
     // Initialize interpreter and write preamble.
     let mut interp = init(&mut output)?;
 
+    // Try to parse readline-native inputrc to detect user preference for
+    // `editing-mode`.
+    let mut editor_config = Builder::new();
+    if let Some(inputrc_config) = rl_read_init_file() {
+        if let Some(edit_mode) = get_readline_edit_mode(inputrc_config) {
+            editor_config = editor_config.edit_mode(edit_mode);
+        }
+    }
+
     // Initialize REPL I/O harness.
-    let mut rl = Editor::<Parser<'_>, FileHistory>::new().map_err(UnhandledReadlineError)?;
+    let mut rl =
+        Editor::<Parser<'_>, FileHistory>::with_config(editor_config.build()).map_err(UnhandledReadlineError)?;
 
     // Set the readline input validator.
     //
