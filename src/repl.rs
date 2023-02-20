@@ -20,8 +20,8 @@ use termcolor::WriteColor;
 use crate::backend::state::parser::Context;
 use crate::backtrace;
 use crate::filename::REPL;
-use crate::parser::ParserValidator;
-use crate::prelude::*;
+use crate::parser::repl::Parser;
+use crate::prelude::{Parser as _, *};
 
 /// Failed to initialize parser during REPL boot.
 ///
@@ -160,6 +160,10 @@ impl<'a, 'b, 'c> PromptConfig<'a, 'b, 'c> {
     }
 }
 
+// Generate a preamble or welcome message when first booting the REPL.
+//
+// The preamble includes the contents of the `RUBY_DESCRIPTION` and
+// `ARTICHOKE_COMPILER_VERSION` contants embedded in the Artichoke Ruby runtime.
 fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
     let description = interp.eval(b"RUBY_DESCRIPTION")?.try_convert_into_mut::<&str>(interp)?;
     let compiler = interp
@@ -173,6 +177,16 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
     Ok(buf)
 }
 
+// Retrieve the path to the REPL history file.
+//
+// Readline input history is stored in this file.
+//
+// The file is stored in the data directory for the host operating system. For
+// example, on macOS, the history file is located at:
+//
+// ```text
+// /Users/username/Library/Application Support/org.artichokeruby.airb/history
+// ```
 fn repl_history_file() -> Option<PathBuf> {
     let dirs = ProjectDirs::from("org", "artichokeruby", "airb")?;
 
@@ -183,6 +197,24 @@ fn repl_history_file() -> Option<PathBuf> {
     let _ignored = fs::create_dir(data_dir);
 
     Some(data_dir.join("history"))
+}
+
+/// Construct an interpreter and initialize it for a REPL environment.
+///
+/// This function also prints out the preamble for the environment.
+fn init<W>(mut output: W) -> Result<Artichoke, Box<dyn error::Error>>
+where
+    W: io::Write,
+{
+    let mut interp = crate::interpreter()?;
+    writeln!(&mut output, "{}", preamble(&mut interp)?)?;
+
+    interp.reset_parser()?;
+    // SAFETY: `REPL` has no NUL bytes (asserted by tests).
+    let context = unsafe { Context::new_unchecked(REPL.to_vec()) };
+    interp.push_context(context)?;
+
+    Ok(interp)
 }
 
 /// Run a REPL for the mruby interpreter exposed by the `mruby` crate.
@@ -201,7 +233,7 @@ fn repl_history_file() -> Option<PathBuf> {
 ///
 /// If an unhandled readline state is encountered, a fatal error is returned.
 pub fn run<Wout, Werr>(
-    output: Wout,
+    mut output: Wout,
     error: Werr,
     config: Option<PromptConfig<'_, '_, '_>>,
 ) -> Result<(), Box<dyn error::Error>>
@@ -209,9 +241,25 @@ where
     Wout: io::Write,
     Werr: io::Write + WriteColor,
 {
-    let mut interp = crate::interpreter()?;
-    let mut rl = Editor::<ParserValidator<'_>, FileHistory>::new().map_err(UnhandledReadlineError)?;
+    // Initialize interpreter and write preamble.
+    let mut interp = init(&mut output)?;
 
+    // Initialize REPL I/O harness.
+    let mut rl = Editor::<Parser<'_>, FileHistory>::new().map_err(UnhandledReadlineError)?;
+
+    // Set the readline input validator.
+    //
+    // The `Parser` works with the `rustyline::Editor` to determine whether a
+    // line is valid Ruby code using the mruby parser.
+    //
+    // If the code is invalid (for example a code block or string literal is
+    // unterminated), rustyline will switch to multiline editing mode. This
+    // ensures that rustyline only yields valid Ruby code to the `repl_loop`
+    // below.
+    let parser = Parser::new(&mut interp).ok_or_else(ParserAllocError::new)?;
+    rl.set_helper(Some(parser));
+
+    // Attempt to load REPL history from the history file.
     let hist_file = repl_history_file();
     if let Some(ref hist_file) = hist_file {
         // History can fail to load if the file does not exist and is a
@@ -219,22 +267,25 @@ where
         let _ignored = rl.load_history(hist_file);
     }
 
-    let result = repl_loop(&mut interp, &mut rl, output, error, &config.unwrap_or_default());
+    // Run the REPL until the user exits.
+    let result = repl_loop(&mut rl, output, error, &config.unwrap_or_default());
 
+    // Attempt to save history to the REPL history file.
     if let Some(ref hist_file) = hist_file {
         // Saving history is not critical and should not abort the REPL if it
         // fails.
         let _ignored = rl.save_history(hist_file);
     }
 
+    // Cleanup and deallocate.
     drop(rl);
     interp.close();
+
     result
 }
 
-fn repl_loop<'a, Wout, Werr>(
-    interp: &'a mut Artichoke,
-    rl: &mut Editor<ParserValidator<'a>, FileHistory>,
+fn repl_loop<Wout, Werr>(
+    rl: &mut Editor<Parser<'_>, FileHistory>,
     mut output: Wout,
     mut error: Werr,
     config: &PromptConfig<'_, '_, '_>,
@@ -243,43 +294,42 @@ where
     Wout: io::Write,
     Werr: io::Write + WriteColor,
 {
-    writeln!(output, "{}", preamble(interp)?)?;
-
-    interp.reset_parser()?;
-    // SAFETY: `REPL` has no NUL bytes (asserted by tests).
-    let context = unsafe { Context::new_unchecked(REPL.to_vec()) };
-    interp.push_context(context)?;
-
-    let parser = ParserValidator::new(interp).ok_or_else(ParserAllocError::new)?;
-    rl.set_helper(Some(parser.clone()));
-
     loop {
         let readline = rl.readline(config.simple);
         match readline {
             Ok(input) if input.is_empty() => {}
             // simulate `Kernel#exit`.
-            Ok(input) if input == "exit" || input == "exit()" => break,
+            Ok(input) if input == "exit" || input == "exit()" => {
+                rl.add_history_entry(input)?;
+                break;
+            }
             Ok(input) => {
-                let mut lock = parser.inner.lock().unwrap_or_else(PoisonError::into_inner);
-                let interp = lock.interp();
+                // scope lock and borrows of the rl editor to a block to facilitate
+                // unlocking and unborrowing.
+                {
+                    let parser = rl.helper().ok_or_else(ParserAllocError::new)?;
+                    let mut lock = parser.inner.lock().unwrap_or_else(PoisonError::into_inner);
+                    let interp = lock.interp();
 
-                match interp.eval(input.as_bytes()) {
-                    Ok(value) => {
-                        let result = value.inspect(interp);
-                        output.write_all(config.result_prefix.as_bytes())?;
-                        output.write_all(result.as_slice())?;
-                        output.write_all(b"\n")?;
+                    match interp.eval(input.as_bytes()) {
+                        Ok(value) => {
+                            let result = value.inspect(interp);
+                            output.write_all(config.result_prefix.as_bytes())?;
+                            output.write_all(result.as_slice())?;
+                            output.write_all(b"\n")?;
+                        }
+                        Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
                     }
-                    Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
+
+                    interp
+                        .add_fetch_lineno(input.matches('\n').count())
+                        .map_err(|_| ParserLineCountError::new())?;
+
+                    // Eval successful, so reset the REPL state for the next expression.
+                    interp.incremental_gc()?;
                 }
 
-                interp
-                    .add_fetch_lineno(input.matches('\n').count())
-                    .map_err(|_| ParserLineCountError::new())?;
                 rl.add_history_entry(input)?;
-
-                // Eval successful, so reset the REPL state for the next expression.
-                interp.incremental_gc()?;
             }
             // Reset and present the user with a fresh prompt.
             Err(ReadlineError::Interrupted) => {
