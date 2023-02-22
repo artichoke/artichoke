@@ -169,7 +169,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
                     let arg: i64 = arg.try_convert_into(self)?;
 
                     result.second = match u8::try_from(arg) {
-                        Ok(second @ 0..=59) => second,
+                        Ok(second @ 0..=60) => second,
                         _ => return Err(ArgumentError::with_message("sec out of range").into()),
                     };
                 }
