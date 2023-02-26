@@ -20,6 +20,7 @@
 #include <mruby/variable.h>
 #include <mruby/error.h>
 #include <mruby/presym.h>
+#include <mruby/internal.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -149,7 +150,7 @@ is_code_block_open(struct mrb_parser_state *parser)
 
   /* check if parser error are available */
   if (0 < parser->nerr) {
-    const char unexpected_end[] = "syntax error, unexpected $end";
+    const char unexpected_end[] = "syntax error, unexpected end of file";
     const char *message = parser->error_buffer[0].message;
 
     /* a parser error occur, we have to check if */
@@ -379,8 +380,6 @@ print_cmdline(int code_block_open)
   fflush(stdout);
 }
 #endif
-
-void mrb_codedump_all(mrb_state*, struct RProc*);
 
 static int
 check_keyword(const char *buf, const char *word)
