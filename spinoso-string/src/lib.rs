@@ -1635,11 +1635,13 @@ impl String {
     /// ```
     /// use spinoso_string::String;
     ///
-    /// let s = String::from("hello");
-    /// assert_eq!(s.index("e", None), Some(1));
-    /// assert_eq!(s.index("lo", None), Some(3));
-    /// assert_eq!(s.index("a", None), None);
-    /// assert_eq!(s.index("l", Some(3)), Some(3));
+    /// let s = String::from("via 💎 v3.2.0");
+    /// assert_eq!(s.index("a", None), Some(2));
+    /// assert_eq!(s.index("a", Some(2)), Some(2));
+    /// assert_eq!(s.index("a", Some(3)), None);
+    /// assert_eq!(s.index("💎", None), Some(4));
+    /// assert_eq!(s.index(".", None), Some(11)); // FIXME: Should be 8 (#2360)
+    /// assert_eq!(s.index("X", None), None);
     /// ```
     ///
     /// [`String#index`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-index
@@ -1666,6 +1668,25 @@ impl String {
         inner(self.inner.as_slice(), needle, offset)
     }
 
+    /// Returns the index of the last occurrence of the given substring in this
+    /// `String`.
+    ///
+    /// Returns [`None`] if not found. If the second parameter is present, it
+    /// specifies the position in the string to begin the search.
+    ///
+    /// This function can be used to implement [`String#rindex`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::from("via 💎 v3.2.0");
+    /// assert_eq!(s.rindex("v", None), Some(9)); // FIXME: Should be 5 (#2360)
+    /// assert_eq!(s.rindex("a", None), Some(2));
+    /// ```
+    ///
+    /// [`String#rindex`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-rindex
     #[inline]
     #[must_use]
     pub fn rindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
