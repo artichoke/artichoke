@@ -1705,6 +1705,89 @@ impl String {
         inner(self.inner.as_slice(), needle, offset)
     }
 
+    /// Returns the Integer byte-based index of the first occurrence of the
+    /// given substring.
+    ///
+    /// Returns [`None`] if not found. If the second parameter is present, it
+    /// specifies the position in the string to begin the search.
+    ///
+    /// This function can be used to implement [`String#byteindex`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::from("via 💎 v3.2.0");
+    /// assert_eq!(s.byteindex("a", None), Some(2));
+    /// assert_eq!(s.byteindex("a", Some(2)), Some(2));
+    /// assert_eq!(s.byteindex("a", Some(3)), None);
+    /// assert_eq!(s.byteindex("💎", None), Some(4));
+    /// assert_eq!(s.byteindex(".", None), Some(11));
+    /// assert_eq!(s.byteindex("X", None), None);
+    /// ```
+    ///
+    /// [`String#index`]: https://ruby-doc.org/3.2.0/String.html#method-i-byteindex
+    #[inline]
+    #[must_use]
+    pub fn byteindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
+        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
+            if let Some(offset) = offset {
+                let buf = buf.get(offset..)?;
+                let index = buf.find(needle)?;
+                // This addition is guaranteed not to overflow because the result is
+                // a valid index of the underlying `Vec`.
+                //
+                // `self.buf.len() < isize::MAX` because `self.buf` is a `Vec` and
+                // `Vec` documents `isize::MAX` as its maximum allocation size.
+                Some(index + offset)
+            } else {
+                buf.find(needle)
+            }
+        }
+        // convert to a concrete type and delegate to a single `index` impl
+        // to minimize code duplication when monomorphizing.
+        let needle = needle.as_ref();
+        inner(self.inner.as_slice(), needle, offset)
+    }
+
+    /// Returns the Integer byte-based index of the last occurrence of the
+    /// given substring.
+    ///
+    /// Returns [`None`] if not found. If the second parameter is present, it
+    /// specifies the position in the string to begin the search.
+    ///
+    /// This function can be used to implement [`String#rindex`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::from("via 💎 v3.2.0");
+    /// assert_eq!(s.byterindex("v", None), Some(9));
+    /// assert_eq!(s.byterindex("a", None), Some(2));
+    /// ```
+    ///
+    /// [`String#byterindex`]: https://ruby-doc.org/3.2.0/String.html#method-i-byterindex
+    #[inline]
+    #[must_use]
+    pub fn byterindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
+        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
+            if let Some(offset) = offset {
+                let end = buf.len().checked_sub(offset).unwrap_or_default();
+                let buf = buf.get(..end)?;
+                buf.rfind(needle)
+            } else {
+                buf.rfind(needle)
+            }
+        }
+        // convert to a concrete type and delegate to a single `rindex` impl
+        // to minimize code duplication when monomorphizing.
+        let needle = needle.as_ref();
+        inner(self.inner.as_slice(), needle, offset)
+    }
+
     /// Returns an iterator that yields a debug representation of the `String`.
     ///
     /// This iterator produces [`char`] sequences like `"spinoso"` and
