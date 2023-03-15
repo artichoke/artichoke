@@ -24,6 +24,8 @@
 
 #![no_std]
 
+use core::time::Duration;
+
 /// The maximum possible value that a fixnum can represent, 63 bits of an
 /// [`i64`].
 ///
@@ -57,6 +59,9 @@ mod private {
     impl Sealed for u32 {}
     impl Sealed for u64 {}
     impl Sealed for u128 {}
+
+    impl Sealed for f32 {}
+    impl Sealed for f64 {}
 }
 
 /// Marker trait for numeric values which can be converted to a "fixnum", or
@@ -179,6 +184,26 @@ impl Fixable for u128 {
         }
         // no need to check the min bound since `u128::MIN` is zero.
         Some(x)
+    }
+}
+
+impl Fixable for f32 {
+    fn to_fix(self) -> Option<i64> {
+        let d = Duration::try_from_secs_f32(self)
+            .or_else(|_| Duration::try_from_secs_f32(-self))
+            .ok()?;
+        let x = d.as_secs();
+        x.to_fix()
+    }
+}
+
+impl Fixable for f64 {
+    fn to_fix(self) -> Option<i64> {
+        let d = Duration::try_from_secs_f64(self)
+            .or_else(|_| Duration::try_from_secs_f64(-self))
+            .ok()?;
+        let x = d.as_secs();
+        x.to_fix()
     }
 }
 
@@ -478,6 +503,80 @@ mod tests {
             (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
             (4_611_686_018_427_387_903 + 1, None),
             (u128::MAX, None),
+        ];
+        for (x, fixed) in test_cases {
+            assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
+            assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+            assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
+        }
+    }
+
+    #[test]
+    fn f32_to_fix() {
+        let test_cases = [
+            (f32::NEG_INFINITY, None),
+            (f32::MIN, None),
+            (-1024.0, Some(-1024)),
+            (-10.0, Some(-10)),
+            (-1.9, Some(-1)),
+            (-1.7, Some(-1)),
+            (-1.5, Some(-1)),
+            (-1.2, Some(-1)),
+            (-1.1, Some(-1)),
+            (-1.0, Some(-1)),
+            (-0.0_f32, Some(0)),
+            (0.0_f32, Some(0)),
+            (1.0, Some(1)),
+            (1.1, Some(1)),
+            (1.2, Some(1)),
+            (1.5, Some(1)),
+            (1.7, Some(1)),
+            (1.9, Some(1)),
+            (10.0, Some(10)),
+            (1024.0, Some(1024)),
+            (f32::MAX, None),
+            (f32::INFINITY, None),
+            (f32::MIN_POSITIVE, Some(0)),
+            (f32::EPSILON, Some(0)),
+            (f32::NAN, None),
+        ];
+        for (x, fixed) in test_cases {
+            assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
+            assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+            assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
+        }
+    }
+
+    #[test]
+    fn f64_to_fix() {
+        let test_cases = [
+            (f64::NEG_INFINITY, None),
+            (f64::MIN, None),
+            (-4_611_686_018_427_387_904.0, None),
+            (-1024.0, Some(-1024)),
+            (-10.0, Some(-10)),
+            (-1.9, Some(-1)),
+            (-1.7, Some(-1)),
+            (-1.5, Some(-1)),
+            (-1.2, Some(-1)),
+            (-1.1, Some(-1)),
+            (-1.0, Some(-1)),
+            (-0.0_f64, Some(0)),
+            (0.0_f64, Some(0)),
+            (1.0, Some(1)),
+            (1.1, Some(1)),
+            (1.2, Some(1)),
+            (1.5, Some(1)),
+            (1.7, Some(1)),
+            (1.9, Some(1)),
+            (10.0, Some(10)),
+            (1024.0, Some(1024)),
+            (4_611_686_018_427_387_904.0, None),
+            (f64::MAX, None),
+            (f64::INFINITY, None),
+            (f64::MIN_POSITIVE, Some(0)),
+            (f64::EPSILON, Some(0)),
+            (f64::NAN, None),
         ];
         for (x, fixed) in test_cases {
             assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
