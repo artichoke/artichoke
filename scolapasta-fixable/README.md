@@ -22,3 +22,7 @@ Add this to your `Cargo.toml`:
 [dependencies]
 scolapasta-fixable = "0.1.0"
 ```
+
+## License
+
+`scolapasta-fixable` is licensed under the [MIT License](LICENSE) (c) Ryan Lopopolo.
