@@ -49,10 +49,14 @@ mod private {
     impl Sealed for i8 {}
     impl Sealed for i16 {}
     impl Sealed for i32 {}
+    impl Sealed for i64 {}
+    impl Sealed for i128 {}
 
     impl Sealed for u8 {}
     impl Sealed for u16 {}
     impl Sealed for u32 {}
+    impl Sealed for u64 {}
+    impl Sealed for u128 {}
 }
 
 /// Marker trait for numeric values which can be converted to a "fixnum", or
@@ -107,6 +111,25 @@ impl Fixable for i32 {
     }
 }
 
+impl Fixable for i64 {
+    fn to_fix(self) -> Option<i64> {
+        if self > RUBY_FIXNUM_MAX {
+            return None;
+        }
+        if self < RUBY_FIXNUM_MIN {
+            return None;
+        }
+        Some(self)
+    }
+}
+
+impl Fixable for i128 {
+    fn to_fix(self) -> Option<i64> {
+        let x = i64::try_from(self).ok()?;
+        x.to_fix()
+    }
+}
+
 impl Fixable for u8 {
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
@@ -134,6 +157,28 @@ impl Fixable for u32 {
 
     fn is_fixable(self) -> bool {
         true
+    }
+}
+
+impl Fixable for u64 {
+    fn to_fix(self) -> Option<i64> {
+        let x = i64::try_from(self).ok()?;
+        if x > RUBY_FIXNUM_MAX {
+            return None;
+        }
+        // no need to check the min bound since `u64::MIN` is zero.
+        Some(x)
+    }
+}
+
+impl Fixable for u128 {
+    fn to_fix(self) -> Option<i64> {
+        let x = i64::try_from(self).ok()?;
+        if x > RUBY_FIXNUM_MAX {
+            return None;
+        }
+        // no need to check the min bound since `u128::MIN` is zero.
+        Some(x)
     }
 }
 
@@ -277,6 +322,78 @@ mod tests {
     }
 
     #[test]
+    fn i64_to_fix() {
+        let test_cases = [
+            (i64::MIN, None),
+            (RUBY_FIXNUM_MIN - 1, None),
+            (RUBY_FIXNUM_MIN, Some(RUBY_FIXNUM_MIN)),
+            (RUBY_FIXNUM_MIN + 1, Some(RUBY_FIXNUM_MIN + 1)),
+            // ```
+            // >>> (-(2 ** 63 - 1)) >> 1
+            // -4611686018427387904
+            // ``
+            (-4_611_686_018_427_387_904 - 1, None),
+            (-4_611_686_018_427_387_904, Some(-4_611_686_018_427_387_904)),
+            (-4_611_686_018_427_387_904 + 1, Some(-4_611_686_018_427_387_903)),
+            (-1024, Some(-1024)),
+            (-10, Some(-10)),
+            (-1, Some(-1)),
+            (0_i64, Some(0)),
+            (1, Some(1)),
+            (10, Some(10)),
+            (1024, Some(1024)),
+            // ```
+            // >>> (2 ** 63 - 1) >> 1
+            // 4611686018427387903
+            // ```
+            (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
+            (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
+            (4_611_686_018_427_387_903 + 1, None),
+            (RUBY_FIXNUM_MAX - 1, Some(RUBY_FIXNUM_MAX - 1)),
+            (RUBY_FIXNUM_MAX, Some(RUBY_FIXNUM_MAX)),
+            (RUBY_FIXNUM_MAX + 1, None),
+            (i64::MAX, None),
+        ];
+        for (x, fixed) in test_cases {
+            assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
+            assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+        }
+    }
+
+    #[test]
+    fn i128_to_fix() {
+        let test_cases = [
+            (i128::MIN, None),
+            // ```
+            // >>> (-(2 ** 63 - 1)) >> 1
+            // -4611686018427387904
+            // ``
+            (-4_611_686_018_427_387_904 - 1, None),
+            (-4_611_686_018_427_387_904, Some(-4_611_686_018_427_387_904)),
+            (-4_611_686_018_427_387_904 + 1, Some(-4_611_686_018_427_387_903)),
+            (-1024, Some(-1024)),
+            (-10, Some(-10)),
+            (-1, Some(-1)),
+            (0_i128, Some(0)),
+            (1, Some(1)),
+            (10, Some(10)),
+            (1024, Some(1024)),
+            // ```
+            // >>> (2 ** 63 - 1) >> 1
+            // 4611686018427387903
+            // ```
+            (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
+            (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
+            (4_611_686_018_427_387_903 + 1, None),
+            (i128::MAX, None),
+        ];
+        for (x, fixed) in test_cases {
+            assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
+            assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+        }
+    }
+
+    #[test]
     fn all_u8_fix_to_self() {
         for x in u8::MIN..=u8::MAX {
             assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
@@ -306,6 +423,52 @@ mod tests {
     fn all_pos_u32_fix_to_self() {
         for x in 1..=u32::MAX {
             assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+        }
+    }
+
+    #[test]
+    fn u64_to_fix() {
+        let test_cases = [
+            (u64::MIN, Some(0)),
+            (0_u64, Some(0)),
+            (1, Some(1)),
+            (10, Some(10)),
+            (1024, Some(1024)),
+            // ```
+            // >>> (2 ** 63 - 1) >> 1
+            // 4611686018427387903
+            // ```
+            (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
+            (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
+            (4_611_686_018_427_387_903 + 1, None),
+            (u64::MAX, None),
+        ];
+        for (x, fixed) in test_cases {
+            assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
+            assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+        }
+    }
+
+    #[test]
+    fn u128_to_fix() {
+        let test_cases = [
+            (u128::MIN, Some(0)),
+            (0_u128, Some(0)),
+            (1, Some(1)),
+            (10, Some(10)),
+            (1024, Some(1024)),
+            // ```
+            // >>> (2 ** 63 - 1) >> 1
+            // 4611686018427387903
+            // ```
+            (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
+            (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
+            (4_611_686_018_427_387_903 + 1, None),
+            (u128::MAX, None),
+        ];
+        for (x, fixed) in test_cases {
+            assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
+            assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
         }
     }
 }
