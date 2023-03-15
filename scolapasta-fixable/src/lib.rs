@@ -225,6 +225,7 @@ mod tests {
     #[test]
     fn all_i8_are_fixable() {
         for x in i8::MIN..=i8::MAX {
+            assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
     }
@@ -232,6 +233,7 @@ mod tests {
     #[test]
     fn all_i16_are_fixable() {
         for x in i16::MIN..=i16::MAX {
+            assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
     }
@@ -239,18 +241,21 @@ mod tests {
     #[test]
     fn all_neg_i32_are_fixable() {
         for x in i32::MIN..0 {
+            assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
     }
 
     #[test]
     fn zero_i32_is_fixable() {
+        assert!(0_i32.is_fixable(), "0 should be fixable");
         assert!(RB_FIXABLE(0_i32), "0 should be fixable");
     }
 
     #[test]
     fn all_pos_i32_are_fixable() {
         for x in 1..=i32::MAX {
+            assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
     }
@@ -258,6 +263,7 @@ mod tests {
     #[test]
     fn all_u8_are_fixable() {
         for x in u8::MIN..=u8::MAX {
+            assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
     }
@@ -265,6 +271,7 @@ mod tests {
     #[test]
     fn all_u16_are_fixable() {
         for x in u16::MIN..=u16::MAX {
+            assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
     }
@@ -272,18 +279,21 @@ mod tests {
     #[test]
     fn all_neg_u32_are_fixable() {
         for x in u32::MIN..0 {
+            assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
     }
 
     #[test]
     fn zero_u32_is_fixable() {
+        assert!(0_u32.is_fixable(), "0 should be fixable");
         assert!(RB_FIXABLE(0_u32), "0 should be fixable");
     }
 
     #[test]
     fn all_pos_u32_are_fixable() {
         for x in 1..=u32::MAX {
+            assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
     }
@@ -357,6 +367,7 @@ mod tests {
         for (x, fixed) in test_cases {
             assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
             assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+            assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
         }
     }
 
@@ -390,6 +401,7 @@ mod tests {
         for (x, fixed) in test_cases {
             assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
             assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+            assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
         }
     }
 
@@ -446,6 +458,7 @@ mod tests {
         for (x, fixed) in test_cases {
             assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
             assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+            assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
         }
     }
 
@@ -469,6 +482,7 @@ mod tests {
         for (x, fixed) in test_cases {
             assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
             assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
+            assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
         }
     }
 }
