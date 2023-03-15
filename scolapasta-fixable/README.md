@@ -26,3 +26,13 @@ scolapasta-fixable = "0.1.0"
 ## License
 
 `scolapasta-fixable` is licensed under the [MIT License](LICENSE) (c) Ryan Lopopolo.
+
+This repository includes a vendored copy of the arithmetic headers from Ruby
+3.2.0, which is licensed under the [Ruby license] or [BSD 2-clause license]. See
+[`vendor/README.md`] for more details. These sources are not distributed on
+[crates.io].
+
+[ruby license]: vendor/ruby-3.2.0/COPYING
+[bsd 2-clause license]: vendor/ruby-3.2.0/BSDL
+[`vendor/readme.md`]: vendor/README.md
+[crates.io]: https://crates.io/
