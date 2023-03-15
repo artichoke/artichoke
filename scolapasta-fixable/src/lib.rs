@@ -350,22 +350,114 @@ mod tests {
     }
 
     #[test]
-    fn all_neg_i32_fix_to_self() {
-        for x in i32::MIN..0 {
+    fn all_i32_fix_to_self_shard_0() {
+        const N: i32 = 0;
+        const LOWER: i32 = i32::MIN + N * (1 << 29);
+        const UPPER: i32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
             assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
         }
+        assert_eq!(c, 1 << 29);
     }
 
     #[test]
-    fn zero_i32_fixes_to_self() {
-        assert_eq!(0_i32.to_fix(), Some(0), "0 should be its own fixnum");
+    fn all_i32_fix_to_self_shard_1() {
+        const N: i32 = 1;
+        const LOWER: i32 = i32::MIN + N * (1 << 29);
+        const UPPER: i32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
     }
 
     #[test]
-    fn all_pos_i32_fix_to_self() {
-        for x in 1..=i32::MAX {
+    fn all_i32_fix_to_self_shard_2() {
+        const N: i32 = 2;
+        const LOWER: i32 = i32::MIN + N * (1 << 29);
+        const UPPER: i32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
             assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
         }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_i32_fix_to_self_shard_3() {
+        const N: i32 = 3;
+        const LOWER: i32 = i32::MIN + N * (1 << 29);
+        const UPPER: i32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_i32_fix_to_self_shard_4() {
+        const N: i32 = 0;
+        const LOWER: i32 = N * (1 << 29);
+        const UPPER: i32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_i32_fix_to_self_shard_5() {
+        const N: i32 = 1;
+        const LOWER: i32 = N * (1 << 29);
+        const UPPER: i32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_i32_fix_to_self_shard_6() {
+        const N: i32 = 2;
+        const LOWER: i32 = N * (1 << 29);
+        const UPPER: i32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_i32_fix_to_self_shard_7() {
+        const N: i32 = 3;
+        const LOWER: i32 = N * (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..=i32::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
     }
 
     #[test]
@@ -459,22 +551,114 @@ mod tests {
     }
 
     #[test]
-    fn all_neg_u32_fix_to_self() {
-        for x in u32::MIN..0 {
+    fn all_u32_fix_to_self_shard_0() {
+        const N: u32 = 0;
+        const LOWER: u32 = N * (1 << 29);
+        const UPPER: u32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
             assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
         }
+        assert_eq!(c, 1 << 29);
     }
 
     #[test]
-    fn zero_u32_fixes_to_self() {
-        assert_eq!(0_u32.to_fix(), Some(0), "0 should be its own fixnum");
+    fn all_u32_fix_to_self_shard_1() {
+        const N: u32 = 1;
+        const LOWER: u32 = N * (1 << 29);
+        const UPPER: u32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
     }
 
     #[test]
-    fn all_pos_u32_fix_to_self() {
-        for x in 1..=u32::MAX {
+    fn all_u32_fix_to_self_shard_2() {
+        const N: u32 = 2;
+        const LOWER: u32 = N * (1 << 29);
+        const UPPER: u32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
             assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
         }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_u32_fix_to_self_shard_3() {
+        const N: u32 = 3;
+        const LOWER: u32 = N * (1 << 29);
+        const UPPER: u32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_u32_fix_to_self_shard_4() {
+        const N: u32 = 4;
+        const LOWER: u32 = N * (1 << 29);
+        const UPPER: u32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_u32_fix_to_self_shard_5() {
+        const N: u32 = 5;
+        const LOWER: u32 = N * (1 << 29);
+        const UPPER: u32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_u32_fix_to_self_shard_6() {
+        const N: u32 = 6;
+        const LOWER: u32 = N * (1 << 29);
+        const UPPER: u32 = LOWER + (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..UPPER {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
+    }
+
+    #[test]
+    fn all_u32_fix_to_self_shard_7() {
+        const N: u32 = 7;
+        const LOWER: u32 = N * (1 << 29);
+
+        let mut c = 0;
+        for x in LOWER..=u32::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+            c += 1;
+        }
+        assert_eq!(c, 1 << 29);
     }
 
     #[test]
