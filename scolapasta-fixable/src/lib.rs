@@ -264,6 +264,7 @@ mod tests {
     #[test]
     fn all_i8_are_fixable() {
         for x in i8::MIN..=i8::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
             assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
@@ -272,6 +273,7 @@ mod tests {
     #[test]
     fn all_i16_are_fixable() {
         for x in i16::MIN..=i16::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
             assert!(x.is_fixable(), "{x} should be fixable");
             assert!(RB_FIXABLE(x), "{x} should be fixable");
         }
