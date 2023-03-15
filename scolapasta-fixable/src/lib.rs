@@ -65,16 +65,25 @@ mod private {
 /// of values yielded by implementers of this trait.
 ///
 /// This trait is sealed and cannot be implmented outside of this crate.
-pub trait Fixable: private::Sealed {
+pub trait Fixable: private::Sealed + Sized {
     /// Convert a fixable numeric value to its integral part.
     ///
     /// This method returns [`None`] if `self` is out of range.
     fn to_fix(self) -> Option<i64>;
+
+    /// Test whether a fixable numeric value is in range.
+    fn is_fixable(self) -> bool {
+        self.to_fix().is_some()
+    }
 }
 
 impl Fixable for i8 {
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
+    }
+
+    fn is_fixable(self) -> bool {
+        true
     }
 }
 
@@ -82,11 +91,19 @@ impl Fixable for i16 {
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
+
+    fn is_fixable(self) -> bool {
+        true
+    }
 }
 
 impl Fixable for i32 {
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
+    }
+
+    fn is_fixable(self) -> bool {
+        true
     }
 }
 
@@ -94,17 +111,29 @@ impl Fixable for u8 {
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
+
+    fn is_fixable(self) -> bool {
+        true
+    }
 }
 
 impl Fixable for u16 {
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
+
+    fn is_fixable(self) -> bool {
+        true
+    }
 }
 
 impl Fixable for u32 {
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
+    }
+
+    fn is_fixable(self) -> bool {
+        true
     }
 }
 
@@ -141,7 +170,7 @@ impl Fixable for u32 {
 /// ```
 #[allow(non_snake_case)] // match MRI macro name
 pub fn RB_FIXABLE<T: Fixable>(x: T) -> bool {
-    x.to_fix().is_some()
+    x.is_fixable()
 }
 
 #[cfg(test)]
@@ -211,6 +240,72 @@ mod tests {
     fn all_pos_u32_are_fixable() {
         for x in 1..=u32::MAX {
             assert!(RB_FIXABLE(x), "{x} should be fixable");
+        }
+    }
+
+    #[test]
+    fn all_i8_fix_to_self() {
+        for x in i8::MIN..=i8::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+        }
+    }
+
+    #[test]
+    fn all_i16_fix_to_self() {
+        for x in i16::MIN..=i16::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+        }
+    }
+
+    #[test]
+    fn all_neg_i32_fix_to_self() {
+        for x in i32::MIN..0 {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+        }
+    }
+
+    #[test]
+    fn zero_i32_fixes_to_self() {
+        assert_eq!(0_i32.to_fix(), Some(0), "0 should be its own fixnum");
+    }
+
+    #[test]
+    fn all_pos_i32_fix_to_self() {
+        for x in 1..=i32::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+        }
+    }
+
+    #[test]
+    fn all_u8_fix_to_self() {
+        for x in u8::MIN..=u8::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+        }
+    }
+
+    #[test]
+    fn all_u16_fix_to_self() {
+        for x in u16::MIN..=u16::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+        }
+    }
+
+    #[test]
+    fn all_neg_u32_fix_to_self() {
+        for x in u32::MIN..0 {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
+        }
+    }
+
+    #[test]
+    fn zero_u32_fixes_to_self() {
+        assert_eq!(0_u32.to_fix(), Some(0), "0 should be its own fixnum");
+    }
+
+    #[test]
+    fn all_pos_u32_fix_to_self() {
+        for x in 1..=u32::MAX {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
         }
     }
 }
