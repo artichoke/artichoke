@@ -3,6 +3,8 @@
 #![warn(clippy::cargo)]
 #![allow(unknown_lints)]
 #![allow(clippy::manual_let_else)]
+// to use value receivers for primitives like `f64::is_nan` does in `std`.
+#![allow(clippy::wrong_self_convention)]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
