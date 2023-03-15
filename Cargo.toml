@@ -55,25 +55,10 @@ required-features = ["cli"]
 
 [workspace]
 members = [
-  "artichoke-backend",
-  "artichoke-core",
-  "artichoke-load-path",
-  "mezzaluna-feature-loader",
-  "scolapasta-aref",
-  "scolapasta-hex",
-  "scolapasta-int-parse",
-  "scolapasta-path",
-  "scolapasta-string-escape",
-  "spinoso-array",
-  "spinoso-env",
-  "spinoso-exception",
-  "spinoso-math",
-  "spinoso-random",
-  "spinoso-regexp",
-  "spinoso-securerandom",
-  "spinoso-string",
-  "spinoso-symbol",
-  "spinoso-time",
+  "artichoke-*",
+  "mezzaluna-*",
+  "scolapasta-*",
+  "spinoso-*",
 ]
 
 [workspace.package]
