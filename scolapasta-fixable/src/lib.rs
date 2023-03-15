@@ -189,21 +189,33 @@ impl Fixable for u128 {
 
 impl Fixable for f32 {
     fn to_fix(self) -> Option<i64> {
-        let d = Duration::try_from_secs_f32(self)
-            .or_else(|_| Duration::try_from_secs_f32(-self))
-            .ok()?;
-        let x = d.as_secs();
-        x.to_fix()
+        if let Ok(d) = Duration::try_from_secs_f32(self) {
+            let x = d.as_secs();
+            return x.to_fix();
+        }
+        if let Ok(d) = Duration::try_from_secs_f32(-self) {
+            let x = d.as_secs();
+            let x = i64::try_from(x).ok()?;
+            let x = x.checked_neg()?;
+            return x.to_fix();
+        }
+        None
     }
 }
 
 impl Fixable for f64 {
     fn to_fix(self) -> Option<i64> {
-        let d = Duration::try_from_secs_f64(self)
-            .or_else(|_| Duration::try_from_secs_f64(-self))
-            .ok()?;
-        let x = d.as_secs();
-        x.to_fix()
+        if let Ok(d) = Duration::try_from_secs_f64(self) {
+            let x = d.as_secs();
+            return x.to_fix();
+        }
+        if let Ok(d) = Duration::try_from_secs_f64(-self) {
+            let x = d.as_secs();
+            let x = i64::try_from(x).ok()?;
+            let x = x.checked_neg()?;
+            return x.to_fix();
+        }
+        None
     }
 }
 
@@ -400,6 +412,7 @@ mod tests {
     fn i128_to_fix() {
         let test_cases = [
             (i128::MIN, None),
+            (i64::MIN.into(), None),
             // ```
             // >>> (-(2 ** 63 - 1)) >> 1
             // -4611686018427387904
@@ -421,6 +434,7 @@ mod tests {
             (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
             (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
             (4_611_686_018_427_387_903 + 1, None),
+            (i64::MAX.into(), None),
             (i128::MAX, None),
         ];
         for (x, fixed) in test_cases {
@@ -478,6 +492,7 @@ mod tests {
             (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
             (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
             (4_611_686_018_427_387_903 + 1, None),
+            (i64::MAX.try_into().unwrap(), None),
             (u64::MAX, None),
         ];
         for (x, fixed) in test_cases {
@@ -502,6 +517,7 @@ mod tests {
             (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
             (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
             (4_611_686_018_427_387_903 + 1, None),
+            (i64::MAX.try_into().unwrap(), None),
             (u128::MAX, None),
         ];
         for (x, fixed) in test_cases {
@@ -516,6 +532,8 @@ mod tests {
         let test_cases = [
             (f32::NEG_INFINITY, None),
             (f32::MIN, None),
+            (i64::MIN as _, None),
+            (-4_612_686_018_427_388_000.0, None),
             (-1024.0, Some(-1024)),
             (-10.0, Some(-10)),
             (-1.9, Some(-1)),
@@ -534,6 +552,8 @@ mod tests {
             (1.9, Some(1)),
             (10.0, Some(10)),
             (1024.0, Some(1024)),
+            (4_611_686_018_427_387_904.0, None),
+            (i64::MAX as _, None),
             (f32::MAX, None),
             (f32::INFINITY, None),
             (f32::MIN_POSITIVE, Some(0)),
@@ -552,7 +572,8 @@ mod tests {
         let test_cases = [
             (f64::NEG_INFINITY, None),
             (f64::MIN, None),
-            (-4_611_686_018_427_387_904.0, None),
+            (i64::MIN as _, None),
+            (-4_612_686_018_427_388_000.0, None),
             (-1024.0, Some(-1024)),
             (-10.0, Some(-10)),
             (-1.9, Some(-1)),
@@ -572,6 +593,7 @@ mod tests {
             (10.0, Some(10)),
             (1024.0, Some(1024)),
             (4_611_686_018_427_387_904.0, None),
+            (i64::MAX as _, None),
             (f64::MAX, None),
             (f64::INFINITY, None),
             (f64::MIN_POSITIVE, Some(0)),
