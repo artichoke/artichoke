@@ -63,8 +63,8 @@ use scolapasta_fixable::Fixable;
 assert_eq!(u64::MAX.to_fix(), None);
 assert_eq!(i128::MIN.to_fix(), None);
 assert_eq!(4_611_686_018_427_387_904.0_f64.to_fix(), None);
-assert_eq!(f64::INFINITY, None);
-assert_eq!(f64::NAN, None);
+assert_eq!(f64::INFINITY.to_fix(), None);
+assert_eq!(f64::NAN.to_fix(), None);
 ```
 
 For non-integer fixable types, the fractional part is discarded when converting

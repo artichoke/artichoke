@@ -53,8 +53,8 @@
 //!
 //! assert!(23_u8.is_fixable());
 //! assert_eq!(23_u8.to_fix(), Some(23_i64));
-//! assert!(-9000.27_f64.is_fixable());
-//! assert_eq!(-9000.27_f64.to_fix(), Some(-9000_i64));
+//! assert!((-9000.27_f64).is_fixable());
+//! assert_eq!((-9000.27_f64).to_fix(), Some(-9000_i64));
 //! ```
 //!
 //! Some numeric types, such as [`u64`], [`i128`], and [`f64`] have values that
@@ -67,8 +67,8 @@
 //! assert_eq!(u64::MAX.to_fix(), None);
 //! assert_eq!(i128::MIN.to_fix(), None);
 //! assert_eq!(4_611_686_018_427_387_904.0_f64.to_fix(), None);
-//! assert_eq!(f64::INFINITY, None);
-//! assert_eq!(f64::NAN, None);
+//! assert_eq!(f64::INFINITY.to_fix(), None);
+//! assert_eq!(f64::NAN.to_fix(), None);
 //! ```
 //!
 //! For non-integer fixable types, the fractional part is discarded when converting
