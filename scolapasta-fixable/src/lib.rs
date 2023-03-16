@@ -23,8 +23,68 @@
 
 //! Functions for converting numeric immediates to integer or "fixnum"
 //! immediates.
+//!
+//! Fixnums have range of a 63-bit unsigned int and are returned as a native
+//! representation [`i64`].
+//!
+//! # Usage
+//!
+//! Check whether a numeric value is able to be converted to an in-range
+//! "fixnum":
+//!
+//! ```
+//! use scolapasta_fixable::RB_FIXABLE;
+//!
+//! assert!(RB_FIXABLE(23_u8));
+//! assert!(RB_FIXABLE(u16::MIN));
+//! assert!(RB_FIXABLE(i32::MAX));
+//! assert!(RB_FIXABLE(1024_u64));
+//! assert!(RB_FIXABLE(1024_i64));
+//! assert!(RB_FIXABLE(1.0_f32));
+//! assert!(RB_FIXABLE(-9000.27_f64));
+//! ```
+//!
+//! This crate also exports a [`Fixable`] trait which provides methods on
+//! numeric types to check if they are fixable and to do a fallible conversion
+//! to an [`i64`] fixnum.
+//!
+//! ```
+//! use scolapasta_fixable::Fixable;
+//!
+//! assert!(23_u8.is_fixable());
+//! assert_eq!(23_u8.to_fix(), Some(23_i64));
+//! assert!(-9000.27_f64.is_fixable());
+//! assert_eq!(-9000.27_f64.to_fix(), Some(-9000_i64));
+//! ```
+//!
+//! Some numeric types, such as [`u64`], [`i128`], and [`f64`] have values that
+//! exceed fixnum range. Conversions on values of these types which are outside
+//! the 63-bit int range will fail:
+//!
+//! ```rust
+//! use scolapasta_fixable::Fixable;
+//!
+//! assert_eq!(u64::MAX.to_fix(), None);
+//! assert_eq!(i128::MIN.to_fix(), None);
+//! assert_eq!(4_611_686_018_427_387_904.0_f64.to_fix(), None);
+//! assert_eq!(f64::INFINITY, None);
+//! assert_eq!(f64::NAN, None);
+//! ```
+//!
+//! For non-integer fixable types, the fractional part is discarded when converting
+//! to fixnum, i.e. converting to fixnum rounds to zero.
+//!
+//! # Panics
+//!
+//! All routines in this crate are implemented with checked operations and will
+//! never panic.
 
 #![no_std]
+
+// Ensure code blocks in `README.md` compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
 
 use core::time::Duration;
 
@@ -94,36 +154,66 @@ pub trait Fixable: private::Sealed + Sized {
 }
 
 impl Fixable for i8 {
+    /// Convert an [`i8`] to a fixnum.
+    ///
+    /// This method on [`i8`] is infallible and will always return `Some(self)`
+    /// since `i8` is always in range of fixnum.
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
 
+    /// Test whether an [`i8`] value is in range of fixnum.
+    ///
+    /// This method on [`i8`] will always return `true` since `i8` is always in
+    /// range of fixnum.
     fn is_fixable(self) -> bool {
         true
     }
 }
 
 impl Fixable for i16 {
+    /// Convert an [`i16`] to a fixnum.
+    ///
+    /// This method on [`i16`] is infallible and will always return `Some(self)`
+    /// since `i16` is always in range of fixnum.
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
 
+    /// Test whether an [`i16`] value is in range of fixnum.
+    ///
+    /// This method on [`i16`] will always return `true` since `i16` is always in
+    /// range of fixnum.
     fn is_fixable(self) -> bool {
         true
     }
 }
 
 impl Fixable for i32 {
+    /// Convert an [`i32`] to a fixnum.
+    ///
+    /// This method on [`i32`] is infallible and will always return `Some(self)`
+    /// since `i32` is always in range of fixnum.
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
 
+    /// Test whether an [`i32`] value is in range of fixnum.
+    ///
+    /// This method on [`i32`] will always return `true` since `i32` is always in
+    /// range of fixnum.
     fn is_fixable(self) -> bool {
         true
     }
 }
 
 impl Fixable for i64 {
+    /// Convert an [`i64`] to a fixnum if it is less than or equal to
+    /// [`RB_FIXNUM_MAX`] and greater than or equal to [`RB_FIXNUM_MIN`] in
+    /// magnitude.
+    ///
+    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`]
+    /// or less than [`RB_FIXNUM_MIN`].
     fn to_fix(self) -> Option<i64> {
         if self > RUBY_FIXNUM_MAX {
             return None;
@@ -134,53 +224,95 @@ impl Fixable for i64 {
         Some(self)
     }
 
+    /// Test whether an [`i64`] value is in range of fixnum.
+    ///
+    /// This method returns `false` if the receiver is greater [`RB_FIXNUM_MAX`]
+    /// or less than [`RB_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
         (RUBY_FIXNUM_MIN..=RUBY_FIXNUM_MAX).contains(&self)
     }
 }
 
 impl Fixable for i128 {
+    /// Convert an [`i128`] to a fixnum if it is less than or equal to
+    /// [`RB_FIXNUM_MAX`] and greater than or equal to [`RB_FIXNUM_MIN`] in
+    /// magnitude.
+    ///
+    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`]
+    /// or less than [`RB_FIXNUM_MIN`].
     fn to_fix(self) -> Option<i64> {
         let x = i64::try_from(self).ok()?;
         x.to_fix()
     }
 
+    /// Test whether an [`i128`] value is in range of fixnum.
+    ///
+    /// This method returns `false` if the receiver is greater [`RB_FIXNUM_MAX`]
+    /// or less than [`RB_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
         (RUBY_FIXNUM_MIN.into()..=RUBY_FIXNUM_MAX.into()).contains(&self)
     }
 }
 
 impl Fixable for u8 {
+    /// Convert a [`u8`] to a fixnum.
+    ///
+    /// This method on [`u8`] is infallible and will always return `Some(self)`
+    /// since `u8` is always in range of fixnum.
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
 
+    /// Test whether a [`u8`] value is in range of fixnum.
+    ///
+    /// This method on [`u8`] will always return `true` since `u8` is always in
+    /// range of fixnum.
     fn is_fixable(self) -> bool {
         true
     }
 }
 
 impl Fixable for u16 {
+    /// Convert a [`u16`] to a fixnum.
+    ///
+    /// This method on [`u16`] is infallible and will always return `Some(self)`
+    /// since `u16` is always in range of fixnum.
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
 
+    /// Test whether a [`u16`] value is in range of fixnum.
+    ///
+    /// This method on [`u16`] will always return `true` since `u16` is always in
+    /// range of fixnum.
     fn is_fixable(self) -> bool {
         true
     }
 }
 
 impl Fixable for u32 {
+    /// Convert a [`u32`] to a fixnum.
+    ///
+    /// This method on [`u32`] is infallible and will always return `Some(self)`
+    /// since `u32` is always in range of fixnum.
     fn to_fix(self) -> Option<i64> {
         Some(self.into())
     }
 
+    /// Test whether a [`u32`] value is in range of fixnum.
+    ///
+    /// This method on [`u32`] will always return `true` since `u32` is always in
+    /// range of fixnum.
     fn is_fixable(self) -> bool {
         true
     }
 }
 
 impl Fixable for u64 {
+    /// Convert a [`u64`] to a fixnum if it is less than or equal to
+    /// [`RB_FIXNUM_MAX`] in magnitude.
+    ///
+    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`].
     fn to_fix(self) -> Option<i64> {
         let x = i64::try_from(self).ok()?;
         if x > RUBY_FIXNUM_MAX {
@@ -190,12 +322,19 @@ impl Fixable for u64 {
         Some(x)
     }
 
+    /// Test whether a [`u64`] value is in range of fixnum.
+    ///
+    /// This method returns `false` if the receiver is greater [`RB_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
         (..=RUBY_FIXNUM_MAX_U64).contains(&self)
     }
 }
 
 impl Fixable for u128 {
+    /// Convert a [`u128`] to a fixnum if it is less than or equal to
+    /// [`RB_FIXNUM_MAX`] in magnitude.
+    ///
+    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`].
     fn to_fix(self) -> Option<i64> {
         let x = i64::try_from(self).ok()?;
         if x > RUBY_FIXNUM_MAX {
@@ -205,12 +344,32 @@ impl Fixable for u128 {
         Some(x)
     }
 
+    /// Test whether a [`u128`] value is in range of fixnum.
+    ///
+    /// This method returns `false` if the receiver is greater [`RB_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
         (..=RUBY_FIXNUM_MAX_U128).contains(&self)
     }
 }
 
 impl Fixable for f32 {
+    /// Convert an [`f32`] to a fixnum if it is less than or equal to
+    /// [`RB_FIXNUM_MAX`] and greater than or equal to [`RB_FIXNUM_MIN`] in
+    /// magnitude.
+    ///
+    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`]
+    /// or less than [`RB_FIXNUM_MIN`].
+    ///
+    /// This function discards the fractional part of the float, i.e. truncates.
+    ///
+    /// [NaN](f32::NAN) and infinities return [`None`].
+    ///
+    /// # Implementation Notes
+    ///
+    /// Conversion is implemented using checked operations and will never panic.
+    ///
+    /// This conversion is implemented using [`Duration::try_from_secs_f32`] and
+    /// extracting the the integral portion of the float via [`Duration::as_secs`].
     fn to_fix(self) -> Option<i64> {
         if let Ok(d) = Duration::try_from_secs_f32(self) {
             let x = d.as_secs();
@@ -227,6 +386,23 @@ impl Fixable for f32 {
 }
 
 impl Fixable for f64 {
+    /// Convert an [`f64`] to a fixnum if it is less than or equal to
+    /// [`RB_FIXNUM_MAX`] and greater than or equal to [`RB_FIXNUM_MIN`] in
+    /// magnitude.
+    ///
+    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`]
+    /// or less than [`RB_FIXNUM_MIN`].
+    ///
+    /// This function discards the fractional part of the float, i.e. truncates.
+    ///
+    /// [NaN](f64::NAN) and infinities return [`None`].
+    ///
+    /// # Implementation Notes
+    ///
+    /// Conversion is implemented using checked operations and will never panic.
+    ///
+    /// This conversion is implemented using [`Duration::try_from_secs_f32`] and
+    /// extracting the the integral portion of the float via [`Duration::as_secs`].
     fn to_fix(self) -> Option<i64> {
         if let Ok(d) = Duration::try_from_secs_f64(self) {
             let x = d.as_secs();
@@ -244,8 +420,25 @@ impl Fixable for f64 {
 
 /// Check whether the given numeric is in the range of fixnum.
 ///
-/// FIXABLE can be applied to any numeric type. See the implementersof the
+/// `RB_FIXABLE` can be applied to any numeric type. See the implementers of the
 /// [`Fixable`] trait for more details on which numeric types are fixable.
+///
+/// To convert the given numeric value to a fixnum instead, see
+/// [`Fixable::to_fix`].
+///
+/// # Examples
+///
+/// ```
+/// use scolapasta_fixable::RB_FIXABLE;
+///
+/// assert!(RB_FIXABLE(23_u8));
+/// assert!(RB_FIXABLE(u16::MIN));
+/// assert!(RB_FIXABLE(i32::MAX));
+/// assert!(RB_FIXABLE(1024_u64));
+/// assert!(RB_FIXABLE(1024_i64));
+/// assert!(RB_FIXABLE(1.0_f32));
+/// assert!(RB_FIXABLE(-9000.27_f64));
+/// ```
 ///
 /// # C Declaration
 ///
