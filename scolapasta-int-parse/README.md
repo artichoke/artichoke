@@ -30,16 +30,16 @@ scolapasta-int-parse = "0.2.2"
 Parse strings into integers like:
 
 ```rust
-use scolapasta_int_parse::{parse, ArgumentError, Radix};
+use scolapasta_int_parse::{parse, Error};
 
-fn example() -> Result<(), ArgumentError<'static>> {
+fn example() -> Result<(), Error<'static>> {
     let int_max = parse("9_223_372_036_854_775_807", None)?;
     assert_eq!(int_max, i64::MAX);
 
     let deadbeef = parse("                       0x000000000deadbeef", None)?;
     assert_eq!(deadbeef, 3_735_928_559);
 
-    let num = parse("32xyz", Radix::new(36))?;
+    let num = parse("32xyz", Some(36))?;
     assert_eq!(num, 5_176_187);
 
     Ok(())
