@@ -128,6 +128,10 @@ impl Fixable for i64 {
         }
         Some(self)
     }
+
+    fn is_fixable(self) -> bool {
+        (RUBY_FIXNUM_MIN..=RUBY_FIXNUM_MAX).contains(&self)
+    }
 }
 
 impl Fixable for i128 {
