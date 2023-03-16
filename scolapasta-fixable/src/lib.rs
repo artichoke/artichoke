@@ -139,6 +139,10 @@ impl Fixable for i128 {
         let x = i64::try_from(self).ok()?;
         x.to_fix()
     }
+
+    fn is_fixable(self) -> bool {
+        (RUBY_FIXNUM_MIN.into()..=RUBY_FIXNUM_MAX.into()).contains(&self)
+    }
 }
 
 impl Fixable for u8 {
@@ -180,6 +184,12 @@ impl Fixable for u64 {
         // no need to check the min bound since `u64::MIN` is zero.
         Some(x)
     }
+
+    fn is_fixable(self) -> bool {
+        const MAX: u64 = RUBY_FIXNUM_MAX as u64;
+
+        (..=MAX).contains(&self)
+    }
 }
 
 impl Fixable for u128 {
@@ -190,6 +200,12 @@ impl Fixable for u128 {
         }
         // no need to check the min bound since `u128::MIN` is zero.
         Some(x)
+    }
+
+    fn is_fixable(self) -> bool {
+        const MAX: u128 = RUBY_FIXNUM_MAX as u128;
+
+        (..=MAX).contains(&self)
     }
 }
 
@@ -455,6 +471,9 @@ mod tests {
         let test_cases = [
             (i128::MIN, None),
             (i64::MIN.into(), None),
+            (i128::from(RUBY_FIXNUM_MIN) - 1, None),
+            (i128::from(RUBY_FIXNUM_MIN), Some(RUBY_FIXNUM_MIN)),
+            (i128::from(RUBY_FIXNUM_MIN) + 1, Some(RUBY_FIXNUM_MIN + 1)),
             // ```
             // >>> (-(2 ** 63 - 1)) >> 1
             // -4611686018427387904
@@ -476,6 +495,9 @@ mod tests {
             (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
             (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
             (4_611_686_018_427_387_903 + 1, None),
+            (i128::from(RUBY_FIXNUM_MAX) - 1, Some(RUBY_FIXNUM_MAX - 1)),
+            (i128::from(RUBY_FIXNUM_MAX), Some(RUBY_FIXNUM_MAX)),
+            (i128::from(RUBY_FIXNUM_MAX) + 1, None),
             (i64::MAX.into(), None),
             (i128::MAX, None),
         ];
@@ -646,6 +668,9 @@ mod tests {
             (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
             (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
             (4_611_686_018_427_387_903 + 1, None),
+            (u64::try_from(RUBY_FIXNUM_MAX).unwrap() - 1, Some(RUBY_FIXNUM_MAX - 1)),
+            (u64::try_from(RUBY_FIXNUM_MAX).unwrap(), Some(RUBY_FIXNUM_MAX)),
+            (u64::try_from(RUBY_FIXNUM_MAX).unwrap() + 1, None),
             (i64::MAX.try_into().unwrap(), None),
             (u64::MAX, None),
         ];
@@ -671,6 +696,9 @@ mod tests {
             (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
             (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
             (4_611_686_018_427_387_903 + 1, None),
+            (u128::try_from(RUBY_FIXNUM_MAX).unwrap() - 1, Some(RUBY_FIXNUM_MAX - 1)),
+            (u128::try_from(RUBY_FIXNUM_MAX).unwrap(), Some(RUBY_FIXNUM_MAX)),
+            (u128::try_from(RUBY_FIXNUM_MAX).unwrap() + 1, None),
             (i64::MAX.try_into().unwrap(), None),
             (u128::MAX, None),
         ];
