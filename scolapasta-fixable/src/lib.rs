@@ -88,30 +88,50 @@ mod readme {}
 
 use core::time::Duration;
 
-/// The maximum possible value that a fixnum can represent, 63 bits of an
-/// [`i64`].
-///
-/// # C Declaration
-///
-/// ```c
-/// /** Maximum possible value that a fixnum can represent. */
-/// #define RUBY_FIXNUM_MAX  (LONG_MAX / 2)
-/// ```
-pub const RUBY_FIXNUM_MAX: i64 = i64::MAX / 2;
+pub use range::{RUBY_FIXNUM_MAX, RUBY_FIXNUM_MIN};
 
-pub(crate) const RUBY_FIXNUM_MAX_U64: u64 = RUBY_FIXNUM_MAX as u64;
-pub(crate) const RUBY_FIXNUM_MAX_U128: u128 = RUBY_FIXNUM_MAX as u128;
+mod range {
+    /// The maximum possible value that a fixnum can represent, 63 bits of an
+    /// [`i64`].
+    ///
+    /// # C Declaration
+    ///
+    /// ```c
+    /// /** Maximum possible value that a fixnum can represent. */
+    /// #define RUBY_FIXNUM_MAX  (LONG_MAX / 2)
+    /// ```
+    pub const RUBY_FIXNUM_MAX: i64 = i64::MAX / 2;
 
-/// The minimum possible value that a fixnum can represent, 63 bits of an
-/// [`i64`].
-///
-/// # C Declaration
-///
-/// ```c
-/// /** Minimum possible value that a fixnum can represent. */
-/// #define RUBY_FIXNUM_MIN  (LONG_MIN / 2)
-/// ```
-pub const RUBY_FIXNUM_MIN: i64 = i64::MIN / 2;
+    /// The minimum possible value that a fixnum can represent, 63 bits of an
+    /// [`i64`].
+    ///
+    /// # C Declaration
+    ///
+    /// ```c
+    /// /** Minimum possible value that a fixnum can represent. */
+    /// #define RUBY_FIXNUM_MIN  (LONG_MIN / 2)
+    /// ```
+    pub const RUBY_FIXNUM_MIN: i64 = i64::MIN / 2;
+
+    pub(crate) mod u64 {
+        pub(crate) const RUBY_FIXNUM_MAX: u64 = super::RUBY_FIXNUM_MAX as u64;
+    }
+
+    pub(crate) mod u128 {
+        pub(crate) const RUBY_FIXNUM_MAX: u128 = super::RUBY_FIXNUM_MAX as u128;
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::RUBY_FIXNUM_MAX;
+
+        #[test]
+        fn casts_in_const_context_are_safe() {
+            assert_eq!(super::u64::RUBY_FIXNUM_MAX, u64::try_from(RUBY_FIXNUM_MAX).unwrap());
+            assert_eq!(super::u128::RUBY_FIXNUM_MAX, u128::try_from(RUBY_FIXNUM_MAX).unwrap());
+        }
+    }
+}
 
 mod private {
     pub trait Sealed {}
@@ -331,7 +351,9 @@ impl Fixable for u64 {
     /// This method returns `false` if the receiver is greater than
     /// [`RUBY_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
-        (..=RUBY_FIXNUM_MAX_U64).contains(&self)
+        use crate::range::u64::RUBY_FIXNUM_MAX;
+
+        (..=RUBY_FIXNUM_MAX).contains(&self)
     }
 }
 
@@ -355,7 +377,9 @@ impl Fixable for u128 {
     /// This method returns `false` if the receiver is greater than
     /// [`RUBY_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
-        (..=RUBY_FIXNUM_MAX_U128).contains(&self)
+        use crate::range::u128::RUBY_FIXNUM_MAX;
+
+        (..=RUBY_FIXNUM_MAX).contains(&self)
     }
 }
 
@@ -989,11 +1013,5 @@ mod tests {
             assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
             assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
         }
-    }
-
-    #[test]
-    fn casts_in_const_context_are_safe() {
-        assert_eq!(RUBY_FIXNUM_MAX_U64, u64::try_from(RUBY_FIXNUM_MAX).unwrap());
-        assert_eq!(RUBY_FIXNUM_MAX_U128, u128::try_from(RUBY_FIXNUM_MAX).unwrap());
     }
 }
