@@ -83,9 +83,11 @@ pub trait Fixable: private::Sealed + Sized {
     /// Convert a fixable numeric value to its integral part.
     ///
     /// This method returns [`None`] if `self` is out of range.
+    #[must_use]
     fn to_fix(self) -> Option<i64>;
 
     /// Test whether a fixable numeric value is in range.
+    #[must_use]
     fn is_fixable(self) -> bool {
         self.to_fix().is_some()
     }
@@ -271,6 +273,7 @@ impl Fixable for f64 {
 /// /** Checks if the passed value is in  range of fixnum */
 /// #define RB_FIXABLE(_)    (RB_POSFIXABLE(_) && RB_NEGFIXABLE(_))
 /// ```
+#[must_use]
 #[allow(non_snake_case)] // match MRI macro name
 pub fn RB_FIXABLE<T: Fixable>(x: T) -> bool {
     x.is_fixable()
