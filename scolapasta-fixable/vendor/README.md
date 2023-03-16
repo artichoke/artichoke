@@ -6,8 +6,8 @@
 
 [ruby]: https://github.com/ruby/ruby
 
-The [`arithmetic.h`] and [`arithmetic`] headers are vendored here as the reference
-implementation whose behavior this crate seeks to match.
+The [`arithmetic.h`] and [`arithmetic`] headers are vendored here as the
+reference implementation whose behavior this crate seeks to match.
 
 [`arithmetic.h`]: ruby-3.2.0/include/ruby/internal/arithmetic.h
 [`arithmetic`]: ruby-3.2.0/include/ruby/internal/arithmetic/
