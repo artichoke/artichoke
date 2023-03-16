@@ -296,6 +296,14 @@ jobs:
         run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "scolapasta-aref"
 
+      - name: Compile scolapasta-fixable with no default features
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
+        working-directory: "scolapasta-fixable"
+
+      - name: Compile scolapasta-fixable with all features
+        run: cargo check --verbose --all-features --all-targets --profile=test
+        working-directory: "scolapasta-fixable"
+
       - name: Compile scolapasta-hex with no default features
         run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "scolapasta-hex"
