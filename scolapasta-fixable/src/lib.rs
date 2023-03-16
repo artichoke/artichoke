@@ -38,6 +38,9 @@ use core::time::Duration;
 /// ```
 pub const RUBY_FIXNUM_MAX: i64 = i64::MAX / 2;
 
+pub(crate) const RUBY_FIXNUM_MAX_U64: u64 = RUBY_FIXNUM_MAX as u64;
+pub(crate) const RUBY_FIXNUM_MAX_U128: u128 = RUBY_FIXNUM_MAX as u128;
+
 /// The minimum possible value that a fixnum can represent, 63 bits of an
 /// [`i64`].
 ///
@@ -186,9 +189,7 @@ impl Fixable for u64 {
     }
 
     fn is_fixable(self) -> bool {
-        const MAX: u64 = RUBY_FIXNUM_MAX as u64;
-
-        (..=MAX).contains(&self)
+        (..=RUBY_FIXNUM_MAX_U64).contains(&self)
     }
 }
 
@@ -203,9 +204,7 @@ impl Fixable for u128 {
     }
 
     fn is_fixable(self) -> bool {
-        const MAX: u128 = RUBY_FIXNUM_MAX as u128;
-
-        (..=MAX).contains(&self)
+        (..=RUBY_FIXNUM_MAX_U128).contains(&self)
     }
 }
 
@@ -787,5 +786,11 @@ mod tests {
             assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
             assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
         }
+    }
+
+    #[test]
+    fn casts_in_const_context_are_safe() {
+        assert_eq!(RUBY_FIXNUM_MAX_U64, u64::try_from(RUBY_FIXNUM_MAX).unwrap());
+        assert_eq!(RUBY_FIXNUM_MAX_U128, u128::try_from(RUBY_FIXNUM_MAX).unwrap());
     }
 }
