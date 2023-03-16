@@ -92,6 +92,7 @@ use core::time::Duration;
 /// [`i64`].
 ///
 /// # C Declaration
+///
 /// ```c
 /// /** Maximum possible value that a fixnum can represent. */
 /// #define RUBY_FIXNUM_MAX  (LONG_MAX / 2)
@@ -103,6 +104,8 @@ pub(crate) const RUBY_FIXNUM_MAX_U128: u128 = RUBY_FIXNUM_MAX as u128;
 
 /// The minimum possible value that a fixnum can represent, 63 bits of an
 /// [`i64`].
+///
+/// # C Declaration
 ///
 /// ```c
 /// /** Minimum possible value that a fixnum can represent. */
@@ -209,11 +212,11 @@ impl Fixable for i32 {
 
 impl Fixable for i64 {
     /// Convert an [`i64`] to a fixnum if it is less than or equal to
-    /// [`RB_FIXNUM_MAX`] and greater than or equal to [`RB_FIXNUM_MIN`] in
+    /// [`RUBY_FIXNUM_MAX`] and greater than or equal to [`RUBY_FIXNUM_MIN`] in
     /// magnitude.
     ///
-    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`]
-    /// or less than [`RB_FIXNUM_MIN`].
+    /// This method returns [`None`] if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`] or less than [`RUBY_FIXNUM_MIN`].
     fn to_fix(self) -> Option<i64> {
         if self > RUBY_FIXNUM_MAX {
             return None;
@@ -226,8 +229,8 @@ impl Fixable for i64 {
 
     /// Test whether an [`i64`] value is in range of fixnum.
     ///
-    /// This method returns `false` if the receiver is greater [`RB_FIXNUM_MAX`]
-    /// or less than [`RB_FIXNUM_MAX`].
+    /// This method returns `false` if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`] or less than [`RUBY_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
         (RUBY_FIXNUM_MIN..=RUBY_FIXNUM_MAX).contains(&self)
     }
@@ -235,11 +238,11 @@ impl Fixable for i64 {
 
 impl Fixable for i128 {
     /// Convert an [`i128`] to a fixnum if it is less than or equal to
-    /// [`RB_FIXNUM_MAX`] and greater than or equal to [`RB_FIXNUM_MIN`] in
+    /// [`RUBY_FIXNUM_MAX`] and greater than or equal to [`RUBY_FIXNUM_MIN`] in
     /// magnitude.
     ///
-    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`]
-    /// or less than [`RB_FIXNUM_MIN`].
+    /// This method returns [`None`] if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`] or less than [`RUBY_FIXNUM_MIN`].
     fn to_fix(self) -> Option<i64> {
         let x = i64::try_from(self).ok()?;
         x.to_fix()
@@ -247,8 +250,8 @@ impl Fixable for i128 {
 
     /// Test whether an [`i128`] value is in range of fixnum.
     ///
-    /// This method returns `false` if the receiver is greater [`RB_FIXNUM_MAX`]
-    /// or less than [`RB_FIXNUM_MAX`].
+    /// This method returns `false` if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`] or less than [`RUBY_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
         (RUBY_FIXNUM_MIN.into()..=RUBY_FIXNUM_MAX.into()).contains(&self)
     }
@@ -310,9 +313,10 @@ impl Fixable for u32 {
 
 impl Fixable for u64 {
     /// Convert a [`u64`] to a fixnum if it is less than or equal to
-    /// [`RB_FIXNUM_MAX`] in magnitude.
+    /// [`RUBY_FIXNUM_MAX`] in magnitude.
     ///
-    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`].
+    /// This method returns [`None`] if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`].
     fn to_fix(self) -> Option<i64> {
         let x = i64::try_from(self).ok()?;
         if x > RUBY_FIXNUM_MAX {
@@ -324,7 +328,8 @@ impl Fixable for u64 {
 
     /// Test whether a [`u64`] value is in range of fixnum.
     ///
-    /// This method returns `false` if the receiver is greater [`RB_FIXNUM_MAX`].
+    /// This method returns `false` if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
         (..=RUBY_FIXNUM_MAX_U64).contains(&self)
     }
@@ -332,9 +337,10 @@ impl Fixable for u64 {
 
 impl Fixable for u128 {
     /// Convert a [`u128`] to a fixnum if it is less than or equal to
-    /// [`RB_FIXNUM_MAX`] in magnitude.
+    /// [`RUBY_FIXNUM_MAX`] in magnitude.
     ///
-    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`].
+    /// This method returns [`None`] if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`].
     fn to_fix(self) -> Option<i64> {
         let x = i64::try_from(self).ok()?;
         if x > RUBY_FIXNUM_MAX {
@@ -346,7 +352,8 @@ impl Fixable for u128 {
 
     /// Test whether a [`u128`] value is in range of fixnum.
     ///
-    /// This method returns `false` if the receiver is greater [`RB_FIXNUM_MAX`].
+    /// This method returns `false` if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`].
     fn is_fixable(self) -> bool {
         (..=RUBY_FIXNUM_MAX_U128).contains(&self)
     }
@@ -354,11 +361,11 @@ impl Fixable for u128 {
 
 impl Fixable for f32 {
     /// Convert an [`f32`] to a fixnum if it is less than or equal to
-    /// [`RB_FIXNUM_MAX`] and greater than or equal to [`RB_FIXNUM_MIN`] in
+    /// [`RUBY_FIXNUM_MAX`] and greater than or equal to [`RUBY_FIXNUM_MIN`] in
     /// magnitude.
     ///
-    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`]
-    /// or less than [`RB_FIXNUM_MIN`].
+    /// This method returns [`None`] if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`] or less than [`RUBY_FIXNUM_MIN`].
     ///
     /// This function discards the fractional part of the float, i.e. truncates.
     ///
@@ -387,11 +394,11 @@ impl Fixable for f32 {
 
 impl Fixable for f64 {
     /// Convert an [`f64`] to a fixnum if it is less than or equal to
-    /// [`RB_FIXNUM_MAX`] and greater than or equal to [`RB_FIXNUM_MIN`] in
+    /// [`RUBY_FIXNUM_MAX`] and greater than or equal to [`RUBY_FIXNUM_MIN`] in
     /// magnitude.
     ///
-    /// This method returns [`None`] if the receiver is greater [`RB_FIXNUM_MAX`]
-    /// or less than [`RB_FIXNUM_MIN`].
+    /// This method returns [`None`] if the receiver is greater than
+    /// [`RUBY_FIXNUM_MAX`] or less than [`RUBY_FIXNUM_MIN`].
     ///
     /// This function discards the fractional part of the float, i.e. truncates.
     ///
