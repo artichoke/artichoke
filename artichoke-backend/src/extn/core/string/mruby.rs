@@ -23,6 +23,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("ascii_only?", string_ascii_only, sys::mrb_args_none())?
         .add_method("b", string_b, sys::mrb_args_none())?
         .add_method("byteindex", string_byteindex, sys::mrb_args_req_and_opt(1, 1))?
+        .add_method("byterindex", string_byterindex, sys::mrb_args_req_and_opt(1, 1))?
         .add_method("bytes", string_bytes, sys::mrb_args_none())? // This does not support the deprecated block form
         .add_method("bytesize", string_bytesize, sys::mrb_args_none())?
         .add_method("byteslice", string_byteslice, sys::mrb_args_req_and_opt(1, 1))?
@@ -193,6 +194,19 @@ unsafe extern "C" fn string_byteindex(mrb: *mut sys::mrb_state, slf: sys::mrb_va
     let substring = Value::from(substring);
     let offset = offset.map(Value::from);
     let result = trampoline::byteindex(&mut guard, value, substring, offset);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_byterindex(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    let (substring, offset) = mrb_get_args!(mrb, required = 1, optional = 1);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let substring = Value::from(substring);
+    let offset = offset.map(Value::from);
+    let result = trampoline::byterindex(&mut guard, value, substring, offset);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),

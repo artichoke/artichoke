@@ -604,6 +604,31 @@ pub fn byteindex(
     interp.try_convert(s.index(needle, offset))
 }
 
+pub fn byterindex(
+    interp: &mut Artichoke,
+    mut value: Value,
+    mut substring: Value,
+    offset: Option<Value>,
+) -> Result<Value, Error> {
+    #[cfg(feature = "core-regexp")]
+    if let Ok(_pattern) = unsafe { Regexp::unbox_from_value(&mut substring, interp) } {
+        return Err(NotImplementedError::from("String#byteindex with Regexp pattern").into());
+    }
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    let needle = unsafe { implicitly_convert_to_string(interp, &mut substring)? };
+    let offset = if let Some(offset) = offset {
+        let offset = implicitly_convert_to_int(interp, offset)?;
+        match aref::offset_to_index(offset, s.len()) {
+            None => return Ok(Value::nil()),
+            Some(offset) if offset > s.len() => return Ok(Value::nil()),
+            Some(offset) => Some(offset),
+        }
+    } else {
+        None
+    };
+    interp.try_convert(s.byterindex(needle, offset))
+}
+
 pub fn bytes(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let bytes = s
