@@ -601,7 +601,7 @@ pub fn byteindex(
     } else {
         None
     };
-    interp.try_convert(s.index(needle, offset))
+    interp.try_convert(s.byteindex(needle, offset))
 }
 
 pub fn byterindex(
