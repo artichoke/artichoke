@@ -35,9 +35,9 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-use alloc::boxed::Box;
 use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
+use alloc::{boxed::Box, string::ToString};
 #[cfg(feature = "casecmp")]
 use core::cmp::Ordering;
 use core::fmt;
@@ -1640,7 +1640,9 @@ impl String {
     /// assert_eq!(s.index("a", Some(2)), Some(2));
     /// assert_eq!(s.index("a", Some(3)), None);
     /// assert_eq!(s.index("💎", None), Some(4));
-    /// assert_eq!(s.index(".", None), Some(11)); // FIXME: Should be 8 (#2360)
+    /// assert_eq!(s.index(".", None), Some(8));
+    /// assert_eq!(s.index("v", Some(6)), Some(6));
+    /// assert_eq!(s.index("v", Some(7)), None);
     /// assert_eq!(s.index("X", None), None);
     /// ```
     ///
@@ -1649,18 +1651,19 @@ impl String {
     #[must_use]
     pub fn index<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
         fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
-            if let Some(offset) = offset {
-                let buf = buf.get(offset..)?;
-                let index = buf.find(needle)?;
-                // This addition is guaranteed not to overflow because the result is
-                // a valid index of the underlying `Vec`.
-                //
-                // `self.buf.len() < isize::MAX` because `self.buf` is a `Vec` and
-                // `Vec` documents `isize::MAX` as its maximum allocation size.
-                Some(index + offset)
-            } else {
-                buf.find(needle)
+            let offset = offset.unwrap_or(0);
+            let buf = std::str::from_utf8(buf).ok()?;
+            let needle = std::str::from_utf8(needle).ok()?;
+
+            for (i, ch) in buf.chars().enumerate() {
+                if i < offset {
+                    continue;
+                }
+                if ch.to_string() == needle {
+                    return Some(i);
+                }
             }
+            None
         }
         // convert to a concrete type and delegate to a single `index` impl
         // to minimize code duplication when monomorphizing.
@@ -1682,8 +1685,10 @@ impl String {
     /// use spinoso_string::String;
     ///
     /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
-    /// assert_eq!(s.rindex("v", None), Some(9)); // FIXME: Should be 5 (#2360)
-    /// assert_eq!(s.rindex("a", None), Some(2));
+    /// assert_eq!(s.rindex("v", None), Some(6));
+    /// assert_eq!(s.rindex("v", Some(5)), Some(5));
+    /// assert_eq!(s.rindex("v", Some(6)), Some(11));
+    /// assert_eq!(s.rindex("a", None), Some(9));
     /// ```
     ///
     /// [`String#rindex`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-rindex
@@ -1691,13 +1696,21 @@ impl String {
     #[must_use]
     pub fn rindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
         fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
-            if let Some(offset) = offset {
-                let end = buf.len().checked_sub(offset).unwrap_or_default();
-                let buf = buf.get(..end)?;
-                buf.rfind(needle)
-            } else {
-                buf.rfind(needle)
+            let buf = std::str::from_utf8(buf).ok()?;
+            let needle = std::str::from_utf8(needle).ok()?;
+            let chars_len = buf.chars().count();
+            let offset = offset.unwrap_or(chars_len);
+
+            for (i, ch) in buf.chars().rev().enumerate() {
+                let i = chars_len - i - 1;
+                if i > offset {
+                    continue;
+                }
+                if ch.to_string() == needle {
+                    return Some(i);
+                }
             }
+            None
         }
         // convert to a concrete type and delegate to a single `rindex` impl
         // to minimize code duplication when monomorphizing.
