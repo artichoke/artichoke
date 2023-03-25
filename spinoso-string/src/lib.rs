@@ -1622,11 +1622,11 @@ impl String {
         self.inner.chr()
     }
 
-    /// Returns the index of the first occurrence of the given substring in this
-    /// `String`.
+    /// Returns the char-based index of the first occurrence of the given
+    /// substring in this `String`.
     ///
     /// Returns [`None`] if not found. If the second parameter is present, it
-    /// specifies the position in the string to begin the search.
+    /// specifies the character position in the string to begin the search.
     ///
     /// This function can be used to implement [`String#index`].
     ///
@@ -1668,11 +1668,11 @@ impl String {
         inner(self.inner.as_slice(), needle, offset)
     }
 
-    /// Returns the index of the last occurrence of the given substring in this
-    /// `String`.
+    /// Returns the char-based index of the last occurrence of the given
+    /// substring in this `String`.
     ///
     /// Returns [`None`] if not found. If the second parameter is present, it
-    /// specifies the position in the string to begin the search.
+    /// specifies the character position in the string to begin the search.
     ///
     /// This function can be used to implement [`String#rindex`].
     ///
@@ -1705,11 +1705,11 @@ impl String {
         inner(self.inner.as_slice(), needle, offset)
     }
 
-    /// Returns the Integer byte-based index of the first occurrence of the
-    /// given substring.
+    /// Returns the byte-based index of the first occurrence of the given
+    /// substring in this `String`.
     ///
     /// Returns [`None`] if not found. If the second parameter is present, it
-    /// specifies the position in the string to begin the search.
+    /// specifies the byte position in the string to begin the search.
     ///
     /// This function can be used to implement [`String#byteindex`].
     ///
@@ -1751,11 +1751,11 @@ impl String {
         inner(self.inner.as_slice(), needle, offset)
     }
 
-    /// Returns the Integer byte-based index of the last occurrence of the
-    /// given substring.
+    /// Returns the byte-based index of the last occurrence of the given
+    /// substring in this `String`.
     ///
     /// Returns [`None`] if not found. If the second parameter is present, it
-    /// specifies the position in the string to begin the search.
+    /// specifies the byte position in the string to begin the search.
     ///
     /// This function can be used to implement [`String#rindex`].
     ///
