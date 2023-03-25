@@ -1727,7 +1727,7 @@ impl String {
     /// assert_eq!(s.byteindex("X", None), None);
     /// ```
     ///
-    /// [`String#index`]: https://ruby-doc.org/3.2.0/String.html#method-i-byteindex
+    /// [`String#byteindex`]: https://ruby-doc.org/3.2.0/String.html#method-i-byteindex
     #[inline]
     #[must_use]
     pub fn byteindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {

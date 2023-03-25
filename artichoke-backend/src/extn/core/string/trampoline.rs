@@ -612,7 +612,7 @@ pub fn byterindex(
 ) -> Result<Value, Error> {
     #[cfg(feature = "core-regexp")]
     if let Ok(_pattern) = unsafe { Regexp::unbox_from_value(&mut substring, interp) } {
-        return Err(NotImplementedError::from("String#byteindex with Regexp pattern").into());
+        return Err(NotImplementedError::from("String#byterindex with Regexp pattern").into());
     }
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     let needle = unsafe { implicitly_convert_to_string(interp, &mut substring)? };
