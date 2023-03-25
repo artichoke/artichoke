@@ -1635,7 +1635,7 @@ impl String {
     /// ```
     /// use spinoso_string::String;
     ///
-    /// let s = String::from("via 💎 v3.2.0");
+    /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
     /// assert_eq!(s.index("a", None), Some(2));
     /// assert_eq!(s.index("a", Some(2)), Some(2));
     /// assert_eq!(s.index("a", Some(3)), None);
@@ -1681,7 +1681,7 @@ impl String {
     /// ```
     /// use spinoso_string::String;
     ///
-    /// let s = String::from("via 💎 v3.2.0");
+    /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
     /// assert_eq!(s.rindex("v", None), Some(9)); // FIXME: Should be 5 (#2360)
     /// assert_eq!(s.rindex("a", None), Some(2));
     /// ```
@@ -1718,7 +1718,7 @@ impl String {
     /// ```
     /// use spinoso_string::String;
     ///
-    /// let s = String::from("via 💎 v3.2.0");
+    /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
     /// assert_eq!(s.byteindex("a", None), Some(2));
     /// assert_eq!(s.byteindex("a", Some(2)), Some(2));
     /// assert_eq!(s.byteindex("a", Some(3)), None);
@@ -1764,7 +1764,7 @@ impl String {
     /// ```
     /// use spinoso_string::String;
     ///
-    /// let s = String::from("via 💎 v3.2.0");
+    /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
     /// assert_eq!(s.byterindex("v", None), Some(9));
     /// assert_eq!(s.byterindex("a", None), Some(2));
     /// ```
