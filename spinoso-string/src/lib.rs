@@ -2258,4 +2258,19 @@ mod tests {
         assert_eq!(ascii.byteindex(utf8_needle.clone(), None), Some(1));
         assert_eq!(binary.byteindex(utf8_needle.clone(), None), Some(1));
     }
+
+    #[test]
+    fn byteindex_support_specifiying_byte_position_to_start_search() {
+        let utf8 = String::utf8("a 💎 has 4 bytes".as_bytes().to_vec());
+
+        // Empty string as needle
+        let needle = String::utf8("a".as_bytes().to_vec());
+        assert_eq!(utf8.byteindex(needle.clone(), None), Some(0));
+        assert_eq!(utf8.byteindex(needle.clone(), Some(0)), Some(0));
+        assert_eq!(utf8.byteindex(needle.clone(), Some(1)), Some(8));
+        // In the middle of 💎
+        assert_eq!(utf8.byteindex(needle.clone(), Some(3)), Some(8));
+        assert_eq!(utf8.byteindex(needle.clone(), Some(8)), Some(8));
+        assert_eq!(utf8.byteindex(needle.clone(), Some(9)), None);
+    }
 }
