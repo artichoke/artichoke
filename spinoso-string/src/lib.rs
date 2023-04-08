@@ -2236,27 +2236,27 @@ mod tests {
 
         // ASCII needles
         let ascii_needle = String::ascii(b"b".to_vec());
-        assert_eq!(utf8.byteindex(ascii_needle.clone(), None), Some(1));
-        assert_eq!(ascii.byteindex(ascii_needle.clone(), None), Some(1));
-        assert_eq!(binary.byteindex(ascii_needle.clone(), None), Some(1));
+        assert_eq!(utf8.byteindex(&ascii_needle, None), Some(1));
+        assert_eq!(ascii.byteindex(&ascii_needle, None), Some(1));
+        assert_eq!(binary.byteindex(&ascii_needle, None), Some(1));
 
         // Binary needles
         let binray_needle = String::binary(b"b".to_vec());
-        assert_eq!(utf8.byteindex(binray_needle.clone(), None), Some(1));
-        assert_eq!(ascii.byteindex(binray_needle.clone(), None), Some(1));
-        assert_eq!(binary.byteindex(binray_needle.clone(), None), Some(1));
+        assert_eq!(utf8.byteindex(&binray_needle, None), Some(1));
+        assert_eq!(ascii.byteindex(&binray_needle, None), Some(1));
+        assert_eq!(binary.byteindex(&binray_needle, None), Some(1));
 
         // UTF-8 needles with multibyte chars
         let utf8_needle = String::utf8("💎🔻".as_bytes().to_vec());
-        assert_eq!(utf8.byteindex(utf8_needle.clone(), None), Some(3));
-        assert_eq!(ascii.byteindex(utf8_needle.clone(), None), None);
-        assert_eq!(binary.byteindex(utf8_needle.clone(), None), None);
+        assert_eq!(utf8.byteindex(&utf8_needle, None), Some(3));
+        assert_eq!(ascii.byteindex(&utf8_needle, None), None);
+        assert_eq!(binary.byteindex(&utf8_needle, None), None);
 
         // UTF-8 encoded strings that have binary contents.
         let utf8_needle = String::utf8([b'b', b'c'].to_vec());
-        assert_eq!(utf8.byteindex(utf8_needle.clone(), None), Some(1));
-        assert_eq!(ascii.byteindex(utf8_needle.clone(), None), Some(1));
-        assert_eq!(binary.byteindex(utf8_needle.clone(), None), Some(1));
+        assert_eq!(utf8.byteindex(&utf8_needle, None), Some(1));
+        assert_eq!(ascii.byteindex(&utf8_needle, None), Some(1));
+        assert_eq!(binary.byteindex(&utf8_needle, None), Some(1));
     }
 
     #[test]
@@ -2265,12 +2265,12 @@ mod tests {
 
         // Empty string as needle
         let needle = String::utf8("a".as_bytes().to_vec());
-        assert_eq!(utf8.byteindex(needle.clone(), None), Some(0));
-        assert_eq!(utf8.byteindex(needle.clone(), Some(0)), Some(0));
-        assert_eq!(utf8.byteindex(needle.clone(), Some(1)), Some(8));
+        assert_eq!(utf8.byteindex(&needle, None), Some(0));
+        assert_eq!(utf8.byteindex(&needle, Some(0)), Some(0));
+        assert_eq!(utf8.byteindex(&needle, Some(1)), Some(8));
         // In the middle of 💎
-        assert_eq!(utf8.byteindex(needle.clone(), Some(3)), Some(8));
-        assert_eq!(utf8.byteindex(needle.clone(), Some(8)), Some(8));
-        assert_eq!(utf8.byteindex(needle.clone(), Some(9)), None);
+        assert_eq!(utf8.byteindex(&needle, Some(3)), Some(8));
+        assert_eq!(utf8.byteindex(&needle, Some(8)), Some(8));
+        assert_eq!(utf8.byteindex(&needle, Some(9)), None);
     }
 }
