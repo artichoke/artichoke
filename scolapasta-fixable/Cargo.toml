@@ -1,0 +1,24 @@
+[package]
+name = "scolapasta-fixable"
+version = "0.1.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+description = """
+Converters from numeric types to a Ruby Integer, or Fixnum, immediate.
+"""
+keywords = ["conversion", "fixnum", "integer", "no_std", "numeric-tower"]
+categories = ["encoding", "no-std", "rust-patterns"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[dependencies]
+
+[features]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -42,6 +42,11 @@
 
 #![no_std]
 
+// Ensure code blocks in `README.md` compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;

@@ -32,6 +32,11 @@
 //! assert!(!is_explicit_relative("/artichoke/src/json/pure"));
 //! ```
 
+// Ensure code blocks in `README.md` compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 mod paths;
 mod platform_string;
 
