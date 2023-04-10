@@ -4,7 +4,28 @@
       "pattern": "img.shields.io"
     },
     {
-      "pattern": "^https://docs.rs/.*"
+      "pattern": "^https://crates.io/crates/artichoke.*"
+    },
+    {
+      "pattern": "^https://crates.io/crates/mezzaluna.*"
+    },
+    {
+      "pattern": "^https://crates.io/crates/scolapasta.*"
+    },
+    {
+      "pattern": "^https://crates.io/crates/spinoso.*"
+    },
+    {
+      "pattern": "^https://docs.rs/artichoke.*"
+    },
+    {
+      "pattern": "^https://docs.rs/mezzaluna.*"
+    },
+    {
+      "pattern": "^https://docs.rs/scolapasta.*"
+    },
+    {
+      "pattern": "^https://docs.rs/spinoso.*"
     }
   ],
   "replacementPatterns": [],
