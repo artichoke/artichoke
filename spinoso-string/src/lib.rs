@@ -1622,11 +1622,11 @@ impl String {
         self.inner.chr()
     }
 
-    /// Returns the index of the first occurrence of the given substring in this
-    /// `String`.
+    /// Returns the char-based index of the first occurrence of the given
+    /// substring in this `String`.
     ///
     /// Returns [`None`] if not found. If the second parameter is present, it
-    /// specifies the position in the string to begin the search.
+    /// specifies the character position in the string to begin the search.
     ///
     /// This function can be used to implement [`String#index`].
     ///
@@ -1635,11 +1635,13 @@ impl String {
     /// ```
     /// use spinoso_string::String;
     ///
-    /// let s = String::from("hello");
-    /// assert_eq!(s.index("e", None), Some(1));
-    /// assert_eq!(s.index("lo", None), Some(3));
-    /// assert_eq!(s.index("a", None), None);
-    /// assert_eq!(s.index("l", Some(3)), Some(3));
+    /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
+    /// assert_eq!(s.index("a", None), Some(2));
+    /// assert_eq!(s.index("a", Some(2)), Some(2));
+    /// assert_eq!(s.index("a", Some(3)), None);
+    /// assert_eq!(s.index("💎", None), Some(4));
+    /// assert_eq!(s.index(".", None), Some(11)); // FIXME: Should be 8 (#2360)
+    /// assert_eq!(s.index("X", None), None);
     /// ```
     ///
     /// [`String#index`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-index
@@ -1666,9 +1668,111 @@ impl String {
         inner(self.inner.as_slice(), needle, offset)
     }
 
+    /// Returns the char-based index of the last occurrence of the given
+    /// substring in this `String`.
+    ///
+    /// Returns [`None`] if not found. If the second parameter is present, it
+    /// specifies the character position in the string to begin the search.
+    ///
+    /// This function can be used to implement [`String#rindex`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
+    /// assert_eq!(s.rindex("v", None), Some(9)); // FIXME: Should be 5 (#2360)
+    /// assert_eq!(s.rindex("a", None), Some(2));
+    /// ```
+    ///
+    /// [`String#rindex`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-rindex
     #[inline]
     #[must_use]
     pub fn rindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
+        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
+            if let Some(offset) = offset {
+                let end = buf.len().checked_sub(offset).unwrap_or_default();
+                let buf = buf.get(..end)?;
+                buf.rfind(needle)
+            } else {
+                buf.rfind(needle)
+            }
+        }
+        // convert to a concrete type and delegate to a single `rindex` impl
+        // to minimize code duplication when monomorphizing.
+        let needle = needle.as_ref();
+        inner(self.inner.as_slice(), needle, offset)
+    }
+
+    /// Returns the byte-based index of the first occurrence of the given
+    /// substring in this `String`.
+    ///
+    /// Returns [`None`] if not found. If the second parameter is present, it
+    /// specifies the byte position in the string to begin the search.
+    ///
+    /// This function can be used to implement [`String#byteindex`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
+    /// assert_eq!(s.byteindex("a", None), Some(2));
+    /// assert_eq!(s.byteindex("a", Some(2)), Some(2));
+    /// assert_eq!(s.byteindex("a", Some(3)), None);
+    /// assert_eq!(s.byteindex("💎", None), Some(4));
+    /// assert_eq!(s.byteindex(".", None), Some(11));
+    /// assert_eq!(s.byteindex("X", None), None);
+    /// ```
+    ///
+    /// [`String#byteindex`]: https://ruby-doc.org/3.2.0/String.html#method-i-byteindex
+    #[inline]
+    #[must_use]
+    pub fn byteindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
+        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
+            if let Some(offset) = offset {
+                let buf = buf.get(offset..)?;
+                let index = buf.find(needle)?;
+                // This addition is guaranteed not to overflow because the result is
+                // a valid index of the underlying `Vec`.
+                //
+                // `self.buf.len() < isize::MAX` because `self.buf` is a `Vec` and
+                // `Vec` documents `isize::MAX` as its maximum allocation size.
+                Some(index + offset)
+            } else {
+                buf.find(needle)
+            }
+        }
+        // convert to a concrete type and delegate to a single `index` impl
+        // to minimize code duplication when monomorphizing.
+        let needle = needle.as_ref();
+        inner(self.inner.as_slice(), needle, offset)
+    }
+
+    /// Returns the byte-based index of the last occurrence of the given
+    /// substring in this `String`.
+    ///
+    /// Returns [`None`] if not found. If the second parameter is present, it
+    /// specifies the byte position in the string to begin the search.
+    ///
+    /// This function can be used to implement [`String#rindex`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
+    /// assert_eq!(s.byterindex("v", None), Some(9));
+    /// assert_eq!(s.byterindex("a", None), Some(2));
+    /// ```
+    ///
+    /// [`String#byterindex`]: https://ruby-doc.org/3.2.0/String.html#method-i-byterindex
+    #[inline]
+    #[must_use]
+    pub fn byterindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
         fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
             if let Some(offset) = offset {
                 let end = buf.len().checked_sub(offset).unwrap_or_default();
@@ -2116,5 +2220,57 @@ mod tests {
         assert_eq!(utf8, ascii);
         assert_eq!(utf8, binary);
         assert_eq!(binary, ascii);
+    }
+
+    #[test]
+    fn byteindex_supports_needle_and_haystack_of_different_encodings() {
+        // all encodings for the receiver
+        let utf8 = String::utf8("abc💎🔻".as_bytes().to_vec());
+        let ascii = String::ascii(b"abc\xFE\xFF".to_vec());
+        let binary = String::binary(b"abc\xFE\xFF".to_vec());
+
+        // Empty string as needle
+        assert_eq!(utf8.byteindex([], None), Some(0));
+        assert_eq!(ascii.byteindex([], None), Some(0));
+        assert_eq!(binary.byteindex([], None), Some(0));
+
+        // ASCII needles
+        let ascii_needle = String::ascii(b"b".to_vec());
+        assert_eq!(utf8.byteindex(&ascii_needle, None), Some(1));
+        assert_eq!(ascii.byteindex(&ascii_needle, None), Some(1));
+        assert_eq!(binary.byteindex(&ascii_needle, None), Some(1));
+
+        // Binary needles
+        let binray_needle = String::binary(b"b".to_vec());
+        assert_eq!(utf8.byteindex(&binray_needle, None), Some(1));
+        assert_eq!(ascii.byteindex(&binray_needle, None), Some(1));
+        assert_eq!(binary.byteindex(&binray_needle, None), Some(1));
+
+        // UTF-8 needles with multibyte chars
+        let utf8_needle = String::utf8("💎🔻".as_bytes().to_vec());
+        assert_eq!(utf8.byteindex(&utf8_needle, None), Some(3));
+        assert_eq!(ascii.byteindex(&utf8_needle, None), None);
+        assert_eq!(binary.byteindex(&utf8_needle, None), None);
+
+        // UTF-8 encoded strings that have binary contents.
+        let utf8_needle = String::utf8([b'b', b'c'].to_vec());
+        assert_eq!(utf8.byteindex(&utf8_needle, None), Some(1));
+        assert_eq!(ascii.byteindex(&utf8_needle, None), Some(1));
+        assert_eq!(binary.byteindex(&utf8_needle, None), Some(1));
+    }
+
+    #[test]
+    fn byteindex_support_specifiying_byte_position_to_start_search() {
+        let utf8 = String::utf8("a 💎 has 4 bytes".as_bytes().to_vec());
+
+        // Empty string as needle
+        let needle = String::utf8("a".as_bytes().to_vec());
+        assert_eq!(utf8.byteindex(&needle, None), Some(0));
+        assert_eq!(utf8.byteindex(&needle, Some(0)), Some(0));
+        assert_eq!(utf8.byteindex(&needle, Some(1)), Some(8));
+        // In the middle of 💎
+        assert_eq!(utf8.byteindex(&needle, Some(3)), Some(8));
+        assert_eq!(utf8.byteindex(&needle, Some(8)), Some(8));
+        assert_eq!(utf8.byteindex(&needle, Some(9)), None);
     }
 }
