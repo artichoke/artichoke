@@ -393,7 +393,7 @@ impl Fixable for f32 {
     ///
     /// This function discards the fractional part of the float, i.e. truncates.
     ///
-    /// [NaN](f32::NAN) and infinities return [`None`].
+    /// [`NaN`](f32::NAN) and infinities return [`None`].
     ///
     /// # Implementation Notes
     ///
@@ -426,7 +426,7 @@ impl Fixable for f64 {
     ///
     /// This function discards the fractional part of the float, i.e. truncates.
     ///
-    /// [NaN](f64::NAN) and infinities return [`None`].
+    /// [`NaN`](f64::NAN) and infinities return [`None`].
     ///
     /// # Implementation Notes
     ///
@@ -936,6 +936,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::cast_precision_loss)]
     fn f32_are_fixable() {
         let test_cases = [
             (f32::NEG_INFINITY, None),
@@ -976,6 +977,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::cast_precision_loss)]
     fn f64_are_fixable() {
         let test_cases = [
             (f64::NEG_INFINITY, None),
