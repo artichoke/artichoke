@@ -10,7 +10,7 @@
 
 Functions for converting numeric immediates to integer or "fixnum" immediates.
 
-Fixnums have range of a 63-bit unsigned int and are returned as a native
+Fixnums have range of a 63-bit signed int and are returned as a native
 representation `i64`.
 
 _Scolapasta_ refers to a specialized colander used to drain pasta. The utilities
