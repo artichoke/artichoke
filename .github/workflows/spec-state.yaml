@@ -6,6 +6,8 @@ name: Spec
       - trunk
 concurrency:
   group: spec-state-${{ github.head_ref }}
+env:
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 jobs:
   spec-state:
     name: spec-state

@@ -9,6 +9,8 @@ name: CI
       - trunk
   schedule:
     - cron: "0 0 * * TUE"
+env:
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 jobs:
   build:
     name: Build

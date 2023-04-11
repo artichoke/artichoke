@@ -4,6 +4,8 @@ name: Crash
   pull_request:
     branches:
       - trunk
+env:
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 jobs:
   crash:
     name: Crash

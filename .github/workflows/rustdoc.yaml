@@ -11,6 +11,8 @@ name: Documentation
     - cron: "0 0 * * TUE"
 concurrency:
   group: docs-${{ github.head_ref }}
+env:
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 jobs:
   rustdoc:
     name: Build Rust API docs
