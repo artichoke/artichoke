@@ -6,6 +6,8 @@ name: Fuzz and Sanitize
       - trunk
   schedule:
     - cron: "0 12 * * *"
+env:
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 jobs:
   fuzz-eval:
     name: Fuzz eval
