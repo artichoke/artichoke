@@ -9,7 +9,7 @@ use tz::timezone::{LocalTimeType, TimeZoneRef};
 use tzdb::local_tz;
 use tzdb::time_zone::etc::GMT;
 
-pub use super::error::{TimeError, TzOutOfRangeError, TzStringError};
+use super::error::{TimeError, TzOutOfRangeError, TzStringError};
 
 const SECONDS_IN_MINUTE: i32 = 60;
 const SECONDS_IN_HOUR: i32 = SECONDS_IN_MINUTE * 60;

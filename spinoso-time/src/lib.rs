@@ -10,6 +10,7 @@
 #![warn(rust_2021_compatibility)]
 #![warn(trivial_casts, trivial_numeric_casts)]
 #![warn(unused_qualifications)]
+#![warn(unreachable_pub)]
 #![warn(variant_size_differences)]
 #![forbid(unsafe_code)]
 // Enable feature callouts in generated documentation:
