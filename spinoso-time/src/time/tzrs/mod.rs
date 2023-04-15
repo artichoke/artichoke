@@ -13,7 +13,7 @@ mod strftime;
 mod timezone;
 mod to_a;
 
-pub use error::TimeError;
+pub use error::{IntOverflowError, TimeError, TzOutOfRangeError, TzStringError};
 pub use offset::{Offset, MAX_OFFSET_SECONDS, MIN_OFFSET_SECONDS};
 pub use to_a::ToA;
 

@@ -166,6 +166,8 @@ impl From<TryFromFloatSecsError> for TimeError {
 /// of a timezone.
 ///
 /// This error is returned by [`Offset::try_from`].
+///
+/// [`Offset::try_from`]: super::Offset::try_from
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzStringError {
     _private: (),
@@ -196,6 +198,8 @@ impl From<Utf8Error> for TzStringError {
 /// allowed range.
 ///
 /// This error is returned by [`Offset::try_from`].
+///
+/// [`Offset::try_from`]: super::Offset::try_from
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TzOutOfRangeError {
     _private: (),
