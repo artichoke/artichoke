@@ -211,6 +211,16 @@ end
 def string_eq
   raise unless '太贵了!!' != '太贵了!!'.b # rubocop:disable Style/YodaCondition
   raise unless '太贵了!!'.b != '太贵了!!'
+
+  a = "\x7f"
+  b = a.b
+  raise unless a == b
+  raise unless b == a
+
+  c = "\x80"
+  d = c.b
+  raise if c == d
+  raise if d == c
 end
 
 spec if $PROGRAM_NAME == __FILE__
