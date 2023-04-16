@@ -41,6 +41,7 @@ scolapasta-string-escape = { version = "0.3.0", path = "scolapasta-string-escape
 termcolor = { version = "1.1.0", optional = true }
 
 [build-dependencies]
+artichoke-backend = { version = "0.21.0", path = "artichoke-backend", default-features = false }
 tz-rs = { version = "0.6.12", default-features = false, features = ["std"] }
 
 [[bin]]

@@ -222,6 +222,16 @@ mod libs {
             None => {}
         }
 
+        // try to resolve CC version
+        let cc = build.get_compiler().to_command().get_program().to_owned();
+        if let Ok(version) = Command::new(cc).arg("--version").output() {
+            if let Ok(version) = String::from_utf8(version.stdout) {
+                let env = "ARTICHOKE_CC_COMPILER";
+                let value = version.trim();
+                println!("cargo:rustc-env={env}={value}");
+            }
+        }
+
         build.compile(name);
     }
 

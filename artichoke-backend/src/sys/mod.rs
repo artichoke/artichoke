@@ -30,6 +30,9 @@ pub(crate) mod protect;
 pub use self::args::*;
 pub use self::ffi::*;
 
+/// Version string from C compiler used to build the mruby-sys bindings.
+pub const CC_VERSION: Option<&str> = option_env!("ARTICHOKE_CC_COMPILER");
+
 impl Default for mrb_value {
     fn default() -> Self {
         unsafe { mrb_sys_nil_value() }

@@ -149,6 +149,10 @@ fn compiler_version() -> Option<String> {
     let compiler_version = Command::new(cmd).arg("-V").output().ok()?;
     let compiler_version = String::from_utf8(compiler_version.stdout).ok()?;
     let mut compiler_version = compiler_version.trim().to_owned();
+    if let Some(cc) = artichoke_backend::sys::CC_VERSION {
+        compiler_version.push_str(" / ");
+        compiler_version.push_str(cc);
+    }
     if let Ok(compiler_host) = env::var("HOST") {
         compiler_version.push_str(" on ");
         compiler_version.push_str(&compiler_host);
