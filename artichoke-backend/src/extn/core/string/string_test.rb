@@ -209,7 +209,7 @@ def string_to_i
 end
 
 def string_eq
-  raise unless "太贵了!!" != "太贵了!!".b
+  raise unless '太贵了!!' != '太贵了!!'.b # rubocop:disable Style/YodaCondition
 end
 
 spec if $PROGRAM_NAME == __FILE__
