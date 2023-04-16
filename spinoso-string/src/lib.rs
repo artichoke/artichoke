@@ -2183,6 +2183,8 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::ToString;
+
     use crate::center::CenterError;
     use crate::String;
 
@@ -2203,23 +2205,104 @@ mod tests {
     }
 
     #[test]
-    fn strings_compare_equal_only_based_on_byte_content() {
+    fn strings_equality_is_reflexive() {
+        // ASCII only, all encodings valid
+        let utf8 = String::utf8(b"abc".to_vec());
+        let ascii = String::ascii(b"abc".to_vec());
+        let binary = String::binary(b"abc".to_vec());
+        assert_eq!(&utf8, &utf8);
+        assert_eq!(&ascii, &ascii);
+        assert_eq!(&binary, &binary);
+
+        // Invalid UTF-8
+        let utf8 = String::utf8(b"abc\xFE\xFF".to_vec());
+        let ascii = String::ascii(b"abc\xFE\xFF".to_vec());
+        let binary = String::binary(b"abc\xFE\xFF".to_vec());
+        assert_eq!(&utf8, &utf8);
+        assert_eq!(&ascii, &ascii);
+        assert_eq!(&binary, &binary);
+
+        // Multibyte UTF-8
+        let utf8 = String::utf8("很困".to_string().into_bytes());
+        let ascii = String::ascii("很困".to_string().into_bytes());
+        let binary = String::binary("很困".to_string().into_bytes());
+        assert_eq!(&utf8, &utf8);
+        assert_eq!(&ascii, &ascii);
+        assert_eq!(&binary, &binary);
+    }
+
+    #[test]
+    fn strings_compare_equal_only_based_on_byte_content_with_valid_encoding() {
+        // ASCII only
         let utf8 = String::utf8(b"abc".to_vec());
         let ascii = String::ascii(b"abc".to_vec());
         let binary = String::binary(b"abc".to_vec());
         assert_eq!(utf8, ascii);
+        assert_eq!(ascii, utf8);
         assert_eq!(utf8, binary);
+        assert_eq!(binary, utf8);
         assert_eq!(binary, ascii);
+        assert_eq!(ascii, binary);
     }
 
     #[test]
-    fn strings_compare_equal_only_based_on_byte_content_without_valid_encoding() {
+    fn strings_with_multibyte_utf8_content_require_compatible_encoding_to_compare_equal() {
+        let utf8 = String::utf8("很困".to_string().into_bytes());
+        let ascii = String::ascii("很困".to_string().into_bytes());
+        let binary = String::binary("很困".to_string().into_bytes());
+        assert_ne!(utf8, ascii);
+        assert_ne!(ascii, utf8);
+        assert_ne!(utf8, binary);
+        assert_ne!(binary, utf8);
+        assert_ne!(binary, ascii);
+        assert_ne!(ascii, binary);
+    }
+
+    #[test]
+    fn strings_compare_unequal_with_equal_byte_content_without_valid_encoding() {
+        // ```
+        // [3.2.2] > utf8 = "abc\xFE\xFF"
+        // => "abc\xFE\xFF"
+        // [3.2.2] > utf8.encoding
+        // => #<Encoding:UTF-8>
+        // [3.2.2] > ascii = "abc\xFE\xFF"
+        // => "abc\xFE\xFF"
+        // [3.2.2] > ascii.force_encoding(Encoding::ASCII)
+        // => "abc\xFE\xFF"
+        // [3.2.2] > ascii.encoding
+        // => #<Encoding:US-ASCII>
+        // [3.2.2] > binary = "abc\xFE\xFF".b
+        // => "abc\xFE\xFF"
+        // [3.2.2] > binary.encoding
+        // => #<Encoding:ASCII-8BIT>
+        // [3.2.2] > utf8.ascii_only?
+        // => false
+        // [3.2.2] > ascii.ascii_only?
+        // => false
+        // [3.2.2] > binary.ascii_only?
+        // => false
+        // [3.2.2] > utf8 == ascii
+        // => false
+        // [3.2.2] > ascii == utf8
+        // => false
+        // [3.2.2] > utf8 == binary
+        // => false
+        // [3.2.2] > binary == utf8
+        // => false
+        // [3.2.2] > binary == ascii
+        // => false
+        // [3.2.2] > ascii == binary
+        // => false
+        // ```
         let utf8 = String::utf8(b"abc\xFE\xFF".to_vec());
         let ascii = String::ascii(b"abc\xFE\xFF".to_vec());
         let binary = String::binary(b"abc\xFE\xFF".to_vec());
-        assert_eq!(utf8, ascii);
-        assert_eq!(utf8, binary);
-        assert_eq!(binary, ascii);
+        assert_ne!(utf8, ascii);
+        assert_ne!(ascii, utf8);
+        assert_ne!(utf8, binary);
+        assert_ne!(binary, utf8);
+        assert_ne!(binary, ascii);
+        assert_ne!(ascii, binary);
     }
 
     #[test]

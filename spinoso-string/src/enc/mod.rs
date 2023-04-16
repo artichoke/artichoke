@@ -69,7 +69,13 @@ impl PartialEq for EncodedString {
         // [3.0.2] > s == t
         // => true
         // ```
-        *self.as_slice() == *other.as_slice()
+        //
+        // See the functional tests in `string_test.rb` for more cases.
+        match (self.encoding(), other.encoding()) {
+            (self_enc, other_enc) if self_enc == other_enc => self.as_slice() == other.as_slice(),
+            _ if self.is_ascii_only() && other.is_ascii_only() => self.as_slice() == other.as_slice(),
+            _ => false,
+        }
     }
 }
 
