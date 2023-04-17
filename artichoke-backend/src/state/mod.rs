@@ -1,6 +1,7 @@
 use std::collections::hash_map::RandomState;
 
 use intaglio::bytes::SymbolTable;
+use mezzaluna_type_registry::Registry;
 
 use crate::class;
 #[cfg(feature = "core-random")]
@@ -26,8 +27,8 @@ pub mod regexp;
 #[derive(Debug)]
 pub struct State {
     pub parser: Option<parser::State>,
-    pub classes: class::Registry,
-    pub modules: module::Registry,
+    pub classes: Registry<class::Spec>,
+    pub modules: Registry<module::Spec>,
     pub load_path_vfs: load_path::Adapter,
     pub regexp: regexp::State,
     pub symbols: SymbolTable,
@@ -65,8 +66,8 @@ impl State {
     pub fn new() -> Result<Self, InterpreterAllocError> {
         Ok(Self {
             parser: None,
-            classes: class::Registry::new(),
-            modules: module::Registry::new(),
+            classes: Registry::new(),
+            modules: Registry::new(),
             load_path_vfs: load_path::Adapter::new(),
             regexp: regexp::State::new(),
             symbols: SymbolTable::new(),

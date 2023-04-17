@@ -86,6 +86,7 @@ dependencies = [
  "bstr",
  "cc",
  "intaglio",
+ "mezzaluna-type-registry",
  "once_cell",
  "onig",
  "posix-space",
@@ -493,6 +494,10 @@ dependencies = [
  "same-file",
  "scolapasta-path",
 ]
+
+[[package]]
+name = "mezzaluna-type-registry"
+version = "1.0.0"
 
 [[package]]
 name = "nix"

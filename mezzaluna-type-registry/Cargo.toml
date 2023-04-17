@@ -1,0 +1,20 @@
+[package]
+name = "mezzaluna-type-registry"
+version = "1.0.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+description = "Registry for associating static config with Rust types"
+keywords = ["any", "registry", "static", "typemap"]
+categories = ["data-structures", "rust-patterns"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[dependencies]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
