@@ -13,7 +13,6 @@ use crate::sys;
 
 pub mod output;
 pub mod parser;
-pub mod regexp;
 
 /// Container for interpreter global state.
 ///
@@ -30,7 +29,7 @@ pub struct State {
     pub classes: Registry<class::Spec>,
     pub modules: Registry<module::Spec>,
     pub load_path_vfs: load_path::Adapter,
-    pub regexp: regexp::State,
+    pub regexp: spinoso_regexp::State,
     pub symbols: SymbolTable,
     pub output: output::Strategy,
     pub hash_builder: RandomState,
@@ -58,7 +57,7 @@ impl State {
     ///
     /// [`Class`]: crate::core::ClassRegistry
     /// [`Module`]: crate::core::ModuleRegistry
-    /// [regexp-state]: regexp::State
+    /// [regexp-state]: spinoso_regexp::State
     /// [In-memory virtual file system]: load_path
     /// [Ruby parser and file context]: parser::State
     #[cfg_attr(feature = "core-random", doc = "[Intepreter-level PRNG]: Random")]
@@ -69,7 +68,7 @@ impl State {
             classes: Registry::new(),
             modules: Registry::new(),
             load_path_vfs: load_path::Adapter::new(),
-            regexp: regexp::State::new(),
+            regexp: spinoso_regexp::State::new(),
             symbols: SymbolTable::new(),
             output: output::Strategy::new(),
             hash_builder: RandomState::new(),
