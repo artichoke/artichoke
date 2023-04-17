@@ -25,6 +25,20 @@ Add this to your `Cargo.toml`:
 mezzaluna-type-registry = "1.0.0"
 ```
 
+And store "specs" for Rust types like this:
+
+```rust
+use mezzaluna_type_registry::Registry;
+
+let mut reg: Registry<&'static str> = Registry::with_capacity(10);
+reg.insert::<i32>(Box::new("Numeric"));
+reg.insert::<Vec<u8>>(Box::new("String"));
+
+assert_eq!(reg.get::<i32>(), Some(&"Numeric"));
+assert_eq!(reg.get::<Vec<u8>>(), Some(&"String"));
+assert_eq!(reg.get::<f64>(), None);
+```
+
 ## License
 
 `mezzaluna-type-registry` is licensed with the [MIT License](LICENSE) (c) Ryan

@@ -24,7 +24,27 @@
 //! This data structure is used for associating data type metadata with a Rust
 //! type which can be used to ensure the lifetime of the associated metadata.
 //!
-//! # Example: `mrb_data_type`
+//! The registry resembles an append-only [`HashMap`].
+//!
+//! The registry stores values behind a [`Box`] pointer to ensure pointers to
+//! the interior of the spec, like [`CString`](std::ffi::CString) fields, are
+//! not invalidated as the underlying storage reallocates.
+//!
+//! # Example
+//!
+//! ```
+//! use mezzaluna_type_registry::Registry;
+//!
+//! let mut reg: Registry<&'static str> = Registry::with_capacity(10);
+//! reg.insert::<i32>(Box::new("Numeric"));
+//! reg.insert::<Vec<u8>>(Box::new("String"));
+//!
+//! assert_eq!(reg.get::<i32>(), Some(&"Numeric"));
+//! assert_eq!(reg.get::<Vec<u8>>(), Some(&"String"));
+//! assert_eq!(reg.get::<f64>(), None);
+//! ```
+//!
+//! # Motivating use case: `mrb_data_type`
 //!
 //! In the mruby C API, custom data types define a `mrb_data_type` struct which
 //! contains the custom data type's module name and free function. The C API
@@ -34,12 +54,11 @@
 //! ```c
 //! static const struct mrb_data_type mrb_time_type = { "Time", mrb_free };
 //! ```
-//!
-//! The registry resembles an append-only [`HashMap`].
-//!
-//! The registry stores values behind a [`Box`] pointer to ensure pointers to
-//! the interior of the spec, like [`CString`](std::ffi::CString) fields, are
-//! not invalidated as the underlying storage reallocates.
+
+// Ensure code blocks in `README.md` compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
 
 use std::any::{self, Any, TypeId};
 use std::collections::hash_map::{HashMap, RandomState, Values};
@@ -82,24 +101,25 @@ impl<'a, T> Iterator for TypeSpecs<'a, T> {
 /// This data structure is used for associating data type metadata with a Rust
 /// type which can be used to ensure the lifetime of the associated metadata.
 ///
-/// # Example: `mrb_data_type`
-///
-/// In the mruby C API, custom data types define a `mrb_data_type` struct which
-/// contains the custom data type's module name and free function. The C API
-/// requires that this struct live at least as long as the `mrb_state`.
-/// Typically, the `mrb_data_type` is `static`.
-///
-/// ```c
-/// static const struct mrb_data_type mrb_time_type = { "Time", mrb_free };
-/// ```
-///
 /// The registry resembles an append-only [`HashMap`].
 ///
 /// The registry stores values behind a [`Box`] pointer to ensure pointers to
-/// the interior of the spec, like [`CString`] fields, are not invalidated as
-/// the underlying storage reallocates.
+/// the interior of the spec, like [`CString`](std::ffi::CString) fields, are
+/// not invalidated as the underlying storage reallocates.
 ///
-/// [`CString`]: std::ffi::CString
+/// # Example
+///
+/// ```
+/// use mezzaluna_type_registry::Registry;
+///
+/// let mut reg: Registry<&'static str> = Registry::with_capacity(10);
+/// reg.insert::<i32>(Box::new("Numeric"));
+/// reg.insert::<Vec<u8>>(Box::new("String"));
+///
+/// assert_eq!(reg.get::<i32>(), Some(&"Numeric"));
+/// assert_eq!(reg.get::<Vec<u8>>(), Some(&"String"));
+/// assert_eq!(reg.get::<f64>(), None);
+/// ```
 #[derive(Default, Debug)]
 pub struct Registry<T, S = RandomState>(HashMap<TypeId, Box<T>, S>);
 
