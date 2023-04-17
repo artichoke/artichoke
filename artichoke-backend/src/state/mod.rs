@@ -29,6 +29,7 @@ pub struct State {
     pub classes: Registry<class::Spec>,
     pub modules: Registry<module::Spec>,
     pub load_path_vfs: load_path::Adapter,
+    #[cfg(feature = "core-regexp")]
     pub regexp: spinoso_regexp::State,
     pub symbols: SymbolTable,
     pub output: output::Strategy,
@@ -43,7 +44,7 @@ impl State {
     /// The state is comprised of several components:
     ///
     /// - [`Class`] and [`Module`] registries.
-    /// - `Regexp` [global state][regexp-state].
+    #[cfg_attr(feature = "core-regexp", doc = "- `Regexp` [global state][regexp-state].")]
     /// - [In-memory virtual file system].
     /// - [Ruby parser and file context].
     #[cfg_attr(feature = "core-random", doc = "- [Intepreter-level PRNG].")]
@@ -57,7 +58,7 @@ impl State {
     ///
     /// [`Class`]: crate::core::ClassRegistry
     /// [`Module`]: crate::core::ModuleRegistry
-    /// [regexp-state]: spinoso_regexp::State
+    #[cfg_attr(feature = "core-regexp", doc = "[regexp-state]: spinoso_regexp::State")]
     /// [In-memory virtual file system]: load_path
     /// [Ruby parser and file context]: parser::State
     #[cfg_attr(feature = "core-random", doc = "[Intepreter-level PRNG]: Random")]
@@ -68,6 +69,7 @@ impl State {
             classes: Registry::new(),
             modules: Registry::new(),
             load_path_vfs: load_path::Adapter::new(),
+            #[cfg(feature = "core-regexp")]
             regexp: spinoso_regexp::State::new(),
             symbols: SymbolTable::new(),
             output: output::Strategy::new(),
