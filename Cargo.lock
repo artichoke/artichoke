@@ -497,7 +497,7 @@ dependencies = [
 
 [[package]]
 name = "mezzaluna-type-registry"
-version = "1.0.0"
+version = "1.0.1"
 
 [[package]]
 name = "nix"

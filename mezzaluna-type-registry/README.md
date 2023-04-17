@@ -22,7 +22,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mezzaluna-type-registry = "1.0.0"
+mezzaluna-type-registry = "1.0.1"
 ```
 
 And store "specs" for Rust types like this:

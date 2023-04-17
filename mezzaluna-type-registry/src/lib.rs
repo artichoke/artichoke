@@ -120,8 +120,25 @@ impl<'a, T> Iterator for TypeSpecs<'a, T> {
 /// assert_eq!(reg.get::<Vec<u8>>(), Some(&"String"));
 /// assert_eq!(reg.get::<f64>(), None);
 /// ```
-#[derive(Default, Debug)]
 pub struct Registry<T, S = RandomState>(HashMap<TypeId, Box<T>, S>);
+
+impl<T, S> Default for Registry<T, S>
+where
+    S: Default,
+{
+    fn default() -> Self {
+        Self(HashMap::default())
+    }
+}
+
+impl<T, S> fmt::Debug for Registry<T, S>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_map().entries(self.0.iter()).finish()
+    }
+}
 
 impl<T, S> PartialEq for Registry<T, S>
 where
