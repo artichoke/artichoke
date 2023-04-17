@@ -10,7 +10,8 @@ pub trait Regexp {
     /// state.
     type Error;
 
-    /// Retrieve the current number of set `Regexp` global variables.
+    /// Retrieve the current number of set `Regexp` capture group global
+    /// variables.
     ///
     /// `Regexp` global variables like `$1` and `$7` are defined after certain
     /// `Regexp` matching methods for each capturing group in the regular
@@ -24,9 +25,9 @@ pub trait Regexp {
     /// # Errors
     ///
     /// If the `Regexp` state is inaccessible, an error is returned.
-    fn active_regexp_globals(&self) -> Result<usize, Self::Error>;
+    fn capture_group_globals(&self) -> Result<usize, Self::Error>;
 
-    /// Set the current number of set `Regexp` global variables.
+    /// Set the current number of set `Regexp` capture group global variables.
     ///
     /// `Regexp` global variables like `$1` and `$7` are defined after certain
     /// `Regexp` matching methods for each capturing group in the regular
@@ -40,7 +41,7 @@ pub trait Regexp {
     /// # Errors
     ///
     /// If the `Regexp` state is inaccessible, an error is returned.
-    fn set_active_regexp_globals(&mut self, count: usize) -> Result<(), Self::Error>;
+    fn set_capture_group_globals(&mut self, count: usize) -> Result<(), Self::Error>;
 
     /// Clear all `Regexp` state.
     ///
