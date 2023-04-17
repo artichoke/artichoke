@@ -159,7 +159,7 @@ mod tests {
     fn debug_is_not_empty() {
         let state = State::new();
         let mut s = String::new();
-        write!(&mut s, "{:?}", state).unwrap();
+        write!(&mut s, "{state:?}").unwrap();
         assert!(!s.is_empty());
     }
 
