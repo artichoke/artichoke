@@ -38,7 +38,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-backend"
-version = "0.21.0"
+version = "0.22.0"
 dependencies = [
  "artichoke-core",
  "artichoke-load-path",
@@ -69,7 +69,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-core"
-version = "0.12.0"
+version = "0.13.0"
 
 [[package]]
 name = "artichoke-fuzz"
@@ -526,7 +526,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-regexp"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "bitflags",
  "bstr",

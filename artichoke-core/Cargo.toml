@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-core"
-version = "0.12.0"
+version = "0.13.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Core traits for implementing an Artichoke Ruby interpreter"
 keywords = ["artichoke", "artichoke-ruby", "ruby"]
