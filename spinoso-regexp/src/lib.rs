@@ -39,6 +39,7 @@ mod error;
 mod named_captures;
 mod options;
 mod regexp;
+mod state;
 
 pub use debug::Debug;
 pub use encoding::{Encoding, InvalidEncodingError};
@@ -46,6 +47,7 @@ pub use error::{ArgumentError, Error, RegexpError, SyntaxError};
 pub use named_captures::NamedCaptures;
 pub use options::{Options, RegexpOption};
 pub use regexp::regex::utf8::Utf8;
+pub use state::State;
 
 bitflags::bitflags! {
     #[derive(Default)]
