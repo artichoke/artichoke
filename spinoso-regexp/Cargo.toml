@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-regexp"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = """
 Regex implementation for Ruby Regexp core type in Artichoke Ruby

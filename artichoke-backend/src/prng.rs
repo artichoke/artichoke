@@ -3,6 +3,7 @@ use crate::extn::core::random::Random;
 use crate::ffi::InterpreterExtractError;
 use crate::{Artichoke, Error};
 
+#[cfg_attr(docsrs, doc(cfg(feature = "core-random")))]
 impl Prng for Artichoke {
     type Error = Error;
     type Prng = Random;
