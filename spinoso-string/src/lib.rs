@@ -35,9 +35,9 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+use alloc::boxed::Box;
 use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
-use alloc::{boxed::Box, string::ToString};
 #[cfg(feature = "casecmp")]
 use core::cmp::Ordering;
 use core::fmt;
@@ -1646,29 +1646,14 @@ impl String {
     /// assert_eq!(s.index("X", None), None);
     /// ```
     ///
+    /// Related: String#rindex.
+    ///
     /// [`String#index`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-index
     #[inline]
     #[must_use]
     pub fn index<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
-        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
-            let offset = offset.unwrap_or(0);
-            let buf = std::str::from_utf8(buf).ok()?;
-            let needle = std::str::from_utf8(needle).ok()?;
-
-            for (i, ch) in buf.chars().enumerate() {
-                if i < offset {
-                    continue;
-                }
-                if ch.to_string() == needle {
-                    return Some(i);
-                }
-            }
-            None
-        }
-        // convert to a concrete type and delegate to a single `index` impl
-        // to minimize code duplication when monomorphizing.
-        let needle = needle.as_ref();
-        inner(self.inner.as_slice(), needle, offset)
+        let offset = offset.unwrap_or(0);
+        self.inner.index(needle.as_ref(), offset)
     }
 
     /// Returns the char-based index of the last occurrence of the given
@@ -1686,36 +1671,21 @@ impl String {
     ///
     /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
     /// assert_eq!(s.rindex("v", None), Some(6));
-    /// assert_eq!(s.rindex("v", Some(5)), Some(5));
-    /// assert_eq!(s.rindex("v", Some(6)), Some(11));
-    /// assert_eq!(s.rindex("a", None), Some(9));
+    /// assert_eq!(s.rindex("v", Some(5)), Some(0));
+    /// assert_eq!(s.rindex("v", Some(6)), Some(6));
+    /// assert_eq!(s.rindex("a", None), Some(2));
     /// ```
     ///
     /// [`String#rindex`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-rindex
     #[inline]
     #[must_use]
     pub fn rindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
-        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
-            let buf = std::str::from_utf8(buf).ok()?;
-            let needle = std::str::from_utf8(needle).ok()?;
-            let chars_len = buf.chars().count();
-            let offset = offset.unwrap_or(chars_len);
-
-            for (i, ch) in buf.chars().rev().enumerate() {
-                let i = chars_len - i - 1;
-                if i > offset {
-                    continue;
-                }
-                if ch.to_string() == needle {
-                    return Some(i);
-                }
-            }
-            None
+        let default_max_offset = self.inner.char_len() - 1;
+        let mut offset = offset.unwrap_or(default_max_offset);
+        if offset > default_max_offset {
+            offset = default_max_offset;
         }
-        // convert to a concrete type and delegate to a single `rindex` impl
-        // to minimize code duplication when monomorphizing.
-        let needle = needle.as_ref();
-        inner(self.inner.as_slice(), needle, offset)
+        self.inner.rindex(needle.as_ref(), offset)
     }
 
     /// Returns the byte-based index of the first occurrence of the given

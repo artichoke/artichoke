@@ -804,6 +804,33 @@ impl Utf8String {
     }
 }
 
+// Index
+impl Utf8String {
+    #[inline]
+    #[must_use]
+    pub fn index(&self, needle: &[u8], offset: usize) -> Option<usize> {
+        for byte_pos in self.find_iter(needle) {
+            let char_pos = self[..byte_pos].chars().count();
+            if char_pos >= offset {
+                return Some(char_pos);
+            }
+        }
+        None
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn rindex(&self, needle: &[u8], offset: usize) -> Option<usize> {
+        for byte_pos in self.inner.rfind_iter(needle) {
+            let char_pos = self[..byte_pos].chars().count();
+            if char_pos <= offset {
+                return Some(char_pos);
+            }
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::invisible_characters)]
 mod tests {
@@ -1215,5 +1242,41 @@ mod tests {
         assert_eq!(s.get_char_slice(10..8), None);
         assert_eq!(s.get_char_slice(10..5), None);
         assert_eq!(s.get_char_slice(10..2), None);
+    }
+
+    #[test]
+    fn index_with_default_offset() {
+        let s = Utf8String::from("f💎oo");
+        assert_eq!(s.index("f".as_bytes(), 0), Some(0));
+        assert_eq!(s.index("o".as_bytes(), 0), Some(2));
+        assert_eq!(s.index("oo".as_bytes(), 0), Some(2));
+        assert_eq!(s.index("ooo".as_bytes(), 0), None);
+    }
+
+    #[test]
+    fn index_with_different_offset() {
+        let s = Utf8String::from("f💎oo");
+        assert_eq!(s.index("o".as_bytes(), 1), Some(2));
+        assert_eq!(s.index("o".as_bytes(), 2), Some(2));
+        assert_eq!(s.index("o".as_bytes(), 3), Some(3));
+        assert_eq!(s.index("o".as_bytes(), 4), None);
+    }
+
+    #[test]
+    fn rindex_with_default_offset() {
+        let s = Utf8String::from("f💎oo");
+        assert_eq!(s.rindex("f".as_bytes(), 3), Some(0));
+        assert_eq!(s.rindex("o".as_bytes(), 3), Some(3));
+        assert_eq!(s.rindex("oo".as_bytes(), 3), Some(2));
+        assert_eq!(s.rindex("ooo".as_bytes(), 3), None);
+    }
+
+    #[test]
+    fn rindex_with_different_offset() {
+        let s = Utf8String::from("f💎oo");
+        assert_eq!(s.rindex("o".as_bytes(), 3), Some(3));
+        assert_eq!(s.rindex("o".as_bytes(), 2), Some(2));
+        assert_eq!(s.rindex("o".as_bytes(), 1), None);
+        assert_eq!(s.rindex("o".as_bytes(), 0), None);
     }
 }
