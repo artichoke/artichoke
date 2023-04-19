@@ -84,7 +84,7 @@ impl<'a, T> Iterator for TypeSpecs<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let value = self.0.next()?;
-        Some(value.as_ref())
+        Some(value)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
