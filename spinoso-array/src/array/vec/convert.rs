@@ -111,8 +111,6 @@ where
 {
     #[inline]
     fn from(values: &[T; N]) -> Self {
-        // Values is empty, so it can be ignored.
-        let _ = values;
         Self(values.to_vec())
     }
 }

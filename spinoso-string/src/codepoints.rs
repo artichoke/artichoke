@@ -121,7 +121,7 @@ impl InvalidCodepointError {
         // and these `String`s will never approach `isize::MAX` bytes.
         //
         // See the `core::fmt::Display` impl for `InvalidCodepointError`.
-        let _ = write!(s, "{self}");
+        let _ignored = write!(s, "{self}");
         s
     }
 }

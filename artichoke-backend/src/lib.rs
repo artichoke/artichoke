@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
+#![allow(clippy::let_underscore_untyped)] // https://github.com/rust-lang/rust-clippy/pull/10442#issuecomment-1516570154
 #![allow(clippy::manual_let_else)]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::missing_errors_doc)]
