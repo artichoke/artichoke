@@ -63,7 +63,7 @@ members = [
 
 [workspace.package]
 edition = "2021"
-rust-version = "1.68.2"
+rust-version = "1.69.0"
 license = "MIT"
 repository = "https://github.com/artichoke/artichoke"
 homepage = "https://github.com/artichoke/artichoke"
