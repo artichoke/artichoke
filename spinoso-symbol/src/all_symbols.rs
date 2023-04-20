@@ -229,13 +229,11 @@ mod tests {
             Err("not implemented")
         }
 
-        fn check_interned_bytes(&self, symbol: &[u8]) -> Result<Option<Self::Symbol>, Self::Error> {
-            let _ = symbol;
+        fn check_interned_bytes(&self, _symbol: &[u8]) -> Result<Option<Self::Symbol>, Self::Error> {
             Err("not implemented")
         }
 
-        fn lookup_symbol(&self, symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error> {
-            let _ = symbol;
+        fn lookup_symbol(&self, _symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error> {
             Err("not implemented")
         }
 
@@ -260,13 +258,11 @@ mod tests {
             Err("not implemented")
         }
 
-        fn check_interned_bytes(&self, symbol: &[u8]) -> Result<Option<Self::Symbol>, Self::Error> {
-            let _ = symbol;
+        fn check_interned_bytes(&self, _symbol: &[u8]) -> Result<Option<Self::Symbol>, Self::Error> {
             Err("not implemented")
         }
 
-        fn lookup_symbol(&self, symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error> {
-            let _ = symbol;
+        fn lookup_symbol(&self, _symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error> {
             Err("not implemented")
         }
 
@@ -291,13 +287,11 @@ mod tests {
             Err("not implemented")
         }
 
-        fn check_interned_bytes(&self, symbol: &[u8]) -> Result<Option<Self::Symbol>, Self::Error> {
-            let _ = symbol;
+        fn check_interned_bytes(&self, _symbol: &[u8]) -> Result<Option<Self::Symbol>, Self::Error> {
             Err("not implemented")
         }
 
-        fn lookup_symbol(&self, symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error> {
-            let _ = symbol;
+        fn lookup_symbol(&self, _symbol: Self::Symbol) -> Result<Option<&[u8]>, Self::Error> {
             Err("not implemented")
         }
 
