@@ -196,7 +196,16 @@ fn repl_history_file() -> Option<PathBuf> {
     // Ensure the data directory exists but ignore failures (e.g. the dir
     // already exists) because all operations on the history file are best
     // effort and non-blocking.
-    let _ignored = fs::create_dir(data_dir);
+    //
+    // On Windows, the data dir is a path like:
+    //
+    // ```
+    // C:\Users\rjl\AppData\Roaming\artichokeruby\airb\data
+    // ```
+    //
+    // When this path doesn't exist, it contains several directories that
+    // must be created, so we must use `fs::create_dir_all`.
+    let _ignored = fs::create_dir_all(data_dir);
 
     Some(data_dir.join("history"))
 }
