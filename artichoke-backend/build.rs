@@ -28,19 +28,11 @@ mod paths {
     pub fn emscripten_root() -> PathBuf {
         crate_root().join("vendor").join("emscripten")
     }
-
-    pub fn bindgen_header() -> PathBuf {
-        crate_root().join("cext").join("bindgen.h")
-    }
 }
 
 mod libs {
-    use std::env;
-    use std::ffi::OsStr;
     use std::path::PathBuf;
-    use std::process::{Command, Stdio};
     use std::str;
-    use std::thread;
 
     use super::paths;
     use crate::Wasm;
@@ -225,7 +217,7 @@ mod libs {
         build.compile(name);
     }
 
-    pub fn build(wasm: Option<Wasm>, out_dir: &OsStr) {
+    pub fn build(wasm: Option<Wasm>) {
         let include_dirs = mruby_include_dirs()
             .chain(mrbgems_include_dirs())
             .chain(mrbsys_include_dirs());
@@ -260,6 +252,5 @@ impl Wasm {
 
 fn main() {
     let wasm = Wasm::from_env();
-    let out_dir = env::var_os("OUT_DIR").expect("cargo-provided OUT_DIR env variable not set");
-    libs::build(wasm, &out_dir);
+    libs::build(wasm);
 }
