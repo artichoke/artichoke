@@ -91,36 +91,38 @@ tasks by running:
 
 ```console
 $ bundle exec rake --tasks
-rake build                        # Build Rust workspace
-rake build:all                    # Build Rust workspace and sub-workspaces
-rake bundle:audit:check           # Checks the Gemfile.lock for insecure dependencies
-rake bundle:audit:update          # Updates the bundler-audit vulnerability database
-rake doc                          # Generate Rust API documentation
-rake doc:open                     # Generate Rust API documentation and open it in a web browser
-rake fmt                          # Format sources
-rake fmt:c                        # Format .c and .h sources with clang-format
-rake fmt:rust                     # Format Rust sources with rustfmt
-rake fmt:text                     # Format text, YAML, and Markdown sources with prettier
-rake format                       # Format sources
-rake format:c                     # Format .c and .h sources with clang-format
-rake format:rust                  # Format Rust sources with rustfmt
-rake format:text                  # Format text, YAML, and Markdown sources with prettier
-rake lint                         # Lint sources
-rake lint:clippy                  # Lint Rust sources with Clippy
-rake lint:clippy:restriction      # Lint Rust sources with Clippy restriction pass (unenforced lints)
-rake lint:rubocop                 # Run RuboCop
-rake lint:rubocop:autocorrect     # Auto-correct RuboCop offenses
-rake release:markdown_link_check  # Check for broken links in markdown files
-rake sanitizer:leak               # Run Artichoke with LeakSanitizer
-rake spec                         # Run enforced ruby/spec suite
-rake test                         # Run Artichoke unit tests
-rake test:all                     # Run all tests
-rake test:fuzz                    # Run fuzz tests (Fuzz the interpreter for crashes with arbitrary input)
-rake test:ui                      # Run ui tests (check exact stdout/stderr of Artichoke binaries)
-rake test:unit                    # Run unit tests
-rake toolchain:sync               # Sync Rust toolchain to all sources
-rake toolchain:sync:ci            # Sync the root rust-toolchain version to CI jobs
-rake toolchain:sync:manifests     # Sync the root rust-toolchain version to all crate manifests
+rake bindgen                       # Generate mruby bindings with Rust bindgen
+rake build                         # Build Rust workspace
+rake build:all                     # Build Rust workspace and sub-workspaces
+rake bundle:audit:check            # Checks the Gemfile.lock for insecure dependencies
+rake bundle:audit:update           # Updates the bundler-audit vulnerability database
+rake doc                           # Generate Rust API documentation
+rake doc:open                      # Generate Rust API documentation and open it in a web browser
+rake fmt                           # Format sources
+rake fmt:c                         # Format .c and .h sources with clang-format
+rake fmt:rust                      # Format Rust sources with rustfmt
+rake fmt:text                      # Format text, YAML, and Markdown sources with prettier
+rake format                        # Format sources
+rake format:c                      # Format .c and .h sources with clang-format
+rake format:rust                   # Format Rust sources with rustfmt
+rake format:text                   # Format text, YAML, and Markdown sources with prettier
+rake lint                          # Lint sources
+rake lint:clippy                   # Lint Rust sources with Clippy
+rake lint:clippy:restriction       # Lint Rust sources with Clippy restriction pass (unenforced lints)
+rake lint:rubocop                  # Run RuboCop
+rake lint:rubocop:autocorrect      # Autocorrect RuboCop offenses (only when it's safe)
+rake lint:rubocop:autocorrect_all  # Autocorrect RuboCop offenses (safe and unsafe)
+rake release:markdown_link_check   # Check for broken links in markdown files
+rake sanitizer:leak                # Run Artichoke with LeakSanitizer
+rake spec                          # Run enforced ruby/spec suite
+rake test                          # Run Artichoke unit tests
+rake test:all                      # Run all tests
+rake test:fuzz                     # Run fuzz tests (Fuzz the interpreter for crashes with arbitrary input)
+rake test:ui                       # Run ui tests (check exact stdout/stderr of Artichoke binaries)
+rake test:unit                     # Run unit tests
+rake toolchain:sync                # Sync Rust toolchain to all sources
+rake toolchain:sync:ci             # Sync the root rust-toolchain version to CI jobs
+rake toolchain:sync:manifests      # Sync the root rust-toolchain version to all crate manifests
 ```
 
 To lint Ruby sources, Artichoke uses [RuboCop]. RuboCop runs as part of the
