@@ -225,113 +225,12 @@ mod libs {
         build.compile(name);
     }
 
-    fn ensure_bindgen(out_dir: &OsStr) -> PathBuf {
-        let status = Command::new("bindgen")
-            .stdin(Stdio::null())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .arg("--version")
-            .status()
-            .ok();
-        if matches!(status, Some(status) if status.success()) {
-            return PathBuf::from("bindgen");
-        }
-        // Install bindgen
-        // cargo install --root target/bindgen --version 0.64.0  bindgen-cli
-        let bindgen_install_dir = PathBuf::from(out_dir).join("bindgen");
-        let status = Command::new(env::var_os("CARGO").unwrap())
-            .stdin(Stdio::null())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .arg("install")
-            .arg("--root")
-            .arg(&bindgen_install_dir)
-            .arg("--version")
-            .arg("0.65.1")
-            .arg("--locked")
-            .arg("bindgen-cli")
-            .status()
-            .unwrap();
-        assert!(status.success(), "cargo install bindgen failed");
-
-        // NOTE: this extensionless binary name also works on Windows even though
-        // `bindgen` is installed with an `.exe` extension:
-        bindgen_install_dir.join("bin").join("bindgen")
-    }
-
-    fn bindgen(wasm: Option<Wasm>, out_dir: &OsStr) {
-        // Try to use an existing global install of bindgen or install one to
-        // the target directory if necessary.
-        let bindgen_executable = ensure_bindgen(out_dir);
-
-        let bindings_out_path = PathBuf::from(out_dir).join("ffi.rs");
-        let mut command = Command::new(bindgen_executable);
-        command
-            .stdin(Stdio::null())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit());
-
-        command
-            .arg("--allowlist-function")
-            .arg("^mrb.*")
-            .arg("--allowlist-type")
-            .arg("^mrb.*")
-            .arg("--allowlist-var")
-            .arg("^mrb.*")
-            .arg("--allowlist-var")
-            .arg("^MRB.*")
-            .arg("--allowlist-var")
-            .arg("^MRUBY.*")
-            .arg("--allowlist-var")
-            .arg("REGEXP_CLASS")
-            .arg("--rustified-enum")
-            .arg("mrb_vtype")
-            .arg("--rustified-enum")
-            .arg("mrb_lex_state_enum")
-            .arg("--rustified-enum")
-            .arg("mrb_range_beg_len")
-            .arg("--no-doc-comments")
-            .arg("--output")
-            .arg(bindings_out_path)
-            .arg(paths::bindgen_header())
-            .arg("--")
-            .arg("-DARTICHOKE")
-            .arg("-DMRB_ARY_NO_EMBED")
-            .arg("-DMRB_GC_TURN_OFF_GENERATIONAL")
-            .arg("-DMRB_INT64")
-            .arg("-DMRB_NO_BOXING")
-            .arg("-DMRB_NO_PRESYM")
-            .arg("-DMRB_NO_STDIO")
-            .arg("-DMRB_UTF8_STRING");
-
-        for include_dir in mruby_include_dirs().chain(mrbsys_include_dirs()) {
-            command.arg("-I").arg(include_dir);
-        }
-
-        if wasm.is_some() {
-            for include_dir in wasm_include_dirs() {
-                command.arg("-I").arg(include_dir);
-            }
-            command.arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
-        }
-
-        let status = command.status().unwrap();
-        assert!(status.success(), "bindgen failed");
-    }
-
     pub fn build(wasm: Option<Wasm>, out_dir: &OsStr) {
-        thread::scope(|s| {
-            s.spawn(|| {
-                let include_dirs = mruby_include_dirs()
-                    .chain(mrbgems_include_dirs())
-                    .chain(mrbsys_include_dirs());
-                let sources = mruby_sources().chain(mrbgems_sources()).chain(mrbsys_sources());
-                staticlib(wasm, "libartichokemruby.a", include_dirs, sources);
-            });
-            s.spawn(|| {
-                bindgen(wasm, out_dir);
-            });
-        });
+        let include_dirs = mruby_include_dirs()
+            .chain(mrbgems_include_dirs())
+            .chain(mrbsys_include_dirs());
+        let sources = mruby_sources().chain(mrbgems_sources()).chain(mrbsys_sources());
+        staticlib(wasm, "libartichokemruby.a", include_dirs, sources);
     }
 }
 
