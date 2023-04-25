@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-backend"
-version = "0.22.0"
+version = "0.23.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Embeddable VM implementation for Artichoke Ruby"
 keywords = ["artichoke", "artichoke-ruby", "mruby", "ruby"]
@@ -43,6 +43,7 @@ spinoso-time = { version = "0.7.1", path = "../spinoso-time", features = ["tzrs"
 quickcheck = { version = "1.0.3", default-features = false }
 
 [build-dependencies]
+bindgen = { version = "0.65.1", default-features = false, features = ["runtime"] }
 cc = { version = "1.0.72", features = ["parallel"] }
 
 [features]

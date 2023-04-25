@@ -28,11 +28,17 @@ mod paths {
     pub fn emscripten_root() -> PathBuf {
         crate_root().join("vendor").join("emscripten")
     }
+
+    pub fn bindgen_header() -> PathBuf {
+        crate_root().join("cext").join("bindgen.h")
+    }
 }
 
 mod libs {
+    use std::ffi::OsStr;
     use std::path::PathBuf;
     use std::str;
+    use std::thread;
 
     use super::paths;
     use crate::Wasm;
@@ -217,12 +223,61 @@ mod libs {
         build.compile(name);
     }
 
-    pub fn build(wasm: Option<Wasm>) {
-        let include_dirs = mruby_include_dirs()
-            .chain(mrbgems_include_dirs())
-            .chain(mrbsys_include_dirs());
-        let sources = mruby_sources().chain(mrbgems_sources()).chain(mrbsys_sources());
-        staticlib(wasm, "libartichokemruby.a", include_dirs, sources);
+    fn bindgen(wasm: Option<Wasm>, out_dir: &OsStr) {
+        let bindgen_header = paths::bindgen_header();
+        let header = bindgen_header.to_str().unwrap();
+        let bindings_out_path = PathBuf::from(out_dir).join("ffi.rs");
+
+        let mut builder = bindgen::builder()
+            .header(header)
+            .allowlist_function("^mrb.*")
+            .allowlist_type("^mrb.*")
+            .allowlist_var("^mrb.*")
+            .allowlist_var("^MRB.*")
+            .allowlist_var("^MRUBY.*")
+            .rustified_enum("^mrb.*")
+            .generate_comments(false)
+            .clang_args([
+                "-DARTICHOKE",
+                "-DMRB_ARY_NO_EMBED",
+                "-DMRB_GC_TURN_OFF_GENERATIONAL",
+                "-DMRB_INT64",
+                "-DMRB_NO_BOXING",
+                "-DMRB_NO_PRESYM",
+                "-DMRB_NO_STDIO",
+                "-DMRB_UTF8_STRING",
+            ]);
+
+        for include_dir in mruby_include_dirs().chain(mrbsys_include_dirs()) {
+            let include_dir = include_dir.to_str().unwrap();
+            builder = builder.clang_arg("-I").clang_arg(include_dir);
+        }
+
+        if wasm.is_some() {
+            for include_dir in wasm_include_dirs() {
+                let include_dir = include_dir.to_str().unwrap();
+                builder = builder.clang_arg("-I").clang_arg(include_dir);
+            }
+            builder = builder.clang_arg(r#"-DMRB_API=__attribute__((visibility("default")))"#);
+        }
+
+        let bindings = builder.generate().unwrap();
+        bindings.write_to_file(bindings_out_path).unwrap();
+    }
+
+    pub fn build(wasm: Option<Wasm>, out_dir: &OsStr) {
+        thread::scope(|s| {
+            s.spawn(|| {
+                let include_dirs = mruby_include_dirs()
+                    .chain(mrbgems_include_dirs())
+                    .chain(mrbsys_include_dirs());
+                let sources = mruby_sources().chain(mrbgems_sources()).chain(mrbsys_sources());
+                staticlib(wasm, "libartichokemruby.a", include_dirs, sources);
+            });
+            s.spawn(|| {
+                bindgen(wasm, out_dir);
+            });
+        });
     }
 }
 
@@ -252,5 +307,6 @@ impl Wasm {
 
 fn main() {
     let wasm = Wasm::from_env();
-    libs::build(wasm);
+    let out_dir = env::var_os("OUT_DIR").expect("cargo-provided OUT_DIR env variable not set");
+    libs::build(wasm, &out_dir);
 }

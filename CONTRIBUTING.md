@@ -91,7 +91,6 @@ tasks by running:
 
 ```console
 $ bundle exec rake --tasks
-rake bindgen                       # Generate mruby bindings with Rust bindgen
 rake build                         # Build Rust workspace
 rake build:all                     # Build Rust workspace and sub-workspaces
 rake bundle:audit:check            # Checks the Gemfile.lock for insecure dependencies
