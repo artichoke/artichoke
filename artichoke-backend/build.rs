@@ -307,6 +307,9 @@ impl Wasm {
 
 fn main() {
     let wasm = Wasm::from_env();
+    if wasm.is_some() {
+        println!("cargo:rerun-if-env-changed=EMCC_CFLAGS");
+    }
     let out_dir = env::var_os("OUT_DIR").expect("cargo-provided OUT_DIR env variable not set");
     libs::build(wasm, &out_dir);
 }
