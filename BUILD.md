@@ -63,14 +63,14 @@ rustup component add clippy
 
 ### Bindgen
 
-Artichoke generates Rust declarations for C code at check in time using
+Artichoke generates Rust declarations for C code at build time using
 [`bindgen`]. Although not required to build Artichoke, installing `bindgen`
-globally is required for modifying C code embedded in Artichoke.
+globally will speed up the compilation cycle.
 
 To install bindgen using `cargo`:
 
 ```sh
-cargo install --locked bindgen
+cargo install --version 0.59.1 bindgen
 ```
 
 ### Rust Crates

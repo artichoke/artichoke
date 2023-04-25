@@ -2,11 +2,9 @@
 
 //! Rust bindings for mruby, customized for Artichoke.
 //!
-//! Bindings are based on the [vendored mruby sources] and generated with
-//! [bindgen].
-//!
-//! [vendored mruby sources]: https://github.com/artichoke/mruby
-//! [bindgen]: https://rust-lang.github.io/rust-bindgen/
+//! Bindings are based on the
+//! [vendored mruby sources](https://github.com/artichoke/mruby) and generated
+//! with bindgen.
 
 use std::ffi::CStr;
 use std::fmt::{self, Write};
@@ -24,7 +22,9 @@ mod args;
 #[allow(clippy::all)]
 #[allow(clippy::pedantic)]
 #[allow(clippy::restriction)]
-mod ffi;
+mod ffi {
+    include!(concat!(env!("OUT_DIR"), "/ffi.rs"));
+}
 pub(crate) mod protect;
 
 pub use self::args::*;

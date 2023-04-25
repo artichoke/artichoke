@@ -235,32 +235,3 @@ namespace :toolchain do
     end
   end
 end
-
-desc 'Generate mruby bindings with Rust bindgen'
-task :bindgen do
-  command = %w[
-    bindgen
-    --use-core
-    --allowlist-function mrb.*
-    --allowlist-type mrb.*
-    --allowlist-var MRB.*
-    --allowlist-var MRUBY.*
-    --allowlist-var REGEXP_CLASS
-    --rustified-enum mrb_.*
-    --no-doc-comments
-    --output artichoke-backend/src/sys/ffi.rs
-    artichoke-backend/cext/bindgen.h
-    --
-    -DARTICHOKE
-    -DMRB_ARY_NO_EMBED
-    -DMRB_GC_TURN_OFF_GENERATIONAL
-    -DMRB_INT64
-    -DMRB_NO_BOXING
-    -DMRB_NO_PRESYM
-    -DMRB_NO_STDIO
-    -DMRB_UTF8_STRING
-    -I artichoke-backend/cext/mrbsys/include
-    -I artichoke-backend/vendor/mruby/include
-  ]
-  sh command.shelljoin
-end
