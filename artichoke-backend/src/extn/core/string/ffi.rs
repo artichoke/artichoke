@@ -27,7 +27,12 @@ use crate::value::Value;
 // MRB_API mrb_value mrb_str_new_capa(mrb_state *mrb, size_t capa)
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> sys::mrb_value {
+unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: sys::mrb_int) -> sys::mrb_value {
+    let capa = if let Ok(capa) = usize::try_from(capa) {
+        capa
+    } else {
+        return sys::mrb_sys_nil_value();
+    };
     unwrap_interpreter!(mrb, to => guard);
     let result = String::with_capacity(capa);
     let result = String::alloc_value(result, &mut guard);
@@ -41,7 +46,12 @@ unsafe extern "C" fn mrb_str_new_capa(mrb: *mut sys::mrb_state, capa: usize) -> 
 // MRB_API mrb_value mrb_str_new(mrb_state *mrb, const char *p, size_t len)
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const c_char, len: usize) -> sys::mrb_value {
+unsafe extern "C" fn mrb_str_new(mrb: *mut sys::mrb_state, p: *const c_char, len: sys::mrb_int) -> sys::mrb_value {
+    let len = if let Ok(len) = usize::try_from(len) {
+        len
+    } else {
+        return sys::mrb_sys_nil_value();
+    };
     unwrap_interpreter!(mrb, to => guard);
     let s = if p.is_null() {
         String::utf8(vec![0; len])
@@ -77,7 +87,11 @@ unsafe extern "C" fn mrb_str_new_cstr(mrb: *mut sys::mrb_state, p: *const c_char
 // MRB_API mrb_value mrb_str_new_static(mrb_state *mrb, const char *p, size_t len)
 // ```
 #[no_mangle]
-unsafe extern "C" fn mrb_str_new_static(mrb: *mut sys::mrb_state, p: *const c_char, len: usize) -> sys::mrb_value {
+unsafe extern "C" fn mrb_str_new_static(
+    mrb: *mut sys::mrb_state,
+    p: *const c_char,
+    len: sys::mrb_int,
+) -> sys::mrb_value {
     // Artichoke doesn't have a static string optimization.
     mrb_str_new(mrb, p, len)
 }
