@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-void emscripten_unwind_to_js_event_loop(void) __attribute__((noreturn));
+void emscripten_unwind_to_js_event_loop(void) __attribute__((__noreturn__));
 
 long emscripten_set_timeout(void (*cb)(void *userData), double msecs, void *userData);
 void emscripten_clear_timeout(long setTimeoutId);
@@ -25,6 +25,10 @@ void emscripten_set_immediate_loop(EM_BOOL (*cb)(void *userData), void *userData
 
 long emscripten_set_interval(void (*cb)(void *userData), double intervalMsecs, void *userData);
 void emscripten_clear_interval(long setIntervalId);
+
+void emscripten_runtime_keepalive_push();
+void emscripten_runtime_keepalive_pop();
+EM_BOOL emscripten_runtime_keepalive_check();
 
 #ifdef __cplusplus
 }

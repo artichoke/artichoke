@@ -58,8 +58,8 @@ WasmFS::~WasmFS() {
   // Note that we lock here, although strictly speaking it is unnecessary given
   // that we are in the destructor of WasmFS: nothing can possibly be running
   // on files at this time.
-  SpecialFiles::getStdout()->locked().flush();
-  SpecialFiles::getStderr()->locked().flush();
+  (void)SpecialFiles::getStdout()->locked().flush();
+  (void)SpecialFiles::getStderr()->locked().flush();
 
   // Break the reference cycle caused by the root directory being its own
   // parent.
@@ -75,16 +75,20 @@ std::shared_ptr<Directory> WasmFS::initRootDirectory() {
   // The root directory is its own parent.
   lockedRoot.setParent(rootDirectory);
 
-  auto devDirectory =
-    std::make_shared<MemoryDirectory>(S_IRUGO | S_IXUGO, rootBackend);
-  lockedRoot.mountChild("dev", devDirectory);
-  auto lockedDev = devDirectory->locked();
+  auto devDir = lockedRoot.insertDirectory("dev", S_IRUGO | S_IXUGO);
+  assert(devDir);
+  {
+    auto lockedDev = devDir->locked();
+    lockedDev.mountChild("null", SpecialFiles::getNull());
+    lockedDev.mountChild("stdin", SpecialFiles::getStdin());
+    lockedDev.mountChild("stdout", SpecialFiles::getStdout());
+    lockedDev.mountChild("stderr", SpecialFiles::getStderr());
+    lockedDev.mountChild("random", SpecialFiles::getRandom());
+    lockedDev.mountChild("urandom", SpecialFiles::getURandom());
+  }
 
-  lockedDev.mountChild("stdin", SpecialFiles::getStdin());
-  lockedDev.mountChild("stdout", SpecialFiles::getStdout());
-  lockedDev.mountChild("stderr", SpecialFiles::getStderr());
-  lockedDev.mountChild("random", SpecialFiles::getRandom());
-  lockedDev.mountChild("urandom", SpecialFiles::getURandom());
+  [[maybe_unused]] auto tmpDir = lockedRoot.insertDirectory("tmp", S_IRWXUGO);
+  assert(tmpDir);
 
   return rootDirectory;
 }

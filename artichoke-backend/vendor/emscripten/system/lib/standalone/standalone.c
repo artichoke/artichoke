@@ -64,21 +64,20 @@ int clock_getres(clockid_t clk_id, struct timespec *tp) {
 // mmap support is nonexistent. TODO: emulate simple mmaps using
 // stdio + malloc, which is slow but may help some things?
 
-intptr_t _mmap_js(size_t length,
-                  int prot,
-                  int flags,
-                  int fd,
-                  size_t offset,
-                  int* allocated) {
+// Mark these as weak so that wasmfs does not collide with it. That is, if
+// wasmfs is in use, we want to use that and not this.
+__attribute__((__weak__)) int _mmap_js(size_t length,
+                                       int prot,
+                                       int flags,
+                                       int fd,
+                                       size_t offset,
+                                       int* allocated,
+                                       void** addr) {
   return -ENOSYS;
 }
 
-int _munmap_js(intptr_t addr,
-               size_t length,
-               int prot,
-               int flags,
-               int fd,
-               size_t offset) {
+__attribute__((__weak__)) int _munmap_js(
+  intptr_t addr, size_t length, int prot, int flags, int fd, size_t offset) {
   return -ENOSYS;
 }
 
@@ -86,8 +85,6 @@ int _munmap_js(intptr_t addr,
 // corner case error checking; everything else is not permitted.
 // TODO: full file support for WASI, or an option for it
 // open()
-// Mark this as weak so that wasmfs does not collide with it. That is, if wasmfs
-// is in use, we want to use that and not this.
 __attribute__((__weak__))
 int __syscall_openat(int dirfd, intptr_t path, int flags, ...) {
   if (!strcmp((const char*)path, "/dev/stdin")) {
@@ -126,7 +123,7 @@ int getentropy(void* buffer, size_t length) {
 extern void emscripten_notify_memory_growth(size_t memory_index);
 
 // Should never be called in standalone mode
-void *emscripten_memcpy_big(void *restrict dest, const void *restrict src, size_t n) {
+void emscripten_memcpy_big(void *restrict dest, const void *restrict src, size_t n) {
   __builtin_unreachable();
 }
 
@@ -188,7 +185,7 @@ int _wasmfs_get_preloaded_file_size(int index) { return 0; }
 
 int _wasmfs_get_preloaded_file_mode(int index) { return 0; }
 
-size_t _wasmfs_copy_preloaded_file_data(int index, void* buffer) { return 0; }
+void _wasmfs_copy_preloaded_file_data(int index, void* buffer) {}
 
 void _wasmfs_get_preloaded_parent_path(int index, void* buffer) {}
 
