@@ -32,6 +32,17 @@
 #include "lsan_common.h"
 #include "lsan_thread.h"
 
+#if SANITIZER_EMSCRIPTEN
+#define __ATTRP_C11_THREAD ((void*)(uptr)-1)
+#include <emscripten/heap.h>
+extern "C" {
+int emscripten_builtin_pthread_create(void *thread, void *attr,
+                                      void *(*callback)(void *), void *arg);
+int emscripten_builtin_pthread_join(void *th, void **ret);
+int emscripten_builtin_pthread_detach(void *th);
+}
+#endif
+
 #include <stddef.h>
 
 using namespace __lsan;
@@ -67,7 +78,7 @@ namespace std {
   enum class align_val_t: size_t;
 }
 
-#if !SANITIZER_MAC
+#if !SANITIZER_APPLE
 INTERCEPTOR(void*, malloc, uptr size) {
   if (DlsymAlloc::Use())
     return DlsymAlloc::Allocate(size);
@@ -116,7 +127,7 @@ INTERCEPTOR(void*, valloc, uptr size) {
   GET_STACK_TRACE_MALLOC;
   return lsan_valloc(size, stack);
 }
-#endif  // !SANITIZER_MAC
+#endif  // !SANITIZER_APPLE
 
 #if SANITIZER_INTERCEPT_MEMALIGN
 INTERCEPTOR(void*, memalign, uptr alignment, uptr size) {
@@ -242,7 +253,7 @@ INTERCEPTOR(int, mprobe, void *ptr) {
 // libstdc++, each of has its implementation of new and delete.
 // To make sure that C++ allocation/deallocation operators are overridden on
 // OS X we need to intercept them using their mangled names.
-#if !SANITIZER_MAC
+#if !SANITIZER_APPLE
 
 INTERCEPTOR_ATTRIBUTE
 void *operator new(size_t size) { OPERATOR_NEW_BODY(false /*nothrow*/); }
@@ -301,7 +312,7 @@ INTERCEPTOR_ATTRIBUTE
 void operator delete[](void *ptr, size_t size, std::align_val_t) NOEXCEPT
 { OPERATOR_DELETE_BODY; }
 
-#else  // SANITIZER_MAC
+#else  // SANITIZER_APPLE
 
 INTERCEPTOR(void *, _Znwm, size_t size)
 { OPERATOR_NEW_BODY(false /*nothrow*/); }
@@ -321,7 +332,7 @@ INTERCEPTOR(void, _ZdlPvRKSt9nothrow_t, void *ptr, std::nothrow_t const&)
 INTERCEPTOR(void, _ZdaPvRKSt9nothrow_t, void *ptr, std::nothrow_t const&)
 { OPERATOR_DELETE_BODY; }
 
-#endif  // !SANITIZER_MAC
+#endif  // !SANITIZER_APPLE
 
 
 ///// Thread initialization and finalization. /////
@@ -401,18 +412,6 @@ INTERCEPTOR(int, pthread_atfork, void (*prepare)(), void (*parent)(),
 #define LSAN_MAYBE_INTERCEPT_PTHREAD_ATFORK INTERCEPT_FUNCTION(pthread_atfork)
 #else
 #define LSAN_MAYBE_INTERCEPT_PTHREAD_ATFORK
-#endif
-
-#if SANITIZER_EMSCRIPTEN
-#define __ATTRP_C11_THREAD ((void*)(uptr)-1)
-extern "C" {
-  int emscripten_builtin_pthread_create(void *thread, void *attr,
-                                        void *(*callback)(void *), void *arg);
-  int emscripten_builtin_pthread_join(void *th, void **ret);
-  int emscripten_builtin_pthread_detach(void *th);
-  void *emscripten_builtin_malloc(size_t size);
-  void emscripten_builtin_free(void *);
-}
 #endif
 
 #if SANITIZER_INTERCEPT_STRERROR

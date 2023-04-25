@@ -46,7 +46,7 @@ extern "C" {
 
 void _embind_fatal_error(
     const char* name,
-    const char* payload) __attribute__((noreturn));
+    const char* payload) __attribute__((__noreturn__));
 
 void _embind_register_void(
     TYPEID voidType,
@@ -63,15 +63,15 @@ void _embind_register_integer(
     TYPEID integerType,
     const char* name,
     size_t size,
-    long minRange,
-    unsigned long maxRange);
+    int32_t minRange,
+    uint32_t maxRange);
 
 void _embind_register_bigint(
     TYPEID integerType,
     const char* name,
     size_t size,
-    long long minRange,
-    unsigned long long maxRange);
+    int64_t minRange,
+    uint64_t maxRange);
 
 void _embind_register_float(
     TYPEID floatType,
@@ -245,6 +245,23 @@ void _embind_register_constant(
     const char* name,
     TYPEID constantType,
     double value);
+
+// Register an InitFunc in the global linked list of init functions.
+void _embind_register_bindings(struct InitFunc* f);
+
+// Binding initialization functions registerd by EMSCRIPTEN_BINDINGS macro
+// below.  Stored as linked list of static data object avoiding std containers
+// to avoid static contructor ordering issues.
+struct InitFunc {
+  InitFunc(void (*init_func)()) : init_func(init_func) {
+    // This the function immediately upon constructions, and also register
+    // it so that it can be called again on each worker that starts.
+    init_func();
+    _embind_register_bindings(this);
+  }
+  void (*init_func)();
+  InitFunc* next = nullptr;
+};
 
 } // end extern "C"
 
@@ -432,6 +449,23 @@ struct SignatureCode<double> {
     }
 };
 
+#ifdef __wasm64__
+// With wasm32 we can fallback to 'i' for pointer types but we need special
+// handling with wasm64.
+template<>
+struct SignatureCode<void*> {
+    static constexpr char get() {
+        return 'p';
+    }
+};
+template<>
+struct SignatureCode<size_t> {
+    static constexpr char get() {
+        return 'p';
+    }
+};
+#endif
+
 template<typename... Args>
 const char* getGenericSignature() {
     static constexpr char signature[] = { SignatureCode<Args>::get()..., 0 };
@@ -442,6 +476,15 @@ template<typename T> struct SignatureTranslator { using type = int; };
 template<> struct SignatureTranslator<void> { using type = void; };
 template<> struct SignatureTranslator<float> { using type = float; };
 template<> struct SignatureTranslator<double> { using type = double; };
+#ifdef __wasm64__
+template<> struct SignatureTranslator<size_t> { using type = size_t; };
+template<typename PtrType>
+struct SignatureTranslator<PtrType*> { using type = void*; };
+template<typename PtrType>
+struct SignatureTranslator<PtrType&> { using type = void*; };
+template<typename ReturnType, typename... Args>
+struct SignatureTranslator<ReturnType (*)(Args...)> { using type = void*; };
+#endif
 
 template<typename... Args>
 EMSCRIPTEN_ALWAYS_INLINE const char* getSpecificSignature() {
@@ -635,6 +678,12 @@ struct GetterPolicy<GetterReturnType (GetterThisType::*)() const> {
     }
 };
 
+#ifdef __cpp_noexcept_function_type
+template<typename GetterReturnType, typename GetterThisType>
+struct GetterPolicy<GetterReturnType (GetterThisType::*)() const noexcept>
+     : GetterPolicy<GetterReturnType (GetterThisType::*)() const> {};
+#endif
+
 template<typename GetterReturnType, typename GetterThisType>
 struct GetterPolicy<GetterReturnType (*)(const GetterThisType&)> {
     typedef GetterReturnType ReturnType;
@@ -709,6 +758,12 @@ struct SetterPolicy<SetterReturnType (SetterThisType::*)(SetterArgumentType)> {
         return internal::getContext(context);
     }
 };
+
+#ifdef __cpp_noexcept_function_type
+template<typename SetterReturnType, typename SetterThisType, typename SetterArgumentType>
+struct SetterPolicy<SetterReturnType (SetterThisType::*)(SetterArgumentType) noexcept>
+     : SetterPolicy<SetterReturnType (SetterThisType::*)(SetterArgumentType)> {};
+#endif
 
 template<typename SetterReturnType, typename SetterThisType, typename SetterArgumentType>
 struct SetterPolicy<SetterReturnType (*)(SetterThisType&, SetterArgumentType)> {
@@ -1326,6 +1381,12 @@ struct RegisterClassMethod<ReturnType (ClassType::*)(Args...)> {
     }
 };
 
+#ifdef __cpp_noexcept_function_type
+template<typename ClassType, typename ReturnType, typename... Args>
+struct RegisterClassMethod<ReturnType (ClassType::*)(Args...) noexcept>
+     : RegisterClassMethod<ReturnType (ClassType::*)(Args...)> {};
+#endif
+
 template<typename ClassType, typename ReturnType, typename... Args>
 struct RegisterClassMethod<ReturnType (ClassType::*)(Args...) const> {
 
@@ -1347,6 +1408,12 @@ struct RegisterClassMethod<ReturnType (ClassType::*)(Args...) const> {
     }
 };
 
+#ifdef __cpp_noexcept_function_type
+template<typename ClassType, typename ReturnType, typename... Args>
+struct RegisterClassMethod<ReturnType (ClassType::*)(Args...) const noexcept>
+     : RegisterClassMethod<ReturnType (ClassType::*)(Args...) const> {};
+#endif
+
 template<typename ReturnType, typename ThisType, typename... Args>
 struct RegisterClassMethod<ReturnType (*)(ThisType, Args...)> {
 
@@ -1366,6 +1433,12 @@ struct RegisterClassMethod<ReturnType (*)(ThisType, Args...)> {
             false);
     }
 };
+
+#ifdef __cpp_noexcept_function_type
+template<typename ReturnType, typename ThisType, typename... Args>
+struct RegisterClassMethod<ReturnType (*)(ThisType, Args...) noexcept>
+     : RegisterClassMethod<ReturnType (*)(ThisType, Args...)> {};
+#endif
 
 template<typename ReturnType, typename ThisType, typename... Args>
 struct RegisterClassMethod<std::function<ReturnType (ThisType, Args...)>> {
@@ -1864,15 +1937,15 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace internal {
-    template<typename T>
-    double asGenericValue(T t) {
-        return static_cast<double>(t);
-    }
 
-    template<typename T>
-    uintptr_t asGenericValue(T* p) {
-        return reinterpret_cast<uintptr_t>(p);
-    }
+template<typename T> double asGenericValue(T t) {
+    return static_cast<double>(t);
+}
+
+template<typename T> uintptr_t asGenericValue(T* p) {
+    return reinterpret_cast<uintptr_t>(p);
+}
+
 }
 
 template<typename ConstantType>
@@ -1885,9 +1958,17 @@ void constant(const char* name, const ConstantType& v) {
         static_cast<double>(asGenericValue(BT::toWireType(v))));
 }
 
-// EMSCRIPTEN_BINDINGS simple creates a static constructor function which
+// EMSCRIPTEN_BINDINGS creates a static struct to initialize the binding which
 // will get included in the program if the translation unit in which it is
-// define gets linked into the program.
-#define EMSCRIPTEN_BINDINGS(name) __attribute__((constructor)) static void __embind_init_##name(void)
+// defined gets linked into the program. Using a C++ constructor here ensures it
+// occurs after any other C++ constructors in this file, which is not true for
+// __attribute__((constructor)) (they run before C++ constructors in the same
+// file).
+#define EMSCRIPTEN_BINDINGS(name)                                              \
+  static void embind_init_##name();                                            \
+  static struct EmBindInit_##name : emscripten::internal::InitFunc {           \
+    EmBindInit_##name() : InitFunc(embind_init_##name) {}                      \
+  } EmBindInit_##name##_instance;                                              \
+  static void embind_init_##name()
 
 } // end namespace emscripten

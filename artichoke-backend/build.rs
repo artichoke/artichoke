@@ -181,9 +181,9 @@ mod libs {
         build
             .warnings(false)
             .define("ARTICHOKE", None)
+            .define("MRB_64BIT", None)
             .define("MRB_ARY_NO_EMBED", None)
             .define("MRB_GC_TURN_OFF_GENERATIONAL", None)
-            .define("MRB_INT64", None)
             .define("MRB_NO_BOXING", None)
             .define("MRB_NO_PRESYM", None)
             .define("MRB_NO_STDIO", None)
