@@ -30,7 +30,7 @@ mod paths {
     }
 
     pub fn bindgen_header() -> PathBuf {
-        crate_root().join("cext").join("bindgen.h")
+        crate_root().join("cext").join("include").join("bindgen.h")
     }
 }
 

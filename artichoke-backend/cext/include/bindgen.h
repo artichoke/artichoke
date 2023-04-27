@@ -7,6 +7,9 @@
  * These bindings are exported in the `artichoke_backend::sys` module.
  */
 
+#ifndef BINDGEN_H
+#define BINDGEN_H
+
 #include <mruby.h>
 #include <mruby/array.h>
 #include <mruby/boxing_no.h>
@@ -35,3 +38,5 @@
 
 #include <mrbsys/ext.h>
 #include <mrbsys/reexports.h>
+
+#endif  // BINDGEN_H
