@@ -6,6 +6,9 @@
  * initializers).
  */
 
+#ifndef MRBSYS_EXT_H
+#define MRBSYS_EXT_H
+
 #include <stdbool.h>
 
 #include <mruby.h>
@@ -146,3 +149,5 @@ MRB_API void mrb_sys_safe_gc_mark(mrb_state *mrb, mrb_value value);
 #ifdef __cplusplus
 } /* extern "C" { */
 #endif
+
+#endif  // MRBSYS_EXT_H

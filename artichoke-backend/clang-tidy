@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+unset CDPATH
+
+dir="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+
+cd "$dir" || exit 1
+
+if command -v brew &>/dev/null; then
+  if llvm_prefix="$(brew --prefix llvm 2>/dev/null)"; then
+    PATH="${llvm_prefix}/bin:$PATH"
+    export PATH
+  fi
+fi
+
+exec clang-tidy `find cext -type f \( -name '*.h' -or -name '*.c' \)` \
+  '-checks=-*,
+  clang-analyzer-*,
+  concurrency-*,
+  google-*,
+  llvm-*,
+  -llvm-include-order,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -readability-identifier-length' \
+  -- \
+  -I vendor/mruby/include \
+  -I cext/mrbsys/include \
+  -DARTICHOKE \
+  -DMRB_ARY_NO_EMBED \
+  -DMRB_GC_TURN_OFF_GENERATIONAL \
+  -DMRB_INT64 \
+  -DMRB_NO_BOXING \
+  -DMRB_NO_PRESYM \
+  -DMRB_NO_STDIO \
+  -DMRB_UTF8_STRING

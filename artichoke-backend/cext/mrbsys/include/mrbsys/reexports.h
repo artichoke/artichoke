@@ -1,3 +1,6 @@
+#ifndef MRBSYS_REEXPORTS_H
+#define MRBSYS_REEXPORTS_H
+
 #include <mruby.h>
 #include <mruby/common.h>
 
@@ -11,3 +14,5 @@ MRB_API void mrb_init_mrbgems(mrb_state *mrb);
 #ifdef __cplusplus
 } /* extern "C" { */
 #endif
+
+#endif  // MRBSYS_REEXPORTS_H
