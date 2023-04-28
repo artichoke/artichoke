@@ -16,10 +16,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.2
 
       - name: Install Ruby toolchain
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@6cecb48364174b0952995175c55f9bf5527e6682 # v1.147.0
         with:
           ruby-version: ".ruby-version"
           bundler-cache: true
@@ -41,10 +41,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.2
 
       - name: Install Rust toolchain
-        uses: artichoke/setup-rust/audit@v1
+        uses: artichoke/setup-rust/audit@v1.9.0
 
       - name: Generate Cargo.lock
         run: |
@@ -52,7 +52,7 @@ jobs:
             cargo generate-lockfile --verbose
           fi
 
-      - uses: EmbarkStudios/cargo-deny-action@v1
+      - uses: EmbarkStudios/cargo-deny-action@e0a440755b184aa50374330fa75cca0f84fcb59a # v1.5.2
         with:
           arguments: --locked --all-features
           command: check ${{ matrix.checks }}

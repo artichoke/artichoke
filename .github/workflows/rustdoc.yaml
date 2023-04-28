@@ -23,10 +23,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.2
 
       - name: Install Rust toolchain
-        uses: artichoke/setup-rust/rustdoc@v1
+        uses: artichoke/setup-rust/rustdoc@v1.9.0
 
       - name: Check docs with no default features
         run: cargo doc --workspace --no-default-features
@@ -41,7 +41,7 @@ jobs:
         run: cp --verbose .github/rustdoc/* target/doc/
 
       - name: Deploy Docs
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.2
         if: github.ref == 'refs/heads/trunk'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
