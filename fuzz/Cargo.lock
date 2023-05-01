@@ -471,9 +471,9 @@ dependencies = [
 
 [[package]]
 name = "qed"
-version = "1.4.0"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90d0abf294960e1e7e22949cddc9cc2c96a05dc52f5567fd65c2bbd4899ff47e"
+checksum = "9fc1ded256da0b1aa6d2bf67fd20aa27d5eba84af7fd1fc357b2b26a2be8abc0"
 
 [[package]]
 name = "quote"
