@@ -1646,8 +1646,6 @@ impl String {
     /// assert_eq!(s.index("X", None), None);
     /// ```
     ///
-    /// Related: String#rindex.
-    ///
     /// [`String#index`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-index
     #[inline]
     #[must_use]
