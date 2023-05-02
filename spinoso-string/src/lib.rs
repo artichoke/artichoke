@@ -2254,4 +2254,17 @@ mod tests {
         assert_eq!(utf8.byteindex(&needle, Some(8)), Some(8));
         assert_eq!(utf8.byteindex(&needle, Some(9)), None);
     }
+
+    #[test]
+    fn rindex_support_empty_string_and_empty_needle() {
+        // Empty needle
+        assert_eq!(String::ascii(b"foo".to_vec()).rindex("", None), Some(3));
+
+        // Empty haystack
+        assert_eq!(String::ascii(b"".to_vec()).rindex("foo", None), None);
+
+        // Empty haystack and needle
+        // FIXME: This currently return None instead of Some(0)
+        assert_eq!(String::ascii(b"".to_vec()).rindex("", None), Some(0));
+    }
 }
