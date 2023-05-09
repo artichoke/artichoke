@@ -1280,4 +1280,28 @@ mod tests {
         assert_eq!(s.rindex("o".as_bytes(), 1), None);
         assert_eq!(s.rindex("o".as_bytes(), 0), None);
     }
+
+    #[test]
+    fn index_and_rindex_support_invalid_utf8_in_needle() {
+        // Invalid UTF-8 in needle
+        let needle = &"💎".as_bytes()[..3];
+
+        println!("{:?} rfinx {:?}", "f💎oo".as_bytes(), needle);
+
+        assert_eq!(Utf8String::from("f💎oo").index(needle, 0), None); // FIXME: Currently `Some(1)`
+        assert_eq!(Utf8String::from("f💎oo").rindex(needle, 3), None); // FIXME: Currently `Some(1)`
+    }
+
+    #[test]
+    fn index_and_rindex_support_invalid_utf8_in_haystack() {
+        // Invalid UTF-8 in haystack
+        let mut haystack = Vec::new();
+        haystack.extend_from_slice(b"f");
+        haystack.extend_from_slice(&"💎".as_bytes()[..2]);
+        haystack.extend_from_slice(b"oo");
+        let haystack = Utf8String::from(haystack);
+
+        assert_eq!(haystack.index("💎".as_bytes(), 0), None);
+        assert_eq!(haystack.rindex("💎".as_bytes(), 3), None);
+    }
 }
