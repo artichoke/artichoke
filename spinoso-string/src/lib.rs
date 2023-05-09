@@ -1678,11 +1678,7 @@ impl String {
     #[inline]
     #[must_use]
     pub fn rindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
-        let default_max_offset = self.inner.char_len() - 1;
-        let mut offset = offset.unwrap_or(default_max_offset);
-        if offset > default_max_offset {
-            offset = default_max_offset;
-        }
+        let offset = offset.unwrap_or_else(|| self.inner.char_len().checked_sub(1).unwrap_or_default());
         self.inner.rindex(needle.as_ref(), offset)
     }
 
@@ -2264,7 +2260,6 @@ mod tests {
         assert_eq!(String::ascii(b"".to_vec()).rindex("foo", None), None);
 
         // Empty haystack and needle
-        // FIXME: This currently return None instead of Some(0)
         assert_eq!(String::ascii(b"".to_vec()).rindex("", None), Some(0));
     }
 }

@@ -347,7 +347,8 @@ impl BinaryString {
     #[inline]
     #[must_use]
     pub fn rindex(&self, needle: &[u8], offset: usize) -> Option<usize> {
-        let buf = self.get(..=offset)?;
+        let search_until = (offset + 1).min(self.len());
+        let buf = self.get(..search_until)?;
         let index = buf.rfind(needle)?;
         Some(index)
     }
@@ -580,6 +581,7 @@ mod tests {
     #[test]
     fn rindex_with_different_offset() {
         let s = BinaryString::from(b"foo");
+        assert_eq!(s.rindex("o".as_bytes(), 3), Some(2));
         assert_eq!(s.rindex("o".as_bytes(), 2), Some(2));
         assert_eq!(s.rindex("o".as_bytes(), 1), Some(1));
         assert_eq!(s.rindex("o".as_bytes(), 0), None);

@@ -1274,6 +1274,7 @@ mod tests {
     #[test]
     fn rindex_with_different_offset() {
         let s = Utf8String::from("f💎oo");
+        assert_eq!(s.rindex("o".as_bytes(), 4), Some(3));
         assert_eq!(s.rindex("o".as_bytes(), 3), Some(3));
         assert_eq!(s.rindex("o".as_bytes(), 2), Some(2));
         assert_eq!(s.rindex("o".as_bytes(), 1), None);
