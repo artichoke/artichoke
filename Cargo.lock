@@ -77,6 +77,7 @@ dependencies = [
  "bstr",
  "clap",
  "directories",
+ "dirs-sys",
  "log",
  "posix-space",
  "rustyline",
