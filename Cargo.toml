@@ -25,6 +25,12 @@ clap = { version = "4.2.4", optional = true }
 directories = { version = "5.0.0", optional = true }
 # XXX: load-bearing unused dependency.
 #
+# `dirs-sys` v4.0.1 includes an additional dependency, `option-ext`, which has
+# an MPL-2.0 license. MPL is a copyleft license, all of which are banned in
+# Artichoke.
+dirs-sys = { version = "=0.4.0", optional = true }
+# XXX: load-bearing unused dependency.
+#
 # `rustyline` improperly declares its minimum version on `log` as `0.4` despite
 # requiring `>=0.4.5` to compile. Link in at least the minimum version here so
 # cargo pulls in at least 0.4.5, e.g. when using `-Zminimal-versions`.
@@ -82,7 +88,16 @@ default = [
 ]
 # Enable a CLI frontend for Artichoke, including a `ruby`-equivalent CLI and
 # REPL.
-cli = ["backtrace", "dep:bstr", "dep:clap", "dep:directories", "dep:log", "dep:posix-space", "dep:rustyline"]
+cli = [
+  "backtrace",
+  "dep:bstr",
+  "dep:clap",
+  "dep:directories",
+  "dep:dirs-sys",
+  "dep:log",
+  "dep:posix-space",
+  "dep:rustyline",
+]
 # Enable a module for formtting backtraces from Ruby exceptions.
 backtrace = ["dep:termcolor"]
 # Enable all features of Ruby Core, Standard Library, and the underlying VM.
