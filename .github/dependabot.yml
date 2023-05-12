@@ -31,8 +31,6 @@ updates:
     directory: "/fuzz"
     schedule:
       interval: monthly
-    allow:
-      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
