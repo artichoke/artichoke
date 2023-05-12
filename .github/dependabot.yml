@@ -13,8 +13,6 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
-    allow:
-      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
@@ -24,8 +22,6 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
-    allow:
-      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
@@ -46,8 +42,6 @@ updates:
     directory: "/spec-runner"
     schedule:
       interval: monthly
-    allow:
-      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
@@ -57,8 +51,6 @@ updates:
     directory: "/ui-tests"
     schedule:
       interval: monthly
-    allow:
-      - dependency-type: "all"
     open-pull-requests-limit: 10
     assignees:
       - lopopolo
