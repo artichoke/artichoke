@@ -26,6 +26,9 @@
     },
     {
       "pattern": "^https://docs.rs/spinoso.*"
+    },
+    {
+      "pattern": "^https://twitter.com/artichokeruby"
     }
   ],
   "replacementPatterns": [],
