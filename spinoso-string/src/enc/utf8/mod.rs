@@ -809,10 +809,37 @@ impl Utf8String {
     #[inline]
     #[must_use]
     pub fn index(&self, needle: &[u8], offset: usize) -> Option<usize> {
-        for byte_pos in self.find_iter(needle) {
-            let char_pos = self[..byte_pos].chars().count();
-            if char_pos >= offset {
-                return Some(char_pos);
+        // Decode needle
+        let needle_chars = match must_decode_utf8(needle) {
+            Some(chars) => chars,
+            // Needle containing any invalid UTF-8 should never match in MRI
+            None => return None,
+        };
+
+        // Decode haystack, and check against needle along the way whenever possible
+        let mut curr = 0;
+        let mut haystack_chars = Vec::new();
+        let mut bytes = &self.inner[..];
+        while !bytes.is_empty() {
+            if curr < offset {
+                curr += 1;
+                continue;
+            }
+
+            let (ch, size) = bstr::decode_utf8(bytes);
+            bytes = &bytes[size..];
+            haystack_chars.push(ch.unwrap_or('\u{FFFD}'));
+
+            if let Some(maybe_match) = haystack_chars.get(curr..) {
+                if needle_chars.len() > maybe_match.len() {
+                    continue; // decode more haystack before checking
+                }
+
+                if needle_chars == maybe_match {
+                    return Some(curr); // Found!
+                }
+
+                curr += 1;
             }
         }
         None
@@ -821,14 +848,52 @@ impl Utf8String {
     #[inline]
     #[must_use]
     pub fn rindex(&self, needle: &[u8], offset: usize) -> Option<usize> {
-        for byte_pos in self.inner.rfind_iter(needle) {
-            let char_pos = self[..byte_pos].chars().count();
-            if char_pos <= offset {
-                return Some(char_pos);
+        // Decode needle
+        let needle_chars = match must_decode_utf8(needle) {
+            Some(chars) => chars,
+            // Needle containing any invalid UTF-8 should never match in MRI
+            None => return None,
+        };
+
+        // Decode haystack
+        // We need to decode from the right side to tell the rightmost match, as well as
+        // from the left side to calculate the index of the match. Therefore we need to
+        // decode the entier haystack anyway.
+        let haystack_chars: Vec<char> = self.chars().collect();
+
+        // Compare from the right
+        let mut curr = offset.min(haystack_chars.len() - 1);
+        loop {
+            if let Some(maybe_match) = haystack_chars[curr..].get(0..needle_chars.len()) {
+                if needle_chars == maybe_match {
+                    return Some(curr); // Found!
+                }
+            }
+
+            if curr > 0 {
+                curr -= 1;
+            } else {
+                return None;
             }
         }
-        None
     }
+}
+
+// Decode UTF-8 bytes. Return None if any invalid UTF-8 bytes is encountered (instead of using
+// replacement codepoint, for example)
+fn must_decode_utf8(maybe_utf8_bytes: &[u8]) -> Option<Vec<char>> {
+    let mut chars = Vec::new();
+    let mut bytes = maybe_utf8_bytes;
+    while !bytes.is_empty() {
+        if let (Some(char), size) = bstr::decode_utf8(bytes) {
+            bytes = &bytes[size..];
+            chars.push(char);
+        } else {
+            // needle containing invalid UTF-8 should never match
+            return None;
+        }
+    }
+    Some(chars)
 }
 
 #[cfg(test)]
@@ -1285,8 +1350,6 @@ mod tests {
     fn index_and_rindex_support_invalid_utf8_in_needle() {
         // Invalid UTF-8 in needle
         let needle = &"💎".as_bytes()[..3];
-
-        println!("{:?} rfinx {:?}", "f💎oo".as_bytes(), needle);
 
         assert_eq!(Utf8String::from("f💎oo").index(needle, 0), None); // FIXME: Currently `Some(1)`
         assert_eq!(Utf8String::from("f💎oo").rindex(needle, 3), None); // FIXME: Currently `Some(1)`
