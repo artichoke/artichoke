@@ -356,8 +356,7 @@ impl AsciiString {
     #[inline]
     #[must_use]
     pub fn rindex(&self, needle: &[u8], offset: usize) -> Option<usize> {
-        let search_until = (offset + 1).min(self.len());
-        let buf = self.get(..search_until)?;
+        let buf = self.get(..=offset).unwrap_or_else(|| self.as_slice());
         let index = buf.rfind(needle)?;
         Some(index)
     }
@@ -586,6 +585,31 @@ mod tests {
     }
 
     #[test]
+    fn index_offset_no_overflow() {
+        let s = AsciiString::from(b"foo");
+        assert_eq!(s.index("o".as_bytes(), usize::MAX), None);
+    }
+
+    #[test]
+    fn index_empties() {
+        // ```console
+        // [3.2.2] > "".index ""
+        // => 0
+        // [3.2.2] > "".index "a"
+        // => nil
+        // [3.2.2] > "a".index ""
+        // => 0
+        // ```
+        let s = AsciiString::from("");
+        assert_eq!(s.index(b"", 0), Some(0));
+
+        assert_eq!(s.index(b"a", 0), None);
+
+        let s = AsciiString::from("a");
+        assert_eq!(s.index(b"", 0), Some(0));
+    }
+
+    #[test]
     fn rindex_with_default_offset() {
         let s = AsciiString::from(b"foo");
         assert_eq!(s.rindex("f".as_bytes(), 2), Some(0));
@@ -601,5 +625,35 @@ mod tests {
         assert_eq!(s.rindex("o".as_bytes(), 2), Some(2));
         assert_eq!(s.rindex("o".as_bytes(), 1), Some(1));
         assert_eq!(s.rindex("o".as_bytes(), 0), None);
+    }
+
+    #[test]
+    fn rindex_offset_no_overflow() {
+        let s = AsciiString::from(b"foo");
+        assert_eq!(s.rindex("o".as_bytes(), usize::MAX), Some(2));
+    }
+
+    #[test]
+    fn rindex_empties() {
+        // ```console
+        // [3.2.2] > "".rindex ""
+        // => 0
+        // [3.2.2] > "".rindex "a"
+        // => nil
+        // [3.2.2] > "a".rindex ""
+        // => 1
+        // ```
+        let s = AsciiString::from("");
+        assert_eq!(s.rindex(b"", usize::MAX), Some(0));
+        assert_eq!(s.rindex(b"", 1), Some(0));
+        assert_eq!(s.rindex(b"", 0), Some(0));
+
+        assert_eq!(s.rindex(b"a", usize::MAX), None);
+        assert_eq!(s.rindex(b"a", 1), None);
+        assert_eq!(s.rindex(b"a", 0), None);
+
+        let s = AsciiString::from("a");
+        assert_eq!(s.rindex(b"", usize::MAX), Some(1));
+        assert_eq!(s.rindex(b"", 1), Some(1));
     }
 }

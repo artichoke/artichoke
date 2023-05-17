@@ -139,25 +139,28 @@ impl Utf8String {
     #[inline]
     #[must_use]
     pub fn char_len(&self) -> usize {
-        let mut bytes = self.as_slice();
-        let tail = if let Some(idx) = bytes.find_non_ascii_byte() {
-            idx
-        } else {
-            return bytes.len();
-        };
-        // SAFETY: `ByteSlice::find_non_ascii_byte` guarantees that the index is
-        // in range for slicing if `Some(_)` is returned.
-        bytes = unsafe { bytes.get_unchecked(tail..) };
-        if simdutf8::basic::from_utf8(bytes).is_ok() {
-            return tail + bytecount::num_chars(bytes);
-        }
-        let mut char_len = tail;
-        for chunk in bytes.utf8_chunks() {
-            char_len += bytecount::num_chars(chunk.valid().as_bytes());
-            char_len += chunk.invalid().len();
-        }
-        char_len
+        char_len(self.as_slice())
     }
+}
+
+fn char_len(mut bytes: &[u8]) -> usize {
+    let tail = if let Some(idx) = bytes.find_non_ascii_byte() {
+        idx
+    } else {
+        return bytes.len();
+    };
+    // SAFETY: `ByteSlice::find_non_ascii_byte` guarantees that the index is in
+    // range for slicing if `Some(_)` is returned.
+    bytes = unsafe { bytes.get_unchecked(tail..) };
+    if simdutf8::basic::from_utf8(bytes).is_ok() {
+        return tail + bytecount::num_chars(bytes);
+    }
+    let mut char_len = tail;
+    for chunk in bytes.utf8_chunks() {
+        char_len += bytecount::num_chars(chunk.valid().as_bytes());
+        char_len += chunk.invalid().len();
+    }
+    char_len
 }
 
 // Memory management
@@ -810,90 +813,132 @@ impl Utf8String {
     #[must_use]
     pub fn index(&self, needle: &[u8], offset: usize) -> Option<usize> {
         // Decode needle
-        let needle_chars = match must_decode_utf8(needle) {
-            Some(chars) => chars,
-            // Needle containing any invalid UTF-8 should never match in MRI
-            None => return None,
-        };
+        // Needle containing any invalid UTF-8 should never match in MRI
+        //
+        // ```console
+        // [3.2.2] > s = "abc"
+        // => "abc"
+        // [3.2.2] > s.encoding
+        // => #<Encoding:UTF-8>
+        // [3.2.2] > s.index "\xFF"
+        // => nil
+        // [3.2.2] > s = "\xFF\xFE"
+        // => "\xFF\xFE"
+        // [3.2.2] > s.encoding
+        // => #<Encoding:UTF-8>
+        // [3.2.2] > s.index "\xFF"
+        // => nil
+        // [3.2.2] > s.index "\xFF".b
+        // (irb):14:in `index': incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)
+        //         from (irb):14:in `<main>'
+        //         from /usr/local/var/rbenv/versions/3.2.2/lib/ruby/gems/3.2.0/gems/irb-1.6.2/exe/irb:11:in `<top (required)>'
+        //         from /usr/local/var/rbenv/versions/3.2.2/bin/irb:25:in `load'
+        //         from /usr/local/var/rbenv/versions/3.2.2/bin/irb:25:in `<main>'
+        // ```
+        if !needle.is_utf8() {
+            return None;
+        }
 
-        // Decode haystack, and check against needle along the way whenever possible
-        let mut curr = 0;
-        let mut haystack_chars = Vec::new();
-        let mut bytes = &self.inner[..];
-        while !bytes.is_empty() {
-            if curr < offset {
-                curr += 1;
-                continue;
+        let buf = self.get_char_slice(offset..usize::MAX)?;
+        let index = buf.find(needle)?;
+
+        let mut s = self.as_slice();
+        let mut char_count = 0;
+
+        // first decode `offset` number of characters.
+        let mut offset_chars_remaining = offset;
+        loop {
+            if offset_chars_remaining == 0 {
+                break;
             }
-
-            let (ch, size) = bstr::decode_utf8(bytes);
-            bytes = &bytes[size..];
-            haystack_chars.push(ch.unwrap_or('\u{FFFD}'));
-
-            if let Some(maybe_match) = haystack_chars.get(curr..) {
-                if needle_chars.len() > maybe_match.len() {
-                    continue; // decode more haystack before checking
+            match bstr::decode_utf8(s) {
+                (Some(_), size) => {
+                    s = &s[size..];
+                    char_count += 1;
+                    offset_chars_remaining -= 1;
                 }
-
-                if needle_chars == maybe_match {
-                    return Some(curr); // Found!
+                (None, 0) => break,
+                (None, size) if size > offset_chars_remaining => {
+                    s = &s[offset_chars_remaining..];
+                    char_count += offset_chars_remaining;
+                    break;
                 }
-
-                curr += 1;
+                (None, size) => {
+                    s = &s[size..];
+                    char_count += size;
+                    offset_chars_remaining -= size;
+                }
             }
         }
-        None
+
+        // then decode `index` bytes, counting characters along the way.
+        let mut decode_size_remaining = index;
+        loop {
+            if decode_size_remaining == 0 {
+                return Some(char_count);
+            }
+            match bstr::decode_utf8(s) {
+                (Some(_), size) if decode_size_remaining > size => {
+                    s = &s[size..];
+                    char_count += 1;
+                    decode_size_remaining -= size;
+                }
+                (Some(_), size) if size == decode_size_remaining => {
+                    return Some(char_count + 1);
+                }
+                (Some(_), _size) => {
+                    unreachable!("needle must be valid UTF-8 so match must occur on a char boundary",);
+                }
+                (None, 0) => {
+                    return Some(char_count);
+                }
+                (None, size) if decode_size_remaining > size => {
+                    s = &s[size..];
+                    decode_size_remaining -= size;
+                    char_count += size;
+                }
+                (None, _size) => {
+                    unreachable!("needle must be valid UTF-8 so match must occur on a char boundary");
+                }
+            }
+        }
     }
 
     #[inline]
     #[must_use]
     pub fn rindex(&self, needle: &[u8], offset: usize) -> Option<usize> {
         // Decode needle
-        let needle_chars = match must_decode_utf8(needle) {
-            Some(chars) => chars,
-            // Needle containing any invalid UTF-8 should never match in MRI
-            None => return None,
-        };
-
-        // Decode haystack
-        // We need to decode from the right side to tell the rightmost match, as well as
-        // from the left side to calculate the index of the match. Therefore we need to
-        // decode the entier haystack anyway.
-        let haystack_chars: Vec<char> = self.chars().collect();
-
-        // Compare from the right
-        let mut curr = offset.min(haystack_chars.len() - 1);
-        loop {
-            if let Some(maybe_match) = haystack_chars[curr..].get(0..needle_chars.len()) {
-                if needle_chars == maybe_match {
-                    return Some(curr); // Found!
-                }
-            }
-
-            if curr > 0 {
-                curr -= 1;
-            } else {
-                return None;
-            }
-        }
-    }
-}
-
-// Decode UTF-8 bytes. Return None if any invalid UTF-8 bytes is encountered (instead of using
-// replacement codepoint, for example)
-fn must_decode_utf8(maybe_utf8_bytes: &[u8]) -> Option<Vec<char>> {
-    let mut chars = Vec::new();
-    let mut bytes = maybe_utf8_bytes;
-    while !bytes.is_empty() {
-        if let (Some(char), size) = bstr::decode_utf8(bytes) {
-            bytes = &bytes[size..];
-            chars.push(char);
-        } else {
-            // needle containing invalid UTF-8 should never match
+        // Needle containing any invalid UTF-8 should never match in MRI
+        //
+        // ```console
+        // [3.2.2] > s = "abc"
+        // => "abc"
+        // [3.2.2] > s.encoding
+        // => #<Encoding:UTF-8>
+        // [3.2.2] > s.rindex "\xFF"
+        // => nil
+        // [3.2.2] > s = "\xFF\xFE"
+        // => "\xFF\xFE"
+        // [3.2.2] > s.encoding
+        // => #<Encoding:UTF-8>
+        // [3.2.2] > s.rindex "\xFF"
+        // => nil
+        // [3.2.2] > s.rindex "\xFF".b
+        // (irb):7:in `rindex': incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)
+        //         from (irb):7:in `<main>'
+        //         from /usr/local/var/rbenv/versions/3.2.2/lib/ruby/gems/3.2.0/gems/irb-1.6.2/exe/irb:11:in `<top (required)>'
+        //         from /usr/local/var/rbenv/versions/3.2.2/bin/irb:25:in `load'
+        //         from /usr/local/var/rbenv/versions/3.2.2/bin/irb:25:in `<main>'
+        // ```
+        if !needle.is_utf8() {
             return None;
         }
+
+        let endpoint = offset.saturating_add(1);
+        let buf = self.get_char_slice(0..endpoint).unwrap_or_else(|| self.as_slice());
+        let index = buf.rfind(needle)?;
+        Some(char_len(&buf[..index]))
     }
-    Some(chars)
 }
 
 #[cfg(test)]
@@ -1366,5 +1411,48 @@ mod tests {
 
         assert_eq!(haystack.index("💎".as_bytes(), 0), None);
         assert_eq!(haystack.rindex("💎".as_bytes(), 3), None);
+    }
+
+    #[test]
+    fn index_empties() {
+        // ```console
+        // [3.2.2] > "".index ""
+        // => 0
+        // [3.2.2] > "".index "a"
+        // => nil
+        // [3.2.2] > "a".index ""
+        // => 0
+        // ```
+        let s = Utf8String::from("");
+        assert_eq!(s.index(b"", 0), Some(0));
+
+        assert_eq!(s.index(b"a", 0), None);
+
+        let s = Utf8String::from("a");
+        assert_eq!(s.index(b"", 0), Some(0));
+    }
+
+    #[test]
+    fn rindex_empties() {
+        // ```console
+        // [3.2.2] > "".rindex ""
+        // => 0
+        // [3.2.2] > "".rindex "a"
+        // => nil
+        // [3.2.2] > "a".rindex ""
+        // => 1
+        // ```
+        let s = Utf8String::from("");
+        assert_eq!(s.rindex(b"", usize::MAX), Some(0));
+        assert_eq!(s.rindex(b"", 1), Some(0));
+        assert_eq!(s.rindex(b"", 0), Some(0));
+
+        assert_eq!(s.rindex(b"a", usize::MAX), None);
+        assert_eq!(s.rindex(b"a", 1), None);
+        assert_eq!(s.rindex(b"a", 0), None);
+
+        let s = Utf8String::from("a");
+        assert_eq!(s.rindex(b"", usize::MAX), Some(1));
+        assert_eq!(s.rindex(b"", 1), Some(1));
     }
 }
