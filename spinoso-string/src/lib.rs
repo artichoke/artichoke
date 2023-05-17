@@ -1640,7 +1640,9 @@ impl String {
     /// assert_eq!(s.index("a", Some(2)), Some(2));
     /// assert_eq!(s.index("a", Some(3)), None);
     /// assert_eq!(s.index("💎", None), Some(4));
-    /// assert_eq!(s.index(".", None), Some(11)); // FIXME: Should be 8 (#2360)
+    /// assert_eq!(s.index(".", None), Some(8));
+    /// assert_eq!(s.index("v", Some(6)), Some(6));
+    /// assert_eq!(s.index("v", Some(7)), None);
     /// assert_eq!(s.index("X", None), None);
     /// ```
     ///
@@ -1648,24 +1650,8 @@ impl String {
     #[inline]
     #[must_use]
     pub fn index<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
-        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
-            if let Some(offset) = offset {
-                let buf = buf.get(offset..)?;
-                let index = buf.find(needle)?;
-                // This addition is guaranteed not to overflow because the result is
-                // a valid index of the underlying `Vec`.
-                //
-                // `self.buf.len() < isize::MAX` because `self.buf` is a `Vec` and
-                // `Vec` documents `isize::MAX` as its maximum allocation size.
-                Some(index + offset)
-            } else {
-                buf.find(needle)
-            }
-        }
-        // convert to a concrete type and delegate to a single `index` impl
-        // to minimize code duplication when monomorphizing.
-        let needle = needle.as_ref();
-        inner(self.inner.as_slice(), needle, offset)
+        let offset = offset.unwrap_or(0);
+        self.inner.index(needle.as_ref(), offset)
     }
 
     /// Returns the char-based index of the last occurrence of the given
@@ -1682,7 +1668,9 @@ impl String {
     /// use spinoso_string::String;
     ///
     /// let s = String::utf8("via 💎 v3.2.0".as_bytes().to_vec());
-    /// assert_eq!(s.rindex("v", None), Some(9)); // FIXME: Should be 5 (#2360)
+    /// assert_eq!(s.rindex("v", None), Some(6));
+    /// assert_eq!(s.rindex("v", Some(5)), Some(0));
+    /// assert_eq!(s.rindex("v", Some(6)), Some(6));
     /// assert_eq!(s.rindex("a", None), Some(2));
     /// ```
     ///
@@ -1690,19 +1678,8 @@ impl String {
     #[inline]
     #[must_use]
     pub fn rindex<T: AsRef<[u8]>>(&self, needle: T, offset: Option<usize>) -> Option<usize> {
-        fn inner(buf: &[u8], needle: &[u8], offset: Option<usize>) -> Option<usize> {
-            if let Some(offset) = offset {
-                let end = buf.len().checked_sub(offset).unwrap_or_default();
-                let buf = buf.get(..end)?;
-                buf.rfind(needle)
-            } else {
-                buf.rfind(needle)
-            }
-        }
-        // convert to a concrete type and delegate to a single `rindex` impl
-        // to minimize code duplication when monomorphizing.
-        let needle = needle.as_ref();
-        inner(self.inner.as_slice(), needle, offset)
+        let offset = offset.unwrap_or_else(|| self.inner.char_len().checked_sub(1).unwrap_or_default());
+        self.inner.rindex(needle.as_ref(), offset)
     }
 
     /// Returns the byte-based index of the first occurrence of the given
@@ -2355,5 +2332,17 @@ mod tests {
         assert_eq!(utf8.byteindex(&needle, Some(3)), Some(8));
         assert_eq!(utf8.byteindex(&needle, Some(8)), Some(8));
         assert_eq!(utf8.byteindex(&needle, Some(9)), None);
+    }
+
+    #[test]
+    fn rindex_support_empty_string_and_empty_needle() {
+        // Empty needle
+        assert_eq!(String::ascii(b"foo".to_vec()).rindex("", None), Some(3));
+
+        // Empty haystack
+        assert_eq!(String::ascii(b"".to_vec()).rindex("foo", None), None);
+
+        // Empty haystack and needle
+        assert_eq!(String::ascii(b"".to_vec()).rindex("", None), Some(0));
     }
 }

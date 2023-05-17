@@ -605,4 +605,22 @@ impl EncodedString {
             EncodedString::Utf8(inner) => inner.reverse(),
         }
     }
+
+    #[inline]
+    pub fn index(&self, needle: &[u8], offset: usize) -> Option<usize> {
+        match self {
+            EncodedString::Ascii(inner) => inner.index(needle, offset),
+            EncodedString::Binary(inner) => inner.index(needle, offset),
+            EncodedString::Utf8(inner) => inner.index(needle, offset),
+        }
+    }
+
+    #[inline]
+    pub fn rindex(&self, needle: &[u8], offset: usize) -> Option<usize> {
+        match self {
+            EncodedString::Ascii(inner) => inner.rindex(needle, offset),
+            EncodedString::Binary(inner) => inner.rindex(needle, offset),
+            EncodedString::Utf8(inner) => inner.rindex(needle, offset),
+        }
+    }
 }

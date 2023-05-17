@@ -343,6 +343,26 @@ impl AsciiString {
     }
 }
 
+// Index
+impl AsciiString {
+    #[inline]
+    #[must_use]
+    pub fn index(&self, needle: &[u8], offset: usize) -> Option<usize> {
+        let buf = self.get(offset..)?;
+        let index = buf.find(needle)?;
+        Some(index + offset)
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn rindex(&self, needle: &[u8], offset: usize) -> Option<usize> {
+        let search_until = (offset + 1).min(self.len());
+        let buf = self.get(..search_until)?;
+        let index = buf.rfind(needle)?;
+        Some(index)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use alloc::string::String;
@@ -546,5 +566,40 @@ mod tests {
         assert_eq!(s.get_char_slice(4..1), None);
         assert_eq!(s.get_char_slice(3..1), Some(&b""[..]));
         assert_eq!(s.get_char_slice(2..1), Some(&b""[..]));
+    }
+
+    #[test]
+    fn index_with_default_offset() {
+        let s = AsciiString::from(b"foo");
+        assert_eq!(s.index("f".as_bytes(), 0), Some(0));
+        assert_eq!(s.index("o".as_bytes(), 0), Some(1));
+        assert_eq!(s.index("oo".as_bytes(), 0), Some(1));
+        assert_eq!(s.index("ooo".as_bytes(), 0), None);
+    }
+
+    #[test]
+    fn index_with_different_offset() {
+        let s = AsciiString::from(b"foo");
+        assert_eq!(s.index("o".as_bytes(), 1), Some(1));
+        assert_eq!(s.index("o".as_bytes(), 2), Some(2));
+        assert_eq!(s.index("o".as_bytes(), 3), None);
+    }
+
+    #[test]
+    fn rindex_with_default_offset() {
+        let s = AsciiString::from(b"foo");
+        assert_eq!(s.rindex("f".as_bytes(), 2), Some(0));
+        assert_eq!(s.rindex("o".as_bytes(), 2), Some(2));
+        assert_eq!(s.rindex("oo".as_bytes(), 2), Some(1));
+        assert_eq!(s.rindex("ooo".as_bytes(), 2), None);
+    }
+
+    #[test]
+    fn rindex_with_different_offset() {
+        let s = AsciiString::from(b"foo");
+        assert_eq!(s.rindex("o".as_bytes(), 3), Some(2));
+        assert_eq!(s.rindex("o".as_bytes(), 2), Some(2));
+        assert_eq!(s.rindex("o".as_bytes(), 1), Some(1));
+        assert_eq!(s.rindex("o".as_bytes(), 0), None);
     }
 }
