@@ -941,23 +941,6 @@ impl Utf8String {
     }
 }
 
-// Decode UTF-8 bytes. Return None if any invalid UTF-8 bytes is encountered (instead of using
-// replacement codepoint, for example)
-fn must_decode_utf8(maybe_utf8_bytes: &[u8]) -> Option<Vec<char>> {
-    let mut chars = Vec::new();
-    let mut bytes = maybe_utf8_bytes;
-    while !bytes.is_empty() {
-        if let (Some(char), size) = bstr::decode_utf8(bytes) {
-            bytes = &bytes[size..];
-            chars.push(char);
-        } else {
-            // needle containing invalid UTF-8 should never match
-            return None;
-        }
-    }
-    Some(chars)
-}
-
 #[cfg(test)]
 #[allow(clippy::invisible_characters)]
 mod tests {
