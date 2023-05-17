@@ -61,17 +61,17 @@ pub fn get_readline_edit_mode(contents: impl AsRef<[u8]>) -> Option<EditMode> {
         }
 
         // If this is a command to set a variable, then do that.
-        if !line.starts_with_str("set") {
-            continue;
-        }
-        let line = &line[3..];
+        let line = match line.strip_prefix(b"set") {
+            Some(rest) => rest,
+            None => continue,
+        };
         // Skip leading whitespace.
         let line = trim_whitespace_front(line);
 
-        if !line.starts_with_str("editing-mode") {
-            continue;
-        }
-        let line = &line[12..];
+        let line = match line.strip_prefix(b"editing-mode") {
+            Some(rest) => rest,
+            None => continue,
+        };
         // Skip leading whitespace.
         let line = trim_whitespace_front(line);
 
