@@ -356,8 +356,7 @@ impl AsciiString {
     #[inline]
     #[must_use]
     pub fn rindex(&self, needle: &[u8], offset: usize) -> Option<usize> {
-        let search_until = (offset + 1).min(self.len());
-        let buf = self.get(..search_until)?;
+        let buf = self.get(..=offset).unwrap_or_else(|| self.as_slice());
         let index = buf.rfind(needle)?;
         Some(index)
     }
