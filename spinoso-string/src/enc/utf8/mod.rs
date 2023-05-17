@@ -1367,4 +1367,47 @@ mod tests {
         assert_eq!(haystack.index("💎".as_bytes(), 0), None);
         assert_eq!(haystack.rindex("💎".as_bytes(), 3), None);
     }
+
+    #[test]
+    fn index_empties() {
+        // ```console
+        // [3.2.2] > "".index ""
+        // => 0
+        // [3.2.2] > "".index "a"
+        // => nil
+        // [3.2.2] > "a".index ""
+        // => 0
+        // ```
+        let s = Utf8String::from("");
+        assert_eq!(s.index(b"", 0), Some(0));
+
+        assert_eq!(s.index(b"a", 0), None);
+
+        let s = Utf8String::from("a");
+        assert_eq!(s.index(b"", 0), Some(0));
+    }
+
+    #[test]
+    fn rindex_empties() {
+        // ```console
+        // [3.2.2] > "".rindex ""
+        // => 0
+        // [3.2.2] > "".rindex "a"
+        // => nil
+        // [3.2.2] > "a".rindex ""
+        // => 1
+        // ```
+        let s = Utf8String::from("");
+        assert_eq!(s.rindex(b"", usize::MAX), Some(0));
+        assert_eq!(s.rindex(b"", 1), Some(0));
+        assert_eq!(s.rindex(b"", 0), Some(0));
+
+        assert_eq!(s.rindex(b"a", usize::MAX), None);
+        assert_eq!(s.rindex(b"a", 1), None);
+        assert_eq!(s.rindex(b"a", 0), None);
+
+        let s = Utf8String::from("a");
+        assert_eq!(s.rindex(b"", usize::MAX), Some(1));
+        assert_eq!(s.rindex(b"", 1), Some(1));
+    }
 }

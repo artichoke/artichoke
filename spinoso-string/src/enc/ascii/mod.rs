@@ -591,6 +591,25 @@ mod tests {
     }
 
     #[test]
+    fn index_empties() {
+        // ```console
+        // [3.2.2] > "".index ""
+        // => 0
+        // [3.2.2] > "".index "a"
+        // => nil
+        // [3.2.2] > "a".index ""
+        // => 0
+        // ```
+        let s = AsciiString::from("");
+        assert_eq!(s.index(b"", 0), Some(0));
+
+        assert_eq!(s.index(b"a", 0), None);
+
+        let s = AsciiString::from("a");
+        assert_eq!(s.index(b"", 0), Some(0));
+    }
+
+    #[test]
     fn rindex_with_default_offset() {
         let s = AsciiString::from(b"foo");
         assert_eq!(s.rindex("f".as_bytes(), 2), Some(0));
@@ -612,5 +631,29 @@ mod tests {
     fn rindex_offset_no_overflow() {
         let s = AsciiString::from(b"foo");
         assert_eq!(s.rindex("o".as_bytes(), usize::MAX), Some(2));
+    }
+
+    #[test]
+    fn rindex_empties() {
+        // ```console
+        // [3.2.2] > "".rindex ""
+        // => 0
+        // [3.2.2] > "".rindex "a"
+        // => nil
+        // [3.2.2] > "a".rindex ""
+        // => 1
+        // ```
+        let s = AsciiString::from("");
+        assert_eq!(s.rindex(b"", usize::MAX), Some(0));
+        assert_eq!(s.rindex(b"", 1), Some(0));
+        assert_eq!(s.rindex(b"", 0), Some(0));
+
+        assert_eq!(s.rindex(b"a", usize::MAX), None);
+        assert_eq!(s.rindex(b"a", 1), None);
+        assert_eq!(s.rindex(b"a", 0), None);
+
+        let s = AsciiString::from("a");
+        assert_eq!(s.rindex(b"", usize::MAX), Some(1));
+        assert_eq!(s.rindex(b"", 1), Some(1));
     }
 }
