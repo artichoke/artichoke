@@ -570,6 +570,12 @@ mod tests {
     }
 
     #[test]
+    fn index_offset_no_overflow() {
+        let s = BinaryString::from(b"foo");
+        assert_eq!(s.index("o".as_bytes(), usize::MAX), None);
+    }
+
+    #[test]
     fn rindex_with_default_offset() {
         let s = BinaryString::from(b"foo");
         assert_eq!(s.rindex("f".as_bytes(), 2), Some(0));
@@ -585,5 +591,11 @@ mod tests {
         assert_eq!(s.rindex("o".as_bytes(), 2), Some(2));
         assert_eq!(s.rindex("o".as_bytes(), 1), Some(1));
         assert_eq!(s.rindex("o".as_bytes(), 0), None);
+    }
+
+    #[test]
+    fn rindex_offset_no_overflow() {
+        let s = BinaryString::from(b"foo");
+        assert_eq!(s.rindex("o".as_bytes(), usize::MAX), Some(2));
     }
 }
