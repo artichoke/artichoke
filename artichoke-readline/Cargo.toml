@@ -1,0 +1,26 @@
+[package]
+name = "artichoke-readline"
+version = "1.0.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+description = "Helpers for interacting with GNU Readline configuration"
+keywords = ["artichoke", "artichoke-ruby", "imputrc", "readline"]
+categories = ["command-line-utilities"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[dependencies]
+bstr = { version = "1.2.0", default-features = false }
+posix-space = "1.0.3"
+rustyline = { version = "11.0.0", optional = true, default-features = false }
+
+[target.'cfg(windows)'.dependencies]
+known-folders = "1.0.0"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
