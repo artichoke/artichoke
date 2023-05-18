@@ -21,6 +21,9 @@ rustyline = { version = "11.0.0", optional = true, default-features = false }
 [target.'cfg(windows)'.dependencies]
 known-folders = "1.0.0"
 
+[features]
+default = ["rustyline"]
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

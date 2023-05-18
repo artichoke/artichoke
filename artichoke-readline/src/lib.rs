@@ -79,6 +79,7 @@ impl From<rustyline::config::EditMode> for EditMode {
         match mode {
             rustyline::config::EditMode::Emacs => Self::Emacs,
             rustyline::config::EditMode::Vi => Self::Vi,
+            _ => Self::Emacs,
         }
     }
 }
@@ -87,7 +88,7 @@ impl From<rustyline::config::EditMode> for EditMode {
 #[cfg_attr(docsrs, doc(cfg(feature = "rustyline")))]
 impl PartialEq<EditMode> for rustyline::config::EditMode {
     fn eq(&self, other: &EditMode) -> bool {
-        self == other.into()
+        *self == Self::from(*other)
     }
 }
 
@@ -95,7 +96,7 @@ impl PartialEq<EditMode> for rustyline::config::EditMode {
 #[cfg_attr(docsrs, doc(cfg(feature = "rustyline")))]
 impl PartialEq<rustyline::config::EditMode> for EditMode {
     fn eq(&self, other: &rustyline::config::EditMode) -> bool {
-        self == other.into()
+        *self == Self::from(*other)
     }
 }
 
