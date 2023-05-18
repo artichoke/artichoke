@@ -38,12 +38,28 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
     let alloc_ud = Box::into_raw(state).cast::<c_void>();
     let raw = unsafe { sys::mrb_open_allocf(Some(sys::mrb_default_allocf), alloc_ud) };
 
+    // All operations using the interpreter must occur behind a function
+    // boundary so we can catch all errors and ensure we call `interp.close()`.
+    //
+    // Allowing the `?` operator to be used in the containing
+    // `interpreter_with_config` function would result in a memory leak of the
+    // interpreter and its heap.
     let mut interp = unsafe { ffi::from_user_data(raw).map_err(|_| InterpreterAllocError::new())? };
 
-    if let Some(ref mut state) = interp.state {
-        if let Some(mrb) = unsafe { raw.as_mut() } {
-            state.try_init_parser(mrb);
+    match init(&mut interp, config) {
+        Ok(()) => Ok(interp),
+        Err(err) => {
+            // Cleanup and deallocate on error.
+            interp.close();
+            Err(err)
         }
+    }
+}
+
+fn init(interp: &mut Artichoke, config: ReleaseMetadata<'_>) -> Result<(), Error> {
+    if let Some(ref mut state) = interp.state {
+        let mrb = unsafe { interp.mrb.as_mut() };
+        state.try_init_parser(mrb);
     }
 
     // mruby garbage collection relies on a fully initialized Array, which we
@@ -52,7 +68,7 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
     let prior_gc_state = interp.disable_gc()?;
 
     // Initialize Artichoke Core and Standard Library runtime
-    extn::init(&mut interp, config)?;
+    extn::init(interp, config)?;
 
     // Load mrbgems
     let mut arena = interp.create_arena_savepoint()?;
@@ -65,14 +81,13 @@ pub fn interpreter_with_config(config: ReleaseMetadata<'_>) -> Result<Artichoke,
     // mruby lazily initializes some core objects like `top_self` and generates
     // a lot of garbage on start-up. Eagerly initialize the interpreter to
     // provide predictable initialization behavior.
-    interp.create_arena_savepoint()?.interp().eval(&[])?;
+    interp.create_arena_savepoint()?.interp().eval(b"")?;
 
     if let GcState::Enabled = prior_gc_state {
         interp.enable_gc()?;
         interp.full_gc()?;
     }
-
-    Ok(interp)
+    Ok(())
 }
 
 #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
