@@ -37,8 +37,8 @@ if let Some(config) = rl_read_init_file() {
 ## Crate Features
 
 The **rustyline** feature (enabled by default) adds trait implementations to
-allow [`EditMode`] to interoperate with the corresponding enum in the
-`rustyline` crate.
+allow `EditMode` to interoperate with the corresponding enum in the `rustyline`
+crate.
 
 ## License
 
