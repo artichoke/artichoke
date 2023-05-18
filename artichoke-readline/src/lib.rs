@@ -72,34 +72,6 @@ impl From<EditMode> for rustyline::config::EditMode {
     }
 }
 
-#[cfg(feature = "rustyline")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rustyline")))]
-impl From<rustyline::config::EditMode> for EditMode {
-    fn from(mode: rustyline::config::EditMode) -> Self {
-        match mode {
-            rustyline::config::EditMode::Emacs => Self::Emacs,
-            rustyline::config::EditMode::Vi => Self::Vi,
-            _ => Self::Emacs,
-        }
-    }
-}
-
-#[cfg(feature = "rustyline")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rustyline")))]
-impl PartialEq<EditMode> for rustyline::config::EditMode {
-    fn eq(&self, other: &EditMode) -> bool {
-        *self == Self::from(*other)
-    }
-}
-
-#[cfg(feature = "rustyline")]
-#[cfg_attr(docsrs, doc(cfg(feature = "rustyline")))]
-impl PartialEq<rustyline::config::EditMode> for EditMode {
-    fn eq(&self, other: &rustyline::config::EditMode) -> bool {
-        *self == Self::from(*other)
-    }
-}
-
 /// Read inputrc contents according to the GNU Readline hierarchy of config
 /// files.
 ///
@@ -339,7 +311,7 @@ set editing-mode "emacs"
     #[test]
     #[cfg(feature = "rustyline")]
     fn edit_mode_rustyline_into() {
-        assert_eq!(EditMode::Emacs.into(), rustyline::config::EditMode::Emacs);
-        assert_eq!(EditMode::Vi.into(), rustyline::config::EditMode::Vi);
+        assert_eq!(rustyline::config::EditMode::Emacs, EditMode::Emacs.into());
+        assert_eq!(rustyline::config::EditMode::Vi, EditMode::Vi.into());
     }
 }
