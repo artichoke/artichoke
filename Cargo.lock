@@ -74,6 +74,7 @@ name = "artichoke"
 version = "0.1.0-pre.0"
 dependencies = [
  "artichoke-backend",
+ "artichoke-readline",
  "bstr",
  "clap",
  "directories",
@@ -129,6 +130,16 @@ name = "artichoke-load-path"
 version = "0.1.0"
 dependencies = [
  "same-file",
+]
+
+[[package]]
+name = "artichoke-readline"
+version = "1.0.0"
+dependencies = [
+ "bstr",
+ "known-folders",
+ "posix-space",
+ "rustyline",
 ]
 
 [[package]]
@@ -437,6 +448,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68c16e1bfd491478ab155fd8b4896b86f9ede344949b641e61501e07c2b8b4d5"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "known-folders"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2336c5e342caba9cf3eac97c82970fa2a4a87d0e8671ec711425b67651bbdda"
+dependencies = [
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

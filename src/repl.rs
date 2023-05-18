@@ -11,6 +11,7 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::PoisonError;
 
+use artichoke_readline::{get_readline_edit_mode, rl_read_init_file};
 use directories::ProjectDirs;
 use rustyline::config::Builder;
 use rustyline::error::ReadlineError;
@@ -23,7 +24,6 @@ use crate::backtrace;
 use crate::filename::REPL;
 use crate::parser::repl::Parser;
 use crate::prelude::{Parser as _, *};
-use crate::readline_bind_mode::{get_readline_edit_mode, rl_read_init_file};
 
 /// Failed to initialize parser during REPL boot.
 ///
@@ -260,7 +260,7 @@ where
     let mut editor_config = Builder::new();
     if let Some(inputrc_config) = rl_read_init_file() {
         if let Some(edit_mode) = get_readline_edit_mode(inputrc_config) {
-            editor_config = editor_config.edit_mode(edit_mode);
+            editor_config = editor_config.edit_mode(edit_mode.into());
         }
     }
 
