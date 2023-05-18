@@ -210,25 +210,25 @@ fn repl_history_file() -> Option<PathBuf> {
     Some(data_dir.join("history"))
 }
 
-/// Construct an interpreter and initialize it for a REPL environment.
+/// Initialize an [`Artichoke`] interpreter for a REPL environment.
 ///
 /// This function also prints out the preamble for the environment.
-fn init<W>(mut output: W) -> Result<Artichoke, Box<dyn error::Error>>
+fn init<W>(interp: &mut Artichoke, mut output: W) -> Result<(), Box<dyn error::Error>>
 where
     W: io::Write,
 {
-    let mut interp = crate::interpreter()?;
-    writeln!(&mut output, "{}", preamble(&mut interp)?)?;
+    writeln!(&mut output, "{}", preamble(interp)?)?;
 
     interp.reset_parser()?;
     // SAFETY: `REPL` has no NUL bytes (asserted by tests).
     let context = unsafe { Context::new_unchecked(REPL.to_vec()) };
     interp.push_context(context)?;
 
-    Ok(interp)
+    Ok(())
 }
 
-/// Run a REPL for the mruby interpreter exposed by the `mruby` crate.
+/// Run a REPL for the [`Artichoke`] interpreter exposed by the
+/// `artichoke-backend` crate.
 ///
 /// # Errors
 ///
@@ -244,6 +244,28 @@ where
 ///
 /// If an unhandled readline state is encountered, a fatal error is returned.
 pub fn run<Wout, Werr>(
+    output: Wout,
+    error: Werr,
+    config: Option<PromptConfig<'_, '_, '_>>,
+) -> Result<(), Box<dyn error::Error>>
+where
+    Wout: io::Write,
+    Werr: io::Write + WriteColor,
+{
+    let mut interp = crate::interpreter()?;
+    // All operations using the interpreter must occur behind a function
+    // boundary so we can catch all errors and ensure we call `interp.close()`.
+    //
+    // Allowing the `?` operator to be used in the containing `run` function
+    // would result in a memory leak of the interpreter and its heap.
+    let result = entrypoint(&mut interp, output, error, config);
+    // Cleanup and deallocate.
+    interp.close();
+    result
+}
+
+fn entrypoint<Wout, Werr>(
+    interp: &mut Artichoke,
     mut output: Wout,
     error: Werr,
     config: Option<PromptConfig<'_, '_, '_>>,
@@ -253,7 +275,7 @@ where
     Werr: io::Write + WriteColor,
 {
     // Initialize interpreter and write preamble.
-    let mut interp = init(&mut output)?;
+    init(interp, &mut output)?;
 
     // Try to parse readline-native inputrc to detect user preference for
     // `editing-mode`.
@@ -277,7 +299,7 @@ where
     // unterminated), rustyline will switch to multiline editing mode. This
     // ensures that rustyline only yields valid Ruby code to the `repl_loop`
     // below.
-    let parser = Parser::new(&mut interp).ok_or_else(ParserAllocError::new)?;
+    let parser = Parser::new(interp).ok_or_else(ParserAllocError::new)?;
     rl.set_helper(Some(parser));
 
     // Attempt to load REPL history from the history file.
@@ -297,10 +319,6 @@ where
         // fails.
         let _ignored = rl.save_history(hist_file);
     }
-
-    // Cleanup and deallocate.
-    drop(rl);
-    interp.close();
 
     result
 }

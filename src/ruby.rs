@@ -109,7 +109,13 @@ where
     W: io::Write + WriteColor,
 {
     let mut interp = crate::interpreter()?;
+    // All operations using the interpreter must occur behind a function
+    // boundary so we can catch all errors and ensure we call `interp.close()`.
+    //
+    // Allowing the `?` operator to be used in the containing `run` function
+    // would result in a memory leak of the interpreter and its heap.
     let result = entrypoint(&mut interp, args, input, error);
+    // Cleanup and deallocate.
     interp.close();
     result
 }
