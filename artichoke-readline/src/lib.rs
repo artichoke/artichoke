@@ -43,6 +43,11 @@
 //! allow [`EditMode`] to interoperate with the corresponding enum in the
 //! `rustyline` crate.
 
+// Ensure code blocks in `README.md` compile
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 use std::env;
 use std::fs;
 use std::path::PathBuf;
