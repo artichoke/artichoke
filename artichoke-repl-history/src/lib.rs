@@ -33,7 +33,7 @@
 //! known folder.
 //!
 //! On Linux and other non-macOS Unix targets, the history file is located in
-//! the `XDG_STATE_DIR` according to the [XDG Base Directory Specification],
+//! the `XDG_STATE_HOME` according to the [XDG Base Directory Specification],
 //! with the specified fallback if the environment variable is not set.
 //!
 //! # Examples
@@ -361,7 +361,7 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_var("XDG_STATE_DIR");
+        env::remove_var("XDG_STATE_HOME");
 
         let dir = repl_history_dir().unwrap();
         let mut components = dir.components();
@@ -382,7 +382,7 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_var("XDG_STATE_DIR");
+        env::remove_var("XDG_STATE_HOME");
 
         let file = repl_history_file().unwrap();
         let mut components = file.components();
@@ -404,8 +404,8 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_var("XDG_STATE_DIR");
-        env::set_var("XDG_STATE_DIR", "");
+        env::remove_var("XDG_STATE_HOME");
+        env::set_var("XDG_STATE_HOME", "");
 
         let dir = repl_history_dir().unwrap();
         let mut components = dir.components();
@@ -426,8 +426,8 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_var("XDG_STATE_DIR");
-        env::set_var("XDG_STATE_DIR", "");
+        env::remove_var("XDG_STATE_HOME");
+        env::set_var("XDG_STATE_HOME", "");
 
         let file = repl_history_file().unwrap();
         let mut components = file.components();
@@ -449,8 +449,8 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_var("XDG_STATE_DIR");
-        env::set_var("XDG_STATE_DIR", "/opt/artichoke/state");
+        env::remove_var("XDG_STATE_HOME");
+        env::set_var("XDG_STATE_HOME", "/opt/artichoke/state");
 
         let dir = repl_history_dir().unwrap();
         let mut components = dir.components();
@@ -470,8 +470,8 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_var("XDG_STATE_DIR");
-        env::set_var("XDG_STATE_DIR", "/opt/artichoke/state");
+        env::remove_var("XDG_STATE_HOME");
+        env::set_var("XDG_STATE_HOME", "/opt/artichoke/state");
 
         let file = repl_history_file().unwrap();
         let mut components = file.components();

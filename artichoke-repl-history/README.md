@@ -22,7 +22,7 @@ On Windows, the history file is located in the current user's `LocalAppData`
 known folder.
 
 On Linux and other non-macOS Unix targets, the history file is located in the
-`XDG_STATE_DIR` according to the [XDG Base Directory Specification], with the
+`XDG_STATE_HOME` according to the [XDG Base Directory Specification], with the
 specified fallback if the environment variable is not set.
 
 [xdg base directory specification]:
