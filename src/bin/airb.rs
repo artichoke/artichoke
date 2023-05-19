@@ -1,7 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-// duplicate syn and windows-sys deps as ecosystem converges
-// #![warn(clippy::cargo)]
+#![warn(clippy::cargo)]
 #![allow(unknown_lints)]
 #![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
