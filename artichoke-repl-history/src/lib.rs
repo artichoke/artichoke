@@ -68,13 +68,15 @@ use std::path::PathBuf;
 /// # Platform Notes
 ///
 /// The file is stored in the application data directory for the host operating
-/// system. For example, on macOS, the history file is located at:
+/// system.
+///
+/// On macOS, the history file is located at a path like:
 ///
 /// ```text
 /// /Users/username/Library/Application Support/org.artichokeruby.airb/history
 /// ```
 ///
-/// On Windows, the history file is located at:
+/// On Windows, the history file is located at a path like:
 ///
 /// ```text
 /// C:\Users\username\AppData\Local\Artichoke Ruby\airb\data\history.txt
