@@ -134,6 +134,20 @@ fn repl_history_dir() -> Option<PathBuf> {
         PATH_MAX, SYSDIR_DOMAIN_MASK_USER,
     };
 
+    // Use macOS Standard Directories as retrieved by `sysdir(3)` APIs:
+    //
+    // https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemOverview/FileSystemOverview.html#//apple_ref/doc/uid/TP40010672-CH2-SW6
+    //
+    // Per Apple:
+    //
+    // > The Library Directory Stores App-Specific Files.
+    // >
+    // > Application Support: Use this directory to store all app data files
+    // > except those associated with the user's documents. For example, you
+    // > might use this directory to store app-created data files, configuration
+    // > files, templates, or other fixed or modifiable resources that are
+    // > managed by the app.
+
     let mut path = [0; PATH_MAX as usize];
 
     let dir = sysdir_search_path_directory_t::SYSDIR_DIRECTORY_APPLICATION_SUPPORT;
@@ -190,6 +204,9 @@ fn repl_history_dir() -> Option<PathBuf> {
             OsString::from_vec(buf).into()
         }
     };
+    // Per Apple docs: All content in this directory should be placed in a
+    // custom subdirectory whose name is that of your app’s bundle identifier
+    // or your company.
     Some(application_support.join("org.artichokeruby.airb"))
 }
 
