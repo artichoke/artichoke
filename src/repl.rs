@@ -6,13 +6,11 @@
 
 use std::error;
 use std::fmt;
-use std::fs;
 use std::io;
-use std::path::PathBuf;
 use std::sync::PoisonError;
 
 use artichoke_readline::{get_readline_edit_mode, rl_read_init_file};
-use directories::ProjectDirs;
+use artichoke_repl_history::repl_history_file;
 use rustyline::config::Builder;
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
@@ -177,37 +175,6 @@ fn preamble(interp: &mut Artichoke) -> Result<String, Error> {
     buf.push_str(compiler);
     buf.push(']');
     Ok(buf)
-}
-
-// Retrieve the path to the REPL history file.
-//
-// Readline input history is stored in this file.
-//
-// The file is stored in the data directory for the host operating system. For
-// example, on macOS, the history file is located at:
-//
-// ```text
-// /Users/username/Library/Application Support/org.artichokeruby.airb/history
-// ```
-fn repl_history_file() -> Option<PathBuf> {
-    let dirs = ProjectDirs::from("org", "artichokeruby", "airb")?;
-
-    let data_dir = dirs.data_dir();
-    // Ensure the data directory exists but ignore failures (e.g. the dir
-    // already exists) because all operations on the history file are best
-    // effort and non-blocking.
-    //
-    // On Windows, the data dir is a path like:
-    //
-    // ```
-    // C:\Users\rjl\AppData\Roaming\artichokeruby\airb\data
-    // ```
-    //
-    // When this path doesn't exist, it contains several directories that
-    // must be created, so we must use `fs::create_dir_all`.
-    let _ignored = fs::create_dir_all(data_dir);
-
-    Some(data_dir.join("history"))
 }
 
 /// Initialize an [`Artichoke`] interpreter for a REPL environment.

@@ -21,7 +21,7 @@ default = "deny"
 confidence-threshold = 0.8
 
 [bans]
-multiple-versions = "warn" # multiple versions of syn and windows-sys as ecosystem converges
+multiple-versions = "deny"
 wildcards = "deny"
 highlight = "all"
 allow = []
