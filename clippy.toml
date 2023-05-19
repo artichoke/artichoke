@@ -1,5 +1,4 @@
 doc-valid-idents = [
   "DoS",
-  "OpenSSL",
-  "SipHash",
+  ".."
 ]
