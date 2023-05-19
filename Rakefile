@@ -235,3 +235,45 @@ namespace :toolchain do
     end
   end
 end
+
+namespace :deps do
+  KNOWN_WORKSPACE_PREFIXES = %w[
+    artichoke
+    mezzaluna
+    scolapasta
+    spinoso
+  ]
+  KNOWN_FIRST_PARTY = %w[
+    focaccia
+    intaglio
+    known-folders
+    posix-space
+    qed
+    rand_mt
+    raw-parts
+    roe
+    strftime-ruby
+    sysdir
+  ]
+
+  desc 'List first-party crate dependencies'
+  task :firstparty do
+    deps = File.readlines("Cargo.lock", chomp: true)
+      .select { |line| line.start_with?("name = ") }
+      .map { |line| line.delete_prefix('name = "') }
+      .map { |line| line.delete_suffix('"') }
+      .select { |dep| KNOWN_FIRST_PARTY.include?(dep) || KNOWN_WORKSPACE_PREFIXES.any? { |prefix| dep.include?(prefix) } }
+    puts deps
+  end
+
+  desc 'List third-party crate dependencies'
+  task :thirdparty do
+    deps = File.readlines("Cargo.lock", chomp: true)
+      .select { |line| line.start_with?("name = ") }
+      .map { |line| line.delete_prefix('name = "') }
+      .map { |line| line.delete_suffix('"') }
+      .reject { |dep| KNOWN_FIRST_PARTY.include?(dep) }
+      .reject { |dep| KNOWN_WORKSPACE_PREFIXES.any? { |prefix| dep.include?(prefix) } }
+    puts deps
+  end
+end

@@ -95,6 +95,8 @@ rake build                         # Build Rust workspace
 rake build:all                     # Build Rust workspace and sub-workspaces
 rake bundle:audit:check            # Checks the Gemfile.lock for insecure dependencies
 rake bundle:audit:update           # Updates the bundler-audit vulnerability database
+rake deps:firstparty               # List first-party crate dependencies
+rake deps:thirdparty               # List third-party crate dependencies
 rake doc                           # Generate Rust API documentation
 rake doc:open                      # Generate Rust API documentation and open it in a web browser
 rake fmt                           # Format sources
