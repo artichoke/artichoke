@@ -492,7 +492,7 @@ mod tests {
         let mut components = dir.components();
 
         let _skip_prefix = components.next().unwrap();
-        assert_eq!(components.next().unwrap().as_os_str(), OsStr::new("/"));
+        assert_eq!(components.next().unwrap().as_os_str(), OsStr::new(r"\"));
         assert_eq!(components.next().unwrap().as_os_str(), OsStr::new("Users"));
         let _skip_user_dir = components.next().unwrap();
         assert_eq!(components.next().unwrap().as_os_str(), OsStr::new("AppData"));
@@ -510,7 +510,7 @@ mod tests {
         let mut components = file.components();
 
         let _skip_prefix = components.next().unwrap();
-        assert_eq!(components.next().unwrap().as_os_str(), OsStr::new("/"));
+        assert_eq!(components.next().unwrap().as_os_str(), OsStr::new(r"\"));
         assert_eq!(components.next().unwrap().as_os_str(), OsStr::new("Users"));
         let _skip_user_dir = components.next().unwrap();
         assert_eq!(components.next().unwrap().as_os_str(), OsStr::new("AppData"));
