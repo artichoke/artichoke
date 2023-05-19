@@ -272,7 +272,8 @@ fn repl_history_dir() -> Option<PathBuf> {
 ///
 /// - On Windows, this function returns `history.txt`.
 /// - On macOS, this function returns `history`.
-/// - On non-macOSUUnix targets, this function returns `airb_history`.
+/// - On non-macOS Unix targets, this function returns `airb_history`.
+/// - On all other platforms, this function returns `history`.
 #[must_use]
 fn history_file_basename() -> &'static str {
     if cfg!(windows) {
