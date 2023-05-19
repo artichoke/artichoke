@@ -1,0 +1,26 @@
+[package]
+name = "artichoke-repl-history"
+version = "1.0.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+description = "Helpers for working with REPL history files"
+keywords = ["artichoke", "artichoke-ruby", "history", "repl"]
+categories = ["command-line-utilities"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[dependencies]
+
+[target.'cfg(target_os = "macos")'.dependencies]
+sysdir = "1.0.0"
+
+[target.'cfg(windows)'.dependencies]
+known-folders = "1.0.0"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

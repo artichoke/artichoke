@@ -143,6 +143,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "artichoke-repl-history"
+version = "1.0.0"
+dependencies = [
+ "known-folders",
+ "sysdir",
+]
+
+[[package]]
 name = "base64"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -955,6 +963,12 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "sysdir"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "454c7b64faf012c0649e91bc0de7ab05a5597a1382974cb7c98d3a61501a0891"
 
 [[package]]
 name = "termcolor"
