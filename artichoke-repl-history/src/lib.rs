@@ -21,7 +21,7 @@
 
 //! Helpers for persisting Artichoke `airb` REPL history to disk.
 //!
-//! This crate provides platform support for resolving the Aritchoke Ruby airb
+//! This crate provides platform support for resolving the Artichoke Ruby `airb`
 //! REPL's application data folder and path to a history file within it.
 //!
 //! # Platform Support
@@ -32,7 +32,7 @@
 //! On Windows, the history file is located in the current user's `LocalAppData`
 //! known folder.
 //!
-//! On Linux and other non-macOS unix targets, the history file is located in
+//! On Linux and other non-macOS Unix targets, the history file is located in
 //! the `XDG_STATE_DIR` according to the [XDG Base Directory Specification],
 //! with the specified fallback if the environment variable is not set.
 //!
@@ -81,7 +81,7 @@ use std::path::PathBuf;
 /// C:\Users\username\AppData\Local\Artichoke Ruby\airb\data\history.txt
 /// ```
 ///
-/// On Linux and other unix platforms excluding macOS, the history file is
+/// On Linux and other Unix platforms excluding macOS, the history file is
 /// located in the XDG state home following the [XDG Base Directory
 /// Specification]. By default, the history file is located at:
 ///
@@ -255,7 +255,7 @@ fn repl_history_dir() -> Option<PathBuf> {
 ///
 /// - On Windows, this function returns `history.txt`.
 /// - On macOS, this function returns `history`.
-/// - On non-macOS unix targets, this function returns `airb_history`.
+/// - On non-macOSUUnix targets, this function returns `airb_history`.
 #[must_use]
 fn history_file_basename() -> &'static str {
     if cfg!(windows) {
@@ -277,7 +277,7 @@ mod tests {
 
     use super::*;
 
-    // Lock for coordinating access to system env for unix target tests.
+    // Lock for coordinating access to system env for Unix target tests.
     #[cfg(all(unix, not(target_os = "macos")))]
     static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 

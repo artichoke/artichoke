@@ -10,7 +10,7 @@
 
 Helpers for persisting Artichoke `airb` REPL history to disk.
 
-This crate provides platform support for resolving the Aritchoke Ruby airb
+This crate provides platform support for resolving the Artichoke Ruby `airb`
 REPL's application data folder and path to a history file within it.
 
 ## Platform Support
@@ -21,7 +21,7 @@ directory.
 On Windows, the history file is located in the current user's `LocalAppData`
 known folder.
 
-On Linux and other non-macOS unix targets, the history file is located in the
+On Linux and other non-macOS Unix targets, the history file is located in the
 `XDG_STATE_DIR` according to the [XDG Base Directory Specification], with the
 specified fallback if the environment variable is not set.
 

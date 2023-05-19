@@ -36,6 +36,7 @@ POSIX
 PRNG/MS
 README/MS
 REPL
+REPL's
 RNG/MS
 RTL
 SipHash
@@ -48,6 +49,7 @@ VM/MS
 VMware
 Wasm
 WebAssembly
+XDG
 ZST
 absolutized
 accessor/MS
