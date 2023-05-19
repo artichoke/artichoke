@@ -31,7 +31,7 @@ pub struct Sources;
 pub enum Formatter {
     // Artichoke's `RSpec`-style dot and it block format.
     Artichoke,
-    /// Output exceptions and summary information in plaintext readable format.
+    /// Output exceptions and summary information in plain text readable format.
     Summary,
     /// `MSpec` tagging mode.
     Tagger,

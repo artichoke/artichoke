@@ -8,7 +8,7 @@
 [![API](https://docs.rs/scolapasta-path/badge.svg)](https://docs.rs/scolapasta-path)
 [![API trunk](https://img.shields.io/badge/docs-trunk-blue.svg)](https://artichoke.github.io/artichoke/scolapasta_path/)
 
-Functions for working with filesystem paths and loading Ruby source code.
+Functions for working with file system paths and loading Ruby source code.
 
 _Scolapasta_ refers to a specialized colander used to drain pasta. The utilities
 defined in the `scolapasta` family of crates are the kitchen tools for preparing

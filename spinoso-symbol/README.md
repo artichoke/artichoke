@@ -75,7 +75,7 @@ All features are enabled by default.
   activates the **inspect** feature.
 - **inspect** - Enables an iterator for generating debug output of a symbol byte
   string. Activating this feature also activates the **ident-parser** feature.
-- **ident-parser** - Enables a parser to determing the Ruby identifier type, if
+- **ident-parser** - Enables a parser to determine the Ruby identifier type, if
   any, for a byte string. Dropping this feature removes the `bstr` and
   `scolapasta-string-escape` dependencies.
 - **std** - Enables a dependency on the Rust Standard Library. Activating this
