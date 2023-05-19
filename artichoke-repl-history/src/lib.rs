@@ -53,7 +53,6 @@
 #[doc = include_str!("../README.md")]
 mod readme {}
 
-use std::env;
 use std::path::PathBuf;
 
 /// Retrieve the path to the REPL history file.
@@ -126,6 +125,7 @@ pub fn repl_history_file() -> Option<PathBuf> {
 #[must_use]
 #[cfg(target_os = "macos")]
 fn repl_history_dir() -> Option<PathBuf> {
+    use std::env;
     use std::ffi::{c_char, CStr, OsString};
     use std::os::unix::ffi::OsStringExt;
 
@@ -207,7 +207,7 @@ fn repl_history_dir() -> Option<PathBuf> {
     // either not set or empty, a default equal to `$HOME/.local/state` should
     // be used.
 
-    let state_home = match env::var_os("XDG_STATE_HOME") {
+    let state_dir = match env::var_os("XDG_STATE_HOME") {
         // if `XDG_STATE_HOME` is empty, ignore it and use the default.
         Some(path) if path.is_empty() => None,
         Some(path) => Some(path),
@@ -216,7 +216,7 @@ fn repl_history_dir() -> Option<PathBuf> {
     };
 
     let state_dir = if let Some(state_dir) = state_dir {
-        state_dir
+        PathBuf::from(state_dir)
     } else {
         // `std::env::home_dir` does not have problematic behavior on `unix`
         // targets, which includes all apple target OSes and Redox. Per the docs:
@@ -232,8 +232,9 @@ fn repl_history_dir() -> Option<PathBuf> {
         //
         // https://docs.rs/home/0.5.5/src/home/lib.rs.html#71-75
         #[allow(deprecated)]
-        let state_dir = env::home_dir()?;
-        state_dir.extend([".local", "state"])
+        let mut state_dir = env::home_dir()?;
+        state_dir.extend([".local", "state"]);
+        state_dir
     };
 
     Some(state_dir.join("artichokeruby"))
@@ -343,7 +344,7 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_env("XDG_STATE_DIR");
+        env::remove_var("XDG_STATE_DIR");
 
         let dir = repl_history_dir().unwrap();
         let mut components = dir.components();
@@ -364,7 +365,7 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_env("XDG_STATE_DIR");
+        env::remove_var("XDG_STATE_DIR");
 
         let file = repl_history_file().unwrap();
         let mut components = file.components();
@@ -386,7 +387,7 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_env("XDG_STATE_DIR");
+        env::remove_var("XDG_STATE_DIR");
         env::set_var("XDG_STATE_DIR", "");
 
         let dir = repl_history_dir().unwrap();
@@ -408,7 +409,7 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_env("XDG_STATE_DIR");
+        env::remove_var("XDG_STATE_DIR");
         env::set_var("XDG_STATE_DIR", "");
 
         let file = repl_history_file().unwrap();
@@ -431,7 +432,7 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_env("XDG_STATE_DIR");
+        env::remove_var("XDG_STATE_DIR");
         env::set_var("XDG_STATE_DIR", "/opt/artichoke/state");
 
         let dir = repl_history_dir().unwrap();
@@ -452,7 +453,7 @@ mod tests {
 
         let _guard = ENV_LOCK.lock();
 
-        env::remove_env("XDG_STATE_DIR");
+        env::remove_var("XDG_STATE_DIR");
         env::set_var("XDG_STATE_DIR", "/opt/artichoke/state");
 
         let file = repl_history_file().unwrap();
