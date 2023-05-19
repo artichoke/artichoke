@@ -126,8 +126,8 @@ pub fn repl_history_file() -> Option<PathBuf> {
 #[must_use]
 #[cfg(target_os = "macos")]
 fn repl_history_dir() -> Option<PathBuf> {
-    use std::ffi::{c_char, CStr, OsStr, OsString};
-    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+    use std::ffi::{c_char, CStr, OsString};
+    use std::os::unix::ffi::OsStringExt;
 
     use sysdir::{
         sysdir_get_next_search_path_enumeration, sysdir_search_path_directory_t, sysdir_start_search_path_enumeration,
@@ -183,7 +183,12 @@ fn repl_history_dir() -> Option<PathBuf> {
 
             OsString::from_vec(home).into()
         }
-        path => OsStr::from_bytes(path).to_owned().into(),
+        path => {
+            let mut buf = vec![];
+            buf.try_reserve_exact(path.len()).ok()?;
+            buf.extend_from_slice(path);
+            OsString::from_vec(buf).into()
+        }
     };
     Some(application_support.join("org.artichokeruby.airb"))
 }
