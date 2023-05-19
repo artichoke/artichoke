@@ -24,13 +24,6 @@ artichoke-readline = { version = "1.0.0", path = "artichoke-readline", optional 
 artichoke-repl-history = { version = "1.0.0", path = "artichoke-repl-history", optional = true }
 bstr = { version = "1.2.0", optional = true, default-features = false }
 clap = { version = "4.2.4", optional = true }
-directories = { version = "5.0.0", optional = true }
-# XXX: load-bearing unused dependency.
-#
-# `dirs-sys` v4.0.1 includes an additional dependency, `option-ext`, which has
-# an MPL-2.0 license. MPL is a copyleft license, all of which are banned in
-# Artichoke.
-dirs-sys = { version = "=0.4.0", optional = true }
 # XXX: load-bearing unused dependency.
 #
 # `rustyline` improperly declares its minimum version on `log` as `0.4` despite
@@ -96,8 +89,6 @@ cli = [
   "dep:artichoke-repl-history",
   "dep:bstr",
   "dep:clap",
-  "dep:directories",
-  "dep:dirs-sys",
   "dep:log",
   "dep:posix-space",
   "dep:rustyline",
