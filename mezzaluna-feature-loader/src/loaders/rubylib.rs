@@ -196,9 +196,7 @@ impl Rubylib {
             return None;
         }
 
-        Some(Self {
-            load_path: dbg!(load_path),
-        })
+        Some(Self { load_path })
     }
 
     /// Check whether `path` points to a file in the backing file system and
