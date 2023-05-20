@@ -331,7 +331,7 @@ impl Disk {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests {
     use std::env;
     use std::path::{Path, PathBuf};
@@ -393,6 +393,75 @@ mod tests {
     #[test]
     fn test_empty_load_path_is_some() {
         let loader = Disk::with_load_path_and_cwd([], Path::new("/test/xyz")).unwrap();
+        assert!(loader.load_path().is_empty());
+
+        let loader = Disk::with_load_path([]).unwrap();
+        assert!(loader.load_path().is_empty());
+    }
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use std::env;
+    use std::path::{Path, PathBuf};
+
+    use super::*;
+
+    #[test]
+    fn test_load_path_is_set_on_construction() {
+        let loader = Disk::new();
+        assert!(loader.load_path().is_empty());
+
+        let loader = Disk::with_load_path([
+            PathBuf::from("c:/home/artichoke/src"),
+            PathBuf::from("c:/usr/share/artichoke"),
+            PathBuf::from("_lib"),
+        ])
+        .unwrap();
+
+        assert_eq!(loader.load_path().len(), 3);
+
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("c:/home/artichoke/src"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/usr/share/artichoke"));
+        assert_eq!(iter.next().unwrap(), &env::current_dir().unwrap().join("_lib"));
+        assert_eq!(iter.next(), None);
+
+        let loader = Disk::with_load_path_and_cwd(
+            [
+                PathBuf::from("c:/home/artichoke/src"),
+                PathBuf::from("c:/usr/share/artichoke"),
+                PathBuf::from("_lib"),
+            ],
+            Path::new("c:/test/xyz"),
+        )
+        .unwrap();
+
+        assert_eq!(loader.load_path().len(), 3);
+
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("c:/home/artichoke/src"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/usr/share/artichoke"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/test/xyz/_lib"));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_relative_cwd_is_err() {
+        let loader = Disk::with_load_path_and_cwd(
+            [
+                PathBuf::from("c:/home/artichoke/src"),
+                PathBuf::from("c:/usr/share/artichoke"),
+                PathBuf::from("_lib"),
+            ],
+            Path::new("xyz"),
+        );
+        assert!(loader.is_none());
+    }
+
+    #[test]
+    fn test_empty_load_path_is_some() {
+        let loader = Disk::with_load_path_and_cwd([], Path::new("c:/test/xyz")).unwrap();
         assert!(loader.load_path().is_empty());
 
         let loader = Disk::with_load_path([]).unwrap();

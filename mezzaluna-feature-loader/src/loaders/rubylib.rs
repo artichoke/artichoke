@@ -362,3 +362,104 @@ mod tests {
         assert!(file.is_none());
     }
 }
+
+#[cfg(all(test, windows))]
+mod tests {
+    use std::env;
+    use std::ffi::OsStr;
+    use std::path::Path;
+
+    use super::*;
+
+    #[test]
+    fn with_rubylib_env_var() {
+        env::remove_var("RUBYLIB");
+        let loader = Rubylib::new();
+        assert!(loader.is_none());
+
+        env::set_var("RUBYLIB", "");
+        let loader = Rubylib::new();
+        assert!(loader.is_none());
+
+        env::set_var("RUBYLIB", "c:/home/artichoke/src;c:/usr/share/artichoke;_lib");
+        let loader = Rubylib::new().unwrap();
+
+        assert_eq!(loader.load_path().len(), 3);
+
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("c:/home/artichoke/src"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/usr/share/artichoke"));
+        assert_eq!(iter.next().unwrap(), &env::current_dir().unwrap().join("_lib"));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_load_path_is_set_on_construction() {
+        let loader = Rubylib::with_rubylib(OsStr::new("c:/home/artichoke/src;c:/usr/share/artichoke;_lib")).unwrap();
+
+        assert_eq!(loader.load_path().len(), 3);
+
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("c:/home/artichoke/src"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/usr/share/artichoke"));
+        assert_eq!(iter.next().unwrap(), &env::current_dir().unwrap().join("_lib"));
+        assert_eq!(iter.next(), None);
+
+        let loader = Rubylib::with_rubylib_and_cwd(
+            OsStr::new("c:/home/artichoke/src;c:/usr/share/artichoke;_lib"),
+            Path::new("c:/test/xyz"),
+        )
+        .unwrap();
+
+        assert_eq!(loader.load_path().len(), 3);
+
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("c:/home/artichoke/src"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/usr/share/artichoke"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/test/xyz/_lib"));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_relative_cwd_is_err() {
+        let loader = Rubylib::with_rubylib_and_cwd(
+            OsStr::new("c:/home/artichoke/src;c:/usr/share/artichoke;_lib"),
+            Path::new("xyz"),
+        );
+        assert!(loader.is_none());
+    }
+
+    #[test]
+    fn test_env_var_path_is_none() {
+        let loader = Rubylib::with_rubylib_and_cwd(OsStr::new(""), Path::new("c:/test/xyz"));
+        assert!(loader.is_none());
+
+        let loader = Rubylib::with_rubylib(OsStr::new(""));
+        assert!(loader.is_none());
+    }
+
+    #[test]
+    fn test_resolve_file_rejects_absolute_paths() {
+        let loader = Rubylib::with_rubylib_and_cwd(
+            OsStr::new("c:/home/artichoke/src;c:/usr/share/artichoke;_lib"),
+            Path::new("c:/test/xyz"),
+        )
+        .unwrap();
+
+        let file = loader.resolve_file(Path::new("c:/absolute/path/to/source.rb"));
+        assert!(file.is_none());
+    }
+
+    #[test]
+    fn test_resolve_file_returns_none_for_nonexistent_path() {
+        let loader = Rubylib::with_rubylib_and_cwd(
+            OsStr::new("c:/home/artichoke/src;/usr/share/artichoke;_lib"),
+            Path::new("c:/test/xyz"),
+        )
+        .unwrap();
+
+        // randomly generated with `python -c 'import secrets; print(secrets.token_urlsafe())'`
+        let file = loader.resolve_file(Path::new("aSMZbEQeJbIfEJYtV-sDOxvJuvSvO4arx3nNXVzMRvg.rb"));
+        assert!(file.is_none());
+    }
+}
