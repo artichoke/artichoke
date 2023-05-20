@@ -28,6 +28,7 @@ use scolapasta_path::is_explicit_relative;
 /// use std::path::{Path, PathBuf};
 /// use mezzaluna_feature_loader::loaders::Disk;
 ///
+/// # #[cfg(unix)]
 /// # fn example() -> Option<()> {
 /// // Search `/home/artichoke/src` first, only attempting to search
 /// // `/usr/share/artichoke` if no file is found in `/home/artichoke/src`.
@@ -44,6 +45,7 @@ use scolapasta_path::is_explicit_relative;
 /// )?;
 /// # Some(())
 /// # }
+/// # #[cfg(unix)]
 /// # example().unwrap();
 /// ```
 ///
@@ -165,6 +167,7 @@ impl Disk {
     /// use std::path::{Path, PathBuf};
     /// use mezzaluna_feature_loader::loaders::Disk;
     ///
+    /// # #[cfg(unix)]
     /// # fn example() -> Option<()> {
     /// // Search `/home/artichoke/src` first, only attempting to search
     /// // `/usr/share/artichoke` if no file is found in `/home/artichoke/src`.
@@ -181,6 +184,7 @@ impl Disk {
     /// )?;
     /// # Some(())
     /// # }
+    /// # #[cfg(unix)]
     /// # example().unwrap();
     /// ```
     /// [`load_path`]: Self::load_path
@@ -254,6 +258,7 @@ impl Disk {
     /// use std::path::{Path, PathBuf};
     /// use mezzaluna_feature_loader::loaders::Disk;
     ///
+    /// # #[cfg(unix)]
     /// # fn example() -> Option<()> {
     /// let loader = Disk::with_load_path_and_cwd(
     ///     [
@@ -273,6 +278,7 @@ impl Disk {
     /// );
     /// # Some(())
     /// # }
+    /// # #[cfg(unix)]
     /// # example().unwrap();
     /// ```
     #[inline]
@@ -291,6 +297,7 @@ impl Disk {
     /// use std::path::{Path, PathBuf};
     /// use mezzaluna_feature_loader::loaders::Disk;
     ///
+    /// # #[cfg(unix)]
     /// # fn example() -> Option<()> {
     /// let mut loader = Disk::with_load_path_and_cwd(
     ///     [
@@ -322,6 +329,7 @@ impl Disk {
     /// assert_eq!(loader.load_path(), [Path::new("/home/app/libpath")]);
     /// # Some(())
     /// # }
+    /// # #[cfg(unix)]
     /// # example().unwrap();
     /// ```
     #[inline]

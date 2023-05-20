@@ -30,6 +30,7 @@ use same_file::Handle;
 /// use std::path::Path;
 /// use mezzaluna_feature_loader::loaders::Rubylib;
 ///
+/// # #[cfg(unix)]
 /// # fn example() -> Option<()> {
 /// // Grab the load paths from the `RUBYLIB` environment variable. If the
 /// // variable is empty or unset, `None` is returned.
@@ -49,6 +50,7 @@ use same_file::Handle;
 /// )?;
 /// # Some(())
 /// # }
+/// # #[cfg(unix)]
 /// # example().unwrap();
 /// ```
 ///
@@ -122,14 +124,15 @@ impl Rubylib {
     /// # Examples
     ///
     /// ```
-    /// # #![cfg(unix)]
     /// use std::ffi::OsStr;
     /// use mezzaluna_feature_loader::loaders::Rubylib;
     ///
+    /// # #[cfg(unix)]
     /// # fn example() -> Option<()> {
     /// let loader = Rubylib::with_rubylib(OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"))?;
     /// # Some(())
     /// # }
+    /// # #[cfg(unix)]
     /// # example().unwrap();
     /// ```
     ///
@@ -161,11 +164,11 @@ impl Rubylib {
     /// # Examples
     ///
     /// ```
-    /// # #![cfg(unix)]
     /// use std::ffi::OsStr;
     /// use std::path::Path;
     /// use mezzaluna_feature_loader::loaders::Rubylib;
     ///
+    /// # #[cfg(unix)]
     /// # fn example() -> Option<()> {
     /// let loader = Rubylib::with_rubylib_and_cwd(
     ///     OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"),
@@ -173,6 +176,7 @@ impl Rubylib {
     /// )?;
     /// # Some(())
     /// # }
+    /// # #[cfg(unix)]
     /// # example().unwrap();
     /// ```
     #[inline]
@@ -231,11 +235,11 @@ impl Rubylib {
     /// # Examples
     ///
     /// ```
-    /// # #![cfg(unix)]
     /// use std::ffi::OsStr;
     /// use std::path::Path;
     /// use mezzaluna_feature_loader::loaders::Rubylib;
     ///
+    /// # #[cfg(unix)]
     /// # fn example() -> Option<()> {
     /// let loader = Rubylib::with_rubylib_and_cwd(
     ///     OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"),
@@ -251,6 +255,7 @@ impl Rubylib {
     /// );
     /// # Some(())
     /// # }
+    /// # #[cfg(unix)]
     /// # example().unwrap();
     /// ```
     #[inline]
