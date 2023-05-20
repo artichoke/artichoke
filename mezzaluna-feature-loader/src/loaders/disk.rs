@@ -21,22 +21,21 @@ use scolapasta_path::is_explicit_relative;
 /// directory marker like `..` or `.`. These relative paths are resolved
 /// relative to the Ruby load path.
 ///
-/// `$LOAD_PATH` contains a list of directory paths to search for Ruby sources
-/// and behaves similarly to the `RUBYLIB` environment variable in the
-/// [`Rubylib`] loader.
+/// # Examples
 ///
 /// ```
-/// # use std::ffi::OsStr;
-/// # use std::path::{Path, PathBuf};
-/// # use mezzaluna_feature_loader::loaders::Disk;
+/// use std::ffi::OsStr;
+/// use std::path::{Path, PathBuf};
+/// use mezzaluna_feature_loader::loaders::Disk;
+///
 /// # fn example() -> Option<()> {
 /// // Search `/home/artichoke/src` first, only attempting to search
 /// // `/usr/share/artichoke` if no file is found in `/home/artichoke/src`.
 /// //
 /// // The relative path `./_lib` is resolved relative to the given working
 /// // directory.
-/// let fixed_loader = Disk::with_load_path_and_cwd(
-///     vec![
+/// let loader = Disk::with_load_path_and_cwd(
+///     [
 ///         PathBuf::from("/home/artichoke/src"),
 ///         PathBuf::from("/usr/share/artichoke"),
 ///         PathBuf::from("_lib"),
@@ -51,7 +50,6 @@ use scolapasta_path::is_explicit_relative;
 /// [require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
 /// [explicit relative]: is_explicit_relative
 /// [resolves to the same file]: same_file
-/// [`Rubylib`]: super::Rubylib
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "disk")))]
 pub struct Disk {
@@ -62,16 +60,24 @@ impl Disk {
     /// Create a new native file system loader that searches the file system for
     /// Ruby sources with an empty `$LOAD_PATH`.
     ///
-    /// A `Disk` loader with an empty `$LOAD_PATH` can only load sources by
+    /// A disk loader with an empty `$LOAD_PATH` can only load sources by
     /// absolute paths or relative to the process's [current working directory]
     /// if an [explicit relative path] is given.
     ///
     /// The resolved load paths are mutable; `$LOAD_PATH` can be modified at
     /// runtime by Ruby code as the VM executes. See [`load_path`] and
-    /// [`set_load_path`] for reading and modifying a `Disk` loader's load path.
+    /// [`set_load_path`] for reading and modifying a disk loader's load path.
     ///
-    /// This source loader grants access to the host file system. The `Disk`
-    /// loader does not support native extensions.
+    /// This source loader grants access to the host file system. This loader
+    /// does not support native extensions.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use mezzaluna_feature_loader::loaders::Disk;
+    ///
+    /// let loader = Disk::new();
+    /// ```
     ///
     /// [`load_path`]: Self::load_path
     /// [`set_load_path`]: Self::set_load_path
@@ -89,56 +95,101 @@ impl Disk {
     ///
     /// The resolved load paths are mutable; `$LOAD_PATH` can be modified at
     /// runtime by Ruby code as the VM executes. See [`load_path`] and
-    /// [`set_load_path`] for reading and modifying a `Disk` loader's load path.
+    /// [`set_load_path`] for reading and modifying a disk loader's load path.
     ///
     /// If any of the paths in the `$LOAD_PATH` global variable are not absolute
     /// paths, they are absolutized relative to the current process's [current
     /// working directory] at the time the load path is set or modified.
     ///
-    /// This source loader grants access to the host file system. The `Disk`
-    /// loader does not support native extensions.
+    /// This source loader grants access to the host file system. This loader
+    /// does not support native extensions.
     ///
     /// This method returns [`None`] if the current working directory cannot be
-    /// retrieved, or if the `$LOAD_PATH` global variable does not contain any
-    /// paths.
+    /// retrieved.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::ffi::OsStr;
+    /// use std::path::{Path, PathBuf};
+    /// use mezzaluna_feature_loader::loaders::Disk;
+    ///
+    /// # fn example() -> Option<()> {
+    /// // Search `/home/artichoke/src` first, only attempting to search
+    /// // `/usr/share/artichoke` if no file is found in `/home/artichoke/src`.
+    /// //
+    /// // The relative path `./_lib` is resolved relative to the current working
+    /// // directory.
+    /// let loader = Disk::with_load_path(
+    ///     [
+    ///         PathBuf::from("/home/artichoke/src"),
+    ///         PathBuf::from("/usr/share/artichoke"),
+    ///         PathBuf::from("_lib"),
+    ///     ]
+    /// )?;
+    /// # Some(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
     /// [`load_path`]: Self::load_path
     /// [`set_load_path`]: Self::set_load_path
     /// [current working directory]: env::current_dir
     #[inline]
     #[must_use]
-    pub fn with_load_path(load_path: Vec<PathBuf>) -> Option<Self> {
+    pub fn with_load_path(load_path: impl IntoIterator<Item = PathBuf>) -> Option<Self> {
         let cwd = env::current_dir().ok()?;
         Self::with_load_path_and_cwd(load_path, &cwd)
     }
 
     /// Create a new native file system loader that searches the file system for
     /// Ruby sources at the paths specified by the given `load_path` platform
-    /// string.
+    /// strings.
     ///
     /// The resolved load paths are mutable; `$LOAD_PATH` can be modified at
     /// runtime by Ruby code as the VM executes. See [`load_path`] and
-    /// [`set_load_path`] for reading and modifying a `Disk` loader's load path.
+    /// [`set_load_path`] for reading and modifying a disk loader's load path.
     ///
     /// If any of the paths in the `$LOAD_PATH` global variable are not absolute
     /// paths, they are absolutized relative to the current process's [current
     /// working directory] at the time the load path is set or modified.
     ///
-    /// This source loader grants access to the host file system. The `Disk`
-    /// loader does not support native extensions.
+    /// This source loader grants access to the host file system. This loader
+    /// does not support native extensions.
     ///
-    /// This method returns [`None`] if the given `load_path` does not contain any
-    /// paths.
+    /// This method returns [`None`] if the given `cwd` is not an absolute path.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::ffi::OsStr;
+    /// use std::path::{Path, PathBuf};
+    /// use mezzaluna_feature_loader::loaders::Disk;
+    ///
+    /// # fn example() -> Option<()> {
+    /// // Search `/home/artichoke/src` first, only attempting to search
+    /// // `/usr/share/artichoke` if no file is found in `/home/artichoke/src`.
+    /// //
+    /// // The relative path `./_lib` is resolved relative to the given working
+    /// // directory.
+    /// let loader = Disk::with_load_path_and_cwd(
+    ///     [
+    ///         PathBuf::from("/home/artichoke/src"),
+    ///         PathBuf::from("/usr/share/artichoke"),
+    ///         PathBuf::from("_lib"),
+    ///     ],
+    ///     Path::new("/home/artichoke"),
+    /// )?;
+    /// # Some(())
+    /// # }
+    /// # example().unwrap();
+    /// ```
     /// [`load_path`]: Self::load_path
     /// [`set_load_path`]: Self::set_load_path
     /// [current working directory]: env::current_dir
     #[inline]
     #[must_use]
-    pub fn with_load_path_and_cwd(load_path: Vec<PathBuf>, cwd: &Path) -> Option<Self> {
-        // If the given load paths vec is empty, return `None` so the `Rubylib`
-        // loader is not used.
-        if load_path.is_empty() {
+    pub fn with_load_path_and_cwd(load_path: impl IntoIterator<Item = PathBuf>, cwd: &Path) -> Option<Self> {
+        if !cwd.is_absolute() {
             return None;
         }
 
@@ -200,12 +251,12 @@ impl Disk {
     /// # Examples
     ///
     /// ```
-    /// # use std::ffi::OsStr;
-    /// # use std::path::{Path, PathBuf};
-    /// # use mezzaluna_feature_loader::loaders::Disk;
+    /// use std::path::{Path, PathBuf};
+    /// use mezzaluna_feature_loader::loaders::Disk;
+    ///
     /// # fn example() -> Option<()> {
     /// let loader = Disk::with_load_path_and_cwd(
-    ///     vec![
+    ///     [
     ///         PathBuf::from("/home/artichoke/src"),
     ///         PathBuf::from("/usr/share/artichoke"),
     ///         PathBuf::from("_lib"),
@@ -237,12 +288,12 @@ impl Disk {
     /// # Examples
     ///
     /// ```
-    /// # use std::ffi::OsStr;
-    /// # use std::path::{Path, PathBuf};
-    /// # use mezzaluna_feature_loader::loaders::Disk;
+    /// use std::path::{Path, PathBuf};
+    /// use mezzaluna_feature_loader::loaders::Disk;
+    ///
     /// # fn example() -> Option<()> {
     /// let mut loader = Disk::with_load_path_and_cwd(
-    ///     vec![
+    ///     [
     ///         PathBuf::from("/home/artichoke/src"),
     ///         PathBuf::from("/usr/share/artichoke"),
     ///         PathBuf::from("_lib"),
@@ -259,7 +310,7 @@ impl Disk {
     /// );
     ///
     /// let old_load_path =
-    ///     loader.set_load_path(vec![PathBuf::from("libpath")], Path::new("/home/app"));
+    ///     loader.set_load_path([PathBuf::from("libpath")], Path::new("/home/app"));
     /// assert_eq!(
     ///     old_load_path,
     ///     &[
@@ -274,8 +325,77 @@ impl Disk {
     /// # example().unwrap();
     /// ```
     #[inline]
-    pub fn set_load_path(&mut self, load_path: Vec<PathBuf>, cwd: &Path) -> Vec<PathBuf> {
+    pub fn set_load_path(&mut self, load_path: impl IntoIterator<Item = PathBuf>, cwd: &Path) -> Vec<PathBuf> {
         let load_path = load_path.into_iter().map(|load_path| cwd.join(load_path)).collect();
         mem::replace(&mut self.load_path, load_path)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::env;
+    use std::path::{Path, PathBuf};
+
+    use super::*;
+
+    #[test]
+    fn test_load_path_is_set_on_construction() {
+        let loader = Disk::new();
+        assert!(loader.load_path().is_empty());
+
+        let loader = Disk::with_load_path([
+            PathBuf::from("/home/artichoke/src"),
+            PathBuf::from("/usr/share/artichoke"),
+            PathBuf::from("_lib"),
+        ])
+        .unwrap();
+
+        assert_eq!(loader.load_path().len(), 3);
+
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("/home/artichoke/src"));
+        assert_eq!(iter.next().unwrap(), Path::new("/usr/share/artichoke"));
+        assert_eq!(iter.next().unwrap(), &env::current_dir().unwrap().join("_lib"));
+        assert_eq!(iter.next(), None);
+
+        let loader = Disk::with_load_path_and_cwd(
+            [
+                PathBuf::from("/home/artichoke/src"),
+                PathBuf::from("/usr/share/artichoke"),
+                PathBuf::from("_lib"),
+            ],
+            Path::new("/test/xyz"),
+        )
+        .unwrap();
+
+        assert_eq!(loader.load_path().len(), 3);
+
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("/home/artichoke/src"));
+        assert_eq!(iter.next().unwrap(), Path::new("/usr/share/artichoke"));
+        assert_eq!(iter.next().unwrap(), Path::new("/test/xyz/_lib"));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_relative_cwd_is_err() {
+        let loader = Disk::with_load_path_and_cwd(
+            [
+                PathBuf::from("/home/artichoke/src"),
+                PathBuf::from("/usr/share/artichoke"),
+                PathBuf::from("_lib"),
+            ],
+            Path::new("xyz"),
+        );
+        assert!(loader.is_none());
+    }
+
+    #[test]
+    fn test_empty_load_path_is_some() {
+        let loader = Disk::with_load_path_and_cwd([], Path::new("/test/xyz")).unwrap();
+        assert!(loader.load_path().is_empty());
+
+        let loader = Disk::with_load_path([]).unwrap();
+        assert!(loader.load_path().is_empty());
     }
 }
