@@ -178,10 +178,10 @@ impl Rubylib {
     #[inline]
     #[must_use]
     pub fn with_rubylib_and_cwd(rubylib: &OsStr, cwd: &Path) -> Option<Self> {
-        if !cwd.is_absolute() {
+        if rubylib.is_empty() {
             return None;
         }
-        if rubylib.is_empty() {
+        if !cwd.is_absolute() {
             return None;
         }
 
