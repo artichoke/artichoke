@@ -839,69 +839,11 @@ impl Utf8String {
             return None;
         }
 
-        let buf = self.get_char_slice(offset..usize::MAX)?;
-        let index = buf.find(needle)?;
+        let prefix = self.get_char_slice(0..offset)?;
+        let tail = &self[prefix.len()..];
+        let index = tail.find(needle)?;
 
-        let mut s = self.as_slice();
-        let mut char_count = 0;
-
-        // first decode `offset` number of characters.
-        let mut offset_chars_remaining = offset;
-        loop {
-            if offset_chars_remaining == 0 {
-                break;
-            }
-            match bstr::decode_utf8(s) {
-                (Some(_), size) => {
-                    s = &s[size..];
-                    char_count += 1;
-                    offset_chars_remaining -= 1;
-                }
-                (None, 0) => break,
-                (None, size) if size > offset_chars_remaining => {
-                    s = &s[offset_chars_remaining..];
-                    char_count += offset_chars_remaining;
-                    break;
-                }
-                (None, size) => {
-                    s = &s[size..];
-                    char_count += size;
-                    offset_chars_remaining -= size;
-                }
-            }
-        }
-
-        // then decode `index` bytes, counting characters along the way.
-        let mut decode_size_remaining = index;
-        loop {
-            if decode_size_remaining == 0 {
-                return Some(char_count);
-            }
-            match bstr::decode_utf8(s) {
-                (Some(_), size) if decode_size_remaining > size => {
-                    s = &s[size..];
-                    char_count += 1;
-                    decode_size_remaining -= size;
-                }
-                (Some(_), size) if size == decode_size_remaining => {
-                    return Some(char_count + 1);
-                }
-                (Some(_), _size) => {
-                    unreachable!("needle must be valid UTF-8 so match must occur on a char boundary",);
-                }
-                (None, 0) => {
-                    return Some(char_count);
-                }
-                (None, size) if decode_size_remaining > size => {
-                    s = &s[size..];
-                    decode_size_remaining -= size;
-                    char_count += size;
-                }
-                (None, _size) => {
-                    unreachable!("needle must be valid UTF-8 so match must occur on a char boundary");
-                }
-            }
-        }
+        Some(offset + char_len(&tail[..index]))
     }
 
     #[inline]
