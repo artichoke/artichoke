@@ -441,7 +441,7 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
 name = "mezzaluna-feature-loader"
-version = "0.6.0"
+version = "0.7.0"
 dependencies = [
  "same-file",
  "scolapasta-path",
