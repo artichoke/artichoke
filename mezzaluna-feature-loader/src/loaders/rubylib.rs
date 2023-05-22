@@ -44,9 +44,8 @@ use same_file::Handle;
 /// //
 /// // The relative path `./_lib` is resolved relative to the given working
 /// // directory.
-/// let fixed_loader = Rubylib::with_rubylib_and_cwd(
+/// let fixed_loader = Rubylib::with_rubylib(
 ///     OsStr::new("/home/artichoke/src:/usr/share/artichoke:./_lib"),
-///     Path::new("/home/artichoke"),
 /// )?;
 /// # Some(())
 /// # }
@@ -71,17 +70,13 @@ impl Rubylib {
     /// The `RUBYLIB` environment variable is resolved once at the time this
     /// method is called and the resolved load path is immutable.
     ///
-    /// If any of the paths in the `RUBYLIB` environment variable are not
-    /// absolute paths, they are absolutized relative to the current process's
-    /// [current working directory] at the time this method is called.
-    ///
     /// This source loader grants access to the host file system. This loader
     /// does not support native extensions.
     ///
     /// This method returns [`None`] if there are errors resolving the
     /// `RUBYLIB` environment variable, if the `RUBYLIB` environment variable is
-    /// not set, if the current working directory cannot be retrieved, or if the
-    /// `RUBYLIB` environment variable does not contain any paths.
+    /// not set, or if the given `RUBYLIB` environment variable contains no
+    /// non-empty paths.
     ///
     /// # Examples
     ///
@@ -94,14 +89,11 @@ impl Rubylib {
     /// # }
     /// # example().unwrap();
     /// ```
-    ///
-    /// [current working directory]: env::current_dir
     #[inline]
     #[must_use]
     pub fn new() -> Option<Self> {
         let rubylib = env::var_os("RUBYLIB")?;
-        let cwd = env::current_dir().ok()?;
-        Self::with_rubylib_and_cwd(&rubylib, &cwd)
+        Self::with_rubylib(&rubylib)
     }
 
     /// Create a new native file system loader that searches the file system for
@@ -111,15 +103,11 @@ impl Rubylib {
     ///
     /// The resolved load path is immutable.
     ///
-    /// If any of the paths in the given `rubylib` are not absolute paths, they
-    /// are absolutized relative to the current process's [current working
-    /// directory] at the time this method is called.
-    ///
     /// This source loader grants access to the host file system. This loader
     /// does not support native extensions.
     ///
-    /// This method returns [`None`] if the current working directory cannot be
-    /// retrieved or if the given `rubylib` does not contain any paths.
+    /// This method returns [`None`] if the given `rubylib` contains no
+    /// non-empty paths.
     ///
     /// # Examples
     ///
@@ -135,62 +123,14 @@ impl Rubylib {
     /// # #[cfg(unix)]
     /// # example().unwrap();
     /// ```
-    ///
-    /// [current working directory]: env::current_dir
     #[inline]
     #[must_use]
     pub fn with_rubylib(rubylib: &OsStr) -> Option<Self> {
-        let cwd = env::current_dir().ok()?;
-        Self::with_rubylib_and_cwd(rubylib, &cwd)
-    }
-
-    /// Create a new native file system loader that searches the file system for
-    /// Ruby sources at the paths specified by the given `rubylib` platform
-    /// string. `rubylib` is expected to be a set of file system paths that are
-    /// delimited by the platform path separator.
-    ///
-    /// The resolved load path is immutable.
-    ///
-    /// If any of the paths in the given `rubylib` are not absolute paths, they
-    /// are absolutized relative to the given current working directory at the
-    /// time this method is called.
-    ///
-    /// This source loader grants access to the host file system. This loader
-    /// does not support native extensions.
-    ///
-    /// This method returns [`None`] if the given `rubylib` does not contain any
-    /// paths or if the given working directory is not an absolute path.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::ffi::OsStr;
-    /// use std::path::Path;
-    /// use mezzaluna_feature_loader::loaders::Rubylib;
-    ///
-    /// # #[cfg(unix)]
-    /// # fn example() -> Option<()> {
-    /// let loader = Rubylib::with_rubylib_and_cwd(
-    ///     OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"),
-    ///     Path::new("/home/artichoke"),
-    /// )?;
-    /// # Some(())
-    /// # }
-    /// # #[cfg(unix)]
-    /// # example().unwrap();
-    /// ```
-    #[inline]
-    #[must_use]
-    pub fn with_rubylib_and_cwd(rubylib: &OsStr, cwd: &Path) -> Option<Self> {
-        if rubylib.is_empty() {
-            return None;
-        }
-        if !cwd.is_absolute() {
-            return None;
-        }
-
         let load_path = env::split_paths(rubylib)
-            .map(|load_path| cwd.join(load_path))
+            .filter(|p| {
+                // Empty paths are filtered out of RUBYLIB:
+                !p.as_os_str().is_empty()
+            })
             .collect::<Box<[_]>>();
 
         // If the `RUBYLIB` env variable is empty or otherwise results in no
@@ -241,16 +181,15 @@ impl Rubylib {
     ///
     /// # #[cfg(unix)]
     /// # fn example() -> Option<()> {
-    /// let loader = Rubylib::with_rubylib_and_cwd(
+    /// let loader = Rubylib::with_rubylib(
     ///     OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"),
-    ///     Path::new("/home/artichoke"),
     /// )?;
     /// assert_eq!(
     ///     loader.load_path(),
     ///     &[
     ///         Path::new("/home/artichoke/src"),
     ///         Path::new("/usr/share/artichoke"),
-    ///         Path::new("/home/artichoke/_lib")
+    ///         Path::new("_lib")
     ///     ]
     /// );
     /// # Some(())
@@ -291,7 +230,7 @@ mod tests {
         let mut iter = loader.load_path().iter();
         assert_eq!(iter.next().unwrap(), Path::new("/home/artichoke/src"));
         assert_eq!(iter.next().unwrap(), Path::new("/usr/share/artichoke"));
-        assert_eq!(iter.next().unwrap(), &env::current_dir().unwrap().join("_lib"));
+        assert_eq!(iter.next().unwrap(), Path::new("_lib"));
         assert_eq!(iter.next(), None);
     }
 
@@ -304,49 +243,114 @@ mod tests {
         let mut iter = loader.load_path().iter();
         assert_eq!(iter.next().unwrap(), Path::new("/home/artichoke/src"));
         assert_eq!(iter.next().unwrap(), Path::new("/usr/share/artichoke"));
-        assert_eq!(iter.next().unwrap(), &env::current_dir().unwrap().join("_lib"));
+        assert_eq!(iter.next().unwrap(), Path::new("_lib"));
         assert_eq!(iter.next(), None);
+    }
 
-        let loader = Rubylib::with_rubylib_and_cwd(
-            OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"),
-            Path::new("/test/xyz"),
-        )
-        .unwrap();
+    #[test]
+    fn test_empty_rubylib_is_none() {
+        let loader = Rubylib::with_rubylib(OsStr::new(""));
+        assert!(loader.is_none());
+    }
+
+    #[test]
+    fn test_empty_rubylib_paths_are_filtered() {
+        // ```console
+        // $ ruby -e 'puts $:'
+        // /usr/local/Cellar/rbenv/1.2.0/rbenv.d/exec/gem-rehash
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0/x86_64-darwin22
+        // $ RUBYLIB= ruby -e 'puts $:'
+        // /usr/local/Cellar/rbenv/1.2.0/rbenv.d/exec/gem-rehash
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0/x86_64-darwin22
+        // $ RUBYLIB=::: ruby -e 'puts $:'
+        // /usr/local/Cellar/rbenv/1.2.0/rbenv.d/exec/gem-rehash
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0/x86_64-darwin22
+        // ```
+        let loader = Rubylib::with_rubylib(OsStr::new(":::::::::::::::::"));
+        assert!(loader.is_none());
+
+        let loader =
+            Rubylib::with_rubylib(OsStr::new(":::/home/artichoke/src:::/usr/share/artichoke:::_lib:::")).unwrap();
 
         assert_eq!(loader.load_path().len(), 3);
 
         let mut iter = loader.load_path().iter();
         assert_eq!(iter.next().unwrap(), Path::new("/home/artichoke/src"));
         assert_eq!(iter.next().unwrap(), Path::new("/usr/share/artichoke"));
-        assert_eq!(iter.next().unwrap(), Path::new("/test/xyz/_lib"));
+        assert_eq!(iter.next().unwrap(), Path::new("_lib"));
         assert_eq!(iter.next(), None);
     }
 
     #[test]
-    fn test_relative_cwd_is_err() {
-        let loader = Rubylib::with_rubylib_and_cwd(
-            OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"),
-            Path::new("xyz"),
+    fn test_paths_taken_verbatim() {
+        // Relative paths are not resolved, duplicates are not removed, paths
+        // are not normalized:
+        //
+        // ```console
+        // $ RUBYLIB=.:.:`pwd`:`pwd`:/Users/:/Users ruby -e 'puts $:'
+        // /usr/local/Cellar/rbenv/1.2.0/rbenv.d/exec/gem-rehash
+        // .
+        // .
+        // /Users/lopopolo/dev/artichoke/artichoke
+        // /Users/lopopolo/dev/artichoke/artichoke
+        // /Users/
+        // /Users
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0/x86_64-darwin22
+        // ```
+        let loader = Rubylib::with_rubylib(OsStr::new(
+            ".:.:/Users/lopopolo/dev/artichoke/artichoke:/Users/lopopolo/dev/artichoke/artichoke:/Users/:/Users",
+        ))
+        .unwrap();
+
+        assert_eq!(loader.load_path().len(), 6);
+
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("."));
+        assert_eq!(iter.next().unwrap(), Path::new("."));
+        assert_eq!(
+            iter.next().unwrap(),
+            Path::new("/Users/lopopolo/dev/artichoke/artichoke")
         );
-        assert!(loader.is_none());
-    }
-
-    #[test]
-    fn test_env_var_path_is_none() {
-        let loader = Rubylib::with_rubylib_and_cwd(OsStr::new(""), Path::new("/test/xyz"));
-        assert!(loader.is_none());
-
-        let loader = Rubylib::with_rubylib(OsStr::new(""));
-        assert!(loader.is_none());
+        assert_eq!(
+            iter.next().unwrap(),
+            Path::new("/Users/lopopolo/dev/artichoke/artichoke")
+        );
+        assert_eq!(iter.next().unwrap(), Path::new("/Users/"));
+        assert_eq!(iter.next().unwrap(), Path::new("/Users"));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
     fn test_resolve_file_rejects_absolute_paths() {
-        let loader = Rubylib::with_rubylib_and_cwd(
-            OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"),
-            Path::new("/test/xyz"),
-        )
-        .unwrap();
+        let loader = Rubylib::with_rubylib(OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib")).unwrap();
 
         let file = loader.resolve_file(Path::new("/absolute/path/to/source.rb"));
         assert!(file.is_none());
@@ -354,11 +358,7 @@ mod tests {
 
     #[test]
     fn test_resolve_file_returns_none_for_nonexistent_path() {
-        let loader = Rubylib::with_rubylib_and_cwd(
-            OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib"),
-            Path::new("/test/xyz"),
-        )
-        .unwrap();
+        let loader = Rubylib::with_rubylib(OsStr::new("/home/artichoke/src:/usr/share/artichoke:_lib")).unwrap();
 
         // randomly generated with `python -c 'import secrets; print(secrets.token_urlsafe())'`
         let file = loader.resolve_file(Path::new("aSMZbEQeJbIfEJYtV-sDOxvJuvSvO4arx3nNXVzMRvg.rb"));
@@ -392,7 +392,7 @@ mod tests {
         let mut iter = loader.load_path().iter();
         assert_eq!(iter.next().unwrap(), Path::new("c:/home/artichoke/src"));
         assert_eq!(iter.next().unwrap(), Path::new("c:/usr/share/artichoke"));
-        assert_eq!(iter.next().unwrap(), &env::current_dir().unwrap().join("_lib"));
+        assert_eq!(iter.next().unwrap(), Path::new("_lib"));
         assert_eq!(iter.next(), None);
     }
 
@@ -405,13 +405,56 @@ mod tests {
         let mut iter = loader.load_path().iter();
         assert_eq!(iter.next().unwrap(), Path::new("c:/home/artichoke/src"));
         assert_eq!(iter.next().unwrap(), Path::new("c:/usr/share/artichoke"));
-        assert_eq!(iter.next().unwrap(), &env::current_dir().unwrap().join("_lib"));
+        assert_eq!(iter.next().unwrap(), Path::new("_lib"));
         assert_eq!(iter.next(), None);
+    }
 
-        let loader = Rubylib::with_rubylib_and_cwd(
-            OsStr::new("c:/home/artichoke/src;c:/usr/share/artichoke;_lib"),
-            Path::new("c:/test/xyz"),
-        )
+    #[test]
+    fn test_empty_rubylib_is_none() {
+        let loader = Rubylib::with_rubylib(OsStr::new(""));
+        assert!(loader.is_none());
+    }
+
+    #[test]
+    fn test_empty_rubylib_paths_are_filtered() {
+        // ```console
+        // $ ruby -e 'puts $:'
+        // /usr/local/Cellar/rbenv/1.2.0/rbenv.d/exec/gem-rehash
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0/x86_64-darwin22
+        // $ RUBYLIB= ruby -e 'puts $:'
+        // /usr/local/Cellar/rbenv/1.2.0/rbenv.d/exec/gem-rehash
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0/x86_64-darwin22
+        // $ RUBYLIB=::: ruby -e 'puts $:'
+        // /usr/local/Cellar/rbenv/1.2.0/rbenv.d/exec/gem-rehash
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0/x86_64-darwin22
+        // ```
+        let loader = Rubylib::with_rubylib(OsStr::new(";;;;;;;;;;;;;;;;"));
+        assert!(loader.is_none());
+
+        let loader = Rubylib::with_rubylib(OsStr::new(
+            ";;;c:/home/artichoke/src;;;c:/usr/share/artichoke;;;_lib;;;",
+        ))
         .unwrap();
 
         assert_eq!(loader.load_path().len(), 3);
@@ -419,35 +462,53 @@ mod tests {
         let mut iter = loader.load_path().iter();
         assert_eq!(iter.next().unwrap(), Path::new("c:/home/artichoke/src"));
         assert_eq!(iter.next().unwrap(), Path::new("c:/usr/share/artichoke"));
-        assert_eq!(iter.next().unwrap(), Path::new("c:/test/xyz/_lib"));
+        assert_eq!(iter.next().unwrap(), Path::new("_lib"));
         assert_eq!(iter.next(), None);
     }
 
     #[test]
-    fn test_relative_cwd_is_err() {
-        let loader = Rubylib::with_rubylib_and_cwd(
-            OsStr::new("c:/home/artichoke/src;c:/usr/share/artichoke;_lib"),
-            Path::new("xyz"),
-        );
-        assert!(loader.is_none());
-    }
+    fn test_paths_taken_verbatim() {
+        // Relative paths are not resolved, duplicates are not removed, paths
+        // are not normalized:
+        //
+        // ```console
+        // $ RUBYLIB=.:.:`pwd`:`pwd`:/Users/:/Users ruby -e 'puts $:'
+        // /usr/local/Cellar/rbenv/1.2.0/rbenv.d/exec/gem-rehash
+        // .
+        // .
+        // /Users/lopopolo/dev/artichoke/artichoke
+        // /Users/lopopolo/dev/artichoke/artichoke
+        // /Users/
+        // /Users
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/site_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby/3.2.0/x86_64-darwin22
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/vendor_ruby
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0
+        // /usr/local/var/rbenv/versions/3.2.2/lib/ruby/3.2.0/x86_64-darwin22
+        // ```
+        let loader = Rubylib::with_rubylib(OsStr::new(
+            ".;.;c:/lopopolo/dev/artichoke/artichoke;c:/lopopolo/dev/artichoke/artichoke;c:/var/;c:/var",
+        ))
+        .unwrap();
 
-    #[test]
-    fn test_env_var_path_is_none() {
-        let loader = Rubylib::with_rubylib_and_cwd(OsStr::new(""), Path::new("c:/test/xyz"));
-        assert!(loader.is_none());
+        assert_eq!(loader.load_path().len(), 6);
 
-        let loader = Rubylib::with_rubylib(OsStr::new(""));
-        assert!(loader.is_none());
+        let mut iter = loader.load_path().iter();
+        assert_eq!(iter.next().unwrap(), Path::new("."));
+        assert_eq!(iter.next().unwrap(), Path::new("."));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/lopopolo/dev/artichoke/artichoke"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/lopopolo/dev/artichoke/artichoke"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/var/"));
+        assert_eq!(iter.next().unwrap(), Path::new("c:/var"));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
     fn test_resolve_file_rejects_absolute_paths() {
-        let loader = Rubylib::with_rubylib_and_cwd(
-            OsStr::new("c:/home/artichoke/src;c:/usr/share/artichoke;_lib"),
-            Path::new("c:/test/xyz"),
-        )
-        .unwrap();
+        let loader = Rubylib::with_rubylib(OsStr::new("c:/home/artichoke/src;c:/usr/share/artichoke;_lib")).unwrap();
 
         let file = loader.resolve_file(Path::new("c:/absolute/path/to/source.rb"));
         assert!(file.is_none());
@@ -455,11 +516,7 @@ mod tests {
 
     #[test]
     fn test_resolve_file_returns_none_for_nonexistent_path() {
-        let loader = Rubylib::with_rubylib_and_cwd(
-            OsStr::new("c:/home/artichoke/src;/usr/share/artichoke;_lib"),
-            Path::new("c:/test/xyz"),
-        )
-        .unwrap();
+        let loader = Rubylib::with_rubylib(OsStr::new("c:/home/artichoke/src;/usr/share/artichoke;_lib")).unwrap();
 
         // randomly generated with `python -c 'import secrets; print(secrets.token_urlsafe())'`
         let file = loader.resolve_file(Path::new("aSMZbEQeJbIfEJYtV-sDOxvJuvSvO4arx3nNXVzMRvg.rb"));

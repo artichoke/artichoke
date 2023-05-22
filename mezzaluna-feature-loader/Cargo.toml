@@ -1,6 +1,6 @@
 [package]
 name = "mezzaluna-feature-loader"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Source and extension loaders for a managing a Ruby $LOAD_PATH"
 keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
