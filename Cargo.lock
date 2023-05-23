@@ -36,7 +36,6 @@ dependencies = [
  "bstr",
  "clap",
  "log",
- "posix-space",
  "rustyline",
  "scolapasta-path",
  "scolapasta-string-escape",
