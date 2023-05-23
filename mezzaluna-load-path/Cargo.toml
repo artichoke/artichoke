@@ -1,8 +1,8 @@
 [package]
-name = "mezzaluna-feature-loader"
-version = "0.8.0"
+name = "mezzaluna-load-path"
+version = "0.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
-description = "Source and extension loaders for a managing a Ruby $LOAD_PATH"
+description = "Build the Ruby $LOAD_PATH at interpreter boot"
 keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
 categories = ["filesystem"]
 readme = "README.md"
@@ -14,13 +14,11 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-same-file = { version = "1.0.6", optional = true }
-scolapasta-path = { version = "0.5.0", path = "../scolapasta-path" }
 
 [features]
-default = ["disk", "rubylib"]
-rubylib = ["disk"]
-disk = ["dep:same-file"]
+default = ["rubylib"]
+# Enable a loader for RUBYLIB-style path strings.
+rubylib = []
 
 [package.metadata.docs.rs]
 all-features = true
