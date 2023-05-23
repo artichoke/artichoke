@@ -30,7 +30,6 @@
 
 mod feature;
 pub mod loaded_features;
-pub mod loaders;
 
 pub use feature::Feature;
 #[doc(inline)]
