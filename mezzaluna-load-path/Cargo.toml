@@ -1,8 +1,20 @@
 [package]
 name = "mezzaluna-load-path"
 version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+description = "Build the Ruby $LOAD_PATH at interpreter boot"
+keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
+categories = ["filesystem"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
 
 [dependencies]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

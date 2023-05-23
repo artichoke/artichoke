@@ -446,6 +446,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "mezzaluna-load-path"
+version = "0.1.0"
+
+[[package]]
 name = "mezzaluna-type-registry"
 version = "1.0.1"
 
