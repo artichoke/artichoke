@@ -33,7 +33,6 @@ dependencies = [
  "artichoke-backend",
  "artichoke-readline",
  "artichoke-repl-history",
- "bstr",
  "clap",
  "log",
  "rustyline",
