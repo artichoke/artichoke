@@ -28,7 +28,7 @@ quickcheck = { version = "1.0.3", default-features = false }
 
 [features]
 default = ["casecmp", "std"]
-casecmp = ["focaccia"]
+casecmp = ["dep:focaccia"]
 # Enable implementations of traits in `std` like `Error` and `io::Write`.
 #
 # Enable runtime SIMD dispatch in `bytecount` and `simdutf8` dependencies.
