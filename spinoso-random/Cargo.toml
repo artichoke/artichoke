@@ -28,9 +28,9 @@ rand_mt = { version = "4.2.0", default-features = false }
 [features]
 default = ["random-rand", "rand-traits", "std"]
 # Enables range sampling methods for the `rand()` function.
-random-rand = ["rand", "rand-traits"]
+random-rand = ["dep:rand", "rand-traits"]
 # Enables implementations of `RngCore` on `Random` and `Mt` types.
-rand-traits = ["rand_core"]
+rand-traits = ["dep:rand_core"]
 std = []
 
 [package.metadata.docs.rs]
