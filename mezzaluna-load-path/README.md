@@ -10,17 +10,17 @@
 
 Ruby load path builders.
 
-An Artichoke Ruby VM may load code (called "features") from several file
-system locations. These locations form the `$LOAD_PATH` global.
+An Artichoke Ruby VM may load code (called "features") from several file system
+locations. These locations form the `$LOAD_PATH` global.
 
-Code and native extensions from the Ruby Core library and Ruby Standard
-Library can be loaded from an in-memory virtual file system.
+Code and native extensions from the Ruby Core library and Ruby Standard Library
+can be loaded from an in-memory virtual file system.
 
 Users can prepend items to the load path at interpreter boot by setting the
 `RUBYLIB` environment variable.
 
-This crate exports two builders which can be used to construct the initial
-load path at interpreter boot. See their documentation for more details.
+This crate exports two builders which can be used to construct the initial load
+path at interpreter boot. See their documentation for more details.
 
 ## Usage
 
@@ -53,6 +53,13 @@ fn build_load_path() -> Option<Box<[PathBuf]>> {
     Some(load_path)
 }
 ```
+
+## Crate features
+
+All features are enabled by default unless otherwise noted.
+
+- **rubylib** - Enables a builder which can parse load paths from the `RUBYLIB`
+  environment variable.
 
 ## License
 

@@ -26,7 +26,6 @@ use std::path::Path;
 /// [require]: https://ruby-doc.org/core-3.1.2/Kernel.html#method-i-require
 /// [`load_path`]: Self::load_path
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(docsrs, doc(cfg(feature = "rubylib")))]
 pub struct RubyCore {
     _private: (),
 }

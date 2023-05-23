@@ -196,6 +196,14 @@ jobs:
         run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "mezzaluna-feature-loader"
 
+      - name: Check mezzaluna-load-path with no default features
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
+        working-directory: "mezzaluna-load-path"
+
+      - name: Check mezzaluna-load-path with all features
+        run: cargo check --verbose --all-features --all-targets --profile=test
+        working-directory: "mezzaluna-load-path"
+
       - name: Check mezzaluna-type-registry with no default features
         run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "mezzaluna-type-registry"

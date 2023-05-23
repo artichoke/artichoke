@@ -28,20 +28,26 @@
 //! Code and native extensions from the Ruby Core library and Ruby Standard
 //! Library can be loaded from an [in-memory virtual file system].
 //!
-//! Users can prepend items to the load path at interpreter boot by setting the
-//! [`RUBYLIB` environment variable].
+//! [in-memory virtual file system]: RubyCore
 //!
-//! This crate exports two builders which can be used to construct the initial
-//! load path at interpreter boot. See their documentation for more details.
+#![cfg_attr(feature = "rubylib", doc = "Users can prepend items to the load path at interpreter")]
+#![cfg_attr(
+    feature = "rubylib",
+    doc = "boot by setting the [`RUBYLIB` environment variable](Rubylib)."
+)]
+//!
+//! This crate exports builders which can be used to construct the initial load
+//! path at interpreter boot. See their documentation for more details.
 //!
 //! # Examples
 //!
 //! ```
+//! # #[cfg(feature = "rubylib")]
+//! # fn example() -> Option<()> {
 //! use std::ffi::OsStr;
 //! use std::path::PathBuf;
 //! use mezzaluna_load_path::{RubyCore, Rubylib};
 //!
-//! # fn example() -> Option<()> {
 //! let core_loader = RubyCore::new();
 //! let rubylib_loader = Rubylib::with_rubylib(OsStr::new("lib"))?;
 //!
@@ -55,24 +61,24 @@
 //! assert_eq!(load_path.len(), 3);
 //! # Some(())
 //! # }
+//! # #[cfg(feature = "rubylib")]
 //! # example().unwrap();
 //! ```
-//!
-//! [in-memory virtual file system]: RubyCore
-//! [`RUBYLIB` environment variable]: Rubylib
 
 // Ensure code blocks in `README.md` compile
-#[cfg(doctest)]
+#[cfg(all(doctest, feature = "rubylib"))]
 #[doc = include_str!("../README.md")]
 mod readme {}
 
 mod ruby_core;
+#[cfg(feature = "rubylib")]
 mod rubylib;
 
 pub use ruby_core::RubyCore;
+#[cfg(feature = "rubylib")]
 pub use rubylib::Rubylib;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "rubylib"))]
 mod tests {
     use std::ffi::OsStr;
     use std::path::{Path, PathBuf};

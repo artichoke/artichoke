@@ -15,6 +15,11 @@ documentation.workspace = true
 
 [dependencies]
 
+[features]
+default = ["rubylib"]
+# Enable a loader for RUBYLIB-style path strings.
+rubylib = []
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
