@@ -1,7 +1,6 @@
 use alloc::boxed::Box;
 use alloc::collections::TryReserveError;
 use alloc::vec::{Drain, Splice, Vec};
-use core::borrow::Borrow;
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
 use core::ops::{Deref, DerefMut, RangeBounds};
@@ -44,13 +43,6 @@ impl DerefMut for Buf {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
-    }
-}
-
-impl Borrow<[u8]> for Buf {
-    #[inline]
-    fn borrow(&self) -> &[u8] {
-        &self.inner
     }
 }
 
