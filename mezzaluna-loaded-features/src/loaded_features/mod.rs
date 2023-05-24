@@ -2,7 +2,7 @@
 //!
 //! Ruby tracks which files and native extensions have been [required] in a
 //! global variable called `$LOADED_FEATURES`, which is aliased to `$"`.
-//! `$LOADED_FEATURES` is an Array of paths which point to these Ruby sources
+//! `$LOADED_FEATURES` is an `Array` of paths which point to these Ruby sources
 //! and native extensions.
 //!
 //! This module exposes an append-only, insertion order-preserving, set-like
@@ -41,13 +41,17 @@ use crate::Feature;
 /// aliased to `$"`.
 ///
 /// `$LOADED_FEATURES` is an append only set. Disk-based features are
-/// deduplicated by their real position on the underlying file system (i.e. their
-/// device and inode).
+/// deduplicated by their real position on the underlying file system (i.e.
+/// their device and inode).
+///
+/// Ruby uses a feature's presence in the loaded features set to determine
+/// whether a require has side effects (i.e. a file can be required multiple
+/// times but is only evaluated once).
 ///
 /// # Examples
 ///
 /// ```
-/// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+/// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
 ///
 /// let mut features = LoadedFeatures::new();
 /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
@@ -84,7 +88,7 @@ impl LoadedFeatures<RandomState> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let features = LoadedFeatures::new();
     /// assert!(features.is_empty());
@@ -106,7 +110,7 @@ impl LoadedFeatures<RandomState> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let features = LoadedFeatures::with_capacity(10);
     /// assert!(features.capacity() >= 10);
@@ -126,7 +130,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let features = LoadedFeatures::with_capacity(100);
     /// assert!(features.capacity() >= 100);
@@ -142,7 +146,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
     /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
@@ -165,7 +169,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
     /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
@@ -187,7 +191,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
     /// assert_eq!(features.len(), 0);
@@ -205,7 +209,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
     /// assert!(features.is_empty());
@@ -236,11 +240,11 @@ impl<S> LoadedFeatures<S> {
     /// ```
     /// use std::collections::hash_map::RandomState;
     ///
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let s = RandomState::new();
-    /// let mut set = LoadedFeatures::with_hasher(s);
-    /// set.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// let mut features = LoadedFeatures::with_hasher(s);
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
     /// ```
     #[must_use]
     pub fn with_hasher(hasher: S) -> Self {
@@ -269,11 +273,11 @@ impl<S> LoadedFeatures<S> {
     /// ```
     /// use std::collections::hash_map::RandomState;
     ///
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let s = RandomState::new();
-    /// let mut set = LoadedFeatures::with_capacity_and_hasher(10, s);
-    /// set.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// let mut features = LoadedFeatures::with_capacity_and_hasher(10, s);
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
     /// ```
     #[must_use]
     pub fn with_capacity_and_hasher(capacity: usize, hasher: S) -> Self {
@@ -289,11 +293,11 @@ impl<S> LoadedFeatures<S> {
     /// ```
     /// use std::collections::hash_map::RandomState;
     ///
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let s = RandomState::new();
-    /// let set = LoadedFeatures::with_hasher(s);
-    /// let hasher: &RandomState = set.hasher();
+    /// let features = LoadedFeatures::with_hasher(s);
+    /// let hasher: &RandomState = features.hasher();
     /// ```
     #[must_use]
     pub fn hasher(&self) -> &S {
@@ -316,7 +320,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let mut features = LoadedFeatures::new();
     /// features.reserve(10);
@@ -341,7 +345,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let mut features = LoadedFeatures::new();
     /// features
@@ -363,7 +367,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::with_capacity(100);
     /// features.insert(Feature::with_in_memory_path("set.rb".into()));
@@ -388,7 +392,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::with_capacity(100);
     /// features.insert(Feature::with_in_memory_path("set.rb".into()));
@@ -412,15 +416,15 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
-    /// let feature = Feature::with_in_memory_path("set.rb".into());
+    /// let set_feature = Feature::with_in_memory_path("set.rb".into());
     ///
-    /// assert!(!features.contains(&feature));
+    /// assert!(!features.contains(&set_feature));
     ///
-    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
-    /// assert!(features.contains(&feature));
+    /// features.insert(set_feature);
+    /// assert_eq!(features.len(), 1);
     /// ```
     #[must_use]
     pub fn contains(&self, feature: &Feature) -> bool {
@@ -436,11 +440,11 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
-    /// let feature = Feature::with_in_memory_path("set.rb".into());
-    /// features.insert(feature);
+    /// let set_feature = Feature::with_in_memory_path("set.rb".into());
+    /// features.insert(set_feature);
     ///
     /// assert_eq!(features.len(), 1);
     /// ```
@@ -458,13 +462,190 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::{Feature, LoadedFeatures};
 
     #[test]
     #[should_panic(expected = "duplicate feature inserted at set.rb")]
-    fn duplicate_insert_panics() {
+    fn duplicate_memory_insert_panics() {
         let mut features = LoadedFeatures::new();
         features.insert(Feature::with_in_memory_path("set.rb".into()));
         features.insert(Feature::with_in_memory_path("set.rb".into()));
+    }
+
+    #[test]
+    fn insert_multiple_memort_features() {
+        let mut features = LoadedFeatures::new();
+        features.insert(Feature::with_in_memory_path("set.rb".into()));
+        features.insert(Feature::with_in_memory_path("hash.rb".into()));
+        features.insert(Feature::with_in_memory_path("artichoke.rb".into()));
+
+        assert_eq!(features.len(), 3);
+
+        let paths = features.iter().collect::<Vec<_>>();
+        assert_eq!(paths.len(), 3);
+        assert_eq!(
+            paths,
+            &[Path::new("set.rb"), Path::new("hash.rb"), Path::new("artichoke.rb")]
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "disk")]
+    #[should_panic(expected = "duplicate feature inserted at Cargo.toml")]
+    fn duplicate_disk_insert_panics() {
+        use same_file::Handle;
+
+        let mut features = LoadedFeatures::new();
+        loop {
+            let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+            let handle = Handle::from_path(&path).unwrap();
+            features.insert(Feature::with_handle_and_path(
+                handle,
+                path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+            ));
+        }
+    }
+
+    // ```shell
+    // $ echo 'puts __FILE__' > a.rb
+    // $ irb
+    // [3.2.2] > require './a.rb'
+    // /Users/lopopolo/dev/artichoke/artichoke/a.rb
+    // => true
+    // [3.2.2] > require '../artichoke/a.rb'
+    // => false
+    // ```
+    #[test]
+    #[cfg(feature = "disk")]
+    #[cfg_attr(
+        not(windows),
+        should_panic(expected = "duplicate feature inserted at src/../Cargo.toml")
+    )]
+    #[cfg_attr(
+        windows,
+        should_panic(expected = "duplicate feature inserted at src\\..\\Cargo.toml")
+    )]
+    fn duplicate_disk_insert_with_different_path_panics() {
+        use same_file::Handle;
+
+        let mut features = LoadedFeatures::new();
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("..")
+            .join("Cargo.toml");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+    }
+
+    #[test]
+    #[cfg(feature = "disk")]
+    fn insert_multiple_disk_features() {
+        use same_file::Handle;
+
+        let mut features = LoadedFeatures::new();
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("LICENSE");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("README.md");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+
+        assert_eq!(features.len(), 3);
+
+        let paths = features.iter().collect::<Vec<_>>();
+        assert_eq!(paths.len(), 3);
+        assert_eq!(
+            paths,
+            &[Path::new("Cargo.toml"), Path::new("LICENSE"), Path::new("README.md")]
+        );
+    }
+
+    #[test]
+    fn iter_yields_paths_in_insertion_order() {
+        let mut features = LoadedFeatures::new();
+        features.insert(Feature::with_in_memory_path("a.rb".into()));
+        features.insert(Feature::with_in_memory_path("b.rb".into()));
+        features.insert(Feature::with_in_memory_path("c.rb".into()));
+        features.insert(Feature::with_in_memory_path("d.rb".into()));
+        features.insert(Feature::with_in_memory_path("e.rb".into()));
+        features.insert(Feature::with_in_memory_path("f.rb".into()));
+        features.insert(Feature::with_in_memory_path("g.rb".into()));
+
+        assert_eq!(features.len(), 7);
+
+        let paths = features.iter().collect::<Vec<_>>();
+        assert_eq!(paths.len(), 7);
+        assert_eq!(
+            paths,
+            &[
+                Path::new("a.rb"),
+                Path::new("b.rb"),
+                Path::new("c.rb"),
+                Path::new("d.rb"),
+                Path::new("e.rb"),
+                Path::new("f.rb"),
+                Path::new("g.rb"),
+            ]
+        );
+    }
+
+    #[test]
+    fn features_iter_yields_all_features() {
+        let mut features = LoadedFeatures::new();
+        features.insert(Feature::with_in_memory_path("a.rb".into()));
+        features.insert(Feature::with_in_memory_path("b.rb".into()));
+        features.insert(Feature::with_in_memory_path("c.rb".into()));
+        features.insert(Feature::with_in_memory_path("d.rb".into()));
+        features.insert(Feature::with_in_memory_path("e.rb".into()));
+        features.insert(Feature::with_in_memory_path("f.rb".into()));
+        features.insert(Feature::with_in_memory_path("g.rb".into()));
+
+        assert_eq!(features.len(), 7);
+
+        let mut feats = features.features().collect::<Vec<_>>();
+        assert_eq!(feats.len(), 7);
+
+        feats.sort_unstable_by_key(|f| f.path());
+        let paths = feats.into_iter().map(Feature::path).collect::<Vec<_>>();
+        assert_eq!(
+            paths,
+            &[
+                Path::new("a.rb"),
+                Path::new("b.rb"),
+                Path::new("c.rb"),
+                Path::new("d.rb"),
+                Path::new("e.rb"),
+                Path::new("f.rb"),
+                Path::new("g.rb"),
+            ]
+        );
     }
 }

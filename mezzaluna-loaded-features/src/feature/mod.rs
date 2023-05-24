@@ -66,8 +66,8 @@ impl Feature {
     /// # Examples
     ///
     /// ```
-    /// # use std::path::Path;
-    /// use mezzaluna_feature_loader::Feature;
+    /// use std::path::Path;
+    /// use mezzaluna_loaded_features::Feature;
     ///
     /// let feature = Feature::with_in_memory_path("/src/_lib/test.rb".into());
     /// assert_eq!(feature.path(), Path::new("/src/_lib/test.rb"));
@@ -87,8 +87,8 @@ impl Feature {
     /// # Examples
     ///
     /// ```
-    /// # use std::path::Path;
-    /// use mezzaluna_feature_loader::Feature;
+    /// use std::path::Path;
+    /// use mezzaluna_loaded_features::Feature;
     ///
     /// let feature = Feature::with_in_memory_path("/src/_lib/test.rb".into());
     /// assert_eq!(feature.path(), Path::new("/src/_lib/test.rb"));

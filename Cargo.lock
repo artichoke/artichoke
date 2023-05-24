@@ -438,16 +438,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
-name = "mezzaluna-feature-loader"
-version = "0.8.0"
-dependencies = [
- "same-file",
- "scolapasta-path",
-]
-
-[[package]]
 name = "mezzaluna-load-path"
 version = "0.1.0"
+
+[[package]]
+name = "mezzaluna-loaded-features"
+version = "0.9.0"
+dependencies = [
+ "same-file",
+]
 
 [[package]]
 name = "mezzaluna-type-registry"
