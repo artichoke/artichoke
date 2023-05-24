@@ -1,7 +1,6 @@
 use alloc::boxed::Box;
 use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
-use core::borrow::Borrow;
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
 use core::ops::{Deref, DerefMut, RangeBounds};
@@ -91,13 +90,6 @@ impl DerefMut for Buf {
         // SAFETY: the mutable reference given out is a slice, NOT the
         // underlying `Vec`, so the allocation cannot change size.
         &mut self.inner
-    }
-}
-
-impl Borrow<[u8]> for Buf {
-    #[inline]
-    fn borrow(&self) -> &[u8] {
-        &self.inner
     }
 }
 
