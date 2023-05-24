@@ -457,7 +457,7 @@ mrb_sys_value_is_dead(mrb_state *mrb, mrb_value value)
   return mrb_object_dead_p(mrb, ptr);
 }
 
-MRB_API int
+MRB_API size_t
 mrb_sys_gc_live_objects(mrb_state *mrb)
 {
   mrb_gc *gc = &mrb->gc;
