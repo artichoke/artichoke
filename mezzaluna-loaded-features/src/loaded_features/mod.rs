@@ -547,4 +547,65 @@ mod tests {
             &[Path::new("Cargo.toml"), Path::new("LICENSE"), Path::new("README.md")]
         );
     }
+
+    #[test]
+    fn iter_yields_paths_in_insertion_order() {
+        let mut features = LoadedFeatures::new();
+        features.insert(Feature::with_in_memory_path("a.rb".into()));
+        features.insert(Feature::with_in_memory_path("b.rb".into()));
+        features.insert(Feature::with_in_memory_path("c.rb".into()));
+        features.insert(Feature::with_in_memory_path("d.rb".into()));
+        features.insert(Feature::with_in_memory_path("e.rb".into()));
+        features.insert(Feature::with_in_memory_path("f.rb".into()));
+        features.insert(Feature::with_in_memory_path("g.rb".into()));
+
+        assert_eq!(features.len(), 7);
+
+        let paths = features.iter().collect::<Vec<_>>();
+        assert_eq!(paths.len(), 7);
+        assert_eq!(
+            paths,
+            &[
+                Path::new("a.rb"),
+                Path::new("b.rb"),
+                Path::new("c.rb"),
+                Path::new("d.rb"),
+                Path::new("e.rb"),
+                Path::new("f.rb"),
+                Path::new("g.rb"),
+            ]
+        );
+    }
+
+    #[test]
+    fn features_iter_yields_all_features() {
+        let mut features = LoadedFeatures::new();
+        features.insert(Feature::with_in_memory_path("a.rb".into()));
+        features.insert(Feature::with_in_memory_path("b.rb".into()));
+        features.insert(Feature::with_in_memory_path("c.rb".into()));
+        features.insert(Feature::with_in_memory_path("d.rb".into()));
+        features.insert(Feature::with_in_memory_path("e.rb".into()));
+        features.insert(Feature::with_in_memory_path("f.rb".into()));
+        features.insert(Feature::with_in_memory_path("g.rb".into()));
+
+        assert_eq!(features.len(), 7);
+
+        let mut feats = features.features().collect::<Vec<_>>();
+        assert_eq!(feats.len(), 7);
+
+        feats.sort_unstable_by_key(|f| f.path());
+        let paths = feats.into_iter().map(Feature::path).collect::<Vec<_>>();
+        assert_eq!(
+            paths,
+            &[
+                Path::new("a.rb"),
+                Path::new("b.rb"),
+                Path::new("c.rb"),
+                Path::new("d.rb"),
+                Path::new("e.rb"),
+                Path::new("f.rb"),
+                Path::new("g.rb"),
+            ]
+        );
+    }
 }
