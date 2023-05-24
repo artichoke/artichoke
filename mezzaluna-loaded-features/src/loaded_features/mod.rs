@@ -492,6 +492,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "disk")]
     #[should_panic(expected = "duplicate feature inserted at Cargo.toml")]
     fn duplicate_disk_insert_panics() {
         use same_file::Handle;
@@ -517,6 +518,7 @@ mod tests {
     // => false
     // ```
     #[test]
+    #[cfg(feature = "disk")]
     #[should_panic(expected = "duplicate feature inserted at src/../Cargo.toml")]
     fn duplicate_disk_insert_with_different_path_panics() {
         use same_file::Handle;
@@ -542,6 +544,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "disk")]
     fn insert_multiple_disk_features() {
         use same_file::Handle;
 
