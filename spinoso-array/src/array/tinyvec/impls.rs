@@ -1,4 +1,3 @@
-use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
 use core::slice::SliceIndex;
 
@@ -21,26 +20,6 @@ where
     #[inline]
     fn as_mut(&mut self) -> &mut [T] {
         self.0.as_mut()
-    }
-}
-
-impl<T> Borrow<[T]> for TinyArray<T>
-where
-    T: Default,
-{
-    #[inline]
-    fn borrow(&self) -> &[T] {
-        self.0.borrow()
-    }
-}
-
-impl<T> BorrowMut<[T]> for TinyArray<T>
-where
-    T: Default,
-{
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut [T] {
-        self.0.borrow_mut()
     }
 }
 

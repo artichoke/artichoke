@@ -83,7 +83,6 @@ mod readme {}
 #[cfg(any(feature = "std", test, doctest))]
 extern crate std;
 
-use core::borrow::Borrow;
 use core::fmt;
 use core::num::TryFromIntError;
 
@@ -166,12 +165,6 @@ impl std::error::Error for SymbolOverflowError {}
 /// `Symbol`s are not constrained to the interner which created them.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Symbol(u32);
-
-impl Borrow<u32> for Symbol {
-    fn borrow(&self) -> &u32 {
-        &self.0
-    }
-}
 
 impl Symbol {
     /// Construct a new `Symbol` from the given `u32`.

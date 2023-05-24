@@ -527,7 +527,7 @@ checksum = "f27f6278552951f1f2b8cf9da965d10969b2efdea95a6ec47987ab46edfe263a"
 
 [[package]]
 name = "spinoso-array"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "raw-parts",
 ]
@@ -602,7 +602,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-symbol"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "artichoke-core",
  "bstr",

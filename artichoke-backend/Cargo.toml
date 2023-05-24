@@ -28,7 +28,7 @@ scolapasta-aref = { version = "0.1.0", path = "../scolapasta-aref" }
 scolapasta-int-parse = { version = "0.2.2", path = "../scolapasta-int-parse", default-features = false }
 scolapasta-path = { version = "0.5.0", path = "../scolapasta-path" }
 scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
-spinoso-array = { version = "0.9.0", path = "../spinoso-array", default-features = false }
+spinoso-array = { version = "0.10.0", path = "../spinoso-array", default-features = false }
 spinoso-env = { version = "0.2.0", path = "../spinoso-env", optional = true, default-features = false }
 spinoso-exception = { version = "0.1.0", path = "../spinoso-exception" }
 spinoso-math = { version = "0.3.0", path = "../spinoso-math", optional = true, default-features = false }
@@ -36,7 +36,7 @@ spinoso-random = { version = "0.3.0", path = "../spinoso-random", optional = tru
 spinoso-regexp = { version = "0.5.0", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", optional = true }
 spinoso-string = { version = "0.22.0", path = "../spinoso-string", features = ["always-nul-terminated-c-string-compat"] }
-spinoso-symbol = { version = "0.3.0", path = "../spinoso-symbol" }
+spinoso-symbol = { version = "0.4.0", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.7.1", path = "../spinoso-time", features = ["tzrs"], default-features = false, optional = true }
 
 [dev-dependencies]
