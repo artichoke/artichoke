@@ -41,8 +41,13 @@ use crate::Feature;
 /// aliased to `$"`.
 ///
 /// `$LOADED_FEATURES` is an append only set. Disk-based features are
-/// deduplicated by their real position on the underlying file system (i.e. their
-/// device and inode).
+/// deduplicated by their real position on the underlying file system (i.e.
+/// their device and inode).
+///
+/// Ruby uses a feature's presence in the loaded features set to determine
+/// whether a require has side effects (i.e. a file can be required multiple
+/// times but is only evaluated once). This container deduplicates paths given
+/// to `require` by the underlying file on disk.
 ///
 /// # Examples
 ///
@@ -503,6 +508,15 @@ mod tests {
         }
     }
 
+    // ```shell
+    // $ echo 'puts __FILE__' > a.rb
+    // $ irb
+    // [3.2.2] > require './a.rb'
+    // /Users/lopopolo/dev/artichoke/artichoke/a.rb
+    // => true
+    // [3.2.2] > require '../artichoke/a.rb'
+    // => false
+    // ```
     #[test]
     #[should_panic(expected = "duplicate feature inserted at src/../Cargo.toml")]
     fn duplicate_disk_insert_with_different_path_panics() {
