@@ -519,7 +519,14 @@ mod tests {
     // ```
     #[test]
     #[cfg(feature = "disk")]
-    #[should_panic(expected = "duplicate feature inserted at src/../Cargo.toml")]
+    #[cfg_attr(
+        not(windows),
+        should_panic(expected = "duplicate feature inserted at src/../Cargo.toml")
+    )]
+    #[cfg_attr(
+        windows,
+        should_panic(expected = "duplicate feature inserted at src\\..\\Cargo.toml")
+    )]
     fn duplicate_disk_insert_with_different_path_panics() {
         use same_file::Handle;
 
