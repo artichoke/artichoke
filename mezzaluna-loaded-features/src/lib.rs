@@ -20,13 +20,29 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 
-//! Ruby feature loader.
+//! A container for storing loaded features in a Ruby VM.
 //!
-//! An Artichoke Ruby VM may load code (called "features") with several
+//! The Artichoke Ruby VM may load code (called "features") with several
 //! strategies. Features can be loaded from an in-memory virtual file system
-//! which can also store native extensions, natively from local disk, or via a
-//! set of search paths given by the `RUBYLIB` environment variable on
-//! interpreter boot.
+//! (which can also store native extensions) or natively from local disk.
+//!
+//! The data structures in this crate track which features have been loaded
+//! with support for deduplicating features which may reside at multiple paths.
+//!
+//! # Examples
+//!
+//! ```
+//! use mezzaluna_loaded_features::{Feature, LoadedFeatures};
+//!
+//! let mut features = LoadedFeatures::new();
+//! features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
+//! features.insert(Feature::with_in_memory_path("set.rb".into()));
+//! features.insert(Feature::with_in_memory_path("artichoke.rb".into()));
+//!
+//! for f in features.features() {
+//!     println!("Loaded feature at: {}", f.path().display());
+//! }
+//! ```
 
 mod feature;
 pub mod loaded_features;

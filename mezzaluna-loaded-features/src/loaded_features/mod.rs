@@ -2,7 +2,7 @@
 //!
 //! Ruby tracks which files and native extensions have been [required] in a
 //! global variable called `$LOADED_FEATURES`, which is aliased to `$"`.
-//! `$LOADED_FEATURES` is an Array of paths which point to these Ruby sources
+//! `$LOADED_FEATURES` is an `Array` of paths which point to these Ruby sources
 //! and native extensions.
 //!
 //! This module exposes an append-only, insertion order-preserving, set-like
@@ -47,7 +47,7 @@ use crate::Feature;
 /// # Examples
 ///
 /// ```
-/// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+/// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
 ///
 /// let mut features = LoadedFeatures::new();
 /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
@@ -84,7 +84,7 @@ impl LoadedFeatures<RandomState> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let features = LoadedFeatures::new();
     /// assert!(features.is_empty());
@@ -106,7 +106,7 @@ impl LoadedFeatures<RandomState> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let features = LoadedFeatures::with_capacity(10);
     /// assert!(features.capacity() >= 10);
@@ -126,7 +126,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let features = LoadedFeatures::with_capacity(100);
     /// assert!(features.capacity() >= 100);
@@ -142,7 +142,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
     /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
@@ -165,7 +165,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
     /// features.insert(Feature::with_in_memory_path("/src/_lib/test.rb".into()));
@@ -187,7 +187,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
     /// assert_eq!(features.len(), 0);
@@ -205,7 +205,7 @@ impl<S> LoadedFeatures<S> {
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
     /// assert!(features.is_empty());
@@ -236,11 +236,11 @@ impl<S> LoadedFeatures<S> {
     /// ```
     /// use std::collections::hash_map::RandomState;
     ///
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let s = RandomState::new();
-    /// let mut set = LoadedFeatures::with_hasher(s);
-    /// set.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// let mut features = LoadedFeatures::with_hasher(s);
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
     /// ```
     #[must_use]
     pub fn with_hasher(hasher: S) -> Self {
@@ -269,11 +269,11 @@ impl<S> LoadedFeatures<S> {
     /// ```
     /// use std::collections::hash_map::RandomState;
     ///
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let s = RandomState::new();
-    /// let mut set = LoadedFeatures::with_capacity_and_hasher(10, s);
-    /// set.insert(Feature::with_in_memory_path("set.rb".into()));
+    /// let mut features = LoadedFeatures::with_capacity_and_hasher(10, s);
+    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
     /// ```
     #[must_use]
     pub fn with_capacity_and_hasher(capacity: usize, hasher: S) -> Self {
@@ -289,11 +289,11 @@ impl<S> LoadedFeatures<S> {
     /// ```
     /// use std::collections::hash_map::RandomState;
     ///
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let s = RandomState::new();
-    /// let set = LoadedFeatures::with_hasher(s);
-    /// let hasher: &RandomState = set.hasher();
+    /// let features = LoadedFeatures::with_hasher(s);
+    /// let hasher: &RandomState = features.hasher();
     /// ```
     #[must_use]
     pub fn hasher(&self) -> &S {
@@ -316,7 +316,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let mut features = LoadedFeatures::new();
     /// features.reserve(10);
@@ -341,7 +341,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::LoadedFeatures;
+    /// use mezzaluna_loaded_features::LoadedFeatures;
     ///
     /// let mut features = LoadedFeatures::new();
     /// features
@@ -363,7 +363,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::with_capacity(100);
     /// features.insert(Feature::with_in_memory_path("set.rb".into()));
@@ -388,7 +388,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::with_capacity(100);
     /// features.insert(Feature::with_in_memory_path("set.rb".into()));
@@ -412,15 +412,15 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
-    /// let feature = Feature::with_in_memory_path("set.rb".into());
+    /// let set_feature = Feature::with_in_memory_path("set.rb".into());
     ///
-    /// assert!(!features.contains(&feature));
+    /// assert!(!features.contains(&set_feature));
     ///
-    /// features.insert(Feature::with_in_memory_path("set.rb".into()));
-    /// assert!(features.contains(&feature));
+    /// features.insert(set_feature);
+    /// assert_eq!(features.len(), 1);
     /// ```
     #[must_use]
     pub fn contains(&self, feature: &Feature) -> bool {
@@ -436,11 +436,11 @@ where
     /// # Examples
     ///
     /// ```
-    /// use mezzaluna_feature_loader::{Feature, LoadedFeatures};
+    /// use mezzaluna_loaded_features::{Feature, LoadedFeatures};
     ///
     /// let mut features = LoadedFeatures::new();
-    /// let feature = Feature::with_in_memory_path("set.rb".into());
-    /// features.insert(feature);
+    /// let set_feature = Feature::with_in_memory_path("set.rb".into());
+    /// features.insert(set_feature);
     ///
     /// assert_eq!(features.len(), 1);
     /// ```
