@@ -46,8 +46,7 @@ use crate::Feature;
 ///
 /// Ruby uses a feature's presence in the loaded features set to determine
 /// whether a require has side effects (i.e. a file can be required multiple
-/// times but is only evaluated once). This container deduplicates paths given
-/// to `require` by the underlying file on disk.
+/// times but is only evaluated once).
 ///
 /// # Examples
 ///
