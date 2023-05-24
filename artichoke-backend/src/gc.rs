@@ -25,7 +25,7 @@ pub trait MrbGarbageCollection {
     /// Retrieve the number of live objects on the interpreter heap.
     ///
     /// A live object is reachable via top self, the stack, or the arena.
-    fn live_object_count(&mut self) -> i32;
+    fn live_object_count(&mut self) -> usize;
 
     /// Mark a [`Value`] as reachable in the mruby garbage collector.
     fn mark_value(&mut self, value: &Value) -> Result<(), Error>;
@@ -65,7 +65,7 @@ impl MrbGarbageCollection for Artichoke {
         ArenaIndex::new(self)
     }
 
-    fn live_object_count(&mut self) -> i32 {
+    fn live_object_count(&mut self) -> usize {
         let live_objects = unsafe { self.with_ffi_boundary(|mrb| sys::mrb_sys_gc_live_objects(mrb)) };
         live_objects.unwrap_or(0)
     }
