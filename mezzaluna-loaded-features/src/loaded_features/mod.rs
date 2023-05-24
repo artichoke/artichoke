@@ -458,13 +458,93 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::{Feature, LoadedFeatures};
 
     #[test]
     #[should_panic(expected = "duplicate feature inserted at set.rb")]
-    fn duplicate_insert_panics() {
+    fn duplicate_memory_insert_panics() {
         let mut features = LoadedFeatures::new();
         features.insert(Feature::with_in_memory_path("set.rb".into()));
         features.insert(Feature::with_in_memory_path("set.rb".into()));
+    }
+
+    #[test]
+    #[should_panic(expected = "duplicate feature inserted at Cargo.toml")]
+    fn duplicate_disk_insert_panics() {
+        use same_file::Handle;
+
+        let mut features = LoadedFeatures::new();
+        loop {
+            let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+            let handle = Handle::from_path(&path).unwrap();
+            features.insert(Feature::with_handle_and_path(
+                handle,
+                path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+            ));
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "duplicate feature inserted at src/../Cargo.toml")]
+    fn duplicate_disk_insert_with_different_path_panics() {
+        use same_file::Handle;
+
+        let mut features = LoadedFeatures::new();
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("..")
+            .join("Cargo.toml");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+    }
+
+    #[test]
+    fn insert_multiple_disk_features() {
+        use same_file::Handle;
+
+        let mut features = LoadedFeatures::new();
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("LICENSE");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("README.md");
+        let handle = Handle::from_path(&path).unwrap();
+        features.insert(Feature::with_handle_and_path(
+            handle,
+            path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap().to_owned(),
+        ));
+
+        assert_eq!(features.len(), 3);
+
+        let paths = features.iter().collect::<Vec<_>>();
+        assert_eq!(paths.len(), 3);
+        assert_eq!(
+            paths,
+            &[Path::new("Cargo.toml"), Path::new("LICENSE"), Path::new("README.md")]
+        );
     }
 }
