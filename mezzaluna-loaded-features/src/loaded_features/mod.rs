@@ -471,6 +471,23 @@ mod tests {
     }
 
     #[test]
+    fn insert_multiple_memort_features() {
+        let mut features = LoadedFeatures::new();
+        features.insert(Feature::with_in_memory_path("set.rb".into()));
+        features.insert(Feature::with_in_memory_path("hash.rb".into()));
+        features.insert(Feature::with_in_memory_path("artichoke.rb".into()));
+
+        assert_eq!(features.len(), 3);
+
+        let paths = features.iter().collect::<Vec<_>>();
+        assert_eq!(paths.len(), 3);
+        assert_eq!(
+            paths,
+            &[Path::new("set.rb"), Path::new("hash.rb"), Path::new("artichoke.rb")]
+        );
+    }
+
+    #[test]
     #[should_panic(expected = "duplicate feature inserted at Cargo.toml")]
     fn duplicate_disk_insert_panics() {
         use same_file::Handle;
