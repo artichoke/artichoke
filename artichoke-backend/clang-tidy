@@ -15,7 +15,11 @@ if command -v brew &>/dev/null; then
   fi
 fi
 
-exec clang-tidy `find cext -type f \( -name '*.h' -or -name '*.c' \)` \
+while IFS= read -r line; do
+  sources+=("$line")
+done < <(find cext -type f \( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or -name '*.cc' -or -name '*.cpp' \))
+
+exec clang-tidy "${sources[@]}" \
   '-checks=-*,
   clang-analyzer-*,
   concurrency-*,
