@@ -1,6 +1,6 @@
 [package]
 name = "mezzaluna-loaded-features"
-version = "0.8.0"
+version = "0.9.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Types for tracking the state of a Ruby $LOAD_PATH"
 keywords = ["artichoke", "artichoke-ruby", "load-path", "ruby"]
