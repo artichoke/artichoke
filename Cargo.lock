@@ -446,7 +446,6 @@ name = "mezzaluna-loaded-features"
 version = "0.9.0"
 dependencies = [
  "same-file",
- "scolapasta-path",
 ]
 
 [[package]]
