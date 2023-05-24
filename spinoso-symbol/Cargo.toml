@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-symbol"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = """
 Symbol implementation for Ruby Symbol core type in Artichoke Ruby
