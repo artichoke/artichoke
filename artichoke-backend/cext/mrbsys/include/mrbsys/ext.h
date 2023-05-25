@@ -142,7 +142,7 @@ MRB_API bool mrb_sys_gc_enable(mrb_state *mrb);
 
 MRB_API bool mrb_sys_value_is_dead(mrb_state *_mrb, mrb_value value);
 
-MRB_API int mrb_sys_gc_live_objects(mrb_state *mrb);
+MRB_API size_t mrb_sys_gc_live_objects(mrb_state *mrb);
 
 MRB_API void mrb_sys_safe_gc_mark(mrb_state *mrb, mrb_value value);
 

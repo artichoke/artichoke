@@ -253,7 +253,7 @@ mrb_sys_raise_current_exception(struct mrb_state *mrb)
 MRB_API mrb_value
 mrb_sys_alloc_rarray(struct mrb_state *mrb, mrb_value *ptr, mrb_int len, mrb_int capa)
 {
-  struct RArray *a;
+  struct RArray *a = NULL;
 
   a = (struct RArray *)mrb_obj_alloc(mrb, MRB_TT_ARRAY, mrb->array_class);
 
@@ -317,7 +317,7 @@ mrb_ary_subseq(mrb_state *mrb, mrb_value ary, mrb_int beg, mrb_int len)
 MRB_API mrb_value
 mrb_sys_alloc_rstring(struct mrb_state *mrb, char *ptr, mrb_int len, mrb_int capa)
 {
-  struct RString *s;
+  struct RString *s = NULL;
 
   s = (struct RString *)mrb_obj_alloc(mrb, MRB_TT_STRING, mrb->string_class);
 
@@ -374,7 +374,7 @@ mrb_obj_as_string(mrb_state *mrb, mrb_value obj)
     case MRB_TT_SYMBOL:
       return mrb_sym_str(mrb, mrb_symbol(obj));
     case MRB_TT_INTEGER:
-      // NOLINTNEXTLINE(readability-magic-numbers): print in base 10
+      // NOLINTNEXTLINE(cppcoreguidelines-avoid-magic-numbers, readability-magic-numbers): base 10
       return mrb_integer_to_str(mrb, obj, 10);
     case MRB_TT_SCLASS:
     case MRB_TT_CLASS:
@@ -457,7 +457,7 @@ mrb_sys_value_is_dead(mrb_state *mrb, mrb_value value)
   return mrb_object_dead_p(mrb, ptr);
 }
 
-MRB_API int
+MRB_API size_t
 mrb_sys_gc_live_objects(mrb_state *mrb)
 {
   mrb_gc *gc = &mrb->gc;

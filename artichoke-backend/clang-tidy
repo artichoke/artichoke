@@ -21,8 +21,11 @@ done < <(find cext -type f \( -name '*.h' -or -name '*.hpp' -or -name '*.c' -or 
 
 exec clang-tidy "${sources[@]}" \
   '-checks=-*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
   clang-analyzer-*,
   concurrency-*,
+  cppcoreguidelines-*,
   google-*,
   llvm-*,
   -llvm-include-order,

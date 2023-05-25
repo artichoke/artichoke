@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-backend"
-version = "0.23.0"
+version = "0.24.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Embeddable VM implementation for Artichoke Ruby"
 keywords = ["artichoke", "artichoke-ruby", "mruby", "ruby"]
