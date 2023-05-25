@@ -253,7 +253,7 @@ mrb_sys_raise_current_exception(struct mrb_state *mrb)
 MRB_API mrb_value
 mrb_sys_alloc_rarray(struct mrb_state *mrb, mrb_value *ptr, mrb_int len, mrb_int capa)
 {
-  struct RArray *a;
+  struct RArray *a = NULL;
 
   a = (struct RArray *)mrb_obj_alloc(mrb, MRB_TT_ARRAY, mrb->array_class);
 
@@ -317,7 +317,7 @@ mrb_ary_subseq(mrb_state *mrb, mrb_value ary, mrb_int beg, mrb_int len)
 MRB_API mrb_value
 mrb_sys_alloc_rstring(struct mrb_state *mrb, char *ptr, mrb_int len, mrb_int capa)
 {
-  struct RString *s;
+  struct RString *s = NULL;
 
   s = (struct RString *)mrb_obj_alloc(mrb, MRB_TT_STRING, mrb->string_class);
 
