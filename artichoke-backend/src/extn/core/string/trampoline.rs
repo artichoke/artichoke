@@ -586,10 +586,24 @@ pub fn byteindex(
     offset: Option<Value>,
 ) -> Result<Value, Error> {
     #[cfg(feature = "core-regexp")]
-    if let Ok(_pattern) = unsafe { Regexp::unbox_from_value(&mut substring, interp) } {
-        return Err(NotImplementedError::from("String#byteindex with Regexp pattern").into());
-    }
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    if let Ok(pattern) = unsafe { Regexp::unbox_from_value(&mut substring, interp) } {
+        let offset_number = match implicitly_convert_to_int(interp, offset.into()) {
+            Err(_) => None,
+            Ok(value) => Some(value),
+        };
+
+        let mut matches = pattern.match_(interp, Some(s.as_slice()), offset_number, None)?;
+        if matches.is_nil() {
+            return Ok(Value::nil());
+        }
+        let first_ocurrence = unsafe { MatchData::unbox_from_value(&mut matches, interp)? };
+        let ocurrence_index = first_ocurrence.begin(matchdata::Capture::GroupIndex(0)).unwrap();
+        match ocurrence_index {
+            None => return Ok(Value::nil()),
+            Some(n) => return Ok(interp.convert(n as i64)),
+        }
+    }
     let needle = unsafe { implicitly_convert_to_string(interp, &mut substring)? };
     let offset = if let Some(offset) = offset {
         let offset = implicitly_convert_to_int(interp, offset)?;
