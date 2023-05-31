@@ -115,7 +115,13 @@ pub fn at(
 }
 
 pub fn mkutc(interp: &mut Artichoke, args: &mut [Value]) -> Result<Value, Error> {
-    let args: Args = interp.try_convert_mut(args)?;
+    let mut args: Args = interp.try_convert_mut(args)?;
+
+    let wrap_leap_second = args.second == 60;
+
+    if wrap_leap_second {
+        args.second -= 1;
+    }
 
     let time = Time::utc(
         args.year,
@@ -127,11 +133,23 @@ pub fn mkutc(interp: &mut Artichoke, args: &mut [Value]) -> Result<Value, Error>
         args.nanoseconds,
     )?;
 
-    Time::alloc_value(time, interp)
+    let result = Time::alloc_value(time, interp)?;
+
+    if wrap_leap_second {
+        plus(interp, result, interp.convert(1))
+    } else {
+        Ok(result)
+    }
 }
 
 pub fn mktime(interp: &mut Artichoke, args: &mut [Value]) -> Result<Value, Error> {
-    let args: Args = interp.try_convert_mut(args)?;
+    let mut args: Args = interp.try_convert_mut(args)?;
+
+    let wrap_leap_second = args.second == 60;
+
+    if wrap_leap_second {
+        args.second -= 1;
+    }
 
     let time = Time::local(
         args.year,
@@ -143,7 +161,13 @@ pub fn mktime(interp: &mut Artichoke, args: &mut [Value]) -> Result<Value, Error
         args.nanoseconds,
     )?;
 
-    Time::alloc_value(time, interp)
+    let result = Time::alloc_value(time, interp)?;
+
+    if wrap_leap_second {
+        plus(interp, result, interp.convert(1))
+    } else {
+        Ok(result)
+    }
 }
 
 // Core
