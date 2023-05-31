@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# TODO: Properly implement this class now that Artichoke has encoding support.
 class Encoding
   class CompatibilityError < StandardError; end
 
@@ -20,50 +19,4 @@ class Encoding
   UTF_8 = new('UTF-8')
   UTF_16LE = new('UTF-16LE')
   UTF_32BE = new('UTF-32BE')
-
-  def self.default_external
-    UTF_8
-  end
-
-  def self.default_external=(_enc)
-    UTF_8
-  end
-
-  def self.default_internal
-    UTF_8
-  end
-
-  def self.default_internal=(_enc)
-    UTF_8
-  end
-
-  def self.find(string)
-    new(string)
-  end
-
-  attr_reader :name
-
-  def ascii_compatible?
-    true
-  end
-
-  def dummy?
-    true
-  end
-
-  def inspect
-    "#<#{self.class}:#{@name}>"
-  end
-
-  def names
-    [name]
-  end
-
-  def replicate(name)
-    new(name)
-  end
-
-  def to_s
-    name
-  end
 end

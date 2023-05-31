@@ -11,9 +11,16 @@
 //!
 //! [`Encoding`]: https://ruby-doc.org/3.1.2/Encoding.html
 
-pub(in crate::extn) mod mruby;
+use spinoso_string::Encoding;
 
-struct Encoding {}
+use crate::convert::HeapAllocatedData;
+
+pub(in crate::extn) mod mruby;
+pub(super) mod trampoline;
+
+impl HeapAllocatedData for Encoding {
+    const RUBY_TYPE: &'static str = "Encoding";
+}
 
 #[cfg(test)]
 mod tests {
