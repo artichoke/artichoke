@@ -64,9 +64,10 @@ pub fn names(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-pub fn replicate(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
+pub fn replicate(interp: &mut Artichoke, encoding: Value, target: Value) -> Result<Value, Error> {
     let _ = interp;
     let _ = encoding;
+    let _ = target;
     Err(NotImplementedError::new().into())
 }
 

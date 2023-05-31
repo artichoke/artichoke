@@ -160,10 +160,11 @@ unsafe extern "C" fn encoding_names(mrb: *mut sys::mrb_state, slf: sys::mrb_valu
 }
 
 unsafe extern "C" fn encoding_replicate(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
+    let target = mrb_get_args!(mrb, required = 1);
     unwrap_interpreter!(mrb, to => guard);
     let encoding = Value::from(slf);
-    let result = trampoline::replicate(&mut guard, encoding);
+    let target = Value::from(target);
+    let result = trampoline::replicate(&mut guard, encoding, target);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
