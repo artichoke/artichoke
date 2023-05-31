@@ -180,6 +180,8 @@ def string_byteindex
   raise unless s.byteindex(/f/, 2).nil?
   raise unless s.byteindex(/o/, 1) == 1
   raise unless s.byteindex(/o/, 2) == 2
+
+  raise unless 'abcdef'.byteindex(/(c).*(f)/, 2) == 2
 end
 
 def string_scan

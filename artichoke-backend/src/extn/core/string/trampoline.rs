@@ -585,23 +585,26 @@ pub fn byteindex(
     mut substring: Value,
     offset: Option<Value>,
 ) -> Result<Value, Error> {
-    #[cfg(feature = "core-regexp")]
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+    #[cfg(feature = "core-regexp")]
     if let Ok(pattern) = unsafe { Regexp::unbox_from_value(&mut substring, interp) } {
-        let offset_number = match implicitly_convert_to_int(interp, offset.into()) {
-            Err(_) => None,
-            Ok(value) => Some(value),
+        let offset_number = if let Some(offset) = offset {
+            Some(implicitly_convert_to_int(interp, offset)?)
+        } else {
+            None
         };
 
+        // offset_number is a byte offset into the search string, not an offset into the capture
+        // group used. This is confirmed by playing around with MRI irb.
         let mut matches = pattern.match_(interp, Some(s.as_slice()), offset_number, None)?;
         if matches.is_nil() {
             return Ok(Value::nil());
         }
         let first_ocurrence = unsafe { MatchData::unbox_from_value(&mut matches, interp)? };
-        let ocurrence_index = first_ocurrence.begin(matchdata::Capture::GroupIndex(0)).unwrap();
+        let ocurrence_index = first_ocurrence.begin(matchdata::Capture::GroupIndex(0))?;
         match ocurrence_index {
+            Some(n) => return interp.try_convert(n),
             None => return Ok(Value::nil()),
-            Some(n) => return Ok(interp.convert(n as i64)),
         }
     }
     let needle = unsafe { implicitly_convert_to_string(interp, &mut substring)? };
