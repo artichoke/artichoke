@@ -5,6 +5,8 @@ use crate::extn::core::string::{Encoding as SpinosoEncoding, String};
 
 use crate::extn::prelude::*;
 
+pub(super) const AVAILABLE_ENCODINGS: [Encoding; 3] = [Encoding::Utf8, Encoding::Ascii, Encoding::Binary];
+
 pub fn aliases(interp: &mut Artichoke) -> Result<Value, Error> {
     let _ = interp;
     Err(NotImplementedError::new().into())
