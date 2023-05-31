@@ -50,10 +50,11 @@ pub fn dummy(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-pub fn inspect(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = encoding;
-    Err(NotImplementedError::new().into())
+pub fn inspect(interp: &mut Artichoke, mut encoding: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut encoding, interp)? };
+
+    let result = encoding.inspect();
+    interp.try_convert_mut(result)
 }
 
 pub fn name(interp: &mut Artichoke, mut encoding: Value) -> Result<Value, Error> {
