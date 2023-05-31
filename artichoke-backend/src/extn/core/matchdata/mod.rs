@@ -14,7 +14,7 @@ use std::fmt::Write as _;
 use std::ops::{Bound, RangeBounds};
 use std::str;
 
-use bstr::BString;
+use bstr::{BString, ByteSlice};
 use scolapasta_string_escape::format_debug_escape_into;
 
 use crate::convert::{implicitly_convert_to_int, implicitly_convert_to_string};
@@ -308,7 +308,12 @@ impl MatchData {
             } else {
                 haystack.len()
             };
-            let offset = self.region.offset();
+            let offset = self
+                .haystack
+                .char_indices()
+                .position(|n| n.0 >= self.region.offset())
+                .unwrap();
+
             Ok(Some([offset + begin, offset + end]))
         } else {
             Ok(None)
@@ -361,5 +366,22 @@ impl MatchData {
     pub fn to_s(&self) -> Result<Option<&[u8]>, Error> {
         let haystack = self.matched_region();
         self.regexp.inner().capture0(haystack)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test::prelude::*;
+
+    const SUBJECT: &str = "MatchData";
+    const FUNCTIONAL_TEST: &[u8] = include_bytes!("matchdata_test.rb");
+
+    #[test]
+    fn functional() {
+        let mut interp = interpreter();
+        let result = interp.eval(FUNCTIONAL_TEST);
+        unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
+        let result = interp.eval(b"spec");
+        unwrap_or_panic_with_backtrace(&mut interp, SUBJECT, result);
     }
 }
