@@ -6,6 +6,7 @@ def spec
   string_match_operator
   string_element_reference_regexp
   string_byteslice
+  string_byteindex
   string_scan
   string_unary_minus
   string_reverse
@@ -161,6 +162,26 @@ def string_byteslice
   raise unless s.byteslice(-10..-11) == ''
   raise unless s.byteslice(-1..-11) == ''
   raise unless s.byteslice(-1..-2) == ''
+end
+
+def string_byteindex
+  s = 'foo'
+  raise unless s.byteindex('f').zero?
+  raise unless s.byteindex('o') == 1
+  raise unless s.byteindex('oo') == 1
+  raise unless s.byteindex('ooo').nil?
+
+  raise unless s.byteindex(/z/).nil?
+  raise unless s.byteindex(/f/).zero?
+  raise unless s.byteindex(/o/) == 1
+  raise unless s.byteindex(/oo/) == 1
+  raise unless s.byteindex(/ooo/).nil?
+
+  raise unless s.byteindex(/f/, 2).nil?
+  raise unless s.byteindex(/o/, 1) == 1
+  raise unless s.byteindex(/o/, 2) == 2
+
+  raise unless 'abcdef'.byteindex(/(c).*(f)/, 2) == 2
 end
 
 def string_scan
