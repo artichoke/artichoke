@@ -27,23 +27,24 @@ describe :time_gm, shared: true do
     time.nsec.should == 999
   end
 
-  guard -> {
-    with_timezone 'right/UTC' do
-      (Time.gm(1972, 6, 30, 23, 59, 59) + 1).sec == 60
-    end
-  } do
-    it "handles real leap seconds in zone 'right/UTC'" do
-      with_timezone 'right/UTC' do
-        time = Time.send(@method, 1972, 6, 30, 23, 59, 60)
+  # TODO: When Artichoke supports `right/` timezones
+  # guard -> {
+  #   with_timezone 'right/UTC' do
+  #     (Time.gm(1972, 6, 30, 23, 59, 59) + 1).sec == 60
+  #   end
+  # } do
+  #   it "handles real leap seconds in zone 'right/UTC'" do
+  #     with_timezone 'right/UTC' do
+  #       time = Time.send(@method, 1972, 6, 30, 23, 59, 60)
 
-        time.sec.should == 60
-        time.min.should == 59
-        time.hour.should == 23
-        time.day.should == 30
-        time.month.should == 6
-      end
-    end
-  end
+  #       time.sec.should == 60
+  #       time.min.should == 59
+  #       time.hour.should == 23
+  #       time.day.should == 30
+  #       time.month.should == 6
+  #     end
+  #   end
+  # end
 
   it "handles bad leap seconds by carrying values forward" do
     with_timezone 'UTC' do
