@@ -19,4 +19,20 @@ class Encoding
   UTF_8 = new('UTF-8')
   UTF_16LE = new('UTF-16LE')
   UTF_32BE = new('UTF-32BE')
+
+  class << self
+    attr_reader :default_external, :default_internal
+  end
+
+  def self.default_external=(encoding)
+    encoding = find(encoding) unless encoding.instance_of?(Encoding)
+
+    @default_external = encoding
+  end
+
+  def self.default_internal=(encoding)
+    encoding = find(encoding) unless encoding.instance_of?(Encoding)
+
+    @default_external = encoding
+  end
 end

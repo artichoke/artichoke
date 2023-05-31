@@ -16,18 +16,6 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .value_is_rust_object()
         .add_self_method("aliases", encoding_self_aliases, sys::mrb_args_none())?
         .add_self_method("compatible?", encoding_self_compatible, sys::mrb_args_req(2))?
-        .add_self_method("default_external", encoding_self_default_external, sys::mrb_args_none())?
-        .add_self_method(
-            "default_external=",
-            encoding_self_default_external_set,
-            sys::mrb_args_none(),
-        )?
-        .add_self_method("default_internal", encoding_self_default_internal, sys::mrb_args_none())?
-        .add_self_method(
-            "default_internal=",
-            encoding_self_default_internal_set,
-            sys::mrb_args_none(),
-        )?
         .add_self_method("find", encoding_self_find, sys::mrb_args_req(1))?
         .add_self_method("list", encoding_self_list, sys::mrb_args_none())?
         .add_self_method("locale_charmap", encoding_self_locale_charmap, sys::mrb_args_none())?
@@ -58,22 +46,6 @@ unsafe extern "C" fn encoding_self_aliases(_: *mut sys::mrb_state, _: sys::mrb_v
 }
 
 unsafe extern "C" fn encoding_self_compatible(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
-}
-
-unsafe extern "C" fn encoding_self_default_external(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
-}
-
-unsafe extern "C" fn encoding_self_default_external_set(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
-}
-
-unsafe extern "C" fn encoding_self_default_internal(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
-}
-
-unsafe extern "C" fn encoding_self_default_internal_set(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
     todo!()
 }
 
