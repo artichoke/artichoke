@@ -1,4 +1,7 @@
-// use super::Encoding;
+use super::Encoding;
+
+use crate::extn::core::string::{Encoding as SpinosoEncoding, String};
+
 use crate::extn::prelude::*;
 
 pub fn aliases(interp: &mut Artichoke) -> Result<Value, Error> {
@@ -52,10 +55,20 @@ pub fn inspect(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> 
     Err(NotImplementedError::new().into())
 }
 
-pub fn name(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = encoding;
-    Err(NotImplementedError::new().into())
+pub fn name(interp: &mut Artichoke, mut encoding: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut encoding, interp)? };
+
+    let name = encoding.name().as_bytes().to_vec();
+
+    // The result of `Encoding#name` is always 7bit ascii.
+    //
+    // ```irb
+    // 3.1.2 > Encoding::UTF_8.name.encoding
+    // => #<Encoding:US-ASCII>
+    // ```
+    let result = String::with_bytes_and_encoding(name, SpinosoEncoding::Ascii);
+
+    String::alloc_value(result, interp)
 }
 
 pub fn names(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
@@ -68,11 +81,5 @@ pub fn replicate(interp: &mut Artichoke, encoding: Value, target: Value) -> Resu
     let _ = interp;
     let _ = encoding;
     let _ = target;
-    Err(NotImplementedError::new().into())
-}
-
-pub fn to_s(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = encoding;
     Err(NotImplementedError::new().into())
 }

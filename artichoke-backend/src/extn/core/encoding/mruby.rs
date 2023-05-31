@@ -26,7 +26,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("name", encoding_name, sys::mrb_args_none())?
         .add_method("names", encoding_names, sys::mrb_args_none())?
         .add_method("replicate", encoding_replicate, sys::mrb_args_req(1))?
-        .add_method("to_s", encoding_to_s, sys::mrb_args_none())?
+        .add_method("to_s", encoding_name, sys::mrb_args_none())?
         .define()?;
 
     interp.def_class::<Encoding>(spec)?;
@@ -165,17 +165,6 @@ unsafe extern "C" fn encoding_replicate(mrb: *mut sys::mrb_state, slf: sys::mrb_
     let encoding = Value::from(slf);
     let target = Value::from(target);
     let result = trampoline::replicate(&mut guard, encoding, target);
-    match result {
-        Ok(value) => value.inner(),
-        Err(exception) => error::raise(guard, exception),
-    }
-}
-
-unsafe extern "C" fn encoding_to_s(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
-    mrb_get_args!(mrb, none);
-    unwrap_interpreter!(mrb, to => guard);
-    let encoding = Value::from(slf);
-    let result = trampoline::to_s(&mut guard, encoding);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
