@@ -1,6 +1,39 @@
 // use super::Encoding;
 use crate::extn::prelude::*;
 
+pub fn aliases(interp: &mut Artichoke) -> Result<Value, Error> {
+    let _ = interp;
+    Err(NotImplementedError::new().into())
+}
+
+pub fn compatible(interp: &mut Artichoke, lhs: Value, rhs: Value) -> Result<Value, Error> {
+    let _ = interp;
+    let _ = lhs;
+    let _ = rhs;
+    Err(NotImplementedError::new().into())
+}
+
+pub fn find(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
+    let _ = interp;
+    let _ = encoding;
+    Err(NotImplementedError::new().into())
+}
+
+pub fn list(interp: &mut Artichoke) -> Result<Value, Error> {
+    let _ = interp;
+    Err(NotImplementedError::new().into())
+}
+
+pub fn locale_charmap(interp: &mut Artichoke) -> Result<Value, Error> {
+    let _ = interp;
+    Err(NotImplementedError::new().into())
+}
+
+pub fn name_list(interp: &mut Artichoke) -> Result<Value, Error> {
+    let _ = interp;
+    Err(NotImplementedError::new().into())
+}
+
 pub fn ascii_compatible(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
     let _ = interp;
     let _ = encoding;

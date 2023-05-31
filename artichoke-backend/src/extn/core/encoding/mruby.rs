@@ -41,28 +41,67 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     Ok(())
 }
 
-unsafe extern "C" fn encoding_self_aliases(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
+unsafe extern "C" fn encoding_self_aliases(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let result = trampoline::aliases(&mut guard);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
 }
 
-unsafe extern "C" fn encoding_self_compatible(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
+unsafe extern "C" fn encoding_self_compatible(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+    let (lhs, rhs) = mrb_get_args!(mrb, required = 2);
+    unwrap_interpreter!(mrb, to => guard);
+    let lhs = Value::from(lhs);
+    let rhs = Value::from(rhs);
+    let result = trampoline::compatible(&mut guard, lhs, rhs);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
 }
 
-unsafe extern "C" fn encoding_self_find(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
+unsafe extern "C" fn encoding_self_find(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+    let encoding = mrb_get_args!(mrb, required = 1);
+    unwrap_interpreter!(mrb, to => guard);
+    let encoding = Value::from(encoding);
+    let result = trampoline::find(&mut guard, encoding);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
 }
 
-unsafe extern "C" fn encoding_self_list(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
+unsafe extern "C" fn encoding_self_list(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let result = trampoline::list(&mut guard);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
 }
 
-unsafe extern "C" fn encoding_self_locale_charmap(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
+unsafe extern "C" fn encoding_self_locale_charmap(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let result = trampoline::locale_charmap(&mut guard);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
 }
 
-unsafe extern "C" fn encoding_self_name_list(_: *mut sys::mrb_state, _: sys::mrb_value) -> sys::mrb_value {
-    todo!()
+unsafe extern "C" fn encoding_self_name_list(mrb: *mut sys::mrb_state, _slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let result = trampoline::name_list(&mut guard);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
 }
 
 unsafe extern "C" fn encoding_ascii_compatible(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
