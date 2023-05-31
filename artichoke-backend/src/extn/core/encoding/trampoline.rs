@@ -38,16 +38,22 @@ pub fn name_list(interp: &mut Artichoke) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-pub fn ascii_compatible(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = encoding;
-    Err(NotImplementedError::new().into())
+#[allow(clippy::unnecessary_wraps)]
+pub fn ascii_compatible(interp: &mut Artichoke, mut encoding: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut encoding, interp)? };
+
+    let result = encoding.is_ascii_compatible();
+
+    Ok(interp.convert(result))
 }
 
-pub fn dummy(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = encoding;
-    Err(NotImplementedError::new().into())
+#[allow(clippy::unnecessary_wraps)]
+pub fn dummy(interp: &mut Artichoke, mut encoding: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut encoding, interp)? };
+
+    let result = encoding.is_dummy();
+
+    Ok(interp.convert(result))
 }
 
 pub fn inspect(interp: &mut Artichoke, mut encoding: Value) -> Result<Value, Error> {
