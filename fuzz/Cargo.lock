@@ -45,7 +45,6 @@ dependencies = [
  "cc",
  "intaglio",
  "mezzaluna-type-registry",
- "once_cell",
  "onig",
  "posix-space",
  "qed",

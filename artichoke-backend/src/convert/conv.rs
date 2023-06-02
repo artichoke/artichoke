@@ -3,10 +3,10 @@
 //! See: <https://github.com/ruby/ruby/blob/v3_1_2/object.c#L2908-L3018>.
 
 use std::ffi::CStr;
+use std::sync::OnceLock;
 
 use artichoke_core::debug::Debug as _;
 use artichoke_core::value::Value as _;
-use once_cell::sync::OnceCell;
 use qed::const_cstr_from_str as cstr;
 use spinoso_exception::TypeError;
 
@@ -49,7 +49,7 @@ fn conv_method_table(interp: &mut Artichoke) -> &'static [ConvMethod; 12] {
         ("to_r",    cstr!("to_r\0"),    false),
     ];
 
-    static CONV_METHOD_TABLE: OnceCell<[ConvMethod; 12]> = OnceCell::new();
+    static CONV_METHOD_TABLE: OnceLock<[ConvMethod; 12]> = OnceLock::new();
 
     CONV_METHOD_TABLE.get_or_init(|| {
         METHODS.map(|(method, method_cstr, is_implicit_conversion)| {
