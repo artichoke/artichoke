@@ -11,12 +11,14 @@ use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
+mod center;
 mod eq;
 mod impls;
 mod inspect;
 #[cfg(feature = "std")]
 mod io;
 
+pub use center::Center;
 pub use inspect::Inspect;
 
 #[repr(transparent)]

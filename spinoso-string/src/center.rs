@@ -123,27 +123,66 @@ pub struct Center<'a, 'b> {
     pub right: Take<Cycle<slice::Iter<'b, u8>>>,
 }
 
-impl<'a, 'b> Default for Center<'a, 'b> {
-    #[inline]
-    fn default() -> Self {
-        Self::with_chars_width_and_padding(Chars::new(), 0, &[])
-    }
-}
-
 impl<'a, 'b> Center<'a, 'b> {
     #[inline]
     #[must_use]
-    pub(crate) fn with_chars_width_and_padding(s: Chars<'a>, padding_width: usize, padding: &'b [u8]) -> Self {
-        let pre_pad = padding_width / 2;
-        let post_pad = (padding_width + 1) / 2;
+    pub(crate) fn with_chars_width_and_padding(
+        s: Chars<'a>,
+        padding_width: usize,
+        padding: Option<&'b [u8]>,
+    ) -> Result<Self, CenterError> {
+        // ```
+        // [3.0.3] > "abc".center 10, ""
+        // (irb):5:in `center': zero width padding (ArgumentError)
+        // 	from (irb):5:in `<main>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `load'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `<main>'
+        // [3.0.3] > "abc".center 3, ""
+        // (irb):6:in `center': zero width padding (ArgumentError)
+        // 	from (irb):6:in `<main>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `load'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `<main>'
+        // [3.0.3] > "abc".center 0, ""
+        // (irb):7:in `center': zero width padding (ArgumentError)
+        // 	from (irb):7:in `<main>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/lib/ruby/gems/3.0.0/gems/irb-1.3.5/exe/irb:11:in `<top (required)>'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `load'
+        // 	from /usr/local/var/rbenv/versions/3.0.3/bin/irb:23:in `<main>'
+        // [3.0.3] > "abc".center 10, " "
+        // => "   abc    "
+        // [3.0.3] > "abc".center 3, " "
+        // => "abc"
+        // [3.0.3] > "abc".center 0, " "
+        // => "abc"
+        // ```
+        let padding = match padding {
+            None => b" ",
+            Some(p) if p.is_empty() => return Err(CenterError::ZeroWidthPadding),
+            Some(p) => p,
+        };
+        let s_width = s.clone().count();
+        let remaining_padding_width = padding_width.checked_sub(s_width).unwrap_or_default();
+
+        let pre_pad = remaining_padding_width / 2;
+        let post_pad = remaining_padding_width - pre_pad;
+
+        // Left and right padding starts from the beginning of padding.
+        //
+        // ```
+        // [3.0.3] > "abc".center 10, "123456789"
+        // => "123abc1234"
+        // ```
         let left = padding.iter().cycle().take(pre_pad);
         let right = padding.iter().cycle().take(post_pad);
-        Self {
+
+        Ok(Self {
             left,
             next: None,
             s,
             right,
-        }
+        })
     }
 }
 
@@ -176,3 +215,142 @@ impl<'a, 'b> Iterator for Center<'a, 'b> {
 impl<'a, 'b> FusedIterator for Center<'a, 'b> {}
 
 impl<'a, 'b> ExactSizeIterator for Center<'a, 'b> {}
+
+#[cfg(test)]
+mod tests {
+    use alloc::vec::Vec;
+
+    use bstr::ByteSlice;
+
+    use super::{Center, CenterError};
+
+    #[test]
+    fn empty_string_empty_padding_gives_error() {
+        let s = crate::String::from("");
+        let center = Center::with_chars_width_and_padding(s.chars(), 0, Some(&b""[..]));
+        assert_eq!(center.unwrap_err(), CenterError::ZeroWidthPadding);
+    }
+
+    #[test]
+    fn empty_padding_gives_error() {
+        let s = crate::String::from("abc");
+        let center = Center::with_chars_width_and_padding(s.chars(), 0, Some(&b""[..]));
+        assert_eq!(center.unwrap_err(), CenterError::ZeroWidthPadding);
+        let center = Center::with_chars_width_and_padding(s.chars(), 3, Some(&b""[..]));
+        assert_eq!(center.unwrap_err(), CenterError::ZeroWidthPadding);
+        let center = Center::with_chars_width_and_padding(s.chars(), 10, Some(&b""[..]));
+        assert_eq!(center.unwrap_err(), CenterError::ZeroWidthPadding);
+    }
+
+    #[test]
+    fn padding_starts_from_begin_on_left_and_right() {
+        let s = crate::String::from("abc");
+        let center = Center::with_chars_width_and_padding(s.chars(), 10, Some(&b"1234567890"[..])).unwrap();
+        let centered = center.collect::<Vec<_>>();
+        assert_eq!(centered.as_bstr(), b"123abc1234".as_bstr());
+    }
+
+    #[test]
+    fn zero_padding_gives_orginal_contents() {
+        let s = crate::String::from("abc");
+        let center = Center::with_chars_width_and_padding(s.chars(), 0, Some(&b"1234567890"[..])).unwrap();
+        let centered = center.collect::<Vec<_>>();
+        assert_eq!(centered.as_bstr(), b"abc".as_bstr());
+    }
+
+    #[test]
+    fn zero_padding_on_empty_string_yields_empty_string() {
+        let s = crate::String::from("");
+        let center = Center::with_chars_width_and_padding(s.chars(), 0, Some(&b"1234567890"[..])).unwrap();
+        let centered = center.collect::<Vec<_>>();
+        assert_eq!(centered.as_bstr(), b"".as_bstr());
+    }
+
+    #[test]
+    fn nonzero_padding_on_empty_string_yields_padding() {
+        // ```
+        // [3.1.1] > "".center 5, "1234567890"
+        // => "12123"
+        // ```
+        let s = crate::String::from("");
+        let center = Center::with_chars_width_and_padding(s.chars(), 5, Some(&b"1234567890"[..])).unwrap();
+        let centered = center.collect::<Vec<_>>();
+        assert_eq!(centered.as_bstr(), b"12123".as_bstr());
+    }
+
+    #[test]
+    fn padding_less_than_len_gives_orginal_contents() {
+        let s = crate::String::from("abc");
+        let center = Center::with_chars_width_and_padding(s.chars(), 1, Some(&b"1234567890"[..])).unwrap();
+        let centered = center.collect::<Vec<_>>();
+        assert_eq!(centered.as_bstr(), b"abc".as_bstr());
+
+        let center = Center::with_chars_width_and_padding(s.chars(), 2, Some(&b"1234567890"[..])).unwrap();
+        let centered = center.collect::<Vec<_>>();
+        assert_eq!(centered.as_bstr(), b"abc".as_bstr());
+    }
+
+    #[test]
+    fn padding_one_longer_than_contents_puts_padding_on_right() {
+        let s = crate::String::from("abc");
+        let center = Center::with_chars_width_and_padding(s.chars(), 4, Some(&b"1234567890"[..])).unwrap();
+        let centered = center.collect::<Vec<_>>();
+        assert_eq!(centered.as_bstr(), b"abc1".as_bstr());
+    }
+
+    // TODO
+    //
+    // ```
+    // [3.1.1] > "谢谢".center 5, "好吗"
+    // => "好谢谢好吗"
+    // [3.1.1] > "谢谢".center 5, "1"
+    // => "1谢谢11"
+    // [3.1.1] > "谢谢".center 5, "12"
+    // => "1谢谢12"
+    // [3.1.1] > "".center 5, "好吗"
+    // => "好吗好吗好"
+    // [3.1.1] > "a".center 5, "好吗"
+    // => "好吗a好吗"
+    // [3.1.1] > "ab".center 5, "好吗"
+    // => "好ab好吗"
+    // [3.1.1] > "喜欢".center 5, "12"
+    // => "1喜欢12"
+    // [3.1.1] > "喜欢".center 5, "打球"
+    // => "打喜欢打球"
+    // ```
+    #[test]
+    fn utf8_padding() {
+        let s = crate::String::from("ab");
+        let center = Center::with_chars_width_and_padding(s.chars(), 5, Some("好吗".as_bytes())).unwrap();
+        let centered = center.collect::<Vec<_>>();
+        assert_eq!(centered.as_bstr(), "好ab好吗".as_bytes().as_bstr());
+    }
+
+    // TODO: ASCII / Binary encodings
+    //
+    // ```
+    // [3.1.1] > "喜欢".center 5, "打球".b
+    // (irb):20:in `center': incompatible character encodings: UTF-8 and ASCII-8BIT (Encoding::CompatibilityError)
+    //         from (irb):20:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.1/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.1/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.1/bin/irb:25:in `<main>'
+    // [3.1.1] > "a".force_encoding(Encoding::ASCII).center 5, "打球".b
+    // => "\xE6\x89a\xE6\x89"
+    // [3.1.1] > "\xFF".b.center 5, "\xFF\xFE"
+    // (irb):22:in `center': incompatible character encodings: ASCII-8BIT and UTF-8 (Encoding::CompatibilityError)
+    //         from (irb):22:in `<main>'
+    //         from /usr/local/var/rbenv/versions/3.1.1/lib/ruby/gems/3.1.0/gems/irb-1.4.1/exe/irb:11:in `<top (required)>'
+    //         from /usr/local/var/rbenv/versions/3.1.1/bin/irb:25:in `load'
+    //         from /usr/local/var/rbenv/versions/3.1.1/bin/irb:25:in `<main>'
+    // [3.1.1] > "\xFF".b.center 5, "\xFF\xFE".b
+    // => "\xFF\xFE\xFF\xFF\xFE"
+    // [3.1.1] > "\xFF".b.center 5, "12345".force_encoding(Encoding::ASCII)
+    // => "12\xFF12"
+    // [3.1.1] > "\xFF".force_encoding(Encoding::ASCII).center 5, "12345".force_encoding(Encoding::ASCII)
+    // => "12\xFF12"
+    // [3.1.1] > "\xFF".force_encoding(Encoding::ASCII).center 5, "12345".b
+    // => "12\xFF12"
+    // [3.1.1] > "abc".force_encoding(Encoding::ASCII).center 5, "\xFF\xFE".b
+    // ```
+}

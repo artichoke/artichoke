@@ -17,6 +17,7 @@ use crate::ord::OrdError;
 
 mod ascii;
 mod binary;
+mod center;
 mod impls;
 mod inspect;
 #[cfg(feature = "std")]

@@ -37,13 +37,6 @@ impl<'a> Iterator for Chars<'a> {
 
 impl<'a> FusedIterator for Chars<'a> {}
 
-impl<'a> Chars<'a> {
-    pub(crate) fn new() -> Self {
-        const EMPTY: &[u8] = &[];
-        Self(State::Binary(Bytes::from(EMPTY)))
-    }
-}
-
 #[derive(Debug, Clone)]
 enum State<'a> {
     Utf8(ConventionallyUtf8<'a>),
