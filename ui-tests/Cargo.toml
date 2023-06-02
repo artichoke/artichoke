@@ -8,7 +8,7 @@ rust-version = "1.70.0"
 license = "MIT"
 
 [dependencies]
-bstr = { version = "1.2.0", default-features = false, features = ["alloc"] }
+bstr = { version = "1.5.0", default-features = false, features = ["alloc"] }
 insta = { version = "1.29.0", features = ["toml"] }
 serde = "1.0.132"
 
