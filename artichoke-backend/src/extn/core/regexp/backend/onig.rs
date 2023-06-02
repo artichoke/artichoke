@@ -171,7 +171,7 @@ impl RegexpType for Onig {
 
             for group in 0..captures.len() {
                 let value = interp.try_convert_mut(captures.at(group))?;
-                let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
+                let group = NonZeroUsize::MIN.saturating_add(group);
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
@@ -244,7 +244,7 @@ impl RegexpType for Onig {
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 0..captures.len() {
                 let value = interp.try_convert_mut(captures.at(group))?;
-                let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
+                let group = NonZeroUsize::MIN.saturating_add(group);
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
@@ -283,7 +283,7 @@ impl RegexpType for Onig {
             interp.set_global_variable(regexp::LAST_MATCHED_STRING, &value)?;
             for group in 0..captures.len() {
                 let value = interp.try_convert_mut(captures.at(group))?;
-                let group = unsafe { NonZeroUsize::new_unchecked(1 + group) };
+                let group = NonZeroUsize::MIN.saturating_add(group);
                 interp.set_global_variable(regexp::nth_match_group(group), &value)?;
             }
 
