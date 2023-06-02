@@ -16,7 +16,6 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-once_cell = { version = "1.12.0", optional = true }
 regex =  { version = "1.7.0", default-features = false, features = ["std"], optional = true }
 strftime-ruby = { version = "1.0.0", default-features = false, features = ["alloc"], optional = true }
 tz-rs = { version = "0.6.12", default-features = false, features = ["std"], optional = true }
@@ -24,7 +23,7 @@ tzdb = { version = "0.5.6", default-features = false, optional = true }
 
 [features]
 default = ["tzrs", "tzrs-local"]
-tzrs = ["dep:once_cell", "dep:regex", "dep:strftime-ruby", "dep:tz-rs", "dep:tzdb"]
+tzrs = ["dep:regex", "dep:strftime-ruby", "dep:tz-rs", "dep:tzdb"]
 tzrs-local = ["tzrs"]
 
 [package.metadata.docs.rs]

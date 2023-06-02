@@ -1,8 +1,8 @@
 use std::io::{self, Write as _};
 use std::slice;
 use std::str;
+use std::sync::OnceLock;
 
-use once_cell::sync::Lazy;
 use regex::Regex;
 use tz::timezone::{LocalTimeType, TimeZoneRef};
 #[cfg(feature = "tzrs-local")]
@@ -147,10 +147,12 @@ impl Offset {
     pub fn local() -> Self {
         // Per the docs, it is suggested to cache the result of fetching the
         // local timezone: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html.
-        static LOCAL_TZ: Lazy<TimeZoneRef<'static>> = Lazy::new(local_time_zone);
+        static LOCAL_TZ: OnceLock<TimeZoneRef<'static>> = OnceLock::new();
+
+        let local_tz = *LOCAL_TZ.get_or_init(local_time_zone);
 
         Self {
-            inner: OffsetType::Tz(*LOCAL_TZ),
+            inner: OffsetType::Tz(local_tz),
         }
     }
 
@@ -308,23 +310,26 @@ impl TryFrom<&str> for Offset {
             // ```
             "Z" | "UTC" => Ok(Self::utc()),
             _ => {
-                // With `Regex`, `\d` is a "Unicode friendly" Perl character
-                // class which matches Unicode property `Nd`. The `Nd` property
-                // includes all sorts of numerals, including Devanagari and
-                // Kannada, which don't parse into an `i32` using `FromStr`.
-                //
-                // `[[:digit:]]` is documented to be an ASCII character class
-                // for only digits 0-9.
-                //
-                // See:
-                // - https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
-                // - https://docs.rs/regex/latest/regex/#ascii-character-classes
-                static HH_MM_MATCHER: Lazy<Regex> = Lazy::new(|| {
-                    // regex must compile
+                static HH_MM_MATCHER: OnceLock<Regex> = OnceLock::new();
+
+                let hh_mm_matcher = HH_MM_MATCHER.get_or_init(|| {
+                    // With `Regex`, `\d` is a "Unicode friendly" Perl character
+                    // class which matches Unicode property `Nd`. The `Nd` property
+                    // includes all sorts of numerals, including Devanagari and
+                    // Kannada, which don't parse into an `i32` using `FromStr`.
+                    //
+                    // `[[:digit:]]` is documented to be an ASCII character class
+                    // for only digits 0-9.
+                    //
+                    // See:
+                    // - https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
+                    // - https://docs.rs/regex/latest/regex/#ascii-character-classes
+                    //
+                    // Use `unwrap()` here because the regex must compile.
                     Regex::new(r"^([\-\+]{1})([[:digit:]]{2}):?([[:digit:]]{2})$").unwrap()
                 });
 
-                let caps = HH_MM_MATCHER.captures(input).ok_or_else(TzStringError::new)?;
+                let caps = hh_mm_matcher.captures(input).ok_or_else(TzStringError::new)?;
 
                 // Special handling of the +/- sign is required because `-00:30`
                 // must parse to a negative offset and `i32::from_str_radix`
@@ -391,7 +396,8 @@ impl TryFrom<i32> for Offset {
 
 #[cfg(test)]
 mod tests {
-    use once_cell::sync::Lazy;
+    use std::sync::OnceLock;
+
     use tz::timezone::Transition;
     use tz::{LocalTimeType, TimeZone};
 
@@ -603,7 +609,9 @@ mod tests {
     // https://github.com/x-hgg-x/tz-rs/issues/34#issuecomment-1206140198
     #[test]
     fn tzrs_gh_34_handle_missing_transition_tzif_v1() {
-        static TZ: Lazy<TimeZone> = Lazy::new(|| {
+        static TZ: OnceLock<TimeZone> = OnceLock::new();
+
+        let tz = TZ.get_or_init(|| {
             let local_time_types = vec![
                 LocalTimeType::new(0, false, None).unwrap(),
                 LocalTimeType::new(3600, false, None).unwrap(),
@@ -617,8 +625,9 @@ mod tests {
             )
             .unwrap()
         });
+
         let offset = Offset {
-            inner: OffsetType::Tz(TZ.as_ref()),
+            inner: OffsetType::Tz(tz.as_ref()),
         };
         assert!(matches!(
             Time::new(1970, 1, 2, 12, 0, 0, 0, offset).unwrap_err(),

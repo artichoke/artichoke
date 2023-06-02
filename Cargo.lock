@@ -820,7 +820,6 @@ dependencies = [
 name = "spinoso-time"
 version = "0.7.1"
 dependencies = [
- "once_cell",
  "regex",
  "strftime-ruby",
  "tz-rs",
