@@ -49,10 +49,14 @@ pub const MIN_OFFSET_SECONDS: i32 = -MAX_OFFSET_SECONDS;
 #[must_use]
 #[cfg(feature = "tzrs-local")]
 fn local_time_zone() -> TimeZoneRef<'static> {
-    match local_tz() {
+    // Per the docs, it is suggested to cache the result of fetching the
+    // local timezone: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html.
+    static LOCAL_TZ: OnceLock<TimeZoneRef<'static>> = OnceLock::new();
+
+    *LOCAL_TZ.get_or_init(|| match local_tz() {
         Some(tz) => tz,
         None => GMT,
-    }
+    })
 }
 
 #[inline]
@@ -145,15 +149,9 @@ impl Offset {
     #[inline]
     #[must_use]
     pub fn local() -> Self {
-        // Per the docs, it is suggested to cache the result of fetching the
-        // local timezone: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html.
-        static LOCAL_TZ: OnceLock<TimeZoneRef<'static>> = OnceLock::new();
-
-        let local_tz = *LOCAL_TZ.get_or_init(local_time_zone);
-
-        Self {
-            inner: OffsetType::Tz(local_tz),
-        }
+        let local_tz = local_time_zone();
+        let offset = OffsetType::Tz(local_tz);
+        Self { inner: offset }
     }
 
     /// Generate an offset with a number of seconds from UTC.
