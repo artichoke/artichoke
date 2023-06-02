@@ -36,7 +36,7 @@ dependencies = [
 
 [[package]]
 name = "artichoke-backend"
-version = "0.24.0"
+version = "0.24.1"
 dependencies = [
  "artichoke-core",
  "artichoke-load-path",
@@ -45,7 +45,6 @@ dependencies = [
  "cc",
  "intaglio",
  "mezzaluna-type-registry",
- "once_cell",
  "onig",
  "posix-space",
  "qed",
@@ -613,9 +612,8 @@ dependencies = [
 
 [[package]]
 name = "spinoso-time"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
- "once_cell",
  "regex",
  "strftime-ruby",
  "tz-rs",
