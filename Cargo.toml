@@ -19,7 +19,7 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-artichoke-backend = { version = "0.24.0", path = "artichoke-backend", default-features = false }
+artichoke-backend = { version = "0.24.1", path = "artichoke-backend", default-features = false }
 artichoke-readline = { version = "1.0.0", path = "artichoke-readline", optional = true }
 artichoke-repl-history = { version = "1.0.0", path = "artichoke-repl-history", optional = true }
 clap = { version = "4.3.0", optional = true, default-features = false, features = ["std", "help", "usage", "error-context", "suggestions"] }
