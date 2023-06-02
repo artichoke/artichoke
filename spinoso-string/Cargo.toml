@@ -19,7 +19,7 @@ documentation.workspace = true
 bstr = { version = "1.2.0", default-features = false, features = ["alloc"] }
 bytecount = "0.6.2"
 focaccia = { version = "1.3.1", optional = true, default-features = false }
-raw-parts = "1.1.2"
+raw-parts = "2.0.0"
 scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
 simdutf8 = { version = "0.1.4", default-features = false }
 

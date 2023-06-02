@@ -456,7 +456,7 @@ impl String {
     /// after calling this function.
     #[must_use]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
-        Self::utf8(RawParts::into_vec(raw_parts))
+        Self::utf8(raw_parts.into_vec())
     }
 
     /// Creates a `String` directly from the raw components of another string
@@ -482,7 +482,7 @@ impl String {
     /// after calling this function.
     #[must_use]
     pub unsafe fn from_raw_parts_with_encoding(raw_parts: RawParts<u8>, encoding: Encoding) -> Self {
-        Self::with_bytes_and_encoding(RawParts::into_vec(raw_parts), encoding)
+        Self::with_bytes_and_encoding(raw_parts.into_vec(), encoding)
     }
 
     /// Decomposes a `String` into its raw components.

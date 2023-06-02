@@ -131,7 +131,7 @@ impl Buf {
 
     #[inline]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
-        let mut inner = RawParts::into_vec(raw_parts);
+        let mut inner = raw_parts.into_vec();
         // SAFETY: Callers may have written into the spare capacity of the `Vec`
         // so we must ensure the NUL termination byte is still present.
         ensure_nul_terminated(&mut inner);
