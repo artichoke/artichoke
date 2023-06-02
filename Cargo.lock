@@ -287,9 +287,9 @@ dependencies = [
 
 [[package]]
 name = "focaccia"
-version = "1.3.1"
+version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc925590c53027bd7fe404cdb7b806a021ec4fc7682a470f387f1055d7c74ef9"
+checksum = "e415e05c1870775d4ccef03519c171fac5bf7be3e32b175390df8a85e757b9be"
 
 [[package]]
 name = "getrandom"
@@ -518,9 +518,9 @@ checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
 
 [[package]]
 name = "posix-space"
-version = "1.0.3"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd0ed6e8ca662f5dadd56c71dfcdf6d83619f4444c48ab630b83b48d4ebd939c"
+checksum = "fb172572fa316ae7e019d10c827231a9be803f3562543813aad86f547f11f352"
 
 [[package]]
 name = "prettyplease"
@@ -543,9 +543,9 @@ dependencies = [
 
 [[package]]
 name = "qed"
-version = "1.6.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fc1ded256da0b1aa6d2bf67fd20aa27d5eba84af7fd1fc357b2b26a2be8abc0"
+checksum = "bf666b4ca1b0b9d8b24345b8fb64b54e7197b4b665f81bad3cc806935344eb23"
 
 [[package]]
 name = "quickcheck"
@@ -585,9 +585,9 @@ dependencies = [
 
 [[package]]
 name = "rand_mt"
-version = "4.2.1"
+version = "4.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77717f0c31ae3827865b59615cebc0e54374bd802bfe0ef067684a50bcfb10a9"
+checksum = "49e018c6ded60e5252609887c12eb3ca2592e9248c5894a7db3975c8a7a1e2df"
 
 [[package]]
 name = "raw-parts"
@@ -859,9 +859,9 @@ dependencies = [
 
 [[package]]
 name = "sysdir"
-version = "1.2.1"
+version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "454c7b64faf012c0649e91bc0de7ab05a5597a1382974cb7c98d3a61501a0891"
+checksum = "e14698b92621402a8aa2e10f3994232e8986b7d8f31c85fffbc420b5b32823f0"
 
 [[package]]
 name = "termcolor"
