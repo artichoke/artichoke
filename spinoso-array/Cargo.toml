@@ -16,7 +16,7 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-raw-parts = "1.1.2"
+raw-parts = "2.0.0"
 # 1.4.1 fixed UB when allocating zero-bytes for ZST element types.
 # https://github.com/servo/rust-smallvec/releases/tag/v1.4.1
 # 1.6.1 fixed a buffer overflow when calling `SmallVec::insert_many`.

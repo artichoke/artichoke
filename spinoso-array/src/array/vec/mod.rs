@@ -313,7 +313,7 @@ impl<T> Array<T> {
     /// pointer after calling this function.
     #[must_use]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<T>) -> Self {
-        let vec = RawParts::into_vec(raw_parts);
+        let vec = raw_parts.into_vec();
         Self(vec)
     }
 

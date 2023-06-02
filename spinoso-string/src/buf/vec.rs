@@ -79,7 +79,7 @@ impl Buf {
 
     #[inline]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
-        let inner = RawParts::into_vec(raw_parts);
+        let inner = raw_parts.into_vec();
         Self { inner }
     }
 
