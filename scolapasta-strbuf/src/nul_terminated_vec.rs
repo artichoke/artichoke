@@ -29,6 +29,7 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) -> Result<(), TryReserveError> {
 
     let spare_capacity = vec.spare_capacity_mut();
     // If the vec has spare capacity, set the first and last bytes to NUL.
+    //
     // See:
     //
     // - https://github.com/artichoke/artichoke/pull/1976#discussion_r932782264
