@@ -47,9 +47,16 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) {
 }
 
 #[repr(transparent)]
-#[derive(Default, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Buf {
     inner: Vec<u8>,
+}
+
+impl Default for Buf {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Clone for Buf {
@@ -485,6 +492,13 @@ mod tests {
             return false;
         }
         true
+    }
+
+    #[test]
+    fn test_ensure_nul_terminated_default() {
+        let buf = Buf::default();
+        let mut bytes = buf.into_inner();
+        assert!(is_nul_terminated(&mut bytes));
     }
 
     #[test]
