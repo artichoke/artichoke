@@ -1,6 +1,6 @@
 use alloc::boxed::Box;
 use alloc::collections::TryReserveError;
-use alloc::vec::{Drain, Splice, Vec};
+use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
 use core::ops::{Deref, DerefMut, RangeBounds};
@@ -231,14 +231,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn drain<R>(&mut self, range: R) -> Drain<'_, u8>
-    where
-        R: RangeBounds<usize>,
-    {
-        self.inner.drain(range)
-    }
-
-    #[inline]
     pub fn clear(&mut self) {
         self.inner.clear();
     }
@@ -307,17 +299,6 @@ where
     #[inline]
     pub fn dedup(&mut self) {
         self.inner.dedup();
-    }
-}
-
-impl Buf {
-    #[inline]
-    pub fn splice<R, I>(&mut self, range: R, replace_with: I) -> Splice<'_, <I as IntoIterator>::IntoIter>
-    where
-        R: RangeBounds<usize>,
-        I: IntoIterator<Item = u8>,
-    {
-        self.inner.splice(range, replace_with)
     }
 }
 
