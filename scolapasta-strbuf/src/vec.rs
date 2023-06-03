@@ -66,29 +66,34 @@ impl Extend<u8> for Buf {
 
 impl Buf {
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         let inner = Vec::new();
         Self { inner }
     }
 
     #[inline]
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         let inner = Vec::with_capacity(capacity);
         Self { inner }
     }
 
     #[inline]
+    #[must_use]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
         let inner = raw_parts.into_vec();
         Self { inner }
     }
 
     #[inline]
+    #[must_use]
     pub fn into_raw_parts(self) -> RawParts<u8> {
         RawParts::from_vec(self.inner)
     }
 
     #[inline]
+    #[must_use]
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
     }
@@ -124,6 +129,7 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn into_boxed_slice(self) -> Box<[u8]> {
         self.inner.into_boxed_slice()
     }
@@ -134,6 +140,7 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn as_slice(&self) -> &[u8] {
         self.inner.as_slice()
     }
@@ -144,11 +151,13 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         self.inner.as_ptr()
     }
 
     #[inline]
+    #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.inner.as_mut_ptr()
     }
@@ -235,19 +244,22 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
     #[inline]
-    pub fn split_off(&mut self, at: usize) -> Buf {
+    #[must_use]
+    pub fn split_off(&mut self, at: usize) -> Self {
         let split = self.inner.split_off(at);
-        Self { inner: split }
+        Self::from(split)
     }
 
     #[inline]
@@ -259,6 +271,7 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn leak<'a>(self) -> &'a mut [u8] {
         self.inner.leak()
     }
@@ -310,6 +323,7 @@ impl Buf {
 
 impl Buf {
     #[inline]
+    #[must_use]
     pub fn into_inner(self) -> Vec<u8> {
         self.inner
     }

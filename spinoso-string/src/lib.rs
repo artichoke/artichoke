@@ -52,8 +52,8 @@ use bstr::ByteSlice;
 pub use focaccia::CaseFold;
 #[doc(inline)]
 pub use raw_parts::RawParts;
+use scolapasta_strbuf::Buf;
 
-mod buf;
 mod center;
 mod chars;
 mod codepoints;
@@ -65,7 +65,6 @@ mod inspect;
 mod iter;
 mod ord;
 
-use buf::Buf;
 pub use center::{Center, CenterError};
 pub use chars::Chars;
 pub use codepoints::{Codepoints, CodepointsError, InvalidCodepointError};

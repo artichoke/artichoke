@@ -688,7 +688,11 @@ version = "0.5.0"
 
 [[package]]
 name = "scolapasta-strbuf"
-version = "0.1.0"
+version = "1.0.0"
+dependencies = [
+ "bstr",
+ "raw-parts",
+]
 
 [[package]]
 name = "scolapasta-string-escape"
@@ -801,6 +805,7 @@ dependencies = [
  "focaccia",
  "quickcheck",
  "raw-parts",
+ "scolapasta-strbuf",
  "scolapasta-string-escape",
  "simdutf8",
 ]

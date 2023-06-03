@@ -53,6 +53,7 @@ pub struct Buf {
 }
 
 impl Clone for Buf {
+    #[inline]
     fn clone(&self) -> Self {
         let mut vec = self.inner.clone();
         ensure_nul_terminated(&mut vec);
@@ -115,6 +116,7 @@ impl Extend<u8> for Buf {
 
 impl Buf {
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         let mut inner = Vec::with_capacity(1);
         ensure_nul_terminated(&mut inner);
@@ -122,6 +124,7 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         let capacity = capacity.checked_add(1).expect("capacity overflow");
         let mut inner = Vec::with_capacity(capacity);
@@ -130,6 +133,7 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
         let mut inner = raw_parts.into_vec();
         // SAFETY: Callers may have written into the spare capacity of the `Vec`
@@ -139,11 +143,13 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn into_raw_parts(self) -> RawParts<u8> {
         RawParts::from_vec(self.inner)
     }
 
     #[inline]
+    #[must_use]
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
     }
@@ -189,6 +195,7 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn into_boxed_slice(self) -> Box<[u8]> {
         self.inner.into_boxed_slice()
     }
@@ -200,21 +207,25 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn as_slice(&self) -> &[u8] {
         self.inner.as_slice()
     }
 
     #[inline]
+    #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         self.inner.as_mut_slice()
     }
 
     #[inline]
+    #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         self.inner.as_ptr()
     }
 
     #[inline]
+    #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.inner.as_mut_ptr()
     }
@@ -309,21 +320,22 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
     #[inline]
-    pub fn split_off(&mut self, at: usize) -> Buf {
-        let mut split = self.inner.split_off(at);
+    pub fn split_off(&mut self, at: usize) -> Self {
+        let split = self.inner.split_off(at);
         ensure_nul_terminated(&mut self.inner);
-        ensure_nul_terminated(&mut split);
-        Self { inner: split }
+        Self::from(split)
     }
 
     #[inline]
@@ -336,6 +348,7 @@ impl Buf {
     }
 
     #[inline]
+    #[must_use]
     pub fn leak<'a>(self) -> &'a mut [u8] {
         self.inner.leak()
     }
@@ -380,6 +393,7 @@ where
 
 impl Buf {
     #[inline]
+    #[must_use]
     pub fn into_inner(self) -> Vec<u8> {
         self.inner
     }
