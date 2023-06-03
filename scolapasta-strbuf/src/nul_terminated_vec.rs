@@ -63,6 +63,113 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) -> Result<(), TryReserveError> {
     Ok(())
 }
 
+/// A contiguous growable byte string, written as `Buf`, short for 'buffer'.
+///
+/// This buffer is a transparent wrapper around [`Vec<u8>`] with a minimized API
+/// sufficient for implementing the Ruby [`String`] type.
+///
+/// This buffer does not assume any encoding. Encoding is a higher-level concept
+/// that should be built on top of `Buf`.
+///
+/// # Examples
+///
+/// ```
+/// use scolapasta_strbuf::Buf;
+///
+/// let mut buf = Buf::new();
+/// buf.push(b'a');
+/// buf.push(b'z');
+///
+/// assert_eq!(buf.len(), 2);
+/// assert_eq!(buf[0], b'a');
+///
+/// assert_eq!(buf.pop(), Some(b'z'));
+/// assert_eq!(buf.len(), 1);
+///
+/// buf[0] = b'!';
+/// assert_eq!(buf[0], b'!');
+///
+/// buf.extend(b"excite!!!");
+///
+/// for byte in &buf {
+///     println!("{byte}");
+/// }
+/// assert_eq!(buf, b"!excite!!!");
+/// ```
+///
+/// # Indexing
+///
+/// The `Buf` type allows to access values by index, because it implements the
+/// [`Index`] trait. An example will be more explicit:
+///
+/// ```
+/// use scolapasta_strbuf::Buf;
+///
+/// let buf = Buf::from(b"scolapasta-strbuf");
+/// println!("{}", buf[1]); // it will display 'c'
+/// ```
+///
+/// However be careful: if you try to access an index which isn't in the `Buf`,
+/// your software will panic! You cannot do this:
+///
+/// ```should_panic
+/// use scolapasta_strbuf::Buf;
+///
+/// let buf = Buf::from(b"scolapasta-strbuf");
+/// println!("{}", buf[100]); // it will panic!
+/// ```
+///
+/// # Capacity and reallocation
+///
+/// The capacity of a buffer is the amount of space allocated for any future
+/// bytes that will be added onto the buffer. This is not to be confused with
+/// the _length_ of a buffer, which specifies the number of actual bytes within
+/// the buffer. If a buffer's length exceeds its capacity, its capacity will
+/// automatically be increased, but its contents will have to be reallocated.
+///
+/// For example, a buffer with capacity 10 and length 0 would be an empty buffer
+/// with space for 10 more bytes. Pushing 10 or fewer bytes into the buffer will
+/// not change its capacity or cause reallocation to occur. However, if the
+/// buffer's length is increased to 11, it will have to reallocate, which can be
+/// slow. For this reason, it is recommended to use `Buf::with_capacity`
+/// whenever possible to specify how big the buffer is expected to get.
+///
+/// # Guarantees
+///
+/// `Buf` is guaranteed to be a `repr(transparent)` wrapper around a `Vec<u8>`,
+/// which means it shares all the same [guarantees as a `Vec`]. See the upstream
+/// documentation in [`std`][vec-docs] for more details.
+///
+/// In addition to the guarantees of the underlying `Vec`, `Buf` is guaranteed
+/// to have a NUL-terminated allocation. All `Buf`s will have spare capacity.
+/// The first and last bytes of that spare capacity will be the NUL byte.
+///
+/// `Buf` does not expose any APIs, such as mutable access to the underlying
+/// `Vec`, that allow violating this invariant. This variant is even upheld by
+/// unsafe APIs such as [`set_len`].
+///
+/// ```
+/// # #[cfg(feature = "nul-terminated")]
+/// # {
+/// use scolapasta_strbuf::Buf;
+///
+/// let buf = Buf::new();
+/// assert_ne!(buf.capacity(), 0);
+///
+/// let mut inner = buf.into_inner();
+/// let spare = inner.spare_capacity_mut();
+/// assert!(!spare.is_empty());
+/// assert_eq!(unsafe { spare.first().unwrap().assume_init() }, 0);
+/// assert_eq!(unsafe { spare.last().unwrap().assume_init() }, 0);
+/// # }
+/// ```
+///
+/// [`Vec<u8>`]: Vec
+/// [`String`]: https://ruby-doc.org/3.2.0/String.html
+/// [`Index`]: core::ops::Index
+/// [guarantees as a `Vec`]: https://doc.rust-lang.org/std/vec/struct.Vec.html#guarantees
+/// [vec-docs]: alloc::vec
+/// [`set_len`]: Self::set_len
 #[repr(transparent)]
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Buf {
