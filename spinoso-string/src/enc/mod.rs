@@ -173,7 +173,7 @@ impl EncodedString {
         match self {
             EncodedString::Ascii(inner) => inner.as_slice(),
             EncodedString::Binary(inner) => inner.as_slice(),
-            EncodedString::Utf8(inner) => inner.as_slice(),
+            EncodedString::Utf8(inner) => inner.as_bytes(),
         }
     }
 
@@ -183,7 +183,7 @@ impl EncodedString {
         match self {
             EncodedString::Ascii(inner) => inner.as_mut_slice(),
             EncodedString::Binary(inner) => inner.as_mut_slice(),
-            EncodedString::Utf8(inner) => inner.as_mut_slice(),
+            EncodedString::Utf8(inner) => inner.as_bytes_mut(),
         }
     }
 
@@ -386,7 +386,7 @@ impl EncodedString {
         match self {
             EncodedString::Ascii(inner) => inner.get_char(index),
             EncodedString::Binary(inner) => inner.get_char(index),
-            EncodedString::Utf8(inner) => inner.get_char(index),
+            EncodedString::Utf8(inner) => Some(inner.get_char(index)?.as_bytes()),
         }
     }
 
@@ -396,7 +396,7 @@ impl EncodedString {
         match self {
             EncodedString::Ascii(inner) => inner.get_char_slice(range),
             EncodedString::Binary(inner) => inner.get_char_slice(range),
-            EncodedString::Utf8(inner) => inner.get_char_slice(range),
+            EncodedString::Utf8(inner) => Some(inner.get_char_slice(range)?.as_bytes()),
         }
     }
 
@@ -553,7 +553,7 @@ impl EncodedString {
         match self {
             EncodedString::Ascii(inner) => inner.chr(),
             EncodedString::Binary(inner) => inner.chr(),
-            EncodedString::Utf8(inner) => inner.chr(),
+            EncodedString::Utf8(inner) => inner.chr().as_bytes(),
         }
     }
 
