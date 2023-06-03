@@ -192,6 +192,13 @@ impl Extend<u8> for Buf {
     }
 }
 
+impl<'a> Extend<&'a u8> for Buf {
+    #[inline]
+    fn extend<I: IntoIterator<Item = &'a u8>>(&mut self, iter: I) {
+        self.inner.extend(iter.into_iter().copied());
+    }
+}
+
 macro_rules! impl_partial_eq {
     ($lhs:ty, $rhs:ty) => {
         impl<'a, 'b> PartialEq<$rhs> for $lhs {
@@ -242,6 +249,33 @@ impl_partial_eq!(Buf, str);
 impl_partial_eq!(Buf, &'a str);
 impl_partial_eq_array!(Buf, [u8; N]);
 impl_partial_eq_array!(Buf, &'a [u8; N]);
+
+impl IntoIterator for Buf {
+    type Item = u8;
+    type IntoIter = IntoIter<u8>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.into_inner().into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a Buf {
+    type Item = &'a u8;
+    type IntoIter = Iter<'a, u8>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut Buf {
+    type Item = &'a mut u8;
+    type IntoIter = IterMut<'a, u8>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
 
 impl Buf {
     #[inline]
