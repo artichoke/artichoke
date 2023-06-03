@@ -192,6 +192,57 @@ impl Extend<u8> for Buf {
     }
 }
 
+macro_rules! impl_partial_eq {
+    ($lhs:ty, $rhs:ty) => {
+        impl<'a, 'b> PartialEq<$rhs> for $lhs {
+            #[inline]
+            fn eq(&self, other: &$rhs) -> bool {
+                let other: &[u8] = other.as_ref();
+                PartialEq::eq(self.as_slice(), other)
+            }
+        }
+
+        impl<'a, 'b> PartialEq<$lhs> for $rhs {
+            #[inline]
+            fn eq(&self, other: &$lhs) -> bool {
+                let this: &[u8] = self.as_ref();
+                PartialEq::eq(this, other.as_slice())
+            }
+        }
+    };
+}
+
+macro_rules! impl_partial_eq_array {
+    ($lhs:ty, $rhs:ty) => {
+        impl<'a, 'b, const N: usize> PartialEq<$rhs> for $lhs {
+            #[inline]
+            fn eq(&self, other: &$rhs) -> bool {
+                let other: &[u8] = other.as_ref();
+                PartialEq::eq(self.as_slice(), other)
+            }
+        }
+
+        impl<'a, 'b, const N: usize> PartialEq<$lhs> for $rhs {
+            #[inline]
+            fn eq(&self, other: &$lhs) -> bool {
+                let this: &[u8] = self.as_ref();
+                PartialEq::eq(this, other.as_slice())
+            }
+        }
+    };
+}
+
+impl_partial_eq!(Buf, Vec<u8>);
+impl_partial_eq!(Buf, &'a Vec<u8>);
+impl_partial_eq!(Buf, [u8]);
+impl_partial_eq!(Buf, &'a [u8]);
+impl_partial_eq!(Buf, String);
+impl_partial_eq!(Buf, &'a String);
+impl_partial_eq!(Buf, str);
+impl_partial_eq!(Buf, &'a str);
+impl_partial_eq_array!(Buf, [u8; N]);
+impl_partial_eq_array!(Buf, &'a [u8; N]);
+
 impl Buf {
     #[inline]
     #[must_use]
