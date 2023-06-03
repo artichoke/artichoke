@@ -1,5 +1,7 @@
+use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use alloc::collections::TryReserveError;
+use alloc::string::String;
 use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
@@ -23,10 +25,109 @@ impl From<Vec<u8>> for Buf {
     }
 }
 
+impl<'a> From<&'a [u8]> for Buf {
+    #[inline]
+    fn from(s: &'a [u8]) -> Self {
+        let vec = s.to_vec();
+        Self::from(vec)
+    }
+}
+
+impl<'a> From<&'a mut [u8]> for Buf {
+    #[inline]
+    fn from(s: &'a mut [u8]) -> Self {
+        let vec = s.to_vec();
+        Self::from(vec)
+    }
+}
+
+impl<const N: usize> From<[u8; N]> for Buf {
+    #[inline]
+    fn from(s: [u8; N]) -> Self {
+        let vec = Vec::from(s);
+        Self::from(vec)
+    }
+}
+
+impl<'a, const N: usize> From<&'a [u8; N]> for Buf {
+    #[inline]
+    fn from(s: &'a [u8; N]) -> Self {
+        let vec = s.to_vec();
+        Self::from(vec)
+    }
+}
+
+impl<'a, const N: usize> From<&'a mut [u8; N]> for Buf {
+    #[inline]
+    fn from(s: &'a mut [u8; N]) -> Self {
+        let vec = s.to_vec();
+        Self::from(vec)
+    }
+}
+
+impl<'a> From<Cow<'a, [u8]>> for Buf {
+    #[inline]
+    fn from(s: Cow<'a, [u8]>) -> Self {
+        let vec = s.into_owned();
+        Self::from(vec)
+    }
+}
+
+impl From<String> for Buf {
+    #[inline]
+    fn from(s: String) -> Self {
+        let vec = s.into_bytes();
+        Self::from(vec)
+    }
+}
+
+impl<'a> From<&'a str> for Buf {
+    #[inline]
+    fn from(s: &'a str) -> Self {
+        let vec = s.as_bytes().to_vec();
+        Self::from(vec)
+    }
+}
+
+impl<'a> From<&'a mut str> for Buf {
+    #[inline]
+    fn from(s: &'a mut str) -> Self {
+        let vec = s.as_bytes().to_vec();
+        Self::from(vec)
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for Buf {
+    #[inline]
+    fn from(s: Cow<'a, str>) -> Self {
+        let vec = s.into_owned().into_bytes();
+        Self::from(vec)
+    }
+}
+
 impl From<Buf> for Vec<u8> {
     #[inline]
     fn from(buf: Buf) -> Self {
         buf.inner
+    }
+}
+
+impl<const N: usize> TryFrom<Buf> for [u8; N] {
+    type Error = Buf;
+
+    #[inline]
+    fn try_from(buf: Buf) -> Result<Self, Self::Error> {
+        match buf.into_inner().try_into() {
+            Ok(array) => Ok(array),
+            Err(vec) => Err(vec.into()),
+        }
+    }
+}
+
+impl<'a> From<Buf> for Cow<'a, [u8]> {
+    #[inline]
+    fn from(buf: Buf) -> Self {
+        Cow::Owned(buf.into())
     }
 }
 
