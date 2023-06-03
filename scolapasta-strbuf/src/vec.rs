@@ -3,6 +3,7 @@ use alloc::boxed::Box;
 use alloc::collections::TryReserveError;
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::borrow::{Borrow, BorrowMut};
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
 use core::ops::{Deref, DerefMut, RangeBounds};
@@ -128,6 +129,32 @@ impl<'a> From<Buf> for Cow<'a, [u8]> {
     #[inline]
     fn from(buf: Buf) -> Self {
         Cow::Owned(buf.into())
+    }
+}
+
+impl AsRef<[u8]> for Buf {
+    #[inline]
+    fn as_ref(&self) -> &[u8] {
+        self.inner.as_ref()
+    }
+}
+
+impl AsMut<[u8]> for Buf {
+    #[inline]
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.inner.as_mut()
+    }
+}
+
+impl Borrow<[u8]> for Buf {
+    fn borrow(&self) -> &[u8] {
+        self
+    }
+}
+
+impl BorrowMut<[u8]> for Buf {
+    fn borrow_mut(&mut self) -> &mut [u8] {
+        self
     }
 }
 
