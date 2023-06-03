@@ -628,6 +628,66 @@ mod tests {
     }
 
     #[test]
+    fn default_is_new() {
+        assert_eq!(Buf::default(), Buf::new());
+    }
+
+    #[test]
+    fn extra_capa_is_not_included_in_len() {
+        let buf = Buf::new();
+        assert!(buf.is_empty());
+        assert_eq!(buf.len(), 0);
+
+        let buf = Buf::with_capacity(0);
+        assert!(buf.is_empty());
+        assert_eq!(buf.len(), 0);
+
+        let buf = Buf::with_capacity(100);
+        assert!(buf.is_empty());
+        assert_eq!(buf.len(), 0);
+    }
+
+    #[test]
+    fn clone_is_equal() {
+        let buf = Buf::from("abc");
+        assert_eq!(buf, buf.clone());
+    }
+
+    #[test]
+    fn try_reserve_overflow_is_err() {
+        let mut buf = Buf::new();
+        assert!(buf.try_reserve(usize::MAX).is_err());
+        assert!(buf.is_empty());
+        assert_eq!(buf.len(), 0);
+    }
+
+    #[test]
+    fn try_reserve_exact_overflow_is_err() {
+        let mut buf = Buf::new();
+        assert!(buf.try_reserve_exact(usize::MAX).is_err());
+        assert!(buf.is_empty());
+        assert_eq!(buf.len(), 0);
+    }
+
+    #[test]
+    fn try_reserve_zero_is_ok() {
+        let mut buf = Buf::new();
+        assert!(buf.try_reserve(0).is_ok());
+        assert_eq!(buf.capacity(), 1);
+        assert!(buf.is_empty());
+        assert_eq!(buf.len(), 0);
+    }
+
+    #[test]
+    fn try_reserve_exact_zero_is_ok() {
+        let mut buf = Buf::new();
+        assert!(buf.try_reserve_exact(0).is_ok());
+        assert_eq!(buf.capacity(), 1);
+        assert!(buf.is_empty());
+        assert_eq!(buf.len(), 0);
+    }
+
+    #[test]
     fn test_ensure_nul_terminated_default() {
         let buf = Buf::default();
         let mut bytes = buf.into_inner();
