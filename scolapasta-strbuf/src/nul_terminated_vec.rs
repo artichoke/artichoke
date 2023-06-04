@@ -6,7 +6,7 @@ use alloc::vec::{IntoIter, Vec};
 use core::borrow::{Borrow, BorrowMut};
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
-use core::ops::{Deref, DerefMut, RangeBounds};
+use core::ops::{Deref, DerefMut};
 use core::slice::{Iter, IterMut};
 #[cfg(feature = "std")]
 use std::io::{self, IoSlice, Write};
@@ -900,15 +900,6 @@ impl Buf {
         self.inner.extend_from_slice(other);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
-
-    #[inline]
-    pub fn extend_from_within<R>(&mut self, src: R)
-    where
-        R: RangeBounds<usize>,
-    {
-        self.inner.extend_from_within(src);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-    }
 }
 
 /// Implementation of useful extension methods from [`bstr::ByteVec`].
@@ -1357,37 +1348,6 @@ mod tests {
         fn test_ensure_nul_terminated_extend_from_slice(bytes: Vec<u8>, other: Vec<u8>) -> bool {
             let mut buf = Buf::from(bytes);
             buf.extend_from_slice(&other);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_extend_from_within_prefix(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.extend_from_within(0..0);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_extend_from_within_suffix(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.extend_from_within(buf.len()..buf.len());
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_extend_from_within_all(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.extend_from_within(0..buf.len());
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_extend_from_within_subset(bytes: Vec<u8>) -> bool {
-            if bytes.len() < 3 {
-                return true;
-            }
-            let mut buf = Buf::from(bytes);
-            buf.extend_from_within(1..buf.len() - 2);
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }

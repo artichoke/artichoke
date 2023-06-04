@@ -6,7 +6,7 @@ use alloc::vec::{IntoIter, Vec};
 use core::borrow::{Borrow, BorrowMut};
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
-use core::ops::{Deref, DerefMut, RangeBounds};
+use core::ops::{Deref, DerefMut};
 use core::slice::{Iter, IterMut};
 #[cfg(feature = "std")]
 use std::io::{self, IoSlice, Write};
@@ -773,14 +773,6 @@ impl Buf {
     #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
         self.inner.extend_from_slice(other);
-    }
-
-    #[inline]
-    pub fn extend_from_within<R>(&mut self, src: R)
-    where
-        R: RangeBounds<usize>,
-    {
-        self.inner.extend_from_within(src);
     }
 }
 
