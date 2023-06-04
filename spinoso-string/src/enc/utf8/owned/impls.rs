@@ -3,6 +3,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::borrow::Borrow;
 use core::fmt;
+use core::hash::{Hash, Hasher};
 use core::ops::{Deref, DerefMut};
 
 use super::{Utf8Str, Utf8String};
@@ -32,7 +33,14 @@ impl Clone for Utf8String {
 
     fn clone_from(&mut self, source: &Self) {
         self.clear();
-        self.extend(source.bytes())
+        let bytes = source.as_bytes();
+        self.extend_from_slice(bytes);
+    }
+}
+
+impl Hash for Utf8String {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        self.as_bytes().hash(hasher);
     }
 }
 
@@ -127,88 +135,77 @@ impl From<Buf> for Utf8String {
 impl From<Vec<u8>> for Utf8String {
     #[inline]
     fn from(content: Vec<u8>) -> Self {
-        let buf = content.into();
-        Self::new(buf)
+        Self::new(content.into())
     }
 }
 
 impl<const N: usize> From<[u8; N]> for Utf8String {
     #[inline]
     fn from(content: [u8; N]) -> Self {
-        let buf = Vec::from(content);
-        Self::new(buf.into())
+        Self::new(content.into())
     }
 }
 
 impl<const N: usize> From<&[u8; N]> for Utf8String {
     #[inline]
     fn from(content: &[u8; N]) -> Self {
-        let buf = content.to_vec();
-        Self::new(buf.into())
+        Self::new(content.into())
     }
 }
 
 impl From<&[u8]> for Utf8String {
     #[inline]
     fn from(content: &[u8]) -> Self {
-        let buf = content.to_vec();
-        Self::new(buf.into())
+        Self::new(content.into())
     }
 }
 
 impl From<&mut [u8]> for Utf8String {
     #[inline]
     fn from(content: &mut [u8]) -> Self {
-        let buf = content.to_vec();
-        Self::new(buf.into())
+        Self::new(content.into())
     }
 }
 
 impl<'a> From<Cow<'a, [u8]>> for Utf8String {
     #[inline]
     fn from(content: Cow<'a, [u8]>) -> Self {
-        let buf = content.into_owned();
-        Self::new(buf.into())
+        Self::new(content.into())
     }
 }
 
 impl From<String> for Utf8String {
     #[inline]
-    fn from(s: String) -> Self {
-        let buf = s.into_bytes();
-        Self::new(buf.into())
+    fn from(content: String) -> Self {
+        Self::new(content.into())
     }
 }
 
 impl From<&str> for Utf8String {
     #[inline]
-    fn from(s: &str) -> Self {
-        let buf = s.as_bytes().to_vec();
-        Self::new(buf.into())
+    fn from(content: &str) -> Self {
+        Self::new(content.into())
     }
 }
 
 impl<'a> From<Cow<'a, str>> for Utf8String {
     #[inline]
     fn from(content: Cow<'a, str>) -> Self {
-        let buf = content.into_owned().into_bytes();
-        Self::new(buf.into())
+        Self::new(content.into())
     }
 }
 
 impl From<&Utf8Str> for Utf8String {
     #[inline]
-    fn from(s: &Utf8Str) -> Self {
-        let buf = s.as_bytes().to_vec();
-        Self::new(buf.into())
+    fn from(content: &Utf8Str) -> Self {
+        Self::new(content.as_bytes().into())
     }
 }
 
 impl<'a> From<Cow<'a, Utf8Str>> for Utf8String {
     #[inline]
     fn from(content: Cow<'a, Utf8Str>) -> Self {
-        let buf = content.into_owned().into_buf();
-        Self::new(buf.into())
+        content.into_owned()
     }
 }
 

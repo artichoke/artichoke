@@ -14,7 +14,7 @@ mod impls;
 mod io;
 
 #[repr(transparent)]
-#[derive(Hash, PartialOrd, Ord)]
+#[derive(PartialOrd, Ord)]
 pub struct Utf8String {
     inner: Buf,
 }
@@ -308,14 +308,14 @@ mod tests {
     fn reverse_ascii() {
         let mut s = Utf8String::from("1234");
         s.reverse();
-        assert_eq!(s, "4321")
+        assert_eq!(s, "4321");
     }
 
     #[test]
     fn reverse_ascii_with_invalid_utf8() {
         let mut s = Utf8String::from(b"1234\xFF\xFE");
         s.reverse();
-        assert_eq!(s, b"\xFE\xFF4321".as_bstr())
+        assert_eq!(s, b"\xFE\xFF4321".as_bstr());
     }
 
     #[test]
@@ -326,7 +326,7 @@ mod tests {
         // ```
         let mut s = Utf8String::from("怎么样");
         s.reverse();
-        assert_eq!(s, "样么怎")
+        assert_eq!(s, "样么怎");
     }
 
     #[test]
@@ -341,7 +341,7 @@ mod tests {
 
         let mut expected = b"\xFE\xFF".to_vec();
         expected.extend_from_slice("样么怎".as_bytes());
-        assert_eq!(s, expected.as_bstr())
+        assert_eq!(s, expected.as_bstr());
     }
 
     #[test]

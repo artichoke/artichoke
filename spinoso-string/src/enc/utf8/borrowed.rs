@@ -18,7 +18,7 @@ pub struct Utf8Str {
 impl Utf8Str {
     #[inline]
     #[must_use]
-    pub fn new<'a, B: ?Sized + AsRef<[u8]>>(bytes: &'a B) -> &'a Utf8Str {
+    pub fn new<B: ?Sized + AsRef<[u8]>>(bytes: &B) -> &Utf8Str {
         Utf8Str::from_bytes(bytes.as_ref())
     }
 
@@ -31,7 +31,7 @@ impl Utf8Str {
     #[inline]
     #[must_use]
     pub const fn empty() -> &'static Utf8Str {
-        Utf8Str::from_bytes(&[])
+        Utf8Str::from_bytes(b"")
     }
 
     #[inline]
@@ -813,6 +813,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::no_effect_underscore_binding)]
     fn slice_indexing_is_byte_slicing() {
         let s = Utf8Str::new("a🦀b💎c");
         // individual bytes can be copied out of the string ref.
@@ -822,7 +823,7 @@ mod tests {
 
         // slicing in the middle of multi-byte UTF-8 characters is fine.
         for idx in 0..s.len() {
-            let _span: &[u8] = &s[idx..idx + 1];
+            let _span: &[u8] = &s[idx..=idx];
         }
         for idx in 0..s.len() - 1 {
             let _span: &[u8] = &s[idx..idx + 2];
@@ -843,7 +844,7 @@ mod tests {
         // slicing in the middle of multi-byte UTF-8 characters is fine.
         let s = Utf8Str::new_mut(&mut data);
         for idx in 0..s.len() {
-            let span: &mut [u8] = &mut s[idx..idx + 1];
+            let span: &mut [u8] = &mut s[idx..=idx];
             span.copy_from_slice(b"%");
         }
         assert_eq!(s, Utf8Str::new("%%%%%%%%%%%"));

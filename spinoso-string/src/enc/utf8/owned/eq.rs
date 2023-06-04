@@ -7,13 +7,13 @@ use super::{Utf8Str, Utf8String};
 
 impl Eq for Utf8String {}
 
-impl<'a, 'b> PartialEq<Utf8String> for Utf8String {
+impl PartialEq<Utf8String> for Utf8String {
     fn eq(&self, other: &Utf8String) -> bool {
         self.as_bytes() == other.as_bytes()
     }
 }
 
-impl<'a, 'b> PartialEq<&'a Utf8String> for Utf8String {
+impl<'a> PartialEq<&'a Utf8String> for Utf8String {
     fn eq(&self, other: &&'a Utf8String) -> bool {
         self.as_bytes() == other.as_bytes()
     }
