@@ -77,13 +77,13 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) -> Result<(), TryReserveError> {
 /// use scolapasta_strbuf::Buf;
 ///
 /// let mut buf = Buf::new();
-/// buf.push(b'a');
-/// buf.push(b'z');
+/// buf.push_byte(b'a');
+/// buf.push_byte(b'z');
 ///
 /// assert_eq!(buf.len(), 2);
 /// assert_eq!(buf[0], b'a');
 ///
-/// assert_eq!(buf.pop(), Some(b'z'));
+/// assert_eq!(buf.pop_byte(), Some(b'z'));
 /// assert_eq!(buf.len(), 1);
 ///
 /// buf[0] = b'!';
@@ -508,13 +508,13 @@ impl Buf {
     ///
     /// // These are all done without reallocating...
     /// for ch in b'a'..=b'z' {
-    ///     buf.push(ch);
+    ///     buf.push_byte(ch);
     /// }
     /// assert_eq!(buf.len(), 26);
     /// assert!(buf.capacity() >= 26);
     ///
     /// // ...but this may make the buffer reallocate
-    /// buf.push(b'!');
+    /// buf.push_byte(b'!');
     /// assert_eq!(buf.len(), 27);
     /// assert!(buf.capacity() >= 27);
     /// ```
@@ -615,7 +615,7 @@ impl Buf {
     /// use scolapasta_strbuf::Buf;
     ///
     /// let mut buf = Buf::with_capacity(10);
-    /// buf.push(b'!');
+    /// buf.push_byte(b'!');
     /// assert_eq!(buf.capacity(), 11);
     /// # }
     /// ```
@@ -894,7 +894,7 @@ impl Buf {
     }
 
     #[inline]
-    pub fn pop(&mut self) -> Option<u8> {
+    pub fn pop_byte(&mut self) -> Option<u8> {
         let popped = self.inner.pop();
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
         popped
@@ -1430,7 +1430,7 @@ mod tests {
                 return true;
             }
             let mut buf = Buf::from(bytes);
-            buf.pop();
+            buf.pop_byte();
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }
