@@ -3,7 +3,6 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::borrow::Borrow;
 use core::fmt;
-use core::hash::{Hash, Hasher};
 use core::ops::{Deref, DerefMut};
 
 use super::{Utf8Str, Utf8String};
@@ -35,12 +34,6 @@ impl Clone for Utf8String {
         self.clear();
         let bytes = source.as_bytes();
         self.extend_from_slice(bytes);
-    }
-}
-
-impl Hash for Utf8String {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        self.as_bytes().hash(hasher);
     }
 }
 

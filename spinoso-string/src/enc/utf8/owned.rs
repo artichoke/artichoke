@@ -14,7 +14,7 @@ mod impls;
 mod io;
 
 #[repr(transparent)]
-#[derive(PartialOrd, Ord)]
+#[derive(Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Utf8String {
     inner: Buf,
 }
