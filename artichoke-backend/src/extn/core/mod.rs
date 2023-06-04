@@ -6,6 +6,7 @@ pub(crate) mod array;
 pub(crate) mod artichoke;
 pub(crate) mod basicobject;
 pub(crate) mod comparable;
+pub(crate) mod encoding;
 pub(crate) mod enumerable;
 pub(crate) mod enumerator;
 #[cfg(feature = "core-env")]
@@ -76,6 +77,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     range::init(interp)?;
     #[cfg(feature = "core-regexp")]
     regexp::mruby::init(interp)?;
+    // `String` is reliant on `Encoding`
+    encoding::mruby::init(interp)?;
     string::mruby::init(interp)?;
     thread::init(interp)?;
     #[cfg(feature = "core-time")]
