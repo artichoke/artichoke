@@ -352,6 +352,18 @@ jobs:
         run: cargo check --verbose --all-features --all-targets --profile=test
         working-directory: "scolapasta-path"
 
+      - name: Compile scolapasta-strbuf with no default features
+        run: cargo check --verbose --no-default-features --all-targets --profile=test
+        working-directory: "scolapasta-strbuf"
+
+      - name: Compile scolapasta-strbuf with some features
+        run: cargo check --verbose --no-default-features --features nul-terminated --all-targets --profile=test
+        working-directory: "scolapasta-strbuf"
+
+      - name: Compile scolapasta-strbuf with all features
+        run: cargo check --verbose --all-features --all-targets --profile=test
+        working-directory: "scolapasta-strbuf"
+
       - name: Compile scolapasta-string-escape with no default features
         run: cargo check --verbose --no-default-features --all-targets --profile=test
         working-directory: "scolapasta-string-escape"
