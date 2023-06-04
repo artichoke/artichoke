@@ -548,6 +548,10 @@ impl Buf {
     /// Refer to the safety documentation for [`Vec::from_raw_parts`] for more
     /// details.
     ///
+    /// In addition to the safety invariants of `Vec`, `Buf` has the additional
+    /// requirement that callers ensure the spare capacity of the allocation
+    /// referred to by `ptr` is NUL terminated at offset `length` and `capacity`.
+    ///
     /// # Examples
     ///
     /// ```
