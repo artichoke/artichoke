@@ -16,7 +16,11 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
+
+[dependencies.scolapasta-string-escape]
+version = "0.3.0"
+path = "../scolapasta-string-escape"
+default-features = false
 
 [features]
 default = ["std"]

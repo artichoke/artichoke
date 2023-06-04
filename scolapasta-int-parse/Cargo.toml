@@ -17,7 +17,11 @@ documentation.workspace = true
 
 [dependencies]
 posix-space = "1.0.0"
-scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
+
+[dependencies.scolapasta-string-escape]
+version = "0.3.0"
+path = "../scolapasta-string-escape"
+default-features = false
 
 [features]
 default = ["std"]

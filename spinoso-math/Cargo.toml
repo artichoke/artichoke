@@ -16,7 +16,10 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-libm = { version = "0.2.6", optional = true }
+
+[dependencies.libm]
+version = "0.2.6"
+optional = true
 
 [features]
 default = ["full"]

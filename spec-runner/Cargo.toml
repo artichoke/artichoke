@@ -10,16 +10,34 @@ keywords = ["artichoke", "artichoke-ruby", "ruby", "ruby-spec", "testing"]
 categories = ["development-tools::testing"]
 
 [dependencies]
-artichoke = { version = "0.1.0-pre.0", path = "..", default-features = false, features = ["backtrace", "kitchen-sink"] }
 basic-toml = "0.1.1"
-clap = { version = "4.3.0", default-features = false, features = ["std", "help", "usage", "error-context", "suggestions"] }
-dhat = { version = "0.3.0", optional = true }
 rust-embed = "6.3.0"
-serde = { version = "1.0.136", features = ["derive"] }
 termcolor = "1.1.0"
 
+[dependencies.artichoke]
+version = "0.1.0-pre.0"
+path = ".."
+default-features = false
+features = ["backtrace", "kitchen-sink"]
+
+[dependencies.clap]
+version = "4.3.0"
+default-features = false
+features = ["std", "help", "usage", "error-context", "suggestions"]
+
+[dependencies.dhat]
+version = "0.3.0"
+optional = true
+
+[dependencies.serde]
+version = "1.0.136"
+features = ["derive"]
+
 [dev-dependencies]
-bstr = { version = "1.2.0", default-features = false }
+
+[dev-dependencies.bstr]
+version = "1.2.0"
+default-features = false
 
 # `spec-runner` is a regression testing tool
 # Remove it from the main artichoke workspace.

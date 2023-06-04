@@ -11,9 +11,18 @@ license = "MIT"
 cargo-fuzz = true
 
 [dependencies]
-artichoke = { version = "0.1.0-pre.0", path = "..", default-features = false, features = ["kitchen-sink"] }
 libfuzzer-sys = "0.4.6"
-scolapasta-int-parse = { version = "0.2.0", path = "../scolapasta-int-parse", default-features = false }
+
+[dependencies.artichoke]
+version = "0.1.0-pre.0"
+path = ".."
+default-features = false
+features = ["kitchen-sink"]
+
+[dependencies.scolapasta-int-parse]
+version = "0.2.0"
+path = "../scolapasta-int-parse"
+default-features = false
 
 # Prevent this from interfering with workspaces
 [workspace]

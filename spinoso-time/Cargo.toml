@@ -16,10 +16,29 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-regex =  { version = "1.7.0", default-features = false, features = ["std"], optional = true }
-strftime-ruby = { version = "1.0.0", default-features = false, features = ["alloc"], optional = true }
-tz-rs = { version = "0.6.12", default-features = false, features = ["std"], optional = true }
-tzdb = { version = "0.5.6", default-features = false, optional = true }
+
+[dependencies.regex]
+version = "1.7.0"
+default-features = false
+features = ["std"]
+optional = true
+
+[dependencies.strftime-ruby]
+version = "1.0.0"
+default-features = false
+features = ["alloc"]
+optional = true
+
+[dependencies.tz-rs]
+version = "0.6.12"
+optional = true
+default-features = false
+features = ["std"]
+
+[dependencies.tzdb]
+version = "0.5.6"
+optional = true
+default-features = false
 
 [features]
 default = ["tzrs", "tzrs-local"]
