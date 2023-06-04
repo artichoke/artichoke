@@ -897,12 +897,46 @@ impl Buf {
 }
 
 /// Implementation of useful extension methods from [`bstr::ByteVec`].
+///
+/// [`bstr::ByteVec`]: https://docs.rs/bstr/latest/bstr/trait.ByteVec.html
 impl Buf {
+    /// Append the given byte to the end of this buffer.
+    ///
+    /// Note that this is equivalent to the generic [`Vec::push`] method. This
+    /// method is provided to permit callers to explicitly differentiate
+    /// between pushing bytes, codepoints and strings.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"abc");
+    /// buf.push_byte(b'\xF0');
+    /// buf.push_byte(b'\x9F');
+    /// buf.push_byte(b'\xA6');
+    /// buf.push_byte(b'\x80');
+    /// assert_eq!(buf, "abc🦀");
+    /// ```
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {
         self.inner.push(byte);
     }
 
+    /// Append the given [`char`] to the end of the buffer.
+    ///
+    /// The given `char` is encoded to its UTF-8 byte sequence which is appended
+    /// to the buffer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"abc");
+    /// buf.push_char('🦀');
+    /// assert_eq!(buf, "abc🦀");
+    /// ```
     #[inline]
     pub fn push_char(&mut self, ch: char) {
         let mut buf = [0; 4];
@@ -910,6 +944,24 @@ impl Buf {
         self.push_str(s);
     }
 
+    /// Append the given slice to the end of this buffer.
+    ///
+    /// This method accepts any type that be converted to a `&[u8]`. This
+    /// includes, but is not limited to, `&str`, `&Buf`, and of course, `&[u8]`
+    /// itself.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"abc");
+    /// buf.push_str("🦀");
+    /// assert_eq!(buf, "abc🦀");
+    ///
+    /// buf.push_str(b"\xF0\x9F\xA6\x80");
+    /// assert_eq!(buf, "abc🦀🦀");
+    /// ```
     #[inline]
     pub fn push_str<B: AsRef<[u8]>>(&mut self, bytes: B) {
         self.extend_from_slice(bytes.as_ref());
