@@ -86,7 +86,7 @@
 //!   capacity. This feature can be used to ensure `Buf`s are FFI compatible
 //!   with C code that expects byte content to be NUL terminated.
 //!
-//! [`Vec<u8>`]: Vec
+//! [`Vec<u8>`]: alloc::vec::Vec
 //! [`String`]: https://ruby-doc.org/3.2.0/String.html
 #![cfg_attr(
     not(feature = "std"),
