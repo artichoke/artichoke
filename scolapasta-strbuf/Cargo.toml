@@ -5,7 +5,7 @@ authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = """
 A byte buffer backend for Ruby Strings.
 """
-keywords = ["bytes", "cstring", "no_std", "vec"]
+keywords = ["buffer", "bytes", "cstring", "no_std", "vec"]
 categories = ["data-structures", "no-std"]
 readme = "README.md"
 edition.workspace = true
