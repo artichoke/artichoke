@@ -5,8 +5,8 @@ use core::ops::Range;
 use core::slice::SliceIndex;
 
 use bstr::{ByteSlice, ByteVec};
+use scolapasta_strbuf::Buf;
 
-use crate::buf::Buf;
 use crate::chars::ConventionallyUtf8;
 use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};

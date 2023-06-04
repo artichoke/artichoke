@@ -50,10 +50,10 @@ use bstr::ByteSlice;
 #[cfg(feature = "casecmp")]
 #[cfg_attr(feature = "docsrs", doc(cfg(feature = "casecmp")))]
 pub use focaccia::CaseFold;
+use scolapasta_strbuf::Buf;
 #[doc(inline)]
-pub use raw_parts::RawParts;
+pub use scolapasta_strbuf::RawParts;
 
-mod buf;
 mod center;
 mod chars;
 mod codepoints;
@@ -65,7 +65,6 @@ mod inspect;
 mod iter;
 mod ord;
 
-use buf::Buf;
 pub use center::{Center, CenterError};
 pub use chars::Chars;
 pub use codepoints::{Codepoints, CodepointsError, InvalidCodepointError};

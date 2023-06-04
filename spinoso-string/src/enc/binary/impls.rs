@@ -3,8 +3,9 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 
+use scolapasta_strbuf::Buf;
+
 use super::BinaryString;
-use crate::buf::Buf;
 
 impl Extend<u8> for BinaryString {
     #[inline]

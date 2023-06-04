@@ -687,6 +687,14 @@ name = "scolapasta-path"
 version = "0.5.0"
 
 [[package]]
+name = "scolapasta-strbuf"
+version = "1.0.0"
+dependencies = [
+ "quickcheck",
+ "raw-parts",
+]
+
+[[package]]
 name = "scolapasta-string-escape"
 version = "0.3.0"
 dependencies = [
@@ -790,13 +798,13 @@ dependencies = [
 
 [[package]]
 name = "spinoso-string"
-version = "0.22.0"
+version = "0.23.0"
 dependencies = [
  "bstr",
  "bytecount",
  "focaccia",
  "quickcheck",
- "raw-parts",
+ "scolapasta-strbuf",
  "scolapasta-string-escape",
  "simdutf8",
 ]

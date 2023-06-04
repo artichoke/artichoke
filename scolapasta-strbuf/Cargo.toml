@@ -1,0 +1,36 @@
+[package]
+name = "scolapasta-strbuf"
+version = "1.0.0"
+authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
+description = """
+A byte buffer backend for Ruby Strings.
+"""
+keywords = ["buffer", "bytes", "cstring", "no_std", "vec"]
+categories = ["data-structures", "no-std"]
+readme = "README.md"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+[dependencies]
+raw-parts = "2.0.0"
+
+[dev-dependencies]
+quickcheck = { version = "1.0.3", default-features = false }
+
+[features]
+default = ["std"]
+# Add implementations of traits from `std` like `std::io::Write`.
+std = []
+# Use an alternate byte buffer backend that ensures byte content is always
+# followed by a NUL byte in the buffer's spare capacity. This feature can be
+# used to ensure `Buf`s are FFI compatible with C code that expects byte content
+# to be NUL terminated.
+nul-terminated = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

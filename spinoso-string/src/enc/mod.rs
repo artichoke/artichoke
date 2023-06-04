@@ -7,9 +7,9 @@ use core::slice::SliceIndex;
 
 use ascii::AsciiString;
 use binary::BinaryString;
+use scolapasta_strbuf::Buf;
 use utf8::Utf8String;
 
-use crate::buf::Buf;
 use crate::codepoints::InvalidCodepointError;
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
