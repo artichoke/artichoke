@@ -26,6 +26,12 @@
 //!
 //! Buffers ensure they never allocate more than `isize::MAX` bytes.
 //!
+//! Buffers are transparent wrappers around [`Vec<u8>`] with a minimized API
+//! sufficient for implementing the Ruby [`String`] type.
+//!
+//! Buffers do not assume any encoding. Encoding is a higher-level concept that
+//! should be built on top of `Buf`.
+//!
 //! # Examples
 //!
 //! You can explicitly create a [`Buf`] with [`Buf::new`]:
@@ -79,6 +85,8 @@
 //!   capacity. This feature can be used to ensure `Buf`s are FFI compatible
 //!   with C code that expects byte content to be NUL terminated.
 //!
+//! [`Vec<u8>`]: Vec
+//! [`String`]: https://ruby-doc.org/3.2.0/String.html
 #![cfg_attr(
     not(feature = "std"),
     doc = "[`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html"
