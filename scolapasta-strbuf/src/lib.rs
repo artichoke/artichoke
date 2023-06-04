@@ -138,6 +138,8 @@ macro_rules! impl_partial_eq_array {
     };
 }
 
+pub use raw_parts::RawParts;
+
 mod nul_terminated_vec;
 mod vec;
 
