@@ -775,11 +775,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn push(&mut self, value: u8) {
-        self.inner.push(value);
-    }
-
-    #[inline]
     pub fn pop(&mut self) -> Option<u8> {
         self.inner.pop()
     }

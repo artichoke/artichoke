@@ -894,12 +894,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn push(&mut self, value: u8) {
-        self.inner.push(value);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-    }
-
-    #[inline]
     pub fn pop(&mut self) -> Option<u8> {
         let popped = self.inner.pop();
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
@@ -1427,13 +1421,6 @@ mod tests {
                 idx += 1;
                 idx % 2 == 0
             });
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_push(bytes: Vec<u8>, pushed: u8) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.push(pushed);
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }
