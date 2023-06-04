@@ -4,6 +4,7 @@ use alloc::collections::TryReserveError;
 use alloc::string::String;
 use alloc::vec::{IntoIter, Vec};
 use core::borrow::{Borrow, BorrowMut};
+use core::fmt;
 #[cfg(feature = "std")]
 use core::fmt::Arguments;
 use core::ops::{Deref, DerefMut};
@@ -1100,6 +1101,20 @@ impl Buf {
     #[inline]
     pub fn push_str<B: AsRef<[u8]>>(&mut self, bytes: B) {
         self.extend_from_slice(bytes.as_ref());
+    }
+}
+
+impl fmt::Write for Buf {
+    #[inline]
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.push_str(s);
+        Ok(())
+    }
+
+    #[inline]
+    fn write_char(&mut self, c: char) -> fmt::Result {
+        self.push_char(c);
+        Ok(())
     }
 }
 
