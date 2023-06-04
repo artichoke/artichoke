@@ -27,7 +27,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-spinoso-string = "0.22.0"
+spinoso-string = "0.23.0"
 ```
 
 ## `no_std`
@@ -44,9 +44,9 @@ All features are enabled by default unless otherwise noted.
   Activating this feature enables a dependency on [`focaccia`].
 - **std** - Enables a dependency on the Rust Standard Library. Activating this
   feature enables [`std::error::Error`] impls on error types in this crate.
-- **always-nul-terminated-c-string-compat** - NOT enabled by default. Use an
-  alternate byte buffer backend that ensures string content is always followed
-  by a NUL byte. This feature can be used to ensure spinoso strings are FFI
+- **nul-terminated** - NOT enabled by default. Use an alternate byte buffer
+  backend that ensures byte content is always followed by a NUL byte in the
+  buffer's spare capacity. This feature can be used to ensure `String`s are FFI
   compatible with C code that expects byte content to be NUL terminated.
 
 [`focaccia`]: https://docs.rs/focaccia

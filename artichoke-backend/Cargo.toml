@@ -34,7 +34,7 @@ spinoso-math = { version = "0.3.0", path = "../spinoso-math", optional = true, d
 spinoso-random = { version = "0.3.0", path = "../spinoso-random", optional = true }
 spinoso-regexp = { version = "0.5.0", path = "../spinoso-regexp", optional = true, default-features = false }
 spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", optional = true }
-spinoso-string = { version = "0.22.0", path = "../spinoso-string", features = ["always-nul-terminated-c-string-compat"] }
+spinoso-string = { version = "0.23.0", path = "../spinoso-string", features = ["nul-terminated"] }
 spinoso-symbol = { version = "0.4.0", path = "../spinoso-symbol" }
 spinoso-time = { version = "0.7.2", path = "../spinoso-time", features = ["tzrs"], default-features = false, optional = true }
 

@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-string"
-version = "0.22.0"
+version = "0.23.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = """
 Encoding-aware string implementation for Ruby String core type in Artichoke Ruby
@@ -33,10 +33,11 @@ casecmp = ["dep:focaccia"]
 #
 # Enable runtime SIMD dispatch in `bytecount` and `simdutf8` dependencies.
 std = ["bytecount/runtime-dispatch-simd", "scolapasta-strbuf/std", "simdutf8/std"]
-# Use an alternate byte buffer backend that ensures string content is always
-# followed by a NUL byte. This feature can be used to ensure spinoso strings are
-# FFI compatible with C code that expects byte content to be NUL terminated.
-always-nul-terminated-c-string-compat = ["scolapasta-strbuf/nul-terminated"]
+# Use an alternate byte buffer backend that ensures byte content is always
+# followed by a NUL byte in the buffer's spare capacity. This feature can be
+# used to ensure `String`s are FFI compatible with C code that expects byte
+# content to be NUL terminated.
+nul-terminated = ["scolapasta-strbuf/nul-terminated"]
 
 [package.metadata.docs.rs]
 all-features = true
