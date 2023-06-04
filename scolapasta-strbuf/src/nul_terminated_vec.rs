@@ -176,6 +176,14 @@ pub struct Buf {
     inner: Vec<u8>,
 }
 
+impl Buf {
+    #[inline]
+    #[must_use]
+    pub fn into_inner(self) -> Vec<u8> {
+        self.inner
+    }
+}
+
 impl Default for Buf {
     #[inline]
     fn default() -> Self {
@@ -453,6 +461,7 @@ impl<'a> IntoIterator for &'a mut Buf {
     }
 }
 
+/// Minimal [`Vec`] API.
 impl Buf {
     /// Constructs a new, empty `Buf`.
     ///
@@ -946,12 +955,7 @@ impl Buf {
     pub fn leak<'a>(self) -> &'a mut [u8] {
         self.inner.leak()
     }
-}
 
-impl Buf
-where
-    u8: Clone,
-{
     #[inline]
     pub fn resize(&mut self, new_len: usize, value: u8) {
         self.inner.resize(new_len, value);
@@ -974,15 +978,7 @@ where
     }
 }
 
-impl Buf {
-    #[inline]
-    #[must_use]
-    pub fn into_inner(self) -> Vec<u8> {
-        self.inner
-    }
-}
-
-// `bstr::ByteVec` impls
+/// Implementation of useful extension methods from [`bstr::ByteVec`].
 impl Buf {
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {
