@@ -11,7 +11,6 @@ use core::slice::{Iter, IterMut};
 #[cfg(feature = "std")]
 use std::io::{self, IoSlice, Write};
 
-use bstr::ByteVec;
 use raw_parts::RawParts;
 
 /// A contiguous growable byte string, written as `Buf`, short for 'buffer'.
@@ -901,17 +900,19 @@ impl Buf {
 impl Buf {
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {
-        self.inner.push_byte(byte);
+        self.inner.push(byte);
     }
 
     #[inline]
     pub fn push_char(&mut self, ch: char) {
-        self.inner.push_char(ch);
+        let mut buf = [0; 4];
+        let s = ch.encode_utf8(&mut buf[..]);
+        self.push_str(s);
     }
 
     #[inline]
     pub fn push_str<B: AsRef<[u8]>>(&mut self, bytes: B) {
-        self.inner.push_str(bytes);
+        self.extend_from_slice(bytes.as_ref());
     }
 }
 

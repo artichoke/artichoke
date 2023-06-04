@@ -690,7 +690,6 @@ version = "0.5.0"
 name = "scolapasta-strbuf"
 version = "1.0.0"
 dependencies = [
- "bstr",
  "quickcheck",
  "raw-parts",
 ]

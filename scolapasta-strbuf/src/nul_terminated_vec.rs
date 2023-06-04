@@ -11,7 +11,6 @@ use core::slice::{Iter, IterMut};
 #[cfg(feature = "std")]
 use std::io::{self, IoSlice, Write};
 
-use bstr::ByteVec;
 use raw_parts::RawParts;
 
 /// Ensure the given `Vec` can be used safely by C code as a string buffer.
@@ -1027,20 +1026,20 @@ impl Buf {
 impl Buf {
     #[inline]
     pub fn push_byte(&mut self, byte: u8) {
-        self.inner.push_byte(byte);
+        self.inner.push(byte);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
     #[inline]
     pub fn push_char(&mut self, ch: char) {
-        self.inner.push_char(ch);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
+        let mut buf = [0; 4];
+        let s = ch.encode_utf8(&mut buf[..]);
+        self.push_str(s);
     }
 
     #[inline]
     pub fn push_str<B: AsRef<[u8]>>(&mut self, bytes: B) {
-        self.inner.push_str(bytes);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
+        self.extend_from_slice(bytes.as_ref());
     }
 }
 

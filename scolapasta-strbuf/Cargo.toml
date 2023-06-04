@@ -16,7 +16,6 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-bstr = { version = "1.2.0", default-features = false, features = ["alloc"] }
 raw-parts = "2.0.0"
 
 [dev-dependencies]
