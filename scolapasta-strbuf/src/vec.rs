@@ -294,12 +294,15 @@ impl_partial_eq!(Buf, Vec<u8>);
 impl_partial_eq!(Buf, &'a Vec<u8>);
 impl_partial_eq!(Buf, [u8]);
 impl_partial_eq!(Buf, &'a [u8]);
+impl_partial_eq!(Buf, &'a mut [u8]);
 impl_partial_eq!(Buf, String);
 impl_partial_eq!(Buf, &'a String);
 impl_partial_eq!(Buf, str);
 impl_partial_eq!(Buf, &'a str);
+impl_partial_eq!(Buf, &'a mut str);
 impl_partial_eq_array!(Buf, [u8; N]);
 impl_partial_eq_array!(Buf, &'a [u8; N]);
+impl_partial_eq_array!(Buf, &'a mut [u8; N]);
 
 impl IntoIterator for Buf {
     type Item = u8;
