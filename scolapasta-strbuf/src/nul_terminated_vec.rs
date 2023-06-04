@@ -1409,12 +1409,14 @@ mod tests {
 
         fn test_ensure_nul_terminated_after_clone(bytes: Vec<u8>) -> bool {
             let buf = Buf::from(bytes);
+            #[allow(clippy::redundant_clone)]
             let buf = buf.clone();
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }
 
         fn test_ensure_nul_terminated_from_iterator(bytes: Vec<u8>) -> bool {
+            #[allow(clippy::from_iter_instead_of_collect)]
             let buf = Buf::from_iter(bytes.into_iter());
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
@@ -1685,7 +1687,7 @@ mod tests {
             use std::io::Write;
 
             let mut buf = Buf::from(bytes);
-            buf.write(&data).unwrap();
+            let _written = buf.write(&data).unwrap();
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }
@@ -1706,7 +1708,7 @@ mod tests {
             use std::io::{IoSlice, Write};
 
             let mut buf = Buf::from(bytes);
-            buf.write_vectored(&[IoSlice::new(&data1), IoSlice::new(&data2)]).unwrap();
+            let _written = buf.write_vectored(&[IoSlice::new(&data1), IoSlice::new(&data2)]).unwrap();
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }
@@ -1726,7 +1728,7 @@ mod tests {
             use std::io::Write;
 
             let mut buf = Buf::from(bytes);
-            buf.write_fmt(format_args!("{}", data)).unwrap();
+            buf.write_fmt(format_args!("{data}")).unwrap();
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }
