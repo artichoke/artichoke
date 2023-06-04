@@ -855,6 +855,40 @@ impl Buf {
         removed
     }
 
+    /// Retain only the bytes specified by the predicate.
+    ///
+    /// In other words, remove all bytes `b` for which `f(&b)` returns `false`.
+    /// This method operates in place, visiting each byte exactly once in the
+    /// original order, and preserves the order of the retained bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"abc, 123!");
+    /// buf.retain(|&b| b.is_ascii_alphanumeric());
+    /// assert_eq!(buf, b"abc123");
+    /// ```
+    ///
+    /// Because the bytes are visited exactly once in the original order,
+    /// external state may be used to decide which elements to keep.
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"abc, 123!");
+    /// let mut seen_space = false;
+    /// buf.retain(|&b| {
+    ///     if seen_space {
+    ///         true
+    ///     } else {
+    ///         seen_space = b.is_ascii_whitespace();
+    ///         false
+    ///     }
+    /// });
+    /// assert_eq!(buf, b"123!");
+    /// ```
     #[inline]
     pub fn retain<F>(&mut self, f: F)
     where
@@ -864,6 +898,18 @@ impl Buf {
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Remove the last byte from the buffer and return it, or [`None`] if the
+    /// buffer is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"abc, 123!");
+    /// assert_eq!(buf.pop_byte(), Some(b'!'));
+    /// assert_eq!(buf, "abc, 123");
+    /// ```
     #[inline]
     pub fn pop_byte(&mut self) -> Option<u8> {
         let popped = self.inner.pop();
@@ -871,30 +917,105 @@ impl Buf {
         popped
     }
 
+    /// Clear the buffer, removing all bytes.
+    ///
+    /// This method sets the length of the buffer to zero. Note that this method
+    /// has no effect on the allocated capacity of the buffer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"abc, 123!");
+    /// let capacity = buf.capacity();
+    ///
+    /// buf.clear();
+    ///
+    /// assert!(buf.is_empty());
+    /// assert_eq!(buf.capacity(), capacity);
+    /// ```
     #[inline]
     pub fn clear(&mut self) {
         self.inner.clear();
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Return the number of bytes in the buffer, also referred to as its
+    /// 'length' or 'bytesize'.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let buf = Buf::from(b"abc");
+    /// assert_eq!(buf.len(), 3);
+    /// ```
     #[inline]
     #[must_use]
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
+    /// Return `true` if the buffer has empty byte content.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::new();
+    /// assert!(buf.is_empty());
+    ///
+    /// buf.push_byte(b'!');
+    /// assert!(!buf.is_empty());
+    /// ```
     #[inline]
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
+    /// Resize the `Buf` in-place so that `len` is equal to `new_len`.
+    ///
+    /// If `new_len` is greater than `len`, the `Vec` is extended by the
+    /// difference, with each additional slot filled with `value`. If `new_len`
+    /// is less than `len`, the `Buf` is simply truncated.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"hello");
+    /// buf.resize(8, b'!');
+    /// assert_eq!(buf, b"hello!!!");
+    ///
+    /// let mut buf = Buf::from("wxyz");
+    /// buf.resize(2, b'.');
+    /// assert_eq!(buf, b"wx");
+    /// ```
     #[inline]
     pub fn resize(&mut self, new_len: usize, value: u8) {
         self.inner.resize(new_len, value);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Copy and append all bytes in the given slice to the `Buf`.
+    ///
+    /// Iterate over the slice `other`, copy each byte, and then append
+    /// it to this `Buf`. The `other` slice is traversed in-order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"h");
+    /// buf.extend_from_slice(b"ello world");
+    /// assert_eq!(buf, b"hello world");
+    /// ```
     #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
         self.inner.extend_from_slice(other);
