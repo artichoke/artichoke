@@ -921,28 +921,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn split_off(&mut self, at: usize) -> Self {
-        let split = self.inner.split_off(at);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-        Self::from(split)
-    }
-
-    #[inline]
-    pub fn resize_with<F>(&mut self, new_len: usize, f: F)
-    where
-        F: FnMut() -> u8,
-    {
-        self.inner.resize_with(new_len, f);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn leak<'a>(self) -> &'a mut [u8] {
-        self.inner.leak()
-    }
-
-    #[inline]
     pub fn resize(&mut self, new_len: usize, value: u8) {
         self.inner.resize(new_len, value);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
@@ -1392,68 +1370,6 @@ mod tests {
             buf.clear();
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_split_off_before_first(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            let split = buf.split_off(0);
-            let mut bytes = buf.into_inner();
-            let mut split = split.into_inner();
-            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
-        }
-
-        fn test_ensure_nul_terminated_split_off_first(bytes: Vec<u8>) -> bool {
-            if bytes.is_empty() {
-                return true;
-            }
-            let mut buf = Buf::from(bytes);
-            let split = buf.split_off(1);
-            let mut bytes = buf.into_inner();
-            let mut split = split.into_inner();
-            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
-        }
-
-        fn test_ensure_nul_terminated_split_off_past_end(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            let split = buf.split_off(buf.len());
-            let mut bytes = buf.into_inner();
-            let mut split = split.into_inner();
-            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
-        }
-
-        fn test_ensure_nul_terminated_split_off_last(bytes: Vec<u8>) -> bool {
-            if bytes.is_empty() {
-                return true;
-            }
-            let mut buf = Buf::from(bytes);
-            let split = buf.split_off(buf.len() - 1);
-            let mut bytes = buf.into_inner();
-            let mut split = split.into_inner();
-            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
-        }
-
-        fn test_ensure_nul_terminated_split_off_interior(bytes: Vec<u8>) -> bool {
-            if bytes.len() < 2 {
-                return true;
-            }
-            let mut buf = Buf::from(bytes);
-            let split = buf.split_off(buf.len() - 2);
-            let mut bytes = buf.into_inner();
-            let mut split = split.into_inner();
-            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
-        }
-
-        fn test_ensure_nul_terminated_resize_with(bytes: Vec<u8>) -> bool {
-            let lengths = [0_usize, 1, 2, 3, 4, 19, 280, 499, 1024, 4096, 4099];
-            for len in lengths {
-                let mut buf = Buf::from(bytes.clone());
-                buf.resize_with(len, || u8::MAX);
-                let mut bytes = buf.into_inner();
-                if !is_nul_terminated(&mut bytes) {
-                    return false;
-                }
-            }
-            true
         }
 
         fn test_ensure_nul_terminated_resize(bytes: Vec<u8>) -> bool {

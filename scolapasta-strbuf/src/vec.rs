@@ -801,27 +801,6 @@ impl Buf {
     }
 
     #[inline]
-    #[must_use]
-    pub fn split_off(&mut self, at: usize) -> Self {
-        let split = self.inner.split_off(at);
-        Self::from(split)
-    }
-
-    #[inline]
-    pub fn resize_with<F>(&mut self, new_len: usize, f: F)
-    where
-        F: FnMut() -> u8,
-    {
-        self.inner.resize_with(new_len, f);
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn leak<'a>(self) -> &'a mut [u8] {
-        self.inner.leak()
-    }
-
-    #[inline]
     pub fn resize(&mut self, new_len: usize, value: u8) {
         self.inner.resize(new_len, value);
     }
