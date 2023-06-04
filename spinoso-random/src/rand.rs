@@ -10,7 +10,7 @@ use crate::{ArgumentError, Random};
 /// more details.
 // TODO: Add range variants
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand-method")))]
 pub enum Max {
     /// A maximum float bound.
     ///
@@ -47,7 +47,7 @@ impl fmt::Display for Max {
 /// This enum is returned by the [`rand()`] function. See its documentation for
 /// more details.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand-method")))]
 pub enum Rand {
     /// A random float.
     ///
@@ -80,7 +80,8 @@ pub enum Rand {
 /// Generate floats from `(0.0..1.0)`:
 ///
 /// ```
-/// # use spinoso_random::{rand, ArgumentError, InitializeError, Max, Rand, Random};
+/// use spinoso_random::{rand, ArgumentError, InitializeError, Max, Rand, Random};
+///
 /// # #[derive(Debug)]
 /// # enum ExampleError { Argument(ArgumentError), Initialize(InitializeError) }
 /// # impl From<ArgumentError> for ExampleError { fn from(err: ArgumentError) -> Self { Self::Argument(err) } }
@@ -98,7 +99,8 @@ pub enum Rand {
 /// Generate random integers:
 ///
 /// ```
-/// # use spinoso_random::{rand, ArgumentError, InitializeError, Max, Rand, Random};
+/// use spinoso_random::{rand, ArgumentError, InitializeError, Max, Rand, Random};
+///
 /// # #[derive(Debug)]
 /// # enum ExampleError { Argument(ArgumentError), Initialize(InitializeError) }
 /// # impl From<ArgumentError> for ExampleError { fn from(err: ArgumentError) -> Self { Self::Argument(err) } }
@@ -122,8 +124,8 @@ pub enum Rand {
 ///
 /// When `max` is a non-finite `f64`, `rand` returns a domain error
 /// [`ArgumentError`].
-#[cfg(feature = "random-rand")]
-#[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
+#[cfg(feature = "rand-method")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rand-method")))]
 pub fn rand(rng: &mut Random, max: Max) -> Result<Rand, ArgumentError> {
     let constraint = max;
     match constraint {

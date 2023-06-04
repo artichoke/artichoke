@@ -42,7 +42,8 @@
 //! Generate integers:
 //!
 //! ```
-//! # use spinoso_random::Random;
+//! use spinoso_random::Random;
+//!
 //! let seed = [627457_u32, 697550, 16438, 41926];
 //! let mut random = Random::with_array_seed(seed);
 //! let rand = random.next_int32();
@@ -51,17 +52,17 @@
 //! Generate random numbers in a range:
 //!
 //! ```
-//! # #[cfg(feature = "random-rand")]
-//! # use spinoso_random::{rand, Error, Max, Rand, Random};
-//! # #[cfg(feature = "random-rand")]
-//! # fn example() -> Result<(), Error> {
+//! # #[cfg(feature = "rand-method")]
+//! # fn example() -> Result<(), spinoso_random::Error> {
+//! use spinoso_random::{rand, Max, Rand, Random};
+//!
 //! let mut random = Random::new()?;
 //! let max = Max::Integer(10);
 //! let mut rand = rand(&mut random, max)?;
 //! assert!(matches!(rand, Rand::Integer(x) if x < 10));
 //! # Ok(())
 //! # }
-//! # #[cfg(feature = "random-rand")]
+//! # #[cfg(feature = "rand-method")]
 //! # example().unwrap();
 //! ```
 //!
@@ -74,10 +75,10 @@
 //!
 //! All features are enabled by default.
 //!
-//! - **random-rand** - Enables range sampling methods for the [`rand()`]
-//!   function.  Activating this feature also activates the **rand-traits**
+//! - **rand-method** - Enables range sampling methods for the [`rand()`]
+//!   function. Activating this feature also activates the **rand_core**
 //!   feature. Dropping this feature removes the [`rand`] dependency.
-//! - **rand-traits** - Enables implementations of [`RngCore`] on the [`Random`]
+//! - **rand_core** - Enables implementations of [`RngCore`] on the [`Random`]
 //!   type. Dropping this feature removes the [`rand_core`] dependency.
 //! - **std** - Enables a dependency on the Rust Standard Library. Activating
 //!   this feature enables [`std::error::Error`] impls on error types in this
@@ -87,20 +88,20 @@
     not(feature = "std"),
     doc = "[`std::error::Error`]: https://doc.rust-lang.org/std/error/trait.Error.html"
 )]
-#![cfg_attr(feature = "rand-traits", doc = "[`RngCore`]: rand_core::RngCore")]
+#![cfg_attr(feature = "rand_core", doc = "[`RngCore`]: rand_core::RngCore")]
 #![cfg_attr(
-    not(feature = "rand-traits"),
+    not(feature = "rand_core"),
     doc = "[`RngCore`]: https://docs.rs/rand_core/latest/rand_core/trait.RngCore.html"
 )]
-#![cfg_attr(feature = "rand-traits", doc = "[`rand_core`]: ::rand_core")]
+#![cfg_attr(feature = "rand_core", doc = "[`rand_core`]: ::rand_core")]
 #![cfg_attr(
-    not(feature = "rand-traits"),
+    not(feature = "rand_core"),
     doc = "[`rand_core`]: https://docs.rs/rand_core/latest/rand_core/"
 )]
-#![cfg_attr(feature = "random-rand", doc = "[`rand`]: ::rand")]
-#![cfg_attr(not(feature = "random-rand"), doc = "[`rand`]: https://docs.rs/rand/latest/rand/")]
+#![cfg_attr(feature = "rand-method", doc = "[`rand`]: ::rand")]
+#![cfg_attr(not(feature = "rand-method"), doc = "[`rand`]: https://docs.rs/rand/latest/rand/")]
 #![cfg_attr(
-    not(feature = "random-rand"),
+    not(feature = "rand-method"),
     doc = "[`rand()`]: https://artichoke.github.io/artichoke/spinoso_random/fn.rand.html"
 )]
 //! [ruby-random]: https://ruby-doc.org/core-3.1.2/Random.html
@@ -109,7 +110,7 @@
 #![no_std]
 
 // Ensure code blocks in `README.md` compile
-#[cfg(doctest)]
+#[cfg(all(feature = "rand-method", doctest))]
 #[doc = include_str!("../README.md")]
 mod readme {}
 
@@ -122,7 +123,7 @@ use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
 
-#[cfg(feature = "random-rand")]
+#[cfg(feature = "rand-method")]
 mod rand;
 mod random;
 mod urandom;
@@ -130,7 +131,7 @@ mod urandom;
 pub use random::{new_seed, seed_to_key, Random};
 pub use urandom::urandom;
 
-#[cfg(feature = "random-rand")]
+#[cfg(feature = "rand-method")]
 pub use self::rand::{rand, Max, Rand};
 
 /// Sum type of all errors possibly returned from `Random` functions.
@@ -145,7 +146,7 @@ pub use self::rand::{rand, Max, Rand};
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Error {
     #[cfg_attr(
-        feature = "random-rand",
+        feature = "rand-method",
         doc = "Error that indicates [`rand()`] was passed an invalid constraint."
     )]
     ///
@@ -224,7 +225,8 @@ impl error::Error for Error {
 /// # Examples
 ///
 /// ```
-/// # use spinoso_random::InitializeError;
+/// use spinoso_random::InitializeError;
+///
 /// let err = InitializeError::new();
 /// assert_eq!(err.message(), "failed to get urandom");
 /// ```
@@ -241,7 +243,8 @@ impl InitializeError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::InitializeError;
+    /// use spinoso_random::InitializeError;
+    ///
     /// const ERR: InitializeError = InitializeError::new();
     /// assert_eq!(ERR.message(), "failed to get urandom");
     /// ```
@@ -257,7 +260,8 @@ impl InitializeError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::InitializeError;
+    /// use spinoso_random::InitializeError;
+    ///
     /// let err = InitializeError::new();
     /// assert_eq!(err.message(), "failed to get urandom");
     /// ```
@@ -291,7 +295,8 @@ impl error::Error for InitializeError {}
 /// # Examples
 ///
 /// ```
-/// # use spinoso_random::UrandomError;
+/// use spinoso_random::UrandomError;
+///
 /// let err = UrandomError::new();
 /// assert_eq!(err.message(), "failed to get urandom");
 /// ```
@@ -308,7 +313,8 @@ impl UrandomError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::UrandomError;
+    /// use spinoso_random::UrandomError;
+    ///
     /// const ERR: UrandomError = UrandomError::new();
     /// assert_eq!(ERR.message(), "failed to get urandom");
     /// ```
@@ -323,7 +329,8 @@ impl UrandomError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::UrandomError;
+    /// use spinoso_random::UrandomError;
+    ///
     /// let err = UrandomError::new();
     /// assert_eq!(err.message(), "failed to get urandom");
     /// ```
@@ -357,7 +364,8 @@ impl error::Error for UrandomError {}
 /// # Examples
 ///
 /// ```
-/// # use spinoso_random::NewSeedError;
+/// use spinoso_random::NewSeedError;
+///
 /// let err = NewSeedError::new();
 /// assert_eq!(err.message(), "failed to get urandom");
 /// ```
@@ -374,7 +382,8 @@ impl NewSeedError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::NewSeedError;
+    /// use spinoso_random::NewSeedError;
+    ///
     /// const ERR: NewSeedError = NewSeedError::new();
     /// assert_eq!(ERR.message(), "failed to get urandom");
     /// ```
@@ -389,7 +398,8 @@ impl NewSeedError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::NewSeedError;
+    /// use spinoso_random::NewSeedError;
+    ///
     /// let err = NewSeedError::new();
     /// assert_eq!(err.message(), "failed to get urandom");
     /// ```
@@ -414,7 +424,7 @@ impl error::Error for NewSeedError {}
 /// bounds.
 ///
 #[cfg_attr(
-    feature = "random-rand",
+    feature = "rand-method",
     doc = "This error is returned by [`rand()`]. See its documentation for more details."
 )]
 ///
@@ -423,7 +433,8 @@ impl error::Error for NewSeedError {}
 /// # Examples
 ///
 /// ```
-/// # use spinoso_random::ArgumentError;
+/// use spinoso_random::ArgumentError;
+///
 /// let err = ArgumentError::new();
 /// assert_eq!(err.message(), "ArgumentError");
 /// ```
@@ -436,8 +447,8 @@ pub struct ArgumentError(ArgumentErrorInner);
 enum ArgumentErrorInner {
     Default,
     DomainError,
-    #[cfg(feature = "random-rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
+    #[cfg(feature = "rand-method")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand-method")))]
     Rand(Max),
 }
 
@@ -447,7 +458,8 @@ impl ArgumentError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::ArgumentError;
+    /// use spinoso_random::ArgumentError;
+    ///
     /// const ERR: ArgumentError = ArgumentError::new();
     /// assert_eq!(ERR.message(), "ArgumentError");
     /// ```
@@ -462,7 +474,8 @@ impl ArgumentError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::ArgumentError;
+    /// use spinoso_random::ArgumentError;
+    ///
     /// const ERR: ArgumentError = ArgumentError::domain_error();
     /// assert_eq!(ERR.message(), "Numerical argument out of domain");
     /// ```
@@ -477,35 +490,37 @@ impl ArgumentError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::{ArgumentError, Max};
+    /// use spinoso_random::{ArgumentError, Max};
+    ///
     /// const ERR: ArgumentError = ArgumentError::with_rand_max(Max::Integer(-1));
     /// assert_eq!(ERR.message(), "invalid argument");
     /// ```
     #[inline]
     #[must_use]
-    #[cfg(feature = "random-rand")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "random-rand")))]
+    #[cfg(feature = "rand-method")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rand-method")))]
     pub const fn with_rand_max(max: Max) -> Self {
         Self(ArgumentErrorInner::Rand(max))
     }
 
     /// Retrieve the exception message associated with this new seed error.
     ///
-    #[cfg_attr(feature = "random-rand", doc = "# Implementation notes")]
+    #[cfg_attr(feature = "rand-method", doc = "# Implementation notes")]
     #[cfg_attr(
-        feature = "random-rand",
+        feature = "rand-method",
         doc = "Argument errors constructed with [`ArgumentError::with_rand_max`] return"
     )]
     #[cfg_attr(
-        feature = "random-rand",
+        feature = "rand-method",
         doc = "an incomplete error message. Prefer to use the [`Display`] impl to"
     )]
-    #[cfg_attr(feature = "random-rand", doc = "retrieve error messages from [`ArgumentError`].")]
+    #[cfg_attr(feature = "rand-method", doc = "retrieve error messages from [`ArgumentError`].")]
     ///
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::ArgumentError;
+    /// use spinoso_random::ArgumentError;
+    ///
     /// let err = ArgumentError::new();
     /// assert_eq!(err.message(), "ArgumentError");
     /// let err = ArgumentError::domain_error();
@@ -519,7 +534,7 @@ impl ArgumentError {
         match self.0 {
             ArgumentErrorInner::Default => "ArgumentError",
             ArgumentErrorInner::DomainError => "Numerical argument out of domain",
-            #[cfg(feature = "random-rand")]
+            #[cfg(feature = "rand-method")]
             ArgumentErrorInner::Rand(_) => "invalid argument",
         }
     }
@@ -531,7 +546,8 @@ impl ArgumentError {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::ArgumentError;
+    /// use spinoso_random::ArgumentError;
+    ///
     /// let err = ArgumentError::domain_error();
     /// assert!(err.is_domain_error());
     /// let err = ArgumentError::new();
@@ -549,7 +565,7 @@ impl fmt::Display for ArgumentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.0 {
             ArgumentErrorInner::Default | ArgumentErrorInner::DomainError => f.write_str(self.message()),
-            #[cfg(feature = "random-rand")]
+            #[cfg(feature = "rand-method")]
             ArgumentErrorInner::Rand(max) => write!(f, "invalid argument - {max}"),
         }
     }

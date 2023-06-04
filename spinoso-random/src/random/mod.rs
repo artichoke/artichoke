@@ -6,7 +6,7 @@ use rand_mt::Mt;
 
 use crate::{InitializeError, NewSeedError};
 
-#[cfg(feature = "rand-traits")]
+#[cfg(feature = "rand_core")]
 mod rand;
 
 const DEFAULT_SEED_CNT: usize = 4;
@@ -35,7 +35,8 @@ const DEFAULT_SEED: u32 = 5489_u32;
 /// Create an RNG with a random seed:
 ///
 /// ```
-/// # use spinoso_random::{Error, Random};
+/// use spinoso_random::{Error, Random};
+///
 /// # fn example() -> Result<(), Error> {
 /// let mut random = Random::new()?;
 /// let next = random.next_int32();
@@ -47,7 +48,8 @@ const DEFAULT_SEED: u32 = 5489_u32;
 /// Create a RNG with a fixed seed:
 ///
 /// ```
-/// # use spinoso_random::Random;
+/// use spinoso_random::Random;
+///
 /// let seed = 5489_u32;
 /// let mut random = Random::with_seed(seed);
 /// let rand = random.next_int32();
@@ -118,7 +120,8 @@ impl Random {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::{Error, Random};
+    /// use spinoso_random::{Error, Random};
+    ///
     /// # fn example() -> Result<(), Error> {
     /// let mut random = Random::new()?;
     /// let next = random.next_int32();
@@ -152,7 +155,8 @@ impl Random {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::Random;
+    /// use spinoso_random::Random;
+    ///
     /// let seed = 33;
     /// let mut random = Random::with_seed(seed);
     /// let rand = random.next_int32();
@@ -174,7 +178,8 @@ impl Random {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::Random;
+    /// use spinoso_random::Random;
+    ///
     /// let seed = [1_u32, 2, 3, 4];
     /// let mut random = Random::with_array_seed(seed);
     /// let rand = random.next_int32();
@@ -199,7 +204,8 @@ impl Random {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::Random;
+    /// use spinoso_random::Random;
+    ///
     /// let seed = [1_u32, 2, 3, 4];
     /// let mut random = Random::with_array_seed(seed);
     /// let rand = random.next_int32();
@@ -225,7 +231,8 @@ impl Random {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::{Error, Random};
+    /// use spinoso_random::{Error, Random};
+    ///
     /// # fn example() -> Result<(), Error> {
     /// let mut random = Random::new()?;
     /// assert_ne!(random.next_int32(), random.next_int32());
@@ -246,7 +253,8 @@ impl Random {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::{Error, Random};
+    /// use spinoso_random::{Error, Random};
+    ///
     /// # fn example() -> Result<(), Error> {
     /// let mut random = Random::new()?;
     /// assert_ne!(random.next_real(), random.next_real());
@@ -273,7 +281,8 @@ impl Random {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::{Error, Random};
+    /// use spinoso_random::{Error, Random};
+    ///
     /// # fn example() -> Result<(), Error> {
     /// let mut random = Random::new()?;
     /// let mut buf = [0; 32];
@@ -299,7 +308,8 @@ impl Random {
     /// # Examples
     ///
     /// ```
-    /// # use spinoso_random::Random;
+    /// use spinoso_random::Random;
+    ///
     /// let seed = [1_u32, 2, 3, 4];
     /// let random = Random::with_array_seed(seed);
     /// assert_eq!(random.seed(), seed);
@@ -354,7 +364,8 @@ pub fn seed_to_key(seed: [u8; DEFAULT_SEED_BYTES]) -> [u32; DEFAULT_SEED_CNT] {
 /// # Examples
 ///
 /// ```
-/// # use spinoso_random::{Error, Random};
+/// use spinoso_random::{Error, Random};
+///
 /// # fn example() -> Result<(), Error> {
 /// let seed = spinoso_random::new_seed()?;
 /// # Ok(())

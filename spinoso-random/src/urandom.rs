@@ -13,7 +13,8 @@ use crate::UrandomError;
 /// # Examples
 ///
 /// ```
-/// # use spinoso_random::Error;
+/// use spinoso_random::Error;
+///
 /// # fn example() -> Result<(), Error> {
 /// let mut bytes = [0_u8; 32];
 /// spinoso_random::urandom(&mut bytes)?;

@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-random"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = """
 Implementation of Ruby Random Core class.
@@ -26,11 +26,11 @@ rand_core = { version = "0.6.2", optional = true, default-features = false }
 rand_mt = { version = "4.2.0", default-features = false }
 
 [features]
-default = ["random-rand", "rand-traits", "std"]
+default = ["rand-method", "rand_core", "std"]
 # Enables range sampling methods for the `rand()` function.
-random-rand = ["dep:rand", "rand-traits"]
+rand-method = ["dep:rand", "rand_core"]
 # Enables implementations of `RngCore` on `Random` and `Mt` types.
-rand-traits = ["dep:rand_core"]
+rand_core = ["dep:rand_core"]
 std = []
 
 [package.metadata.docs.rs]

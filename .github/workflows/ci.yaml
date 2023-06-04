@@ -254,9 +254,9 @@ jobs:
 
       - name: Check spinoso-random with some features
         run: |
-          cargo check --verbose --no-default-features --features rand-traits --all-targets --profile=test
+          cargo check --verbose --no-default-features --features rand_core --all-targets --profile=test
           cargo check --verbose --no-default-features --features std --all-targets --profile=test
-          cargo check --verbose --no-default-features --features random-rand --all-targets --profile=test
+          cargo check --verbose --no-default-features --features rand-method --all-targets --profile=test
         working-directory: "spinoso-random"
 
       - name: Check spinoso-regexp with no default features

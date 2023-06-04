@@ -10,8 +10,9 @@ impl SeedableRng for Random {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core::{RngCore, SeedableRng};
-    /// # use spinoso_random::Random;
+    /// use rand_core::{RngCore, SeedableRng};
+    /// use spinoso_random::Random;
+    ///
     /// // Default MT seed
     /// let seed = 5489_u128.to_le_bytes();
     /// let mut mt = Random::from_seed(seed);
@@ -37,8 +38,9 @@ impl RngCore for Random {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core::RngCore;
-    /// # use spinoso_random::Random;
+    /// use rand_core::RngCore;
+    /// use spinoso_random::Random;
+    ///
     /// let mut random = Random::with_seed(33);
     /// assert_ne!(random.next_u64(), random.next_u64());
     /// ```
@@ -56,8 +58,9 @@ impl RngCore for Random {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core::RngCore;
-    /// # use spinoso_random::Random;
+    /// use rand_core::RngCore;
+    /// use spinoso_random::Random;
+    ///
     /// let mut random = Random::with_seed(33);
     /// assert_ne!(random.next_u32(), random.next_u32());
     /// ```
@@ -78,8 +81,9 @@ impl RngCore for Random {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core::RngCore;
-    /// # use spinoso_random::Random;
+    /// use rand_core::RngCore;
+    /// use spinoso_random::Random;
+    ///
     /// let mut random = Random::with_seed(33);
     /// let mut buf = [0; 32];
     /// random.fill_bytes(&mut buf);
@@ -106,8 +110,9 @@ impl RngCore for Random {
     /// # Examples
     ///
     /// ```
-    /// # use rand_core::{Error, RngCore};
-    /// # use spinoso_random::Random;
+    /// use rand_core::{Error, RngCore};
+    /// use spinoso_random::Random;
+    ///
     /// # fn example() -> Result<(), Error> {
     /// let mut random = Random::with_seed(33);
     /// let mut buf = [0; 32];
