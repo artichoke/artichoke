@@ -775,14 +775,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn retain_mut<F>(&mut self, f: F)
-    where
-        F: FnMut(&mut u8) -> bool,
-    {
-        self.inner.retain_mut(f);
-    }
-
-    #[inline]
     pub fn push(&mut self, value: u8) {
         self.inner.push(value);
     }

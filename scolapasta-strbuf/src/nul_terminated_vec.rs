@@ -894,15 +894,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn retain_mut<F>(&mut self, f: F)
-    where
-        F: FnMut(&mut u8) -> bool,
-    {
-        self.inner.retain_mut(f);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-    }
-
-    #[inline]
     pub fn push(&mut self, value: u8) {
         self.inner.push(value);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
@@ -1433,31 +1424,6 @@ mod tests {
             let mut idx = 0_usize;
             let mut buf = Buf::from(bytes);
             buf.retain(|_| {
-                idx += 1;
-                idx % 2 == 0
-            });
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_retain_mut_all(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.retain_mut(|_| true);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_retain_mut_none(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.retain_mut(|_| false);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_retain_mut_some(bytes: Vec<u8>) -> bool {
-            let mut idx = 0_usize;
-            let mut buf = Buf::from(bytes);
-            buf.retain_mut(|_| {
                 idx += 1;
                 idx % 2 == 0
             });
