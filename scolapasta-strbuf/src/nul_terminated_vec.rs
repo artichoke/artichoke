@@ -167,7 +167,7 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) -> Result<(), TryReserveError> {
 /// [`String`]: https://ruby-doc.org/3.2.0/String.html
 /// [`Index`]: core::ops::Index
 /// [guarantees as a `Vec`]: https://doc.rust-lang.org/std/vec/struct.Vec.html#guarantees
-/// [vec-docs]: alloc::vec
+/// [vec-docs]: mod@alloc::vec
 /// [`set_len`]: Self::set_len
 #[repr(transparent)]
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]

@@ -94,7 +94,7 @@ use raw_parts::RawParts;
 /// [`String`]: https://ruby-doc.org/3.2.0/String.html
 /// [`Index`]: core::ops::Index
 /// [guarantees as a `Vec`]: https://doc.rust-lang.org/std/vec/struct.Vec.html#guarantees
-/// [vec-docs]: alloc::vec
+/// [vec-docs]: mod@alloc::vec
 #[repr(transparent)]
 #[derive(Default, Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Buf {

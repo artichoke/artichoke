@@ -19,8 +19,73 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, feature(doc_alias))]
 
-//! A String object holds and manipulates an arbitrary sequence of bytes,
-//! typically representing characters.
+//! A contiguous growable byte string, written as `Buf`, short for 'buffer'.
+//!
+//! Buffers have *O*(1) indexing, amortized *O*(1) push (to the end) and *O*(1)
+//! pop (from the end).
+//!
+//! Buffers ensure they never allocate more than `isize::MAX` bytes.
+//!
+//! # Examples
+//!
+//! You can explicitly create a [`Buf`] with [`Buf::new`]:
+//!
+//! ```
+//! use scolapasta_strbuf::Buf;
+//!
+//! let buf = Buf::new();
+//! ```
+//!
+//! You can [`push_byte`] bytes into the end of a buffer (which will grow the
+//! buffer as needed):
+//!
+//! ```
+//! use scolapasta_strbuf::Buf;
+//!
+//! let mut buf = Buf::from(b"12");
+//!
+//! buf.push_byte(b'3');
+//! assert_eq!(buf, b"123");
+//! ```
+//!
+//! Popping bytes works in much the same way:
+//!
+//! ```
+//! use scolapasta_strbuf::Buf;
+//!
+//! let mut buf = Buf::from(b"12");
+//!
+//! let alpha_two = buf.pop_byte();
+//! assert_eq!(alpha_two, Some(b'2'));
+//! ```
+//!
+//! Buffers also support indexing (through the [`Index`] and [`IndexMut`]
+//! traits):
+//!
+//! ```
+//! use scolapasta_strbuf::Buf;
+//!
+//! let mut buf = Buf::from(b"123");
+//! let three = buf[2];
+//! buf[1] = b'!';
+//! ```
+//!
+//! # Crate features
+//!
+//! - **std**: Enabled by default. Implement [`std::io::Write`] for `Buf`. If
+//!   this feature is disabled, this crate only depends on [`alloc`].
+//! - **nul-terminated**: Use an alternate byte buffer backend that ensures
+//!   byte content is always followed by a NUL byte in the buffer's spare
+//!   capacity. This feature can be used to ensure `Buf`s are FFI compatible
+//!   with C code that expects byte content to be NUL terminated.
+//!
+#![cfg_attr(
+    not(feature = "std"),
+    doc = "[`std::io::Write`]: https://doc.rust-lang.org/std/io/trait.Write.html"
+)]
+//! [`push_byte`]: Buf::push_byte
+//! [`Index`]: core::ops::Index
+//! [`IndexMut`]: core::ops::IndexMut
 
 #![no_std]
 
