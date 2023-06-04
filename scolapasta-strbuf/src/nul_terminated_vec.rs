@@ -903,25 +903,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn dedup_by_key<F, K>(&mut self, key: F)
-    where
-        F: FnMut(&mut u8) -> K,
-        K: PartialEq<K>,
-    {
-        self.inner.dedup_by_key(key);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-    }
-
-    #[inline]
-    pub fn dedup_by<F>(&mut self, same_bucket: F)
-    where
-        F: FnMut(&mut u8, &mut u8) -> bool,
-    {
-        self.inner.dedup_by(same_bucket);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-    }
-
-    #[inline]
     pub fn push(&mut self, value: u8) {
         self.inner.push(value);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
@@ -1004,17 +985,6 @@ where
         R: RangeBounds<usize>,
     {
         self.inner.extend_from_within(src);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-    }
-}
-
-impl Buf
-where
-    u8: PartialEq<u8>,
-{
-    #[inline]
-    pub fn dedup(&mut self) {
-        self.inner.dedup();
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 }
@@ -1495,20 +1465,6 @@ mod tests {
             is_nul_terminated(&mut bytes)
         }
 
-        fn test_ensure_nul_terminated_dedup_by_key(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.dedup_by_key(|byte| *byte);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_dedup_by(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.dedup_by(|&mut a, &mut b| a == b);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
         fn test_ensure_nul_terminated_push(bytes: Vec<u8>, pushed: u8) -> bool {
             let mut buf = Buf::from(bytes);
             buf.push(pushed);
@@ -1651,13 +1607,6 @@ mod tests {
             }
             let mut buf = Buf::from(bytes);
             buf.extend_from_within(1..buf.len() - 2);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_dedup(bytes: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            buf.dedup();
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }

@@ -783,23 +783,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn dedup_by_key<F, K>(&mut self, key: F)
-    where
-        F: FnMut(&mut u8) -> K,
-        K: PartialEq<K>,
-    {
-        self.inner.dedup_by_key(key);
-    }
-
-    #[inline]
-    pub fn dedup_by<F>(&mut self, same_bucket: F)
-    where
-        F: FnMut(&mut u8, &mut u8) -> bool,
-    {
-        self.inner.dedup_by(same_bucket);
-    }
-
-    #[inline]
     pub fn push(&mut self, value: u8) {
         self.inner.push(value);
     }
@@ -873,16 +856,6 @@ where
         R: RangeBounds<usize>,
     {
         self.inner.extend_from_within(src);
-    }
-}
-
-impl Buf
-where
-    u8: PartialEq<u8>,
-{
-    #[inline]
-    pub fn dedup(&mut self) {
-        self.inner.dedup();
     }
 }
 
