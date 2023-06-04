@@ -9,6 +9,8 @@
 #![warn(rust_2018_idioms)]
 #![warn(rust_2021_compatibility)]
 #![warn(trivial_casts, trivial_numeric_casts)]
+#![warn(unsafe_op_in_unsafe_fn)]
+#![warn(clippy::undocumented_unsafe_blocks)]
 #![warn(unused_qualifications)]
 #![warn(variant_size_differences)]
 // Enable feature callouts in generated documentation:

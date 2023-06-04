@@ -448,7 +448,9 @@ impl Buf {
     #[inline]
     #[must_use]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
-        let inner = raw_parts.into_vec();
+        // SAFETY: Callers ensure that the raw parts safety invariants are
+        // upheld.
+        let inner = unsafe { raw_parts.into_vec() };
         Self { inner }
     }
 
@@ -812,7 +814,11 @@ impl Buf {
     /// [`capacity()`]: Self::capacity
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
-        self.inner.set_len(new_len);
+        // SAFETY: Caller has guaranteed the safety invariants of `Vec::set_len`
+        // are upheld.
+        unsafe {
+            self.inner.set_len(new_len);
+        }
     }
 
     /// Insert a byte at position `index` within the buffer, shifting all
