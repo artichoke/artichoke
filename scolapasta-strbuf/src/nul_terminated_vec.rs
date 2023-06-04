@@ -874,13 +874,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn swap_remove(&mut self, index: usize) -> u8 {
-        let removed = self.inner.swap_remove(index);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-        removed
-    }
-
-    #[inline]
     pub fn insert(&mut self, index: usize, element: u8) {
         self.inner.insert(index, element);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
@@ -1295,36 +1288,6 @@ mod tests {
             unsafe {
                 buf.set_len(0);
             }
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_swap_remove_first(bytes: Vec<u8>) -> bool {
-            if bytes.is_empty() {
-                return true;
-            }
-            let mut buf = Buf::from(bytes);
-            buf.swap_remove(0);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_swap_remove_last(bytes: Vec<u8>) -> bool {
-            if bytes.is_empty() {
-                return true;
-            }
-            let mut buf = Buf::from(bytes);
-            buf.swap_remove(buf.len() - 1);
-            let mut bytes = buf.into_inner();
-            is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_swap_remove_interior(bytes: Vec<u8>) -> bool {
-            if bytes.len() < 2 {
-                return true;
-            }
-            let mut buf = Buf::from(bytes);
-            buf.swap_remove(buf.len() - 2);
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
         }

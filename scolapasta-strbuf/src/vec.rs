@@ -761,11 +761,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn swap_remove(&mut self, index: usize) -> u8 {
-        self.inner.swap_remove(index)
-    }
-
-    #[inline]
     pub fn insert(&mut self, index: usize, element: u8) {
         self.inner.insert(index, element);
     }
