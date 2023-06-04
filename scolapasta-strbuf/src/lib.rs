@@ -152,9 +152,13 @@ pub use raw_parts::RawParts;
 mod nul_terminated_vec;
 mod vec;
 
-#[cfg(feature = "nul-terminated")]
-use nul_terminated_vec as imp;
-#[cfg(not(feature = "nul-terminated"))]
-use vec as imp;
+mod imp {
+    #[cfg(feature = "nul-terminated")]
+    pub use crate::nul_terminated_vec::Buf;
+    #[cfg(not(feature = "nul-terminated"))]
+    pub use crate::vec::Buf;
+}
 
+// Only export one `Buf` type. The presence of the `nul-terminated` feature
+// determines which `Buf` type to use.
 pub use imp::Buf;
