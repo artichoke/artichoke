@@ -3,10 +3,7 @@ name = "artichoke"
 version = "0.1.0-pre.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = """
-artichoke is a Ruby 2.6.3 implementation. Artichoke supports embedding and
-conditional compilation of the VM and standard library. Artichoke can be used to
-distribute Ruby applications as single-binary artifacts. Artichoke builds on
-Windows, macOS, and Linux, as well as WebAssembly via Emscripten.
+artichoke is an implementation of the Ruby programming language.
 """
 keywords = ["artichoke", "artichoke-ruby", "mri", "cruby", "ruby"]
 categories = ["command-line-utilities"]
