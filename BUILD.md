@@ -31,7 +31,7 @@ bundle, depend on `artichoke` in a crate with a main. See the
 
 Artichoke is a collection of Rust crates and requires a Rust compiler. The
 specific version of Rust Artichoke requires is specified in the
-[toolchain file](rust-toolchain).
+[toolchain file](rust-toolchain.toml).
 
 Artichoke only guarantees support for the latest stable version of the Rust
 compiler.
@@ -52,14 +52,8 @@ prompts: <https://rustup.rs/>. This requires a download of Visual Studio (the
 selected through the VS component installer. (I'm not sure which packages are
 required; I selected them all.)
 
-Once you have rustup, you can install the Rust toolchain needed to compile
-Artichoke.
-
-```sh
-rustup toolchain install "$(cat rust-toolchain)"
-rustup component add rustfmt
-rustup component add clippy
-```
+When running any subsequent `cargo` commands, rustup will ensure the correct
+toolchain is installed.
 
 ### Bindgen
 
