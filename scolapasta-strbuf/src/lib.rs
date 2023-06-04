@@ -4,8 +4,7 @@
 #![allow(unknown_lints)]
 #![allow(clippy::manual_let_else)]
 #![allow(clippy::module_name_repetitions)]
-// TODO: warn on missing docs once crate is API-complete.
-// #![warn(missing_docs)]
+#![warn(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![warn(missing_copy_implementations)]
 #![warn(rust_2018_idioms)]

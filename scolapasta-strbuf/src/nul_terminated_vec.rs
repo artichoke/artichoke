@@ -176,6 +176,19 @@ pub struct Buf {
 }
 
 impl Buf {
+    /// Consume this buffer and return its inner [`Vec<u8>`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let buf = Buf::from(b"abc");
+    /// let vec: Vec<u8> = buf.into_inner();
+    /// assert_eq!(vec, b"abc");
+    /// ```
+    ///
+    /// [`Vec<u8>`]: Vec
     #[inline]
     #[must_use]
     pub fn into_inner(self) -> Vec<u8> {
@@ -805,49 +818,171 @@ impl Buf {
         self.inner.into_boxed_slice()
     }
 
+    /// Shorten the buffer, keeping the first `len` bytes and dropping the rest.
+    ///
+    /// If `len` is greater than the buffer's current length, this has no
+    /// effect.
+    ///
+    /// Note that this method has no effect on the allocated capacity of the
+    /// buffer.
+    ///
+    /// # Examples
+    ///
+    /// Truncating a five byte buffer to two bytes:
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"12345");
+    /// buf.truncate(2);
+    /// assert_eq!(buf, b"12");
+    /// ```
+    ///
+    /// No truncation occurs when `len` is greater than the buffer's current
+    /// length:
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"123");
+    /// buf.truncate(8);
+    /// assert_eq!(buf, b"123");
+    /// ```
+    ///
+    /// Truncating when `len == 0` is equivalent to calling the [`clear`]
+    /// method.
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"123");
+    /// buf.truncate(0);
+    /// assert_eq!(buf, b"");
+    /// ```
+    ///
+    /// [`clear`]: Self::clear
     #[inline]
     pub fn truncate(&mut self, len: usize) {
         self.inner.truncate(len);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Extract a slice containing the entire buffer.
+    ///
+    /// Equivalent to `&buf[..]`.
     #[inline]
     #[must_use]
     pub fn as_slice(&self) -> &[u8] {
         self.inner.as_slice()
     }
 
+    /// Extract a mutable slice containing the entire buffer.
+    ///
+    /// Equivalent to `&mut buf[..]`.
     #[inline]
     #[must_use]
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         self.inner.as_mut_slice()
     }
 
+    /// Return a raw pointer to the buffer's inner vec, or a dangling raw
+    /// pointer valid for zero sized reads if the buffer didn't allocate.
+    ///
+    /// The caller must ensure correct use of the pointer. See [`Vec::as_ptr`]
+    /// for more details.
+    ///
+    /// Callers must also ensure that the NUL termination invariant of the
+    /// buffer is maintained is the returned pointer is used for writes.
     #[inline]
     #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         self.inner.as_ptr()
     }
 
+    /// Return an unsafe mutable pointer to the buffer's inner vec, or a
+    /// dangling raw pointer valid for zero sized reads if the buffer didn't
+    /// allocate.
+    ///
+    /// The caller must ensure correct use of the pointer. See [`Vec::as_mut_ptr`]
+    /// for more details.
+    ///
+    /// Callers must also ensure that the NUL termination invariant of the
+    /// buffer is maintained is the returned pointer is used for writes.
     #[inline]
     #[must_use]
     pub fn as_mut_ptr(&mut self) -> *mut u8 {
         self.inner.as_mut_ptr()
     }
 
+    /// Force the length of the buffer to `new_len`.
+    ///
+    /// This is a low-level operation that maintains none of the normal
+    /// invariants of the type. Normally changing the length of a vector is done
+    /// using one of the safe operations instead, such as [`truncate`],
+    /// [`resize`], [`extend`], or [`clear`].
+    ///
+    /// [`truncate`]: Self::truncate
+    /// [`resize`]: Self::resize
+    /// [`extend`]: Self::extend
+    /// [`clear`]: Self::clear
+    ///
+    /// # Safety
+    ///
+    /// - `new_len` must be less than or equal to [`capacity()`].
+    /// - The elements at `old_len..new_len` must be initialized.
+    ///
+    /// [`capacity()`]: Self::capacity
     #[inline]
     pub unsafe fn set_len(&mut self, new_len: usize) {
         self.inner.set_len(new_len);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Insert a byte at position `index` within the buffer, shifting all
+    /// elements after it to the right.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index > len`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"123");
+    /// buf.insert(1, b'4');
+    /// assert_eq!(buf, b"1423");
+    /// buf.insert(4, b'5');
+    /// assert_eq!(buf, b"14235");
+    /// ```
     #[inline]
     pub fn insert(&mut self, index: usize, element: u8) {
         self.inner.insert(index, element);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Remove and return the byte at position `index` within the buffer,
+    /// shifting all bytes after it to the left.
+    ///
+    /// **Note**: Because this shifts over the remaining bytes, it has a
+    /// worst-case performance of *O*(*n*).
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"123");
+    /// assert_eq!(buf.remove(1), b'2');
+    /// assert_eq!(buf, b"13");
+    /// ```
     #[inline]
+    #[track_caller]
     pub fn remove(&mut self, index: usize) -> u8 {
         let removed = self.inner.remove(index);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
