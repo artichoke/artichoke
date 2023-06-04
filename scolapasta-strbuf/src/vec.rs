@@ -462,11 +462,12 @@ impl Buf {
     ///
     /// unsafe {
     ///     ptr::write(ptr, b'A');
+    ///     ptr::write(ptr.add(1), b'B');
     ///
     ///     let raw_parts = RawParts { ptr, length, capacity };
     ///     let rebuilt = Buf::from_raw_parts(raw_parts);
     ///
-    ///     assert_eq!(rebuilt, b"Abcde");
+    ///     assert_eq!(rebuilt, b"ABcde");
     /// }
     /// ```
     #[inline]
@@ -501,11 +502,12 @@ impl Buf {
     ///
     /// unsafe {
     ///     ptr::write(ptr, b'A');
+    ///     ptr::write(ptr.add(1), b'B');
     ///
     ///     let raw_parts = RawParts { ptr, length, capacity };
     ///     let rebuilt = Buf::from_raw_parts(raw_parts);
     ///
-    ///     assert_eq!(rebuilt, b"Abcde");
+    ///     assert_eq!(rebuilt, b"ABcde");
     /// }
     /// ```
     #[inline]
