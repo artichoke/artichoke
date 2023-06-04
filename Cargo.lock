@@ -804,7 +804,6 @@ dependencies = [
  "bytecount",
  "focaccia",
  "quickcheck",
- "raw-parts",
  "scolapasta-strbuf",
  "scolapasta-string-escape",
  "simdutf8",

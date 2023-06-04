@@ -598,7 +598,6 @@ dependencies = [
  "bstr",
  "bytecount",
  "focaccia",
- "raw-parts",
  "scolapasta-strbuf",
  "scolapasta-string-escape",
  "simdutf8",
