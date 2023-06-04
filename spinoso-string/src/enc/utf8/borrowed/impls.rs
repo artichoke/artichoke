@@ -2,6 +2,7 @@ use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use core::array::TryFromSliceError;
 use core::fmt;
+use core::hash::{Hash, Hasher};
 use core::ops::{Index, IndexMut};
 use core::slice::SliceIndex;
 use core::str;
@@ -12,6 +13,12 @@ impl<'a> Default for &'a Utf8Str {
     #[inline]
     fn default() -> Self {
         Utf8Str::empty()
+    }
+}
+
+impl Hash for Utf8Str {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        self.as_bytes().hash(hasher);
     }
 }
 
