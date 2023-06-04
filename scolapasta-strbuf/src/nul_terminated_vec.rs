@@ -457,3 +457,586 @@ impl Write for Buf {
         result
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::string::String;
+    use alloc::vec::Vec;
+
+    use quickcheck::quickcheck;
+    use raw_parts::RawParts;
+
+    use super::{ensure_nul_terminated, Buf};
+
+    #[must_use]
+    fn is_nul_terminated(bytes: &mut Vec<u8>) -> bool {
+        let spare_capacity = bytes.spare_capacity_mut();
+        if spare_capacity.is_empty() {
+            return false;
+        }
+
+        let first = unsafe { spare_capacity.first().unwrap().assume_init() };
+        if first != 0 {
+            return false;
+        }
+
+        let last = unsafe { spare_capacity.last().unwrap().assume_init() };
+        if last != 0 {
+            return false;
+        }
+        true
+    }
+
+    #[test]
+    fn test_ensure_nul_terminated_new() {
+        let buf = Buf::new();
+        let mut bytes = buf.into_inner();
+        assert!(is_nul_terminated(&mut bytes));
+    }
+
+    #[test]
+    fn test_ensure_nul_terminated_with_capacity() {
+        let capacities = [0_usize, 1, 2, 3, 4, 19, 280, 499, 1024, 4096, 4099];
+        for capa in capacities {
+            let buf = Buf::with_capacity(capa);
+            let mut bytes = buf.into_inner();
+            assert!(is_nul_terminated(&mut bytes), "failed for capacity {capa}");
+        }
+    }
+
+    quickcheck! {
+        fn test_ensure_nul_terminated(bytes: Vec<u8>) -> bool {
+            let mut bytes = bytes;
+            ensure_nul_terminated(&mut bytes);
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_after_shrink(bytes: Vec<u8>) -> bool {
+            let mut bytes = bytes;
+            bytes.shrink_to_fit();
+            ensure_nul_terminated(&mut bytes);
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_from_vec(bytes: Vec<u8>) -> bool {
+            let buf = Buf::from(bytes);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_from_buf(bytes: Vec<u8>) -> bool {
+            let buf = Buf::from(bytes);
+            let mut bytes = Vec::from(buf);
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_after_clone(bytes: Vec<u8>) -> bool {
+            let buf = Buf::from(bytes);
+            let buf = buf.clone();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_from_iterator(bytes: Vec<u8>) -> bool {
+            let buf = Buf::from_iter(bytes.into_iter());
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_collect(bytes: Vec<u8>) -> bool {
+            let buf = bytes.into_iter().collect::<Buf>();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_after_extend(bytes: Vec<u8>, extend: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.extend(extend.into_iter());
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_from_raw_parts(bytes: Vec<u8>) -> bool {
+            let raw_parts = RawParts::from_vec(bytes);
+            let buf = unsafe { Buf::from_raw_parts(raw_parts) };
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_raw_parts_round_trip(bytes: Vec<u8>) -> bool {
+            let buf = Buf::from(bytes);
+            let raw_parts = buf.into_raw_parts();
+            let buf = unsafe { Buf::from_raw_parts(raw_parts) };
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_reserve(bytes: Vec<u8>) -> bool {
+            let additional = [0_usize, 1, 2, 3, 4, 19, 280, 499, 1024, 4096, 4099];
+            for reserve in additional {
+                let mut buf = Buf::from(bytes.clone());
+                buf.reserve(reserve);
+                let mut bytes = buf.into_inner();
+                if !is_nul_terminated(&mut bytes) {
+                    return false;
+                }
+            }
+            true
+        }
+
+        fn test_ensure_nul_terminated_reserve_exact(bytes: Vec<u8>) -> bool {
+            let additional = [0_usize, 1, 2, 3, 4, 19, 280, 499, 1024, 4096, 4099];
+            for reserve in additional {
+                let mut buf = Buf::from(bytes.clone());
+                buf.reserve_exact(reserve);
+                let mut bytes = buf.into_inner();
+                if !is_nul_terminated(&mut bytes) {
+                    return false;
+                }
+            }
+            true
+        }
+
+        fn test_ensure_nul_terminated_try_reserve(bytes: Vec<u8>) -> bool {
+            let additional = [0_usize, 1, 2, 3, 4, 19, 280, 499, 1024, 4096, 4099];
+            for reserve in additional {
+                let mut buf = Buf::from(bytes.clone());
+                buf.try_reserve(reserve).unwrap();
+                let mut bytes = buf.into_inner();
+                if !is_nul_terminated(&mut bytes) {
+                    return false;
+                }
+            }
+            true
+        }
+
+        fn test_ensure_nul_terminated_try_reserve_exact(bytes: Vec<u8>) -> bool {
+            let additional = [0_usize, 1, 2, 3, 4, 19, 280, 499, 1024, 4096, 4099];
+            for reserve in additional {
+                let mut buf = Buf::from(bytes.clone());
+                buf.try_reserve_exact(reserve).unwrap();
+                let mut bytes = buf.into_inner();
+                if !is_nul_terminated(&mut bytes) {
+                    return false;
+                }
+            }
+            true
+        }
+
+        fn test_ensure_nul_terminated_shrink_to_fit(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.shrink_to_fit();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_shrink_to(bytes: Vec<u8>, shrink_to: usize) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.shrink_to(shrink_to);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_truncate(bytes: Vec<u8>, truncate_to: usize) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.truncate(truncate_to);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_set_len(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            unsafe {
+                buf.set_len(0);
+            }
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_swap_remove_first(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.swap_remove(0);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_swap_remove_last(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.swap_remove(buf.len() - 1);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_swap_remove_interior(bytes: Vec<u8>) -> bool {
+            if bytes.len() < 2 {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.swap_remove(buf.len() - 2);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_insert_first(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.insert(0, u8::MAX);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_insert_past_end(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.insert(buf.len(), u8::MAX);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_insert_last(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.insert(buf.len() - 1, u8::MAX);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_insert_interior(bytes: Vec<u8>) -> bool {
+            if bytes.len() < 2 {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.insert(buf.len() - 2, u8::MAX);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_remove_first(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.remove(0);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_remove_last(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.remove(buf.len() - 1);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_remove_interior(bytes: Vec<u8>) -> bool {
+            if bytes.len() < 2 {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.remove(buf.len() - 2);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_retain_all(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.retain(|_| true);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_retain_none(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.retain(|_| false);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_retain_some(bytes: Vec<u8>) -> bool {
+            let mut idx = 0_usize;
+            let mut buf = Buf::from(bytes);
+            buf.retain(|_| {
+                idx += 1;
+                idx % 2 == 0
+            });
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_retain_mut_all(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.retain_mut(|_| true);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_retain_mut_none(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.retain_mut(|_| false);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_retain_mut_some(bytes: Vec<u8>) -> bool {
+            let mut idx = 0_usize;
+            let mut buf = Buf::from(bytes);
+            buf.retain_mut(|_| {
+                idx += 1;
+                idx % 2 == 0
+            });
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_dedup_by_key(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.dedup_by_key(|byte| *byte);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_dedup_by(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.dedup_by(|&mut a, &mut b| a == b);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_push(bytes: Vec<u8>, pushed: u8) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.push(pushed);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_pop(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.pop();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_append(bytes: Vec<u8>, other: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            let mut other_buf = Buf::from(other);
+            buf.append(&mut other_buf);
+            let mut bytes = buf.into_inner();
+            let mut other = other_buf.into_inner();
+            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut other)
+        }
+
+        fn test_ensure_nul_terminated_clear(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.clear();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_split_off_before_first(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            let split = buf.split_off(0);
+            let mut bytes = buf.into_inner();
+            let mut split = split.into_inner();
+            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
+        }
+
+        fn test_ensure_nul_terminated_split_off_first(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            let split = buf.split_off(1);
+            let mut bytes = buf.into_inner();
+            let mut split = split.into_inner();
+            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
+        }
+
+        fn test_ensure_nul_terminated_split_off_past_end(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            let split = buf.split_off(buf.len());
+            let mut bytes = buf.into_inner();
+            let mut split = split.into_inner();
+            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
+        }
+
+        fn test_ensure_nul_terminated_split_off_last(bytes: Vec<u8>) -> bool {
+            if bytes.is_empty() {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            let split = buf.split_off(buf.len() - 1);
+            let mut bytes = buf.into_inner();
+            let mut split = split.into_inner();
+            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
+        }
+
+        fn test_ensure_nul_terminated_split_off_interior(bytes: Vec<u8>) -> bool {
+            if bytes.len() < 2 {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            let split = buf.split_off(buf.len() - 2);
+            let mut bytes = buf.into_inner();
+            let mut split = split.into_inner();
+            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut split)
+        }
+
+        fn test_ensure_nul_terminated_resize_with(bytes: Vec<u8>) -> bool {
+            let lengths = [0_usize, 1, 2, 3, 4, 19, 280, 499, 1024, 4096, 4099];
+            for len in lengths {
+                let mut buf = Buf::from(bytes.clone());
+                buf.resize_with(len, || u8::MAX);
+                let mut bytes = buf.into_inner();
+                if !is_nul_terminated(&mut bytes) {
+                    return false;
+                }
+            }
+            true
+        }
+
+        fn test_ensure_nul_terminated_resize(bytes: Vec<u8>) -> bool {
+            let lengths = [0_usize, 1, 2, 3, 4, 19, 280, 499, 1024, 4096, 4099];
+            for len in lengths {
+                let mut buf = Buf::from(bytes.clone());
+                buf.resize(len, u8::MAX);
+                let mut bytes = buf.into_inner();
+                if !is_nul_terminated(&mut bytes) {
+                    return false;
+                }
+            }
+            true
+        }
+
+        fn test_ensure_nul_terminated_extend_from_slice(bytes: Vec<u8>, other: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.extend_from_slice(&other);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_extend_from_within_prefix(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.extend_from_within(0..0);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_extend_from_within_suffix(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.extend_from_within(buf.len()..buf.len());
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_extend_from_within_all(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.extend_from_within(0..buf.len());
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_extend_from_within_subset(bytes: Vec<u8>) -> bool {
+            if bytes.len() < 3 {
+                return true;
+            }
+            let mut buf = Buf::from(bytes);
+            buf.extend_from_within(1..buf.len() - 2);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_dedup(bytes: Vec<u8>) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.dedup();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_push_byte(bytes: Vec<u8>, pushed: u8) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.push_byte(pushed);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_push_char(bytes: Vec<u8>, pushed: char) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.push_char(pushed);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        fn test_ensure_nul_terminated_push_str(bytes: Vec<u8>, pushed: String) -> bool {
+            let mut buf = Buf::from(bytes);
+            buf.push_str(pushed);
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        #[cfg(feature = "std")]
+        fn test_ensure_nul_terminated_write(bytes: Vec<u8>, data: Vec<u8>) -> bool {
+            use std::io::Write;
+
+            let mut buf = Buf::from(bytes);
+            buf.write(&data).unwrap();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        #[cfg(feature = "std")]
+        fn test_ensure_nul_terminated_flush(bytes: Vec<u8>, data: Vec<u8>) -> bool {
+            use std::io::Write;
+
+            let mut buf = Buf::from(bytes);
+            buf.write_all(&data).unwrap();
+            buf.flush().unwrap();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        #[cfg(feature = "std")]
+        fn test_ensure_nul_terminated_write_vectored(bytes: Vec<u8>, data1: Vec<u8>, data2: Vec<u8>) -> bool {
+            use std::io::{IoSlice, Write};
+
+            let mut buf = Buf::from(bytes);
+            buf.write_vectored(&[IoSlice::new(&data1), IoSlice::new(&data2)]).unwrap();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        #[cfg(feature = "std")]
+        fn test_ensure_nul_terminated_write_all(bytes: Vec<u8>, data: Vec<u8>) -> bool {
+            use std::io::Write;
+
+            let mut buf = Buf::from(bytes);
+            buf.write_all(&data).unwrap();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+
+        #[cfg(feature = "std")]
+        fn test_ensure_nul_terminated_write_fmt(bytes: Vec<u8>, data: String) -> bool {
+            use std::io::Write;
+
+            let mut buf = Buf::from(bytes);
+            buf.write_fmt(format_args!("{}", data)).unwrap();
+            let mut bytes = buf.into_inner();
+            is_nul_terminated(&mut bytes)
+        }
+    }
+}
