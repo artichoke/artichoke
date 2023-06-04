@@ -5,7 +5,7 @@ require 'shellwords'
 
 require 'bundler/audit/task'
 require 'rubocop/rake_task'
-require 'toml'
+require 'tomlrb'
 
 task default: %i[format lint]
 
@@ -198,8 +198,8 @@ namespace :toolchain do
   desc 'Sync Rust toolchain to all sources'
   task sync: %i[sync:manifests sync:ci]
 
-  rust_toolchain = TOML.load_file('rust-toolchain.toml')
-  toolchain_version = rust_toolchain['toolchain']['channel']
+  rust_toolchain = Tomlrb.load_file('rust-toolchain.toml', symbolize_keys: true)
+  toolchain_version = rust_toolchain[:toolchain][:channel]
 
   namespace :sync do
     desc 'Sync the root rust-toolchain version to all crate manifests'
