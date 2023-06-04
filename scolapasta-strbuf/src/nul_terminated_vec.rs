@@ -5,8 +5,6 @@ use alloc::string::String;
 use alloc::vec::{IntoIter, Vec};
 use core::borrow::{Borrow, BorrowMut};
 use core::fmt;
-#[cfg(feature = "std")]
-use core::fmt::Arguments;
 use core::ops::{Deref, DerefMut};
 use core::slice::{Iter, IterMut};
 #[cfg(feature = "std")]
@@ -1261,13 +1259,6 @@ impl Write for Buf {
     }
 
     #[inline]
-    fn flush(&mut self) -> io::Result<()> {
-        let result = self.inner.flush();
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-        result
-    }
-
-    #[inline]
     fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
         let result = self.inner.write_vectored(bufs);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
@@ -1282,8 +1273,8 @@ impl Write for Buf {
     }
 
     #[inline]
-    fn write_fmt(&mut self, fmt: Arguments<'_>) -> io::Result<()> {
-        let result = self.inner.write_fmt(fmt);
+    fn flush(&mut self) -> io::Result<()> {
+        let result = self.inner.flush();
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
         result
     }

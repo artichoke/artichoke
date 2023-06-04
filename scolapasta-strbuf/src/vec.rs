@@ -5,8 +5,6 @@ use alloc::string::String;
 use alloc::vec::{IntoIter, Vec};
 use core::borrow::{Borrow, BorrowMut};
 use core::fmt;
-#[cfg(feature = "std")]
-use core::fmt::Arguments;
 use core::ops::{Deref, DerefMut};
 use core::slice::{Iter, IterMut};
 #[cfg(feature = "std")]
@@ -1126,11 +1124,6 @@ impl Write for Buf {
     }
 
     #[inline]
-    fn flush(&mut self) -> io::Result<()> {
-        self.inner.flush()
-    }
-
-    #[inline]
     fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
         self.inner.write_vectored(bufs)
     }
@@ -1141,8 +1134,8 @@ impl Write for Buf {
     }
 
     #[inline]
-    fn write_fmt(&mut self, fmt: Arguments<'_>) -> io::Result<()> {
-        self.inner.write_fmt(fmt)
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
     }
 }
 
