@@ -16,7 +16,10 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-bstr = { version = "1.2.0", default-features = false }
+
+[dependencies.bstr]
+version = "1.2.0"
+default-features = false
 
 [features]
 default = ["std"]

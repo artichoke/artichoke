@@ -16,9 +16,22 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-base64 = { version = "0.21.0", default-features = false, features = ["alloc"] }
-rand = { version = "0.8.0", default-features = false, features = ["getrandom"] }
-scolapasta-hex = { version = "0.2.0", path = "../scolapasta-hex", default-features = false, features = ["alloc"] }
+
+[dependencies.base64]
+version = "0.21.0"
+default-features = false
+features = ["alloc"]
+
+[dependencies.rand]
+version = "0.8.0"
+default-features = false
+features = ["getrandom"]
+
+[dependencies.scolapasta-hex]
+version = "0.2.0"
+path = "../scolapasta-hex"
+default-features = false
+features = ["alloc"]
 
 [package.metadata.docs.rs]
 all-features = true

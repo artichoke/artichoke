@@ -14,36 +14,125 @@ homepage.workspace = true
 documentation.workspace = true
 
 [dependencies]
-artichoke-core = { version = "0.13.0", path = "../artichoke-core" }
-artichoke-load-path = { version = "0.1.0", path = "../artichoke-load-path", default-features = false }
-bstr = { version = "1.2.0", default-features = false, features = ["alloc"] }
-intaglio = { version = "1.7.0", default-features = false, features = ["bytes"] }
-mezzaluna-type-registry = { version = "1.0.1", path = "../mezzaluna-type-registry" }
-onig = { version = "6.4.0", optional = true, default-features = false }
 posix-space = "1.0.0"
 qed = "1.3.0"
 regex = "1.7.0"
-scolapasta-aref = { version = "0.1.0", path = "../scolapasta-aref" }
-scolapasta-int-parse = { version = "0.2.2", path = "../scolapasta-int-parse", default-features = false }
-scolapasta-path = { version = "0.5.0", path = "../scolapasta-path" }
-scolapasta-string-escape = { version = "0.3.0", path = "../scolapasta-string-escape", default-features = false }
-spinoso-array = { version = "0.10.0", path = "../spinoso-array", default-features = false }
-spinoso-env = { version = "0.2.0", path = "../spinoso-env", optional = true, default-features = false }
-spinoso-exception = { version = "0.1.0", path = "../spinoso-exception" }
-spinoso-math = { version = "0.3.0", path = "../spinoso-math", optional = true, default-features = false }
-spinoso-random = { version = "0.4.0", path = "../spinoso-random", optional = true }
-spinoso-regexp = { version = "0.5.0", path = "../spinoso-regexp", optional = true, default-features = false }
-spinoso-securerandom = { version = "0.2.0", path = "../spinoso-securerandom", optional = true }
-spinoso-string = { version = "0.23.0", path = "../spinoso-string", features = ["nul-terminated"] }
-spinoso-symbol = { version = "0.4.0", path = "../spinoso-symbol" }
-spinoso-time = { version = "0.7.2", path = "../spinoso-time", features = ["tzrs"], default-features = false, optional = true }
+
+[dependencies.artichoke-core]
+version = "0.13.0"
+path = "../artichoke-core"
+
+[dependencies.artichoke-load-path]
+version = "0.1.0"
+path = "../artichoke-load-path"
+default-features = false
+
+[dependencies.bstr]
+version = "1.2.0"
+default-features = false
+features = ["alloc"]
+
+[dependencies.intaglio]
+version = "1.7.0"
+default-features = false
+features = ["bytes"]
+
+[dependencies.mezzaluna-type-registry]
+version = "1.0.1"
+path = "../mezzaluna-type-registry"
+
+[dependencies.onig]
+version = "6.4.0"
+optional = true
+default-features = false
+
+[dependencies.scolapasta-aref]
+version = "0.1.0"
+path = "../scolapasta-aref"
+
+[dependencies.scolapasta-int-parse]
+version = "0.2.2"
+path = "../scolapasta-int-parse"
+default-features = false
+
+[dependencies.scolapasta-path]
+version = "0.5.0"
+path = "../scolapasta-path"
+
+[dependencies.scolapasta-string-escape]
+version = "0.3.0"
+path = "../scolapasta-string-escape"
+default-features = false
+
+[dependencies.spinoso-array]
+version = "0.10.0"
+path = "../spinoso-array"
+default-features = false
+
+[dependencies.spinoso-env]
+version = "0.2.0"
+path = "../spinoso-env"
+optional = true
+default-features = false
+
+[dependencies.spinoso-exception]
+version = "0.1.0"
+path = "../spinoso-exception"
+
+[dependencies.spinoso-math]
+version = "0.3.0"
+path = "../spinoso-math"
+optional = true
+default-features = false
+
+[dependencies.spinoso-random]
+version = "0.4.0"
+path = "../spinoso-random"
+optional = true
+
+[dependencies.spinoso-regexp]
+version = "0.5.0"
+path = "../spinoso-regexp"
+optional = true
+default-features = false
+
+[dependencies.spinoso-securerandom]
+version = "0.2.0"
+path = "../spinoso-securerandom"
+optional = true
+
+[dependencies.spinoso-string]
+version = "0.23.0"
+path = "../spinoso-string"
+features = ["nul-terminated"]
+
+[dependencies.spinoso-symbol]
+version = "0.4.0"
+path = "../spinoso-symbol"
+
+[dependencies.spinoso-time]
+version = "0.7.2"
+path = "../spinoso-time"
+optional = true
+default-features = false
+features = ["tzrs"]
 
 [dev-dependencies]
-quickcheck = { version = "1.0.3", default-features = false }
+
+[dev-dependencies.quickcheck]
+version = "1.0.3"
+default-features = false
 
 [build-dependencies]
-bindgen = { version = "0.65.1", default-features = false, features = ["runtime"] }
-cc = { version = "1.0.72", features = ["parallel"] }
+
+[build-dependencies.bindgen]
+version = "0.65.1"
+default-features = false
+features = ["runtime"]
+
+[build-dependencies.cc]
+version = "1.0.72"
+features = ["parallel"]
 
 [features]
 default = [
