@@ -784,11 +784,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn append(&mut self, other: &mut Buf) {
-        self.inner.append(&mut other.inner);
-    }
-
-    #[inline]
     pub fn clear(&mut self) {
         self.inner.clear();
     }

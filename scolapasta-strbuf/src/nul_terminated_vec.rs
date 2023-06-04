@@ -903,13 +903,6 @@ impl Buf {
     }
 
     #[inline]
-    pub fn append(&mut self, other: &mut Buf) {
-        self.inner.append(&mut other.inner);
-        ensure_nul_terminated(&mut self.inner).expect("alloc failure");
-        ensure_nul_terminated(&mut other.inner).expect("alloc failure");
-    }
-
-    #[inline]
     pub fn clear(&mut self) {
         self.inner.clear();
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
@@ -1392,15 +1385,6 @@ mod tests {
             buf.pop_byte();
             let mut bytes = buf.into_inner();
             is_nul_terminated(&mut bytes)
-        }
-
-        fn test_ensure_nul_terminated_append(bytes: Vec<u8>, other: Vec<u8>) -> bool {
-            let mut buf = Buf::from(bytes);
-            let mut other_buf = Buf::from(other);
-            buf.append(&mut other_buf);
-            let mut bytes = buf.into_inner();
-            let mut other = other_buf.into_inner();
-            is_nul_terminated(&mut bytes) && is_nul_terminated(&mut other)
         }
 
         fn test_ensure_nul_terminated_clear(bytes: Vec<u8>) -> bool {
