@@ -154,7 +154,7 @@ fn ensure_nul_terminated(vec: &mut Vec<u8>) -> Result<(), TryReserveError> {
 /// use scolapasta_strbuf::Buf;
 ///
 /// let buf = Buf::new();
-/// assert_ne!(buf.capacity(), 0);
+/// assert_eq!(buf.capacity(), 1);
 ///
 /// let mut inner = buf.into_inner();
 /// let spare = inner.spare_capacity_mut();
@@ -454,6 +454,18 @@ impl<'a> IntoIterator for &'a mut Buf {
 }
 
 impl Buf {
+    /// Constructs a new, empty `Buf`.
+    ///
+    /// The buffer will allocate one byte to maintain its NUL termination
+    /// invariant.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::new();
+    /// ```
     #[inline]
     #[must_use]
     pub fn new() -> Self {
@@ -461,6 +473,51 @@ impl Buf {
         Self::from(inner)
     }
 
+    /// Constructs a new, empty `Buf` with at least the specified capacity.
+    ///
+    /// The buffer will be able to hold at least `capacity` bytes without
+    /// reallocating. This method is allowed to allocate for more elements than
+    /// `capacity`. If `capacity` is 0, the buffer will allocate 1 byte to
+    /// maintain its NUL termination invariant.
+    ///
+    /// It is important to note that although the returned buffer has the
+    /// minimum *capacity* specified, the vector will have a zero *length*. For
+    /// an explanation of the difference between length and capacity, see
+    /// *[Capacity and reallocation]*.
+    ///
+    /// If it is important to know the exact allocated capacity of a `Buf`,
+    /// always use the [`capacity`] method after construction.
+    ///
+    /// [Capacity and reallocation]: #capacity-and-reallocation
+    /// [`capacity`]: Self::capacity
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new capacity exceeds `isize::MAX` bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::with_capacity(26);
+    ///
+    /// // The buffer is empty, even though it has capacity for more
+    /// assert_eq!(buf.len(), 0);
+    /// assert!(buf.capacity() >= 26);
+    ///
+    /// // These are all done without reallocating...
+    /// for ch in b'a'..=b'z' {
+    ///     buf.push(ch);
+    /// }
+    /// assert_eq!(buf.len(), 26);
+    /// assert!(buf.capacity() >= 26);
+    ///
+    /// // ...but this may make the buffer reallocate
+    /// buf.push(b'!');
+    /// assert_eq!(buf.len(), 27);
+    /// assert!(buf.capacity() >= 27);
+    /// ```
     #[inline]
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
@@ -469,6 +526,39 @@ impl Buf {
         Self::from(inner)
     }
 
+    /// Creates a `Buf` directly from a pointer, a capacity, and a length.
+    ///
+    /// Reconstructing the buffer may cause a reallocation to maintain the
+    /// buffer's NUL termination invariant.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't
+    /// checked.
+    ///
+    /// Refer to the safety documentation for [`Vec::from_raw_parts`] for more
+    /// details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::ptr;
+    ///
+    /// use raw_parts::RawParts;
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let buf = Buf::from(b"abcde");
+    /// let RawParts { ptr, length, capacity } = buf.into_raw_parts();
+    ///
+    /// unsafe {
+    ///     ptr::write(ptr, b'A');
+    ///
+    ///     let raw_parts = RawParts { ptr, length, capacity };
+    ///     let rebuilt = Buf::from_raw_parts(raw_parts);
+    ///
+    ///     assert_eq!(rebuilt, b"Abcde");
+    /// }
+    /// ```
     #[inline]
     #[must_use]
     pub unsafe fn from_raw_parts(raw_parts: RawParts<u8>) -> Self {
@@ -476,30 +566,138 @@ impl Buf {
         Self::from(inner)
     }
 
+    /// Decomposes a `Buf` into its raw components.
+    ///
+    /// Returns the raw pointer to the underlying bytes, the length of the
+    /// buffer (in bytes), and the allocated capacity of the data (in bytes).
+    ///
+    /// After calling this function, the caller is responsible for the memory
+    /// previously managed by the `Buf`. The only way to do this is to convert
+    /// the raw pointer, length, and capacity back into a `Buf` with the
+    /// [`from_raw_parts`] function, allowing the destructor to perform the cleanup.
+    ///
+    /// [`from_raw_parts`]: Self::from_raw_parts
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use core::ptr;
+    ///
+    /// use raw_parts::RawParts;
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let buf = Buf::from(b"abcde");
+    /// let RawParts { ptr, length, capacity } = buf.into_raw_parts();
+    ///
+    /// unsafe {
+    ///     ptr::write(ptr, b'A');
+    ///
+    ///     let raw_parts = RawParts { ptr, length, capacity };
+    ///     let rebuilt = Buf::from_raw_parts(raw_parts);
+    ///
+    ///     assert_eq!(rebuilt, b"Abcde");
+    /// }
+    /// ```
     #[inline]
     #[must_use]
     pub fn into_raw_parts(self) -> RawParts<u8> {
         RawParts::from_vec(self.inner)
     }
 
+    /// Returns the total number of bytes the buffer can hold without
+    /// reallocating.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature = "nul-terminated")]
+    /// # {
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::with_capacity(10);
+    /// buf.push(b'!');
+    /// assert_eq!(buf.capacity(), 11);
+    /// # }
+    /// ```
     #[inline]
     #[must_use]
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
     }
 
+    /// Reserves capacity for at least `additional` more bytes to be inserted in
+    /// the given `Buf`.
+    ///
+    /// The buffer may reserve more space to speculatively avoid frequent
+    /// reallocations. After calling `reserve`, capacity will be greater than or
+    /// equal to `self.len() + additional`. Does nothing if capacity is already
+    /// sufficient.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new capacity exceeds `isize::MAX` bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"@");
+    /// buf.reserve(10);
+    /// assert!(buf.capacity() >= 11);
+    /// ```
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         self.inner.reserve(additional);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Reserves the minimum capacity for at least `additional` more bytes to
+    /// be inserted in the given `Buf`.
+    ///
+    /// Unlike [`reserve`], this will not deliberately over-allocate to
+    /// speculatively avoid frequent allocations. After calling `reserve_exact`,
+    /// capacity will be greater than or equal to `self.len() + additional`.
+    /// Does nothing if the capacity is already sufficient.
+    ///
+    /// Note that the allocator may give the buffer more space than it requests.
+    /// Therefore, capacity can not be relied upon to be precisely minimal.
+    /// Prefer [`reserve`] if future insertions are expected.
+    ///
+    /// [`reserve`]: Self::reserve
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new capacity exceeds `isize::MAX` bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::from(b"@");
+    /// buf.reserve_exact(10);
+    /// assert!(buf.capacity() >= 11);
+    /// ```
     #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.inner.reserve_exact(additional);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Tries to reserve capacity for at least `additional` more bytes to be
+    /// inserted in the given `Buf`.
+    ///
+    /// The buffer may reserve more space to speculatively avoid frequent
+    /// reallocations. After calling `try_reserve`, capacity will be greater
+    /// than or equal to `self.len() + additional` if it returns `Ok(())`. Does
+    /// nothing if capacity is already sufficient. This method preserves the
+    /// byte contents even if an error occurs.
+    ///
+    /// # Errors
+    ///
+    /// If the capacity overflows, or the allocator reports a failure, then an
+    /// error is returned.
     #[inline]
     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {
         let additional = additional.checked_add(1).unwrap_or(additional);
@@ -508,6 +706,25 @@ impl Buf {
         Ok(())
     }
 
+    /// Tries to reserve the minimum capacity for at least `additional`
+    /// elements to be inserted in the given `Buf`.
+    ///
+    /// Unlike [`try_reserve`], this will not deliberately over-allocate to
+    /// speculatively avoid frequent allocations. After calling
+    /// `try_reserve_exact`, capacity will be greater than or equal to
+    /// `self.len() + additional` if it returns `Ok(())`. Does nothing if the
+    /// capacity is already sufficient.
+    ///
+    /// Note that the allocator may give the buffer more space than it requests.
+    /// Therefore, capacity can not be relied upon to be precisely minimal.
+    /// Prefer [`try_reserve`] if future insertions are expected.
+    ///
+    /// [`try_reserve`]: Self::try_reserve
+    ///
+    /// # Errors
+    ///
+    /// If the capacity overflows, or the allocator reports a failure, then an
+    /// error is returned.
     #[inline]
     pub fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {
         let additional = additional.checked_add(1).unwrap_or(additional);
@@ -516,18 +733,95 @@ impl Buf {
         Ok(())
     }
 
+    /// Shrinks the capacity of the buffer as much as possible while maintaining
+    /// its NUL termination invariant.
+    ///
+    /// It will drop down as close as possible to the length but the allocator
+    /// may still inform the buffer that there is space for a few more bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature = "nul-terminated")]
+    /// # {
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::with_capacity(10);
+    /// buf.extend(b"123");
+    /// assert_eq!(buf.capacity(), 11);
+    /// buf.shrink_to(4);
+    /// assert!(buf.capacity() >= 4);
+    /// buf.shrink_to_fit();
+    /// assert!(buf.capacity() >= 4);
+    /// # }
+    /// ```
     #[inline]
     pub fn shrink_to_fit(&mut self) {
         self.inner.shrink_to_fit();
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Shrinks the capacity of the buffer with a lower bound.
+    ///
+    /// The capacity will remain at least as large as both the length and the
+    /// supplied value.
+    ///
+    /// If the current capacity is less than the lower limit, this is a no-op.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[cfg(feature = "nul-terminated")]
+    /// # {
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::with_capacity(10);
+    /// buf.extend(b"123");
+    /// assert_eq!(buf.capacity(), 11);
+    /// buf.shrink_to(4);
+    /// assert!(buf.capacity() >= 4);
+    /// buf.shrink_to(0);
+    /// assert!(buf.capacity() >= 4);
+    /// # }
+    /// ```
     #[inline]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.inner.shrink_to(min_capacity);
         ensure_nul_terminated(&mut self.inner).expect("alloc failure");
     }
 
+    /// Converts the buffer into [`Box<[u8]>`][owned slice].
+    ///
+    /// If the buffer has excess capacity, its bytes will be moved into a
+    /// newly-allocated buffer with exactly the right capacity.
+    ///
+    /// [owned slice]: Box
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let buf = Buf::from(b"123");
+    ///
+    /// let slice = buf.into_boxed_slice();
+    /// ```
+    ///
+    /// Any excess capacity is removed:
+    ///
+    /// ```
+    /// # #[cfg(feature = "nul-terminated")]
+    /// # {
+    /// use scolapasta_strbuf::Buf;
+    ///
+    /// let mut buf = Buf::with_capacity(10);
+    /// buf.extend(b"123");
+    ///
+    /// assert_eq!(buf.capacity(), 11);
+    /// let slice = buf.into_boxed_slice();
+    /// assert_eq!(slice.into_vec().capacity(), 3);
+    /// # }
+    /// ```
     #[inline]
     #[must_use]
     pub fn into_boxed_slice(self) -> Box<[u8]> {

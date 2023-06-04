@@ -37,8 +37,9 @@ extern crate std;
 mod nul_terminated_vec;
 mod vec;
 
-pub use imp::Buf;
 #[cfg(feature = "nul-terminated")]
 use nul_terminated_vec as imp;
 #[cfg(not(feature = "nul-terminated"))]
 use vec as imp;
+
+pub use imp::Buf;
