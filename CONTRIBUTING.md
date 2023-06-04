@@ -40,7 +40,7 @@ requires configuring several dependencies.
 
 Artichoke depends on Rust and several compiler plugins for linting and
 formatting. The specific version of Rust that Artichoke requires is specified in
-the [toolchain file](rust-toolchain).
+the [toolchain file](rust-toolchain.toml).
 
 Toolchain requirements are documented in [`BUILD.md`](BUILD.md#rust-toolchain).
 

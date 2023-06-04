@@ -2,8 +2,10 @@
 
 require 'open-uri'
 require 'shellwords'
+
 require 'bundler/audit/task'
 require 'rubocop/rake_task'
+require 'tomlrb'
 
 task default: %i[format lint]
 
@@ -196,14 +198,14 @@ namespace :toolchain do
   desc 'Sync Rust toolchain to all sources'
   task sync: %i[sync:manifests sync:ci]
 
-  rust_toolchain = File.read('rust-toolchain').chomp
+  rust_toolchain = Tomlrb.load_file('rust-toolchain.toml', symbolize_keys: true)
+  toolchain_version = rust_toolchain[:toolchain][:channel]
 
   namespace :sync do
     desc 'Sync the root rust-toolchain version to all crate manifests'
     task :manifests do
-      rust_version = File.read('rust-toolchain').chomp
       regexp = /^rust-version = "(.*)"$/
-      next_rust_version = "rust-version = \"#{rust_toolchain}\""
+      next_rust_version = "rust-version = \"#{toolchain_version}\""
 
       pkg_files = FileList.new(['Cargo.toml', 'fuzz/Cargo.toml', 'spec-runner/Cargo.toml', 'ui-tests/Cargo.toml'])
 
@@ -211,7 +213,7 @@ namespace :toolchain do
         contents = File.read(file)
 
         if (existing_version = contents.match(regexp))
-          File.write(file, contents.gsub(regexp, next_rust_version)) if existing_version != rust_version
+          File.write(file, contents.gsub(regexp, next_rust_version)) if existing_version != next_rust_version
           next
         end
 
@@ -228,7 +230,7 @@ namespace :toolchain do
 
       workflow_files.each do |file|
         contents = File.read(file)
-        contents = contents.gsub(/(toolchain: "?)\d+\.\d+\.\d+("?)/, "\\1#{rust_toolchain}\\2")
+        contents = contents.gsub(/(toolchain: "?)\d+\.\d+\.\d+("?)/, "\\1#{toolchain_version}\\2")
 
         File.write(file, contents)
       end
