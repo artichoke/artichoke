@@ -58,6 +58,7 @@ dependencies = [
  "qed",
  "quickcheck",
  "regex",
+ "rustc-hash",
  "scolapasta-aref",
  "scolapasta-int-parse",
  "scolapasta-path",
