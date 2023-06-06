@@ -49,6 +49,7 @@ dependencies = [
  "posix-space",
  "qed",
  "regex",
+ "rustc-hash",
  "scolapasta-aref",
  "scolapasta-int-parse",
  "scolapasta-path",

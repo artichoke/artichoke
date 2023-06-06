@@ -1,7 +1,9 @@
+use core::hash::BuildHasherDefault;
 use std::collections::hash_map::RandomState;
 
 use intaglio::bytes::SymbolTable;
 use mezzaluna_type_registry::Registry;
+use rustc_hash::FxHasher;
 
 use crate::class;
 #[cfg(feature = "core-random")]
@@ -13,6 +15,8 @@ use crate::sys;
 
 pub mod output;
 pub mod parser;
+
+type SymbolTableHasher = BuildHasherDefault<FxHasher>;
 
 /// Container for interpreter global state.
 ///
@@ -31,7 +35,7 @@ pub struct State {
     pub load_path_vfs: load_path::Adapter,
     #[cfg(feature = "core-regexp")]
     pub regexp: spinoso_regexp::State,
-    pub symbols: SymbolTable,
+    pub symbols: SymbolTable<SymbolTableHasher>,
     pub output: output::Strategy,
     pub hash_builder: RandomState,
     #[cfg(feature = "core-random")]
@@ -71,7 +75,7 @@ impl State {
             load_path_vfs: load_path::Adapter::new(),
             #[cfg(feature = "core-regexp")]
             regexp: spinoso_regexp::State::new(),
-            symbols: SymbolTable::new(),
+            symbols: SymbolTable::with_hasher(SymbolTableHasher::default()),
             output: output::Strategy::new(),
             hash_builder: RandomState::new(),
             #[cfg(feature = "core-random")]
