@@ -1754,3 +1754,60 @@ pub fn is_valid_encoding(interp: &mut Artichoke, mut value: Value) -> Result<Val
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     Ok(interp.convert(s.is_valid_encoding()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test::prelude::*;
+
+    #[test]
+    fn mutating_methods_may_raise_frozen_error() {
+        let mut interp = interpreter();
+        let mut slf = interp.eval(b"'foo'").unwrap();
+
+        slf.freeze(&mut interp).unwrap();
+
+        let other = interp.try_convert_mut("bar").unwrap();
+        assert_eq!(
+            append(&mut interp, slf, other).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen String: \\\"foo\\\")",
+        );
+
+        assert_eq!(
+            aset(&mut interp, slf).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen String: \\\"foo\\\")",
+        );
+
+        assert_eq!(
+            capitalize_bang(&mut interp, slf).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen String: \\\"foo\\\")",
+        );
+
+        assert_eq!(
+            chomp_bang(&mut interp, slf, None).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen String: \\\"foo\\\")",
+        );
+
+        assert_eq!(
+            chop_bang(&mut interp, slf).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen String: \\\"foo\\\")",
+        );
+
+        assert_eq!(
+            clear(&mut interp, slf).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen String: \\\"foo\\\")",
+        );
+
+        assert_eq!(
+            reverse_bang(&mut interp, slf).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen String: \\\"foo\\\")",
+        );
+
+        let index = interp.convert(0);
+        let byte = interp.convert(0);
+        assert_eq!(
+            setbyte(&mut interp, slf, index, byte).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen String: \\\"foo\\\")",
+        );
+    }
+}
