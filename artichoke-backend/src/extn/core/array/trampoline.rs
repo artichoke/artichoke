@@ -407,3 +407,56 @@ pub fn shift(interp: &mut Artichoke, mut ary: Value, count: Option<Value>) -> Re
         Ok(interp.convert(shifted))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test::prelude::*;
+
+    #[test]
+    fn mutating_methods_may_raise_frozen_error() {
+        let mut interp = interpreter();
+        let mut slf = interp.eval(b"[1,2,3]").unwrap();
+        slf.freeze(&mut interp).unwrap();
+
+        let value = interp.convert(0);
+        assert_eq!(
+            push_single(&mut interp, slf, value).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen Array)",
+        );
+
+        let first = interp.convert(0);
+        let second = interp.try_convert_mut(Vec::<u8>::new()).unwrap();
+        assert_eq!(
+            element_assignment(&mut interp, slf, first, second, None)
+                .unwrap_err()
+                .to_string(),
+            "FrozenError (can't modify frozen Array)",
+        );
+
+        assert_eq!(
+            clear(&mut interp, slf).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen Array)",
+        );
+
+        assert_eq!(
+            push(&mut interp, slf, None).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen Array)",
+        );
+
+        assert_eq!(
+            concat(&mut interp, slf, []).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen Array)",
+        );
+
+        assert_eq!(
+            reverse_bang(&mut interp, slf).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen Array)",
+        );
+
+        assert_eq!(
+            shift(&mut interp, slf, None).unwrap_err().to_string(),
+            "FrozenError (can't modify frozen Array)",
+        );
+    }
+}
