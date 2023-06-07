@@ -21,13 +21,6 @@ impl<'a> Extend<&'a u8> for AsciiString {
     }
 }
 
-impl<'a> Extend<&'a mut u8> for AsciiString {
-    #[inline]
-    fn extend<I: IntoIterator<Item = &'a mut u8>>(&mut self, iter: I) {
-        self.inner.extend(iter.into_iter().map(|byte| *byte));
-    }
-}
-
 impl From<Buf> for AsciiString {
     #[inline]
     fn from(content: Buf) -> Self {

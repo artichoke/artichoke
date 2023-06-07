@@ -1,6 +1,6 @@
 [package]
 name = "spinoso-string"
-version = "0.23.0"
+version = "0.24.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = """
 Encoding-aware string implementation for Ruby String core type in Artichoke Ruby

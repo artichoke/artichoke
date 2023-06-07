@@ -72,13 +72,6 @@ impl<'a> Extend<&'a u8> for String {
     }
 }
 
-impl<'a> Extend<&'a mut u8> for String {
-    #[inline]
-    fn extend<I: IntoIterator<Item = &'a mut u8>>(&mut self, iter: I) {
-        self.inner.extend(iter);
-    }
-}
-
 impl FromIterator<u8> for String {
     #[inline]
     fn from_iter<I: IntoIterator<Item = u8>>(iter: I) -> Self {

@@ -2,7 +2,7 @@ use core::iter::FusedIterator;
 
 use scolapasta_string_escape::{ascii_char_with_escape, InvalidUtf8ByteSequence};
 
-use super::Utf8String;
+use super::{Utf8Str, Utf8String};
 use crate::inspect::Flags;
 
 #[derive(Debug, Clone)]
@@ -17,7 +17,21 @@ pub struct Inspect<'a> {
 impl<'a> From<&'a Utf8String> for Inspect<'a> {
     #[inline]
     fn from(value: &'a Utf8String) -> Self {
-        Self::new(value.as_slice())
+        Self::new(value.as_bytes())
+    }
+}
+
+impl<'a> From<&'a Utf8Str> for Inspect<'a> {
+    #[inline]
+    fn from(value: &'a Utf8Str) -> Self {
+        Self::new(value.as_bytes())
+    }
+}
+
+impl<'a> From<&'a str> for Inspect<'a> {
+    #[inline]
+    fn from(value: &'a str) -> Self {
+        Self::new(value.as_bytes())
     }
 }
 
@@ -99,57 +113,47 @@ impl<'a> FusedIterator for Inspect<'a> {}
 mod tests {
     use alloc::string::String;
 
-    use super::{Inspect, Utf8String};
+    use super::{Inspect, Utf8Str};
 
     #[test]
     fn empty() {
-        let s = "";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("");
 
         assert_eq!(inspect.collect::<String>(), r#""""#);
     }
 
     #[test]
     fn fred() {
-        let s = "fred";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("fred");
 
         assert_eq!(inspect.collect::<String>(), r#""fred""#);
     }
 
     #[test]
     fn invalid_utf8_byte() {
-        let s = b"\xFF";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let s = Utf8Str::new(b"\xFF");
+        let inspect = Inspect::from(s);
 
         assert_eq!(inspect.collect::<String>(), r#""\xFF""#);
     }
 
     #[test]
     fn invalid_utf8() {
-        let s = b"invalid-\xFF-utf8";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let s = Utf8Str::new(b"invalid-\xFF-utf8");
+        let inspect = Inspect::from(s);
 
         assert_eq!(inspect.collect::<String>(), r#""invalid-\xFF-utf8""#);
     }
 
     #[test]
     fn quote_collect() {
-        let s = r#"a"b"#;
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from(r#"a"b"#);
         assert_eq!(inspect.collect::<String>(), r#""a\"b""#);
     }
 
     #[test]
     fn quote_iter() {
-        let s = r#"a"b"#;
-        let s = Utf8String::from(s);
-        let mut inspect = Inspect::from(&s);
+        let mut inspect = Inspect::from(r#"a"b"#);
 
         assert_eq!(inspect.next(), Some('"'));
         assert_eq!(inspect.next(), Some('a'));
@@ -162,108 +166,84 @@ mod tests {
 
     #[test]
     fn emoji() {
-        let s = "💎";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("💎");
 
-        assert_eq!(inspect.collect::<String>(), "\"💎\"");
+        assert_eq!(inspect.collect::<String>(), r#""💎""#);
     }
 
     #[test]
     fn emoji_global() {
-        let s = "$💎";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("$💎");
 
-        assert_eq!(inspect.collect::<String>(), "\"$💎\"");
+        assert_eq!(inspect.collect::<String>(), r#""$💎""#);
     }
 
     #[test]
     fn emoji_ivar() {
-        let s = "@💎";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("@💎");
 
-        assert_eq!(inspect.collect::<String>(), "\"@💎\"");
+        assert_eq!(inspect.collect::<String>(), r#""@💎""#);
     }
 
     #[test]
     fn emoji_cvar() {
-        let s = "@@💎";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("@@💎");
 
-        assert_eq!(inspect.collect::<String>(), "\"@@💎\"");
+        assert_eq!(inspect.collect::<String>(), r#""@@💎""#);
     }
 
     #[test]
     fn unicode_replacement_char() {
-        let s = "�";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("�");
 
-        assert_eq!(inspect.collect::<String>(), "\"�\"");
+        assert_eq!(inspect.collect::<String>(), r#""�""#);
     }
 
     #[test]
     fn unicode_replacement_char_global() {
-        let s = "$�";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("$�");
 
-        assert_eq!(inspect.collect::<String>(), "\"$�\"");
+        assert_eq!(inspect.collect::<String>(), r#""$�""#);
     }
 
     #[test]
     fn unicode_replacement_char_ivar() {
-        let s = "@�";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("@�");
 
-        assert_eq!(inspect.collect::<String>(), "\"@�\"");
+        assert_eq!(inspect.collect::<String>(), r#""@�""#);
     }
 
     #[test]
     fn unicode_replacement_char_cvar() {
-        let s = "@@�";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("@@�");
 
-        assert_eq!(inspect.collect::<String>(), "\"@@�\"");
+        assert_eq!(inspect.collect::<String>(), r#""@@�""#);
     }
 
     #[test]
     fn escape_slash() {
-        let s = r"\";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from(r"\");
 
         assert_eq!(inspect.collect::<String>(), r#""\\""#);
     }
 
     #[test]
     fn escape_inner_slash() {
-        let s = r"foo\bar";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from(r"foo\bar");
 
         assert_eq!(inspect.collect::<String>(), r#""foo\\bar""#);
     }
 
     #[test]
     fn nul() {
-        let s = "\0";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("\0");
 
         assert_eq!(inspect.collect::<String>(), r#""\x00""#);
     }
 
     #[test]
     fn del() {
-        let s = "\x7F";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("\x7F");
 
         assert_eq!(inspect.collect::<String>(), r#""\x7F""#);
     }
@@ -306,38 +286,29 @@ mod tests {
             ["\x20", r#"" ""#],
         ];
         for [s, r] in test_cases {
-            let s = Utf8String::from(s);
-            let inspect = Inspect::from(&s);
+            let inspect = Inspect::from(s);
             assert_eq!(inspect.collect::<String>(), r, "For {s:?}, expected {r}");
         }
     }
 
     #[test]
     fn special_double_quote() {
-        let s = "\x22";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("\x22");
 
         assert_eq!(inspect.collect::<String>(), r#""\"""#);
 
-        let s = "\"";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("\"");
 
         assert_eq!(inspect.collect::<String>(), r#""\"""#);
     }
 
     #[test]
     fn special_backslash() {
-        let s = "\x5C";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("\x5C");
 
         assert_eq!(inspect.collect::<String>(), r#""\\""#);
 
-        let s = "\\";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("\\");
 
         assert_eq!(inspect.collect::<String>(), r#""\\""#);
     }
@@ -345,29 +316,23 @@ mod tests {
     #[test]
     fn invalid_utf8_special_global() {
         let s = b"$-\xFF";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let s = Utf8Str::from_bytes(s);
+        let inspect = Inspect::from(s);
 
         assert_eq!(inspect.collect::<String>(), r#""$-\xFF""#);
     }
 
     #[test]
     fn replacement_char_special_global() {
-        let s = "$-�";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("$-�");
 
-        assert_eq!(inspect.collect::<String>(), "\"$-�\"");
+        assert_eq!(inspect.collect::<String>(), r#""$-�""#);
 
-        let s = "$-�a";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("$-�a");
 
         assert_eq!(inspect.collect::<String>(), r#""$-�a""#);
 
-        let s = "$-��";
-        let s = Utf8String::from(s);
-        let inspect = Inspect::from(&s);
+        let inspect = Inspect::from("$-��");
 
         assert_eq!(inspect.collect::<String>(), r#""$-��""#);
     }

@@ -24,17 +24,6 @@ impl<'a> Extend<&'a u8> for EncodedString {
     }
 }
 
-impl<'a> Extend<&'a mut u8> for EncodedString {
-    #[inline]
-    fn extend<I: IntoIterator<Item = &'a mut u8>>(&mut self, iter: I) {
-        match self {
-            EncodedString::Ascii(inner) => inner.extend(iter),
-            EncodedString::Binary(inner) => inner.extend(iter),
-            EncodedString::Utf8(inner) => inner.extend(iter),
-        }
-    }
-}
-
 impl AsRef<[u8]> for EncodedString {
     #[inline]
     fn as_ref(&self) -> &[u8] {
@@ -65,7 +54,7 @@ impl Deref for EncodedString {
         match self {
             EncodedString::Ascii(inner) => inner,
             EncodedString::Binary(inner) => inner,
-            EncodedString::Utf8(inner) => inner,
+            EncodedString::Utf8(inner) => inner.as_bytes(),
         }
     }
 }
@@ -76,7 +65,7 @@ impl DerefMut for EncodedString {
         match self {
             EncodedString::Ascii(inner) => &mut *inner,
             EncodedString::Binary(inner) => &mut *inner,
-            EncodedString::Utf8(inner) => &mut *inner,
+            EncodedString::Utf8(inner) => inner.as_bytes_mut(),
         }
     }
 }
