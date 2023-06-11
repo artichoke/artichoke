@@ -35,9 +35,11 @@
 //! # Examples
 //!
 //! ```
-//! # #![cfg(feature = "alloc")]
+//! # #[cfg(feature = "alloc")]
 //! # extern crate alloc;
+//! # #[cfg(feature = "alloc")]
 //! # use alloc::collections::TryReserveError;
+//! # #[cfg(feature = "alloc")]
 //! # fn example() -> Result<(), TryReserveError> {
 //! let data = b"Artichoke Ruby";
 //! let mut buf = String::new();
@@ -45,13 +47,15 @@
 //! assert_eq!(buf, "4172746963686f6b652052756279");
 //! # Ok(())
 //! # }
+//! # #[cfg(feature = "alloc")]
 //! # example().unwrap()
 //! ```
 //!
 //! This module also exposes an iterator:
 //!
 //! ```
-//! # use scolapasta_hex::Hex;
+//! use scolapasta_hex::Hex;
+//!
 //! let data = "Artichoke Ruby";
 //! let iter = Hex::from(data);
 //! assert_eq!(iter.collect::<String>(), "4172746963686f6b652052756279");
@@ -90,7 +94,7 @@
 #![no_std]
 
 // Ensure code blocks in `README.md` compile
-#[cfg(doctest)]
+#[cfg(all(doctest, alloc))]
 #[doc = include_str!("../README.md")]
 mod readme {}
 
@@ -176,9 +180,7 @@ pub fn try_encode_into<T: AsRef<[u8]>>(data: T, buf: &mut String) -> Result<(), 
     let data = data.as_ref();
     let iter = Hex::from(data);
     buf.try_reserve(iter.len())?;
-    for ch in iter {
-        buf.push(ch);
-    }
+    buf.extend(iter);
     Ok(())
 }
 
@@ -260,7 +262,8 @@ where
 /// # Examples
 ///
 /// ```
-/// # use scolapasta_hex::Hex;
+/// use scolapasta_hex::Hex;
+///
 /// let data = "Artichoke Ruby";
 /// let iter = Hex::from(data);
 /// assert_eq!(iter.collect::<String>(), "4172746963686f6b652052756279");
@@ -277,7 +280,8 @@ impl<'a> Hex<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use scolapasta_hex::Hex;
+    /// use scolapasta_hex::Hex;
+    ///
     /// let iter = Hex::from("");
     /// assert_eq!(iter.len(), 0);
     ///
@@ -309,7 +313,8 @@ impl<'a> Hex<'a> {
     /// # Examples
     ///
     /// ```
-    /// # use scolapasta_hex::Hex;
+    /// use scolapasta_hex::Hex;
+    ///
     /// let iter = Hex::from("");
     /// assert!(iter.is_empty());
     ///
@@ -532,7 +537,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn literal_exhaustive() {
+    fn test_literal_exhaustive() {
         for byte in 0..=255 {
             let mut lit = EscapedByte::from(byte);
             let left = lit.next().unwrap();
@@ -583,6 +588,99 @@ mod tests {
                 "literal must only expand to two ASCII chracters, found 3+"
             );
         }
+    }
+
+    #[test]
+    fn test_escape_byte() {
+        // Expected hex escape codes for all possible u8 values
+        #[rustfmt::skip]
+        const EXPECTED: [&str; 256] = [
+            "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
+            "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "1a", "1b", "1c", "1d", "1e", "1f",
+            "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "2a", "2b", "2c", "2d", "2e", "2f",
+            "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "3a", "3b", "3c", "3d", "3e", "3f",
+            "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "4a", "4b", "4c", "4d", "4e", "4f",
+            "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "5a", "5b", "5c", "5d", "5e", "5f",
+            "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "6a", "6b", "6c", "6d", "6e", "6f",
+            "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "7a", "7b", "7c", "7d", "7e", "7f",
+            "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "8a", "8b", "8c", "8d", "8e", "8f",
+            "90", "91", "92", "93", "94", "95", "96", "97", "98", "99", "9a", "9b", "9c", "9d", "9e", "9f",
+            "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9", "aa", "ab", "ac", "ad", "ae", "af",
+            "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "ba", "bb", "bc", "bd", "be", "bf",
+            "c0", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "ca", "cb", "cc", "cd", "ce", "cf",
+            "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "da", "db", "dc", "dd", "de", "df",
+            "e0", "e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "ea", "eb", "ec", "ed", "ee", "ef",
+            "f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "fa", "fb", "fc", "fd", "fe", "ff",
+        ];
+
+        // Iterate over all possible u8 values
+        for byte in 0..=255 {
+            let expected = EXPECTED[byte as usize];
+            assert_eq!(EscapedByte::from(byte).as_str(), expected);
+            assert_eq!(EscapedByte::hex_escape(byte), expected);
+            assert_eq!(escape_byte(byte), expected);
+        }
+    }
+
+    #[test]
+    fn test_escaped_byte_as_str() {
+        let escaped_byte = EscapedByte::from(b'H');
+        assert_eq!(escaped_byte.as_str(), "48");
+    }
+
+    #[test]
+    fn test_escaped_byte_len() {
+        let escaped_byte = EscapedByte::from(b'H');
+        assert_eq!(escaped_byte.len(), 2);
+    }
+
+    #[test]
+    fn test_escaped_byte_is_empty() {
+        let escaped_byte = EscapedByte::from(b'\x00');
+        assert!(!escaped_byte.is_empty());
+
+        let escaped_byte = EscapedByte::from(b'H');
+        assert!(!escaped_byte.is_empty());
+    }
+
+    #[test]
+    fn test_escaped_byte_double_ended_iterator() {
+        let mut iter = EscapedByte::from(b'H');
+
+        assert_eq!(iter.next(), Some('4'));
+        assert_eq!(iter.next_back(), Some('8'));
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.next_back(), None);
+    }
+
+    #[test]
+    fn test_escaped_byte_is_empty_with_partial_consumption() {
+        // Partial consumption of iterator
+        let mut escaped_byte = EscapedByte::from(b'H');
+        assert!(!escaped_byte.is_empty());
+
+        // Consume one character
+        escaped_byte.next();
+        assert!(!escaped_byte.is_empty());
+
+        // Fully consume the iterator
+        escaped_byte.next();
+        assert!(escaped_byte.is_empty());
+    }
+
+    #[test]
+    fn test_escaped_byte_len_with_partial_consumption() {
+        // Partial consumption of iterator
+        let mut escaped_byte = EscapedByte::from(b'H');
+        assert_eq!(escaped_byte.len(), 2);
+
+        // Consume one character
+        escaped_byte.next();
+        assert_eq!(escaped_byte.len(), 1);
+
+        // Fully consume the iterator
+        escaped_byte.next();
+        assert_eq!(escaped_byte.len(), 0);
     }
 
     #[test]
@@ -967,15 +1065,97 @@ mod tests {
         assert!(hex_iter.is_empty());
     }
 
+    #[test]
+    fn test_hex_exact_size_iterator() {
+        // ```
+        // >>> import binascii
+        // >>> binascii.hexlify(bytes("Hello", "utf-8"))
+        // b'48656c6c6f'
+        // ```
+        let mut iter = Hex::from("Hello");
+        assert_eq!(iter.len(), 10);
+        assert_eq!(iter.size_hint(), (10, Some(10)));
+
+        assert_eq!(iter.next(), Some('4'));
+        assert_eq!(iter.len(), 9);
+        assert_eq!(iter.size_hint(), (9, Some(9)));
+
+        assert_eq!(iter.next(), Some('8'));
+        assert_eq!(iter.next(), Some('6'));
+        assert_eq!(iter.len(), 7);
+        assert_eq!(iter.size_hint(), (7, Some(7)));
+
+        assert_eq!(iter.next(), Some('5'));
+        assert_eq!(iter.next(), Some('6'));
+        assert_eq!(iter.len(), 5);
+        assert_eq!(iter.size_hint(), (5, Some(5)));
+
+        assert_eq!(iter.next(), Some('c'));
+        assert_eq!(iter.next(), Some('6'));
+        assert_eq!(iter.len(), 3);
+        assert_eq!(iter.size_hint(), (3, Some(3)));
+
+        assert_eq!(iter.next(), Some('c'));
+        assert_eq!(iter.next(), Some('6'));
+        assert_eq!(iter.len(), 1);
+        assert_eq!(iter.size_hint(), (1, Some(1)));
+
+        assert_eq!(iter.next(), Some('f'));
+        assert_eq!(iter.len(), 0);
+        assert_eq!(iter.size_hint(), (0, Some(0)));
+
+        assert_eq!(iter.next(), None);
+        assert_eq!(iter.len(), 0);
+        assert_eq!(iter.size_hint(), (0, Some(0)));
+    }
+
+    #[test]
+    fn test_hex_is_empty() {
+        let iter = Hex::from("Hello");
+        assert!(!iter.is_empty());
+
+        let iter = Hex::from("");
+        assert!(iter.is_empty());
+
+        let mut iter = Hex::from("W");
+        assert!(!iter.is_empty());
+        assert_eq!(iter.next(), Some('5'));
+        assert!(!iter.is_empty());
+        assert_eq!(iter.next(), Some('7'));
+        assert!(iter.is_empty());
+        assert_eq!(iter.next(), None);
+        assert!(iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_last() {
+        let iter = Hex::from("");
+        assert_eq!(iter.last(), None);
+
+        let iter = Hex::from("Hello");
+        assert_eq!(iter.last(), Some('f'));
+
+        let mut iter = Hex::from("World");
+        assert_eq!(iter.next(), Some('5'));
+        assert_eq!(iter.last(), Some('4'));
+
+        let iter = Hex::from("123456");
+        assert_eq!(iter.last(), Some('6'));
+
+        let iter = Hex::from("A");
+        assert_eq!(iter.last(), Some('1'));
+    }
+
     #[cfg(feature = "alloc")]
     mod alloc {
         use alloc::string::String;
+        use core::fmt::Write;
 
-        use crate::{format_into, try_encode, try_encode_into, Hex};
+        use crate::{escape_byte, format_into, try_encode, try_encode_into, EscapedByte, Hex};
 
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
-        fn rfc4648_test_vectors_encode() {
+        fn test_rfc4648_test_vectors_encode() {
             // ```
             // BASE16("") = ""
             // ```
@@ -1014,7 +1194,7 @@ mod tests {
 
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
-        fn rfc4648_test_vectors_hex_iter() {
+        fn test_rfc4648_test_vectors_hex_iter() {
             // ```
             // BASE16("") = ""
             // ```
@@ -1053,7 +1233,7 @@ mod tests {
 
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
-        fn rfc4648_test_vectors_encode_into_string() {
+        fn test_rfc4648_test_vectors_encode_into_string() {
             // ```
             // BASE16("") = ""
             // ```
@@ -1113,7 +1293,7 @@ mod tests {
 
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
-        fn rfc4648_test_vectors_format_into() {
+        fn test_rfc4648_test_vectors_format_into() {
             // ```
             // BASE16("") = ""
             // ```
@@ -1194,6 +1374,26 @@ mod tests {
             let result = iter.collect::<String>();
             assert_eq!(result, "4172746963686f6b652052756279");
         }
+
+        #[test]
+        fn test_hex_escape() {
+            let mut buf = String::new();
+            for value in 0..=255 {
+                write!(&mut buf, "{value:02x}").unwrap();
+                assert_eq!(EscapedByte::from(value).as_str(), buf);
+                assert_eq!(EscapedByte::hex_escape(value), buf);
+                assert_eq!(escape_byte(value), buf);
+                buf.clear();
+            }
+        }
+
+        #[test]
+        fn test_escaped_byte_iterator() {
+            let escaped_byte = EscapedByte::from(b'H');
+
+            let result = escaped_byte.collect::<String>();
+            assert_eq!(result, "48");
+        }
     }
 
     #[cfg(feature = "std")]
@@ -1204,7 +1404,7 @@ mod tests {
 
         // https://tools.ietf.org/html/rfc4648#section-10
         #[test]
-        fn rfc4648_test_vectors_write_into() {
+        fn test_rfc4648_test_vectors_write_into() {
             // ```
             // BASE16("") = ""
             // ```
