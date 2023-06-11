@@ -350,6 +350,16 @@ impl<'a> From<&'a [u8]> for Hex<'a> {
     }
 }
 
+impl<'a, const N: usize> From<&'a [u8; N]> for Hex<'a> {
+    #[inline]
+    fn from(data: &'a [u8; N]) -> Self {
+        Self {
+            iter: data.iter(),
+            escaped_byte: None,
+        }
+    }
+}
+
 impl<'a> Iterator for Hex<'a> {
     type Item = char;
 
@@ -519,7 +529,7 @@ impl FusedIterator for EscapedByte {}
 
 #[cfg(test)]
 mod tests {
-    use crate::EscapedByte;
+    use super::*;
 
     #[test]
     fn literal_exhaustive() {
@@ -573,6 +583,388 @@ mod tests {
                 "literal must only expand to two ASCII chracters, found 3+"
             );
         }
+    }
+
+    #[test]
+    fn test_hex_iterator_with_remaining_escaped_byte() {
+        let hex_str = &[0x41, 0x42, 0x1B, 0x43];
+        let mut hex_iter = Hex::from(hex_str);
+
+        // Consume the first three bytes
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '3');
+        assert!(hex_iter.next().is_none());
+    }
+
+    #[test]
+    fn test_hex_iterator_empty_after_exhausted() {
+        let hex_str = &[0x41, 0x42];
+        let mut hex_iter = Hex::from(hex_str);
+
+        // Consume all bytes
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+
+        assert!(hex_iter.is_empty());
+        assert!(hex_iter.next().is_none());
+    }
+
+    #[test]
+    fn test_hex_iterator_not_empty_with_remaining_escaped_byte() {
+        let hex_str = &[0x41, 0x42, 0x1B, 0x43];
+        let mut hex_iter = Hex::from(hex_str);
+
+        // Consume the first three bytes
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+
+        assert!(!hex_iter.is_empty());
+        assert!(hex_iter.next().is_some());
+    }
+
+    #[test]
+    fn test_hex_iterator_not_empty_with_remaining_byte() {
+        let hex_str = &[0x41, 0x42, 0x43];
+        let mut hex_iter = Hex::from(hex_str);
+
+        // Consume the first two bytes
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+
+        assert!(!hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_empty() {
+        let hex_str = b"";
+        let hex_iter = Hex::from(hex_str);
+
+        assert!(hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_with_single_escaped_byte() {
+        let hex_str = &[0x1B];
+        let mut hex_iter = Hex::from(hex_str);
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+        assert!(hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_with_multiple_escaped_bytes() {
+        let hex_str = &[0x1B, 0x1B, 0x1B];
+        let mut hex_iter = Hex::from(hex_str);
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        assert!(hex_iter.next().is_none());
+        assert!(hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_with_invalid_escape_sequence() {
+        let hex_str = &[0x41, 0x1B, 0x42];
+        let mut hex_iter = Hex::from(hex_str);
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '2');
+
+        assert!(hex_iter.next().is_none());
+        assert!(hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_with_no_remaining_bytes() {
+        let hex_str = &[0x41, 0x42, 0x43];
+        let mut hex_iter = Hex::from(hex_str);
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '2');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '3');
+
+        assert!(hex_iter.next().is_none());
+        assert!(hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_with_emoji_sequence() {
+        // ```
+        // >>> binascii.hexlify(bytes("Hello, 😃!", "utf-8"))
+        // b'48656c6c6f2c20f09f988321'
+        // ```
+        let mut hex_iter = Hex::from("Hello, 😃!");
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '8');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '6');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '5');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '6');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'c');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '6');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'c');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '6');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'f');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '2');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'c');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '2');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '0');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'f');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '0');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '9');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'f');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '9');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '8');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '8');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '3');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '2');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+
+        assert!(hex_iter.next().is_none());
+        assert!(hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_with_chinese_hanzi_sequence() {
+        // ```
+        // >>> binascii.hexlify(bytes("你好，世界！", "utf-8"))
+        // b'e4bda0e5a5bdefbc8ce4b896e7958cefbc81'
+        // ```
+        let mut hex_iter = Hex::from("你好，世界！");
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'e');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'd');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'a');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '0');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'e');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '5');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'a');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '5');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'd');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'e');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'f');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'c');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '8');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'c');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'e');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '8');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '9');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '6');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'e');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '7');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '9');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '5');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '8');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'c');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'e');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'f');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'b');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, 'c');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '8');
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '1');
+
+        assert!(hex_iter.next().is_none());
+        assert!(hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_with_byte_array_exhaustive() {
+        let mut hex_str = [0u8; 256];
+
+        for (i, byte) in hex_str.iter_mut().enumerate() {
+            *byte = i.try_into().unwrap();
+        }
+
+        let mut hex_iter = Hex::from(&hex_str);
+
+        for byte in &hex_str {
+            let expected_chars = [
+                char::from_digit(u32::from(byte >> 4), 16).unwrap(),
+                char::from_digit(u32::from(byte & 0x0F), 16).unwrap(),
+            ];
+            for expected_char in expected_chars {
+                let result = hex_iter.next().unwrap();
+                assert_eq!(result, expected_char);
+            }
+        }
+
+        assert!(hex_iter.next().is_none());
+        assert!(hex_iter.is_empty());
     }
 
     #[cfg(feature = "alloc")]
@@ -771,6 +1163,37 @@ mod tests {
             format_into("foobar", &mut fmt).unwrap();
             assert_eq!(fmt, "666f6f626172");
         }
+
+        #[test]
+        fn test_try_encode() {
+            let data = b"Artichoke Ruby";
+            let result = try_encode(data).unwrap();
+            assert_eq!(result, "4172746963686f6b652052756279");
+        }
+
+        #[test]
+        fn test_try_encode_into() {
+            let data = b"Artichoke Ruby";
+            let mut buf = String::new();
+            try_encode_into(data, &mut buf).unwrap();
+            assert_eq!(buf, "4172746963686f6b652052756279");
+        }
+
+        #[test]
+        fn test_format_into() {
+            let data = b"Artichoke Ruby";
+            let mut buf = String::new();
+            format_into(data, &mut buf).unwrap();
+            assert_eq!(buf, "4172746963686f6b652052756279");
+        }
+
+        #[test]
+        fn test_hex_iterator() {
+            let data = "Artichoke Ruby";
+            let iter = Hex::from(data);
+            let result = iter.collect::<String>();
+            assert_eq!(result, "4172746963686f6b652052756279");
+        }
     }
 
     #[cfg(feature = "std")]
@@ -830,6 +1253,14 @@ mod tests {
             let mut write = Vec::new();
             write_into("foobar", &mut write).unwrap();
             assert_eq!(write, b"666f6f626172".to_vec());
+        }
+
+        #[test]
+        fn test_write_into() {
+            let data = b"Artichoke Ruby";
+            let mut buf = Vec::new();
+            write_into(data, &mut buf).unwrap();
+            assert_eq!(buf, b"4172746963686f6b652052756279".to_vec());
         }
     }
 }

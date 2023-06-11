@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-scolapasta-hex = "0.2.0"
+scolapasta-hex = "0.3.0"
 ```
 
 Hex encode data like:
