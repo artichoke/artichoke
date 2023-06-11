@@ -19,7 +19,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-artichoke-readline = "1.0.0"
+artichoke-readline = "1.0.1"
 ```
 
 And parse Readline editing mode like this:
