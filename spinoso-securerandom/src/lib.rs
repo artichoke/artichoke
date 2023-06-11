@@ -735,9 +735,9 @@ pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, Error> {
     Ok(string)
 }
 
-/// Generate a version 4 UUID and return a [`String`].
+/// Generate a Version 4 (random) UUID and return a [`String`].
 ///
-/// A version 4 UUID is randomly generated. See [RFC 4122] for details.
+/// A Version 4 UUID is randomly generated. See [RFC4122] for details.
 ///
 /// # Examples
 ///
@@ -758,7 +758,7 @@ pub fn alphanumeric(len: Option<i64>) -> Result<Vec<u8>, Error> {
 ///
 /// If an allocation error occurs, an error is returned.
 ///
-/// [RFC 4122]: https://tools.ietf.org/html/rfc4122#section-4.4
+/// [RFC4122]: https://tools.ietf.org/html/rfc4122#section-4.4
 #[inline]
 pub fn uuid() -> Result<String, Error> {
     uuid::v4()
