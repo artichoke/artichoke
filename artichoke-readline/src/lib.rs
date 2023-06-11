@@ -213,17 +213,23 @@ pub fn get_readline_edit_mode(contents: impl AsRef<[u8]>) -> Option<EditMode> {
 
             // The values 'vi' and 'emacs' in the 'set' directive are case insensitive.
             match line {
-                [b'v' | b'V', b'i' | b'I'] => edit_mode = Some(EditMode::Vi),
+                [b'v' | b'V', b'i' | b'I'] => {
+                    // Last occurrence of editing mode directive takes effect.
+                    edit_mode = Some(EditMode::Vi);
+                }
                 [b'e' | b'E', b'm' | b'M', b'a' | b'A', b'c' | b'C', b's' | b'S'] => {
                     // Last occurrence of editing mode directive takes effect.
-                    edit_mode = Some(EditMode::Emacs)
+                    edit_mode = Some(EditMode::Emacs);
                 }
-                [b'v' | b'V', b'i' | b'I', next, ..] if posix_space::is_space(*next) => edit_mode = Some(EditMode::Vi),
+                [b'v' | b'V', b'i' | b'I', next, ..] if posix_space::is_space(*next) => {
+                    // Last occurrence of editing mode directive takes effect.
+                    edit_mode = Some(EditMode::Vi);
+                }
                 [b'e' | b'E', b'm' | b'M', b'a' | b'A', b'c' | b'C', b's' | b'S', next, ..]
                     if posix_space::is_space(*next) =>
                 {
                     // Last occurrence of editing mode directive takes effect.
-                    edit_mode = Some(EditMode::Emacs)
+                    edit_mode = Some(EditMode::Emacs);
                 }
                 // Ignore unrecognized or invalid lines.
                 // Lines without a valid editing mode directive are skipped.
