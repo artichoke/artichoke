@@ -225,6 +225,30 @@ pub enum IntegerDirective {
     /// Pointer width signed, native endian (`j`)
     SignedPointerWidthNativeEndian,
 
+    /// 16-bit unsigned, big-endian byte order (`S>`)
+    Unsigned16BigEndian,
+
+    /// 32-bit unsigned, big-endian byte order (`L>`)
+    Unsigned32BigEndian,
+
+    /// 16-bit signed, little-endian byte order (`s<`)
+    Signed16LittleEndian,
+
+    /// 32-bit signed, little-endian byte order (`l<`)
+    Signed32LittleEndian,
+
+    /// 16-bit unsigned, big-endian byte order with native endianness fallback (`S!>`)
+    Unsigned16BigEndianNativeOrder,
+
+    /// 32-bit unsigned, big-endian byte order with native endianness fallback (`L!>`)
+    Unsigned32BigEndianNativeOrder,
+
+    /// 16-bit signed, little-endian byte order with native endianness fallback (`s!<`)
+    Signed16LittleEndianNativeOrder,
+
+    /// 32-bit signed, little-endian byte order with native endianness fallback (`l!<`)
+    Signed32LittleEndianNativeOrder,
+
     /// 16-bit unsigned, network (big-endian) byte order (`n`)
     Unsigned16BigEndian,
 
