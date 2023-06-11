@@ -176,6 +176,7 @@ impl<T> Registry<T, RandomState> {
     ///
     /// ```
     /// use mezzaluna_type_registry::Registry;
+    ///
     /// let mut reg: Registry<&'static str> = Registry::new();
     /// ```
     #[must_use]
@@ -189,6 +190,7 @@ impl<T> Registry<T, RandomState> {
     ///
     /// ```
     /// use mezzaluna_type_registry::Registry;
+    ///
     /// let mut reg: Registry<&'static str> = Registry::with_capacity(10);
     /// ```
     #[must_use]
@@ -265,6 +267,7 @@ impl<T, S> Registry<T, S> {
     ///
     /// ```
     /// use mezzaluna_type_registry::Registry;
+    ///
     /// let reg: Registry<&'static str> = Registry::with_capacity(100);
     /// assert!(reg.capacity() >= 100);
     /// ```
@@ -525,13 +528,260 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::Registry;
+    use super::*;
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    struct Item {
+        name: &'static str,
+    }
+
+    #[test]
+    fn test_contains_existing_type() {
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+
+        assert!(registry.contains::<i32>());
+    }
+
+    #[test]
+    fn test_contains_non_existing_type() {
+        let registry = Registry::<Item>::new();
+
+        assert!(!registry.contains::<String>());
+    }
+
+    #[test]
+    fn test_contains_after_register() {
+        let mut registry = Registry::new();
+
+        assert!(!registry.contains::<i32>());
+
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+
+        assert!(registry.contains::<i32>());
+    }
+
+    #[test]
+    fn test_get_existing_type() {
+        let mut registry = Registry::new();
+        let item = Item { name: "Integer" };
+        registry.insert::<i32>(Box::new(item.clone()));
+
+        assert_eq!(registry.get::<i32>(), Some(&item));
+    }
+
+    #[test]
+    fn test_get_non_existing_type() {
+        let registry = Registry::<Item>::new();
+
+        assert_eq!(registry.get::<String>(), None);
+    }
 
     #[test]
     #[should_panic = "Attempted duplicate insert of i32. Registry is append-only. Previous spec: \"Numeric\""]
-    fn registry_panics_on_duplicate_insert() {
+    fn test_registry_panics_on_duplicate_insert() {
         let mut reg = Registry::new();
         reg.insert::<i32>(Box::new("Numeric"));
         reg.insert::<i32>(Box::new("Integer"));
+    }
+
+    #[test]
+    fn test_typespecs_iterator_empty() {
+        let registry = Registry::<Item>::new();
+        let type_specs: Vec<_> = registry.type_specs().collect();
+        assert_eq!(type_specs.len(), 0);
+    }
+
+    #[test]
+    fn test_typespecs_iterator_single_item() {
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+        let type_specs: Vec<_> = registry.type_specs().collect();
+        assert_eq!(type_specs.len(), 1);
+        assert!(type_specs.contains(&&Item { name: "Integer" }));
+    }
+
+    #[test]
+    fn test_typespecs_iterator_multiple_items() {
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+        registry.insert::<String>(Box::new(Item { name: "String" }));
+        registry.insert::<f64>(Box::new(Item { name: "Float" }));
+
+        let type_specs: Vec<_> = registry.type_specs().collect();
+        assert_eq!(type_specs.len(), 3);
+        assert!(type_specs.contains(&&Item { name: "Integer" }));
+        assert!(type_specs.contains(&&Item { name: "String" }));
+        assert!(type_specs.contains(&&Item { name: "Float" }));
+    }
+
+    #[test]
+    fn test_typespecs_iterator_exact_size() {
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+        registry.insert::<String>(Box::new(Item { name: "String" }));
+        registry.insert::<f64>(Box::new(Item { name: "Float" }));
+
+        let mut iter = registry.type_specs();
+
+        // Check the length of the iterator matches the expected count
+        assert_eq!(iter.len(), 3);
+
+        // Test the size_hint() method
+        let size_hint = iter.size_hint();
+
+        // The lower bound of the size hint should be 3
+        assert_eq!(size_hint.0, 3);
+
+        // The upper bound of the size hint should be Some(3)
+        assert_eq!(size_hint.1, Some(3));
+
+        // Call next() to advance the iterator
+        assert!(iter.next().is_some());
+
+        // Check the length of the iterator matches the expected count
+        assert_eq!(iter.len(), 2);
+
+        // Test the size_hint() method
+        let size_hint = iter.size_hint();
+
+        // The lower bound of the size hint should be 2
+        assert_eq!(size_hint.0, 2);
+
+        // The upper bound of the size hint should be Some(2)
+        assert_eq!(size_hint.1, Some(2));
+
+        // Advance the iterator using count()
+        let count = iter.by_ref().count();
+
+        // Ensure the count matches the remaining items
+        assert_eq!(count, 2);
+
+        // The length of the iterator should be 0 after exhaustion
+        assert_eq!(iter.len(), 0);
+
+        // After exhausting the iterator, it should return None
+        assert_eq!(iter.next(), None);
+
+        // The length of the iterator should be 0 after exhaustion
+        assert_eq!(iter.len(), 0);
+
+        // Test the size_hint() method
+        let size_hint = iter.size_hint();
+
+        // The lower bound of the size hint should be 0
+        assert_eq!(size_hint.0, 0);
+
+        // The upper bound of the size hint should be Some(0)
+        assert_eq!(size_hint.1, Some(0));
+    }
+
+    #[test]
+    fn test_registry_is_empty() {
+        let registry = Registry::<Item>::new();
+        assert!(registry.is_empty());
+
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+        assert!(!registry.is_empty());
+    }
+
+    #[test]
+    fn test_registry_len() {
+        let registry = Registry::<Item>::new();
+        assert_eq!(registry.len(), 0);
+
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+        assert_eq!(registry.len(), 1);
+
+        registry.insert::<String>(Box::new(Item { name: "String" }));
+        assert_eq!(registry.len(), 2);
+    }
+
+    #[test]
+    fn test_typespecs_debug_output_non_empty() {
+        let registry = Registry::<Item>::new();
+        let type_specs = registry.type_specs();
+        let debug_output = format!("{type_specs:?}");
+        assert!(!debug_output.is_empty());
+    }
+
+    #[test]
+    fn test_registry_debug_output_non_empty() {
+        let registry = Registry::<Item>::new();
+        let debug_output = format!("{registry:?}");
+        assert!(!debug_output.is_empty());
+
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+        let debug_output = format!("{registry:?}");
+        assert!(!debug_output.is_empty());
+    }
+
+    #[test]
+    fn test_typespecs_debug_output_all_items() {
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+        registry.insert::<String>(Box::new(Item { name: "String" }));
+        registry.insert::<f64>(Box::new(Item { name: "Float" }));
+
+        let type_specs = registry.type_specs();
+        let debug_output = format!("{type_specs:?}");
+
+        assert!(debug_output.contains("Integer"));
+        assert!(debug_output.contains("String"));
+        assert!(debug_output.contains("Float"));
+    }
+
+    #[test]
+    fn test_registry_debug_output_all_items() {
+        let mut registry = Registry::new();
+        registry.insert::<i32>(Box::new(Item { name: "Integer" }));
+        registry.insert::<String>(Box::new(Item { name: "String" }));
+        registry.insert::<f64>(Box::new(Item { name: "Float" }));
+
+        let debug_output = format!("{registry:?}");
+
+        assert!(debug_output.contains("Integer"));
+        assert!(debug_output.contains("String"));
+        assert!(debug_output.contains("Float"));
+    }
+
+    #[test]
+    fn test_registry_api() {
+        let mut reg: Registry<&'static str> = Registry::new();
+
+        // Test len
+        assert_eq!(reg.len(), 0);
+        assert!(reg.is_empty());
+
+        // Test capacity and reserve
+        assert_eq!(reg.capacity(), 0);
+        reg.reserve(5);
+        assert!(reg.capacity() >= 5);
+        reg.try_reserve(10).unwrap();
+        assert!(reg.capacity() >= 10);
+
+        // Test len
+        assert_eq!(reg.len(), 0);
+        assert!(reg.is_empty());
+
+        // Test insert and get
+        reg.insert::<i32>(Box::new("Numeric"));
+        reg.insert::<Vec<u8>>(Box::new("String"));
+
+        assert_eq!(reg.get::<i32>(), Some(&"Numeric"));
+        assert_eq!(reg.get::<Vec<u8>>(), Some(&"String"));
+        assert_eq!(reg.get::<f32>(), None);
+
+        // Test contains
+        assert!(reg.contains::<i32>());
+        assert!(reg.contains::<Vec<u8>>());
+        assert!(!reg.contains::<f32>());
+
+        // Test len
+        assert_eq!(reg.len(), 2);
+        assert!(!reg.is_empty());
     }
 }
