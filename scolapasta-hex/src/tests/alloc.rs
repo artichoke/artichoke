@@ -244,3 +244,63 @@ fn test_escaped_byte_iterator() {
     let result = escaped_byte.collect::<String>();
     assert_eq!(result, "48");
 }
+
+#[test]
+fn test_empty_input() {
+    let input: &[u8] = &[];
+    assert_eq!(try_encode(input).as_deref(), Ok(""));
+}
+
+#[test]
+fn test_single_byte_input() {
+    let input: &[u8] = &[0];
+    assert_eq!(try_encode(input).as_deref(), Ok("00"));
+
+    let input: &[u8] = &[255];
+    assert_eq!(try_encode(input).as_deref(), Ok("ff"));
+
+    let input: &[u8] = &[127];
+    assert_eq!(try_encode(input).as_deref(), Ok("7f"));
+}
+
+#[test]
+fn test_multi_byte_input() {
+    let input: &[u8] = &[0, 1, 255];
+    assert_eq!(try_encode(input).as_deref(), Ok("0001ff"));
+
+    let input: &[u8] = &[10, 20, 30, 40, 50];
+    assert_eq!(try_encode(input).as_deref(), Ok("0a141e2832"));
+}
+
+#[test]
+fn test_boundary_values() {
+    let input: &[u8] = &[0];
+    assert_eq!(try_encode(input).as_deref(), Ok("00"));
+
+    let input: &[u8] = &[255];
+    assert_eq!(try_encode(input).as_deref(), Ok("ff"));
+}
+
+#[test]
+fn test_null_byte() {
+    let input: &[u8] = &[0];
+    assert_eq!(try_encode(input).as_deref(), Ok("00"));
+}
+
+#[test]
+fn test_special_characters() {
+    let input: &[u8] = &[10, 13, 9, 92];
+    assert_eq!(try_encode(input).as_deref(), Ok("0a0d095c"));
+}
+
+#[test]
+fn test_repeated_patterns() {
+    let input: &[u8] = &[1, 1, 1, 1, 1];
+    assert_eq!(try_encode(input).as_deref(), Ok("0101010101"));
+}
+
+#[test]
+fn test_random_byte_sequences() {
+    let input: &[u8] = &[45, 68, 122, 200, 33, 90, 111];
+    assert_eq!(try_encode(input).as_deref(), Ok("2d447ac8215a6f"));
+}
