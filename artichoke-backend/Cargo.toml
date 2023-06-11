@@ -60,7 +60,7 @@ path = "../scolapasta-int-parse"
 default-features = false
 
 [dependencies.scolapasta-path]
-version = "0.5.0"
+version = "0.5.1"
 path = "../scolapasta-path"
 
 [dependencies.scolapasta-string-escape]

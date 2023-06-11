@@ -1,6 +1,6 @@
 use std::ffi::{OsStr, OsString};
 use std::os::windows::ffi::OsStrExt;
-use std::path::{self, PathBuf};
+use std::path::{self, Component, PathBuf};
 
 use super::default::is_explicit_relative_bytes;
 
@@ -46,6 +46,12 @@ fn is_unpaired_surrogate_path_explicit_relative(path: &OsStr) -> bool {
 }
 
 pub fn normalize_slashes(path: PathBuf) -> Result<Vec<u8>, PathBuf> {
+    // A verbatim path is a path that starts with "\\?\" or "\\?\UNC\" on Windows.
+    // These paths are treated as-is and should not be normalized.
+    if matches!(path.components().next(), Some(Component::Prefix(prefix)) if prefix.kind().is_verbatim()) {
+        return Err(path);
+    }
+
     let mut buf = OsString::from(path).into_string()?.into_bytes();
     for byte in &mut buf {
         if *byte == b'\\' {
@@ -389,5 +395,33 @@ mod tests {
         let wide = [b'a'.into(), b'\\'.into(), 0xd800_u16];
         let path = OsString::from_wide(&wide);
         normalize_slashes(path.into()).unwrap_err();
+    }
+
+    #[test]
+    fn normalize_slashes_normal_path() {
+        let path = PathBuf::from(r"path\to\file");
+        let result = normalize_slashes(path);
+        assert_eq!(result, Ok(b"path/to/file".to_vec()));
+    }
+
+    #[test]
+    fn normalize_slashes_verbatim_path() {
+        let path = PathBuf::from(r"\\?\C:\path\to\file");
+        let result = normalize_slashes(path);
+        assert_eq!(result, Err(PathBuf::from(r"\\?\C:\path\to\file")));
+    }
+
+    #[test]
+    fn normalize_slashes_verbatim_unc_path() {
+        let path = PathBuf::from(r"\\?\UNC\server\share\file");
+        let result = normalize_slashes(path);
+        assert_eq!(result, Err(PathBuf::from(r"\\?\UNC\server\share\file")));
+    }
+
+    #[test]
+    fn normalize_slashes_verbatim_relative_path() {
+        let path = PathBuf::from(r"\\?\Relative\path\to\file");
+        let result = normalize_slashes(path);
+        assert_eq!(result, Err(PathBuf::from(r"\\?\Relative\path\to\file")));
     }
 }
