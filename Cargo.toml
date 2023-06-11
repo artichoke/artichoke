@@ -23,7 +23,7 @@ path = "artichoke-backend"
 default-features = false
 
 [dependencies.artichoke-readline]
-version = "1.0.0"
+version = "1.0.1"
 path = "artichoke-readline"
 optional = true
 
