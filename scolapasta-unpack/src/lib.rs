@@ -1,3 +1,7 @@
+/// Enum representing different directives used for parsing format strings in
+/// Ruby's [`String#unpack`].
+///
+/// [`String#unpack`]: https://ruby-doc.org/core-3.1.2/String.html#method-i-unpack
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Directive {
     /// Integer directives
@@ -6,156 +10,189 @@ pub enum Directive {
     ///
     /// The corresponding characters for each directive are as follows:
     ///
-    /// Unsigned directives:
-    /// - C: Unsigned 8-bit integer (unsigned char)
-    /// - S: Unsigned 16-bit integer, native endian (uint16_t)
-    /// - L: Unsigned 32-bit integer, native endian (uint32_t)
-    /// - Q: Unsigned 64-bit integer, native endian (uint64_t)
-    /// - J: Unsigned pointer-width integer, native endian (uintptr_t)
-    /// - S_, S!, S>, S!>: Unsigned short, native endian
-    /// - I, I_, I!, I!>: Unsigned int, native endian
-    /// - L_, L!, L>, L!>: Unsigned long, native endian
-    /// - Q_, Q!, Q>, Q!>: Unsigned long long, native endian (ArgumentError if the platform has no long long type)
-    /// - J!, J>!, J!>, J!>>: uintptr_t, native endian (same as J)
-    /// - n: 16-bit unsigned integer, network (big-endian) byte order
-    /// - N: 32-bit unsigned integer, network (big-endian) byte order
-    /// - v: 16-bit unsigned integer, VAX (little-endian) byte order
-    /// - V: 32-bit unsigned integer, VAX (little-endian) byte order
+    /// | Integer Directive | Returns  | Meaning                                                                      |
+    /// |-------------------|----------|------------------------------------------------------------------------------|
+    /// | `C`               | Integer  | 8-bit unsigned (`unsigned char`)                                             |
+    /// | `S`               | Integer  | 16-bit unsigned, native endian (`uint16_t`)                                  |
+    /// | `L`               | Integer  | 32-bit unsigned, native endian (`uint32_t`)                                  |
+    /// | `Q`               | Integer  | 64-bit unsigned, native endian (`uint64_t`)                                  |
+    /// | `J`               | Integer  | pointer width unsigned, native endian (`uintptr_t`)                          |
+    /// | `c`               | Integer  | 8-bit signed (`signed char`)                                                 |
+    /// | `s`               | Integer  | 16-bit signed, native endian (`int16_t`)                                     |
+    /// | `l`               | Integer  | 32-bit signed, native endian (`int32_t`)                                     |
+    /// | `q`               | Integer  | 64-bit signed, native endian (`int64_t`)                                     |
+    /// | `j`               | Integer  | pointer width signed, native endian (`intptr_t`)                             |
+    /// | `S_`, `S!`        | Integer  | `unsigned short`, native endian                                              |
+    /// | `I`, `I_`, `I!`   | Integer  | `unsigned int`, native endian                                                |
+    /// | `L_`, `L!`        | Integer  | `unsigned long`, native endian                                               |
+    /// | `Q_`, `Q!`        | Integer  | `unsigned long long`, native endian (`ArgumentError` if no `long long` type) |
+    /// | `J!`              | Integer  | `uintptr_t`, native endian (same as `J`)                                     |
+    /// | `s_`, `s!`        | Integer  | `signed short`, native endian                                                |
+    /// | `i`, `i_`, `i!`   | Integer  | `signed int`, native endian                                                  |
+    /// | `l_`, `l!`        | Integer  | `signed long`, native endian                                                 |
+    /// | `q_`, `q!`        | Integer  | `signed long long`, native endian (ArgumentError if no long long type)       |
+    /// | `j!`              | Integer  | `intptr_t`, native endian (same as `j`)                                      |
+    /// | `S>`, `s>`, `S!>`, `s!>`  | Integer  | same as directives without ">" except big endian. `S>` is the same as `n` |
+    /// | `L>`, `l>`, `L!>`, `l!>`  | Integer  | same as directives without ">" except big endian. `L>` is the same as `N` |
+    /// | `I!>`, `i!>`              | Integer  | same as directives without ">" except big endian                     |
+    /// | `Q>`, `q>`, `Q!>`, `q!>`  | Integer  | same as directives without ">" except big endian                     |
+    /// | `J>`, `j>`, `J!>`, `j!>`  | Integer  | same as directives without ">" except big endian                     |
+    /// | `S<`, `s<`, `S!<`, `s!<`  | Integer  | same as directives without "<" except little endian. `S<` is the same as `v` |
+    /// | `L<`, `l<`, `L!<`, `l!<`  | Integer  | same as directives without "<" except little endian. `L<` is the same as `V` |
+    /// | `I!<`, `i!<`              | Integer  | same as directives without "<" except little endian                  |
+    /// | `Q<`, `q<`, `Q!<`, `q!<`  | Integer  | same as directives without "<" except little endian                  |
+    /// | `J<`, `j<`, `J!<`, `j!<`  | Integer  | same as directives without "<" except little endian                  |
+    /// | `n`               | Integer  | 16-bit unsigned, network (big-endian) byte order                             |
+    /// | `N`               | Integer  | 32-bit unsigned, network (big-endian) byte order                             |
+    /// | `v`               | Integer  | 16-bit unsigned, VAX (little-endian) byte order                              |
+    /// | `V`               | Integer  | 32-bit unsigned, VAX (little-endian) byte order                              |
+    /// | `U`               | Integer  | UTF-8 character                                                              |
+    /// | `w`               | Integer  | BER-compressed integer (see [`Array#pack`])                                  |
     ///
-    /// Signed directives:
-    /// - c: Signed 8-bit integer (signed char)
-    /// - s: Signed 16-bit integer, native endian (int16_t)
-    /// - l: Signed 32-bit integer, native endian (int32_t)
-    /// - q: Signed 64-bit integer, native endian (int64_t)
-    /// - j: Signed pointer-width integer, native endian (intptr_t)
-    /// - s_, s!, s<, s!<: Signed short, native endian
-    /// - i, i_, i!, i!>: Signed int, native endian
-    /// - l_, l!, l<, l!<: Signed long, native endian
-    /// - q_, q!, q<, q!<: Signed long long, native endian (ArgumentError if the platform has no long long type)
-    /// - j!, j>!, j<, j!<: intptr_t, native endian (same as j)
-    ///
-    /// Miscellaneous directives:
-    /// - U: UTF-8 character
-    /// - w: BER-compressed integer (see Array#pack)
-    ///
-    /// These directives represent various integer types with different sizes, endianness,
-    /// and additional miscellaneous types.
+    /// [`Array#pack`]: https://ruby-doc.org/core-3.1.2/Array.html#method-i-pack
     Integer(IntegerDirective),
 
     /// Float directives
     ///
-    /// Represents various floating-point directives.
+    /// Consists of various float directives.
     ///
     /// The corresponding characters for each directive are as follows:
     ///
-    /// - D, d: Double, native format
-    /// - F, f: Single, native format
-    /// - E: Double, little-endian byte order
-    /// - e: Single, little-endian byte order
-    /// - G: Double, network (big-endian) byte order
-    /// - g: Single, network (big-endian) byte order
+    /// | Float Directive | Returns  | Meaning                                                           |
+    /// |-----------------|----------|-------------------------------------------------------------------|
+    /// | `D`, `d`        | Float    | double-precision, native format                                   |
+    /// | `F`, `f`        | Float    | single-precision, native format                                   |
+    /// | `E`             | Float    | double-precision, little-endian byte order                        |
+    /// | `e`             | Float    | single-precision, little-endian byte order                        |
+    /// | `G`             | Float    | double-precision, network (big-endian) byte order                 |
+    /// | `g`             | Float    | single-precision, network (big-endian) byte order                 |
     Float(FloatDirective),
 
     /// String directives
     ///
-    /// Represents various string directives.
+    /// Consists of various string directives.
     ///
     /// The corresponding characters for each directive are as follows:
     ///
-    /// - A: Arbitrary binary
-    /// - a: Arbitrary binary
-    /// - Z: Null-terminated string
-    /// - B: Bit string (MSB first)
-    /// - b: Bit string (LSB first)
-    /// - H: Hex string (high nibble first)
-    /// - h: Hex string (low nibble first)
-    /// - u: UU-encoded string
-    /// - M: Quoted-printable, MIME encoding
-    /// - m: Base64-encoded string (RFC 2045)
-    ///   - m0: Base64-encoded string (RFC 4648)
-    /// - P: Pointer to a structure (fixed-length string)
-    /// - p: Pointer to a null-terminated string
+    /// | String Directive | Returns | Meaning                                                          |
+    /// |------------------|---------|------------------------------------------------------------------|
+    /// | `A`              | String  | arbitrary binary string (remove trailing nulls and ASCII spaces) |
+    /// | `a`              | String  | arbitrary binary string                                          |
+    /// | `Z`              | String  | null-terminated string                                           |
+    /// | `B`              | String  | bit string (MSB first)                                           |
+    /// | `b`              | String  | bit string (LSB first)                                           |
+    /// | `H`              | String  | hex string (high nibble first)                                   |
+    /// | `h`              | String  | hex string (low nibble first)                                    |
+    /// | `u`              | String  | UU-encoded string                                                |
+    /// | `M`              | String  | quoted-printable, MIME encoding (see RFC2045)                    |
+    /// | `m`              | String  | base64 encoded string (RFC 2045) (default)                       |
+    /// | `m0`             | String  | base64 encoded string (RFC 4648) if followed by 0                |
+    /// | `P`              | String  | pointer to a structure (fixed-length string)                     |
+    /// | `p`              | String  | pointer to a null-terminated string                              |
     String(StringDirective),
 
     /// Miscellaneous directives
     ///
-    /// Represents various miscellaneous directives.
+    /// Consists of various miscellaneous directives.
     ///
     /// The corresponding characters for each directive are as follows:
     ///
-    /// - @: Skip to offset
-    /// - X: Skip backward
-    /// - x: Skip forward
+    /// | Directive | Returns | Meaning                                         |
+    /// |-----------|---------|-------------------------------------------------|
+    /// | `@`       | ---     | skip to the offset given by the length argument |
+    /// | `X`       | ---     | skip backward one byte                          |
+    /// | `x`       | ---     | skip forward one byte                           |
     Miscellaneous(MiscellaneousDirective),
+
+    /// Unknown directives
+    ///
+    /// Unpacking cannot fail. All unknown directives are ignored, but parsed as
+    /// valid directives.
+    ///
+    /// ```console
+    /// [3.2.2] > "aa".unpack('b-10b')
+    /// <internal:pack>:20: warning: unknown unpack directive '-' in 'b-10b'
+    /// => ["1", "1"]
+    /// ```
+    ///
+    /// All unknown directives print a warning:
+    ///
+    /// ```console
+    /// [3.2.2] > "aa".unpack('b-10{b')
+    /// <internal:pack>:20: warning: unknown unpack directive '-' in 'b-10{b'
+    /// <internal:pack>:20: warning: unknown unpack directive '{' in 'b-10{b'
+    /// => ["1", "1"]
+    /// ```
+    Unknown(u8),
 }
 
-impl TryFrom<u8> for Directive {
-    type Error = ();
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
+impl From<u8> for Directive {
+    fn from(value: u8) -> Self {
         if let Ok(directive) = IntegerDirective::try_from(value) {
-            return Ok(Self::Integer(directive));
+            return Self::Integer(directive);
         }
         if let Ok(directive) = FloatDirective::try_from(value) {
-            return Ok(Self::Float(directive));
+            return Self::Float(directive);
         }
         if let Ok(directive) = StringDirective::try_from(value) {
-            return Ok(Self::String(directive));
+            return Self::String(directive);
         }
         if let Ok(directive) = MiscellaneousDirective::try_from(value) {
-            return Ok(Self::Miscellaneous(directive));
+            return Self::Miscellaneous(directive);
         }
-        Err(())
+        Self::Unknown(value)
     }
 }
 
 /// Integer directives
 ///
-/// C (8-bit unsigned integer)
-/// S (16-bit unsigned, native endian)
-/// L (32-bit unsigned, native endian)
-/// Q (64-bit unsigned, native endian)
-/// J (Pointer width unsigned, native endian)
+/// Consists of various unsigned and signed integer directives.
 ///
-/// c (8-bit signed integer)
-/// s (16-bit signed, native endian)
-/// l (32-bit signed, native endian)
-/// q (64-bit signed, native endian)
-/// j (Pointer width signed, native endian)
+/// The corresponding characters for each directive are as follows:
 ///
-/// S_, S! (Unsigned short, native endian)
-/// I, I_, I! (Unsigned int, native endian)
-/// L_, L! (Unsigned long, native endian)
-/// Q_, Q! (Unsigned long long, native endian)
+/// | Integer Directive | Returns  | Meaning                                                                      |
+/// |-------------------|----------|------------------------------------------------------------------------------|
+/// | `C`               | Integer  | 8-bit unsigned (`unsigned char`)                                             |
+/// | `S`               | Integer  | 16-bit unsigned, native endian (`uint16_t`)                                  |
+/// | `L`               | Integer  | 32-bit unsigned, native endian (`uint32_t`)                                  |
+/// | `Q`               | Integer  | 64-bit unsigned, native endian (`uint64_t`)                                  |
+/// | `J`               | Integer  | pointer width unsigned, native endian (`uintptr_t`)                          |
+/// | `c`               | Integer  | 8-bit signed (`signed char`)                                                 |
+/// | `s`               | Integer  | 16-bit signed, native endian (`int16_t`)                                     |
+/// | `l`               | Integer  | 32-bit signed, native endian (`int32_t`)                                     |
+/// | `q`               | Integer  | 64-bit signed, native endian (`int64_t`)                                     |
+/// | `j`               | Integer  | pointer width signed, native endian (`intptr_t`)                             |
+/// | `S_`, `S!`        | Integer  | `unsigned short`, native endian                                              |
+/// | `I`, `I_`, `I!`   | Integer  | `unsigned int`, native endian                                                |
+/// | `L_`, `L!`        | Integer  | `unsigned long`, native endian                                               |
+/// | `Q_`, `Q!`        | Integer  | `unsigned long long`, native endian (`ArgumentError` if no `long long` type) |
+/// | `J!`              | Integer  | `uintptr_t`, native endian (same as `J`)                                     |
+/// | `s_`, `s!`        | Integer  | `signed short`, native endian                                                |
+/// | `i`, `i_`, `i!`   | Integer  | `signed int`, native endian                                                  |
+/// | `l_`, `l!`        | Integer  | `signed long`, native endian                                                 |
+/// | `q_`, `q!`        | Integer  | `signed long long`, native endian (ArgumentError if no long long type)       |
+/// | `j!`              | Integer  | `intptr_t`, native endian (same as `j`)                                      |
+/// | `S>`, `s>`, `S!>`, `s!>`  | Integer  | same as directives without ">" except big endian. `S>` is the same as `n` |
+/// | `L>`, `l>`, `L!>`, `l!>`  | Integer  | same as directives without ">" except big endian. `L>` is the same as `N` |
+/// | `I!>`, `i!>`              | Integer  | same as directives without ">" except big endian                     |
+/// | `Q>`, `q>`, `Q!>`, `q!>`  | Integer  | same as directives without ">" except big endian                     |
+/// | `J>`, `j>`, `J!>`, `j!>`  | Integer  | same as directives without ">" except big endian                     |
+/// | `S<`, `s<`, `S!<`, `s!<`  | Integer  | same as directives without "<" except little endian. `S<` is the same as `v` |
+/// | `L<`, `l<`, `L!<`, `l!<`  | Integer  | same as directives without "<" except little endian. `L<` is the same as `V` |
+/// | `I!<`, `i!<`              | Integer  | same as directives without "<" except little endian                  |
+/// | `Q<`, `q<`, `Q!<`, `q!<`  | Integer  | same as directives without "<" except little endian                  |
+/// | `J<`, `j<`, `J!<`, `j!<`  | Integer  | same as directives without "<" except little endian                  |
+/// | `n`               | Integer  | 16-bit unsigned, network (big-endian) byte order                             |
+/// | `N`               | Integer  | 32-bit unsigned, network (big-endian) byte order                             |
+/// | `v`               | Integer  | 16-bit unsigned, VAX (little-endian) byte order                              |
+/// | `V`               | Integer  | 32-bit unsigned, VAX (little-endian) byte order                              |
+/// | `U`               | Integer  | UTF-8 character                                                              |
+/// | `w`               | Integer  | BER-compressed integer (see [`Array#pack`])                                  |
 ///
-/// J! (uintptr_t, native endian)
+/// [`Array#pack`]: https://ruby-doc.org/core-3.1.2/Array.html#method-i-pack
 ///
-/// s_, s! (Signed short, native endian)
-/// i, i_, i! (Signed int, native endian)
-/// l_, l! (Signed long, native endian)
-/// q_, q! (Signed long long, native endian)
-///
-/// j! (intptr_t, native endian)
-///
-/// S>, s>, S!>, s!> (Same as the directives without ">", big endian)
-/// L>, l>, L!>, l!> (Same as the directives without ">", big endian)
-/// I!> (Same as "I", big endian)
-/// Q>, q>, Q!>, q!> (Same as the directives without ">", big endian)
-/// J>, j>, J!>, j!> (Same as the directives without ">", big endian)
-///
-/// S<, s<, S!<, s!< (Same as the directives without "<", little endian)
-/// L<, l<, L!<, l!< (Same as the directives without "<", little endian)
-/// I!< (Same as "I", little endian)
-/// Q<, q<, Q!<, q!< (Same as the directives without "<", little endian)
-/// J<, j<, J!<, j!< (Same as the directives without "<", little endian)
-///
-/// n (16-bit unsigned, network (big-endian) byte order)
-/// N (32-bit unsigned, network (big-endian) byte order)
-/// v (16-bit unsigned, VAX (little-endian) byte order)
-/// V (32-bit unsigned, VAX (little-endian) byte order)
-///
-/// U (UTF-8 character)
-/// w (BER-compressed integer)
+/// These directives represent various integer types with different sizes, endianness,
+/// and additional miscellaneous types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IntegerDirective {
     /// 8-bit unsigned integer (`C`)
@@ -235,12 +272,18 @@ impl TryFrom<u8> for IntegerDirective {
 
 /// Float directives
 ///
-/// D, d (Double-precision, native format)
-/// F, f (Single-precision, native format)
-/// E (Double-precision, little-endian byte order)
-/// e (Single-precision, little-endian byte order)
-/// G (Double-precision, network (big-endian) byte order)
-/// g (Single-precision, network (big-endian) byte order)
+/// Consists of various float directives.
+///
+/// The corresponding characters for each directive are as follows:
+///
+/// | Float Directive | Returns  | Meaning                                                           |
+/// |-----------------|----------|-------------------------------------------------------------------|
+/// | `D`, `d`        | Float    | double-precision, native format                                   |
+/// | `F`, `f`        | Float    | single-precision, native format                                   |
+/// | `E`             | Float    | double-precision, little-endian byte order                        |
+/// | `e`             | Float    | single-precision, little-endian byte order                        |
+/// | `G`             | Float    | double-precision, network (big-endian) byte order                 |
+/// | `g`             | Float    | single-precision, network (big-endian) byte order                 |
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FloatDirective {
     /// Double-precision, native format (`D`, `d`)
@@ -280,18 +323,25 @@ impl TryFrom<u8> for FloatDirective {
 
 /// String directives
 ///
-/// A (Arbitrary binary string, remove trailing nulls and ASCII spaces)
-/// a (Arbitrary binary string)
-/// Z (Null-terminated string)
-/// B (Bit string, MSB first)
-/// b (Bit string, LSB first)
-/// H (Hex string, high nibble first)
-/// h (Hex string, low nibble first)
-/// U (UU-encoded string)
-/// M (Quoted-printable, MIME encoding - see RFC2045)
-/// m (Base64 encoded string - RFC 2045 default, RFC 4648 if followed by 0)
-/// P (Pointer to a structure, fixed-length string)
-/// p (Pointer to a null-terminated string)
+/// Consists of various string directives.
+///
+/// The corresponding characters for each directive are as follows:
+///
+/// | String Directive | Returns | Meaning                                                          |
+/// |------------------|---------|------------------------------------------------------------------|
+/// | `A`              | String  | arbitrary binary string (remove trailing nulls and ASCII spaces) |
+/// | `a`              | String  | arbitrary binary string                                          |
+/// | `Z`              | String  | null-terminated string                                           |
+/// | `B`              | String  | bit string (MSB first)                                           |
+/// | `b`              | String  | bit string (LSB first)                                           |
+/// | `H`              | String  | hex string (high nibble first)                                   |
+/// | `h`              | String  | hex string (low nibble first)                                    |
+/// | `u`              | String  | UU-encoded string                                                |
+/// | `M`              | String  | quoted-printable, MIME encoding (see RFC2045)                    |
+/// | `m`              | String  | base64 encoded string (RFC 2045) (default)                       |
+/// | `m0`             | String  | base64 encoded string (RFC 4648) if followed by 0                |
+/// | `P`              | String  | pointer to a structure (fixed-length string)                     |
+/// | `p`              | String  | pointer to a null-terminated string                              |
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StringDirective {
     /// Arbitrary binary string, remove trailing nulls and ASCII spaces (`A`)
@@ -355,9 +405,15 @@ impl TryFrom<u8> for StringDirective {
 
 /// Miscellaneous directives
 ///
-/// @ (Skip to offset)
-/// X (Skip backward)
-/// x (Skip forward)
+/// Consists of various miscellaneous directives.
+///
+/// The corresponding characters for each directive are as follows:
+///
+/// | Directive | Returns | Meaning                                         |
+/// |-----------|---------|-------------------------------------------------|
+/// | `@`       | ---     | skip to the offset given by the length argument |
+/// | `X`       | ---     | skip backward one byte                          |
+/// | `x`       | ---     | skip forward one byte                           |
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MiscellaneousDirective {
     /// Skip to offset (`@`)
@@ -383,12 +439,42 @@ impl TryFrom<u8> for MiscellaneousDirective {
     }
 }
 
+/// Represents various  directives used in a format string.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DirectiveType {
+pub enum UnpackAmount {
+    /// Specifies the number of times to repeat the preceding directive.
+    ///
+    /// An repeat count of `0`, consumes 0 bytes from the string being unpacked.
     Repeat(usize),
+
+    /// Consume to end.
+    ///
+    /// An asterisk (`*`) will use up all remaining elements.
     ConsumeToEnd,
+
+    /// Native size (underscore).
+    ///
+    /// The underscore (`_`) indicates that the underlying platform's native
+    /// size should be used for the specified type. If not present, it uses a
+    /// platform-independent consistent size.
+    ///
+    /// This unpack amount is only valid for the `sSiIlL` directives.
     PlatformNativeSizeUnderscore,
+
+    /// Native size (bang).
+    ///
+    /// The exclamation mark (`!`) indicates that the underlying platform's
+    /// native size should be used for the specified type. If not present, it
+    /// uses a platform-independent consistent size.
+    ///
+    /// This unpack amount is only valid for the `sSiIlL` directives.
     PlatformNativeSizeBang,
+}
+
+impl Default for UnpackAmount {
+    fn default() -> Self {
+        Self::Repeat(1)
+    }
 }
 
 #[cfg(test)]
@@ -592,6 +678,31 @@ mod tests {
 
             // Try parsing as StringDirective
             StringDirective::try_from(directive).unwrap_err();
+        }
+    }
+
+    #[test]
+    fn test_parsing_all_directives() {
+        for byte in u8::MIN..=u8::MAX {
+            match Directive::from(byte) {
+                Directive::Integer(inner) if Ok(inner) == IntegerDirective::try_from(byte) => {}
+                Directive::Integer(inner) => {
+                    panic!("{byte} parsed to Directive::Integer({inner:?}) but failed to parse as integer directive");
+                }
+                Directive::Float(inner) if Ok(inner) == FloatDirective::try_from(byte) => {}
+                Directive::Float(inner) => {
+                    panic!("{byte} parsed to Directive::Float({inner:?}) but failed to parse as float directive");
+                }
+                Directive::String(inner) if Ok(inner) == StringDirective::try_from(byte) => {}
+                Directive::String(inner) => {
+                    panic!("{byte} parsed to Directive::String({inner:?}) but failed to parse as string directive");
+                }
+                Directive::Miscellaneous(inner) if Ok(inner) == MiscellaneousDirective::try_from(byte) => {}
+                Directive::Miscellaneous(inner) => {
+                    panic!("{byte} parsed to Directive::Miscellaneous({inner:?}) but failed to parse as miscellaneous directive");
+                }
+                Directive::Unknown(..) => {}
+            }
         }
     }
 }
