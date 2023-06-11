@@ -185,6 +185,8 @@ fn home_dir() -> Option<PathBuf> {
 #[must_use]
 pub fn get_readline_edit_mode(contents: impl AsRef<[u8]>) -> Option<EditMode> {
     fn inner(contents: &[u8]) -> Option<EditMode> {
+        let mut edit_mode = None; // Stores the last encountered editing mode
+
         for line in contents.lines() {
             // Skip leading whitespace.
             let line = trim_whitespace_front(line);
@@ -210,19 +212,23 @@ pub fn get_readline_edit_mode(contents: impl AsRef<[u8]>) -> Option<EditMode> {
             let line = trim_whitespace_front(line);
 
             match line {
-                [b'v' | b'V', b'i' | b'I'] => return Some(EditMode::Vi),
-                [b'e' | b'E', b'm' | b'M', b'a' | b'A', b'c' | b'C', b's' | b'S'] => return Some(EditMode::Emacs),
-                [b'v' | b'V', b'i' | b'I', next, ..] if posix_space::is_space(*next) => return Some(EditMode::Vi),
+                [b'v' | b'V', b'i' | b'I'] => edit_mode = Some(EditMode::Vi),
+                [b'e' | b'E', b'm' | b'M', b'a' | b'A', b'c' | b'C', b's' | b'S'] => {
+                    // Last occurrence of editing mode directive takes effect
+                    edit_mode = Some(EditMode::Emacs)
+                }
+                [b'v' | b'V', b'i' | b'I', next, ..] if posix_space::is_space(*next) => edit_mode = Some(EditMode::Vi),
                 [b'e' | b'E', b'm' | b'M', b'a' | b'A', b'c' | b'C', b's' | b'S', next, ..]
                     if posix_space::is_space(*next) =>
                 {
-                    return Some(EditMode::Emacs)
+                    // Last occurrence of editing mode directive takes effect
+                    edit_mode = Some(EditMode::Emacs)
                 }
                 _ => {}
             }
         }
 
-        None
+        edit_mode
     }
 
     inner(contents.as_ref())
@@ -607,6 +613,61 @@ mod tests {
     fn test_get_readline_edit_mode_quotes_mixed_vi() {
         let config = "set editing-mode 'vi\"\n";
         assert_eq!(get_readline_edit_mode(config), None);
+    }
+
+    #[test]
+    fn test_get_readline_edit_mode_last_set_directive_vi() {
+        let contents = "
+            set editing-mode emacs
+            set editing-mode vi
+        ";
+        assert_eq!(get_readline_edit_mode(contents), Some(EditMode::Vi));
+    }
+
+    #[test]
+    fn test_get_readline_edit_mode_last_set_directive_emacs() {
+        let contents = "
+            set editing-mode vi
+            set editing-mode emacs
+        ";
+        assert_eq!(get_readline_edit_mode(contents), Some(EditMode::Emacs));
+    }
+
+    #[test]
+    fn test_get_readline_edit_mode_last_set_directive_vi_with_whitespace() {
+        let contents = "
+            set editing-mode emacs
+            set editing-mode   vi
+        ";
+        assert_eq!(get_readline_edit_mode(contents), Some(EditMode::Vi));
+    }
+
+    #[test]
+    fn test_get_readline_edit_mode_last_set_directive_emacs_with_whitespace() {
+        let contents = "
+            set editing-mode vi
+            set editing-mode    emacs
+        ";
+        assert_eq!(get_readline_edit_mode(contents), Some(EditMode::Emacs));
+    }
+
+    #[test]
+    fn test_get_readline_edit_mode_multiple_set_directives_mixed() {
+        let contents = "
+            set some-other-setting 123
+
+            set editing-mode vi
+
+            set another-setting true
+
+            set editing-mode emacs
+
+            set extra-setting abc
+            set extra-setting xyz
+
+            set editing-mode vi
+        ";
+        assert_eq!(get_readline_edit_mode(contents), Some(EditMode::Vi));
     }
 
     #[test]
