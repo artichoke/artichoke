@@ -59,7 +59,7 @@ default-features = false
 features = ["with-file-history"]
 
 [dependencies.scolapasta-path]
-version = "0.5.0"
+version = "0.5.1"
 path = "scolapasta-path"
 optional = true
 
