@@ -1163,6 +1163,37 @@ mod tests {
             format_into("foobar", &mut fmt).unwrap();
             assert_eq!(fmt, "666f6f626172");
         }
+
+        #[test]
+        fn test_try_encode() {
+            let data = b"Artichoke Ruby";
+            let result = try_encode(data).unwrap();
+            assert_eq!(result, "4172746963686f6b652052756279");
+        }
+
+        #[test]
+        fn test_try_encode_into() {
+            let data = b"Artichoke Ruby";
+            let mut buf = String::new();
+            try_encode_into(data, &mut buf).unwrap();
+            assert_eq!(buf, "4172746963686f6b652052756279");
+        }
+
+        #[test]
+        fn test_format_into() {
+            let data = b"Artichoke Ruby";
+            let mut buf = String::new();
+            format_into(data, &mut buf).unwrap();
+            assert_eq!(buf, "4172746963686f6b652052756279");
+        }
+
+        #[test]
+        fn test_hex_iterator() {
+            let data = "Artichoke Ruby";
+            let iter = Hex::from(data);
+            let result = iter.collect::<String>();
+            assert_eq!(result, "4172746963686f6b652052756279");
+        }
     }
 
     #[cfg(feature = "std")]
@@ -1222,6 +1253,14 @@ mod tests {
             let mut write = Vec::new();
             write_into("foobar", &mut write).unwrap();
             assert_eq!(write, b"666f6f626172".to_vec());
+        }
+
+        #[test]
+        fn test_write_into() {
+            let data = b"Artichoke Ruby";
+            let mut buf = Vec::new();
+            write_into(data, &mut buf).unwrap();
+            assert_eq!(buf, b"4172746963686f6b652052756279".to_vec());
         }
     }
 }
