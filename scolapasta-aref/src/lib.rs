@@ -21,15 +21,67 @@
 
 //! Functions for working with Ruby containers that respond to `#[]` or "aref".
 //!
-//! Convert offsets to `usize` indexes like this:
+//! # Examples
+//!
+//! Index into arrays:
 //!
 //! ```
 //! # fn example() -> Option<()> {
-//! let data = "ABC, 123, XYZ";
-//! let offset = -5;
+//! let data = [1, 2, 3, 4, 5];
+//!
+//! // Positive offset
+//! let offset = 2;
 //! let index = scolapasta_aref::offset_to_index(offset, data.len())?;
-//! assert_eq!(index, 8);
-//! assert_eq!(&data[index..], ", XYZ");
+//! assert_eq!(index, 2);
+//! assert_eq!(data[index], 3);
+//!
+//! // Negative offset
+//! let offset = -3;
+//! let index = scolapasta_aref::offset_to_index(offset, data.len())?;
+//! assert_eq!(index, 2);
+//! assert_eq!(data[index], 3);
+//!
+//! // Out-of-bounds offset
+//! let offset = 10;
+//! let index = scolapasta_aref::offset_to_index(offset, data.len())?;
+//! assert_eq!(index, 10);
+//!
+//! // Out-of-bounds negative offset
+//! let offset = -10;
+//! let index = scolapasta_aref::offset_to_index(offset, data.len());
+//! assert_eq!(index, None);
+//! # Some(())
+//! # }
+//! # example().unwrap()
+//! ```
+//!
+//! Index into strings:
+//!
+//! ```
+//! # fn example() -> Option<()> {
+//! let data = "Hello, World!";
+//!
+//! // Positive offset
+//! let offset = 7;
+//! let index = scolapasta_aref::offset_to_index(offset, data.len())?;
+//! assert_eq!(index, 7);
+//! assert_eq!(&data[index..], "World!");
+//!
+//! // Negative offset
+//! let offset = -6;
+//! let index = scolapasta_aref::offset_to_index(offset, data.len())?;
+//! assert_eq!(index, 7);
+//! assert_eq!(&data[index..], "World!");
+//!
+//! // Out-of-bounds offset
+//! let offset = 20;
+//! let index = scolapasta_aref::offset_to_index(offset, data.len())?;
+//! assert_eq!(index, 20);
+//!
+//! // Out-of-bounds negative offset
+//! let offset = -20;
+//! let index = scolapasta_aref::offset_to_index(offset, data.len());
+//! assert_eq!(index, None);
 //! # Some(())
 //! # }
 //! # example().unwrap()
@@ -48,19 +100,26 @@ mod readme {}
 /// as long as their magnitude is less than the given length.
 ///
 /// Callers must still check whether the returned index is in bounds for the
-/// container.
+/// container. The returned index may be out of range since this routine can be
+/// used to calculate indexes beyond the length of the container during
+/// assignment (for example, `Array#[]=` may perform length-extension upon an
+/// out-of-bounds index).
 ///
 /// # Examples
 ///
 /// ```
 /// # fn example() -> Option<()> {
 /// let data = "ABC, 123, XYZ";
+///
 /// let offset = 6;
 /// let index = scolapasta_aref::offset_to_index(offset, data.len())?;
 /// assert_eq!(index, 6);
 /// assert_eq!(&data[index..], "23, XYZ");
 ///
-/// let data = "ABC, 123, XYZ";
+/// let offset = 55;
+/// let index = scolapasta_aref::offset_to_index(offset, data.len())?;
+/// assert_eq!(index, 55);
+///
 /// let offset = -5;
 /// let index = scolapasta_aref::offset_to_index(offset, data.len())?;
 /// assert_eq!(index, 8);
@@ -103,87 +162,250 @@ pub fn offset_to_index(index: i64, len: usize) -> Option<usize> {
     // => nil
     // => nil
     // ```
-    if let Ok(index) = usize::try_from(index) {
-        Some(index)
-    } else {
-        index
+    match usize::try_from(index) {
+        Ok(index) => Some(index),
+        Err(_) => index
             .checked_neg()
             .and_then(|index| usize::try_from(index).ok())
-            .and_then(|index| len.checked_sub(index))
+            .and_then(|index| len.checked_sub(index)),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::offset_to_index;
+    use super::*;
 
     #[test]
-    fn zero_index() {
-        let test_cases = [
-            (0_i64, 0_usize, Some(0_usize)),
-            (0, 1, Some(0)),
-            (0, usize::MAX, Some(0)),
-        ];
-        for (index, len, expected) in test_cases {
-            assert_eq!(
-                offset_to_index(index, len),
-                expected,
-                "unexpected result for index {index}, len {len}"
-            );
-        }
+    fn test_zero_index() {
+        // Test case: index = 0, len = 0
+        assert_eq!(offset_to_index(0_i64, 0_usize), Some(0_usize));
+
+        // Test case: index = 0, len = 1
+        assert_eq!(offset_to_index(0_i64, 1_usize), Some(0_usize));
+
+        // Test case: index = 0, len = 10
+        assert_eq!(offset_to_index(0, 10), Some(0_usize));
+
+        // Test case: index = 0, len = usize::MAX
+        assert_eq!(offset_to_index(0_i64, usize::MAX), Some(0_usize));
     }
 
     #[test]
-    fn positive_index() {
-        let test_cases = [
-            (1_i64, 0_usize, Some(1_usize)),
-            (1, 1, Some(1)),
-            (1, usize::MAX, Some(1)),
-            (123, 0, Some(123)),
-            (123, 1, Some(123)),
-            (123, 123, Some(123)),
-            (123, usize::MAX, Some(123)),
-            (i64::MAX, usize::MAX, Some(i64::MAX.try_into().unwrap())),
-        ];
-        for (index, len, expected) in test_cases {
-            assert_eq!(
-                offset_to_index(index, len),
-                expected,
-                "unexpected result for index {index}, len {len}"
-            );
-        }
+    fn test_positive_index() {
+        // Test case: index = 1, len = 0
+        assert_eq!(offset_to_index(1_i64, 0_usize), Some(1_usize));
+
+        // Test case: index = 1, len = 1
+        assert_eq!(offset_to_index(1_i64, 1_usize), Some(1_usize));
+
+        // Test case: index = 1, len = 2
+        assert_eq!(offset_to_index(1_i64, 2_usize), Some(1_usize));
+
+        // Test case: index = 1, len = usize::MAX
+        assert_eq!(offset_to_index(1_i64, usize::MAX), Some(1_usize));
+
+        // Test case: index = 15, len = 10
+        assert_eq!(offset_to_index(15, 10), Some(15_usize));
+
+        // Test case: index = 123, len = 0
+        assert_eq!(offset_to_index(123_i64, 0_usize), Some(123_usize));
+
+        // Test case: index = 123, len = 1
+        assert_eq!(offset_to_index(123_i64, 1_usize), Some(123_usize));
+
+        // Test case: index = 123, len = 123
+        assert_eq!(offset_to_index(123_i64, 123_usize), Some(123_usize));
+
+        // Test case: index = 123, len = 123
+        assert_eq!(offset_to_index(123_i64, 124_usize), Some(123_usize));
+
+        // Test case: index = 123, len = 123
+        assert_eq!(offset_to_index(123_i64, 500_usize), Some(123_usize));
+
+        // Test case: index = 123, len = usize::MAX
+        assert_eq!(offset_to_index(123_i64, usize::MAX), Some(123_usize));
+
+        // Test case: index = i64::MAX, len = 5
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(offset_to_index(i64::MAX, 5), Some(usize::try_from(i64::MAX).unwrap()));
+
+        // Test case: index = i64::MAX, len = usize::MAX
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(
+            offset_to_index(i64::MAX, usize::MAX),
+            Some(usize::try_from(i64::MAX).unwrap())
+        );
+
+        // Test case: index = 100, len = 1000
+        assert_eq!(offset_to_index(100_i64, 1000_usize), Some(100_usize));
+
+        // Test case: index = 500, len = 500
+        assert_eq!(offset_to_index(500_i64, 500_usize), Some(500_usize));
+
+        // Test case: index = 999, len = 100
+        assert_eq!(offset_to_index(999_i64, 100_usize), Some(999_usize));
     }
 
     #[test]
-    fn negative_index() {
-        let test_cases = [
-            (-1_i64, 0_usize, None),
-            (-1, 1, Some(0)),
-            (-1, 2, Some(1)),
-            (-1, 10, Some(9)),
-            (-1, 245, Some(244)),
-            (-10, 0, None),
-            (-10, 1, None),
-            (-10, 2, None),
-            (-10, 10, Some(0)),
-            (-10, 245, Some(235)),
-            (-123, 0, None),
-            (-123, 1, None),
-            (-123, 2, None),
-            (-123, 10, None),
-            (-123, 245, Some(122)),
-            (i64::MIN, 0, None),
-            (i64::MIN, 1, None),
-            (i64::MIN, 2, None),
-            (i64::MIN, 10, None),
-            (i64::MIN, 245, None),
-        ];
-        for (index, len, expected) in test_cases {
-            assert_eq!(
-                offset_to_index(index, len),
-                expected,
-                "unexpected result for index {index}, len {len}"
-            );
-        }
+    fn test_negative_index() {
+        // Test case: index = -1, len = 0
+        assert_eq!(offset_to_index(-1_i64, 0_usize), None);
+
+        // Test case: index = -1, len = 1
+        assert_eq!(offset_to_index(-1_i64, 1_usize), Some(0_usize));
+
+        // Test case: index = -1, len = 2
+        assert_eq!(offset_to_index(-1_i64, 2_usize), Some(1_usize));
+
+        // Test case: index = -1, len = 10
+        assert_eq!(offset_to_index(-1_i64, 10_usize), Some(9_usize));
+
+        // Test case: index = -1, len = 245
+        assert_eq!(offset_to_index(-1_i64, 245_usize), Some(244_usize));
+
+        // Test case: index = -10, len = 0
+        assert_eq!(offset_to_index(-10_i64, 0_usize), None);
+
+        // Test case: index = -10, len = 1
+        assert_eq!(offset_to_index(-10_i64, 1_usize), None);
+
+        // Test case: index = -10, len = 2
+        assert_eq!(offset_to_index(-10_i64, 2_usize), None);
+
+        // Test case: index = -10, len = 10
+        assert_eq!(offset_to_index(-10_i64, 10_usize), Some(0_usize));
+
+        // Test case: index = -10, len = 245
+        assert_eq!(offset_to_index(-10_i64, 245_usize), Some(235_usize));
+
+        // Test case: index = -123, len = 0
+        assert_eq!(offset_to_index(-123_i64, 0_usize), None);
+
+        // Test case: index = -123, len = 1
+        assert_eq!(offset_to_index(-123_i64, 1_usize), None);
+
+        // Test case: index = -123, len = 2
+        assert_eq!(offset_to_index(-123_i64, 2_usize), None);
+
+        // Test case: index = -123, len = 10
+        assert_eq!(offset_to_index(-123_i64, 10_usize), None);
+
+        // Test case: index = -123, len = 245
+        assert_eq!(offset_to_index(-123_i64, 245_usize), Some(122_usize));
+
+        // Test case: index = i64::MIN, len = 0
+        assert_eq!(offset_to_index(i64::MIN, 0_usize), None);
+
+        // Test case: index = i64::MIN, len = 1
+        assert_eq!(offset_to_index(i64::MIN, 1_usize), None);
+
+        // Test case: index = i64::MIN, len = 2
+        assert_eq!(offset_to_index(i64::MIN, 2_usize), None);
+
+        // Test case: index = i64::MIN, len = 10
+        assert_eq!(offset_to_index(i64::MIN, 10_usize), None);
+
+        // Test case: index = i64::MIN, len = 245
+        assert_eq!(offset_to_index(i64::MIN, 245_usize), None);
+    }
+
+    #[test]
+    fn test_out_of_bounds_positive_offset() {
+        // Test case: Offset greater than or equal to length
+        //
+        // ```
+        // [3.2.2] > a = [1,2,3,4,5]
+        // => [1, 2, 3, 4, 5]
+        // [3.2.2] > a[10]
+        // => nil
+        // [3.2.2] > a[10] = 'a'
+        // => "a"
+        // [3.2.2] > a
+        // => [1, 2, 3, 4, 5, nil, nil, nil, nil, nil, "a"]
+        // ```
+        assert_eq!(offset_to_index(10, 5), Some(10_usize));
+    }
+
+    #[test]
+    fn test_positive_offset_equal_to_length() {
+        // ```
+        // [3.2.2] > a = [1,2,3,4,5]
+        // => [1, 2, 3, 4, 5]
+        // [3.2.2] > a[5]
+        // => nil
+        // [3.2.2] > a[5, 0]
+        // => []
+        // [3.2.2] > a[5] = 'a'
+        // => "a"
+        // [3.2.2] > a
+        // => [1, 2, 3, 4, 5, "a"]
+        // ```
+        assert_eq!(offset_to_index(5, 5), Some(5_usize));
+    }
+
+    #[test]
+    fn test_negative_offset_of_magnitude_length() {
+        // Test case: Offset equal to negative length
+        //
+        // ```
+        // [3.2.2] > a = [1,2,3,4,5]
+        // => [1, 2, 3, 4, 5]
+        // [3.2.2] > a[-5]
+        // => 1
+        // [3.2.2] > a[-5] = 'a'
+        // => "a"
+        // [3.2.2] > a
+        // => ["a", 2, 3, 4, 5]
+        // ```
+        assert_eq!(offset_to_index(-5, 5), Some(0));
+
+        assert_eq!(offset_to_index(-10, 10), Some(0_usize));
+    }
+
+    #[test]
+    fn test_invalid_negative_offset() {
+        // Test case: Offset less than negative length
+        //
+        // ```
+        // [3.2.2] > a = [1,2,3,4,5]
+        // => [1, 2, 3, 4, 5]
+        // [3.2.2] > a[-10]
+        // => nil
+        // [3.2.2] > a[-10] = 'a'
+        // (irb):5:in `<main>': index -10 too small for array; minimum: -5 (IndexError)
+        // ```
+        assert_eq!(offset_to_index(-10, 5), None);
+    }
+
+    #[test]
+    fn test_edge_cases() {
+        // Test case: Length is zero
+        assert_eq!(offset_to_index(0, 0), Some(0_usize));
+
+        // Test case: Offset is the minimum `i64` value
+        assert_eq!(offset_to_index(i64::MIN, 10), None);
+
+        // Test case: Offset is the maximum `i64` value
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(offset_to_index(i64::MAX, 10), Some(usize::try_from(i64::MAX).unwrap()));
+
+        // Test case: index = 0, len = usize::MAX
+        assert_eq!(offset_to_index(0_i64, usize::MAX), Some(0_usize));
+
+        // Test case: index = 1, len = usize::MAX
+        assert_eq!(offset_to_index(1_i64, usize::MAX), Some(1_usize));
+
+        // Test case: index = -1, len = usize::MAX
+        assert_eq!(offset_to_index(-1_i64, usize::MAX), Some(usize::MAX - 1));
+
+        // Test case: index = 10, len = usize::MAX
+        assert_eq!(offset_to_index(10, usize::MAX), Some(10_usize));
+
+        // Test case: index = i64::MAX, len = usize::MAX
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(
+            offset_to_index(i64::MAX, usize::MAX),
+            Some(usize::try_from(i64::MAX).unwrap())
+        );
     }
 }
