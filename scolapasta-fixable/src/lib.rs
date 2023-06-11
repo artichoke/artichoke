@@ -508,7 +508,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn all_i8_are_fixable() {
+    fn test_all_i8_are_fixable() {
         for x in i8::MIN..=i8::MAX {
             assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
             assert!(x.is_fixable(), "{x} should be fixable");
@@ -517,7 +517,7 @@ mod tests {
     }
 
     #[test]
-    fn all_i16_are_fixable() {
+    fn test_all_i16_are_fixable() {
         for x in i16::MIN..=i16::MAX {
             assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
             assert!(x.is_fixable(), "{x} should be fixable");
@@ -526,134 +526,17 @@ mod tests {
     }
 
     #[test]
-    fn all_i32_are_fixable_shard_0() {
-        const N: i32 = 0;
-        const LOWER: i32 = i32::MIN + N * (1 << 29);
-        const UPPER: i32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
+    fn test_i32_are_fixable() {
+        let test_cases = [i32::MIN, -1, 0, i32::MAX];
+        for x in test_cases {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} did not fix correctly");
+            assert!(x.is_fixable(), "{x} did not is_fixable correctly");
+            assert!(RB_FIXABLE(x), "{x} did not RB_FIXABLE correctly");
         }
-        assert_eq!(c, 1 << 29);
     }
 
     #[test]
-    fn all_i32_are_fixable_shard_1() {
-        const N: i32 = 1;
-        const LOWER: i32 = i32::MIN + N * (1 << 29);
-        const UPPER: i32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_i32_are_fixable_shard_2() {
-        const N: i32 = 2;
-        const LOWER: i32 = i32::MIN + N * (1 << 29);
-        const UPPER: i32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_i32_are_fixable_shard_3() {
-        const N: i32 = 3;
-        const LOWER: i32 = i32::MIN + N * (1 << 29);
-        const UPPER: i32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_i32_are_fixable_shard_4() {
-        const N: i32 = 0;
-        const LOWER: i32 = N * (1 << 29);
-        const UPPER: i32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_i32_are_fixable_shard_5() {
-        const N: i32 = 1;
-        const LOWER: i32 = N * (1 << 29);
-        const UPPER: i32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_i32_are_fixable_shard_6() {
-        const N: i32 = 2;
-        const LOWER: i32 = N * (1 << 29);
-        const UPPER: i32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_i32_are_fixable_shard_7() {
-        const N: i32 = 3;
-        const LOWER: i32 = N * (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..=i32::MAX {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn i64_are_fixable() {
+    fn test_i64_are_fixable() {
         let test_cases = [
             (i64::MIN, None),
             (RUBY_FIXNUM_MIN - 1, None),
@@ -693,7 +576,7 @@ mod tests {
     }
 
     #[test]
-    fn i128_are_fixable() {
+    fn test_i128_are_fixable() {
         let test_cases = [
             (i128::MIN, None),
             (i64::MIN.into(), None),
@@ -753,152 +636,28 @@ mod tests {
     }
 
     #[test]
-    fn all_u32_are_fixable_shard_0() {
-        const N: u32 = 0;
-        const LOWER: u32 = N * (1 << 29);
-        const UPPER: u32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
+    fn test_u32_are_fixable() {
+        let test_cases = [0, u32::MAX / 2, u32::MAX];
+        for x in test_cases {
+            assert_eq!(x.to_fix(), Some(x.into()), "{x} did not fix correctly");
+            assert!(x.is_fixable(), "{x} did not is_fixable correctly");
+            assert!(RB_FIXABLE(x), "{x} did not RB_FIXABLE correctly");
         }
-        assert_eq!(c, 1 << 29);
     }
 
     #[test]
-    fn all_u32_are_fixable_shard_1() {
-        const N: u32 = 1;
-        const LOWER: u32 = N * (1 << 29);
-        const UPPER: u32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_u32_are_fixable_shard_2() {
-        const N: u32 = 2;
-        const LOWER: u32 = N * (1 << 29);
-        const UPPER: u32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_u32_are_fixable_shard_3() {
-        const N: u32 = 3;
-        const LOWER: u32 = N * (1 << 29);
-        const UPPER: u32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_u32_are_fixable_shard_4() {
-        const N: u32 = 4;
-        const LOWER: u32 = N * (1 << 29);
-        const UPPER: u32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_u32_are_fixable_shard_5() {
-        const N: u32 = 5;
-        const LOWER: u32 = N * (1 << 29);
-        const UPPER: u32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_u32_are_fixable_shard_6() {
-        const N: u32 = 6;
-        const LOWER: u32 = N * (1 << 29);
-        const UPPER: u32 = LOWER + (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..UPPER {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn all_u32_are_fixable_shard_7() {
-        const N: u32 = 7;
-        const LOWER: u32 = N * (1 << 29);
-
-        let mut c = 0;
-        for x in LOWER..=u32::MAX {
-            assert_eq!(x.to_fix(), Some(x.into()), "{x} should be its own fixnum");
-            assert!(x.is_fixable(), "{x} should be fixable");
-            assert!(RB_FIXABLE(x), "{x} should be fixable");
-            c += 1;
-        }
-        assert_eq!(c, 1 << 29);
-    }
-
-    #[test]
-    fn u64_are_fixable() {
+    fn test_u64_are_fixable() {
         let test_cases = [
-            (u64::MIN, Some(0)),
-            (0_u64, Some(0)),
-            (1, Some(1)),
-            (10, Some(10)),
-            (1024, Some(1024)),
-            // ```
-            // >>> (2 ** 63 - 1) >> 1
-            // 4611686018427387903
-            // ```
-            (4_611_686_018_427_387_903 - 1, Some(4_611_686_018_427_387_902)),
-            (4_611_686_018_427_387_903, Some(4_611_686_018_427_387_903)),
-            (4_611_686_018_427_387_903 + 1, None),
-            (u64::try_from(RUBY_FIXNUM_MAX).unwrap() - 1, Some(RUBY_FIXNUM_MAX - 1)),
-            (u64::try_from(RUBY_FIXNUM_MAX).unwrap(), Some(RUBY_FIXNUM_MAX)),
-            (u64::try_from(RUBY_FIXNUM_MAX).unwrap() + 1, None),
-            (i64::MAX.try_into().unwrap(), None),
-            (u64::MAX, None),
+            (0_u64, Some(0_i64)),                                             // Smallest fixable value: 0
+            (1_u64, Some(1)),                                                 // Another fixable value: 1
+            (4_611_686_018_427_387_903_u64, Some(4_611_686_018_427_387_903)), // Largest fixable value: 2^62 - 1
+            (4_611_686_018_427_387_904_u64, None), // Value just above the fixable range: 2^62
+            (4_611_686_018_427_387_905_u64, None), // Value further above the fixable range: 2^62 + 1
+            (9_223_372_036_854_775_806_u64, None), // Value near the maximum u64 value: 2^63 - 2
+            (9_223_372_036_854_775_807_u64, None), // Maximum u64 value: 2^63 - 1
+            (18_446_744_073_709_551_614_u64, None), // Value just above the maximum i64 value: 2^63
+            (18_446_744_073_709_551_615_u64, None), // Value further above the maximum i64 value: 2^63 + 1
+            (9_223_372_036_854_775_809_u64, None), // Value near the maximum u64 value: 2^63 + 3
         ];
         for (x, fixed) in test_cases {
             assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
@@ -908,7 +667,7 @@ mod tests {
     }
 
     #[test]
-    fn u128_are_fixable() {
+    fn test_u128_are_fixable() {
         let test_cases = [
             (u128::MIN, Some(0)),
             (0_u128, Some(0)),
@@ -936,38 +695,36 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::approx_constant)]
     #[allow(clippy::cast_precision_loss)]
-    fn f32_are_fixable() {
+    fn test_f32_are_fixable() {
         let test_cases = [
-            (f32::NEG_INFINITY, None),
-            (f32::MIN, None),
-            (i64::MIN as _, None),
-            (-4_612_686_018_427_388_000.0, None),
-            (-1024.0, Some(-1024)),
-            (-10.0, Some(-10)),
-            (-1.9, Some(-1)),
-            (-1.7, Some(-1)),
-            (-1.5, Some(-1)),
-            (-1.2, Some(-1)),
-            (-1.1, Some(-1)),
-            (-1.0, Some(-1)),
-            (-0.0_f32, Some(0)),
-            (0.0_f32, Some(0)),
-            (1.0, Some(1)),
-            (1.1, Some(1)),
-            (1.2, Some(1)),
-            (1.5, Some(1)),
-            (1.7, Some(1)),
-            (1.9, Some(1)),
-            (10.0, Some(10)),
-            (1024.0, Some(1024)),
-            (4_611_686_018_427_387_904.0, None),
-            (i64::MAX as _, None),
-            (f32::MAX, None),
-            (f32::INFINITY, None),
-            (f32::MIN_POSITIVE, Some(0)),
-            (f32::EPSILON, Some(0)),
-            (f32::NAN, None),
+            // Value within fixable range
+            (0.0, Some(0)),
+            (123.45, Some(123)),
+            (-987.65, Some(-987)),
+            // Value outside fixable range
+            (1e38, None),         // Greater than i64::MAX
+            (-1e38, None),        // Less than i64::MIN
+            (1.234e-18, Some(0)), // Very small value
+            // Interesting float values
+            (-0.0, Some(0)),              // Negative zero
+            (f32::NAN, None),             // Not a Number
+            (f32::INFINITY, None),        // Positive infinity
+            (f32::EPSILON, Some(0)),      // Smallest positive value greater than 0
+            (f32::NEG_INFINITY, None),    // Negative infinity
+            (f32::MIN_POSITIVE, Some(0)), // Smallest positive normalized value
+            (f32::MAX, None),             // Max float value
+            (f32::MIN, None),             // Min float value
+            // Boundary conditions
+            (i64::MIN as _, None),                             // i64::MIN as float
+            (-4.611_686e18, Some(-4_611_686_018_427_387_904)), // closest float to i64::MIN / 2
+            (i64::MAX as _, None),                             // Largest finite positive value
+            (4.611_685_5e18, Some(4_611_685_468_671_574_016)), // closest float to i64::MAX / 2
+            // Varying fractional parts
+            (1.99, Some(1)),      // Truncated decimal part
+            (3.14159, Some(3)),   // Truncated decimal part
+            (-2.71828, Some(-2)), // Truncated decimal part
         ];
         for (x, fixed) in test_cases {
             assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
@@ -977,43 +734,197 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::approx_constant)]
     #[allow(clippy::cast_precision_loss)]
-    fn f64_are_fixable() {
+    fn test_f64_are_fixable() {
         let test_cases = [
-            (f64::NEG_INFINITY, None),
-            (f64::MIN, None),
-            (i64::MIN as _, None),
-            (-4_612_686_018_427_388_000.0, None),
-            (-1024.0, Some(-1024)),
-            (-10.0, Some(-10)),
-            (-1.9, Some(-1)),
-            (-1.7, Some(-1)),
-            (-1.5, Some(-1)),
-            (-1.2, Some(-1)),
-            (-1.1, Some(-1)),
-            (-1.0, Some(-1)),
-            (-0.0_f64, Some(0)),
-            (0.0_f64, Some(0)),
-            (1.0, Some(1)),
-            (1.1, Some(1)),
-            (1.2, Some(1)),
-            (1.5, Some(1)),
-            (1.7, Some(1)),
-            (1.9, Some(1)),
-            (10.0, Some(10)),
-            (1024.0, Some(1024)),
-            (4_611_686_018_427_387_904.0, None),
-            (i64::MAX as _, None),
-            (f64::MAX, None),
-            (f64::INFINITY, None),
-            (f64::MIN_POSITIVE, Some(0)),
-            (f64::EPSILON, Some(0)),
-            (f64::NAN, None),
+            // Value within fixable range
+            (0.0, Some(0)),
+            (123.45, Some(123)),
+            (-987.65, Some(-987)),
+            // Value outside fixable range
+            (1e38, None),         // Greater than i64::MAX
+            (-1e38, None),        // Less than i64::MIN
+            (1.234e-18, Some(0)), // Very small value
+            // Interesting float values
+            (-0.0, Some(0)),              // Negative zero
+            (f64::NAN, None),             // Not a Number
+            (f64::INFINITY, None),        // Positive infinity
+            (f64::EPSILON, Some(0)),      // Smallest positive value greater than 0
+            (f64::NEG_INFINITY, None),    // Negative infinity
+            (f64::MIN_POSITIVE, Some(0)), // Smallest positive normalized value
+            (f64::MAX, None),             // Max float value
+            (f64::MIN, None),             // Min float value
+            // Boundary conditions
+            (i64::MIN as _, None),                                         // i64::MIN as float
+            (-4.611_686_018_427_387e18, Some(-4_611_686_018_427_386_880)), // closest float to i64::MIN / 2
+            (i64::MAX as _, None),                                         // Largest finite positive value
+            (4.611_686_018_427_387e18, Some(4_611_686_018_427_386_880)),   // closest float to i64::MAX / 2
+            // Varying fractional parts
+            (1.99, Some(1)),      // Truncated decimal part
+            (3.14159, Some(3)),   // Truncated decimal part
+            (-2.71828, Some(-2)), // Truncated decimal part
         ];
         for (x, fixed) in test_cases {
             assert_eq!(x.to_fix(), fixed, "{x} did not fix correctly");
             assert_eq!(x.is_fixable(), fixed.is_some(), "{x} did not is_fixable correctly");
             assert_eq!(RB_FIXABLE(x), fixed.is_some(), "{x} did not RB_FIXABLE correctly");
         }
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_u8() {
+        assert!(0_u8.is_fixable());
+        assert!(255_u8.is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_u8() {
+        assert_eq!(0_u8.to_fix(), Some(0));
+        assert_eq!(255_u8.to_fix(), Some(255));
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_i8() {
+        assert!(0_i8.is_fixable());
+        assert!(127_i8.is_fixable());
+        assert!((-128_i8).is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_i8() {
+        assert_eq!(0_i8.to_fix(), Some(0));
+        assert_eq!(127_i8.to_fix(), Some(127));
+        assert_eq!((-128_i8).to_fix(), Some(-128));
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_u16() {
+        assert!(0_u16.is_fixable());
+        assert!(65_535_u16.is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_u16() {
+        assert_eq!(0_u16.to_fix(), Some(0));
+        assert_eq!(65_535_u16.to_fix(), Some(65_535));
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_i16() {
+        assert!(0_i16.is_fixable());
+        assert!(32_767_i16.is_fixable());
+        assert!((-32_768_i16).is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_i16() {
+        assert_eq!(0_i16.to_fix(), Some(0));
+        assert_eq!(32_767_i16.to_fix(), Some(32_767));
+        assert_eq!((-32_768_i16).to_fix(), Some(-32_768));
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_u32() {
+        assert!(0_u32.is_fixable());
+        assert!(4_294_967_295_u32.is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_u32() {
+        assert_eq!(0_u32.to_fix(), Some(0));
+        assert_eq!(4_294_967_295_u32.to_fix(), Some(4_294_967_295));
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_i32() {
+        assert!(0_i32.is_fixable());
+        assert!(2_147_483_647_i32.is_fixable());
+        assert!((-2_147_483_648_i32).is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_i32() {
+        assert_eq!(0_i32.to_fix(), Some(0));
+        assert_eq!(2_147_483_647_i32.to_fix(), Some(2_147_483_647));
+        assert_eq!((-2_147_483_648_i32).to_fix(), Some(-2_147_483_648));
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_u64() {
+        assert!(0_u64.is_fixable());
+        assert!((u64::MAX >> 2).is_fixable());
+        assert!(!(u64::MAX >> 1).is_fixable());
+        assert!(!u64::MAX.is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_u64() {
+        assert_eq!(0_u64.to_fix(), Some(0));
+        assert_eq!((u64::MAX >> 2).to_fix(), Some(i64::MAX / 2));
+        assert_eq!((u64::MAX >> 1).to_fix(), None);
+        assert_eq!(u64::MAX.to_fix(), None);
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_i64() {
+        assert!(0_i64.is_fixable());
+        assert!((i64::MIN >> 1).is_fixable());
+        assert!((i64::MAX >> 1).is_fixable());
+        assert!(!i64::MIN.is_fixable());
+        assert!(!i64::MAX.is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_i64() {
+        assert_eq!(0_i64.to_fix(), Some(0));
+        assert_eq!((i64::MAX >> 1).to_fix(), Some(i64::MAX / 2));
+        assert_eq!((i64::MIN >> 1).to_fix(), Some(i64::MIN / 2));
+        assert_eq!(i64::MIN.to_fix(), None);
+        assert_eq!(i64::MAX.to_fix(), None);
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_u128() {
+        assert!(0_u64.is_fixable());
+        assert!((u128::MAX >> 66).is_fixable());
+        assert!(!(u128::MAX >> 65).is_fixable());
+        assert!(!(u128::MAX >> 10).is_fixable());
+        assert!(!(u128::MAX >> 2).is_fixable());
+        assert!(!(u128::MAX >> 1).is_fixable());
+        assert!(!u128::MAX.is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_u128() {
+        assert_eq!(0_u64.to_fix(), Some(0));
+        assert_eq!((u128::MAX >> 66).to_fix(), Some(i64::MAX / 2));
+        assert_eq!((u128::MAX >> 65).to_fix(), None);
+        assert_eq!((u128::MAX >> 10).to_fix(), None);
+        assert_eq!((u128::MAX >> 2).to_fix(), None);
+        assert_eq!((u128::MAX >> 1).to_fix(), None);
+        assert_eq!(u128::MAX.to_fix(), None);
+    }
+
+    #[test]
+    fn test_fixable_boundary_values_i128() {
+        assert!(0_i128.is_fixable());
+        assert!((i128::MIN >> 65).is_fixable());
+        assert!((i128::MAX >> 65).is_fixable());
+        assert!(!(i128::MIN >> 1).is_fixable());
+        assert!(!(i128::MAX >> 1).is_fixable());
+        assert!(!i128::MIN.is_fixable());
+        assert!(!i128::MAX.is_fixable());
+    }
+
+    #[test]
+    fn test_to_fix_boundary_values_i128() {
+        assert_eq!(0_i128.to_fix(), Some(0));
+        assert_eq!((i128::MAX >> 65).to_fix(), Some(i64::MAX / 2));
+        assert_eq!((i128::MIN >> 65).to_fix(), Some(i64::MIN / 2));
+        assert_eq!((i128::MAX >> 1).to_fix(), None);
+        assert_eq!((i128::MIN >> 1).to_fix(), None);
+        assert_eq!(i128::MIN.to_fix(), None);
+        assert_eq!(i128::MAX.to_fix(), None);
     }
 }
