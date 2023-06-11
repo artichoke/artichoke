@@ -350,6 +350,16 @@ impl<'a> From<&'a [u8]> for Hex<'a> {
     }
 }
 
+impl<'a, const N: usize> From<&'a [u8; N]> for Hex<'a> {
+    #[inline]
+    fn from(data: &'a [u8; N]) -> Self {
+        Self {
+            iter: data.iter(),
+            escaped_byte: None,
+        }
+    }
+}
+
 impl<'a> Iterator for Hex<'a> {
     type Item = char;
 
@@ -519,7 +529,7 @@ impl FusedIterator for EscapedByte {}
 
 #[cfg(test)]
 mod tests {
-    use crate::EscapedByte;
+    use super::*;
 
     #[test]
     fn literal_exhaustive() {
@@ -573,6 +583,75 @@ mod tests {
                 "literal must only expand to two ASCII chracters, found 3+"
             );
         }
+    }
+
+    #[test]
+    fn test_hex_iterator_with_remaining_escaped_byte() {
+        let hex_str = &[0x41, 0x42, 0x1B, 0x43];
+        let mut hex_iter = Hex::from(hex_str);
+
+        // Consume the first three bytes
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '4');
+        let result = hex_iter.next().unwrap();
+        assert_eq!(result, '3');
+        assert!(hex_iter.next().is_none());
+    }
+
+    #[test]
+    fn test_hex_iterator_empty_after_exhausted() {
+        let hex_str = &[0x41, 0x42];
+        let mut hex_iter = Hex::from(hex_str);
+
+        // Consume all bytes
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+
+        assert!(hex_iter.is_empty());
+        assert!(hex_iter.next().is_none());
+    }
+
+    #[test]
+    fn test_hex_iterator_not_empty_with_remaining_escaped_byte() {
+        let hex_str = &[0x41, 0x42, 0x1B, 0x43];
+        let mut hex_iter = Hex::from(hex_str);
+
+        // Consume the first three bytes
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+
+        assert!(!hex_iter.is_empty());
+        assert!(hex_iter.next().is_some());
+    }
+
+    #[test]
+    fn test_hex_iterator_not_empty_with_remaining_byte() {
+        let hex_str = &[0x41, 0x42, 0x43];
+        let mut hex_iter = Hex::from(hex_str);
+
+        // Consume the first two bytes
+        hex_iter.next().unwrap();
+        hex_iter.next().unwrap();
+
+        assert!(!hex_iter.is_empty());
+    }
+
+    #[test]
+    fn test_hex_iterator_empty() {
+        let hex_str = b"";
+        let hex_iter = Hex::from(hex_str);
+
+        assert!(hex_iter.is_empty());
     }
 
     #[cfg(feature = "alloc")]
