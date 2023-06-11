@@ -744,8 +744,7 @@ mod tests {
         // >>> binascii.hexlify(bytes("Hello, 😃!", "utf-8"))
         // b'48656c6c6f2c20f09f988321'
         // ```
-        let hex_str = Hex::from("Hello, 😃!");
-        let mut hex_iter = hex_str.into_iter();
+        let mut hex_iter = Hex::from("Hello, 😃!");
 
         let result = hex_iter.next().unwrap();
         assert_eq!(result, '4');
@@ -829,8 +828,7 @@ mod tests {
         // >>> binascii.hexlify(bytes("你好，世界！", "utf-8"))
         // b'e4bda0e5a5bdefbc8ce4b896e7958cefbc81'
         // ```
-        let hex_str = Hex::from("你好，世界！");
-        let mut hex_iter = hex_str.into_iter();
+        let mut hex_iter = Hex::from("你好，世界！");
 
         let result = hex_iter.next().unwrap();
         assert_eq!(result, 'e');
@@ -949,15 +947,15 @@ mod tests {
         let mut hex_str = [0u8; 256];
 
         for (i, byte) in hex_str.iter_mut().enumerate() {
-            *byte = i as u8;
+            *byte = i.try_into().unwrap();
         }
 
         let mut hex_iter = Hex::from(&hex_str);
 
         for byte in &hex_str {
             let expected_chars = [
-                char::from_digit((byte >> 4) as u32, 16).unwrap(),
-                char::from_digit((byte & 0x0F) as u32, 16).unwrap(),
+                char::from_digit(u32::from(byte >> 4), 16).unwrap(),
+                char::from_digit(u32::from(byte & 0x0F), 16).unwrap(),
             ];
             for expected_char in expected_chars {
                 let result = hex_iter.next().unwrap();
