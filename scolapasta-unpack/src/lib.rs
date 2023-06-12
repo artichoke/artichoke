@@ -227,6 +227,54 @@ pub enum IntegerDirective {
     /// Pointer width signed, native endian (`j`)
     SignedPointerWidthNativeEndian,
 
+    /// 16-bit unsigned, big endian (`S>`)
+    Unsigned16BigEndian,
+
+    /// 32-bit unsigned, big endian (`L>`)
+    Unsigned32BigEndian,
+
+    /// 64-bit unsigned, big endian (`Q>`)
+    Unsigned64BigEndian,
+
+    /// Pointer width unsigned, big endian (`J>`)
+    UnsignedPointerWidthBigEndian,
+
+    /// 16-bit signed, big endian (`s>`)
+    Signed16BigEndian,
+
+    /// 32-bit signed, big endian (`l>`)
+    Signed32BigEndian,
+
+    /// 64-bit signed, big endian (`q>`)
+    Signed64BigEndian,
+
+    /// Pointer width signed, big endian (`j>`)
+    SignedPointerWidthBigEndian,
+
+    /// 16-bit unsigned, little endian (`S<`)
+    Unsigned16LittleEndian,
+
+    /// 32-bit unsigned, little endian (`L<`)
+    Unsigned32LittleEndian,
+
+    /// 64-bit unsigned, little endian (`Q<`)
+    Unsigned64BigEndian,
+
+    /// Pointer width unsigned, little endian (`J<`)
+    UnsignedPointerWidthLittleEndian,
+
+    /// 16-bit signed, little endian (`s<`)
+    Signed16LittleEndian,
+
+    /// 32-bit signed, little endian (`l<`)
+    Signed32LittleEndian,
+
+    /// 64-bit signed, little endian (`q<`)
+    Signed64LittleEndian,
+
+    /// Pointer width signed, little endian (`j<`)
+    SignedPointerWidthLittleEndian,
+
     /// `unsigned short`, native endian (`S_`, `S!`)
     UnsignedShortNativeEndian,
 
@@ -255,7 +303,7 @@ pub enum IntegerDirective {
     /// `ArgumentError` if the platform has no `long long` type.
     SignedLongLongNativeEndian,
 
-    /// `unsigned short`, big endian (`S>`, `S!>`)
+    /// `unsigned short`, big endian (`S!>`)
     ///
     /// Also known as `n`.
     UnsignedShortBigEndian,
@@ -263,31 +311,31 @@ pub enum IntegerDirective {
     /// `unsigned int`, big endian (`I!>`)
     UnsignedIntBigEndian,
 
-    /// `unsigned long`, big endian (`L>`, `L!>`)
+    /// `unsigned long`, big endian (`L!>`)
     ///
     /// Also known as `N`.
     UnsignedLongBigEndian,
 
-    /// `unsigned long long`, big endian (`Q>`, `Q!>`)
+    /// `unsigned long long`, big endian (`Q!>`)
     ///
     /// `ArgumentError` if the platform has no `long long` type.
     UnsignedLongLongBigEndian,
 
-    /// `signed short`, big endian (`s>`, `s!>`)
+    /// `signed short`, big endian (`s!>`)
     SignedShortBigEndian,
 
     /// `signed int`, big endian (`i!>`)
     SignedIntBigEndian,
 
-    /// `signed long`, big endian (`l>`, `l!>`)
+    /// `signed long`, big endian (`l!>`)
     SignedLongBigEndian,
 
-    /// `signed long long`, big endian (`q>`, `q!>`)
+    /// `signed long long`, big endian (`q!>`)
     ///
     /// `ArgumentError` if the platform has no `long long` type.
     SignedLongLongBigEndian,
 
-    /// `unsigned short`, little endian (`S<`, `S!<`)
+    /// `unsigned short`, little endian (`S!<`)
     ///
     /// Also known as `v`.
     UnsignedShortLittleEndian,
@@ -295,48 +343,48 @@ pub enum IntegerDirective {
     /// `unsigned int`, little endian (`I!<`)
     UnsignedIntLittleEndian,
 
-    /// `unsigned long`, little endian (`L<`, `L!<`)
+    /// `unsigned long`, little endian (`L!<`)
     ///
     /// Also known as `V`.
     UnsignedLongLittleEndian,
 
-    /// `unsigned long long`, little endian (`Q<`, `Q!<`)
+    /// `unsigned long long`, little endian (`Q!<`)
     ///
     /// `ArgumentError` if the platform has no `long long` type.
     UnsignedLongLongLittleEndian,
 
-    /// `signed short`, little endian (`s<`, `s!<`)
+    /// `signed short`, little endian (`s!<`)
     SignedShortLittleEndian,
 
     /// `signed int`, little endian (`i!<`)
     SignedIntLittleEndian,
 
-    /// `signed long`, little endian (`l<`, `l!<`)
+    /// `signed long`, little endian (`l!<`)
     SignedLongLittleEndian,
 
-    /// `signed long long`, little endian (`q<`, `q!<`)
+    /// `signed long long`, little endian (`q!<`)
     ///
     /// `ArgumentError` if the platform has no `long long` type.
     SignedLongLongLittleEndian,
 
     /// 16-bit unsigned, network (big-endian) byte order (`n`)
     ///
-    /// Also known as `S>`, `S!>`.
+    /// Also known as `S>`.
     Unsigned16BigEndian,
 
     /// 32-bit unsigned, network (big-endian) byte order (`N`)
     ///
-    /// Also known as `L>`, `L!>`.
+    /// Also known as `L>`.
     Unsigned32BigEndian,
 
     /// 16-bit unsigned, VAX (little-endian) byte order (`v`)
     ///
-    /// Also known as `S<`, `S!<`.
+    /// Also known as `S<`.
     Unsigned16LittleEndian,
 
     /// 32-bit unsigned, VAX (little-endian) byte order (`V`)
     ///
-    /// Also known as `L<`, `L!<`.
+    /// Also known as `L<`.
     Unsigned32LittleEndian,
 
     /// UTF-8 character (`U`)
