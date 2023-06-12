@@ -4,6 +4,7 @@ mod repetition;
 use directive::{Directive, MiscDirective};
 use repetition::Repetition;
 
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct RangeError {
     message: &'static str,
 }
