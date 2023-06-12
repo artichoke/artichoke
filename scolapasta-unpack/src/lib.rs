@@ -1,3 +1,6 @@
+use core::num::IntErrorKind;
+use core::str;
+
 /// Enum representing different directives used for parsing format strings in
 /// Ruby's [`String#unpack`].
 ///
@@ -124,6 +127,21 @@ pub enum Directive {
     /// => ["1", "1"]
     /// ```
     Unknown(u8),
+}
+
+impl Directive {
+    pub fn next_from_format_bytes(format: &mut &[u8]) -> Option<Self> {
+        let (&first, tail) = format.split_first()?;
+
+        let mut directive = Directive::from(first);
+
+        *format = tail;
+
+        if let Directive::Integer(ref mut directive) = directive {
+            directive.update_from_modifiers(format);
+        }
+        Some(directive)
+    }
 }
 
 impl From<u8> for Directive {
@@ -423,16 +441,22 @@ impl TryFrom<u8> for IntegerDirective {
 }
 
 impl IntegerDirective {
-    pub fn from_format_bytes(bytes: &mut &[u8]) -> Option<Self> {
+    #[allow(dead_code)]
+    fn next_from_format_bytes(bytes: &mut &[u8]) -> Option<Self> {
         let (&first, tail) = bytes.split_first()?;
 
         let mut directive = IntegerDirective::try_from(first).ok()?;
 
         *bytes = tail;
 
+        directive.update_from_modifiers(bytes);
+        Some(directive)
+    }
+
+    fn update_from_modifiers(&mut self, format: &mut &[u8]) {
         let mut chomp = 1_usize;
-        match (directive, tail) {
-            (_, []) => return Some(directive),
+        match (*self, *format) {
+            (_, []) => return,
             (
                 Self::Unsigned16NativeEndian
                 | Self::UnsignedIntNativeEndian
@@ -441,8 +465,8 @@ impl IntegerDirective {
                 | Self::UnsignedPointerWidthNativeEndian,
                 [b'!', b'>', ..],
             ) => {
-                directive.modify_platform_specific();
-                directive.modify_big_endian();
+                self.modify_platform_specific();
+                self.modify_big_endian();
                 chomp = 2;
             }
             (
@@ -453,8 +477,8 @@ impl IntegerDirective {
                 | Self::UnsignedPointerWidthNativeEndian,
                 [b'!', b'<', ..],
             ) => {
-                directive.modify_platform_specific();
-                directive.modify_little_endian();
+                self.modify_platform_specific();
+                self.modify_little_endian();
                 chomp = 2;
             }
             (
@@ -468,10 +492,10 @@ impl IntegerDirective {
                 | Self::Signed64NativeEndian,
                 [b'_' | b'!', ..],
             ) => {
-                directive.modify_platform_specific();
+                self.modify_platform_specific();
             }
             (Self::UnsignedPointerWidthNativeEndian | Self::SignedPointerWidthNativeEndian, [b'!', ..]) => {
-                directive.modify_platform_specific();
+                self.modify_platform_specific();
             }
             (
                 Self::Unsigned16NativeEndian
@@ -481,7 +505,7 @@ impl IntegerDirective {
                 | Self::UnsignedPointerWidthNativeEndian,
                 [b'>', ..],
             ) => {
-                directive.modify_big_endian();
+                self.modify_big_endian();
             }
             (
                 Self::Unsigned16NativeEndian
@@ -491,7 +515,7 @@ impl IntegerDirective {
                 | Self::UnsignedPointerWidthNativeEndian,
                 [b'<', ..],
             ) => {
-                directive.modify_little_endian();
+                self.modify_little_endian();
             }
 
             // Consume unknown modifiers, emit a warning, and continue:
@@ -504,9 +528,7 @@ impl IntegerDirective {
                 // TODO: emit warning with `ch`.
             }
         }
-        *bytes = &bytes[chomp..];
-
-        Some(directive)
+        *format = &format[chomp..];
     }
 
     fn modify_little_endian(&mut self) {
@@ -743,7 +765,31 @@ impl TryFrom<u8> for MiscellaneousDirective {
     }
 }
 
+pub struct RangeError {
+    message: &'static str,
+}
+
+impl RangeError {
+    pub fn with_message(message: &'static str) -> Self {
+        Self { message }
+    }
+
+    pub fn message(&self) -> &'static str {
+        self.message
+    }
+}
+
 /// Represents various  directives used in a format string.
+///
+/// The unpack amount must be the last modifier:
+///
+/// ```console
+/// [3.2.2] > "1111111111111111".unpack('s*_')
+/// <internal:pack>:20: warning: unknown unpack directive '_' in 's*_'
+/// => [12593, 12593, 12593, 12593, 12593, 12593, 12593, 12593]
+/// [3.2.2] > "1111111111111111".unpack('s_*')
+/// => [12593, 12593, 12593, 12593, 12593, 12593, 12593, 12593]
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnpackAmount {
     /// Specifies the number of times to repeat the preceding directive.
@@ -755,29 +801,64 @@ pub enum UnpackAmount {
     ///
     /// An asterisk (`*`) will use up all remaining elements.
     ConsumeToEnd,
-
-    /// Native size (underscore).
-    ///
-    /// The underscore (`_`) indicates that the underlying platform's native
-    /// size should be used for the specified type. If not present, it uses a
-    /// platform-independent consistent size.
-    ///
-    /// This unpack amount is only valid for the `sSiIlL` directives.
-    PlatformNativeSizeUnderscore,
-
-    /// Native size (bang).
-    ///
-    /// The exclamation mark (`!`) indicates that the underlying platform's
-    /// native size should be used for the specified type. If not present, it
-    /// uses a platform-independent consistent size.
-    ///
-    /// This unpack amount is only valid for the `sSiIlL` directives.
-    PlatformNativeSizeBang,
 }
 
 impl Default for UnpackAmount {
     fn default() -> Self {
         Self::Repeat(1)
+    }
+}
+
+impl UnpackAmount {
+    pub fn from_format_bytes(format: &mut &[u8]) -> Result<Self, RangeError> {
+        match *format {
+            [] => return Ok(Self::default()),
+            [b'*', tail @ ..] => {
+                *format = tail;
+                return Ok(Self::ConsumeToEnd);
+            }
+            [byte, ..] if !byte.is_ascii_digit() => return Ok(Self::default()),
+            _ => {}
+        }
+        // Trim leading zeros:
+        //
+        // ```console
+        // [3.2.2] > "11111111111111111111111111111111".unpack('h010')
+        // => ["1313131313"]
+        // [3.2.2] > "11111111111111111111111111111111".unpack('h010').first.length
+        // => 10
+        // ```
+        while let Some((&b'0', tail)) = format.split_first() {
+            *format = tail;
+        }
+
+        let end_pos = format
+            .iter()
+            .position(|b| !b.is_ascii_digit())
+            .unwrap_or_else(|| format.len());
+        let number = str::from_utf8(&format[..end_pos]).expect("slice is only ASCII digits");
+
+        *format = &format[end_pos..];
+
+        match usize::from_str_radix(number, 10) {
+            Ok(count) => Ok(Self::Repeat(count)),
+            // we had some numbers, but they must have all been zero and stripped above.
+            Err(err) if matches!(err.kind(), IntErrorKind::Empty | IntErrorKind::Zero) => Ok(Self::Repeat(0)),
+            Err(err) if *err.kind() == IntErrorKind::PosOverflow => {
+                // ```
+                // <internal:pack>:20:in `unpack': pack length too big (RangeError)
+                // ```
+                Err(RangeError::with_message("pack length too big"))
+            }
+            Err(err) if *err.kind() == IntErrorKind::InvalidDigit => {
+                unreachable!("unexpected digits. Got {number}, expected 0-9 digits");
+            }
+            Err(err) if *err.kind() == IntErrorKind::NegOverflow => {
+                unreachable!("parsing into usize does not permit negative values");
+            }
+            // handle non-exhaustive case for this enum.
+            Err(_) => Ok(Self::Repeat(0)),
+        }
     }
 }
 
