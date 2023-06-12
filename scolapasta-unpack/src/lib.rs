@@ -258,7 +258,7 @@ pub enum IntegerDirective {
     Unsigned32LittleEndian,
 
     /// 64-bit unsigned, little endian (`Q<`)
-    Unsigned64BigEndian,
+    Unsigned64LittleEndian,
 
     /// Pointer width unsigned, little endian (`J<`)
     UnsignedPointerWidthLittleEndian,
@@ -370,22 +370,22 @@ pub enum IntegerDirective {
     /// 16-bit unsigned, network (big-endian) byte order (`n`)
     ///
     /// Also known as `S>`.
-    Unsigned16BigEndian,
+    Unsigned16NetworkOrder,
 
     /// 32-bit unsigned, network (big-endian) byte order (`N`)
     ///
     /// Also known as `L>`.
-    Unsigned32BigEndian,
+    Unsigned32NetworkOrder,
 
     /// 16-bit unsigned, VAX (little-endian) byte order (`v`)
     ///
     /// Also known as `S<`.
-    Unsigned16LittleEndian,
+    Unsigned16VaxOrder,
 
     /// 32-bit unsigned, VAX (little-endian) byte order (`V`)
     ///
     /// Also known as `L<`.
-    Unsigned32LittleEndian,
+    Unsigned32VaxOrder,
 
     /// UTF-8 character (`U`)
     Utf8Character,
@@ -411,13 +411,165 @@ impl TryFrom<u8> for IntegerDirective {
             b'j' => Ok(Self::SignedPointerWidthNativeEndian),
             b'I' => Ok(Self::UnsignedIntNativeEndian),
             b'i' => Ok(Self::SignedIntNativeEndian),
-            b'n' => Ok(Self::Unsigned16BigEndian),
-            b'N' => Ok(Self::Unsigned32BigEndian),
-            b'v' => Ok(Self::Unsigned16LittleEndian),
-            b'V' => Ok(Self::Unsigned32LittleEndian),
+            b'n' => Ok(Self::Unsigned16NetworkOrder),
+            b'N' => Ok(Self::Unsigned32NetworkOrder),
+            b'v' => Ok(Self::Unsigned16VaxOrder),
+            b'V' => Ok(Self::Unsigned32VaxOrder),
             b'U' => Ok(Self::Utf8Character),
             b'w' => Ok(Self::BerCompressedInteger),
             _ => Err(()),
+        }
+    }
+}
+
+impl IntegerDirective {
+    pub fn from_format_bytes(bytes: &mut &[u8]) -> Option<Self> {
+        let (&first, tail) = bytes.split_first()?;
+
+        let mut directive = IntegerDirective::try_from(first).ok()?;
+
+        *bytes = tail;
+
+        let mut chomp = 1_usize;
+        match (directive, tail) {
+            (_, []) => return Some(directive),
+            (
+                Self::Unsigned16NativeEndian
+                | Self::UnsignedIntNativeEndian
+                | Self::Unsigned32NativeEndian
+                | Self::Unsigned64NativeEndian
+                | Self::UnsignedPointerWidthNativeEndian,
+                [b'!', b'>', ..],
+            ) => {
+                directive.modify_platform_specific();
+                directive.modify_big_endian();
+                chomp = 2;
+            }
+            (
+                Self::Unsigned16NativeEndian
+                | Self::UnsignedIntNativeEndian
+                | Self::Unsigned32NativeEndian
+                | Self::Unsigned64NativeEndian
+                | Self::UnsignedPointerWidthNativeEndian,
+                [b'!', b'<', ..],
+            ) => {
+                directive.modify_platform_specific();
+                directive.modify_little_endian();
+                chomp = 2;
+            }
+            (
+                Self::Unsigned16NativeEndian
+                | Self::UnsignedIntNativeEndian
+                | Self::Unsigned32NativeEndian
+                | Self::Unsigned64NativeEndian
+                | Self::Signed16NativeEndian
+                | Self::SignedIntNativeEndian
+                | Self::Signed32NativeEndian
+                | Self::Signed64NativeEndian,
+                [b'_' | b'!', ..],
+            ) => {
+                directive.modify_platform_specific();
+            }
+            (Self::UnsignedPointerWidthNativeEndian | Self::SignedPointerWidthNativeEndian, [b'!', ..]) => {
+                directive.modify_platform_specific();
+            }
+            (
+                Self::Unsigned16NativeEndian
+                | Self::UnsignedIntNativeEndian
+                | Self::Unsigned32NativeEndian
+                | Self::Unsigned64NativeEndian
+                | Self::UnsignedPointerWidthNativeEndian,
+                [b'>', ..],
+            ) => {
+                directive.modify_big_endian();
+            }
+            (
+                Self::Unsigned16NativeEndian
+                | Self::UnsignedIntNativeEndian
+                | Self::Unsigned32NativeEndian
+                | Self::Unsigned64NativeEndian
+                | Self::UnsignedPointerWidthNativeEndian,
+                [b'<', ..],
+            ) => {
+                directive.modify_little_endian();
+            }
+
+            // Consume unknown modifiers, emit a warning, and continue:
+            //
+            // ```console
+            // [3.2.2] > "1111111111111111".unpack('s-')
+            // <internal:pack>:20: warning: unknown unpack directive '-' in 's-'
+            // ```
+            _ch => {
+                // TODO: emit warning with `ch`.
+            }
+        }
+        *bytes = &bytes[chomp..];
+
+        Some(directive)
+    }
+
+    fn modify_little_endian(&mut self) {
+        match self {
+            Self::Unsigned16NativeEndian => *self = Self::Unsigned16LittleEndian,
+            Self::Unsigned32NativeEndian => *self = Self::Unsigned32LittleEndian,
+            Self::Unsigned64NativeEndian => *self = Self::Unsigned64LittleEndian,
+            Self::Signed16NativeEndian => *self = Self::Signed16LittleEndian,
+            Self::Signed32NativeEndian => *self = Self::Signed32LittleEndian,
+            Self::Signed64NativeEndian => *self = Self::Signed64LittleEndian,
+            Self::UnsignedShortNativeEndian => *self = Self::UnsignedShortLittleEndian,
+            Self::UnsignedIntNativeEndian => *self = Self::UnsignedIntLittleEndian,
+            Self::UnsignedLongNativeEndian => *self = Self::UnsignedLongLittleEndian,
+            Self::UnsignedLongLongNativeEndian => *self = Self::UnsignedLongLongLittleEndian,
+            Self::SignedShortNativeEndian => *self = Self::SignedShortLittleEndian,
+            Self::SignedIntNativeEndian => *self = Self::SignedIntLittleEndian,
+            Self::SignedLongNativeEndian => *self = Self::SignedLongLittleEndian,
+            Self::SignedLongLongNativeEndian => *self = Self::SignedLongLongLittleEndian,
+            _ => {} // No modification needed for other variants
+        }
+    }
+
+    fn modify_big_endian(&mut self) {
+        match self {
+            Self::Unsigned16NativeEndian => *self = Self::Unsigned16BigEndian,
+            Self::Unsigned32NativeEndian => *self = Self::Unsigned32BigEndian,
+            Self::Unsigned64NativeEndian => *self = Self::Unsigned64BigEndian,
+            Self::Signed16NativeEndian => *self = Self::Signed16BigEndian,
+            Self::Signed32NativeEndian => *self = Self::Signed32BigEndian,
+            Self::Signed64NativeEndian => *self = Self::Signed64BigEndian,
+            Self::UnsignedShortNativeEndian => *self = Self::UnsignedShortBigEndian,
+            Self::UnsignedIntNativeEndian => *self = Self::UnsignedIntBigEndian,
+            Self::UnsignedLongNativeEndian => *self = Self::UnsignedLongBigEndian,
+            Self::UnsignedLongLongNativeEndian => *self = Self::UnsignedLongLongBigEndian,
+            Self::SignedShortNativeEndian => *self = Self::SignedShortBigEndian,
+            Self::SignedIntNativeEndian => *self = Self::SignedIntBigEndian,
+            Self::SignedLongNativeEndian => *self = Self::SignedLongBigEndian,
+            Self::SignedLongLongNativeEndian => *self = Self::SignedLongLongBigEndian,
+            _ => {} // No modification needed for other variants
+        }
+    }
+
+    fn modify_platform_specific(&mut self) {
+        match self {
+            Self::Unsigned16NativeEndian => *self = Self::UnsignedShortNativeEndian,
+            Self::Unsigned32NativeEndian => *self = Self::UnsignedLongNativeEndian,
+            Self::Unsigned64NativeEndian => *self = Self::UnsignedLongLongNativeEndian,
+            Self::Signed16NativeEndian => *self = Self::SignedShortNativeEndian,
+            Self::Signed32NativeEndian => *self = Self::SignedLongNativeEndian,
+            Self::Signed64NativeEndian => *self = Self::SignedLongLongNativeEndian,
+            Self::Unsigned16BigEndian => *self = Self::UnsignedShortBigEndian,
+            Self::Unsigned32BigEndian => *self = Self::UnsignedLongBigEndian,
+            Self::Unsigned64BigEndian => *self = Self::UnsignedLongLongBigEndian,
+            Self::Signed16BigEndian => *self = Self::SignedShortBigEndian,
+            Self::Signed32BigEndian => *self = Self::SignedLongBigEndian,
+            Self::Signed64BigEndian => *self = Self::SignedLongLongBigEndian,
+            Self::Unsigned16LittleEndian => *self = Self::UnsignedShortLittleEndian,
+            Self::Unsigned32LittleEndian => *self = Self::UnsignedLongLittleEndian,
+            Self::Unsigned64LittleEndian => *self = Self::UnsignedLongLongLittleEndian,
+            Self::Signed16LittleEndian => *self = Self::SignedShortLittleEndian,
+            Self::Signed32LittleEndian => *self = Self::SignedLongLittleEndian,
+            Self::Signed64LittleEndian => *self = Self::SignedLongLongLittleEndian,
+            _ => {} // No modification needed for other variants
         }
     }
 }
@@ -679,19 +831,19 @@ mod tests {
         );
         assert_eq!(
             IntegerDirective::try_from(b'n'),
-            Ok(IntegerDirective::Unsigned16BigEndian)
+            Ok(IntegerDirective::Unsigned16NetworkOrder)
         );
         assert_eq!(
             IntegerDirective::try_from(b'N'),
-            Ok(IntegerDirective::Unsigned32BigEndian)
+            Ok(IntegerDirective::Unsigned32NetworkOrder)
         );
         assert_eq!(
             IntegerDirective::try_from(b'v'),
-            Ok(IntegerDirective::Unsigned16LittleEndian)
+            Ok(IntegerDirective::Unsigned16VaxOrder)
         );
         assert_eq!(
             IntegerDirective::try_from(b'V'),
-            Ok(IntegerDirective::Unsigned32LittleEndian)
+            Ok(IntegerDirective::Unsigned32VaxOrder)
         );
         assert_eq!(IntegerDirective::try_from(b'U'), Ok(IntegerDirective::Utf8Character));
         assert_eq!(
