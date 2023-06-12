@@ -208,6 +208,8 @@ pub enum IntegerDirective {
     Unsigned64NativeEndian,
 
     /// Pointer width unsigned, native endian (`J`)
+    ///
+    /// Also known as `J!`.
     UnsignedPointerWidthNativeEndian,
 
     /// 8-bit signed integer (`c`)
@@ -225,40 +227,116 @@ pub enum IntegerDirective {
     /// Pointer width signed, native endian (`j`)
     SignedPointerWidthNativeEndian,
 
-    /// 16-bit unsigned, big-endian byte order (`S>`)
-    Unsigned16BigEndian,
+    /// `unsigned short`, native endian (`S_`, `S!`)
+    UnsignedShortNativeEndian,
 
-    /// 32-bit unsigned, big-endian byte order (`L>`)
-    Unsigned32BigEndian,
+    /// `unsigned int`, native endian (`I`, `I_`, `I!`)
+    UnsignedIntNativeEndian,
 
-    /// 16-bit signed, little-endian byte order (`s<`)
-    Signed16LittleEndian,
+    /// `unsigned long`, native endian (`L_`, `L!`)
+    UnsignedLongNativeEndian,
 
-    /// 32-bit signed, little-endian byte order (`l<`)
-    Signed32LittleEndian,
+    /// `unsigned long long`, native endian (`Q_`, `Q!`)
+    ///
+    /// `ArgumentError` if the platform has no `long long` type.
+    UnsignedLongLongNativeEndian,
 
-    /// 16-bit unsigned, big-endian byte order with native endianness fallback (`S!>`)
-    Unsigned16BigEndianNativeOrder,
+    /// `signed short`, native endian (`s_`, `s!`)
+    SignedShortNativeEndian,
 
-    /// 32-bit unsigned, big-endian byte order with native endianness fallback (`L!>`)
-    Unsigned32BigEndianNativeOrder,
+    /// `signed int`, native endian (`i`, `i_`, `i!`)
+    SignedIntNativeEndian,
 
-    /// 16-bit signed, little-endian byte order with native endianness fallback (`s!<`)
-    Signed16LittleEndianNativeOrder,
+    /// `signed long`, native endian (`l_`, `l!`)
+    SignedLongNativeEndian,
 
-    /// 32-bit signed, little-endian byte order with native endianness fallback (`l!<`)
-    Signed32LittleEndianNativeOrder,
+    /// `signed long long`, native endian (`q_`, `q!`)
+    ///
+    /// `ArgumentError` if the platform has no `long long` type.
+    SignedLongLongNativeEndian,
+
+    /// `unsigned short`, big endian (`S>`, `S!>`)
+    ///
+    /// Also known as `n`.
+    UnsignedShortBigEndian,
+
+    /// `unsigned int`, big endian (`I!>`)
+    UnsignedIntBigEndian,
+
+    /// `unsigned long`, big endian (`L>`, `L!>`)
+    ///
+    /// Also known as `N`.
+    UnsignedLongBigEndian,
+
+    /// `unsigned long long`, big endian (`Q>`, `Q!>`)
+    ///
+    /// `ArgumentError` if the platform has no `long long` type.
+    UnsignedLongLongBigEndian,
+
+    /// `signed short`, big endian (`s>`, `s!>`)
+    SignedShortBigEndian,
+
+    /// `signed int`, big endian (`i!>`)
+    SignedIntBigEndian,
+
+    /// `signed long`, big endian (`l>`, `l!>`)
+    SignedLongBigEndian,
+
+    /// `signed long long`, big endian (`q>`, `q!>`)
+    ///
+    /// `ArgumentError` if the platform has no `long long` type.
+    SignedLongLongBigEndian,
+
+    /// `unsigned short`, little endian (`S<`, `S!<`)
+    ///
+    /// Also known as `v`.
+    UnsignedShortLittleEndian,
+
+    /// `unsigned int`, little endian (`I!<`)
+    UnsignedIntLittleEndian,
+
+    /// `unsigned long`, little endian (`L<`, `L!<`)
+    ///
+    /// Also known as `V`.
+    UnsignedLongLittleEndian,
+
+    /// `unsigned long long`, little endian (`Q<`, `Q!<`)
+    ///
+    /// `ArgumentError` if the platform has no `long long` type.
+    UnsignedLongLongLittleEndian,
+
+    /// `signed short`, little endian (`s<`, `s!<`)
+    SignedShortLittleEndian,
+
+    /// `signed int`, little endian (`i!<`)
+    SignedIntLittleEndian,
+
+    /// `signed long`, little endian (`l<`, `l!<`)
+    SignedLongLittleEndian,
+
+    /// `signed long long`, little endian (`q<`, `q!<`)
+    ///
+    /// `ArgumentError` if the platform has no `long long` type.
+    SignedLongLongLittleEndian,
 
     /// 16-bit unsigned, network (big-endian) byte order (`n`)
+    ///
+    /// Also known as `S>`, `S!>`.
     Unsigned16BigEndian,
 
     /// 32-bit unsigned, network (big-endian) byte order (`N`)
+    ///
+    /// Also known as `L>`, `L!>`.
     Unsigned32BigEndian,
 
     /// 16-bit unsigned, VAX (little-endian) byte order (`v`)
+    ///
+    /// Also known as `S<`, `S!<`.
     Unsigned16LittleEndian,
 
     /// 32-bit unsigned, VAX (little-endian) byte order (`V`)
+    ///
+    /// Also known as `L<`, `L!<`.
     Unsigned32LittleEndian,
 
     /// UTF-8 character (`U`)
@@ -283,6 +361,8 @@ impl TryFrom<u8> for IntegerDirective {
             b'l' => Ok(Self::Signed32NativeEndian),
             b'q' => Ok(Self::Signed64NativeEndian),
             b'j' => Ok(Self::SignedPointerWidthNativeEndian),
+            b'I' => Ok(Self::UnsignedIntNativeEndian),
+            b'i' => Ok(Self::SignedIntNativeEndian),
             b'n' => Ok(Self::Unsigned16BigEndian),
             b'N' => Ok(Self::Unsigned32BigEndian),
             b'v' => Ok(Self::Unsigned16LittleEndian),
@@ -542,6 +622,14 @@ mod tests {
             Ok(IntegerDirective::SignedPointerWidthNativeEndian)
         );
         assert_eq!(
+            IntegerDirective::try_from(b'I'),
+            Ok(IntegerDirective::UnsignedIntNativeEndian)
+        );
+        assert_eq!(
+            IntegerDirective::try_from(b'i'),
+            Ok(IntegerDirective::SignedIntNativeEndian)
+        );
+        assert_eq!(
             IntegerDirective::try_from(b'n'),
             Ok(IntegerDirective::Unsigned16BigEndian)
         );
@@ -646,6 +734,8 @@ mod tests {
         ];
 
         for directive in integer_directives {
+            IntegerDirective::try_from(directive).unwrap();
+
             // Try parsing as FloatDirective
             FloatDirective::try_from(directive).unwrap_err();
 
@@ -662,6 +752,8 @@ mod tests {
         let float_directives = [b'D', b'd', b'F', b'f', b'E', b'e', b'G', b'g'];
 
         for directive in float_directives {
+            FloatDirective::try_from(directive).unwrap();
+
             // Try parsing as IntegerDirective
             IntegerDirective::try_from(directive).unwrap_err();
 
@@ -678,6 +770,8 @@ mod tests {
         let string_directives = [b'A', b'a', b'Z', b'B', b'b', b'H', b'h', b'u', b'M', b'm', b'P', b'p'];
 
         for directive in string_directives {
+            StringDirective::try_from(directive).unwrap();
+
             // Try parsing as IntegerDirective
             IntegerDirective::try_from(directive).unwrap_err();
 
@@ -694,6 +788,8 @@ mod tests {
         let miscellaneous_directives = [b'@', b'X', b'x'];
 
         for directive in miscellaneous_directives {
+            MiscellaneousDirective::try_from(directive).unwrap();
+
             // Try parsing as IntegerDirective
             IntegerDirective::try_from(directive).unwrap_err();
 
