@@ -109,6 +109,42 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_directive_try_from_valid() {
+        // Positive tests for valid directives
+        assert_eq!(Directive::try_from(b'A'), Ok(Directive::ArbitraryBinaryTrimmed));
+        assert_eq!(Directive::try_from(b'a'), Ok(Directive::ArbitraryBinary));
+        assert_eq!(Directive::try_from(b'Z'), Ok(Directive::NullTerminated));
+        assert_eq!(Directive::try_from(b'B'), Ok(Directive::BitStringMsbFirst));
+        assert_eq!(Directive::try_from(b'b'), Ok(Directive::BitStringLsbFirst));
+        assert_eq!(Directive::try_from(b'H'), Ok(Directive::HexStringHighNibbleFirst));
+        assert_eq!(Directive::try_from(b'h'), Ok(Directive::HexStringLowNibbleFirst));
+        assert_eq!(Directive::try_from(b'u'), Ok(Directive::UuEncoded));
+        assert_eq!(Directive::try_from(b'M'), Ok(Directive::QuotedPrintable));
+        assert_eq!(Directive::try_from(b'm'), Ok(Directive::Base64Encoded));
+        assert_eq!(Directive::try_from(b'P'), Ok(Directive::StructurePointer));
+        assert_eq!(Directive::try_from(b'p'), Ok(Directive::NullTerminatedStringPointer));
+    }
+
+    #[test]
+    fn test_directive_try_from_invalid() {
+        // Negative tests for non-directive characters
+        assert_eq!(Directive::try_from(b'C'), Err(()));
+        assert_eq!(Directive::try_from(b'Y'), Err(()));
+        assert_eq!(Directive::try_from(b'Q'), Err(()));
+
+        // Negative tests for ASCII control characters
+        assert_eq!(Directive::try_from(0x00), Err(())); // NUL
+        assert_eq!(Directive::try_from(0x07), Err(())); // BEL
+        assert_eq!(Directive::try_from(0x1B), Err(())); // ESC
+        assert_eq!(Directive::try_from(0x7F), Err(())); // DEL
+
+        // Negative tests for bytes outside the ASCII range
+        assert_eq!(Directive::try_from(0x80), Err(()));
+        assert_eq!(Directive::try_from(0xA5), Err(()));
+        assert_eq!(Directive::try_from(0xFF), Err(()));
+    }
+
+    #[test]
     fn test_directive_display_not_empty() {
         let test_cases = [
             Directive::ArbitraryBinaryTrimmed,

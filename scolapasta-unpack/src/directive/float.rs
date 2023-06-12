@@ -72,6 +72,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_directive_try_from_valid() {
+        // Positive tests for valid directives
+        assert_eq!(Directive::try_from(b'D'), Ok(Directive::DoubleNativeEndian));
+        assert_eq!(Directive::try_from(b'd'), Ok(Directive::DoubleNativeEndian));
+        assert_eq!(Directive::try_from(b'F'), Ok(Directive::SingleNativeEndian));
+        assert_eq!(Directive::try_from(b'f'), Ok(Directive::SingleNativeEndian));
+        assert_eq!(Directive::try_from(b'E'), Ok(Directive::DoubleLittleEndian));
+        assert_eq!(Directive::try_from(b'e'), Ok(Directive::SingleLittleEndian));
+        assert_eq!(Directive::try_from(b'G'), Ok(Directive::DoubleBigEndian));
+        assert_eq!(Directive::try_from(b'g'), Ok(Directive::SingleBigEndian));
+    }
+
+    #[test]
+    fn test_directive_try_from_invalid() {
+        // Negative tests for non-directive characters
+        assert_eq!(Directive::try_from(b'A'), Err(()));
+        assert_eq!(Directive::try_from(b'Z'), Err(()));
+        assert_eq!(Directive::try_from(b' '), Err(()));
+        assert_eq!(Directive::try_from(b'!'), Err(()));
+
+        // Negative tests for ASCII control characters
+        assert_eq!(Directive::try_from(0x00), Err(())); // NUL
+        assert_eq!(Directive::try_from(0x07), Err(())); // BEL
+        assert_eq!(Directive::try_from(0x1B), Err(())); // ESC
+        assert_eq!(Directive::try_from(0x7F), Err(())); // DEL
+
+        // Negative tests for bytes outside the ASCII range
+        assert_eq!(Directive::try_from(0x80), Err(()));
+        assert_eq!(Directive::try_from(0xA5), Err(()));
+        assert_eq!(Directive::try_from(0xFF), Err(()));
+    }
+
+    #[test]
     fn test_directive_display_not_empty() {
         let test_cases = [
             Directive::DoubleNativeEndian,

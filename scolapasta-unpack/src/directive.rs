@@ -168,3 +168,155 @@ impl From<u8> for Directive {
         Self::Unknown(value)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_integer_directives_cannot_parse_as_other_types() {
+        #[rustfmt::skip]
+        let integer_directives = [
+            b'C', b'S', b'L', b'Q', b'J',
+            b'c', b's', b'l', b'q', b'j',
+            b'S', b'I', b'L', b'Q',
+            b'J',
+            b's', b'i', b'l', b'q',
+            b'j',
+            b'n', b'N', b'v', b'V',
+            b'U', b'w',
+        ];
+
+        for directive in integer_directives {
+            IntegerDirective::try_from(directive).unwrap();
+
+            // Try parsing as FloatDirective
+            assert!(FloatDirective::try_from(directive).is_err());
+
+            // Try parsing as StringDirective
+            assert!(StringDirective::try_from(directive).is_err());
+
+            // Try parsing as MiscDirective
+            assert!(MiscDirective::try_from(directive).is_err());
+        }
+    }
+
+    #[test]
+    fn test_float_directives_cannot_parse_as_other_types() {
+        let float_directives = [b'F', b'D', b'E', b'G', b'f', b'd', b'e', b'g'];
+
+        for directive in float_directives {
+            FloatDirective::try_from(directive).unwrap();
+
+            // Try parsing as IntegerDirective
+            assert!(IntegerDirective::try_from(directive).is_err());
+
+            // Try parsing as StringDirective
+            assert!(StringDirective::try_from(directive).is_err());
+
+            // Try parsing as MiscDirective
+            assert!(MiscDirective::try_from(directive).is_err());
+        }
+    }
+
+    #[test]
+    fn test_string_directives_cannot_parse_as_other_types() {
+        let string_directives = [b'A', b'a', b'Z', b'B', b'b', b'H', b'h', b'u', b'M', b'm', b'P', b'p'];
+
+        for directive in string_directives {
+            StringDirective::try_from(directive).unwrap();
+
+            // Try parsing as IntegerDirective
+            assert!(IntegerDirective::try_from(directive).is_err());
+
+            // Try parsing as FloatDirective
+            assert!(FloatDirective::try_from(directive).is_err());
+
+            // Try parsing as MiscDirective
+            assert!(MiscDirective::try_from(directive).is_err());
+        }
+    }
+
+    #[test]
+    fn test_misc_directives_cannot_parse_as_other_types() {
+        let misc_directives = [b'@', b'X', b'x'];
+
+        for directive in misc_directives {
+            MiscDirective::try_from(directive).unwrap();
+
+            // Try parsing as IntegerDirective
+            assert!(IntegerDirective::try_from(directive).is_err());
+
+            // Try parsing as FloatDirective
+            assert!(FloatDirective::try_from(directive).is_err());
+
+            // Try parsing as StringDirective
+            assert!(StringDirective::try_from(directive).is_err());
+        }
+    }
+
+    #[test]
+    fn test_try_from_integer_directive() {
+        #[rustfmt::skip]
+        let integer_directives = [
+            b'C', b'S', b'L', b'Q', b'J',
+            b'c', b's', b'l', b'q', b'j',
+            b'S', b'I', b'L', b'Q',
+            b'J',
+            b's', b'i', b'l', b'q',
+            b'j',
+            b'n', b'N', b'v', b'V',
+            b'U', b'w',
+        ];
+
+        for directive in integer_directives {
+            let result = Directive::from(directive);
+            assert_eq!(result, Directive::Integer(directive.try_into().unwrap()));
+        }
+    }
+
+    #[test]
+    fn test_try_from_float_directive() {
+        let float_directives = [b'D', b'd', b'F', b'f', b'E', b'e', b'G', b'g'];
+
+        for directive in float_directives {
+            let result = Directive::from(directive);
+            assert_eq!(result, Directive::Float(directive.try_into().unwrap()));
+        }
+    }
+
+    #[test]
+    fn test_try_from_string_directive() {
+        let string_directives = [
+            b'A', b'a', b'Z', b'B', b'b', b'H', b'h', b'u', b'M', b'm', b'm', b'P', b'p',
+        ];
+
+        for directive in string_directives {
+            let result = Directive::from(directive);
+            assert_eq!(result, Directive::String(directive.try_into().unwrap()));
+        }
+    }
+
+    #[test]
+    fn test_try_from_misc_directive() {
+        let misc_directives = [b'@', b'X', b'x'];
+
+        for directive in misc_directives {
+            let result = Directive::from(directive);
+            assert_eq!(result, Directive::Misc(directive.try_into().unwrap()));
+        }
+    }
+
+    #[test]
+    fn test_try_from_unknown_directive() {
+        for directive in 0..=u8::MAX {
+            let result = Directive::from(directive);
+
+            if !b"CSLQJcslqjIinNvVUwDdFfEeGgAaZBbHhuMmPp@Xx".contains(&directive) {
+                assert_eq!(result, Directive::Unknown(directive));
+            } else {
+                assert!(!matches!(result, Directive::Unknown(_)));
+            }
+        }
+    }
+}

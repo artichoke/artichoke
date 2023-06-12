@@ -499,7 +499,57 @@ impl fmt::Display for Directive {
 
 #[cfg(test)]
 mod tests {
+    use core::fmt::Write as _;
+
     use super::*;
+
+    #[test]
+    fn test_directive_try_from_valid() {
+        // Positive tests for valid directives
+        assert_eq!(Directive::try_from(b'C'), Ok(Directive::Unsigned8));
+        assert_eq!(Directive::try_from(b'S'), Ok(Directive::Unsigned16NativeEndian));
+        assert_eq!(Directive::try_from(b'L'), Ok(Directive::Unsigned32NativeEndian));
+        assert_eq!(Directive::try_from(b'Q'), Ok(Directive::Unsigned64NativeEndian));
+        assert_eq!(
+            Directive::try_from(b'J'),
+            Ok(Directive::UnsignedPointerWidthNativeEndian)
+        );
+        assert_eq!(Directive::try_from(b'c'), Ok(Directive::Signed8));
+        assert_eq!(Directive::try_from(b's'), Ok(Directive::Signed16NativeEndian));
+        assert_eq!(Directive::try_from(b'l'), Ok(Directive::Signed32NativeEndian));
+        assert_eq!(Directive::try_from(b'q'), Ok(Directive::Signed64NativeEndian));
+        assert_eq!(Directive::try_from(b'j'), Ok(Directive::SignedPointerWidthNativeEndian));
+        assert_eq!(Directive::try_from(b'I'), Ok(Directive::UnsignedIntNativeEndian));
+        assert_eq!(Directive::try_from(b'i'), Ok(Directive::SignedIntNativeEndian));
+        assert_eq!(Directive::try_from(b'n'), Ok(Directive::Unsigned16NetworkOrder));
+        assert_eq!(Directive::try_from(b'N'), Ok(Directive::Unsigned32NetworkOrder));
+        assert_eq!(Directive::try_from(b'v'), Ok(Directive::Unsigned16VaxOrder));
+        assert_eq!(Directive::try_from(b'V'), Ok(Directive::Unsigned32VaxOrder));
+        assert_eq!(Directive::try_from(b'U'), Ok(Directive::Utf8Character));
+        assert_eq!(Directive::try_from(b'w'), Ok(Directive::BerCompressedInteger));
+    }
+
+    #[test]
+    fn test_directive_try_from_invalid() {
+        // Negative tests for non-directive characters
+        assert_eq!(Directive::try_from(b'X'), Err(()));
+        assert_eq!(Directive::try_from(b'Y'), Err(()));
+        assert_eq!(Directive::try_from(b'Z'), Err(()));
+        assert_eq!(Directive::try_from(b'x'), Err(()));
+        assert_eq!(Directive::try_from(b'y'), Err(()));
+        assert_eq!(Directive::try_from(b'z'), Err(()));
+
+        // Negative tests for ASCII control characters
+        assert_eq!(Directive::try_from(0x00), Err(())); // NUL
+        assert_eq!(Directive::try_from(0x07), Err(())); // BEL
+        assert_eq!(Directive::try_from(0x1B), Err(())); // ESC
+        assert_eq!(Directive::try_from(0x7F), Err(())); // DEL
+
+        // Negative tests for bytes outside the ASCII range
+        assert_eq!(Directive::try_from(0x80), Err(()));
+        assert_eq!(Directive::try_from(0xA5), Err(()));
+        assert_eq!(Directive::try_from(0xFF), Err(()));
+    }
 
     #[test]
     fn test_integer_directive_display() {

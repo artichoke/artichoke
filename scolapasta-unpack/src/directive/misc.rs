@@ -54,6 +54,33 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_directive_try_from_valid() {
+        // Positive tests for valid directives
+        assert_eq!(Directive::try_from(b'@'), Ok(Directive::SkipToOffset));
+        assert_eq!(Directive::try_from(b'X'), Ok(Directive::SkipBackward));
+        assert_eq!(Directive::try_from(b'x'), Ok(Directive::SkipForward));
+    }
+
+    #[test]
+    fn test_directive_try_from_invalid() {
+        // Negative tests for non-directive characters
+        assert_eq!(Directive::try_from(b'A'), Err(()));
+        assert_eq!(Directive::try_from(b'Y'), Err(()));
+        assert_eq!(Directive::try_from(b'Z'), Err(()));
+
+        // Negative tests for ASCII control characters
+        assert_eq!(Directive::try_from(0x00), Err(())); // NUL
+        assert_eq!(Directive::try_from(0x07), Err(())); // BEL
+        assert_eq!(Directive::try_from(0x1B), Err(())); // ESC
+        assert_eq!(Directive::try_from(0x7F), Err(())); // DEL
+
+        // Negative tests for bytes outside the ASCII range
+        assert_eq!(Directive::try_from(0x80), Err(()));
+        assert_eq!(Directive::try_from(0xA5), Err(()));
+        assert_eq!(Directive::try_from(0xFF), Err(()));
+    }
+
+    #[test]
     fn test_directive_display_not_empty() {
         let test_cases = [Directive::SkipToOffset, Directive::SkipBackward, Directive::SkipForward];
 
