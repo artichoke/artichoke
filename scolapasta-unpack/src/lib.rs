@@ -793,14 +793,15 @@ impl RangeError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UnpackAmount {
     /// Specifies the number of times to repeat the preceding directive.
-    ///
-    /// An repeat count of `0`, consumes 0 bytes from the string being unpacked.
     Repeat(usize),
 
     /// Consume to end.
     ///
     /// An asterisk (`*`) will use up all remaining elements.
     ConsumeToEnd,
+
+    /// The amount to unpack is consumed.
+    Finished,
 }
 
 impl Default for UnpackAmount {
@@ -841,9 +842,12 @@ impl UnpackAmount {
         *format = &format[end_pos..];
 
         match usize::from_str_radix(number, 10) {
-            Ok(count) => Ok(Self::Repeat(count)),
+            Ok(count) => match NonZeroUsize::new(count) {
+                Some(count) => Ok(Self::Repeat(count)),
+                None => Ok(Self::Finished),
+            },
             // we had some numbers, but they must have all been zero and stripped above.
-            Err(err) if matches!(err.kind(), IntErrorKind::Empty | IntErrorKind::Zero) => Ok(Self::Repeat(0)),
+            Err(err) if matches!(err.kind(), IntErrorKind::Empty | IntErrorKind::Zero) => Ok(Self::Finished),
             Err(err) if *err.kind() == IntErrorKind::PosOverflow => {
                 // ```
                 // <internal:pack>:20:in `unpack': pack length too big (RangeError)
@@ -857,7 +861,114 @@ impl UnpackAmount {
                 unreachable!("parsing into usize does not permit negative values");
             }
             // handle non-exhaustive case for this enum.
-            Err(_) => Ok(Self::Repeat(0)),
+            Err(_) => Ok(Self::Finished),
+        }
+    }
+
+    fn consume(&mut self) {
+        match self {
+            Self::Repeat(count) => {
+                let count = count.get();
+                match count.checked_sub(1) {
+                    None | Some(0) => *self = Self::Finished,
+                    Some(updated_count) => {
+                        *self = Self::Repeat(NonZeroUsize::new(updated_count).expect("count is nonzero"))
+                    }
+                }
+            }
+            // No updates.
+            Self::ConsumeToEnd | Self::Finished => {}
+        }
+    }
+}
+
+/// Iterator that parses a format string into directives.
+pub struct FormatStringIterator<'a> {
+    bytes: &'a [u8],
+    idx: usize,
+    last_directive: Option<(Directive, UnpackAmount)>,
+}
+
+impl<'a> FormatStringIterator<'a> {
+    pub fn new(format_string: &'a [u8]) -> Self {
+        FormatStringIterator {
+            bytes: format_string,
+            idx: 0,
+            last_directive: None,
+        }
+    }
+}
+
+impl<'a> Iterator for FormatStringIterator<'a> {
+    type Item = Result<Directive, RangeError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((directive, mut unpack_amount)) = self.last_directive {
+            unpack_amount.consume();
+            if let UnpackAmount::Finished = unpack_amount {
+                self.last_directive = None;
+            }
+            return Some(Ok(directive));
+        }
+
+        let misc = None;
+        loop {
+            pub enum MiscellaneousDirective {
+                /// Skip to offset (`@`)
+                SkipToOffset,
+
+                /// Skip backward (`X`)
+                SkipBackward,
+
+                /// Skip forward (`x`)
+                SkipForward,
+            }
+            let s = match misc {
+                Some((_, UnpackAmount::ConsumeToEnd)) => {
+                    self.idx = usize::MAX;
+                    &[]
+                }
+                Some((MiscellaneousSpecifier::SkipToOffset, UnpackAmount::Finished)) => {
+                    self.idx = 0;
+                    self.bytes
+                }
+                Some((MiscellaneousSpecifier::SkipToOffset, UnpackAmount::Repeat(idx))) => {
+                    self.idx = idx.get();
+                    match self.bytes.get(self.idx..) {
+                        Some(s) => s,
+                        None => return Some(Err(RangeError::with_message("@ outside of string"))),
+                    }
+                }
+                Some((
+                    MiscellaneousSpecifier::SkipBackward | MiscellaneousSpecifier::SkipForward,
+                    UnpackAmount::Finished,
+                )) => self.bytes,
+                Some((MiscellaneousSpecifier::SkipBackward, UnpackAmount::Repeat(idx))) => {
+                    self.idx = idx.get();
+                    match self.bytes.get(self.idx..) {
+                        Some(s) => s,
+                        None => return Some(Err(RangeError::with_message("@ outside of string"))),
+                    }
+                }
+                Some((MiscellaneousSpecifier::SkipForward, UnpackAmount::Repeat(idx))) => {
+                    self.idx = idx.get();
+                    match self.bytes.get(self.idx..) {
+                        Some(s) => s,
+                        None => return Some(Err(RangeError::with_message("@ outside of string"))),
+                    }
+                }
+                None => self.bytes.get(self.idx..)?,
+            };
+
+            let mut format = s;
+            let directive = Directive::next_from_format_bytes(&mut format);
+            let amount = match UnpackAmount::next_from_format_bytes(&mut format) {
+                Ok(amount) => amount,
+                Err(err) => {
+                    self.idx = usize::MAX;
+                    return Some(Err(err));
+                }
+            };
         }
     }
 }
