@@ -175,4 +175,91 @@ mod tests {
 
         assert_eq!(directives, expected_directives);
     }
+
+    #[test]
+    fn test_unpack_directive_iterator_with_all_float_directives() {
+        let format_string = "DdFfEeGg";
+        let iterator = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        let directives = iterator.filter_map(Result::ok).collect::<Vec<_>>();
+        let expected_directives = vec![
+            Directive::Float(FloatDirective::DoubleNativeEndian),
+            Directive::Float(FloatDirective::DoubleNativeEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+            Directive::Float(FloatDirective::DoubleLittleEndian),
+            Directive::Float(FloatDirective::SingleLittleEndian),
+            Directive::Float(FloatDirective::DoubleBigEndian),
+            Directive::Float(FloatDirective::SingleBigEndian),
+        ];
+
+        assert_eq!(directives, expected_directives);
+    }
+
+    #[test]
+    fn test_unpack_directive_iterator_with_all_float_directives_and_repetitions() {
+        let format_string = "D3d2E1e4G2g3F4f3";
+        let iterator = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        let directives = iterator.filter_map(Result::ok).collect::<Vec<_>>();
+        let expected_directives = vec![
+            Directive::Float(FloatDirective::DoubleNativeEndian),
+            Directive::Float(FloatDirective::DoubleNativeEndian),
+            Directive::Float(FloatDirective::DoubleNativeEndian),
+            Directive::Float(FloatDirective::DoubleNativeEndian),
+            Directive::Float(FloatDirective::DoubleNativeEndian),
+            Directive::Float(FloatDirective::DoubleLittleEndian),
+            Directive::Float(FloatDirective::SingleLittleEndian),
+            Directive::Float(FloatDirective::SingleLittleEndian),
+            Directive::Float(FloatDirective::SingleLittleEndian),
+            Directive::Float(FloatDirective::SingleLittleEndian),
+            Directive::Float(FloatDirective::DoubleBigEndian),
+            Directive::Float(FloatDirective::DoubleBigEndian),
+            Directive::Float(FloatDirective::SingleBigEndian),
+            Directive::Float(FloatDirective::SingleBigEndian),
+            Directive::Float(FloatDirective::SingleBigEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+            Directive::Float(FloatDirective::SingleNativeEndian),
+        ];
+
+        assert_eq!(directives, expected_directives);
+    }
+
+    #[test]
+    fn test_unpack_directive_iterator_with_repetition_1024() {
+        let format_string = "D1024";
+        let iterator = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        let directives: Vec<Directive> = iterator.filter_map(Result::ok).collect();
+        let expected_directive = Directive::Float(FloatDirective::DoubleNativeEndian);
+
+        assert_eq!(directives.len(), 1024);
+        assert!(directives.into_iter().all(|directive| directive == expected_directive));
+    }
+
+    #[test]
+    fn test_unpack_directive_iterator_with_large_count_directive() {
+        // ```
+        // [3.2.2] > "".unpack "D18446744073709551616Z2"
+        // <internal:pack>:20:in `unpack': pack length too big (RangeError)
+        // ```
+        let format_string = "D18446744073709551616Z2";
+        let mut iterator = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        assert_eq!(
+            iterator.next().unwrap(),
+            Err(RangeError::with_message("pack length too big"))
+        );
+
+        assert!(iterator.next().is_none());
+        assert!(iterator.next().is_none());
+        assert!(iterator.next().is_none());
+        assert!(iterator.next().is_none());
+        assert!(iterator.next().is_none());
+    }
 }
