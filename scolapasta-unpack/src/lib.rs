@@ -116,4 +116,63 @@ mod tests {
         }
         assert!(iter.next().is_some());
     }
+
+    #[test]
+    fn test_unpack_directive_iterator_with_all_string_directives() {
+        let format_string = "AaZBbHhuMmPp";
+        let iterator = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        let directives = iterator.filter_map(Result::ok).collect::<Vec<_>>();
+        let expected_directives = vec![
+            Directive::String(StringDirective::ArbitraryBinaryTrimmed),
+            Directive::String(StringDirective::ArbitraryBinary),
+            Directive::String(StringDirective::NullTerminated),
+            Directive::String(StringDirective::BitStringMsbFirst),
+            Directive::String(StringDirective::BitStringLsbFirst),
+            Directive::String(StringDirective::HexStringHighNibbleFirst),
+            Directive::String(StringDirective::HexStringLowNibbleFirst),
+            Directive::String(StringDirective::UuEncoded),
+            Directive::String(StringDirective::QuotedPrintable),
+            Directive::String(StringDirective::Base64Encoded),
+            Directive::String(StringDirective::StructurePointer),
+            Directive::String(StringDirective::NullTerminatedStringPointer),
+        ];
+
+        assert_eq!(directives, expected_directives);
+    }
+
+    #[test]
+    fn test_unpack_directive_iterator_with_all_string_directives_and_repetitions() {
+        let format_string = "A4a2Z3B1b3H2h3u1M1m1P1p1";
+        let iterator = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        let directives = iterator.filter_map(Result::ok).collect::<Vec<_>>();
+        let expected_directives = vec![
+            Directive::String(StringDirective::ArbitraryBinaryTrimmed),
+            Directive::String(StringDirective::ArbitraryBinaryTrimmed),
+            Directive::String(StringDirective::ArbitraryBinaryTrimmed),
+            Directive::String(StringDirective::ArbitraryBinaryTrimmed),
+            Directive::String(StringDirective::ArbitraryBinary),
+            Directive::String(StringDirective::ArbitraryBinary),
+            Directive::String(StringDirective::NullTerminated),
+            Directive::String(StringDirective::NullTerminated),
+            Directive::String(StringDirective::NullTerminated),
+            Directive::String(StringDirective::BitStringMsbFirst),
+            Directive::String(StringDirective::BitStringLsbFirst),
+            Directive::String(StringDirective::BitStringLsbFirst),
+            Directive::String(StringDirective::BitStringLsbFirst),
+            Directive::String(StringDirective::HexStringHighNibbleFirst),
+            Directive::String(StringDirective::HexStringHighNibbleFirst),
+            Directive::String(StringDirective::HexStringLowNibbleFirst),
+            Directive::String(StringDirective::HexStringLowNibbleFirst),
+            Directive::String(StringDirective::HexStringLowNibbleFirst),
+            Directive::String(StringDirective::UuEncoded),
+            Directive::String(StringDirective::QuotedPrintable),
+            Directive::String(StringDirective::Base64Encoded),
+            Directive::String(StringDirective::StructurePointer),
+            Directive::String(StringDirective::NullTerminatedStringPointer),
+        ];
+
+        assert_eq!(directives, expected_directives);
+    }
 }
