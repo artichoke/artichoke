@@ -1,3 +1,5 @@
+use core::iter::FusedIterator;
+
 mod directive;
 mod repetition;
 
@@ -80,6 +82,8 @@ impl<'a> Iterator for UnpackDirectiveIterator<'a> {
         }
     }
 }
+
+impl<'a> FusedIterator for UnpackDirectiveIterator<'a> {}
 
 #[cfg(test)]
 mod tests {
@@ -261,5 +265,30 @@ mod tests {
         assert!(iterator.next().is_none());
         assert!(iterator.next().is_none());
         assert!(iterator.next().is_none());
+    }
+
+    #[test]
+    fn test_unpack_directive_iterator_with_asterisk_repetition_and_specifiers() {
+        let format_string = "A2B*C3";
+        let iterator = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        let expected_directive = Directive::String(StringDirective::BitStringMsbFirst);
+        let mut counter = 0;
+
+        for directive in iterator {
+            let directive = directive.unwrap();
+            assert_eq!(directive, expected_directive);
+            counter += 1;
+            if counter >= 1000 {
+                // Breaking the loop after 1000 iterations to prevent infinite loops
+                // and ensure the iterator runs for a reasonable number of iterations.
+                break;
+            }
+        }
+
+        assert!(
+            counter >= 1000,
+            "Iterator did not run for a sufficient number of iterations (1000)"
+        );
     }
 }
