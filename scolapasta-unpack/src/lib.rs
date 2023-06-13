@@ -1,7 +1,7 @@
 mod directive;
 mod repetition;
 
-use directive::{Directive, MiscDirective};
+use directive::Directive;
 use repetition::Repetition;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
@@ -20,81 +20,63 @@ impl RangeError {
 }
 
 /// Iterator that parses a format string into directives.
-pub struct FormatStringIterator<'a> {
-    bytes: &'a [u8],
-    idx: usize,
-    last_directive: Option<(Directive, Repetition)>,
+pub struct UnpackDirectiveIterator<'a> {
+    format: &'a [u8],
+    directive: Option<(Directive, Repetition)>,
 }
 
-impl<'a> FormatStringIterator<'a> {
-    pub fn new(format_string: &'a [u8]) -> Self {
-        FormatStringIterator {
-            bytes: format_string,
-            idx: 0,
-            last_directive: None,
+impl<'a> UnpackDirectiveIterator<'a> {
+    pub fn new(format: &'a [u8]) -> Self {
+        Self {
+            format,
+            directive: None,
         }
     }
 }
 
-impl<'a> Iterator for FormatStringIterator<'a> {
+impl<'a> Iterator for UnpackDirectiveIterator<'a> {
     type Item = Result<Directive, RangeError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if let Some((directive, repetition)) = self.last_directive.take() {
+        dbg!(&self.directive);
+        dbg!(std::str::from_utf8(self.format).unwrap());
+        if let Some((directive, repetition)) = self.directive.take() {
             match repetition.next() {
                 None | Some(Repetition::Finished) => {}
-                Some(next_repetition) => {
-                    self.last_directive = Some((directive, next_repetition));
+                Some(repetition) => {
+                    self.directive = Some((directive, repetition));
                 }
             }
             return Some(Ok(directive));
         }
 
-        let misc = None;
         loop {
-            let s = match misc {
-                Some((_, Repetition::ConsumeToEnd)) => {
-                    self.idx = usize::MAX;
-                    &[]
-                }
-                Some((MiscDirective::SkipToOffset, Repetition::Finished)) => {
-                    self.idx = 0;
-                    self.bytes
-                }
-                Some((MiscDirective::SkipToOffset, Repetition::Repeat(idx))) => {
-                    self.idx = idx.get();
-                    match self.bytes.get(self.idx..) {
-                        Some(s) => s,
-                        None => return Some(Err(RangeError::with_message("@ outside of string"))),
-                    }
-                }
-                Some((MiscDirective::SkipBackward | MiscDirective::SkipForward, Repetition::Finished)) => self.bytes,
-                Some((MiscDirective::SkipBackward, Repetition::Repeat(idx))) => {
-                    self.idx = idx.get();
-                    match self.bytes.get(self.idx..) {
-                        Some(s) => s,
-                        None => return Some(Err(RangeError::with_message("@ outside of string"))),
-                    }
-                }
-                Some((MiscDirective::SkipForward, Repetition::Repeat(idx))) => {
-                    self.idx = idx.get();
-                    match self.bytes.get(self.idx..) {
-                        Some(s) => s,
-                        None => return Some(Err(RangeError::with_message("@ outside of string"))),
-                    }
-                }
-                None => self.bytes.get(self.idx..)?,
-            };
-
-            let mut format = s;
-            let directive = Directive::next_from_format_bytes(&mut format);
-            let amount = match Repetition::next_from_format_bytes(&mut format) {
-                Ok(amount) => amount,
+            dbg!(std::str::from_utf8(self.format).unwrap());
+            let directive = Directive::next_from_format_bytes(&mut self.format)?;
+            dbg!(std::str::from_utf8(self.format).unwrap());
+            let repetition = match Repetition::next_from_format_bytes(&mut self.format) {
+                Ok(repetition) => dbg!(repetition),
                 Err(err) => {
-                    self.idx = usize::MAX;
+                    self.format = &[];
                     return Some(Err(err));
                 }
             };
+            dbg!(std::str::from_utf8(self.format).unwrap());
+            if let Directive::Unknown(b) = directive {
+                // ```
+                // [3.2.2] > "11111111111111111111111111111111".unpack('h-1')
+                // <internal:pack>:20: warning: unknown unpack directive '-' in 'h-1'
+                // ```
+                todo!("emit warning");
+                continue;
+            }
+            if matches!(repetition, Repetition::Finished) {
+                continue;
+            }
+            if let Some(repetition) = repetition.next() {
+                self.directive = Some((directive, repetition));
+            }
+            return Some(Ok(directive));
         }
     }
 }
@@ -102,4 +84,36 @@ impl<'a> Iterator for FormatStringIterator<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::directive::{Directive, FloatDirective, IntegerDirective, MiscDirective, StringDirective};
+
+    #[test]
+    fn test_unpack_directive_iterator_with_format_string_a4n3c() {
+        let format_string = "a4n3c";
+        let iterator = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        let directives = iterator.filter_map(Result::ok).collect::<Vec<_>>();
+        let expected_directives = vec![
+            Directive::String(StringDirective::ArbitraryBinary),
+            Directive::String(StringDirective::ArbitraryBinary),
+            Directive::String(StringDirective::ArbitraryBinary),
+            Directive::String(StringDirective::ArbitraryBinary),
+            Directive::Integer(IntegerDirective::Unsigned16NetworkOrder),
+            Directive::Integer(IntegerDirective::Unsigned16NetworkOrder),
+            Directive::Integer(IntegerDirective::Unsigned16NetworkOrder),
+            Directive::Integer(IntegerDirective::Signed8),
+        ];
+
+        assert_eq!(directives, expected_directives);
+    }
+
+    #[test]
+    fn test_unpack_directive_iterator_with_format_string_star_yields_forever() {
+        let format_string = "c*a4";
+        let mut iter = UnpackDirectiveIterator::new(format_string.as_bytes());
+
+        for _ in 0..=10240 {
+            assert_eq!(iter.next().unwrap(), Ok(Directive::Integer(IntegerDirective::Signed8)));
+        }
+        assert!(iter.next().is_some());
+    }
 }

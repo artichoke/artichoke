@@ -354,15 +354,8 @@ impl Directive {
             ) => {
                 self.modify_little_endian();
             }
-
-            // Consume unknown modifiers, emit a warning, and continue:
-            //
-            // ```console
-            // [3.2.2] > "1111111111111111".unpack('s-')
-            // <internal:pack>:20: warning: unknown unpack directive '-' in 's-'
-            // ```
-            _ch => {
-                // TODO: emit warning with `ch`.
+            _ => {
+                chomp = 0;
             }
         }
         *format = &format[chomp..];
@@ -620,5 +613,15 @@ mod tests {
                 "Formatted string is empty for directive: {directive:?}",
             );
         }
+    }
+
+    #[test]
+    fn test_parse_integer_directive_with_repetition() {
+        let mut format: &[u8] = b"n3c*";
+        assert_eq!(
+            Directive::next_from_format_bytes(&mut format).unwrap(),
+            Directive::Unsigned16NetworkOrder,
+        );
+        assert_eq!(format, &b"3c*"[..]);
     }
 }

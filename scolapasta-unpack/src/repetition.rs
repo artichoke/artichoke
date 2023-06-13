@@ -239,4 +239,23 @@ mod tests {
         let repetition = Repetition::Finished;
         assert_eq!(repetition.next(), None);
     }
+
+    #[test]
+    fn test_partial_consume() {
+        let mut format: &[u8] = b"a4n3c*";
+        // consume the first directive
+        format = &format[1..];
+        assert_eq!(
+            Repetition::next_from_format_bytes(&mut format),
+            Ok(Repetition::Repeat(NonZeroUsize::new(4).unwrap()))
+        );
+        assert_eq!(format, &b"n3c*"[..]);
+        // consume the second directive
+        format = &format[1..];
+        assert_eq!(
+            Repetition::next_from_format_bytes(&mut format),
+            Ok(Repetition::Repeat(NonZeroUsize::new(3).unwrap()))
+        );
+        assert_eq!(format, &b"c*"[..]);
+    }
 }
