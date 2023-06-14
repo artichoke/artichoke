@@ -69,6 +69,16 @@ impl<'a> Iterator for UnpackDirectiveIterator<'a> {
                 // [3.2.2] > "11111111111111111111111111111111".unpack('h-1')
                 // <internal:pack>:20: warning: unknown unpack directive '-' in 'h-1'
                 // ```
+                //
+                // The format string is treated as ASCII/binary encoding:
+                //
+                // ```
+                // [3.2.2] > "11111111111111111111111111111111".unpack('h🐹1')
+                // <internal:pack>:20: warning: unknown unpack directive '\xf0' in 'h🐹1'
+                // <internal:pack>:20: warning: unknown unpack directive '\x9f' in 'h🐹1'
+                // <internal:pack>:20: warning: unknown unpack directive '\x90' in 'h🐹1'
+                // <internal:pack>:20: warning: unknown unpack directive '\xb9' in 'h🐹1'
+                // ```
                 todo!("emit warning");
                 continue;
             }
