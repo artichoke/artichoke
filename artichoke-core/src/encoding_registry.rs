@@ -42,4 +42,13 @@ pub trait EncodingRegistry {
     ///
     /// If the encoding registry state is inaccessible, an error is returned.
     fn encoding_of(&self) -> Result<Option<Self::Value>, Self::Error>;
+
+    /// Retrieve the a Rust Encoding matching `Self::Spec` which for a given
+    /// Ruby Value.
+    ///
+    /// # Errors
+    ///
+    /// If the encoding registry state is inaccessible, or the value does not
+    /// point to the a valid Spec.
+    fn encoding_for(&mut self, value: &Self::Value) -> Result<Self::Spec, Self::Error>;
 }
