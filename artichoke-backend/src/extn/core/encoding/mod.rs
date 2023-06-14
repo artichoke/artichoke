@@ -11,15 +11,14 @@
 //!
 //! [`Encoding`]: https://ruby-doc.org/3.1.2/Encoding.html
 
-use spinoso_string::Encoding;
-
 use crate::convert::HeapAllocatedData;
+use crate::encoding::{Encoding, RUBY_TYPE as RTYPE};
 
 pub(in crate::extn) mod mruby;
 pub(super) mod trampoline;
 
 impl HeapAllocatedData for Encoding {
-    const RUBY_TYPE: &'static str = "Encoding";
+    const RUBY_TYPE: &'static str = RTYPE;
 }
 
 #[cfg(test)]

@@ -13,7 +13,7 @@ use crate::Artichoke;
 
 mod array;
 mod boolean;
-mod boxing;
+pub(crate) mod boxing;
 mod bytes;
 mod conv;
 mod fixnum;

@@ -26,6 +26,7 @@ pub fn find(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
 }
 
 pub fn list(interp: &mut Artichoke) -> Result<Value, Error> {
+    let _ = interp.encodings();
     let _ = interp;
     Err(NotImplementedError::new().into())
 }

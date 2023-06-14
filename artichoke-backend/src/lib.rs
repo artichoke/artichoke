@@ -128,6 +128,8 @@ mod constant;
 pub mod convert;
 mod debug;
 pub mod def;
+pub mod encoding;
+mod encoding_registry;
 pub mod error;
 mod eval;
 pub mod exception_handler;

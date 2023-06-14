@@ -1,5 +1,3 @@
-use once_cell::sync::Lazy;
-use regex::Regex;
 use std::ffi::CStr;
 
 use super::{trampoline, trampoline::AVAILABLE_ENCODINGS, Encoding};
@@ -9,11 +7,6 @@ const ENCODING_CSTR: &CStr = qed::const_cstr_from_str!("Encoding\0");
 static ENCODING_RUBY_SOURCE: &[u8] = include_bytes!("encoding.rb");
 
 pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
-    static ESCAPABLE_CONSTANT_CHARS: Lazy<Regex> = Lazy::new(|| {
-        // Match any `-` and `.` chars. These will be replaced with `_`
-        Regex::new(r"[-\.]+").unwrap()
-    });
-
     if interp.is_class_defined::<Encoding>() {
         return Ok(());
     }
@@ -48,17 +41,8 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // 3.1.2 > Encoding::UTF_8.object_id == Encoding::CP65001.object_id
     // => true
     // ```
-    //
     for encoding in AVAILABLE_ENCODINGS {
-        // Def all the constants
-        let allocated_encoding = Encoding::alloc_value(encoding, interp)?;
-        for alias in encoding.names() {
-            // Some of the `names` specified contain characters which would
-            // require character escaping, however in MRI they are converted to
-            // underscores.
-            let alias = ESCAPABLE_CONSTANT_CHARS.replace_all(alias, "_");
-            interp.define_class_constant::<Encoding>(&alias, allocated_encoding)?;
-        }
+        interp.def_encoding(encoding)?
     }
 
     Ok(())

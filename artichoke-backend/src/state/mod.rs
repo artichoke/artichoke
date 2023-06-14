@@ -1,11 +1,13 @@
 use core::hash::BuildHasherDefault;
 use std::collections::hash_map::RandomState;
+use std::collections::HashSet;
 
 use intaglio::bytes::SymbolTable;
 use mezzaluna_type_registry::Registry;
 use rustc_hash::FxHasher;
 
 use crate::class;
+use crate::encoding;
 #[cfg(feature = "core-random")]
 use crate::extn::core::random::Random;
 use crate::interpreter::InterpreterAllocError;
@@ -32,6 +34,7 @@ pub struct State {
     pub parser: Option<parser::State>,
     pub classes: Registry<class::Spec>,
     pub modules: Registry<module::Spec>,
+    pub encodings: HashSet<encoding::Spec>,
     pub load_path_vfs: load_path::Adapter,
     #[cfg(feature = "core-regexp")]
     pub regexp: spinoso_regexp::State,
@@ -72,6 +75,7 @@ impl State {
             parser: None,
             classes: Registry::new(),
             modules: Registry::new(),
+            encodings: HashSet::new(),
             load_path_vfs: load_path::Adapter::new(),
             #[cfg(feature = "core-regexp")]
             regexp: spinoso_regexp::State::new(),

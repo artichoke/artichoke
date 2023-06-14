@@ -19,6 +19,7 @@ pub use artichoke_core::coerce_to_numeric::CoerceToNumeric;
 pub use artichoke_core::constant::DefineConstant as _;
 pub use artichoke_core::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
 pub use artichoke_core::debug::Debug as _;
+pub use artichoke_core::encoding_registry::EncodingRegistry as _;
 pub use artichoke_core::eval::Eval as _;
 pub use artichoke_core::file::File;
 pub use artichoke_core::globals::Globals as _;
