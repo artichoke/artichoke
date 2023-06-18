@@ -45,6 +45,8 @@ mrb_class(mrb_state *mrb, mrb_value v)
     return mrb->object_class;
   case MRB_TT_ENV:
     return NULL;
+  case MRB_TT_ENCODING:
+    return mrb->encoding_class;
   default:
     return mrb_obj_ptr(v)->c;
   }

@@ -147,7 +147,7 @@ mrb_print_backtrace(mrb_state *mrb)
   }
 
   struct RObject *backtrace = ((struct RException*)mrb->exc)->backtrace;
-  if (backtrace && backtrace->tt != MRB_TT_ARRAY) backtrace = mrb_unpack_backtrace(mrb, backtrace);
+  if (backtrace && backtrace->tt != MRB_TT_ARRAY && backtrace->tt != MRB_TT_ENCODING) backtrace = mrb_unpack_backtrace(mrb, backtrace);
   print_backtrace(mrb, mrb->exc, (struct RArray*)backtrace);
 }
 #else
@@ -232,6 +232,7 @@ mrb_unpack_backtrace(mrb_state *mrb, struct RObject *backtrace)
     return mrb_obj_ptr(mrb_ary_new_capa(mrb, 0));
   }
   if (backtrace->tt == MRB_TT_ARRAY) return backtrace;
+  if (backtrace->tt == MRB_TT_ENCODING) return backtrace;
   bt = (struct backtrace_location*)mrb_data_check_get_ptr(mrb, mrb_obj_value(backtrace), &bt_type);
   if (bt == NULL) goto empty_backtrace;
   n = (mrb_int)backtrace->flags;
@@ -266,7 +267,7 @@ mrb_exc_backtrace(mrb_state *mrb, mrb_value exc)
   if (backtrace == NULL) {
     return mrb_nil_value();
   }
-  if (backtrace->tt == MRB_TT_ARRAY) {
+  if (backtrace->tt == MRB_TT_ARRAY || backtrace->tt == MRB_TT_ENCODING) {
     return mrb_obj_value(backtrace);
   }
   /* unpack packed-backtrace */

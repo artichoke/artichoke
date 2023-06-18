@@ -139,6 +139,7 @@ mrb_obj_id(mrb_value obj)
   case MRB_TT_EXCEPTION:
   case MRB_TT_CDATA:
   case MRB_TT_ISTRUCT:
+  case MRB_TT_ENCODING:
   default:
     return MakeID(mrb_ptr(obj), tt);
   }
