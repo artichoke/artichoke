@@ -432,7 +432,7 @@ impl Fixable for f64 {
     ///
     /// Conversion is implemented using checked operations and will never panic.
     ///
-    /// This conversion is implemented using [`Duration::try_from_secs_f32`] and
+    /// This conversion is implemented using [`Duration::try_from_secs_f64`] and
     /// extracting the the integral portion of the float via [`Duration::as_secs`].
     fn to_fix(self) -> Option<i64> {
         if let Ok(d) = Duration::try_from_secs_f64(self) {
