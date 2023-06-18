@@ -128,7 +128,6 @@ mrb_nan_boxing_value_int(mrb_value v)
 #define mrb_integer(o) mrb_fixnum(o)
 #endif
 #define mrb_symbol(o)  ((mrb_sym)((uintptr_t)0xffffffff)&((o).u))
-#define mrb_artichoke_encoding(o) mrb_fixnum(o)
 #define mrb_ptr(o)     ((void*)(uintptr_t)(o).u)
 #define mrb_cptr(o)    ((void*)(uintptr_t)(0xffffffffffffULL&(o).u))
 

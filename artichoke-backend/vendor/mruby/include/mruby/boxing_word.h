@@ -166,7 +166,6 @@ mrb_integer_func(mrb_value o) {
 #define mrb_integer(o) mrb_integer_func(o)
 #define mrb_symbol(o)  (mrb_sym)(((o).w) >> WORDBOX_SYMBOL_SHIFT)
 #define mrb_bool(o)    (((o).w & ~(uintptr_t)MRB_Qfalse) != 0)
-#define mrb_artichoke_encoding(o) mrb_fixnum(o)
 
 #define mrb_fixnum_p(o) WORDBOX_SHIFT_VALUE_P(o, FIXNUM)
 #define mrb_integer_p(o) (WORDBOX_SHIFT_VALUE_P(o, FIXNUM)||WORDBOX_OBJ_TYPE_P(o, INTEGER))
