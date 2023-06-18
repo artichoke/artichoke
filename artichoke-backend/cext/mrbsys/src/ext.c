@@ -224,7 +224,7 @@ MRB_API mrb_value
 mrb_sys_new_encoding(mrb_int id)
 {
   mrb_value value;
-  mrb_artichoke_encoding(value) = id;
+  mrb_fixnum(value) = id;
   value.tt = MRB_TT_ENCODING;
 
   return value;
