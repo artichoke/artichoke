@@ -50,5 +50,5 @@ pub trait EncodingRegistry {
     ///
     /// If the encoding registry state is inaccessible, or the value does not
     /// point to the a valid Spec.
-    fn encoding_for(&mut self, value: &Self::Value) -> Result<Self::Spec, Self::Error>;
+    fn encoding_for(&mut self, value: &mut Self::Value) -> Result<Self::Spec, Self::Error>;
 }

@@ -114,8 +114,8 @@ unsafe extern "C" fn encoding_self_name_list(mrb: *mut sys::mrb_state, _slf: sys
 unsafe extern "C" fn encoding_ascii_compatible(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
-    let encoding = Value::from(slf);
-    let result = trampoline::ascii_compatible(&mut guard, encoding);
+    let mut encoding = Value::from(slf);
+    let result = trampoline::ascii_compatible(&mut guard, &mut encoding);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -125,8 +125,8 @@ unsafe extern "C" fn encoding_ascii_compatible(mrb: *mut sys::mrb_state, slf: sy
 unsafe extern "C" fn encoding_dummy(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
-    let encoding = Value::from(slf);
-    let result = trampoline::dummy(&mut guard, encoding);
+    let mut encoding = Value::from(slf);
+    let result = trampoline::dummy(&mut guard, &mut encoding);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -136,8 +136,8 @@ unsafe extern "C" fn encoding_dummy(mrb: *mut sys::mrb_state, slf: sys::mrb_valu
 unsafe extern "C" fn encoding_inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
-    let encoding = Value::from(slf);
-    let result = trampoline::inspect(&mut guard, encoding);
+    let mut encoding = Value::from(slf);
+    let result = trampoline::inspect(&mut guard, &mut encoding);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -147,8 +147,8 @@ unsafe extern "C" fn encoding_inspect(mrb: *mut sys::mrb_state, slf: sys::mrb_va
 unsafe extern "C" fn encoding_name(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
-    let encoding = Value::from(slf);
-    let result = trampoline::name(&mut guard, encoding);
+    let mut encoding = Value::from(slf);
+    let result = trampoline::name(&mut guard, &mut encoding);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),
@@ -158,8 +158,8 @@ unsafe extern "C" fn encoding_name(mrb: *mut sys::mrb_state, slf: sys::mrb_value
 unsafe extern "C" fn encoding_names(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
     mrb_get_args!(mrb, none);
     unwrap_interpreter!(mrb, to => guard);
-    let encoding = Value::from(slf);
-    let result = trampoline::names(&mut guard, encoding);
+    let mut encoding = Value::from(slf);
+    let result = trampoline::names(&mut guard, &mut encoding);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),

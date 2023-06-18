@@ -10,10 +10,10 @@ use crate::sys;
 pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
     use sys::mrb_vtype::{
         MRB_TT_ARRAY, MRB_TT_BIGINT, MRB_TT_BREAK, MRB_TT_CDATA, MRB_TT_CLASS, MRB_TT_COMPLEX, MRB_TT_CPTR,
-        MRB_TT_ENV, MRB_TT_EXCEPTION, MRB_TT_FALSE, MRB_TT_FIBER, MRB_TT_FLOAT, MRB_TT_FREE, MRB_TT_HASH,
-        MRB_TT_ICLASS, MRB_TT_INTEGER, MRB_TT_ISTRUCT, MRB_TT_MAXDEFINE, MRB_TT_MODULE, MRB_TT_OBJECT, MRB_TT_PROC,
-        MRB_TT_RANGE, MRB_TT_RATIONAL, MRB_TT_SCLASS, MRB_TT_STRING, MRB_TT_STRUCT, MRB_TT_SYMBOL, MRB_TT_TRUE,
-        MRB_TT_UNDEF,
+        MRB_TT_ENCODING, MRB_TT_ENV, MRB_TT_EXCEPTION, MRB_TT_FALSE, MRB_TT_FIBER, MRB_TT_FLOAT, MRB_TT_FREE,
+        MRB_TT_HASH, MRB_TT_ICLASS, MRB_TT_INTEGER, MRB_TT_ISTRUCT, MRB_TT_MAXDEFINE, MRB_TT_MODULE, MRB_TT_OBJECT,
+        MRB_TT_PROC, MRB_TT_RANGE, MRB_TT_RATIONAL, MRB_TT_SCLASS, MRB_TT_STRING, MRB_TT_STRUCT, MRB_TT_SYMBOL,
+        MRB_TT_TRUE, MRB_TT_UNDEF,
     };
 
     // Suppress lint to enumerate match arms in the same order they are defined
@@ -32,6 +32,7 @@ pub fn ruby_from_mrb_value(value: sys::mrb_value) -> Ruby {
         MRB_TT_TRUE => Ruby::Bool,
         MRB_TT_INTEGER => Ruby::Fixnum,
         MRB_TT_SYMBOL => Ruby::Symbol,
+        MRB_TT_ENCODING => Ruby::Encoding,
         // internal use: `#undef`; should not happen
         MRB_TT_UNDEF => Ruby::Unreachable,
         MRB_TT_FLOAT => Ruby::Float,

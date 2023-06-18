@@ -34,6 +34,7 @@ typedef struct mrb_value {
 #define mrb_fixnum(o)   (o).value.i
 #define mrb_integer(o)  mrb_fixnum(o)
 #define mrb_symbol(o)   (o).value.sym
+#define mrb_artichoke_encoding(o)  (o).value.i
 #define mrb_type(o)     (o).tt
 
 #define BOXNIX_SET_VALUE(o, ttt, attr, v) do {\

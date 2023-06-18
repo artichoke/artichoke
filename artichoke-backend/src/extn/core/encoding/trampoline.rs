@@ -41,33 +41,31 @@ pub fn name_list(interp: &mut Artichoke) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-#[allow(clippy::unnecessary_wraps)]
-pub fn ascii_compatible(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(&encoding)?;
+pub fn ascii_compatible(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
+    let encoding = interp.encoding_for(encoding)?;
 
     let result = encoding.is_ascii_compatible();
 
     Ok(interp.convert(result))
 }
 
-#[allow(clippy::unnecessary_wraps)]
-pub fn dummy(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(&encoding)?;
+pub fn dummy(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
+    let encoding = interp.encoding_for(encoding)?;
 
     let result = encoding.is_dummy();
 
     Ok(interp.convert(result))
 }
 
-pub fn inspect(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(&encoding)?;
+pub fn inspect(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
+    let encoding = interp.encoding_for(encoding)?;
 
     let result = encoding.inspect();
     interp.try_convert_mut(result)
 }
 
-pub fn name(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(&encoding)?;
+pub fn name(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
+    let encoding = interp.encoding_for(encoding)?;
 
     let name = encoding.name().as_bytes().to_vec();
 
@@ -82,8 +80,8 @@ pub fn name(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
     String::alloc_value(result, interp)
 }
 
-pub fn names(interp: &mut Artichoke, encoding: Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(&encoding)?;
+pub fn names(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
+    let encoding = interp.encoding_for(encoding)?;
 
     // The result of `Encoding#names` is always 7bit ascii.
     //
