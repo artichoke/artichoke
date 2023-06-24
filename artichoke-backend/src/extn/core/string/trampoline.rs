@@ -7,12 +7,13 @@ use artichoke_core::hash::Hash as _;
 use artichoke_core::value::Value as _;
 use bstr::ByteSlice;
 
-use super::Encoding;
+use super::Encoding as SpinosoEncoding;
 use crate::convert::implicitly_convert_to_int;
 use crate::convert::implicitly_convert_to_nilable_string;
 use crate::convert::implicitly_convert_to_spinoso_string;
 use crate::convert::implicitly_convert_to_string;
 use crate::extn::core::array::Array;
+use crate::extn::core::encoding::Encoding;
 #[cfg(feature = "core-regexp")]
 use crate::extn::core::matchdata::{self, MatchData};
 #[cfg(feature = "core-regexp")]
@@ -124,7 +125,7 @@ pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Res
         // [3.1.2] > s.encoding
         // => #<Encoding:US-ASCII>
         // ```
-        Encoding::Utf8 => {
+        SpinosoEncoding::Utf8 => {
             // SAFETY: The string is repacked before any intervening uses of
             // `interp` which means no mruby heap allocations can occur.
             unsafe {
@@ -133,7 +134,7 @@ pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Res
                 //    size and may panic or abort.
                 string_mut.extend_from_slice(other.as_slice());
 
-                if !matches!(other.encoding(), Encoding::Utf8) && !other.is_ascii_only() {
+                if !matches!(other.encoding(), SpinosoEncoding::Utf8) && !other.is_ascii_only() {
                     // encodings are incompatible if other is not UTF-8 and is non-ASCII
                     string_mut.set_encoding(other.encoding());
                 }
@@ -172,7 +173,7 @@ pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Res
         // [3.1.2] > ae.encoding
         // => #<Encoding:ASCII-8BIT>
         // ```
-        Encoding::Ascii if s.is_empty() => {
+        SpinosoEncoding::Ascii if s.is_empty() => {
             // SAFETY: The string is repacked before any intervening uses of
             // `interp` which means no mruby heap allocations can occur.
             unsafe {
@@ -215,7 +216,7 @@ pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Res
         //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
         //         from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
         // ```
-        Encoding::Ascii => {
+        SpinosoEncoding::Ascii => {
             if !other.is_ascii() {
                 let code = format!(
                     "raise Encoding::CompatibilityError, 'incompatible character encodings: {} and {}",
@@ -269,7 +270,7 @@ pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Res
         // [3.1.2] > be.encoding
         // => #<Encoding:ASCII-8BIT>
         // ```
-        Encoding::Binary if s.is_empty() => {
+        SpinosoEncoding::Binary if s.is_empty() => {
             // SAFETY: The string is repacked before any intervening uses of
             // `interp` which means no mruby heap allocations can occur.
             unsafe {
@@ -286,7 +287,7 @@ pub fn append(interp: &mut Artichoke, mut value: Value, mut other: Value) -> Res
                 super::String::box_into_value(s, value, interp)
             }
         }
-        Encoding::Binary => {
+        SpinosoEncoding::Binary => {
             // SAFETY: The string is repacked before any intervening uses of
             // `interp` which means no mruby heap allocations can occur.
             unsafe {
@@ -1126,6 +1127,17 @@ pub fn is_empty(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error
     Ok(interp.convert(s.is_empty()))
 }
 
+pub fn encoding(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
+
+    let encoding = Encoding::from(s.encoding());
+
+    match interp.encoding_of(&encoding)? {
+        Some(encoding) => Ok(encoding),
+        None => Err(TypeError::from("unititalized Encoding".to_string()).into()),
+    }
+}
+
 pub fn end_with<T>(interp: &mut Artichoke, mut value: Value, suffixes: T) -> Result<Value, Error>
 where
     T: IntoIterator<Item = Value>,
@@ -1275,7 +1287,7 @@ pub fn initialize_copy(interp: &mut Artichoke, mut value: Value, mut other: Valu
         }
     }
     // XXX: This should use the encoding of the given `other`.
-    let replacement = super::String::with_bytes_and_encoding(buf, super::Encoding::Utf8);
+    let replacement = super::String::with_bytes_and_encoding(buf, SpinosoEncoding::Utf8);
     super::String::box_into_value(replacement, value, interp)
 }
 

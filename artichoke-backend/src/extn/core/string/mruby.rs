@@ -44,6 +44,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
         .add_method("downcase", string_downcase, sys::mrb_args_any())?
         .add_method("downcase!", string_downcase_bang, sys::mrb_args_any())?
         .add_method("empty?", string_empty, sys::mrb_args_none())?
+        .add_method("encoding", string_encoding, sys::mrb_args_none())?
         .add_method("end_with?", string_end_with, sys::mrb_args_rest())?
         .add_method("eql?", string_eql, sys::mrb_args_req(1))?
         .add_method("getbyte", string_getbyte, sys::mrb_args_req(1))?
@@ -463,6 +464,17 @@ unsafe extern "C" fn string_empty(mrb: *mut sys::mrb_state, slf: sys::mrb_value)
     unwrap_interpreter!(mrb, to => guard);
     let value = Value::from(slf);
     let result = trampoline::is_empty(&mut guard, value);
+    match result {
+        Ok(value) => value.inner(),
+        Err(exception) => error::raise(guard, exception),
+    }
+}
+
+unsafe extern "C" fn string_encoding(mrb: *mut sys::mrb_state, slf: sys::mrb_value) -> sys::mrb_value {
+    mrb_get_args!(mrb, none);
+    unwrap_interpreter!(mrb, to => guard);
+    let value = Value::from(slf);
+    let result = trampoline::encoding(&mut guard, value);
     match result {
         Ok(value) => value.inner(),
         Err(exception) => error::raise(guard, exception),

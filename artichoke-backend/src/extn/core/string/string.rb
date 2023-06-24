@@ -495,15 +495,6 @@ class String
     self
   end
 
-  # https://ruby-doc.org/core-3.0.2/String.html#method-i-encoding
-  #
-  # TODO: Properly implement this method now that Artichoke has encoding support.
-  def encoding
-    # mruby does not support encoding, all Strings are UTF-8. This method is a
-    # stub and is here for compatibility.
-    Encoding::UTF_8
-  end
-
   # https://ruby-doc.org/core-3.0.2/String.html#method-i-end_with-3F
   #
   # NOTE: Implemented in native code.

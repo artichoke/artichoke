@@ -61,8 +61,17 @@ impl EncodingRegistry for Artichoke {
         Ok(result)
     }
 
-    fn encoding_of(&self, _spec: &Self::Spec) -> Result<Option<Self::Value>, Self::Error> {
-        todo!()
+    fn encoding_of(&self, spec: &Self::Spec) -> Result<Option<Self::Value>, Self::Error> {
+        // Check to make sure the encoding was registered
+        let state = self.state.as_deref().ok_or_else(InterpreterExtractError::new)?;
+
+        let id = spec.flag();
+        if !state.encodings.contains_key(&id) {
+            return Ok(None);
+        }
+
+        let obj = unsafe { sys::mrb_sys_new_encoding(i64::from(id)) };
+        Ok(Some(Value::from(obj)))
     }
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
