@@ -11,10 +11,12 @@
 //!
 //! [`Encoding`]: https://ruby-doc.org/3.1.2/Encoding.html
 
-use crate::encoding::Encoding;
-
+mod backend;
 pub(in crate::extn) mod mruby;
 pub(super) mod trampoline;
+
+const RUBY_TYPE: &str = "Encoding";
+pub use backend::spinoso::Encoding;
 
 #[cfg(test)]
 mod tests {

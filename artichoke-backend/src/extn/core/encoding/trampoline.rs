@@ -1,11 +1,13 @@
-use super::Encoding;
+//use super::Encoding;
 
+use crate::encoding_registry::EncodingSpec;
 use crate::extn::core::array::Array;
 use crate::extn::core::string::{Encoding as SpinosoEncoding, String};
 
 use crate::extn::prelude::*;
 
-pub(super) const AVAILABLE_ENCODINGS: [Encoding; 3] = [Encoding::Utf8, Encoding::Ascii, Encoding::Binary];
+pub(super) const AVAILABLE_ENCODINGS: [SpinosoEncoding; 3] =
+    [SpinosoEncoding::Utf8, SpinosoEncoding::Ascii, SpinosoEncoding::Binary];
 
 pub fn aliases(interp: &mut Artichoke) -> Result<Value, Error> {
     let _ = interp;
@@ -61,6 +63,7 @@ pub fn inspect(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Er
     let encoding = interp.encoding_for(encoding)?;
 
     let result = encoding.inspect();
+
     interp.try_convert_mut(result)
 }
 

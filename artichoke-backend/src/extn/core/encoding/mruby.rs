@@ -42,7 +42,7 @@ pub fn init(interp: &mut Artichoke) -> InitializeResult<()> {
     // => true
     // ```
     for encoding in AVAILABLE_ENCODINGS {
-        interp.def_encoding(encoding)?;
+        interp.def_encoding(encoding.into())?;
     }
 
     Ok(())
