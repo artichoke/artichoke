@@ -1,8 +1,6 @@
-//use super::Encoding;
-
-use crate::encoding_registry::EncodingSpec;
 use crate::extn::core::array::Array;
 use crate::extn::core::string::{Encoding as SpinosoEncoding, String};
+use artichoke_core::encoding::Encoding as _;
 
 use crate::extn::prelude::*;
 

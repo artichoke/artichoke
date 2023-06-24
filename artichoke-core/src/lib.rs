@@ -134,6 +134,7 @@ pub mod coerce_to_numeric;
 pub mod constant;
 pub mod convert;
 pub mod debug;
+pub mod encoding;
 pub mod encoding_registry;
 pub mod eval;
 pub mod file;
@@ -169,6 +170,7 @@ pub mod prelude {
     pub use crate::constant::DefineConstant;
     pub use crate::convert::{Convert, ConvertMut, TryConvert, TryConvertMut};
     pub use crate::debug::Debug;
+    pub use crate::encoding::Encoding;
     pub use crate::encoding_registry::EncodingRegistry;
     pub use crate::eval::Eval;
     pub use crate::file::File;

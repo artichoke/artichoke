@@ -33,7 +33,7 @@ pub struct State {
     pub parser: Option<parser::State>,
     pub classes: Registry<class::Spec>,
     pub modules: Registry<module::Spec>,
-    pub encodings: HashMap<i64, encoding_registry::Spec>,
+    pub encodings: HashMap<u8, encoding_registry::Spec>,
     pub load_path_vfs: load_path::Adapter,
     #[cfg(feature = "core-regexp")]
     pub regexp: spinoso_regexp::State,

@@ -1,5 +1,6 @@
-//! Define and store encoding specs on an interpreter.
+//! Define and store encodings on an interpreter.
 
+use crate::encoding::Encoding;
 use alloc::vec::Vec;
 
 /// Define and store encoding specs on an interpreter.
@@ -14,7 +15,7 @@ pub trait EncodingRegistry {
     type Error;
 
     /// Type representing an encoding specification.
-    type Spec: 'static;
+    type Spec: Encoding + 'static;
 
     /// Create an encoding definition bound to a Rust type `T`.
     ///

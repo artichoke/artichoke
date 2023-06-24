@@ -1,7 +1,7 @@
 use bstr::ByteSlice;
 
-use super::super::RUBY_TYPE;
-pub use crate::encoding_registry::{EncodingSpec, Spec};
+pub use crate::encoding_registry::Spec;
+use artichoke_core::encoding::Encoding as CoreEncoding;
 pub use spinoso_string::Encoding as SpinosoEncoding;
 
 #[derive(Debug, Clone, Copy)]
@@ -13,11 +13,9 @@ impl From<SpinosoEncoding> for Encoding {
     }
 }
 
-impl EncodingSpec for Encoding {
-    const RUBY_TYPE: &'static str = RUBY_TYPE;
-
-    fn id(&self) -> i64 {
-        i64::from(self.0.to_flag())
+impl CoreEncoding for Encoding {
+    fn flag(&self) -> u8 {
+        self.0.to_flag()
     }
 
     fn aliases(&self) -> Vec<Vec<u8>> {
