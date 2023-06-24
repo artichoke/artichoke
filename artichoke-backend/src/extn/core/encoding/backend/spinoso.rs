@@ -13,6 +13,12 @@ impl From<SpinosoEncoding> for Encoding {
     }
 }
 
+impl From<Encoding> for u8 {
+    fn from(enc: Encoding) -> Self {
+        enc.flag()
+    }
+}
+
 impl CoreEncoding for Encoding {
     fn flag(&self) -> u8 {
         self.0.to_flag()

@@ -1,3 +1,5 @@
+use super::Encoding;
+
 use crate::extn::core::array::Array;
 use crate::extn::core::string::{Encoding as SpinosoEncoding, String};
 use artichoke_core::encoding::Encoding as _;
@@ -41,32 +43,32 @@ pub fn name_list(interp: &mut Artichoke) -> Result<Value, Error> {
     Err(NotImplementedError::new().into())
 }
 
-pub fn ascii_compatible(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(encoding)?;
+pub fn ascii_compatible(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut value, interp)? };
 
     let result = encoding.is_ascii_compatible();
 
     Ok(interp.convert(result))
 }
 
-pub fn dummy(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(encoding)?;
+pub fn dummy(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut value, interp)? };
 
     let result = encoding.is_dummy();
 
     Ok(interp.convert(result))
 }
 
-pub fn inspect(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(encoding)?;
+pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut value, interp)? };
 
     let result = encoding.inspect();
 
     interp.try_convert_mut(result)
 }
 
-pub fn name(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(encoding)?;
+pub fn name(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut value, interp)? };
 
     let name = encoding.name().as_bytes().to_vec();
 
@@ -81,8 +83,8 @@ pub fn name(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error
     String::alloc_value(result, interp)
 }
 
-pub fn names(interp: &mut Artichoke, encoding: &mut Value) -> Result<Value, Error> {
-    let encoding = interp.encoding_for(encoding)?;
+pub fn names(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut value, interp)? };
 
     // The result of `Encoding#names` is always 7bit ascii.
     //
