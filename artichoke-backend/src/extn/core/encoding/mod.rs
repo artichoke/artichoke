@@ -18,7 +18,7 @@ pub(super) mod trampoline;
 use crate::convert::{Immediate, UnboxedValueGuard};
 use crate::extn::prelude::*;
 use artichoke_core::encoding::Encoding as _;
-pub use backend::spinoso::Encoding;
+pub use backend::{replica::Encoding as ReplicaEncoding, spinoso::Encoding as SpinosoEncoding, Encoding};
 use bstr::ByteVec;
 use core::ffi::c_void;
 
@@ -58,7 +58,7 @@ impl BoxUnboxVmValue for Encoding {
             TypeError::from(message)
         })?;
 
-        Ok(UnboxedValueGuard::new(Immediate::new(*encoding)))
+        Ok(UnboxedValueGuard::new(Immediate::new(encoding.clone())))
     }
 
     fn alloc_value(value: Self::Unboxed, interp: &mut Artichoke) -> Result<Value, Error> {
@@ -76,7 +76,7 @@ impl BoxUnboxVmValue for Encoding {
         };
 
         // Create the encoding type
-        let encoding_flag: u8 = value.into();
+        let encoding_flag: u8 = value.clone().into();
         let obj = unsafe { sys::mrb_sys_new_encoding(i64::from(encoding_flag)) };
         let encoding = Value::from(obj);
 

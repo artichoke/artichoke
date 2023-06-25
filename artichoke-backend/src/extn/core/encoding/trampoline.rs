@@ -1,4 +1,4 @@
-use super::Encoding;
+use super::{Encoding, ReplicaEncoding};
 
 use crate::extn::core::array::Array;
 use crate::extn::core::string::{Encoding as SpinosoEncoding, String};
@@ -108,9 +108,17 @@ pub fn names(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     Array::alloc_value(result, interp)
 }
 
-pub fn replicate(interp: &mut Artichoke, encoding: Value, target: Value) -> Result<Value, Error> {
-    let _ = interp;
-    let _ = encoding;
-    let _ = target;
-    Err(NotImplementedError::new().into())
+pub fn replicate(interp: &mut Artichoke, mut value: Value, mut target: Value) -> Result<Value, Error> {
+    let encoding = unsafe { Encoding::unbox_from_value(&mut value, interp)? };
+
+    let name = unsafe { String::unbox_from_value(&mut target, interp)? };
+
+    let enc = match encoding.clone() {
+        Encoding::Spinoso(e) => e,
+        Encoding::Replica(e) => e.replicates(),
+    };
+
+    let replica = ReplicaEncoding::with_name(name.to_vec(), enc);
+
+    Encoding::alloc_value(replica.into(), interp)
 }
