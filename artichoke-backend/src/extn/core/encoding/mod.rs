@@ -11,16 +11,18 @@
 //!
 //! [`Encoding`]: https://ruby-doc.org/3.1.2/Encoding.html
 
-mod backend;
-pub(in crate::extn) mod mruby;
-pub(super) mod trampoline;
+use bstr::ByteVec;
+use core::ffi::c_void;
+
+use artichoke_core::encoding::Encoding as _;
 
 use crate::convert::{Immediate, UnboxedValueGuard};
 use crate::extn::prelude::*;
-use artichoke_core::encoding::Encoding as _;
 pub use backend::{replica::Encoding as ReplicaEncoding, spinoso::Encoding as SpinosoEncoding, Encoding};
-use bstr::ByteVec;
-use core::ffi::c_void;
+
+mod backend;
+pub(in crate::extn) mod mruby;
+pub(super) mod trampoline;
 
 impl BoxUnboxVmValue for Encoding {
     type Unboxed = Self;
