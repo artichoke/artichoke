@@ -29,11 +29,7 @@ impl CoreEncoding for Encoding {
         // require character escaping, however in MRI they are converted to
         // underscores.
 
-        self.0
-            .names()
-            .iter()
-            .map(|&name| name.as_bytes().replace("-", "_"))
-            .collect()
+        self.names().iter().map(|name| name.replace("-", "_")).collect()
     }
 
     fn is_ascii_compatible(&self) -> bool {
@@ -44,15 +40,15 @@ impl CoreEncoding for Encoding {
         self.0.is_dummy()
     }
 
-    fn inspect(&self) -> &'static str {
-        self.0.inspect()
+    fn inspect(&self) -> Vec<u8> {
+        self.0.inspect().into()
     }
 
-    fn name(&self) -> &'static str {
-        self.0.name()
+    fn name(&self) -> Vec<u8> {
+        self.0.name().into()
     }
 
-    fn names(&self) -> &'static [&'static str] {
-        self.0.names()
+    fn names(&self) -> Vec<Vec<u8>> {
+        self.0.names().iter().map(|name| name.as_bytes().into()).collect()
     }
 }

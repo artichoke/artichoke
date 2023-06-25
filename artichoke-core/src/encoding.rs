@@ -17,11 +17,11 @@ pub trait Encoding {
     fn is_dummy(&self) -> bool;
 
     /// The string be displayed when debugging the encoding.
-    fn inspect(&self) -> &'static str;
+    fn inspect(&self) -> Vec<u8>;
 
     /// The primary name to display when displaying the encoding.
-    fn name(&self) -> &'static str;
+    fn name(&self) -> Vec<u8>;
 
     /// All names that can be used to refer to this encoding.
-    fn names(&self) -> &'static [&'static str];
+    fn names(&self) -> Vec<Vec<u8>>;
 }

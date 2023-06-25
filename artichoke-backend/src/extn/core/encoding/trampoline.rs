@@ -70,7 +70,7 @@ pub fn inspect(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error>
 pub fn name(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let encoding = unsafe { Encoding::unbox_from_value(&mut value, interp)? };
 
-    let name = encoding.name().as_bytes().to_vec();
+    let name = encoding.name();
 
     // The result of `Encoding#name` is always 7bit ascii.
     //
@@ -98,8 +98,7 @@ pub fn names(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
         .names()
         .iter()
         .map(|name| {
-            let name = name.as_bytes().to_vec();
-            let name = String::with_bytes_and_encoding(name, SpinosoEncoding::Ascii);
+            let name = String::with_bytes_and_encoding(name.clone(), SpinosoEncoding::Ascii);
             String::alloc_value(name, interp)
         })
         .collect::<Result<Vec<Value>, Error>>()?;
