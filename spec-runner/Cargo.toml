@@ -30,7 +30,7 @@ version = "0.3.0"
 optional = true
 
 [dependencies.serde]
-version = "1.0.136"
+version = "1.0.164"
 features = ["derive"]
 
 [dev-dependencies]
