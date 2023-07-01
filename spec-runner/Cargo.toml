@@ -21,7 +21,7 @@ default-features = false
 features = ["backtrace", "kitchen-sink"]
 
 [dependencies.clap]
-version = "4.3.0"
+version = "4.3.10"
 default-features = false
 features = ["std", "help", "usage", "error-context", "suggestions"]
 
