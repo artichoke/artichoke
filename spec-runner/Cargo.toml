@@ -11,7 +11,7 @@ categories = ["development-tools::testing"]
 
 [dependencies]
 basic-toml = "0.1.1"
-rust-embed = "6.3.0"
+rust-embed = "6.8.1"
 termcolor = "1.1.0"
 
 [dependencies.artichoke]
