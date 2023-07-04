@@ -5,6 +5,10 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    groups:
+      gha-deps:
+        patterns:
+          - "*"
     assignees:
       - lopopolo
     labels:
@@ -13,7 +17,10 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 10
+    groups:
+      cargo-deps:
+        patterns:
+          - "*"
     assignees:
       - lopopolo
     labels:
@@ -22,7 +29,10 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 10
+    groups:
+      bundler-deps:
+        patterns:
+          - "*"
     assignees:
       - lopopolo
     labels:
@@ -31,7 +41,10 @@ updates:
     directory: "/fuzz"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 10
+    groups:
+      cargo-deps:
+        patterns:
+          - "*"
     assignees:
       - lopopolo
     labels:
@@ -40,7 +53,10 @@ updates:
     directory: "/spec-runner"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 10
+    groups:
+      cargo-deps:
+        patterns:
+          - "*"
     assignees:
       - lopopolo
     labels:
@@ -49,7 +65,10 @@ updates:
     directory: "/ui-tests"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 10
+    groups:
+      cargo-deps:
+        patterns:
+          - "*"
     assignees:
       - lopopolo
     labels:
