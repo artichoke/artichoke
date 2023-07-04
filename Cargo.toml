@@ -33,7 +33,7 @@ path = "artichoke-repl-history"
 optional = true
 
 [dependencies.clap]
-version = "4.3.0"
+version = "4.3.10"
 optional = true
 default-features = false
 features = ["std", "help", "usage", "error-context", "suggestions"]
