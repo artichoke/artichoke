@@ -1,6 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-#![warn(clippy::cargo)]
+// #![warn(clippy::cargo)] disable for bitflags v2 churn
 #![allow(unknown_lints)]
 #![allow(clippy::manual_let_else)]
 #![allow(clippy::module_name_repetitions)]

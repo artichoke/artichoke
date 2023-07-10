@@ -21,7 +21,7 @@ default = "deny"
 confidence-threshold = 0.8
 
 [bans]
-multiple-versions = "deny"
+multiple-versions = "warn" # bitflags transition to v2
 wildcards = "deny"
 highlight = "all"
 allow = []
