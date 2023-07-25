@@ -10,7 +10,7 @@ use binary::BinaryString;
 use scolapasta_strbuf::Buf;
 use utf8::Utf8String;
 
-use crate::codepoints::InvalidCodepointError;
+use crate::codepoints::{Codepoints, CodepointsError, InvalidCodepointError};
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
@@ -471,6 +471,15 @@ impl EncodedString {
             EncodedString::Utf8(inner) => inner.try_push_int(int)?,
         }
         Ok(())
+    }
+
+    #[inline]
+    pub fn codepoints(&self) -> Result<Codepoints, CodepointsError> {
+        match self {
+            EncodedString::Utf8(inner) => inner.codepoints(),
+            EncodedString::Binary(inner) => inner.codepoints(),
+            EncodedString::Ascii(inner) => inner.codepoints(),
+        }
     }
 
     #[inline]

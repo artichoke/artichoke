@@ -1,4 +1,5 @@
 use alloc::collections::TryReserveError;
+use alloc::vec::Vec;
 use core::fmt;
 use core::ops::Range;
 use core::slice::SliceIndex;
@@ -6,7 +7,7 @@ use core::slice::SliceIndex;
 use bstr::ByteSlice;
 use scolapasta_strbuf::Buf;
 
-use crate::codepoints::InvalidCodepointError;
+use crate::codepoints::{Codepoints, CodepointsError, InvalidCodepointError};
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
@@ -269,6 +270,18 @@ impl BinaryString {
     #[inline]
     pub fn extend_from_slice(&mut self, other: &[u8]) {
         self.inner.extend_from_slice(other);
+    }
+
+    #[inline]
+    pub fn codepoints(&self) -> Result<Codepoints, CodepointsError> {
+        let iter = self
+            .inner
+            .as_slice()
+            .bytes()
+            .map(|b| b as u32)
+            .collect::<Vec<_>>()
+            .into_iter();
+        Ok(Codepoints::from(iter))
     }
 }
 

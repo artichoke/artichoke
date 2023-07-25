@@ -1919,7 +1919,7 @@ impl String {
     /// [binary encoded]: crate::Encoding::Binary
     /// [`str::from_utf8`]: core::str::from_utf8
     #[inline]
-    pub fn codepoints(&self) -> Result<Codepoints<'_>, CodepointsError> {
+    pub fn codepoints(&self) -> Result<Codepoints, CodepointsError> {
         Codepoints::try_from(self)
     }
 
