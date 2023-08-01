@@ -369,9 +369,9 @@ dependencies = [
 
 [[package]]
 name = "intaglio"
-version = "1.8.0"
+version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b4f756a47a2dac507018af2d4e47988e93829f34a665da3655b23cc1d21ee47"
+checksum = "aa3eb1c7e05b0f9ddc99a1e9f186a434fa0bfd0087d6369acf5f2814731ab610"
 
 [[package]]
 name = "itoa"
