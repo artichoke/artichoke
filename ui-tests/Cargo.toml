@@ -8,15 +8,15 @@ rust-version = "1.70.0"
 license = "MIT"
 
 [dependencies]
-serde = "1.0.166"
+serde = "1.0.180"
 
 [dependencies.bstr]
-version = "1.2.0"
+version = "1.6.0"
 default-features = false
 features = ["alloc"]
 
 [dependencies.insta]
-version = "1.30.0"
+version = "1.31.0"
 features = ["toml"]
 
 [workspace]
