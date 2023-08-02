@@ -33,7 +33,7 @@ default-features = false
 features = ["alloc"]
 
 [dependencies.intaglio]
-version = "1.7.0"
+version = "1.9.1"
 default-features = false
 features = ["bytes"]
 
@@ -130,7 +130,7 @@ default-features = false
 [build-dependencies]
 
 [build-dependencies.bindgen]
-version = "0.65.1"
+version = "0.66.1"
 default-features = false
 features = ["runtime"]
 

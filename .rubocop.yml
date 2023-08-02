@@ -21,5 +21,9 @@ Metrics:
   Enabled: false
 Style/Documentation:
   Enabled: false
+Style/RedundantRegexpArgument:
+  Exclude:
+    - "**/test/**/*"
+    - "**/*test*.rb"
 Style/SlicingWithRange:
   Enabled: false # See GH-679.

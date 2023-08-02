@@ -50,12 +50,12 @@ pub use regexp::regex::utf8::Utf8;
 pub use state::State;
 
 bitflags::bitflags! {
-    #[derive(Default)]
+    #[derive(Default, Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
     pub struct Flags: u8 {
         const IGNORECASE      = 0b0000_0001;
         const EXTENDED        = 0b0000_0010;
         const MULTILINE       = 0b0000_0100;
-        const ALL_REGEXP_OPTS = Self::IGNORECASE.bits | Self::EXTENDED.bits | Self::MULTILINE.bits;
+        const ALL_REGEXP_OPTS = Self::IGNORECASE.bits() | Self::EXTENDED.bits() | Self::MULTILINE.bits();
 
         const FIXEDENCODING   = 0b0001_0000;
         const NOENCODING      = 0b0010_0000;

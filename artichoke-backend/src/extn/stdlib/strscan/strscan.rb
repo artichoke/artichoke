@@ -82,7 +82,7 @@ class StringScanner
 
   def exist?(pattern)
     match = @string.byteslice(@pos, @string.bytesize - @pos).match(pattern)
-    return nil if match.nil?
+    return nil if match.nil? # rubocop:disable Style/ReturnNilInPredicateMethodDefinition
 
     match.end(0)
   end
@@ -151,7 +151,7 @@ class StringScanner
     if match.nil? || match.begin(0).positive?
       @last_match = nil
       @last_match_pos = nil
-      return nil
+      return nil # rubocop:disable Style/ReturnNilInPredicateMethodDefinition
     end
 
     @last_match = match
