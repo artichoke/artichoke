@@ -11,7 +11,6 @@ use crate::codepoints::{Codepoints, InvalidCodepointError};
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
-use crate::CodepointsError;
 
 mod eq;
 mod impls;
@@ -284,15 +283,15 @@ impl AsciiString {
     }
 
     #[inline]
-    pub fn codepoints(&self) -> Result<Codepoints, CodepointsError> {
+    pub fn codepoints(&self) -> Codepoints {
         let iter = self
             .inner
             .as_slice()
             .bytes()
-            .map(|b| b as u32)
+            .map(u32::from)
             .collect::<Vec<_>>()
             .into_iter();
-        Ok(Codepoints::from(iter))
+        Codepoints::from(iter)
     }
 }
 

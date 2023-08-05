@@ -477,8 +477,8 @@ impl EncodedString {
     pub fn codepoints(&self) -> Result<Codepoints, CodepointsError> {
         match self {
             EncodedString::Utf8(inner) => inner.codepoints(),
-            EncodedString::Binary(inner) => inner.codepoints(),
-            EncodedString::Ascii(inner) => inner.codepoints(),
+            EncodedString::Binary(inner) => Ok(inner.codepoints()),
+            EncodedString::Ascii(inner) => Ok(inner.codepoints()),
         }
     }
 
