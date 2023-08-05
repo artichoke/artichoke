@@ -288,7 +288,7 @@ impl AsciiString {
             .inner
             .as_slice()
             .bytes()
-            .map(u32::from)
+            .map(char::from)
             .collect::<Vec<_>>()
             .into_iter();
         Codepoints::from(iter)

@@ -190,7 +190,7 @@ impl std::error::Error for InvalidCodepointError {}
 /// [Conventionally UTF-8]: crate::Encoding::Utf8
 #[derive(Debug, Default, Clone)]
 pub struct Codepoints {
-    iter: IntoIter<u32>,
+    iter: IntoIter<char>,
 }
 
 impl TryFrom<&String> for Codepoints {
@@ -202,8 +202,8 @@ impl TryFrom<&String> for Codepoints {
     }
 }
 
-impl From<IntoIter<u32>> for Codepoints {
-    fn from(iter: IntoIter<u32>) -> Self {
+impl From<IntoIter<char>> for Codepoints {
+    fn from(iter: IntoIter<char>) -> Self {
         Self { iter }
     }
 }
