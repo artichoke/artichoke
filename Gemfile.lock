@@ -2,6 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.2)
+    base64 (0.1.1)
     bundler-audit (0.9.1)
       bundler (>= 1.2.0, < 3)
       thor (~> 1.0)
@@ -16,7 +17,8 @@ GEM
     rake (13.0.6)
     regexp_parser (2.8.1)
     rexml (3.2.6)
-    rubocop (1.55.1)
+    rubocop (1.56.2)
+      base64 (~> 0.1.1)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
       parallel (~> 1.10)
@@ -43,7 +45,7 @@ PLATFORMS
 DEPENDENCIES
   bundler-audit (~> 0.9)
   rake (>= 12.3.3)
-  rubocop (~> 1.55)
+  rubocop (~> 1.56)
   rubocop-rake (~> 0.6)
   tomlrb (~> 2.0)
 
