@@ -33,7 +33,7 @@ path = "artichoke-repl-history"
 optional = true
 
 [dependencies.clap]
-version = "4.3.19"
+version = "4.4.2"
 optional = true
 default-features = false
 features = ["std", "help", "usage", "error-context", "suggestions"]
@@ -49,7 +49,7 @@ features = ["std", "help", "usage", "error-context", "suggestions"]
 #
 # See: https://github.com/kkawakam/rustyline/pull/583
 [dependencies.log]
-version = "0.4.19"
+version = "0.4.20"
 optional = true
 
 [dependencies.rustyline]
