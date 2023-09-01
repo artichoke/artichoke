@@ -8,10 +8,10 @@ rust-version = "1.70.0"
 license = "MIT"
 
 [dependencies]
-serde = "1.0.180"
+serde = "1.0.188"
 
 [dependencies.bstr]
-version = "1.6.0"
+version = "1.6.2"
 default-features = false
 features = ["alloc"]
 
