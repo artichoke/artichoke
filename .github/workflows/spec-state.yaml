@@ -17,7 +17,7 @@ jobs:
       RUST_BACKTRACE: 1
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v3.6.0
         with:
           path: artichoke
 
@@ -86,7 +86,7 @@ jobs:
           ./artichoke/spec-runner/scripts/spec-yaml-to-json.rb "${{ steps.exceptions.outputs.yaml }}" > "${{ steps.exceptions.outputs.json }}"
 
       - name: Checkout spec state repository
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v3.6.0
         with:
           repository: artichoke/spec-state
           path: spec-state
