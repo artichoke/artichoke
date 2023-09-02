@@ -36,7 +36,7 @@ impl<T> DerefMut for Array<T> {
 impl<T> Extend<T> for Array<T> {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        self.0.extend(iter.into_iter());
+        self.0.extend(iter);
     }
 }
 
@@ -46,7 +46,7 @@ where
 {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
-        self.0.extend(iter.into_iter());
+        self.0.extend(iter);
     }
 }
 

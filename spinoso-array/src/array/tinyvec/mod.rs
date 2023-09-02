@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+#![allow(clippy::missing_panics_doc)]
 
 //! Ruby `Array` based on [`TinyVec`].
 

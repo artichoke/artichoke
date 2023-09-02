@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_wrap)]
+
 use core::char;
 use core::convert::TryFrom;
 use core::hash::{BuildHasher, Hash, Hasher};

@@ -1,6 +1,7 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![allow(clippy::restriction)]
+#![allow(clippy::missing_panics_doc)]
 
 use std::env;
 

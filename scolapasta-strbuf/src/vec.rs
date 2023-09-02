@@ -290,7 +290,7 @@ impl FromIterator<u8> for Buf {
 impl Extend<u8> for Buf {
     #[inline]
     fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
-        self.inner.extend(iter.into_iter());
+        self.inner.extend(iter);
     }
 }
 

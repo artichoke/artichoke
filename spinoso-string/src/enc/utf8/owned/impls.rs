@@ -107,14 +107,14 @@ impl AsMut<Utf8Str> for Utf8String {
 impl Extend<u8> for Utf8String {
     #[inline]
     fn extend<I: IntoIterator<Item = u8>>(&mut self, iter: I) {
-        self.inner.extend(iter.into_iter());
+        self.inner.extend(iter);
     }
 }
 
 impl<'a> Extend<&'a u8> for Utf8String {
     #[inline]
     fn extend<I: IntoIterator<Item = &'a u8>>(&mut self, iter: I) {
-        self.inner.extend(iter.into_iter());
+        self.inner.extend(iter);
     }
 }
 
