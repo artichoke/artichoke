@@ -29,6 +29,7 @@ impl Time {
     ///
     /// [`Time#round`]: https://ruby-doc.org/core-3.1.2/Time.html#method-i-round
     #[inline]
+    #[allow(clippy::missing_panics_doc)]
     pub fn round(&self, ndigits: u32) -> Self {
         match ndigits {
             9..=u32::MAX => *self,

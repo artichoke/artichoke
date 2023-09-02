@@ -184,6 +184,7 @@ impl Offset {
     /// Return a [`TimeError::TzOutOfRangeError`] when outside of range of
     /// acceptable offset of [`MIN_OFFSET_SECONDS`] to [`MAX_OFFSET_SECONDS`].
     #[inline]
+    #[allow(clippy::missing_panics_doc)]
     pub fn fixed(offset: i32) -> Result<Self, TimeError> {
         if !(MIN_OFFSET_SECONDS..=MAX_OFFSET_SECONDS).contains(&offset) {
             return Err(TzOutOfRangeError::new().into());

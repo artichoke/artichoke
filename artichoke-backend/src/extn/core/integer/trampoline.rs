@@ -42,7 +42,8 @@ pub fn is_nobits(interp: &mut Artichoke, value: Value, mask: Value) -> Result<Va
     Ok(interp.convert(result))
 }
 
-// This method will become fallible once `Bignum` is implemented.
+// XXX: This method will become fallible once `Bignum` is implemented.
+#[allow(clippy::cast_possible_wrap)]
 #[allow(clippy::unnecessary_wraps)]
 pub fn size(interp: &Artichoke) -> Result<Value, Error> {
     qed::const_assert!(Integer::size() < i8::MAX as usize);

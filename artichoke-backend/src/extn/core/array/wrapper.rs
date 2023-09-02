@@ -141,7 +141,7 @@ impl Extend<sys::mrb_value> for Array {
     where
         T: IntoIterator<Item = sys::mrb_value>,
     {
-        self.0.extend(iter.into_iter());
+        self.0.extend(iter);
     }
 }
 

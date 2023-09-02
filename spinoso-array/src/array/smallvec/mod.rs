@@ -1,3 +1,5 @@
+#![allow(clippy::missing_panics_doc)]
+
 //! Ruby `Array` based on [`SmallVec`].
 
 use alloc::boxed::Box;

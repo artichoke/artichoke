@@ -76,7 +76,7 @@ impl FromIterator<u8> for String {
     #[inline]
     fn from_iter<I: IntoIterator<Item = u8>>(iter: I) -> Self {
         let mut s = String::new();
-        s.extend(iter.into_iter());
+        s.extend(iter);
         s
     }
 }

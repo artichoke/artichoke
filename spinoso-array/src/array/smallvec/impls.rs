@@ -36,7 +36,7 @@ impl<T> DerefMut for SmallArray<T> {
 impl<T> Extend<T> for SmallArray<T> {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        self.0.extend(iter.into_iter());
+        self.0.extend(iter);
     }
 }
 

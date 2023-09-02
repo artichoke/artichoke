@@ -17,6 +17,7 @@ use super::Args;
 ///
 /// If an invalid argument is provided, an error is returned.
 #[must_use]
+#[allow(clippy::missing_panics_doc)]
 pub fn parse_args() -> Args {
     let matches = clap_matches(env::args_os());
 

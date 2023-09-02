@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_wrap)]
+
 use core::convert::TryFrom;
 use core::fmt::Write as _;
 use core::hash::{BuildHasher, Hash, Hasher};

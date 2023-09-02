@@ -126,7 +126,7 @@ pub fn join(interp: &mut Artichoke, ary: &Array, sep: &[u8]) -> Result<Vec<u8>, 
             Ruby::Array => {
                 let ary = unsafe { Array::unbox_from_value(&mut value, interp)? };
                 out.reserve(ary.len());
-                for elem in ary.iter() {
+                for elem in &*ary {
                     flatten(interp, elem, out)?;
                 }
             }
@@ -281,6 +281,7 @@ impl BoxUnboxVmValue for Array {
         Ok(interp.protect(value.into()))
     }
 
+    #[allow(clippy::cast_possible_wrap)]
     fn box_into_value(value: Self::Unboxed, into: Value, interp: &mut Artichoke) -> Result<Value, Error> {
         // Make sure we have an Array otherwise boxing will produce undefined
         // behavior. This check is critical to protecting the garbage collector

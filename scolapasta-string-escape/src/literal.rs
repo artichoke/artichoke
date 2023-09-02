@@ -614,7 +614,6 @@ mod tests {
                 r"\xF0", r"\xF1", r"\xF2", r"\xF3", r"\xF4", r"\xF5", r"\xF6", r"\xF7",
                 r"\xF8", r"\xF9", r"\xFA", r"\xFB", r"\xFC", r"\xFD", r"\xFE", r"\xFF",
             ]
-            .into_iter(),
         );
         for (byte, literal) in test_cases {
             let iter = Literal::from(byte);

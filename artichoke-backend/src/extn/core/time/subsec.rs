@@ -203,6 +203,7 @@ impl TryConvertMut<(Option<Value>, Option<Value>), Subsec> for Artichoke {
 }
 
 #[cfg(test)]
+#[allow(clippy::unnecessary_literal_unwrap)]
 mod tests {
     use bstr::ByteSlice;
 
