@@ -16,7 +16,7 @@ default-features = false
 features = ["alloc"]
 
 [dependencies.insta]
-version = "1.31.0"
+version = "1.33.0"
 features = ["toml"]
 
 [workspace]
