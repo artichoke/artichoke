@@ -1191,8 +1191,12 @@ pub fn index(
 ) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     #[cfg(feature = "core-regexp")]
-    if let Ok(_pattern) = unsafe { Regexp::unbox_from_value(&mut needle, interp) } {
-        return Err(NotImplementedError::from("String#index with Regexp pattern").into());
+    if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut needle, interp) } {
+        let match_data = regexp.match_(interp, Some(s.as_slice()), None, None)?; 
+        if match_data.is_nil(){
+            return Ok(Value::nil());
+        }
+        return matchdata::trampoline::begin(interp, match_data, interp.convert(0));
     }
     let needle = unsafe { implicitly_convert_to_string(interp, &mut needle)? };
     let index = if let Some(offset) = offset {
@@ -1351,8 +1355,12 @@ pub fn rindex(
 ) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
     #[cfg(feature = "core-regexp")]
-    if let Ok(_pattern) = unsafe { Regexp::unbox_from_value(&mut needle, interp) } {
-        return Err(NotImplementedError::from("String#index with Regexp pattern").into());
+    if let Ok(regexp) = unsafe { Regexp::unbox_from_value(&mut needle, interp) } {
+        let match_data = regexp.match_(interp, Some(s.as_slice()), None, None)?; 
+        if match_data.is_nil(){
+            return Ok(Value::nil());
+        }
+        return matchdata::trampoline::end(interp, match_data, interp.convert(0));
     }
     let needle = unsafe { implicitly_convert_to_string(interp, &mut needle)? };
     let index = if let Some(offset) = offset {

@@ -255,12 +255,12 @@ impl Regexp {
     pub fn match_(
         &self,
         interp: &mut Artichoke,
-        pattern: Option<&[u8]>,
+        haystack: Option<&[u8]>,
         pos: Option<i64>,
         block: Option<Block>,
     ) -> Result<Value, Error> {
-        if let Some(pattern) = pattern {
-            self.0.match_(interp, pattern, pos, block)
+        if let Some(haystack) = haystack {
+            self.0.match_(interp, haystack, pos, block)
         } else {
             interp.unset_global_variable(LAST_MATCH)?;
             Ok(Value::nil())
