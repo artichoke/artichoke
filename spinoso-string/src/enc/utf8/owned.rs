@@ -1,12 +1,11 @@
 use alloc::collections::TryReserveError;
 use alloc::vec::Vec;
 
-use bstr::ByteSlice;
 use scolapasta_strbuf::Buf;
 
 use super::Utf8Str;
 use crate::chars::ConventionallyUtf8;
-use crate::codepoints::{Codepoints, CodepointsError, InvalidCodepointError};
+use crate::codepoints::InvalidCodepointError;
 use crate::iter::IntoIter;
 
 mod eq;
@@ -145,16 +144,6 @@ impl Utf8String {
     #[inline]
     pub fn try_push_int(&mut self, int: i64) -> Result<(), InvalidCodepointError> {
         self.try_push_codepoint(int)
-    }
-
-    #[inline]
-    pub fn codepoints(&self) -> Result<Codepoints, CodepointsError> {
-        if let Ok(s) = self.inner.as_slice().to_str() {
-            let iter = s.chars().map(u32::from).collect::<Vec<_>>().into_iter();
-            return Ok(Codepoints::from(iter));
-        }
-
-        Err(CodepointsError::invalid_utf8_codepoint())
     }
 
     #[inline]
