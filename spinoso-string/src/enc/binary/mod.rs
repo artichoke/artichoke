@@ -278,7 +278,7 @@ impl BinaryString {
             .inner
             .as_slice()
             .bytes()
-            .map(char::from)
+            .map(u32::from)
             .collect::<Vec<_>>()
             .into_iter();
         Codepoints::from(iter)

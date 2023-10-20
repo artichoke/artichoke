@@ -150,7 +150,7 @@ impl Utf8String {
     #[inline]
     pub fn codepoints(&self) -> Result<Codepoints, CodepointsError> {
         if let Ok(s) = self.inner.as_slice().to_str() {
-            let iter = s.chars().collect::<Vec<_>>().into_iter();
+            let iter = s.chars().map(u32::from).collect::<Vec<_>>().into_iter();
             return Ok(Codepoints::from(iter));
         }
 
