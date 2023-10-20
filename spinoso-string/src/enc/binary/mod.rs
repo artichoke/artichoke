@@ -7,7 +7,7 @@ use core::slice::SliceIndex;
 use bstr::ByteSlice;
 use scolapasta_strbuf::Buf;
 
-use crate::codepoints::{Codepoints, InvalidCodepointError};
+use crate::codepoints::{Codepoints, CodepointsError, InvalidCodepointError};
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
@@ -273,15 +273,15 @@ impl BinaryString {
     }
 
     #[inline]
-    pub fn codepoints(&self) -> Codepoints {
+    pub fn codepoints(&self) -> Result<Codepoints, CodepointsError> {
         let iter = self
             .inner
             .as_slice()
             .bytes()
-            .map(u32::from)
+            .map(|b| b as u32)
             .collect::<Vec<_>>()
             .into_iter();
-        Codepoints::from(iter)
+        Ok(Codepoints::from(iter))
     }
 }
 
