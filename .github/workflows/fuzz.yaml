@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.6.0
+        uses: actions/checkout@v4.1.0
 
       - name: Install nightly Rust toolchain
         uses: artichoke/setup-rust/build-and-test@v1.10.0
@@ -42,7 +42,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.6.0
+        uses: actions/checkout@v4.1.0
 
       - name: Install nightly Rust toolchain
         uses: artichoke/setup-rust/build-and-test@v1.10.0
@@ -75,7 +75,7 @@ jobs:
       RUST_BACKTRACE: 1
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.6.0
+        uses: actions/checkout@v4.1.0
 
       - name: Install nightly Rust toolchain
         uses: artichoke/setup-rust/build-and-test@v1.10.0
