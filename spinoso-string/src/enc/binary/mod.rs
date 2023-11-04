@@ -10,12 +10,14 @@ use crate::codepoints::InvalidCodepointError;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
 
+mod codepoints;
 mod eq;
 mod impls;
 mod inspect;
 #[cfg(feature = "std")]
 mod io;
 
+pub use codepoints::Codepoints;
 pub use inspect::Inspect;
 
 #[repr(transparent)]

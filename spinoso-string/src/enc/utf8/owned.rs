@@ -164,9 +164,9 @@ impl Utf8String {
 
 // Casing
 impl Utf8String {
-    // TODO: Use roe for case changing operations. UTF-8 case changing needs to
-    //       be parameterized on the case folding strategy to account for e.g.
-    //       Turkic or ASCII-only modes
+    // TODO: #1723 Use roe for case changing operations. UTF-8 case changing
+    //       needs to be parameterized on the case folding strategy to account
+    //       for e.g. Turkic or ASCII-only modes
     #[inline]
     pub fn make_capitalized(&mut self) {
         use bstr::ByteVec;

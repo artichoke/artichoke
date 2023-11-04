@@ -7,8 +7,11 @@ use bstr::ByteSlice;
 use crate::iter::{Bytes, Iter, IterMut};
 use crate::ord::OrdError;
 
+mod codepoints;
 mod eq;
 mod impls;
+
+pub use codepoints::Codepoints;
 
 #[repr(transparent)]
 pub struct Utf8Str {

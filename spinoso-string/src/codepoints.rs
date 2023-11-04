@@ -1,11 +1,9 @@
 use core::fmt::{self, Write};
 use core::iter::FusedIterator;
 use core::mem;
-use core::str::Chars;
 
-use bstr::{ByteSlice, Bytes};
-
-use crate::{Encoding, String};
+use crate::enc::{self};
+use crate::String;
 
 /// Error returned when failing to construct a [`Codepoints`] iterator/
 ///
@@ -191,31 +189,14 @@ impl std::error::Error for InvalidCodepointError {}
 /// [encoding-aware]: crate::Encoding
 /// [Conventionally UTF-8]: crate::Encoding::Utf8
 #[derive(Debug, Default, Clone)]
-pub struct Codepoints<'a>(State<'a>);
+pub struct Codepoints<'a>(enc::Codepoints<'a>);
 
 impl<'a> TryFrom<&'a String> for Codepoints<'a> {
     type Error = CodepointsError;
 
     #[inline]
     fn try_from(s: &'a String) -> Result<Self, Self::Error> {
-        let state = match s.encoding() {
-            Encoding::Utf8 => {
-                if let Ok(s) = s.inner.as_slice().to_str() {
-                    State::Utf8(s.chars())
-                } else {
-                    return Err(CodepointsError::invalid_utf8_codepoint());
-                }
-            }
-            Encoding::Ascii => {
-                let iter = s.as_slice().bytes();
-                State::Ascii(iter)
-            }
-            Encoding::Binary => {
-                let iter = s.as_slice().bytes();
-                State::Binary(iter)
-            }
-        };
-        Ok(Self(state))
+        s.inner.codepoints().map(Self)
     }
 }
 
@@ -229,30 +210,3 @@ impl<'a> Iterator for Codepoints<'a> {
 }
 
 impl<'a> FusedIterator for Codepoints<'a> {}
-
-#[derive(Debug, Clone)]
-enum State<'a> {
-    Utf8(Chars<'a>),
-    Ascii(Bytes<'a>),
-    Binary(Bytes<'a>),
-}
-
-impl<'a> Default for State<'a> {
-    fn default() -> Self {
-        Self::Utf8("".chars())
-    }
-}
-
-impl<'a> Iterator for State<'a> {
-    type Item = u32;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            Self::Ascii(iter) | Self::Binary(iter) => iter.next().map(u32::from),
-            Self::Utf8(iter) => iter.next().map(u32::from),
-        }
-    }
-}
-
-impl<'a> FusedIterator for State<'a> {}
