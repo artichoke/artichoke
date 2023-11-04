@@ -34,3 +34,24 @@ impl<'a> Default for Codepoints<'a> {
         Self { inner: "".chars() }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::vec::Vec;
+
+    use super::*;
+
+    #[test]
+    fn test_valid_utf8() {
+        let s = Utf8Str::new("hello💎");
+        let codepoints = Codepoints::try_from(s).unwrap();
+        assert_eq!(codepoints.collect::<Vec<_>>(), &[104, 101, 108, 108, 111, 128_142]);
+    }
+
+    #[test]
+    fn test_invalid_utf8() {
+        let s = Utf8Str::new(b"hello\xFF");
+        let err = Codepoints::try_from(s).unwrap_err();
+        assert_eq!(err, CodepointsError::invalid_utf8_codepoint());
+    }
+}

@@ -26,3 +26,32 @@ impl<'a> Default for Codepoints<'a> {
         Self::new(b"")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::vec::Vec;
+
+    use super::*;
+    use crate::enc::ascii::AsciiString;
+
+    #[test]
+    fn test_valid_ascii() {
+        let s = AsciiString::from("abc");
+        let codepoints = Codepoints::new(&s);
+        assert_eq!(codepoints.collect::<Vec<_>>(), &[97, 98, 99]);
+    }
+
+    #[test]
+    fn test_utf8_interpreted_as_bytes() {
+        let s = AsciiString::from("abc💎");
+        let codepoints = Codepoints::new(&s);
+        assert_eq!(codepoints.collect::<Vec<_>>(), &[97, 98, 99, 240, 159, 146, 142]);
+    }
+
+    #[test]
+    fn test_invalid_utf8_interpreted_as_bytes() {
+        let s = AsciiString::from(b"abc\xFF");
+        let codepoints = Codepoints::new(&s);
+        assert_eq!(codepoints.collect::<Vec<_>>(), &[97, 98, 99, 255]);
+    }
+}
