@@ -14,15 +14,18 @@ use crate::codepoints::InvalidCodepointError;
 use crate::encoding::Encoding;
 use crate::iter::{Bytes, IntoIter, Iter, IterMut};
 use crate::ord::OrdError;
+use crate::CodepointsError;
 
 mod ascii;
 mod binary;
+mod codepoints;
 mod impls;
 mod inspect;
 #[cfg(feature = "std")]
 mod io;
 mod utf8;
 
+pub use codepoints::Codepoints;
 pub use inspect::Inspect;
 
 #[derive(Clone)]
@@ -310,6 +313,14 @@ impl EncodedString {
             EncodedString::Ascii(inner) => inner.into(),
             EncodedString::Binary(inner) => inner.into(),
             EncodedString::Utf8(inner) => inner.into(),
+        }
+    }
+    #[inline]
+    pub fn codepoints(&self) -> Result<Codepoints<'_>, CodepointsError> {
+        match self {
+            EncodedString::Ascii(inner) => Ok(inner.into()),
+            EncodedString::Binary(inner) => Ok(inner.into()),
+            EncodedString::Utf8(inner) => inner.try_into(),
         }
     }
 

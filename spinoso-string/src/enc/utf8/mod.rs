@@ -42,6 +42,7 @@ mod borrowed;
 mod inspect;
 mod owned;
 
+pub use borrowed::Codepoints;
 pub use borrowed::Utf8Str;
 pub use inspect::Inspect;
 pub use owned::Utf8String;
