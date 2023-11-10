@@ -15,6 +15,18 @@ impl<'a> TryFrom<&'a Utf8Str> for Codepoints<'a> {
     fn try_from(s: &'a Utf8Str) -> Result<Self, Self::Error> {
         match simdutf8::basic::from_utf8(s.as_bytes()) {
             Ok(s) => Ok(Self { inner: s.chars() }),
+            // ```
+            // [3.2.2] > s = "abc\xFFxyz"
+            // => "abc\xFFxyz"
+            // [3.2.2] > s.encoding
+            // => #<Encoding:UTF-8>
+            // [3.2.2] > s.codepoints
+            // (irb):5:in `codepoints': invalid byte sequence in UTF-8 (ArgumentError)
+            //         from (irb):5:in `<main>'
+            //         from /usr/local/var/rbenv/versions/3.2.2/lib/ruby/gems/3.2.0/gems/irb-1.6.2/exe/irb:11:in `<top (required)>'
+            //         from /usr/local/var/rbenv/versions/3.2.2/bin/irb:25:in `load'
+            //         from /usr/local/var/rbenv/versions/3.2.2/bin/irb:25:in `<main>'
+            // ```
             Err(_) => Err(CodepointsError::invalid_utf8_codepoint()),
         }
     }
