@@ -308,11 +308,12 @@ $ rbenv install artichoke-dev
 
 Currently supported nightly targets are:
 
+- [`aarch64-apple-darwin`] (Apple Silicon)
+- [`aarch64-unknown-linux-gnu`]
+- [`x86_64-apple-darwin`]
 - [`x86_64-unknown-linux-gnu`]
 - [`x86_64-unknown-linux-musl`]
-- [`x86_64-apple-darwin`]
 - [`x86_64-pc-windows-msvc`]
-- [`aarch64-apple-darwin`] (Apple Silicon)
 
 [artichoke/nightly]: https://github.com/artichoke/nightly
 [github-actions-nightly]:
@@ -320,16 +321,18 @@ Currently supported nightly targets are:
 [nightly-releases]: https://github.com/artichoke/nightly/releases
 [`ruby-build`]: https://github.com/rbenv/ruby-build
 [`rbenv install`]: https://github.com/rbenv/rbenv#installing-ruby-versions
+[`aarch64-apple-darwin`]:
+  https://github.com/artichoke/nightly/releases/latest/download/artichoke-nightly-aarch64-apple-darwin.tar.gz
+[`aarch64-unknown-linux-gnu`]:
+  https://github.com/artichoke/nightly/releases/latest/download/artichoke-nightly-aarch64-unknown-linux-gnu.tar.gz
+[`x86_64-apple-darwin`]:
+  https://github.com/artichoke/nightly/releases/latest/download/artichoke-nightly-x86_64-apple-darwin.tar.gz
 [`x86_64-unknown-linux-gnu`]:
   https://github.com/artichoke/nightly/releases/latest/download/artichoke-nightly-x86_64-unknown-linux-gnu.tar.gz
 [`x86_64-unknown-linux-musl`]:
   https://github.com/artichoke/nightly/releases/latest/download/artichoke-nightly-x86_64-unknown-linux-musl.tar.gz
-[`x86_64-apple-darwin`]:
-  https://github.com/artichoke/nightly/releases/latest/download/artichoke-nightly-x86_64-apple-darwin.tar.gz
 [`x86_64-pc-windows-msvc`]:
   https://github.com/artichoke/nightly/releases/latest/download/artichoke-nightly-x86_64-pc-windows-msvc.zip
-[`aarch64-apple-darwin`]:
-  https://github.com/artichoke/nightly/releases/latest/download/artichoke-nightly-aarch64-apple-darwin.tar.gz
 
 ### Nightly Containers
 
