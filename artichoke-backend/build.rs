@@ -231,6 +231,7 @@ mod libs {
 
         let mut builder = bindgen::builder()
             .header(header)
+            .parse_callbacks(Box::new(bindgen::CargoCallbacks::new().rerun_on_header_files(true)))
             .allowlist_function("^mrb.*")
             .allowlist_type("^mrb.*")
             .allowlist_var("^mrb.*")
