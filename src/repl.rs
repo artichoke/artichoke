@@ -310,31 +310,9 @@ where
                 break;
             }
             Ok(input) => {
-                // scope lock and borrows of the rl editor to a block to facilitate
-                // unlocking and unborrowing.
-                {
-                    let parser = rl.helper().ok_or_else(ParserAllocError::new)?;
-                    let mut lock = parser.inner.lock().unwrap_or_else(PoisonError::into_inner);
-                    let interp = lock.interp();
-
-                    match interp.eval(input.as_bytes()) {
-                        Ok(value) => {
-                            let result = value.inspect(interp);
-                            output.write_all(config.result_prefix.as_bytes())?;
-                            output.write_all(result.as_slice())?;
-                            output.write_all(b"\n")?;
-                        }
-                        Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
-                    }
-
-                    interp
-                        .add_fetch_lineno(input.matches('\n').count())
-                        .map_err(|_| ParserLineCountError::new())?;
-
-                    // Eval successful, so reset the REPL state for the next expression.
-                    interp.incremental_gc()?;
-                }
-
+                // scope lock and borrows of the rl editor to a function call to
+                // facilitate unlocking and unborrowing.
+                eval_single_input(rl, &mut output, &mut error, config, &input)?;
                 rl.add_history_entry(input)?;
             }
             // Reset and present the user with a fresh prompt.
@@ -346,5 +324,62 @@ where
             Err(err) => return Err(Box::new(UnhandledReadlineError(err))),
         };
     }
+    Ok(())
+}
+
+fn eval_single_input<Wout, Werr>(
+    rl: &mut Editor<Parser<'_>, FileHistory>,
+    mut output: Wout,
+    error: Werr,
+    config: &PromptConfig<'_, '_, '_>,
+    input: &str,
+) -> Result<(), Box<dyn error::Error>>
+where
+    Wout: io::Write,
+    Werr: io::Write + WriteColor,
+{
+    let parser = rl.helper().ok_or_else(ParserAllocError::new)?;
+    let mut lock = parser.inner.lock().unwrap_or_else(PoisonError::into_inner);
+    let interp = lock.interp();
+
+    match interp.eval(input.as_bytes()) {
+        // As of IRB v1.10.0 (included in Ruby v3.3.0), users can omit return
+        // value inspection by ending an input with `;`.
+        //
+        // See:https://railsatscale.com/2023-12-19-irb-for-ruby-3-3/#omitting-return-value-inspection-with-
+        //
+        // # Example
+        //
+        // ```console
+        // irb(main):001> long_string = "foo" * 10000;
+        // irb(main):002> long_string.size
+        // => 30000
+        // ```
+        Ok(_) if input.bytes().last() == Some(b';') => {}
+        // Return value inspection: print a `=> ` and the value of `_.inspect`
+        // after evaluating the given input.
+        //
+        // # Example
+        //
+        // ```
+        // [3.2.2] > s = "abc"
+        // => "abc"
+        // ```
+        Ok(value) => {
+            let result = value.inspect(interp);
+            output.write_all(config.result_prefix.as_bytes())?;
+            output.write_all(result.as_slice())?;
+            output.write_all(b"\n")?;
+        }
+        Err(ref exc) => backtrace::format_repl_trace_into(error, interp, exc)?,
+    }
+
+    interp
+        .add_fetch_lineno(input.lines().count())
+        .map_err(|_| ParserLineCountError::new())?;
+
+    // Eval successful, so reset the REPL state for the next expression.
+    interp.incremental_gc()?;
+
     Ok(())
 }
