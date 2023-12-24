@@ -318,6 +318,12 @@ where
                     let interp = lock.interp();
 
                     match interp.eval(input.as_bytes()) {
+                        // As of IRB v1.10.0 (included in Ruby v3.3.0), users can
+                        // omit return value inspection by ending an input with `;`.
+                        //
+                        // See:https://railsatscale.com/2023-12-19-irb-for-ruby-3-3/#omitting-return-value-inspection-with-
+                        Ok(_) if input.as_bytes().last() == Some(&b';') => {}
+                        // return value inspection
                         Ok(value) => {
                             let result = value.inspect(interp);
                             output.write_all(config.result_prefix.as_bytes())?;
