@@ -330,7 +330,7 @@ where
 fn eval_single_input<Wout, Werr>(
     rl: &mut Editor<Parser<'_>, FileHistory>,
     mut output: Wout,
-    mut error: Werr,
+    error: Werr,
     config: &PromptConfig<'_, '_, '_>,
     input: &str,
 ) -> Result<(), Box<dyn error::Error>>
@@ -371,7 +371,7 @@ where
             output.write_all(result.as_slice())?;
             output.write_all(b"\n")?;
         }
-        Err(ref exc) => backtrace::format_repl_trace_into(&mut error, interp, exc)?,
+        Err(ref exc) => backtrace::format_repl_trace_into(error, interp, exc)?,
     }
 
     interp
