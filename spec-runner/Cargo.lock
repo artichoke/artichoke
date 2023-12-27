@@ -933,6 +933,7 @@ dependencies = [
 name = "spinoso-time"
 version = "0.7.2"
 dependencies = [
+ "iana-time-zone",
  "regex",
  "strftime-ruby",
  "tz-rs",
@@ -1004,11 +1005,10 @@ dependencies = [
 
 [[package]]
 name = "tzdb"
-version = "0.5.7"
+version = "0.6.0-pre.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec758958f2fb5069cd7fae385be95cc8eceb8cdfd270c7d14de6034f0108d99e"
+checksum = "58d8b51e1d35ca1094870b46d453ee9374345bad838b47d0478e248493d0ff84"
 dependencies = [
- "iana-time-zone",
  "tz-rs",
 ]
 

@@ -5,8 +5,6 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 use tz::timezone::{LocalTimeType, TimeZoneRef};
-#[cfg(feature = "tzrs-local")]
-use tzdb::local_tz;
 use tzdb::time_zone::etc::GMT;
 
 use super::error::{TimeError, TzOutOfRangeError, TzStringError};
@@ -53,9 +51,9 @@ fn local_time_zone() -> TimeZoneRef<'static> {
     // local timezone: https://docs.rs/tzdb/latest/tzdb/fn.local_tz.html.
     static LOCAL_TZ: OnceLock<TimeZoneRef<'static>> = OnceLock::new();
 
-    *LOCAL_TZ.get_or_init(|| match local_tz() {
-        Some(tz) => tz,
-        None => GMT,
+    *LOCAL_TZ.get_or_init(|| {
+        let tz = iana_time_zone::get_timezone().ok().and_then(tzdb::tz_by_name);
+        tz.unwrap_or(GMT)
     })
 }
 
