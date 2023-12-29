@@ -19,7 +19,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-artichoke-readline = "1.0.1"
+artichoke-readline = "1.1.0"
 ```
 
 And parse Readline editing mode like this:
@@ -39,6 +39,8 @@ if let Some(config) = rl_read_init_file() {
 The **rustyline** feature (enabled by default) adds trait implementations to
 allow `EditMode` to interoperate with the corresponding enum in the `rustyline`
 crate.
+
+`rustyline` major version upgrades can be made in minor version bumps.
 
 ## License
 

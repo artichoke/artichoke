@@ -1,6 +1,6 @@
 [package]
 name = "artichoke-readline"
-version = "1.0.1"
+version = "1.1.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Helpers for interacting with GNU Readline configuration"
 keywords = ["artichoke", "artichoke-ruby", "inputrc", "readline"]
@@ -21,7 +21,7 @@ version = "1.2.0"
 default-features = false
 
 [dependencies.rustyline]
-version = "12.0.0"
+version = "13.0.0"
 optional = true
 default-features = false
 
