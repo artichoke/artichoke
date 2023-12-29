@@ -239,7 +239,7 @@ class << ENV
     # returns nil if no changes were made
     return nil if to_remove.empty?
 
-    to_remove.each do |key, _|
+    to_remove.each_key do |key|
       delete(key)
     end
     self

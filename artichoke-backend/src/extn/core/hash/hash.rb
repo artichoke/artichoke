@@ -107,7 +107,7 @@ class Hash
     return false unless other.is_a?(Hash)
     return false unless size == other.size
 
-    each do |k, _|
+    each_key do |k|
       return false unless other.key?(k)
       return false unless self[k] == other[k]
     end
@@ -209,7 +209,7 @@ class Hash
     return false unless other.is_a?(Hash)
     return false if size != other.size
 
-    each do |k, _|
+    each_key do |k|
       return false unless other.key?(k)
       return false unless self[k].eql?(other[k])
     end
