@@ -37,7 +37,7 @@ class NoMethodError
 
   def initialize(message = nil, name = nil, args = nil)
     @args = args
-    super message, name
+    super(message, name)
   end
 end
 
@@ -59,6 +59,6 @@ class UncaughtThrowError
   def initialize(tag, value = nil)
     @tag = tag
     @value = value
-    super "uncaught throw #{tag}"
+    super("uncaught throw #{tag}")
   end
 end
