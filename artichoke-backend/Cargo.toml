@@ -115,7 +115,7 @@ version = "0.4.0"
 path = "../spinoso-symbol"
 
 [dependencies.spinoso-time]
-version = "0.7.2"
+version = "0.8.0"
 path = "../spinoso-time"
 optional = true
 default-features = false
