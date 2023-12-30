@@ -37,6 +37,18 @@ updates:
       - lopopolo
     labels:
       - A-deps
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: monthly
+    groups:
+      npm-deps:
+        patterns:
+          - "*"
+    assignees:
+      - lopopolo
+    labels:
+      - A-deps
   - package-ecosystem: cargo
     directory: "/fuzz"
     schedule:

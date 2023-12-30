@@ -427,13 +427,13 @@ jobs:
       - name: Setup Node.js runtime
         uses: actions/setup-node@v4.0.0
         with:
-          node-version: 16
+          node-version: "lts/*"
 
-      - name: Install npm
-        run: npm i -f -g npm@8.16.0
+      - name: Install toolchain
+        run: npm ci
 
       - name: Lint and check formatting with clang-format
-        run: npx github:artichoke/clang-format --check
+        run: npm run fmt:c -- --check
 
   text:
     name: Lint and format text
@@ -441,6 +441,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.1
+
+      - name: Setup Node.js runtime
+        uses: actions/setup-node@v4.0.0
+        with:
+          node-version: "lts/*"
+
+      - name: Install toolchain
+        run: npm ci
 
       - name: Lint and check formatting with prettier
         run: npx prettier --check '**/*'
