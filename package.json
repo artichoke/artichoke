@@ -1,0 +1,23 @@
+{
+  "name": "@artichokeruby/artichoke",
+  "version": "0.1.0-pre.0",
+  "private": true,
+  "description": "Artichoke is a Ruby made with Rust",
+  "keywords": [
+    "ruby",
+    "rust",
+    "wasm"
+  ],
+  "repository": "github:artichoke/artichoke",
+  "author": "Ryan Lopopolo <rjl@hyperbo.la> (https://hyperbo.la/)",
+  "homepage": "https://www.artichokeruby.org",
+  "bugs": "https://github.com/artichoke/artichoke/issues",
+  "devDependencies": {
+    "@artichokeruby/clang-format": "github:artichoke/clang-format#semver:^0.15.0",
+    "prettier": "^3.1.1"
+  },
+  "scripts": {
+    "fmt": "prettier --write \"**/*\"",
+    "fmt:c": "clang-format"
+  }
+}

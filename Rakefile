@@ -62,12 +62,12 @@ namespace :format do
 
   desc 'Format text, YAML, and Markdown sources with prettier'
   task :text do
-    sh 'npx prettier --write "**/*"'
+    sh 'npm run fmt'
   end
 
   desc 'Format .c and .h sources with clang-format'
   task :c do
-    sh 'npx --yes github:artichoke/clang-format'
+    sh 'npm run fmt:c'
   end
 end
 
@@ -88,12 +88,12 @@ namespace :fmt do
 
   desc 'Format text, YAML, and Markdown sources with prettier'
   task :text do
-    sh 'npx prettier --write "**/*"'
+    sh 'npm run fmt'
   end
 
   desc 'Format .c and .h sources with clang-format'
   task :c do
-    sh 'npx --yes github:artichoke/clang-format'
+    sh 'npm run fmt:c'
   end
 end
 
