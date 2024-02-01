@@ -10,9 +10,9 @@ keywords = ["artichoke", "artichoke-ruby", "ruby", "ruby-spec", "testing"]
 categories = ["development-tools::testing"]
 
 [dependencies]
-basic-toml = "0.1.4"
+basic-toml = "0.1.8"
 rust-embed = "8.2.0"
-termcolor = "1.1.0"
+termcolor = "1.4.1"
 
 [dependencies.artichoke]
 version = "0.1.0-pre.0"
@@ -21,7 +21,7 @@ default-features = false
 features = ["backtrace", "kitchen-sink"]
 
 [dependencies.clap]
-version = "4.4.12"
+version = "4.4.18"
 default-features = false
 features = ["std", "help", "usage", "error-context", "suggestions"]
 
