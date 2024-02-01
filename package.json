@@ -14,7 +14,7 @@
   "bugs": "https://github.com/artichoke/artichoke/issues",
   "devDependencies": {
     "@artichokeruby/clang-format": "github:artichoke/clang-format#semver:^0.16.0",
-    "prettier": "^3.1.1"
+    "prettier": "^3.2.4"
   },
   "scripts": {
     "fmt": "prettier --write \"**/*\"",
