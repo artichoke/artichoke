@@ -422,6 +422,12 @@ macro_rules! mrb_get_args {
             args.as_mut_ptr(),
             count.as_mut_ptr(),
         );
-        std::slice::from_raw_parts(args.assume_init(), count.assume_init())
+        let args = args.assume_init();
+        let count = count.assume_init();
+        if args.is_null() || count == 0 {
+            &[]
+        } else {
+            std::slice::from_raw_parts(args, count)
+        }
     }};
 }
