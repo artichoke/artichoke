@@ -1,8 +1,9 @@
-pub mod integer;
+mod integer;
 pub(in crate::extn) mod mruby;
 pub mod require;
 pub(super) mod trampoline;
 
+#[allow(unused_imports)]
 pub use trampoline::integer;
 
 #[derive(Debug, Clone, Copy)]
