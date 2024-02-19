@@ -2,7 +2,7 @@
 
 use core::convert::TryFrom;
 use core::fmt::Write as _;
-use core::hash::{BuildHasher, Hash, Hasher};
+use core::hash::BuildHasher;
 use core::str;
 
 use artichoke_core::hash::Hash as _;
@@ -1169,10 +1169,8 @@ pub fn getbyte(interp: &mut Artichoke, mut value: Value, index: Value) -> Result
 
 pub fn hash(interp: &mut Artichoke, mut value: Value) -> Result<Value, Error> {
     let s = unsafe { super::String::unbox_from_value(&mut value, interp)? };
-    let mut hasher = interp.global_build_hasher()?.build_hasher();
-    s.as_slice().hash(&mut hasher);
     #[allow(clippy::cast_possible_wrap)]
-    let hash = hasher.finish() as i64;
+    let hash = interp.global_build_hasher()?.hash_one(s.as_slice()) as i64;
     Ok(interp.convert(hash))
 }
 

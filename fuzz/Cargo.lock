@@ -338,7 +338,7 @@ checksum = "523dc4f511e55ab87b694dc30d0f820d60906ef06413f93d4d7a1385599cc149"
 
 [[package]]
 name = "mezzaluna-type-registry"
-version = "1.0.1"
+version = "2.0.0"
 
 [[package]]
 name = "minimal-lexical"
@@ -625,7 +625,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-string"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "bstr",
  "bytecount",

@@ -189,7 +189,7 @@ impl Utf8String {
                 }
                 bytes = &bytes[size..];
             }
-            (None, size) if size == 0 => return,
+            (None, 0) => return,
             (None, size) => {
                 let (substring, remainder) = bytes.split_at(size);
                 replacement.extend_from_slice(substring);

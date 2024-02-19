@@ -146,11 +146,12 @@ mod tests {
 
         #[test]
         #[should_panic]
+        #[allow(clippy::should_panic_without_expect)]
         // this test is known broken
         fn eval_context_is_a_stack() {
             let mut interp = interpreter();
             interp.def_file_for_type::<_, NestedEval>("nested_eval.rb").unwrap();
-            let code = br#"require 'nested_eval'; NestedEval.file"#;
+            let code = b"require 'nested_eval'; NestedEval.file";
             let result = interp.eval(code).unwrap();
             let result = result.try_convert_into_mut::<&str>(&mut interp).unwrap();
             assert_eq!(result, "/src/lib/nested_eval.rb");

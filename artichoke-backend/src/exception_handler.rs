@@ -200,16 +200,16 @@ mod tests {
     #[test]
     fn raise_does_not_panic_or_segfault() {
         let mut interp = interpreter();
-        interp.eval(br#"raise 'foo'"#).unwrap_err();
-        interp.eval(br#"raise 'foo'"#).unwrap_err();
+        interp.eval(b"raise 'foo'").unwrap_err();
+        interp.eval(b"raise 'foo'").unwrap_err();
         interp.eval(br#"eval("raise 'foo'")"#).unwrap_err();
         interp.eval(br#"eval("raise 'foo'")"#).unwrap_err();
-        interp.eval(br#"require 'foo'"#).unwrap_err();
-        interp.eval(br#"require 'foo'"#).unwrap_err();
+        interp.eval(b"require 'foo'").unwrap_err();
+        interp.eval(b"require 'foo'").unwrap_err();
         interp.eval(br#"eval("require 'foo'")"#).unwrap_err();
         interp.eval(br#"eval("require 'foo'")"#).unwrap_err();
-        interp.eval(br#"Regexp.compile(2)"#).unwrap_err();
-        interp.eval(br#"Regexp.compile(2)"#).unwrap_err();
+        interp.eval(b"Regexp.compile(2)").unwrap_err();
+        interp.eval(b"Regexp.compile(2)").unwrap_err();
         #[cfg(feature = "core-regexp")]
         {
             interp.eval(br#"eval("Regexp.compile(2)")"#).unwrap_err();
@@ -230,7 +230,7 @@ fail
 ";
             interp.eval(REQUIRE_TEST).unwrap();
         }
-        let kernel = interp.eval(br#"Kernel"#).unwrap();
+        let kernel = interp.eval(b"Kernel").unwrap();
         kernel.funcall(&mut interp, "raise", &[], None).unwrap_err();
         kernel.funcall(&mut interp, "raise", &[], None).unwrap_err();
     }

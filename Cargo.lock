@@ -426,14 +426,14 @@ version = "0.1.0"
 
 [[package]]
 name = "mezzaluna-loaded-features"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "same-file",
 ]
 
 [[package]]
 name = "mezzaluna-type-registry"
-version = "1.0.1"
+version = "2.0.0"
 
 [[package]]
 name = "minimal-lexical"
@@ -786,7 +786,7 @@ dependencies = [
 
 [[package]]
 name = "spinoso-string"
-version = "0.24.0"
+version = "0.25.0"
 dependencies = [
  "bstr",
  "bytecount",

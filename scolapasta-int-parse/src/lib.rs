@@ -195,35 +195,19 @@ fn parse_inner(subject: &[u8], radix: Option<i64>) -> Result<i64, Error<'_>> {
         Some(b'0') => {
             chars.next();
             match (chars.peek(), radix) {
-                (Some(b'b' | b'B'), None) => {
+                (Some(b'b' | b'B'), None | Some(2)) => {
                     chars.next();
                     2
                 }
-                (Some(b'b' | b'B'), Some(radix)) if radix == 2 => {
-                    chars.next();
-                    2
-                }
-                (Some(b'o' | b'O'), None) => {
+                (Some(b'o' | b'O'), None | Some(8)) => {
                     chars.next();
                     8
                 }
-                (Some(b'o' | b'O'), Some(radix)) if radix == 8 => {
-                    chars.next();
-                    8
-                }
-                (Some(b'd' | b'D'), None) => {
+                (Some(b'd' | b'D'), None | Some(10)) => {
                     chars.next();
                     10
                 }
-                (Some(b'd' | b'D'), Some(radix)) if radix == 10 => {
-                    chars.next();
-                    10
-                }
-                (Some(b'x' | b'X'), None) => {
-                    chars.next();
-                    16
-                }
-                (Some(b'x' | b'X'), Some(radix)) if radix == 16 => {
+                (Some(b'x' | b'X'), None | Some(16)) => {
                     chars.next();
                     16
                 }
