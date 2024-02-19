@@ -20,7 +20,7 @@ use core::hash::BuildHasher;
 use std::collections::hash_map::RandomState;
 use std::collections::hash_set::HashSet;
 use std::collections::TryReserveError;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 mod iter;
 
@@ -76,6 +76,15 @@ pub struct LoadedFeatures<S = RandomState> {
 impl Default for LoadedFeatures {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl<'a, S> IntoIterator for &'a LoadedFeatures<S> {
+    type IntoIter = Iter<'a>;
+    type Item = &'a Path;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 

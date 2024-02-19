@@ -69,7 +69,7 @@ impl<'a> From<&'a [u8]> for Inspect<'a> {
     #[inline]
     fn from(value: &'a [u8]) -> Self {
         match value {
-            value if value.is_empty() => Self::default(),
+            [] => Self::default(),
             value if IdentifierType::try_from(value).is_ok() => Self(State::ident(value)),
             value => Self(State::quoted(value)),
         }

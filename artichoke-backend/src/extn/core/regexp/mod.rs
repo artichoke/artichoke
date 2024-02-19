@@ -12,6 +12,7 @@ use std::num::NonZeroUsize;
 use std::str;
 
 #[doc(inline)]
+#[allow(unused_imports)]
 pub use spinoso_regexp::{
     nth_match_group_bytes as nth_match_group, Config, Encoding, Flags, InvalidEncodingError, Options, RegexpError,
     RegexpOption, Source, HIGHEST_MATCH_GROUP, LAST_MATCH, LAST_MATCHED_STRING, STRING_LEFT_OF_MATCH,
@@ -35,6 +36,7 @@ pub(super) mod trampoline;
 #[cfg(feature = "core-regexp-oniguruma")]
 use backend::onig::Onig;
 use backend::regex::utf8::Utf8;
+#[allow(unused_imports)]
 pub use backend::{NilableString, RegexpType, Scan};
 
 pub type NameToCaptureLocations = Vec<(Vec<u8>, Vec<i64>)>;

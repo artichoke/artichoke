@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 //! A "prelude" for writing tests in the `artichoke-backend` crate.
 //!
 //! This prelude is similar to the standard library's prelude in that you'll

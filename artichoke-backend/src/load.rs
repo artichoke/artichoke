@@ -185,7 +185,7 @@ mod tests {
 
     use crate::test::prelude::*;
 
-    const NON_IDEMPOTENT_LOAD: &[u8] = br#"
+    const NON_IDEMPOTENT_LOAD: &[u8] = b"
 module LoadSources
   class Counter
     attr_reader :c
@@ -205,7 +205,7 @@ module LoadSources
 end
 
 LoadSources::Counter.instance.inc!
-    "#;
+    ";
 
     #[test]
     fn load_has_no_memory() {

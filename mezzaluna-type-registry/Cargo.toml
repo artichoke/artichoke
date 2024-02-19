@@ -1,6 +1,6 @@
 [package]
 name = "mezzaluna-type-registry"
-version = "1.0.1"
+version = "2.0.0"
 authors = ["Ryan Lopopolo <rjl@hyperbo.la>"]
 description = "Registry for associating static config with Rust types"
 keywords = ["any", "registry", "static", "typemap"]

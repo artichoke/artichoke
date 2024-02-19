@@ -230,7 +230,7 @@ unsafe extern "C" fn mrb_str_resize(mrb: *mut sys::mrb_state, s: sys::mrb_value,
     // `allow` for clarity and to potentially handle `TryReserveErrorKind`.
     #[allow(clippy::single_match_else)]
     match result {
-        Ok(_) => value.inner(),
+        Ok(()) => value.inner(),
         // NOTE: Ideally this code would distinguish between a capacity overflow
         // (string too large) vs an out of memory condition (allocation failure).
         // This is not possible on stable Rust since `TryReserveErrorKind` is

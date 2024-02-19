@@ -52,7 +52,7 @@ impl TryConvertMut<Value, Option<Offset>> for Artichoke {
 
         // Based on the above logic, the only option in the hash is `in`.
         // >0 keys, and all other keys are rejected).
-        let mut in_value = hash.get(0).expect("Only the `in` parameter should be available").1;
+        let mut in_value = hash.first().expect("Only the `in` parameter should be available").1;
 
         match in_value.ruby_type() {
             Ruby::String => {

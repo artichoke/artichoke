@@ -38,7 +38,7 @@ default-features = false
 features = ["bytes"]
 
 [dependencies.mezzaluna-type-registry]
-version = "1.0.1"
+version = "2.0.0"
 path = "../mezzaluna-type-registry"
 
 [dependencies.onig]
@@ -106,7 +106,7 @@ path = "../spinoso-securerandom"
 optional = true
 
 [dependencies.spinoso-string]
-version = "0.24.0"
+version = "0.25.0"
 path = "../spinoso-string"
 features = ["nul-terminated"]
 

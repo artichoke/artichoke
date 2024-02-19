@@ -209,7 +209,7 @@ mod libs {
                 for include_dir in wasm_include_dirs() {
                     build.include(include_dir);
                 }
-                build.define("MRB_API", Some(r#"__attribute__((used))"#));
+                build.define("MRB_API", Some("__attribute__((used))"));
             }
             Some(Wasm::Unknown) => {
                 for include_dir in wasm_include_dirs() {

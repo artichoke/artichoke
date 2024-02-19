@@ -703,7 +703,7 @@ impl IntoIterator for String {
     type Item = u8;
     type IntoIter = IntoIter;
 
-    /// Returns an iterator that moves over the remaining bytes of a slice
+    /// Returns an iterator that moves over the bytes of this string.
     ///
     /// # Examples
     ///
@@ -719,11 +719,62 @@ impl IntoIterator for String {
     /// assert_eq!(iterator.next(), Some(b'c'));
     /// assert_eq!(iterator.next(), None);
     /// ```
-
     #[inline]
     #[must_use]
     fn into_iter(self) -> Self::IntoIter {
         self.inner.into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a String {
+    type Item = &'a u8;
+    type IntoIter = Iter<'a>;
+
+    /// Returns a borrowing iterator that moves over the bytes of this string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let s = String::from("abc");
+    ///
+    /// for &b in &s {
+    ///     assert_eq!(b, b'a');
+    ///     break;
+    /// }
+    /// ```
+    #[inline]
+    #[must_use]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut String {
+    type Item = &'a mut u8;
+    type IntoIter = IterMut<'a>;
+
+    /// Returns a borrowing iterator that mutably moves over the bytes of this
+    /// string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use spinoso_string::String;
+    ///
+    /// let mut s = String::from("abc");
+    ///
+    /// for b in &mut s {
+    ///     *b = b'1';
+    /// }
+    ///
+    /// assert_eq!(s, b"111");
+    /// ```
+    #[inline]
+    #[must_use]
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }
 
@@ -1436,7 +1487,7 @@ impl String {
     pub fn center<'a, 'b>(&'a self, width: usize, padding: Option<&'b [u8]>) -> Result<Center<'a, 'b>, CenterError> {
         let padding = match padding {
             None => b" ",
-            Some(p) if p.is_empty() => return Err(CenterError::ZeroWidthPadding),
+            Some([]) => return Err(CenterError::ZeroWidthPadding),
             Some(p) => p,
         };
         let padding_width = width.saturating_sub(self.char_len());
@@ -2111,7 +2162,7 @@ fn chomp(string: &mut String, separator: Option<&[u8]>) -> bool {
         return false;
     }
     match separator {
-        Some(separator) if separator.is_empty() => {
+        Some([]) => {
             let original_len = string.len();
             let mut iter = string.bytes().rev().peekable();
             while let Some(&b'\n') = iter.peek() {

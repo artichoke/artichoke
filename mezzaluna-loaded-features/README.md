@@ -23,7 +23,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mezzaluna-loaded-features = "0.9.0"
+mezzaluna-loaded-features = "0.10.0"
 ```
 
 And track loaded features like this:

@@ -35,7 +35,7 @@ impl TryConvertMut<&mut [Value], Args> for Artichoke {
         // give a hint that the 10 arg variant is supported however (this is
         // the same in MRI).
         if let 0 | 9 | 11 = args.len() {
-            let mut message = br#"wrong number of arguments (given "#.to_vec();
+            let mut message = b"wrong number of arguments (given ".to_vec();
             message.extend(args.len().to_string().bytes());
             message.extend_from_slice(b", expected 1..8)");
             return Err(ArgumentError::from(message).into());
@@ -518,6 +518,7 @@ mod tests {
 
     #[test]
     #[should_panic]
+    #[allow(clippy::should_panic_without_expect)]
     fn fractional_seconds_return_nanos() {
         // ```irb
         // 3.1.2 > Time.utc(*[2022, 1, 1, 0, 0, 1.5])

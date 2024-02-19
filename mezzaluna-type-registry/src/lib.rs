@@ -157,15 +157,6 @@ where
 {
 }
 
-impl<'a, T, S> IntoIterator for &'a Registry<T, S> {
-    type Item = &'a T;
-    type IntoIter = TypeSpecs<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.type_specs()
-    }
-}
-
 impl<T> Registry<T, RandomState> {
     /// Construct a new, empty registry.
     ///

@@ -510,7 +510,7 @@ fn strftime_with_encoding(
         #[allow(clippy::match_same_arms)]
         match e {
             InvalidFormatString => {
-                let mut message = br#"invalid format: "#.to_vec();
+                let mut message = b"invalid format: ".to_vec();
                 message.extend_from_slice(format);
                 Error::from(ArgumentError::from(message))
             }
@@ -525,7 +525,7 @@ fn strftime_with_encoding(
                 //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
                 //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
                 // ```
-                let mut message = br#"Result too large - "#.to_vec();
+                let mut message = b"Result too large - ".to_vec();
                 message.extend_from_slice(format);
                 Error::from(ArgumentError::from(message))
             }
@@ -540,7 +540,7 @@ fn strftime_with_encoding(
                 //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `load'
                 //      from /usr/local/var/rbenv/versions/3.1.2/bin/irb:25:in `<main>'
                 // ```
-                let mut message = br#"Result too large - "#.to_vec();
+                let mut message = b"Result too large - ".to_vec();
                 message.extend_from_slice(format);
                 Error::from(ArgumentError::from(message))
             }
