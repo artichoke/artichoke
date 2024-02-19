@@ -740,7 +740,7 @@ impl<'a> IntoIterator for &'a String {
     /// let s = String::from("abc");
     ///
     /// for &b in &s {
-    ///     assert_eq!(b, Some(b'a'));
+    ///     assert_eq!(b, b'a');
     ///     break;
     /// }
     /// ```
