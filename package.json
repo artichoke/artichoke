@@ -13,7 +13,7 @@
   "homepage": "https://www.artichokeruby.org",
   "bugs": "https://github.com/artichoke/artichoke/issues",
   "devDependencies": {
-    "@artichokeruby/clang-format": "github:artichoke/clang-format#semver:^0.16.0",
+    "@artichokeruby/clang-format": "github:artichoke/clang-format#semver:^0.17.0",
     "prettier": "^3.2.5"
   },
   "scripts": {
