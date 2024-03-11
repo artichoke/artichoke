@@ -1535,6 +1535,7 @@ RETRY_TRY_BLOCK:
       case MRB_TT_STRING:
         switch (mrb_type(vb)) {
         case MRB_TT_INTEGER:
+        case MRB_TT_ENCODING:
         case MRB_TT_STRING:
         case MRB_TT_RANGE:
           va = mrb_str_aref(mrb, va, vb, mrb_undef_value());

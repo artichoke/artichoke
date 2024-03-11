@@ -54,6 +54,7 @@ mod libs {
             "src/debug.c",
             "src/dump.c",
             "src/enum.c",
+            "src/encoding.c",
             "src/error.c",
             "src/etc.c",
             "src/fmt_fp.c",

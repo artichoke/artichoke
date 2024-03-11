@@ -135,6 +135,7 @@ static const unsigned int IEEE754_INFINITY_BITS_SINGLE = 0x7F800000;
   f(MRB_TT_FALSE,       void,               "false") \
   f(MRB_TT_TRUE,        void,               "true") \
   f(MRB_TT_SYMBOL,      void,               "Symbol") \
+  f(MRB_TT_ENCODING,    void,               "Encoding") \
   f(MRB_TT_UNDEF,       void,               "undefined") \
   f(MRB_TT_FREE,        void,               "free") \
   f(MRB_TT_FLOAT,       struct RFloat,      "Float") \

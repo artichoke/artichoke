@@ -88,6 +88,10 @@ MRB_API mrb_value mrb_sys_proc_value(struct mrb_state *mrb, struct RProc *proc);
 
 MRB_API mrb_value mrb_sys_new_symbol(mrb_sym id);
 
+// Manipulate 'Encoding's
+
+MRB_API mrb_value mrb_sys_new_encoding(mrb_int id);
+
 // Manage Rust-backed `mrb_value`s
 
 MRB_API void mrb_sys_set_instance_tt(struct RClass *klass, enum mrb_vtype type);

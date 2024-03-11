@@ -218,6 +218,18 @@ mrb_sys_new_symbol(mrb_sym id)
   return value;
 }
 
+// Manipulate `Encoding`s
+
+MRB_API mrb_value
+mrb_sys_new_encoding(mrb_int id)
+{
+  mrb_value value;
+  mrb_fixnum(value) = id;
+  value.tt = MRB_TT_ENCODING;
+
+  return value;
+}
+
 // Manage Rust-backed `mrb_value`s
 
 MRB_API void

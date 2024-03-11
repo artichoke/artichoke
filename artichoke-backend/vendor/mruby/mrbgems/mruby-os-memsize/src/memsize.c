@@ -125,6 +125,7 @@ os_memsize_of_object(mrb_state* mrb, mrb_value obj)
 #ifndef MRB_NO_FLOAT
     case MRB_TT_FLOAT:
 #endif
+    case MRB_TT_ENCODING:
     case MRB_TT_INTEGER:
       if (mrb_immediate_p(obj))
         break;

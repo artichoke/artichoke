@@ -974,6 +974,7 @@ root_scan_phase(mrb_state *mrb, mrb_gc *gc)
   mrb_gc_mark(mrb, (struct RBasic*)mrb->false_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->nil_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->symbol_class);
+  mrb_gc_mark(mrb, (struct RBasic*)mrb->encoding_class);
   mrb_gc_mark(mrb, (struct RBasic*)mrb->kernel_module);
 
   mrb_gc_mark(mrb, (struct RBasic*)mrb->eException_class);

@@ -61,6 +61,8 @@ pub enum Ruby {
     CPointer,
     /// FFI type for an owned C pointer.
     Data,
+    /// Artichoke Ruby `Encoding` type.
+    Encoding,
     /// Ruby `Exception` type.
     Exception,
     /// Ruby `Fiber` type.
@@ -127,6 +129,7 @@ impl Ruby {
             Self::Class => "Class",
             Self::CPointer => "C Pointer",
             Self::Data => "Rust-backed Ruby instance",
+            Self::Encoding => "Rust-backed Encoding",
             Self::Exception => "Exception",
             Self::Fiber => "Fiber",
             Self::Fixnum => "Integer",
