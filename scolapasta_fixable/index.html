@@ -1,0 +1,49 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Functions for converting numeric immediates to integer or “fixnum” immediates."><title>scolapasta_fixable - Rust</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="scolapasta_fixable" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (0824b300e 2024-03-24)" data-channel="nightly" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-4c98445ec4002617.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../scolapasta_fixable/index.html">scolapasta_fixable</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><ul class="block">
+            <li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#constants">Constants</a></li><li><a href="#traits">Traits</a></li><li><a href="#functions">Functions</a></li></ul></section></div></nav><div class="sidebar-resizer"></div>
+    <main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../scolapasta_fixable/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">scolapasta_fixable</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/scolapasta_fixable/lib.rs.html#1-930">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Functions for converting numeric immediates to integer or “fixnum”
+immediates.</p>
+<p>Fixnums have range of a 63-bit signed int and are returned as a native
+representation <a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html" title="primitive i64"><code>i64</code></a>.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>Check whether a numeric value is able to be converted to an in-range
+“fixnum”:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>scolapasta_fixable::RB_FIXABLE;
+
+<span class="macro">assert!</span>(RB_FIXABLE(<span class="number">23_u8</span>));
+<span class="macro">assert!</span>(RB_FIXABLE(u16::MIN));
+<span class="macro">assert!</span>(RB_FIXABLE(i32::MAX));
+<span class="macro">assert!</span>(RB_FIXABLE(<span class="number">1024_u64</span>));
+<span class="macro">assert!</span>(RB_FIXABLE(<span class="number">1024_i64</span>));
+<span class="macro">assert!</span>(RB_FIXABLE(<span class="number">1.0_f32</span>));
+<span class="macro">assert!</span>(RB_FIXABLE(-<span class="number">9000.27_f64</span>));</code></pre></div>
+<p>This crate also exports a <a href="trait.Fixable.html" title="trait scolapasta_fixable::Fixable"><code>Fixable</code></a> trait which provides methods on
+numeric types to check if they are fixable and to do a fallible conversion
+to an <a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html" title="primitive i64"><code>i64</code></a> fixnum.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>scolapasta_fixable::Fixable;
+
+<span class="macro">assert!</span>(<span class="number">23_u8</span>.is_fixable());
+<span class="macro">assert_eq!</span>(<span class="number">23_u8</span>.to_fix(), <span class="prelude-val">Some</span>(<span class="number">23_i64</span>));
+<span class="macro">assert!</span>((-<span class="number">9000.27_f64</span>).is_fixable());
+<span class="macro">assert_eq!</span>((-<span class="number">9000.27_f64</span>).to_fix(), <span class="prelude-val">Some</span>(-<span class="number">9000_i64</span>));</code></pre></div>
+<p>Some numeric types, such as <a href="https://doc.rust-lang.org/nightly/core/primitive.u64.html" title="primitive u64"><code>u64</code></a>, <a href="https://doc.rust-lang.org/nightly/core/primitive.i128.html" title="primitive i128"><code>i128</code></a>, and <a href="https://doc.rust-lang.org/nightly/core/primitive.f64.html" title="primitive f64"><code>f64</code></a> have values that
+exceed fixnum range. Conversions on values of these types which are outside
+the 63-bit int range will fail:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>scolapasta_fixable::Fixable;
+
+<span class="macro">assert_eq!</span>(u64::MAX.to_fix(), <span class="prelude-val">None</span>);
+<span class="macro">assert_eq!</span>(i128::MIN.to_fix(), <span class="prelude-val">None</span>);
+<span class="macro">assert_eq!</span>(<span class="number">4_611_686_018_427_387_904.0_f64</span>.to_fix(), <span class="prelude-val">None</span>);
+<span class="macro">assert_eq!</span>(f64::INFINITY.to_fix(), <span class="prelude-val">None</span>);
+<span class="macro">assert_eq!</span>(f64::NAN.to_fix(), <span class="prelude-val">None</span>);</code></pre></div>
+<p>For non-integer fixable types, the fractional part is discarded when converting
+to fixnum, i.e. converting to fixnum rounds to zero.</p>
+<h2 id="panics"><a class="doc-anchor" href="#panics">§</a>Panics</h2>
+<p>All routines in this crate are implemented with checked operations and will
+never panic.</p>
+</div></details><h2 id="constants" class="section-header">Constants<a href="#constants" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="constant" href="constant.RUBY_FIXNUM_MAX.html" title="constant scolapasta_fixable::RUBY_FIXNUM_MAX">RUBY_FIXNUM_MAX</a></div><div class="desc docblock-short">The maximum possible value that a fixnum can represent, 63 bits of an
+<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html" title="primitive i64"><code>i64</code></a>.</div></li><li><div class="item-name"><a class="constant" href="constant.RUBY_FIXNUM_MIN.html" title="constant scolapasta_fixable::RUBY_FIXNUM_MIN">RUBY_FIXNUM_MIN</a></div><div class="desc docblock-short">The minimum possible value that a fixnum can represent, 63 bits of an
+<a href="https://doc.rust-lang.org/nightly/core/primitive.i64.html" title="primitive i64"><code>i64</code></a>.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.Fixable.html" title="trait scolapasta_fixable::Fixable">Fixable</a></div><div class="desc docblock-short">Marker trait for numeric values which can be converted to a “fixnum”, or
+Integer, representation.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.RB_FIXABLE.html" title="fn scolapasta_fixable::RB_FIXABLE">RB_FIXABLE</a></div><div class="desc docblock-short">Check whether the given numeric is in the range of fixnum.</div></li></ul></section></div></main></body></html>

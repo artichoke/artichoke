@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CaseFold","CenterError","CodepointsError","Encoding","OrdError"],"struct":["Bytes","Center","Chars","Codepoints","Inspect","IntoIter","InvalidCodepointError","InvalidEncodingError","Iter","IterMut","RawParts","String"]};

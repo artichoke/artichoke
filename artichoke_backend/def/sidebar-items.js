@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["EnclosingRubyScope","NotDefinedError"],"fn":["box_unbox_free"],"struct":["ClassScope","ConstantNameError","ModuleScope"],"type":["Free","Method"]};

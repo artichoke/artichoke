@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TzError","TzFileError","TzStringError"],"struct":["DateTimeError","FindLocalTimeTypeError","LocalTimeTypeError","OutOfRangeError","ProjectDateTimeError","TimeZoneError","TransitionRuleError"]};

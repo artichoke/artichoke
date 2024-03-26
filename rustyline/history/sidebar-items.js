@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["SearchDirection"],"struct":["FileHistory","MemHistory","SearchResult"],"trait":["History"],"type":["DefaultHistory"]};

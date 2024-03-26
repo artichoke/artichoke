@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["ASCTIME_FORMAT_STRING"],"enum":["Error"],"mod":["buffered","bytes","fmt","string"],"trait":["Time"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["RuleDay","TransitionRule"],"struct":["AlternateTime","Julian0WithLeap","Julian1WithoutLeap","LeapSecond","LocalTimeType","MonthWeekDay","TimeZone","TimeZoneRef","Transition"]};

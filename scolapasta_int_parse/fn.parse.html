@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Parse a given byte string and optional `Radix` into an `i64`."><title>parse in scolapasta_int_parse - Rust</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="scolapasta_int_parse" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (0824b300e 2024-03-24)" data-channel="nightly" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-4c98445ec4002617.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../scolapasta_int_parse/index.html">scolapasta_int_parse</a><span class="version">0.2.2</span></h2></div><div class="sidebar-elems"></div></nav><div class="sidebar-resizer"></div>
+    <main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../scolapasta_int_parse/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="index.html">scolapasta_int_parse</a>::<wbr><a class="fn" href="#">parse</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/scolapasta_int_parse/lib.rs.html#156-162">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub fn parse&lt;T&gt;(subject: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;T</a>, radix: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>&gt;) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.i64.html">i64</a>, <a class="enum" href="enum.Error.html" title="enum scolapasta_int_parse::Error">Error</a>&lt;'_&gt;&gt;<div class="where">where
+    T: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html" title="trait core::convert::AsRef">AsRef</a>&lt;[<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>]&gt; + ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,</div></code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Parse a given byte string and optional <a href="struct.Radix.html" title="struct scolapasta_int_parse::Radix"><code>Radix</code></a> into an <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html" title="primitive i64"><code>i64</code></a>.</p>
+<p>This function wraps <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html#method.from_str_radix" title="associated function i64::from_str_radix"><code>i64::from_str_radix</code></a> by normalizing the input byte
+string:</p>
+<ul>
+<li>Assert the byte string is ASCII and does not contain NUL bytes.</li>
+<li>Parse the radix to ensure it is in range and valid for the given input
+byte string.</li>
+<li>Trim leading and trailing whitespace.</li>
+<li>Accept a single, optional <code>+</code> or <code>-</code> sign byte.</li>
+<li>Parse a literal radix out of the string from one of <code>0b</code>, <code>0B</code>, <code>0o</code>,
+<code>0O</code>, <code>0d</code>, <code>0D</code>, <code>0x</code>, or <code>0X</code>. If the given radix is <code>Some(_)</code>, the
+radix must match the embedded radix literal. A <code>0</code> prefix of arbitrary
+length is interpreted as an octal literal.</li>
+<li>Remove (“squeeze”) leading zeros.</li>
+<li>Collect ASCII alphanumeric bytes and filter out underscores.</li>
+<li>Pass the collected ASCII alphanumeric bytes to <a href="https://doc.rust-lang.org/nightly/std/primitive.i64.html#method.from_str_radix" title="associated function i64::from_str_radix"><code>i64::from_str_radix</code></a>.</li>
+</ul>
+<p>If the given radix argument is <a href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html#variant.None" title="variant core::option::Option::None"><code>None</code></a> the input byte string is either
+parsed with the radix embedded within it (e.g. <code>0x...</code> is base 16) or
+defaults to base 10.</p>
+<h2 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors</h2>
+<p>This function can return an error in the following circumstances:</p>
+<ul>
+<li>The input byte string has non-ASCII bytes.</li>
+<li>The input byte string contains a NUL byte.</li>
+<li>The input byte string is the empty byte slice.</li>
+<li>The input byte string only contains +/- signs.</li>
+<li>The given radix does not match a <code>0x</code>-style prefix.</li>
+<li>Invalid or duplicate +/- signs are in the input.</li>
+<li>Consecutive underscores are present in the input.</li>
+<li>Leading or trailing underscores are present in the input.</li>
+<li>The input contains ASCII alphanumeric bytes that are invalid for the
+computed radix.</li>
+<li>The input radix is out of range of <a href="https://doc.rust-lang.org/nightly/std/primitive.i32.html" title="primitive i32"><code>i32</code></a>.</li>
+<li>The input radix is negative (if the input byte string does not have an
+<code>0x</code>-style prefix) and out of range <code>-36..=-2</code>.</li>
+<li>The input radix is out of range of <code>2..=36</code>.</li>
+</ul>
+<p>See <a href="struct.ArgumentError.html" title="struct scolapasta_int_parse::ArgumentError"><code>ArgumentError</code></a> and <a href="struct.InvalidRadixError.html" title="struct scolapasta_int_parse::InvalidRadixError"><code>InvalidRadixError</code></a> for more details.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>int_max = parse(<span class="string">"9_223_372_036_854_775_807"</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(int_max, i64::MAX);
+
+<span class="kw">let </span>deadbeef = parse(<span class="string">"                       0x000000000deadbeef"</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(deadbeef, <span class="number">3_735_928_559</span>);
+
+<span class="kw">let </span>octal = parse(<span class="string">"000123"</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(octal, <span class="number">83</span>);
+
+<span class="kw">let </span>negative = parse(<span class="string">"-199"</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(negative, -<span class="number">199</span>);
+
+<span class="kw">let </span>positive = parse(<span class="string">"+199"</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(positive, <span class="number">199</span>);</code></pre></div>
+<p>If a <code>Some(_)</code> radix is given, that radix is used:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>num = parse(<span class="string">"32xyz"</span>, <span class="prelude-val">Some</span>(<span class="number">36</span>))<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(num, <span class="number">5_176_187</span>);
+
+<span class="kw">let </span>binary = parse(<span class="string">"1100_0011"</span>, <span class="prelude-val">Some</span>(<span class="number">2</span>))<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(binary, <span class="number">195</span>);</code></pre></div>
+<p>If a <code>Some(_)</code> radix is given and it does not match the embedded radix, an
+error is returned:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>result = parse(<span class="string">"0b1100_0011"</span>, <span class="prelude-val">Some</span>(<span class="number">12</span>));
+<span class="macro">assert!</span>(result.is_err());</code></pre></div>
+</div></details></section></div></main></body></html>

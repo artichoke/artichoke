@@ -1,0 +1,200 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Changes between the versions"><title>tzdb::changelog - Rust</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="tzdb" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (0824b300e 2024-03-24)" data-channel="nightly" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../tzdb/index.html">tzdb</a><span class="version">0.6.1</span></h2></div><h2 class="location"><a href="#">Module changelog</a></h2><div class="sidebar-elems"><h2><a href="../index.html">In crate tzdb</a></h2></div></nav><div class="sidebar-resizer"></div>
+    <main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../tzdb/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../index.html">tzdb</a>::<wbr><a class="mod" href="#">changelog</a><button id="copy-path" title="Copy item path to clipboard"><img src="../../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../../src/tzdb/changelog.rs.html#1">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h3 id="changes-between-the-versions"><a class="doc-anchor" href="#changes-between-the-versions">§</a>Changes between the versions</h3><h4 id="061-2023-12-30"><a class="doc-anchor" href="#061-2023-12-30">§</a>0.6.1 (2023-12-30)</h4>
+<ul>
+<li>Split into <code>tzdb</code> and <code>tzdb_data</code></li>
+<li>Optimize lookup. It’s ~39% faster now.</li>
+</ul>
+<h4 id="060-2023-12-29"><a class="doc-anchor" href="#060-2023-12-29">§</a>0.6.0 (2023-12-29)</h4>
+<ul>
+<li>Unchanged stable release</li>
+</ul>
+<h4 id="060-pre1-2023-12-27"><a class="doc-anchor" href="#060-pre1-2023-12-27">§</a>0.6.0-pre.1 (2023-12-27)</h4>
+<ul>
+<li>Make <code>iana_time_zone</code> inclusion optional</li>
+</ul>
+<h4 id="059-2023-12-27"><a class="doc-anchor" href="#059-2023-12-27">§</a>0.5.9 (2023-12-27)</h4>
+<ul>
+<li>Update to Time Zone Database release <a href="https://mm.icann.org/pipermail/tz-announce/2023-December/000080.html">2023d</a></li>
+</ul>
+<h4 id="058-2023-12-27"><a class="doc-anchor" href="#058-2023-12-27">§</a><del>0.5.8 (2023-12-27)</del></h4><h4 id="057-2023-05-11"><a class="doc-anchor" href="#057-2023-05-11">§</a>0.5.7 (2023-05-11)</h4>
+<ul>
+<li>Fewer macros = faster compile times</li>
+<li>Update to Time Zone Database release <a href="https://mm.icann.org/pipermail/tz-announce/2023-March/000079.html">2023c</a></li>
+</ul>
+<h4 id="056-2023-03-24"><a class="doc-anchor" href="#056-2023-03-24">§</a>0.5.6 (2023-03-24)</h4>
+<ul>
+<li>Update to Time Zone Database release <a href="https://mm.icann.org/pipermail/tz-announce/2023-March/000078.html">2023b</a></li>
+</ul>
+<h4 id="055-2023-03-24"><a class="doc-anchor" href="#055-2023-03-24">§</a>0.5.5 (2023-03-24)</h4>
+<ul>
+<li>Update to Time Zone Database release <a href="https://mm.icann.org/pipermail/tz-announce/2023-March/000077.html">2023a</a></li>
+<li>Remove “etc/localtime” as it should not be part of this library</li>
+</ul>
+<h4 id="054-2023-03-24"><a class="doc-anchor" href="#054-2023-03-24">§</a><del>0.5.4 (2023-03-24)</del></h4><h4 id="053-2023-01-01"><a class="doc-anchor" href="#053-2023-01-01">§</a>0.5.3 (2023-01-01)</h4>
+<ul>
+<li>No need to use <code>unsafe</code> functions</li>
+</ul>
+<h4 id="052-2022-12-22"><a class="doc-anchor" href="#052-2022-12-22">§</a>0.5.2 (2022-12-22)</h4>
+<ul>
+<li>Prepare v0.5.x branch so that v0.3.x can re-export it</li>
+</ul>
+<h4 id="051-2022-11-30"><a class="doc-anchor" href="#051-2022-11-30">§</a>0.5.1 (2022-11-30)</h4>
+<ul>
+<li>Update to Time Zone Database release <a href="https://mm.icann.org/pipermail/tz-announce/2022-November/000076.html">2022g</a></li>
+</ul>
+<h4 id="050-2022-11-24"><a class="doc-anchor" href="#050-2022-11-24">§</a>0.5.0 (2022-11-24)</h4>
+<ul>
+<li>Release v0.5.0</li>
+</ul>
+<h5 id="050-pre4-2022-10-29"><a class="doc-anchor" href="#050-pre4-2022-10-29">§</a>0.5.0-pre.4 (2022-10-29)</h5>
+<ul>
+<li>Update to Time Zone Database release <a href="https://mm.icann.org/pipermail/tz-announce/2022-October/000075.html">2022f</a></li>
+<li>Use <code>edition = &quot;2021&quot;</code></li>
+</ul>
+<h5 id="050-pre3-2022-10-12"><a class="doc-anchor" href="#050-pre3-2022-10-12">§</a>0.5.0-pre.3 (2022-10-12)</h5>
+<ul>
+<li>Remove <code>utcnow</code> integration</li>
+<li>Simplify by removing <code>no_std</code> support</li>
+<li>Update to Time Zone Database release <a href="https://mm.icann.org/pipermail/tz-announce/2022-October/000074.html">2022e</a></li>
+</ul>
+<h5 id="050-pre2-2022-09-25"><a class="doc-anchor" href="#050-pre2-2022-09-25">§</a>0.5.0-pre.2 (2022-09-25)</h5>
+<ul>
+<li>Update to Time Zone Database release <a href="https://mm.icann.org/pipermail/tz-announce/2022-September/000073.html">2022d</a></li>
+<li>Update to iana-time-zone 0.1.50</li>
+</ul>
+<h5 id="050-pre1-2022-09-14"><a class="doc-anchor" href="#050-pre1-2022-09-14">§</a>0.5.0-pre.1 (2022-09-14)</h5>
+<ul>
+<li>Simplify a lot by removing feature gates [<a href="https://github.com/Kijewski/tzdb/pull/123">#123</a>]</li>
+</ul>
+<h4 id="045-2022-08-31"><a class="doc-anchor" href="#045-2022-08-31">§</a>0.4.5 (2022-08-31)</h4>
+<ul>
+<li>Remove <a href="https://crates.io/crates/phf">phf</a> dependency</li>
+</ul>
+<h4 id="044-2022-08-16"><a class="doc-anchor" href="#044-2022-08-16">§</a>0.4.4 (2022-08-16)</h4>
+<ul>
+<li>Update to <a href="https://mm.icann.org/pipermail/tz-announce/2022-August/000072.html">Time Zone Database 2022c</a></li>
+</ul>
+<h4 id="043-2022-08-12"><a class="doc-anchor" href="#043-2022-08-12">§</a>0.4.3 (2022-08-12)</h4>
+<ul>
+<li>Update <a href="https://crates.io/crates/iana-time-zone">iana-time-zone</a> to fix more issues on CentOS 7
+(<a href="https://github.com/strawlab/iana-time-zone/pull/49">#49</a>), and not to depend on core-foundation
+(<a href="https://github.com/strawlab/iana-time-zone/pull/50">#50</a>)</li>
+</ul>
+<h4 id="042-2022-08-11"><a class="doc-anchor" href="#042-2022-08-11">§</a>0.4.2 (2022-08-11)</h4>
+<ul>
+<li>Update to <a href="https://mm.icann.org/pipermail/tz-announce/2022-August/000071.html">Time Zone Database 2022b</a></li>
+</ul>
+<h4 id="041-2022-08-10"><a class="doc-anchor" href="#041-2022-08-10">§</a>0.4.1 (2022-08-10)</h4>
+<ul>
+<li>Update <a href="https://crates.io/crates/iana-time-zone">iana-time-zone</a> to v0.1.42
+in order to fix problems on CentOS
+(<a href="https://github.com/strawlab/iana-time-zone/pull/48">#48</a>)</li>
+</ul>
+<h4 id="040-2022-08-05"><a class="doc-anchor" href="#040-2022-08-05">§</a>0.4.0 (2022-08-05)</h4>
+<ul>
+<li>Increase msrv to 1.60</li>
+<li>Add <code>now</code> module, which uses <a href="https://crates.io/crates/utcnow"><code>utcnow()</code></a>,
+and works in <code>#[no_std]</code></li>
+</ul>
+<h4 id="034-2022-08-02"><a class="doc-anchor" href="#034-2022-08-02">§</a>0.3.4 (2022-08-02)</h4>
+<ul>
+<li>Fix endianness issues for PowerPCs</li>
+</ul>
+<h4 id="033-2022-08-01"><a class="doc-anchor" href="#033-2022-08-01">§</a>0.3.3 (2022-08-01)</h4>
+<ul>
+<li>Update <a href="https://crates.io/crates/tz-rs">tz-rs</a> to v0.6.12 to work in a no-std context
+(<a href="https://github.com/x-hgg-x/tz-rs/pull/33">#33</a>)</li>
+<li>Expand documentation</li>
+<li>Add features <code>std</code>, <code>alloc</code>, and <code>fallback</code> (unused until the next breaking change)</li>
+</ul>
+<h4 id="032-2022-07-30"><a class="doc-anchor" href="#032-2022-07-30">§</a>0.3.2 (2022-07-30)</h4>
+<ul>
+<li>Update <a href="https://crates.io/crates/iana-time-zone">iana-time-zone</a> to implement
+<a href="https://docs.rs/tzdb/0.3.2/tzdb/fn.local_tz.html"><code>local_tz()</code></a> for
+Illumos (<a href="https://github.com/strawlab/iana-time-zone/pull/44">#44</a>) and
+Android (<a href="https://github.com/strawlab/iana-time-zone/pull/45">#45</a>)</li>
+</ul>
+<h4 id="031-2022-07-23"><a class="doc-anchor" href="#031-2022-07-23">§</a>0.3.1 (2022-07-23)</h4>
+<ul>
+<li>Update <a href="https://crates.io/crates/iana-time-zone">iana-time-zone</a> to implement
+<a href="https://docs.rs/tzdb/0.2.6/tzdb/fn.local_tz.html"><code>local_tz()</code></a> for
+iOS (<a href="https://github.com/strawlab/iana-time-zone/pull/41">#41</a>)</li>
+</ul>
+<h4 id="030-2022-07-21"><a class="doc-anchor" href="#030-2022-07-21">§</a>0.3.0 (2022-07-21)</h4>
+<ul>
+<li>Remove serde-as feature. The feature is very unrelated to goals of the crate, so it should be
+moved somewhere else</li>
+<li>Split up <code>generated.rs</code> to speed up compilation if not all features are selected</li>
+<li>Reduce msrv to 1.55</li>
+</ul>
+<h4 id="027-2022-06-30"><a class="doc-anchor" href="#027-2022-06-30">§</a>0.2.7 (2022-06-30)</h4>
+<ul>
+<li>Fix error if build and target platform have different pointer widths</li>
+</ul>
+<h4 id="026-2022-06-29"><a class="doc-anchor" href="#026-2022-06-29">§</a>0.2.6 (2022-06-29)</h4>
+<ul>
+<li>Update <a href="https://crates.io/crates/iana-time-zone">iana-time-zone</a> to implement
+<a href="https://docs.rs/tzdb/0.2.6/tzdb/fn.local_tz.html"><code>local_tz()</code></a> for
+Wasm (<a href="https://github.com/strawlab/iana-time-zone/pull/38">#38</a>), and
+{Free,Net,Open,Dragonfly}BSD (<a href="https://github.com/strawlab/iana-time-zone/pull/39">#39</a>)</li>
+</ul>
+<h4 id="025-2022-06-26"><a class="doc-anchor" href="#025-2022-06-26">§</a>0.2.5 (2022-06-26)</h4>
+<ul>
+<li>Ensure <code>-Zminimal-versions</code> works</li>
+</ul>
+<h4 id="024-2022-06-08"><a class="doc-anchor" href="#024-2022-06-08">§</a>0.2.4 (2022-06-08)</h4>
+<ul>
+<li>Fix missing import if the project is used with <code>default-features = false</code></li>
+</ul>
+<h4 id="023-2022-04-15"><a class="doc-anchor" href="#023-2022-04-15">§</a>0.2.3 (2022-04-15)</h4>
+<ul>
+<li>Fix lookup error for names containing underscores</li>
+</ul>
+<h4 id="022-2022-03-27"><a class="doc-anchor" href="#022-2022-03-27">§</a>0.2.2 (2022-03-27)</h4>
+<ul>
+<li>Bump dependency versions</li>
+</ul>
+<h4 id="021-2022-03-27"><a class="doc-anchor" href="#021-2022-03-27">§</a>0.2.1 (2022-03-27)</h4>
+<ul>
+<li>Fix typos</li>
+<li>Introduce <code>VERSION</code> and <code>VERSION_HASH</code></li>
+</ul>
+<h4 id="020-2022-03-17"><a class="doc-anchor" href="#020-2022-03-17">§</a>0.2.0 (2022-03-17)</h4>
+<ul>
+<li>
+<p>Update to 2022a</p>
+</li>
+<li>
+<p>Make the unparsed binary time zone data available</p>
+</li>
+<li>
+<p>Simplify the library by removing the trait TimeZoneExt:</p>
+<ul>
+<li><code>TimeZoneExt::from_db()</code> is now <code>tz_by_name()</code></li>
+<li><code>TimeZoneExt::local_from_db()</code> is now <code>local_tz()</code></li>
+<li><code>TimeZoneExt::names_in_db()</code> is now <code>TZ_NAMES</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="014-2022-03-17"><a class="doc-anchor" href="#014-2022-03-17">§</a>0.1.4 (2022-03-17)</h4>
+<ul>
+<li>Re-export v0.2 with old names and default features</li>
+</ul>
+<h4 id="013-2022-03-03"><a class="doc-anchor" href="#013-2022-03-03">§</a>0.1.3 (2022-03-03)</h4>
+<ul>
+<li>Optimize <code>DateTime</code> deserialization to work without dynamic allocation
+(<a href="https://github.com/x-hgg-x/tz-rs/pull/22">tz-rs#22</a>)</li>
+</ul>
+<h4 id="012-2022-03-02"><a class="doc-anchor" href="#012-2022-03-02">§</a>0.1.2 (2022-03-02)</h4>
+<ul>
+<li>Include “backzone” data to include pre-1970 information for some more time zones</li>
+</ul>
+<h4 id="011-2022-03-01"><a class="doc-anchor" href="#011-2022-03-01">§</a>0.1.1 (2022-03-01)</h4>
+<ul>
+<li>Make <code>UtcDateTime</code>/<code>DateTime</code> serializable with <code>serde</code> using <code>serde_with</code></li>
+</ul>
+<h4 id="010-2022-02-28"><a class="doc-anchor" href="#010-2022-02-28">§</a>0.1.0 (2022-02-28)</h4>
+<ul>
+<li>Initial release</li>
+</ul>
+</div></details></section></div></main></body></html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Mersenne Twister random number generators."><title>rand_mt - Rust</title><script> if (window.location.protocol !== "file:") document.write(`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2">`)</script><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-e935ef01ae1c1829.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="rand_mt" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0-nightly (0824b300e 2024-03-24)" data-channel="nightly" data-search-js="search-42d8da7a6b9792c2.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../static.files/storage-4c98445ec4002617.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-12cf3b4f4f9dc36d.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../rand_mt/index.html">rand_mt</a><span class="version">4.2.2</span></h2></div><div class="sidebar-elems"><ul class="block">
+            <li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#types">Type Aliases</a></li></ul></section></div></nav><div class="sidebar-resizer"></div>
+    <main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../rand_mt/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">rand_mt</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/rand_mt/lib.rs.html#12-208">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Mersenne Twister random number generators.</p>
+<p>This is a native Rust implementation of a selection of Mersenne Twister
+generators. Mersenne Twister is not suitable for cryptographic use.</p>
+<p>This crate provides:</p>
+<ul>
+<li><a href="struct.Mt19937GenRand32.html" title="struct rand_mt::Mt19937GenRand32"><code>Mt19937GenRand32</code></a>, the original reference Mersenne Twister
+implementation known as <code>MT19937</code>. This is a good choice on both 32-bit
+and 64-bit CPUs (for 32-bit output).</li>
+<li><a href="struct.Mt19937GenRand64.html" title="struct rand_mt::Mt19937GenRand64"><code>Mt19937GenRand64</code></a>, the 64-bit variant of <code>MT19937</code> known as
+<code>MT19937-64</code>. This algorithm produces a different output stream than
+<code>MT19937</code> and produces 64-bit output. This is a good choice on 64-bit
+CPUs.</li>
+</ul>
+<p>Both of these RNGs use approximately 2.5 kilobytes of state.
+<a href="struct.Mt19937GenRand32.html" title="struct rand_mt::Mt19937GenRand32"><code>Mt19937GenRand32</code></a> uses a 32-bit seed. <a href="struct.Mt19937GenRand64.html" title="struct rand_mt::Mt19937GenRand64"><code>Mt19937GenRand64</code></a> uses a 64-bit
+seed. Both can be seeded from an iterator of seeds.</p>
+<p>Both RNGs implement a <code>recover</code> constructor which can reconstruct the RNG
+state from a sequence of output samples.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>You can seed a RNG and begin sampling it:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Create the RNG.
+</span><span class="kw">let </span><span class="kw-2">mut </span>rng = Mt64::new(<span class="number">0x1234_567_89ab_cdef_u64</span>);
+<span class="comment">// start grabbing randomness from rng...
+</span><span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[<span class="number">0</span>; <span class="number">512</span>];
+rng.fill_bytes(<span class="kw-2">&amp;mut </span>buf);</code></pre></div>
+<p>Or if you want to use the default (fixed) seeds that are specified in the
+reference implementations:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>default = Mt::default();
+<span class="kw">let </span>mt = Mt::new_unseeded();
+<span class="macro">assert_eq!</span>(default, mt);</code></pre></div>
+<h2 id="crate-features"><a class="doc-anchor" href="#crate-features">§</a>Crate Features</h2>
+<p><code>rand_mt</code> is <code>no_std</code> compatible. <code>rand_mt</code> has several optional features
+that are enabled by default:</p>
+<ul>
+<li><strong>rand-traits</strong> - Enables a dependency on <a href="https://crates.io/crates/rand_core"><code>rand_core</code></a>. Activating this
+feature implements <code>RngCore</code> and <code>SeedableRng</code> on the RNGs in this crate.</li>
+<li><strong>std</strong> - Enables a dependency on the Rust Standard Library. Activating
+this feature enables <a href="https://doc.rust-lang.org/std/error/trait.Error.html"><code>std::error::Error</code></a> impls on error types in this
+crate.</li>
+</ul>
+<p>Mersenne Twister requires approximately 2.5 kilobytes of internal state. To
+make the RNGs implemented in this crate practical to embed in other structs,
+you may wish to store the RNG in a <a href="https://doc.rust-lang.org/std/boxed/struct.Box.html"><code>Box</code></a>.</p>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Mt19937GenRand32.html" title="struct rand_mt::Mt19937GenRand32">Mt19937GenRand32</a></div><div class="desc docblock-short">The 32-bit flavor of the Mersenne Twister pseudorandom number
+generator.</div></li><li><div class="item-name"><a class="struct" href="struct.Mt19937GenRand64.html" title="struct rand_mt::Mt19937GenRand64">Mt19937GenRand64</a></div><div class="desc docblock-short">The 64-bit flavor of the Mersenne Twister pseudorandom number
+generator.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.RecoverRngError.html" title="enum rand_mt::RecoverRngError">RecoverRngError</a></div><div class="desc docblock-short">Error returned from fallible Mersenne Twister recovery constructors.</div></li></ul><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="type" href="type.Mt.html" title="type rand_mt::Mt">Mt</a></div><div class="desc docblock-short">A type alias for <a href="struct.Mt19937GenRand32.html" title="struct rand_mt::Mt19937GenRand32"><code>Mt19937GenRand32</code></a>, 32-bit Mersenne Twister.</div></li><li><div class="item-name"><a class="type" href="type.Mt64.html" title="type rand_mt::Mt64">Mt64</a></div><div class="desc docblock-short">A type alias for <a href="struct.Mt19937GenRand64.html" title="struct rand_mt::Mt19937GenRand64"><code>Mt19937GenRand64</code></a>, 64-bit Mersenne Twister.</div></li></ul></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["loaded_features"],"struct":["Feature","Handle","LoadedFeatures"]};
