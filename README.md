@@ -43,7 +43,7 @@ These daily binaries track the latest trunk branch of Artichoke.
 Binaries are also distributed through [ruby-build]. To install with [rbenv]:
 
 ```console
-$ rbenv install artichoke-dev
+rbenv install artichoke-dev
 ```
 
 ### Cargo
@@ -52,7 +52,7 @@ You can install a pre-release build of Artichoke using `cargo`, Rust's package
 manager, by running:
 
 ```console
-$ cargo install --git https://github.com/artichoke/artichoke --branch trunk --locked artichoke
+cargo install --git https://github.com/artichoke/artichoke --branch trunk --locked artichoke
 ```
 
 To install via `cargo install` or to checkout and build locally, you'll need
