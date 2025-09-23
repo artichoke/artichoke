@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CaseFold","IdentifierType"],"fn":["ascii_casecmp","unicode_case_eq"],"struct":["AllSymbols","Inspect","NoSuchCaseFoldingScheme","ParseIdentifierError","Symbol","SymbolOverflowError"],"trait":["InternerAllSymbols"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Quote"],"fn":["escape","extract_word","longest_common_prefix","unescape"],"struct":["FilenameCompleter","Pair"],"trait":["Candidate","Completer"]};

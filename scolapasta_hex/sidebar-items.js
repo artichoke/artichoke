@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["escape_byte","format_into","try_encode","try_encode_into","write_into"],"struct":["Hex"]};

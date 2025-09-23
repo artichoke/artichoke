@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Extension trait to return an iterator that returns all symbol identifiers stored in an interner as `Symbol`s."><title>InternerAllSymbols in spinoso_symbol - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="spinoso_symbol" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (9f32ccf35 2025-09-21)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">InternerAllSymbols</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../spinoso_symbol/index.html">spinoso_<wbr>symbol</a><span class="version">0.5.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Interner<wbr>AllSymbols</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul><h3><a href="#required-methods">Required Methods</a></h3><ul class="block"><li><a href="#tymethod.all_symbols" title="all_symbols">all_symbols</a></li></ul><h3><a href="#dyn-compatibility">Dyn Compatibility</a></h3><h3><a href="#implementors">Implementors</a></h3></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate spinoso_<wbr>symbol</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">spinoso_symbol</a></div><h1>Trait <span class="trait">Interner<wbr>AllSymbols</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/spinoso_symbol/all_symbols.rs.html#79-99">Source</a> </span></div><pre class="rust item-decl"><code>pub trait InternerAllSymbols: <a class="trait" href="../artichoke_core/intern/trait.Intern.html" title="trait artichoke_core::intern::Intern">Intern</a> {
+    // Required method
+    fn <a href="#tymethod.all_symbols" class="fn">all_symbols</a>(&amp;self) -&gt; <a class="struct" href="struct.AllSymbols.html" title="struct spinoso_symbol::AllSymbols">AllSymbols</a> <a href="#" class="tooltip" data-notable-ty="AllSymbols">ⓘ</a>;
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Extension trait to return an iterator that returns all symbol identifiers
+stored in an <a href="../artichoke_core/intern/trait.Intern.html" title="trait artichoke_core::intern::Intern">interner</a> as <a href="struct.Symbol.html" title="struct spinoso_symbol::Symbol"><code>Symbol</code></a>s.</p>
+<p>The returned iterator yields <a href="struct.Symbol.html" title="struct spinoso_symbol::Symbol"><code>Symbol</code></a> as its item type.</p>
+<p>Implementers of this trait must issue symbol identifiers as an <a href="https://en.wikipedia.org/wiki/Arithmetic_progression">arithmetic
+progression</a> with a common difference of 1. The sequence of symbol
+identifiers must be representable by a <a href="https://doc.rust-lang.org/nightly/core/ops/range/struct.Range.html" title="struct core::ops::range::Range"><code>Range&lt;u32&gt;</code></a>.</p>
+<p>This trait is automatically implemented for all types that implement
+<a href="../artichoke_core/intern/trait.Intern.html" title="trait artichoke_core::intern::Intern"><code>Intern</code></a> from <a href="../artichoke_core/index.html" title="mod artichoke_core"><code>artichoke_core</code></a>.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>alloc::borrow::Cow;
+<span class="kw">use </span>alloc::boxed::Box;
+
+<span class="kw">use </span>artichoke_core::intern::Intern;
+<span class="kw">use </span>spinoso_symbol::{InternerAllSymbols, Symbol};
+
+<span class="attr">#[derive(Default)]
+</span><span class="kw">struct </span>Interner(u32);
+
+<span class="kw">impl </span>Intern <span class="kw">for </span>Interner {
+    <span class="kw">type </span>Symbol = u32;
+    <span class="kw">type </span>Error = <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str;
+    <span class="kw">const </span>SYMBOL_RANGE_START: u32 = <span class="number">1</span>;
+
+    <span class="kw">fn </span>intern_bytes&lt;T&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, symbol: T) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Symbol, <span class="self">Self</span>::Error&gt;
+    <span class="kw">where
+        </span>T: Into&lt;Cow&lt;<span class="lifetime">'static</span>, [u8]&gt;&gt;,
+    {
+        <span class="kw">let </span>boxed = Box::&lt;[u8]&gt;::from(symbol.into());
+        Box::leak(boxed);
+        <span class="self">self</span>.<span class="number">0 </span>+= <span class="number">1</span>;
+        <span class="kw">let </span>sym = <span class="self">self</span>.<span class="number">0</span>;
+        <span class="prelude-val">Ok</span>(sym)
+    }
+
+    <span class="kw">fn </span>check_interned_bytes(<span class="kw-2">&amp;</span><span class="self">self</span>, symbol: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Symbol&gt;, <span class="self">Self</span>::Error&gt; {
+        <span class="prelude-val">Err</span>(<span class="string">"not implemented"</span>)
+    }
+
+    <span class="kw">fn </span>lookup_symbol(<span class="kw-2">&amp;</span><span class="self">self</span>, symbol: <span class="self">Self</span>::Symbol) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>[u8]&gt;, <span class="self">Self</span>::Error&gt; {
+        <span class="prelude-val">Err</span>(<span class="string">"not implemented"</span>)
+    }
+
+    <span class="kw">fn </span>symbol_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
+        <span class="self">self</span>.<span class="number">0 </span><span class="kw">as </span>usize
+    }
+}
+
+<span class="kw">let </span><span class="kw-2">mut </span>interner = Interner::default();
+<span class="kw">let </span><span class="kw-2">mut </span>all_symbols = interner.all_symbols();
+<span class="macro">assert_eq!</span>(all_symbols.count(), <span class="number">0</span>);
+
+interner.intern_bytes(<span class="kw-2">&amp;</span><span class="string">b"Spinoso"</span>[..]);
+interner.intern_bytes(<span class="kw-2">&amp;</span><span class="string">b"Artichoke"</span>[..]);
+
+<span class="kw">let </span><span class="kw-2">mut </span>all_symbols = interner.all_symbols();
+<span class="macro">assert_eq!</span>(all_symbols.next(), <span class="prelude-val">Some</span>(Symbol::new(<span class="number">1</span>)));
+<span class="macro">assert_eq!</span>(all_symbols.next(), <span class="prelude-val">Some</span>(Symbol::new(<span class="number">2</span>)));
+<span class="macro">assert_eq!</span>(all_symbols.next(), <span class="prelude-val">None</span>);</code></pre></div></div></details><h2 id="required-methods" class="section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.all_symbols" class="method"><a class="src rightside" href="../src/spinoso_symbol/all_symbols.rs.html#98">Source</a><h4 class="code-header">fn <a href="#tymethod.all_symbols" class="fn">all_symbols</a>(&amp;self) -&gt; <a class="struct" href="struct.AllSymbols.html" title="struct spinoso_symbol::AllSymbols">AllSymbols</a> <a href="#" class="tooltip" data-notable-ty="AllSymbols">ⓘ</a></h4></section></summary><div class="docblock"><p>Returns an iterator that returns all symbol identifiers stored in an
+<a href="../artichoke_core/intern/trait.Intern.html" title="trait artichoke_core::intern::Intern">interner</a> as <a href="struct.Symbol.html" title="struct spinoso_symbol::Symbol"><code>Symbol</code></a>s.</p>
+<p>The returned iterator yields <a href="struct.Symbol.html" title="struct spinoso_symbol::Symbol"><code>Symbol</code></a> as its item type.</p>
+<p>This function requires that the interner issues symbol identifiers as an
+<a href="https://en.wikipedia.org/wiki/Arithmetic_progression">arithmetic progression</a> with a common difference of 1. The sequence of
+symbol identifiers must be representable by a <a href="https://doc.rust-lang.org/nightly/core/ops/range/struct.Range.html" title="struct core::ops::range::Range"><code>Range&lt;u32&gt;</code></a>.</p>
+<p><a href="struct.AllSymbols.html" title="struct spinoso_symbol::AllSymbols"><code>AllSymbols</code></a> supports yielding up to <code>u32::MAX - 1</code> <code>Symbol</code>s.</p>
+<h5 id="examples-1"><a class="doc-anchor" href="#examples-1">§</a>Examples</h5>
+<p>See trait-level documentation for examples.</p>
+</div></details></div><h2 id="dyn-compatibility" class="section-header">Dyn Compatibility<a href="#dyn-compatibility" class="anchor">§</a></h2><div class="dyn-compatibility-info"><p>This trait is <b>not</b> <a href="https://doc.rust-lang.org/nightly/reference/items/traits.html#dyn-compatibility">dyn compatible</a>.</p><p><i>In older versions of Rust, dyn compatibility was called "object safety", so this trait is not object safe.</i></p></div><h2 id="implementors" class="section-header">Implementors<a href="#implementors" class="anchor">§</a></h2><div id="implementors-list"><section id="impl-InternerAllSymbols-for-T" class="impl"><a class="src rightside" href="../src/spinoso_symbol/all_symbols.rs.html#101-111">Source</a><a href="#impl-InternerAllSymbols-for-T" class="anchor">§</a><h3 class="code-header">impl&lt;T, U&gt; <a class="trait" href="trait.InternerAllSymbols.html" title="trait spinoso_symbol::InternerAllSymbols">InternerAllSymbols</a> for T<div class="where">where
+    T: <a class="trait" href="../artichoke_core/intern/trait.Intern.html" title="trait artichoke_core::intern::Intern">Intern</a>&lt;Symbol = U&gt;,
+    U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html" title="trait core::marker::Copy">Copy</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>&gt;,</div></h3></section></div><script src="../trait.impl/spinoso_symbol/all_symbols/trait.InternerAllSymbols.js" async></script><script type="text/json" id="notable-traits-data">{"AllSymbols":"<h3>Notable traits for <code><a class=\"struct\" href=\"struct.AllSymbols.html\" title=\"struct spinoso_symbol::AllSymbols\">AllSymbols</a></code></h3><pre><code><div class=\"where\">impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html\" title=\"trait core::iter::traits::iterator::Iterator\">Iterator</a> for <a class=\"struct\" href=\"struct.AllSymbols.html\" title=\"struct spinoso_symbol::AllSymbols\">AllSymbols</a></div><div class=\"where\">    type <a href=\"https://doc.rust-lang.org/nightly/core/iter/traits/iterator/trait.Iterator.html#associatedtype.Item\" class=\"associatedtype\">Item</a> = <a class=\"struct\" href=\"struct.Symbol.html\" title=\"struct spinoso_symbol::Symbol\">Symbol</a>;</div>"}</script></section></div></main></body></html>

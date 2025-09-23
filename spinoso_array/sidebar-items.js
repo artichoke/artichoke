@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["INLINE_CAPACITY"],"struct":["Array","RawParts","SmallArray","TinyArray"]};

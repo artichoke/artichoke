@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ForkptyResult"],"fn":["forkpty","grantpt","openpty","posix_openpt","ptsname","ptsname_r","unlockpt"],"struct":["OpenptyResult","PtyMaster","Winsize"],"type":["SessionId"]};

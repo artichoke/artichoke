@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["AT_FDCWD"],"enum":["FcntlArg","FlockArg","PosixFadviseAdvice"],"fn":["fallocate","fcntl","flock","open","openat","openat2","posix_fadvise","posix_fallocate","readlink","readlinkat","renameat","renameat2"],"struct":["AtFlags","FallocateFlags","FdFlag","Flock","OFlag","OpenHow","RenameFlags","ResolveFlag","SealFlag"],"trait":["Flockable"]};

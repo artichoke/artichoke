@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="ENV is a hash-like accessor for environment variables."><title>spinoso_env - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="spinoso_env" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (9f32ccf35 2025-09-21)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate spinoso_env</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../spinoso_env/index.html">spinoso_<wbr>env</a><span class="version">0.3.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li><li><a href="#crate-features" title="Crate features">Crate features</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>spinoso_<wbr>env</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/spinoso_env/lib.rs.html#1-437">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>ENV is a hash-like accessor for environment variables.</p>
+<p>This module implements the <a href="https://ruby-doc.org/core-3.1.2/ENV.html"><code>ENV</code></a> singleton object from Ruby Core.</p>
+<p>In Artichoke, the environment variable store is modeled as a hash map of
+byte vector keys and values, e.g. <code>HashMap&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt;</code>. Backends are
+expected to convert their internals to this representation in their public
+APIs. For this reason, all APIs exposed by ENV backends in this crate are
+fallible.</p>
+<p>You can use this object in your application by accessing it directly. As a
+Core API, it is globally available:</p>
+<div class="example-wrap"><pre class="language-ruby"><code>ENV[&quot;PATH&quot;]
+ENV[&quot;PS1&quot;] = &#39;artichoke&gt; &#39;</code></pre></div>
+<p>There are two <code>ENV</code> implementations in this crate:</p>
+<ul>
+<li><a href="struct.Memory.html" title="struct spinoso_env::Memory"><code>Memory</code></a>, enabled by default, implements an <code>ENV</code> store and accessor on
+top of a Rust <a href="https://doc.rust-lang.org/nightly/std/collections/hash/map/struct.HashMap.html" title="struct std::collections::hash::map::HashMap"><code>HashMap</code></a>. This backend does not query or modify the host
+system.</li>
+<li><a href="struct.System.html" title="struct spinoso_env::System"><code>System</code></a>, enabled when the <strong>system-env</strong> feature is activated, is a
+proxy for the system environment and uses platform-specific APIs defined
+in the <a href="https://doc.rust-lang.org/nightly/std/index.html" title="mod std">Rust Standard Library</a>.</li>
+</ul>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>Using the in-memory backend allows safely manipulating an emulated environment:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span><span class="kw-2">mut </span>env = Memory::new();
+<span class="comment">// This does not alter the behavior of the host Rust process.
+</span>env.put(<span class="string">b"PATH"</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+<span class="comment">// `Memory` backends start out empty.
+</span><span class="macro">assert_eq!</span>(env.get(<span class="string">b"HOME"</span>)<span class="question-mark">?</span>, <span class="prelude-val">None</span>);</code></pre></div>
+<p>System backends inherit and mutate the environment from the current Rust
+process:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">const </span>ENV: System = System::new();
+ENV.put(<span class="string">b"RUBY"</span>, <span class="prelude-val">Some</span>(<span class="string">b"Artichoke"</span>))<span class="question-mark">?</span>;
+<span class="macro">assert!</span>(ENV.get(<span class="string">b"PATH"</span>)<span class="question-mark">?</span>.is_some());</code></pre></div><h2 id="crate-features"><a class="doc-anchor" href="#crate-features">§</a>Crate features</h2>
+<p>This crate requires <a href="https://doc.rust-lang.org/nightly/std/index.html" title="mod std"><code>std</code></a>, the Rust Standard Library.</p>
+<p>All features are enabled by default:</p>
+<ul>
+<li><strong>system-env</strong> - Enable an <code>ENV</code> backend that accesses the host system’s
+environment variables via the <a href="https://doc.rust-lang.org/nightly/std/env/index.html" title="mod std::env"><code>std::env</code></a> module.</li>
+</ul>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.ArgumentError.html" title="struct spinoso_env::ArgumentError">Argument<wbr>Error</a></dt><dd>Error that indicates an argument parsing or value logic error occurred.</dd><dt><a class="struct" href="struct.InvalidError.html" title="struct spinoso_env::InvalidError">Invalid<wbr>Error</a></dt><dd>Error that indicates the underlying platform API returned an error.</dd><dt><a class="struct" href="struct.Memory.html" title="struct spinoso_env::Memory">Memory</a></dt><dd>A hash-like accessor for environment variables using a fake in-memory store.</dd><dt><a class="struct" href="struct.System.html" title="struct spinoso_env::System">System</a></dt><dd>A hash-like accessor for environment variables using platform APIs.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.Error.html" title="enum spinoso_env::Error">Error</a></dt><dd>Sum type of all errors possibly returned from <a href="struct.Memory.html#method.get" title="method spinoso_env::Memory::get"><code>get</code></a>, <a href="struct.Memory.html#method.put" title="method spinoso_env::Memory::put"><code>put</code></a>, and
+<a href="struct.Memory.html#method.to_map" title="method spinoso_env::Memory::to_map"><code>to_map</code></a>.</dd></dl></section></div></main></body></html>

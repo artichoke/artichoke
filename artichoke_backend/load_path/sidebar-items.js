@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["RUBY_LOAD_PATH"],"struct":["Hybrid","Memory","Native"],"type":["Adapter","ExtensionHook"]};

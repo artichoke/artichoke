@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["CONVERSION_METHODS"],"enum":["ConversionType"],"struct":["ConvMethod","ConvMethods","InitError"]};

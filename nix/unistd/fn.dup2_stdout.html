@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Duplicate `fd` with Stdout, i.e., Stdout redirection."><title>dup2_stdout in nix::unistd - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="nix" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (9f32ccf35 2025-09-21)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">dup2_stdout</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../nix/index.html">nix</a><span class="version">0.30.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">dup2_<wbr>stdout</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In nix::<wbr>unistd</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">nix</a>::<wbr><a href="index.html">unistd</a></div><h1>Function <span class="fn">dup2_<wbr>stdout</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/nix/unistd.rs.html#492-498">Source</a> </span></div><pre class="rust item-decl"><code>pub fn dup2_stdout&lt;Fd: <a class="trait" href="https://doc.rust-lang.org/nightly/std/os/fd/owned/trait.AsFd.html" title="trait std::os::fd::owned::AsFd">AsFd</a>&gt;(fd: Fd) -&gt; <a class="type" href="../type.Result.html" title="type nix::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>&gt;</code></pre><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>fs</code></strong> only.</div></span><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Duplicate <code>fd</code> with Stdout, i.e., Stdout redirection.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>Redirect the Stdout to file foo and restore it:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>nix::fcntl::open;
+<span class="kw">use </span>nix::fcntl::OFlag;
+<span class="kw">use </span>nix::sys::stat::Mode;
+<span class="kw">use </span>nix::unistd::dup;
+<span class="kw">use </span>nix::unistd::dup2_stdout;
+<span class="kw">use </span>std::io::{stdout, Write};
+
+<span class="kw">let </span><span class="kw-2">mut </span>stdout = stdout();
+
+<span class="comment">// Save the previous Stdout so that we can restore it
+</span><span class="kw">let </span>saved_stdout = dup(<span class="kw-2">&amp;</span>stdout).unwrap();
+<span class="kw">let </span>foo = open(
+    <span class="string">"foo"</span>,
+    OFlag::O_RDWR | OFlag::O_CLOEXEC | OFlag::O_CREAT | OFlag::O_EXCL,
+    Mode::S_IRWXU,
+)
+.unwrap();
+<span class="comment">// Now our Stdout has been redirected to file foo
+</span>dup2_stdout(foo).unwrap();
+<span class="comment">// Let's say hi to foo
+// NOTE: add a newline here to flush the buffer
+</span>stdout.write(<span class="string">b"Hi, foo!\n"</span>).unwrap();
+
+<span class="comment">// Restore the Stdout
+</span>dup2_stdout(saved_stdout).unwrap();
+
+<span class="comment">// Let's say hi to Stdout
+// NOTE: add a newline here to flush the buffer
+</span>stdout.write(<span class="string">b"Hi, Stdout!\n"</span>).unwrap();</code></pre></div></div></details></section></div></main></body></html>

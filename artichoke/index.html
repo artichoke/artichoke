@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Artichoke Ruby"><title>artichoke - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-e56847b5.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="artichoke" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0-nightly (9f32ccf35 2025-09-21)" data-channel="nightly" data-search-js="search-e256b49e.js" data-stringdex-js="stringdex-061df703.js" data-settings-js="settings-c38705f0.js" ><script src="../static.files/storage-e2aeef58.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-6dc2a7f3.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-263c88ec.css"></noscript><link rel="icon" href="https://www.artichokeruby.org/favicon-32x32.png"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Crate artichoke</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><a class="logo-container" href="../artichoke/index.html"><img src="https://www.artichokeruby.org/artichoke-logo.svg" alt="logo"></a><h2><a href="../artichoke/index.html">artichoke</a><span class="version">0.1.0-pre.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#crate-features" title="Crate Features">Crate Features</a></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>artichoke</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/artichoke/lib.rs.html#1-162">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Artichoke Ruby</p>
+<p>This crate is a Rust and Ruby implementation of the <a href="https://www.ruby-lang.org/">Ruby programming
+language</a>. Artichoke is not production-ready, but intends to be a
+<a href="https://github.com/ruby/spec">MRI-compliant</a> implementation of <a href="https://github.com/artichoke/artichoke/blob/trunk/RUBYSPEC.md#mri-target">recent MRI Ruby</a>.</p>
+<p>This crate provides:</p>
+<ul>
+<li>An embeddable Ruby interpreter, which can be created with the
+<a href="fn.interpreter.html" title="fn artichoke::interpreter"><code>interpreter</code></a> function.</li>
+<li>A Rust and Ruby implementation of Ruby Core and Standard Library using
+high-quality Rust dependencies and modern Ruby.</li>
+<li>Support for injecting Rust code and types into the interpreter with a
+rubygems-style <a href="prelude/trait.File.html" title="trait artichoke::prelude::File"><code>File</code></a> API.</li>
+<li>The ability to disable parts of the interpreter VM or library functions at
+compile time. For example, deny access to the system environ by disabling
+the <code>core-env-system</code> feature.</li>
+</ul>
+<h3 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h3>
+<p>You can create an interpreter and begin executing code on it:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>artichoke::prelude::<span class="kw-2">*</span>;
+
+<span class="kw">let </span><span class="kw-2">mut </span>interp = artichoke::interpreter()<span class="question-mark">?</span>;
+<span class="kw">let </span>result = interp.eval(<span class="string">b"2 + 5"</span>)<span class="question-mark">?</span>;</code></pre></div>
+<p>Artichoke supports calling Ruby functions from Rust and converting between
+Ruby boxed values and Rust native types:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>artichoke::prelude::<span class="kw-2">*</span>;
+
+<span class="kw">let </span><span class="kw-2">mut </span>interp = artichoke::interpreter()<span class="question-mark">?</span>;
+<span class="kw">let </span>s = interp.try_convert_mut(<span class="string">"💎"</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>codepoint = s.funcall(
+    <span class="kw-2">&amp;mut </span>interp,
+    <span class="string">"ord"</span>,
+    <span class="kw-2">&amp;</span>[],  <span class="comment">/* args */
+    </span><span class="prelude-val">None</span>, <span class="comment">/* block */
+</span>)<span class="question-mark">?</span>;
+<span class="kw">let </span>codepoint = codepoint.try_convert_into::&lt;u32&gt;(<span class="kw-2">&amp;</span>interp)<span class="question-mark">?</span>;
+<span class="macro">assert_eq!</span>(<span class="number">128142</span>, codepoint);</code></pre></div><h3 id="crate-features"><a class="doc-anchor" href="#crate-features">§</a>Crate Features</h3>
+<p>All features are enabled by default.</p>
+<p>The features exposed by this crate are unstable. Please refer to the
+documentation in the <a href="https://github.com/artichoke/artichoke/blob/trunk/Cargo.toml">source <code>Cargo.toml</code></a>.</p>
+</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><dl class="item-table reexports"><dt id="reexport.backend"><code>pub use <a class="mod" href="../artichoke_backend/index.html" title="mod artichoke_backend">artichoke_backend</a> as backend;</code></dt></dl><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="backtrace/index.html" title="mod artichoke::backtrace">backtrace</a></dt><dd>Format Ruby <code>Exception</code> backtraces.</dd><dt><a class="mod" href="parser/index.html" title="mod artichoke::parser">parser</a></dt><dd>Detect if Ruby code parses successfully.</dd><dt><a class="mod" href="prelude/index.html" title="mod artichoke::prelude">prelude</a></dt><dd>A “prelude” for users of the <code>artichoke</code> crate.</dd><dt><a class="mod" href="repl/index.html" title="mod artichoke::repl">repl</a></dt><dd>A REPL (read–eval–print–loop) for an Artichoke interpreter.</dd><dt><a class="mod" href="ruby/index.html" title="mod artichoke::ruby">ruby</a></dt><dd>Artichoke CLI entry point.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Artichoke.html" title="struct artichoke::Artichoke">Artichoke</a></dt><dd>Interpreter instance.</dd><dt><a class="struct" href="struct.Error.html" title="struct artichoke::Error">Error</a></dt><dd>The <code>Error</code> type, a wrapper around a dynamic exception type.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.interpreter.html" title="fn artichoke::interpreter">interpreter</a></dt><dd>Create a new Artichoke Ruby interpreter.</dd></dl></section></div></main></body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PollTimeoutTryFromError"],"fn":["poll","ppoll"],"struct":["PollFd","PollFlags","PollTimeout"]};

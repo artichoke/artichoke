@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["ACRE","DE_NORONHA","EAST","RAW_ACRE","RAW_DE_NORONHA","RAW_EAST","RAW_WEST","WEST"]};

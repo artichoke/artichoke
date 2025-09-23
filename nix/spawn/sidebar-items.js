@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["posix_spawn","posix_spawnp"],"struct":["PosixSpawnAttr","PosixSpawnFileActions","PosixSpawnFlags"]};

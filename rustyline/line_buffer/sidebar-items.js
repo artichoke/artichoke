@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Direction","WordAction"],"struct":["LineBuffer"],"trait":["ChangeListener","DeleteListener"]};
