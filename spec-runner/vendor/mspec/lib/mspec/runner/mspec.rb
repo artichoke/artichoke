@@ -10,7 +10,6 @@ class MSpecEnv
 end
 
 module MSpec
-
   @exit    = nil
   @abort   = nil
   @start   = nil
@@ -27,6 +26,7 @@ module MSpec
   @unload  = nil
   @tagged  = nil
   @current = nil
+  @passed = nil
   @example = nil
   @modes   = []
   @shared  = {}
@@ -37,15 +37,16 @@ module MSpec
   @repeat       = 1
   @expectation  = nil
   @expectations = false
+  @skips = []
 
   class << self
-    attr_reader :file, :include, :exclude
+    attr_reader :file, :include, :exclude, :skips
     attr_writer :repeat, :randomize
     attr_accessor :formatter
   end
 
-  def self.describe(mod, options = nil, &block)
-    state = ContextState.new mod, options
+  def self.describe(description, options = nil, &block)
+    state = ContextState.new description, options
     state.parent = current
 
     MSpec.register_current state
@@ -97,6 +98,7 @@ module MSpec
       actions :load
       protect("loading #{file}") { Kernel.load file }
       actions :unload
+      raise "#{file} was executed but did not reset the current example: #{@current}" if @current
     end
   end
 
@@ -111,13 +113,14 @@ module MSpec
 
   def self.protect(location, &block)
     begin
-      @env.instance_eval(&block)
+      @env.instance_exec(&block)
       return true
     rescue SystemExit => e
       raise e
     rescue SkippedSpecError => e
+      @skips << [e, block]
       return false
-    rescue Exception => exc
+    rescue Object => exc
       register_exit 1
       actions :exception, ExceptionState.new(current && current.state, location, exc)
       return false
@@ -155,7 +158,9 @@ module MSpec
 
   # Stores the shared ContextState keyed by description.
   def self.register_shared(state)
-    @shared[state.to_s] = state
+    name = state.to_s
+    raise "duplicated shared #describe: #{name}" if @shared.key?(name)
+    @shared[name] = state
   end
 
   # Returns the shared ContextState matching description.
@@ -239,6 +244,7 @@ module MSpec
   #   :before       before a single spec is run
   #   :add          while a describe block is adding examples to run later
   #   :expectation  before a 'should', 'should_receive', etc.
+  #   :passed       after an example block is run and passes, passed the block, run before :example action
   #   :example      after an example block is run, passed the block
   #   :exception    after an exception is rescued
   #   :after        after a single spec is run
