@@ -229,10 +229,20 @@ crates.
 `spinso-array` implements contiguous growable vector types that implement the
 [Ruby `Array`] API. The code for this crate is located in the [`spinoso-array`
 directory][spinoso-array-src]. `spinoso-array` is `no_std` + `alloc` and exports
-two implementations:
+three implementations:
+
+[ruby `array`]: https://ruby-doc.org/core-3.1.2/Array.html
+[spinoso-array-src]: spinoso-array
 
 - `Array`, which is implemented with [`Vec`][rust-alloc-vec].
 - `SmallArray`, which is implemented with [`SmallVec`] from the [Servo project].
+- `TinyArray`, which is implemented with [`TinyVec`] and no unsafe code.
+
+[rust-alloc-vec]: https://doc.rust-lang.org/alloc/vec/struct.Vec.html
+[`smallvec`]:
+  https://artichoke.github.io/artichoke/smallvec/struct.SmallVec.html
+[servo project]: https://github.com/servo/rust-smallvec
+[`tinyvec`]: https://artichoke.github.io/artichoke/tinyvec/enum.TinyVec.html
 
 `Array` is enabled by default; `SmallArray` requires activating the
 `small-array` Cargo feature. Both data structures have nearly identical APIs
@@ -240,12 +250,6 @@ two implementations:
 `SmallArray`) which allows downstream consumers of these data structures to swap
 out implementations by changing an import.
 
-[ruby `array`]: https://ruby-doc.org/core-3.1.2/Array.html
-[spinoso-array-src]: spinoso-array
-[rust-alloc-vec]: https://doc.rust-lang.org/alloc/vec/struct.Vec.html
-[`smallvec`]:
-  https://artichoke.github.io/artichoke/smallvec/struct.SmallVec.html
-[servo project]: https://github.com/servo/rust-smallvec
 ["raw parts"]:
   https://artichoke.github.io/artichoke/spinoso_array/struct.Array.html#method.into_raw_parts
 
